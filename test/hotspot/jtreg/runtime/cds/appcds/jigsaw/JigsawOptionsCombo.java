@@ -33,6 +33,8 @@
  */
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 import java.util.ArrayList;
 
 

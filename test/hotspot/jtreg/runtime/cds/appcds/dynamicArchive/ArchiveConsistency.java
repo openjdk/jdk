@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import sun.hotspot.WhiteBox;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ArchiveConsistency extends DynamicArchiveTestBase {
     public static WhiteBox wb;

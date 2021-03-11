@@ -36,6 +36,7 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;

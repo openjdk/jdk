@@ -37,6 +37,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ClassResolutionFailure
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class ClassResolutionFailure extends DynamicArchiveTestBase {
 
     public static void main(String[] args) throws Exception {

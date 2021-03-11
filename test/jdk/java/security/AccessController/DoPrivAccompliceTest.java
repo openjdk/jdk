@@ -25,6 +25,7 @@
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 import java.io.FileWriter;
 import java.io.IOException;

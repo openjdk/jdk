@@ -42,6 +42,7 @@
  */
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class FieldLayoutFlags {
     static final String[][] flags = {

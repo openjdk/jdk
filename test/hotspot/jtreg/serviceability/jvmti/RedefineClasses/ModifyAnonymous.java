@@ -45,6 +45,7 @@ import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ModifyAnonymous {
 

@@ -34,6 +34,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaCustomLoader
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class LambdaCustomLoader extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
         runTest(LambdaCustomLoader::test);

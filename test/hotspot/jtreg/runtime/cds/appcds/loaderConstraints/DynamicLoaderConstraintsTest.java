@@ -39,6 +39,7 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
     static String mainClass = LoaderConstraintsApp.class.getName();

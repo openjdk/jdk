@@ -35,6 +35,8 @@
  * @run driver AnonVmClassesDuringDump
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class AnonVmClassesDuringDump {
     public static String appClasses[] = {
         Hello.class.getName(),

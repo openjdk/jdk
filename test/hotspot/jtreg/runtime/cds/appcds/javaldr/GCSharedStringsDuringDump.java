@@ -42,6 +42,7 @@ import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class GCSharedStringsDuringDump {
     public static String appClasses[] = {

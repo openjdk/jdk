@@ -39,6 +39,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ExcludedClasses
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class ExcludedClasses extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
         runTest(ExcludedClasses::test);

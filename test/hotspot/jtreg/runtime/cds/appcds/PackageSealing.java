@@ -34,6 +34,7 @@
 
 import java.io.File;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class PackageSealing {
     public static void main(String args[]) throws Exception {

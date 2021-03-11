@@ -35,6 +35,7 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RedefineRunningMethods_Shared {
     public static String shared_classes[] = {

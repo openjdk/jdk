@@ -28,6 +28,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSTestUtils.Result;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import sun.hotspot.WhiteBox;
 
 /**

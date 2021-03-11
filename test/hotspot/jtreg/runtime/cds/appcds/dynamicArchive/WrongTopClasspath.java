@@ -36,6 +36,8 @@ import java.io.File;
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar WrongTopClasspath
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class WrongTopClasspath extends DynamicArchiveTestBase {
 
     public static void main(String[] args) throws Exception {

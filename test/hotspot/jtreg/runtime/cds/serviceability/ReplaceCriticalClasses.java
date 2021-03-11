@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import sun.hotspot.WhiteBox;
 
 public class ReplaceCriticalClasses {

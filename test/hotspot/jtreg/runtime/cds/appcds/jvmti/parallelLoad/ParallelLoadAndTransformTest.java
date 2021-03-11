@@ -35,9 +35,12 @@
  * @build TransformUtil TransformerAgent ParallelLoad
  * @run driver ParallelLoadAndTransformTest
  */
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ParallelLoadAndTransformTest {
 

@@ -36,6 +36,7 @@ import java.lang.reflect.Method;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 // Test that JVM get_system_package() returns the module location for defined packages.
 public class GetSysPkgTest {

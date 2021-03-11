@@ -36,6 +36,7 @@
 
 import java.io.File;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class PatchDir {
     private static String moduleJar;

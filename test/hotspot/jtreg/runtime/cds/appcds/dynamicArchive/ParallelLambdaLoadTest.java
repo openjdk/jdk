@@ -35,6 +35,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ParallelLambdaLoadTest
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class ParallelLambdaLoadTest extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
         runTest(ParallelLambdaLoadTest::test);

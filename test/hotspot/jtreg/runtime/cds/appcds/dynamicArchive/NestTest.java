@@ -37,6 +37,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. NestTest
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class NestTest extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
         runTest(NestTest::test);

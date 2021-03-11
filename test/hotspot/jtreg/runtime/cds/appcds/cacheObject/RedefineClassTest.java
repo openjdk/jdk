@@ -43,6 +43,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RedefineClassTest {
     public static String bootClasses[] = {

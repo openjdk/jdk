@@ -34,6 +34,7 @@
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class HumongousDuringDump {
     public static String appClasses[] = {

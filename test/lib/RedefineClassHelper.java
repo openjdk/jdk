@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.ClassDefinition;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 /*
  * Helper class to write tests that redefine classes.

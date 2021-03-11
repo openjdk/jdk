@@ -49,6 +49,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MethodSorting
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class MethodSorting extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
         runTest(MethodSorting::test);

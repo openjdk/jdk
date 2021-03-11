@@ -41,6 +41,7 @@ import java.io.File;
 import java.util.ArrayList;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 // This class is intended to test 2 parent-child relationships:
 // 1. Base Class (parent) and Derived Class (child)

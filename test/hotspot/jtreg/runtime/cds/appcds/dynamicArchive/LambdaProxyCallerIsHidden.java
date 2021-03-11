@@ -42,6 +42,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaProxyCallerIsHidden
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class LambdaProxyCallerIsHidden extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
         runTest(LambdaProxyCallerIsHidden::test);

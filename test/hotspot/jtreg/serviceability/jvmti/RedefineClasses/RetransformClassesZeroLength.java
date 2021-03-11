@@ -42,7 +42,7 @@ import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 
 import jdk.test.lib.process.ProcessTools;
-
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RetransformClassesZeroLength {
 

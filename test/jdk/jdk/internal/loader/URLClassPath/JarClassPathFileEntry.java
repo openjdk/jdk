@@ -30,6 +30,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import jdk.test.lib.util.JarUtils;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 /*
  * @test

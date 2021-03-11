@@ -36,6 +36,7 @@
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class Simple {
     private static String moduleJar;

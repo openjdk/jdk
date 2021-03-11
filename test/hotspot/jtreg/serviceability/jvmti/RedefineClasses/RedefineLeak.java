@@ -42,6 +42,7 @@ import java.security.ProtectionDomain;
 import java.lang.instrument.IllegalClassFormatException;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RedefineLeak {
     static class Tester {}

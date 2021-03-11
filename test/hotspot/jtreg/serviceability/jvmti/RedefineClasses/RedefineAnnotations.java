@@ -35,6 +35,7 @@
  */
 
 import static jdk.test.lib.Asserts.assertTrue;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.lang.NoSuchFieldException;

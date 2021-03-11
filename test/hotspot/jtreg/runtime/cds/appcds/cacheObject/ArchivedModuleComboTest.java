@@ -41,6 +41,7 @@ import java.nio.file.Paths;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import sun.hotspot.WhiteBox;
 
 public class ArchivedModuleComboTest {

@@ -34,6 +34,7 @@
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleTraceCL {

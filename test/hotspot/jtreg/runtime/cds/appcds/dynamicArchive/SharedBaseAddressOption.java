@@ -35,6 +35,7 @@
  */
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class SharedBaseAddressOption extends DynamicArchiveTestBase {
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");
