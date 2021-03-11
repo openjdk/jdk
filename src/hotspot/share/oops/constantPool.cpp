@@ -604,7 +604,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     if (k != NULL && !SafepointSynchronize::is_at_safepoint()) {
       // Make sure that resolving is legal
       ExceptionMark em(thread);
-      Thread* THREAD = current; // For exception macros.
+      Thread* THREAD = thread; // For exception macros.
       // return NULL if verification fails
       verify_constant_pool_resolve(this_cp, k, THREAD);
       if (HAS_PENDING_EXCEPTION) {

@@ -2145,7 +2145,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     }
     return;
   }
-  ObjectSynchronizer::exit(obj, lock, thread);
+  ObjectSynchronizer::exit(obj, lock, current);
 }
 
 // Handles the uncommon cases of monitor unlocking in compiled code

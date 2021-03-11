@@ -1650,7 +1650,7 @@ void ThreadTimesClosure::do_thread(Thread* thread) {
     return;
   }
 
-  ExceptionMark em(THREAD);
+  EXCEPTION_MARK;
   ResourceMark rm(THREAD); // thread->name() uses ResourceArea
 
   assert(thread->name() != NULL, "All threads should have a name");
