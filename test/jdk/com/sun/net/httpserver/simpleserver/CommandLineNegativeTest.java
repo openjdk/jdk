@@ -30,19 +30,23 @@
  * @run testng CommandLineNegativeTest
  */
 
+import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertEquals;
 
 public class CommandLineNegativeTest {
 
@@ -110,22 +114,97 @@ public class CommandLineNegativeTest {
             );
     }
 
-    @Test
-    public void testBindAddressUnknownHost() {
-        simpleserver("-b", "[127.0.0.1]")
+    @DataProvider(name = "invalidValue")
+    public Object[][] invalidValue() {
+        return new Object[][] {
+                {"-b", "[127.0.0.1]"},
+                {"-b", "192.168.1.220..."},
+                {"-b", "badhost"},
+
+                {"-d", "\u0000"},
+                // TODO
+                // expect failure at Path::of, not at actual file system access
+                // thus no need to be file system specific?
+
+                {"-o", ""},
+                {"-o", "bad-output-level"},
+
+                {"-p", ""},
+                {"-p", "+-"},
+                {"-p", "\u0000"},
+        };
+    }
+
+    @Test(dataProvider = "invalidValue")
+    public void testInvalidValue(String option, String value) {
+        simpleserver(option, value)
             .assertFailure()
             .resultChecker(r ->
-                assertContains(r.output, "Error: invalid value given for -b: [127.0.0.1]")
+                assertContains(r.output, "Error: invalid value given for "
+                        + option + ": " + value)
             );
     }
 
-    // TODO
-    // bind address unknown host
-    // directory
-    // output level
-    // path
+    @Test
+    public void testPortOutOfRange() {
+        simpleserver("-p", "65536")  // range 0 to 65535
+                .assertFailure()
+                .resultChecker(r ->
+                        assertContains(r.output, "Error: server config failed: "
+                                + "port out of range:65536")
+                );
+    }
 
-    // ---
+    @Test
+    public void testRootNotAbsolute() {
+        simpleserver("-d", "")
+                .assertFailure()
+                .resultChecker(r ->
+                        assertContains(r.output, "Error: server config failed: "
+                                + "Path is not absolute:")
+                );
+    }
+
+    static final String TEST_SRC = System.getProperty("test.src", ".");
+    static final Path TEST_DIR = Paths.get(TEST_SRC, "dir");
+    static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
+
+    @BeforeTest
+    public void makeTestDirectory() throws IOException {
+        if (Files.exists(TEST_DIR))
+            FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+        Files.createDirectories(TEST_DIR);
+        Files.createFile(TEST_FILE);
+    }
+
+    @Test
+    public void testRootNotADirectory() {
+        String file = TEST_FILE.toString();
+        simpleserver("-d", file)
+                .assertFailure()
+                .resultChecker(r ->
+                        assertContains(r.output, "Error: server config failed: "
+                                + "Path not a directory: " + file)
+                );
+    }
+
+    @Test
+    public void testRootDoesNotExist() {
+        Path root = TEST_DIR.resolve("/nonexistant/dir");
+        simpleserver("-d", root.toString())
+                .assertFailure()
+                .resultChecker(r ->
+                        assertContains(r.output, "Error: server config failed: "
+                                + "Path does not exist: " + root.toString())
+                );
+    }
+
+    @Test
+    public void testRootNotReadable() {
+        // TODO
+    }
+
+    // --- helper methods ---
 
     static void assertContains(String output, String subString) {
         if (output.contains(subString))

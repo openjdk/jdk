@@ -86,9 +86,10 @@ final class SimpleFileServerImpl {
         Path root = ROOT;
         OutputLevel outputLevel = OUTPUT_LEVEL;
 
-        // parse args
+        // parse options
         Iterator<String> options = Arrays.asList(args).iterator();
         String option = null;
+        String optionArg = null;
         try {
             while (options.hasNext()) {
                 option = options.next();
@@ -97,11 +98,11 @@ final class SimpleFileServerImpl {
                         showHelp();
                         return Result.OK.statusCode;
                     }
-                    case "-b" -> addr = InetAddress.getByName(options.next());
-                    case "-p" -> port = Integer.parseInt(options.next());
-                    case "-d" -> root = Path.of(options.next());
+                    case "-b" -> addr = InetAddress.getByName(optionArg = options.next());
+                    case "-d" -> root = Path.of(optionArg = options.next());
                     case "-o" -> outputLevel = Enum.valueOf(OutputLevel.class,
-                            options.next().toUpperCase(Locale.ROOT));
+                            (optionArg = options.next()).toUpperCase(Locale.ROOT));
+                    case "-p" -> port = Integer.parseInt(optionArg = options.next());
                     default -> throw new AssertionError();
                 }
             }
@@ -113,7 +114,7 @@ final class SimpleFileServerImpl {
             reportError(getMessage("err.missing.arg", option));
             return Result.CMDERR.statusCode;
         } catch (Exception e) {
-            reportError(getMessage("err.invalid.arg", option, e.getMessage()));
+            reportError(getMessage("err.invalid.arg", option, optionArg));
             e.printStackTrace(out);
             return Result.CMDERR.statusCode;
         } finally {

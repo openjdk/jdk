@@ -180,7 +180,7 @@ public final class SimpleFileServer {
      * @param outputLevel the log message output level
      * @return an HttpServer
      * @throws IllegalArgumentException if root is not absolute, not a directory,
-     *         does not exist, or is not readably
+     *         does not exist, or is not readable
      * @throws UncheckedIOException if an I/O error occurs
      * @throws NullPointerException if any argument is null
      */
