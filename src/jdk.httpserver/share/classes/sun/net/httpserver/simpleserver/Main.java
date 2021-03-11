@@ -24,6 +24,7 @@
 package sun.net.httpserver.simpleserver;
 
 import java.io.PrintWriter;
+import java.util.Objects;
 
 /**
  * Provides external entry points (tool and programmatic) to start the
@@ -46,7 +47,8 @@ public class Main {
      * ignored.
      *
      * @param args the command-line options
-     * @throws NullPointerException if the args is null
+     * @throws NullPointerException if {@code args} is {@code null}, or if there
+     *         are any {@code null} values in the {@code args} array
      */
     public static void main(String... args) {
         start(new PrintWriter(System.out, true), args);
@@ -62,7 +64,8 @@ public class Main {
      * @param writer a writer to which output should be written
      * @param args the command-line options
      * @return The status code
-     * @throws NullPointerException if any of the arguments is null
+     * @throws NullPointerException if any of the arguments are {@code null},
+     *         or if there are any {@code null} values in the {@code args} array
      */
     public static int start(PrintWriter writer, String[] args) {
         return SimpleFileServerImpl.start(writer, args);

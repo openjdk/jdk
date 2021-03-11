@@ -71,12 +71,16 @@ final class SimpleFileServerImpl {
      *
      * @param  writer the writer to which output should be written
      * @param  args the command line options
-     * @throws NullPointerException if any of the arguments is null
+     * @throws NullPointerException if any of the arguments are {@code null},
+     *         or if there are any {@code null} values in the {@code args} array
      */
     static int start(PrintWriter writer, String[] args) {
-        Objects.requireNonNull(writer);
         Objects.requireNonNull(args);
-        out = writer;
+        for (var arg : args) {
+            Objects.requireNonNull(arg);
+        }
+        out = Objects.requireNonNull(writer);
+
         InetAddress addr = ADDR;
         int port = PORT;
         Path root = ROOT;
