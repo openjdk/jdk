@@ -746,20 +746,47 @@ class StoreVectorNode : public StoreNode {
     set_mismatched_access();
   }
 
-  const TypeVect* vect_type() const { return in(MemNode::ValueIn)->bottom_type()->is_vect(); }
-  uint length() const { return vect_type()->length(); } // Vector length
+  const TypeVect* vect_type() const {
+    const Type* type = in(MemNode::ValueIn)->bottom_type();
+    if (type != Type::TOP) {
+      return type->is_vect();
+    } else {
+      return NULL;
+    }
+  }
+
+  uint length() const {
+    if (vect_type() != NULL) {
+      return vect_type()->length();
+    } else {
+      return 0;
+    }
+  } // Vector length
 
   virtual int Opcode() const;
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
   virtual BasicType memory_type() const { return T_VOID; }
-  virtual int memory_size() const { return vect_type()->length_in_bytes(); }
+
+  virtual int memory_size() const {
+    if (vect_type() != NULL) {
+      return vect_type()->length_in_bytes();
+    } else {
+      return 0;
+    }
+  }
 
   static StoreVectorNode* make(int opc, Node* ctl, Node* mem,
                                Node* adr, const TypePtr* atyp, Node* val,
                                uint vlen);
 
-  uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
+  uint element_size(void) {
+    if (vect_type() != NULL) {
+      return type2aelembytes(vect_type()->element_basic_type());
+    } else {
+      return 0;
+    }
+  }
 };
 
 //------------------------------StoreVectorScatterNode------------------------------
