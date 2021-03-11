@@ -63,6 +63,7 @@
         <module>Coordinator</module>
         <module>SelectionCoordinator</module>
         <module>Graph</module>
+        <module>HierarchicalLayout</module>
     </modules>
 
     <properties>
