@@ -805,14 +805,8 @@ void ShenandoahConcurrentGC::op_weak_roots() {
     heap->workers()->run_task(&task);
   }
 
-  // Perform handshake to flush out dead oops
-  {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
-    heap->rendezvous_threads();
-  }
-
   if (!ShenandoahHeap::heap()->unload_classes()) {
-    heap->set_concurrent_weak_root_in_progress(false);
+    heap->disable_concurrent_weak_root_in_progress_concurrently();
   }
 }
 
@@ -822,7 +816,7 @@ void ShenandoahConcurrentGC::op_class_unloading() {
           heap->unload_classes(),
           "Checked by caller");
   heap->do_class_unloading();
-  heap->set_concurrent_weak_root_in_progress(false);
+  heap->disable_concurrent_weak_root_in_progress_concurrently();
 }
 
 class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {

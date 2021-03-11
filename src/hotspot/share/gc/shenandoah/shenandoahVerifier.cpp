@@ -604,7 +604,7 @@ private:
 public:
   VerifyThreadGCState(const char* label, char expected) : _label(label), _expected(expected) {}
   void do_thread(Thread* t) {
-    char actual = ShenandoahThreadLocalData::gc_state(t);
+    char actual = ShenandoahThreadLocalData::gc_state(t) & ~((char)ShenandoahHeap::WEAK_ROOTS);
     if (actual != _expected) {
       fatal("%s: Thread %s: expected gc-state %d, actual %d", _label, t->name(), _expected, actual);
     }
@@ -650,7 +650,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
     }
 
     if (enabled) {
-      char actual = _heap->gc_state();
+      char actual = _heap->gc_state() & ~((char)ShenandoahHeap::WEAK_ROOTS);
       if (actual != expected) {
         fatal("%s: Global gc-state: expected %d, actual %d", label, expected, actual);
       }

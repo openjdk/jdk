@@ -263,6 +263,9 @@ public:
 
     // Heap is under updating: needs no additional barriers.
     UPDATEREFS_BITPOS = 3,
+
+    // Weak-reference/roots-processing in progress: need weak-LRB
+    WEAK_ROOTS_BITPOS  = 4,
   };
 
   enum GCState {
@@ -271,6 +274,7 @@ public:
     MARKING       = 1 << MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
     UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
+    WEAK_ROOTS    = 1 << WEAK_ROOTS_BITPOS,
   };
 
 private:
@@ -280,7 +284,6 @@ private:
   ShenandoahSharedFlag   _full_gc_move_in_progress;
   ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
-  ShenandoahSharedFlag   _concurrent_weak_root_in_progress;
 
   void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
@@ -298,6 +301,7 @@ public:
   void set_has_forwarded_objects(bool cond);
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
+  void disable_concurrent_weak_root_in_progress_concurrently();
 
   inline bool is_stable() const;
   inline bool is_idle() const;

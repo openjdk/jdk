@@ -1655,7 +1655,6 @@ void ShenandoahHeap::prepare_regions_and_collection_set(bool concurrent) {
 
 void ShenandoahHeap::do_class_unloading() {
   _unloader.unload();
-  set_concurrent_weak_root_in_progress(false);
 }
 
 void ShenandoahHeap::stw_weak_refs(bool full_gc) {
@@ -1717,12 +1716,29 @@ void ShenandoahHeap::set_concurrent_strong_root_in_progress(bool in_progress) {
   }
 }
 
-void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool in_progress) {
-  if (in_progress) {
-    _concurrent_weak_root_in_progress.set();
-  } else {
-    _concurrent_weak_root_in_progress.unset();
+void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool cond) {
+  set_gc_state_mask(WEAK_ROOTS, cond);
+}
+
+class ShenandoahDisableWeakRootsClosure : public HandshakeClosure {
+public:
+  inline ShenandoahDisableWeakRootsClosure() : HandshakeClosure("ShenandoahDisableWeakRoots") {}
+  inline void do_thread(Thread* thread) {
+    char gc_state = ShenandoahThreadLocalData::gc_state(thread);
+    gc_state &= ~((char)ShenandoahHeap::WEAK_ROOTS);
+    ShenandoahThreadLocalData::set_gc_state(thread, gc_state);
   }
+};
+
+void ShenandoahHeap::disable_concurrent_weak_root_in_progress_concurrently() {
+  // Perform handshake to flush out dead oops
+  {
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
+    ShenandoahDisableWeakRootsClosure cl;
+    Handshake::execute(&cl);
+  }
+
+  _gc_state.set_cond(WEAK_ROOTS, false);
 }
 
 GCTracer* ShenandoahHeap::tracer() {
