@@ -153,7 +153,6 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
     case Location::invalid: {
       return new StackValue();
     }
-    case Location::vectorpred:
     case Location::vector: {
       ShouldNotReachHere(); // should be handled by Deoptimization::realloc_objects()
     }

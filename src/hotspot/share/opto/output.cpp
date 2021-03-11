@@ -897,8 +897,6 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                t->base() == Type::VectorD || t->base() == Type::VectorX ||
                t->base() == Type::VectorY || t->base() == Type::VectorZ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
-    } else if ( t->base() == Type::VectorM ) {
-      array->append(new_loc_value( C->regalloc(), regnum, Location::vectorpred ));
     } else {
       array->append(new_loc_value( C->regalloc(), regnum, C->regalloc()->is_oop(local) ? Location::oop : Location::normal ));
     }
@@ -985,14 +983,6 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     case Type::Top:               // Add an illegal value here
       array->append(new LocationValue(Location()));
       break;
-    case Type::VectorA:
-    case Type::VectorS:
-    case Type::VectorD:
-    case Type::VectorX:
-    case Type::VectorY:
-    case Type::VectorZ:
-    case Type::VectorM:
-      // Vector payload should always be present in a physical vector register location.
     default:
       ShouldNotReachHere();
       break;

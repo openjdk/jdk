@@ -88,34 +88,21 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
 
 void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr, Location loc) {
   if (is_mask) {
-    if ( loc.type() == Location::vectorpred ) {
-#if defined(X86)
-      // For targets supporting X86-AVX512 feature, opmask/predicate register is 8 byte(64 bits) wide,
-      // where each bit location corresponds to a lane element in vector register. This is different
-      // for non-AVX512 targets where mask vector has same shape as that of the vector register its operating on.
-#if defined(COMPILER2)
-      assert(Matcher::has_predicated_vectors() , "");
-#endif
-      arr->bool_at_put(index,  ((*(jlong*)addr) & (UCONST64(1) << index)) != UCONST64(0));
-      return;
-#endif
-    } else {
-      // Masks require special handling: when boxed they are packed and stored in boolean
-      // arrays, but in scalarized form they have the same size as corresponding vectors.
-      // For example, Int512Mask is represented in memory as boolean[16], but
-      // occupies the whole 512-bit vector register when scalarized.
-      // (In generated code, the conversion is performed by VectorStoreMask.)
-      //
-      switch (elem_bt) {
-        case T_BYTE:   arr->bool_at_put(index,  (*(jbyte*)addr) != 0); break;
-        case T_SHORT:  arr->bool_at_put(index, (*(jshort*)addr) != 0); break;
-        case T_INT:    // fall-through
-        case T_FLOAT:  arr->bool_at_put(index,   (*(jint*)addr) != 0); break;
-        case T_LONG:   // fall-through
-        case T_DOUBLE: arr->bool_at_put(index,  (*(jlong*)addr) != 0); break;
+    // Masks require special handling: when boxed they are packed and stored in boolean
+    // arrays, but in scalarized form they have the same size as corresponding vectors.
+    // For example, Int512Mask is represented in memory as boolean[16], but
+    // occupies the whole 512-bit vector register when scalarized.
+    // (In generated code, the conversion is performed by VectorStoreMask.)
+    //
+    switch (elem_bt) {
+      case T_BYTE:   arr->bool_at_put(index,  (*(jbyte*)addr) != 0); break;
+      case T_SHORT:  arr->bool_at_put(index, (*(jshort*)addr) != 0); break;
+      case T_INT:    // fall-through
+      case T_FLOAT:  arr->bool_at_put(index,   (*(jint*)addr) != 0); break;
+      case T_LONG:   // fall-through
+      case T_DOUBLE: arr->bool_at_put(index,  (*(jlong*)addr) != 0); break;
 
-        default: fatal("unsupported: %s", type2name(elem_bt));
-      }
+      default: fatal("unsupported: %s", type2name(elem_bt));
     }
   } else {
     switch (elem_bt) {
@@ -147,37 +134,18 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
     // Value was in a callee-saved register.
     VMReg vreg = VMRegImpl::as_VMReg(location.register_number());
 
-    if (location.type() == Location::vectorpred) {
-#if defined(X86)
-      // For X86 two adjacent stack slots hold 64 bit opmask register value.
-      address elem_addr = reg_map->location(vreg, 0); // assumes little endian element order
-      for (int i = 0; i < num_elem; i++) {
-        init_payload_element(arr, is_mask, elem_bt, i, elem_addr, location);
-      }
-#endif
-    } else {
-      for (int i = 0; i < num_elem; i++) {
-        int vslot = (i * elem_size) / VMRegImpl::stack_slot_size;
-        int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
+    for (int i = 0; i < num_elem; i++) {
+      int vslot = (i * elem_size) / VMRegImpl::stack_slot_size;
+      int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
 
-        address elem_addr = reg_map->location(vreg, vslot) + off; // assumes little endian element order
-        init_payload_element(arr, is_mask, elem_bt, i, elem_addr, location);
-      }
+      address elem_addr = reg_map->location(vreg, vslot) + off; // assumes little endian element order
+      init_payload_element(arr, is_mask, elem_bt, i, elem_addr, location);
     }
   } else {
     // Value was directly saved on the stack.
     address base_addr = ((address)fr->unextended_sp()) + location.stack_offset();
-    if (location.type() == Location::vectorpred) {
-#if defined(X86)
-      // For X86 two adjacent stack slots hold 64 bit opmask register value.
-      for (int i = 0; i < num_elem; i++) {
-        init_payload_element(arr, is_mask, elem_bt, i, base_addr, location);
-      }
-#endif
-    } else {
-      for (int i = 0; i < num_elem; i++) {
-        init_payload_element(arr, is_mask, elem_bt, i, base_addr + i * elem_size, location);
-      }
+    for (int i = 0; i < num_elem; i++) {
+      init_payload_element(arr, is_mask, elem_bt, i, base_addr + i * elem_size, location);
     }
   }
   return Handle(THREAD, arr);
@@ -185,8 +153,7 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
 
 Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ScopeValue* payload, TRAPS) {
   if (payload->is_location() &&
-      (payload->as_LocationValue()->location().type() == Location::vector    ||
-       payload->as_LocationValue()->location().type() == Location::vectorpred)) {
+      payload->as_LocationValue()->location().type() == Location::vector) {
     // Vector value in an aligned adjacent tuple (1, 2, 4, 8, or 16 slots).
     Location location = payload->as_LocationValue()->location();
     return allocate_vector_payload_helper(ik, fr, reg_map, location, THREAD); // safepoint

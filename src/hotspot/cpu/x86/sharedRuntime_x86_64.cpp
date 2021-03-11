@@ -111,12 +111,6 @@ class RegisterSaver {
     opmask_off         = xmm_off + (XSAVE_AREA_OPMASK_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_OPMASK_OFFS(0),
     DEF_OPMASK_OFFS(1),
-    DEF_OPMASK_OFFS(2),
-    DEF_OPMASK_OFFS(3),
-    DEF_OPMASK_OFFS(4),
-    DEF_OPMASK_OFFS(5),
-    DEF_OPMASK_OFFS(6),
-    DEF_OPMASK_OFFS(7),
     // 2..7 are implied in range usage
     zmm_off = xmm_off + (XSAVE_AREA_ZMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_ZMM_OFFS(0),
@@ -300,13 +294,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       map->set_callee_saved(STACK_OFFSET(off), zmm_name->as_VMReg());
       off += delta;
     }
-    map->set_callee_saved(STACK_OFFSET( opmask1_off ), k1->as_VMReg());
-    map->set_callee_saved(STACK_OFFSET( opmask2_off ), k2->as_VMReg());
-    map->set_callee_saved(STACK_OFFSET( opmask3_off ), k3->as_VMReg());
-    map->set_callee_saved(STACK_OFFSET( opmask4_off ), k4->as_VMReg());
-    map->set_callee_saved(STACK_OFFSET( opmask5_off ), k5->as_VMReg());
-    map->set_callee_saved(STACK_OFFSET( opmask6_off ), k6->as_VMReg());
-    map->set_callee_saved(STACK_OFFSET( opmask7_off ), k7->as_VMReg());
   }
 
 #if COMPILER2_OR_JVMCI
@@ -367,13 +354,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
         map->set_callee_saved(STACK_OFFSET(off), zmm_name->as_VMReg()->next());
         off += delta;
       }
-      map->set_callee_saved(STACK_OFFSET( opmask1H_off ), k1->as_VMReg()->next());
-      map->set_callee_saved(STACK_OFFSET( opmask2H_off ), k2->as_VMReg()->next());
-      map->set_callee_saved(STACK_OFFSET( opmask3H_off ), k3->as_VMReg()->next());
-      map->set_callee_saved(STACK_OFFSET( opmask4H_off ), k4->as_VMReg()->next());
-      map->set_callee_saved(STACK_OFFSET( opmask5H_off ), k5->as_VMReg()->next());
-      map->set_callee_saved(STACK_OFFSET( opmask6H_off ), k6->as_VMReg()->next());
-      map->set_callee_saved(STACK_OFFSET( opmask7H_off ), k7->as_VMReg()->next());
     }
   }
 
