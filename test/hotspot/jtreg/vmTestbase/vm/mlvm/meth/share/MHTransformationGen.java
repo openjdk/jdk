@@ -72,6 +72,8 @@ public class MHTransformationGen {
     private static final Optional<MemoryPoolMXBean> NON_NMETHODS_POOL;
     private static final Optional<MemoryPoolMXBean> PROFILED_NMETHODS_POOL;
     private static final Optional<MemoryPoolMXBean> NON_PROFILED_NMETHODS_POOL ;
+    private static final int NON_SEGMENTED_CACHE_ALLOWANCE = 2_000_000;
+    private static final int SEGMENTED_CACHE_ALLOWANCE = 1_000_000;
 
     static {
         var pools = ManagementFactory.getMemoryPoolMXBeans();
@@ -98,10 +100,10 @@ public class MHTransformationGen {
         };
 
         // Limit numbers are arbitrary, feel free to change if arguably necessary
-        NON_SEGMENTED_CODE_CACHE_POOL.ifPresent(pool -> check.accept(pool, 2_000_000));
-        NON_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, 1_000_000));
-        PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, 1_000_000));
-        NON_PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, 1_000_000));
+        NON_SEGMENTED_CODE_CACHE_POOL.ifPresent(pool -> check.accept(pool, NON_SEGMENTED_CACHE_ALLOWANCE));
+        NON_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
+        PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
+        NON_PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
 
         return result.value;
     }
