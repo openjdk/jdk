@@ -839,6 +839,8 @@ jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-
 # jdk_jpackage
 
 tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java#id0    8248418 generic-all
+tools/jpackage/windows/WinShortcutPromptTest.java                   8263474 windows-all
+tools/jpackage/windows/WinInstallerUiTest.java                      8263474 windows-all
 
 ############################################################################
 
