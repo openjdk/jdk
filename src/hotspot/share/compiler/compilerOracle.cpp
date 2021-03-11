@@ -784,7 +784,8 @@ void CompilerOracle::parse_from_line(char* line) {
         if (option2type(option) == OptionType::Bool) {
           register_command(typed_matcher, option, true);
         } else {
-          jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not a boolean type", option2name(option));
+          jio_snprintf(error_buf, sizeof(error_buf), "  Missing type '%s' before option '%s'",
+                       optiontype2name(option2type(option)), option2name(option));
           print_parse_error(error_buf, original.get());
           return;
         }

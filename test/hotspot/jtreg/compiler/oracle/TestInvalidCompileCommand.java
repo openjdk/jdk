@@ -23,7 +23,7 @@
 
 /*
  * @test TestInvalidCompileCommand
- * @bug 8263206
+ * @bug 8263206 8263353
  * @summary Regression tests of -XX:CompileCommand
  * @library /test/lib
  * @run driver compiler.oracle.TestInvalidCompileCommand
@@ -52,7 +52,7 @@ public class TestInvalidCompileCommand {
             "Unrecognized option 'unknown'"
         },
         {
-            "Option 'TestOptionDouble' is not a boolean type"
+            "Missing type 'double' before option 'TestOptionDouble'"
         }
     };
 
