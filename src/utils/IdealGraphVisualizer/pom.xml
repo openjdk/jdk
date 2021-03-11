@@ -29,6 +29,7 @@
                           <publicPackage>com.sun.hotspot.igv.connection</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.difference</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.layout</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.hierarchicallayout</publicPackage>
                         </publicPackages>
                     </configuration>
                 </plugin>
@@ -64,6 +65,7 @@
         <module>SelectionCoordinator</module>
         <module>Graph</module>
         <module>HierarchicalLayout</module>
+        <module>ControlFlow</module>
     </modules>
 
     <properties>
