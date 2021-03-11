@@ -824,9 +824,6 @@ void ShenandoahHeapRegion::promote() {
   assert(heap->active_generation()->is_mark_complete(), "sanity");
   assert(affiliation() == YOUNG_GENERATION, "Only young regions can be promoted");
 
-  heap->young_generation()->decrease_used(used());
-  heap->old_generation()->increase_used(used());
-
   UpdateCardValuesClosure update_card_values;
   if (is_humongous_start()) {
     oop obj = oop(bottom());
@@ -841,6 +838,7 @@ void ShenandoahHeapRegion::promote() {
 
       ShenandoahBarrierSet::barrier_set()->card_table()->clear_MemRegion(MemRegion(r->bottom(), r->end()));
       r->set_affiliation(OLD_GENERATION);
+      heap->old_generation()->increase_used(used());
     }
     // HEY!  Better to call ShenandoahHeap::heap()->card_scan()->mark_range_as_clean(r->bottom(), obj->size())
     //  and skip the calls to clear_MemRegion() above.
@@ -864,6 +862,7 @@ void ShenandoahHeapRegion::promote() {
     // HEY!  Better to call ShenandoahHeap::heap()->card_scan()->mark_range_as_dirty(r->bottom(), obj->size());
     ShenandoahBarrierSet::barrier_set()->card_table()->dirty_MemRegion(MemRegion(bottom(), end()));
     set_affiliation(OLD_GENERATION);
+    heap->old_generation()->increase_used(used());
     oop_iterate_objects(&update_card_values, /*fill_dead_objects*/ true, /* reregister_coalesced_objects */ false);
   }
 }
