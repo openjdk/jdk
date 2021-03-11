@@ -20,6 +20,9 @@
                     <configuration>
                         <brandingToken>${brandingToken}</brandingToken>
                         <cluster>${brandingToken}</cluster>
+                        <publicPackages>
+                          <publicPackage>com.sun.hotspot.igv.data</publicPackage>
+                        </publicPackages>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -46,6 +49,7 @@
         <module>application</module>
         <module>Data</module>
         <module>Settings</module>
+        <module>Util</module>
     </modules>
 
     <properties>
