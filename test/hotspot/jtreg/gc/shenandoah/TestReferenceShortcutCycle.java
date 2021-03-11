@@ -85,6 +85,7 @@ public class TestReferenceShortcutCycle {
         setup();
         WB.concurrentGCAcquireControl();
         try {
+            WB.concurrentGCRunToIdle();
             WB.concurrentGCRunTo(WB.AFTER_CONCURRENT_REFERENCE_PROCESSING_STARTED);
             for (int i = 0; i < NUM_ITEMS; i++) {
                 if (refs[i].get() != null) {
