@@ -122,7 +122,7 @@ char* MetaspaceShared::symbol_space_alloc(size_t num_bytes) {
 
 // os::vm_allocation_granularity() is usually 4K for most OSes. However, on Linux/aarch64,
 // it can be either 4K or 64K and on Macosx-arm it is 16K. To generate archives that are
-// compatible for both settings. An alternative cds core region alignment can be enabled
+// compatible for both settings, an alternative cds core region alignment can be enabled
 // at building time:
 //   --enable-compactible-cds-alignment
 // Upon successful configuration, the compactible alignment then can be defined as in:
