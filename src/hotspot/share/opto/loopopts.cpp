@@ -1043,7 +1043,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Do not clone the trip counter through on a CountedLoop
   // (messes up the canonical shape).
-  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_loop())) && n->Opcode() == Op_AddI) ||
+  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_inner_loop())) && n->Opcode() == Op_AddI) ||
       (n_blk->is_LongCountedLoop() && n->Opcode() == Op_AddL)) {
     return n;
   }
