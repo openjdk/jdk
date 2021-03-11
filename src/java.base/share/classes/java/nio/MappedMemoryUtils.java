@@ -42,8 +42,7 @@ import java.io.UncheckedIOException;
             return true;
         long offset = mappingOffset(address);
         long length = mappingLength(offset, size);
-        return isLoaded0(mappingAddress(address, offset), length,
-            Bits.pageCount(length));
+        return isLoaded0(mappingAddress(address, offset), length, Bits.pageCount(length));
     }
 
     static void load(long address, boolean isSync, long size) {
@@ -90,8 +89,7 @@ import java.io.UncheckedIOException;
         unload0(mappingAddress(address, offset), length);
     }
 
-    static void force(FileDescriptor fd, long address, boolean isSync,
-        long index, long length) {
+    static void force(FileDescriptor fd, long address, boolean isSync, long index, long length) {
         if (isSync) {
             // simply force writeback of associated cache lines
             Unsafe.getUnsafe().writebackMemory(address + index, length);
@@ -99,8 +97,7 @@ import java.io.UncheckedIOException;
             // force writeback via file descriptor
             long offset = mappingOffset(address, index);
             try {
-                force0(fd, mappingAddress(address, offset, index),
-                    mappingLength(offset, length));
+                force0(fd, mappingAddress(address, offset, index), mappingLength(offset, length));
             } catch (IOException cause) {
                 throw new UncheckedIOException(cause);
             }
@@ -109,12 +106,10 @@ import java.io.UncheckedIOException;
 
     // native methods
 
-    private static native boolean isLoaded0(long address, long length,
-        int pageCount);
+    private static native boolean isLoaded0(long address, long length, int pageCount);
     private static native void load0(long address, long length);
     private static native void unload0(long address, long length);
-    private static native void force0(FileDescriptor fd, long address,
-        long length) throws IOException;
+    private static native void force0(FileDescriptor fd, long address, long length) throws IOException;
 
     // utility methods
 
@@ -147,8 +142,7 @@ import java.io.UncheckedIOException;
     // mappingOffset(index) returns the largest page aligned address
     // of the mapping less than or equal to the address of the buffer
     // element identified by index.
-    private static long mappingAddress(long address, long mappingOffset,
-        long index) {
+    private static long mappingAddress(long address, long mappingOffset, long index) {
         long indexAddress = address + index;
         return indexAddress - mappingOffset;
     }
