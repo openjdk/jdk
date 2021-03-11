@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1GCTYPES_HPP
-#define SHARE_GC_G1_G1GCTYPES_HPP
+#ifndef SHARE_GC_G1_G1GCPAUSETYPES_HPP
+#define SHARE_GC_G1_G1GCPAUSETYPES_HPP
 
 #include "utilities/debug.hpp"
 
@@ -86,4 +86,4 @@ public:
   }
 };
 
-#endif // SHARE_GC_G1_G1GCTYPES_HPP
+#endif // SHARE_GC_G1_G1GCPAUSETYPES_HPP

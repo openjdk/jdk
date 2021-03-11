@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1TRACE_HPP
 #define SHARE_GC_G1_G1TRACE_HPP
 
-#include "gc/g1/g1GCTypes.hpp"
+#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/shared/gcTrace.hpp"
 
 class G1EvacuationInfo;

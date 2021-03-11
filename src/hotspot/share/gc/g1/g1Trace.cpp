@@ -26,7 +26,7 @@
 #include "gc/g1/g1EvacuationInfo.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/g1/g1GCTypes.hpp"
+#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "jfr/jfrEvents.hpp"
 #if INCLUDE_JFR

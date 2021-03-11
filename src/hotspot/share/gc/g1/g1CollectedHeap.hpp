@@ -36,7 +36,7 @@
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1EvacuationInfo.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
-#include "gc/g1/g1GCTypes.hpp"
+#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
