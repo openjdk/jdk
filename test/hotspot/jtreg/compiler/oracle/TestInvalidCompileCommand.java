@@ -44,6 +44,22 @@ public class TestInvalidCompileCommand {
         {
             "-XX:CompileCommand=option,Test::test,TestOptionDouble,3.14",
             "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionInt,3",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionUint,3",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionStr,hello",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionList,hello,world",
+            "-version"
         }
     };
 
@@ -53,6 +69,18 @@ public class TestInvalidCompileCommand {
         },
         {
             "Missing type 'double' before option 'TestOptionDouble'"
+        },
+        {
+            "Missing type 'intx' before option 'TestOptionInt'"
+        },
+        {
+            "Missing type 'uintx' before option 'TestOptionUint'"
+        },
+        {
+            "Missing type 'ccstr' before option 'TestOptionStr'"
+        },
+        {
+            "Missing type 'ccstrlist' before option 'TestOptionList'"
         }
     };
 
