@@ -355,7 +355,7 @@ public class request001 extends JDIBase {
             vm.resume();
 
             log2("......waiting for ThreadStartEvent");
-            waitThreadStart("thread2");
+            getEventSetForThreadStartDeath("thread2");
             eventSets[10] = eventSet;
 
             Event receivedEvent = eventIterator.nextEvent();
@@ -370,7 +370,7 @@ public class request001 extends JDIBase {
             vm.resume();
 
             log2("......waiting for ThreadDeathEvent");
-            waitThreadDeath("thread2");
+            getEventSetForThreadStartDeath("thread2");
             eventSets[9] = eventSet;
             receivedEvent = eventIterator.nextEvent();
             if ( !(receivedEvent instanceof ThreadDeathEvent) ) {

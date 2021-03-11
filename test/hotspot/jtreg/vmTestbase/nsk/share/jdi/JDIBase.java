@@ -152,6 +152,38 @@ public class JDIBase {
         }
     }
 
+    // Special version of getEventSet for ThreadStartEvent/ThreadDeathEvent.
+    // When ThreadStartRequest and/or ThreadDeathRequest are enabled, we can get the events from system threads
+    // unexpected for tests.
+    // The method skips ThreadStartEvent/ThreadDeathEvent events for all threads except the expected one.
+    protected void getEventSetForThreadStartDeath(String threadName) throws JDITestRuntimeException {
+        boolean gotDesiredEvent = false;
+        while (!gotDesiredEvent) {
+            getEventSet();
+            Event event = eventIterator.nextEvent();
+            if (event instanceof ThreadStartEvent) {
+                ThreadStartEvent evt = (ThreadStartEvent)event;
+                if (evt.thread().name().equals(threadName)) {
+                    gotDesiredEvent = true;
+                } else {
+                    log2("Got ThreadStartEvent for wrong thread: " + event);
+                }
+            } else if (event instanceof ThreadDeathEvent) {
+                ThreadDeathEvent evt = (ThreadDeathEvent)event;
+                if (evt.thread().name().equals(threadName)) {
+                    gotDesiredEvent = true;
+                } else {
+                    log2("Got ThreadDeathEvent for wrong thread: " + event);
+                }
+            } else {
+                // not ThreadStartEvent nor ThreadDeathEvent
+                gotDesiredEvent = true;
+            }
+        }
+        // reset the iterator before return
+        eventIterator = eventSet.eventIterator();
+    }
+
     protected void breakpointForCommunication() throws JDITestRuntimeException {
 
         log2("breakpointForCommunication");
@@ -164,48 +196,6 @@ public class JDIBase {
         }
 
         throw new JDITestRuntimeException("** event '" + event + "' IS NOT a breakpoint **");
-    }
-
-    // Waiting for ThreadStart and ThreadDeath event we can get events from system threads,
-    // so need to ensure we get the event from the desired thread.
-    protected void waitThreadStart(String threadName) throws JDITestRuntimeException {
-        while (true) {
-            getEventSet();
-            Event event = eventIterator.nextEvent();
-            if (event instanceof ThreadStartEvent) {
-                ThreadStartEvent evt = (ThreadStartEvent)event;
-                if (evt.thread().name().equals(threadName)) {
-                    break;
-                }
-            } else if (!(event instanceof ThreadDeathEvent)) {
-                // unexpected event. let the test handle it
-                break;
-            }
-            // log the event and wait for next one
-            log2("Waiting for ThreadStartEvent, got " + event);
-        }
-        // reset the iterator
-        eventIterator = eventSet.eventIterator();
-    }
-
-    protected void waitThreadDeath(String threadName) throws JDITestRuntimeException {
-        while (true) {
-            getEventSet();
-            Event event = eventIterator.nextEvent();
-            if (event instanceof ThreadDeathEvent) {
-                ThreadDeathEvent evt = (ThreadDeathEvent)event;
-                if (evt.thread().name().equals(threadName)) {
-                    break;
-                }
-            } else if (!(event instanceof ThreadStartEvent)) {
-                // unexpected event. let the test handle it
-                break;
-            }
-            // log the event and wait for next one
-            log2("Waiting for ThreadStartEvent, got " + event);
-        }
-        // reset the iterator
-        eventIterator = eventSet.eventIterator();
     }
 
 }
