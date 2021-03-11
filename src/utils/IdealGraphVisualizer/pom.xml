@@ -50,6 +50,7 @@
         <module>Data</module>
         <module>Settings</module>
         <module>Util</module>
+        <module>Layout</module>
     </modules>
 
     <properties>
