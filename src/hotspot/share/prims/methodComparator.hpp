@@ -34,12 +34,11 @@
 
 class MethodComparator {
  private:
-  static BytecodeStream *_s_old, *_s_new;
-  static ConstantPool* _old_cp;
-  static ConstantPool* _new_cp;
-
-  static bool args_same(Bytecodes::Code c_old, Bytecodes::Code c_new);
-  static bool pool_constants_same(int cpi_old, int cpi_new);
+  static bool args_same(Bytecodes::Code c_old, Bytecodes::Code c_new,
+                        BytecodeStream* s_old, BytecodeStream* s_new,
+                        ConstantPool* old_cp,  ConstantPool* new_cp);
+  static bool pool_constants_same(int cpi_old, int cpi_new,
+                                  ConstantPool* old_cp,  ConstantPool* new_cp);
   static int check_stack_and_locals_size(Method* old_method, Method* new_method);
 
  public:
