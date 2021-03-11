@@ -27,7 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "utilities/enumIterator.hpp"
 
 class Thread;
 
