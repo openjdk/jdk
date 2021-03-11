@@ -39,7 +39,7 @@ import sun.nio.ch.DirectBuffer;
  * popular ZLIB compression library. The ZLIB compression library was
  * initially developed as part of the PNG graphics standard and is not
  * protected by patents. It is fully described in the specifications at
- * the <a href="package-summary.html#package.description">java.util.zip
+ * the <a href="package-summary.html#package-description">java.util.zip
  * package description</a>.
  * <p>
  * This class inflates sequences of ZLIB compressed bytes. The input byte

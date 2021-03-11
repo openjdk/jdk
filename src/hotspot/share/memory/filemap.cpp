@@ -280,7 +280,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_HEX, _cloned_vtables_offset);
   st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_HEX, _serialized_data_offset);
-  st->print_cr("- i2i_entry_code_buffers_offset:  " SIZE_FORMAT_HEX, _i2i_entry_code_buffers_offset);
   st->print_cr("- heap_end:                       " INTPTR_FORMAT, p2i(_heap_end));
   st->print_cr("- base_archive_is_default:        %d", _base_archive_is_default);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
@@ -1271,7 +1270,7 @@ void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, b
 
 static const char* region_name(int region_index) {
   static const char* names[] = {
-    "mc", "rw", "ro", "bm", "ca0", "ca1", "oa0", "oa1"
+    "rw", "ro", "bm", "ca0", "ca1", "oa0", "oa1"
   };
   const int num_regions = sizeof(names)/sizeof(names[0]);
   assert(0 <= region_index && region_index < num_regions, "sanity");
@@ -1532,7 +1531,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
 }
 
 // Memory map a region in the address space.
-static const char* shared_region_name[] = { "MiscCode", "ReadWrite", "ReadOnly", "Bitmap",
+static const char* shared_region_name[] = { "ReadWrite", "ReadOnly", "Bitmap",
                                             "String1", "String2", "OpenArchive1", "OpenArchive2" };
 
 MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs) {
@@ -1677,7 +1676,7 @@ char* FileMapInfo::map_bitmap_region() {
 }
 
 // This is called when we cannot map the archive at the requested[ base address (usually 0x800000000).
-// We relocate all pointers in the 3 core regions (mc, ro, rw).
+// We relocate all pointers in the 2 core regions (ro, rw).
 bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
   log_debug(cds, reloc)("runtime archive relocation start");
   char* bitmap_base = map_bitmap_region();
@@ -2172,9 +2171,9 @@ char* FileMapInfo::region_addr(int idx) {
   }
 }
 
-// The 3 core spaces are MC->RW->RO
+// The 2 core spaces are RW->RO
 FileMapRegion* FileMapInfo::first_core_space() const {
-  return space_at(MetaspaceShared::mc);
+  return space_at(MetaspaceShared::rw);
 }
 
 FileMapRegion* FileMapInfo::last_core_space() const {
@@ -2220,14 +2219,26 @@ bool FileMapHeader::validate() {
     _has_platform_or_app_classes = false;
   }
 
-  // For backwards compatibility, we don't check the verification setting
-  // if the archive only contains system classes.
-  if (_has_platform_or_app_classes &&
-      ((!_verify_local && BytecodeVerificationLocal) ||
-       (!_verify_remote && BytecodeVerificationRemote))) {
-    FileMapInfo::fail_continue("The shared archive file was created with less restrictive "
-                  "verification setting than the current setting.");
+
+  if (!_verify_local && BytecodeVerificationLocal) {
+    //  we cannot load boot classes, so there's no point of using the CDS archive
+    FileMapInfo::fail_continue("The shared archive file's BytecodeVerificationLocal setting (%s)"
+                               " does not equal the current BytecodeVerificationLocal setting (%s).",
+                               _verify_local ? "enabled" : "disabled",
+                               BytecodeVerificationLocal ? "enabled" : "disabled");
     return false;
+  }
+
+  // For backwards compatibility, we don't check the BytecodeVerificationRemote setting
+  // if the archive only contains system classes.
+  if (_has_platform_or_app_classes
+      && !_verify_remote // we didn't verify the archived platform/app classes
+      && BytecodeVerificationRemote) { // but we want to verify all loaded platform/app classes
+    FileMapInfo::fail_continue("The shared archive file was created with less restrictive "
+                               "verification setting than the current setting.");
+    // Pretend that we didn't have any archived platform/app classes, so they won't be loaded
+    // by SystemDictionaryShared.
+    _has_platform_or_app_classes = false;
   }
 
   // Java agents are allowed during run time. Therefore, the following condition is not
@@ -2280,8 +2291,7 @@ bool FileMapInfo::validate_header() {
 // Check if a given address is within one of the shared regions
 bool FileMapInfo::is_in_shared_region(const void* p, int idx) {
   assert(idx == MetaspaceShared::ro ||
-         idx == MetaspaceShared::rw ||
-         idx == MetaspaceShared::mc, "invalid region index");
+         idx == MetaspaceShared::rw, "invalid region index");
   char* base = region_addr(idx);
   if (p >= base && p < base + space_at(idx)->used()) {
     return true;

@@ -92,7 +92,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         String unmapPattern = unmapPrefix + "(Bitmap)";
         String archiveRelocPattern = ".*ArchiveRelocationMode == 1.*";
         String unmapRgn1Pattern = ".*Unmapping region #1 at base 0x.*";
-        String unmapRgn0Pattern = ".*Unmapping region #0 at base 0x.*(MiscCode)";
+        String unmapRgn0Pattern = ".*Unmapping region #0 at base 0x.*(ReadWrite)";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
 
         // (1) Dump base archive (static)

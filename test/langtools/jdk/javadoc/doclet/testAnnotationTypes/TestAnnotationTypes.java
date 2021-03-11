@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4973609 8015249 8025633 8026567 6469561 8071982 8162363 8182765 8223364
-             8242056
+             8242056 8261976
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @library  ../../lib
@@ -53,10 +53,10 @@ public class TestAnnotationTypes extends JavadocTester {
         checkOutput("pkg/AnnotationTypeField.html", true,
                 """
                     <li>Summary:&nbsp;</li>
-                    <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#field-summary">Field</a>&nbsp;|&nbsp;</li>""",
                 """
                     <li>Detail:&nbsp;</li>
-                    <li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#field-detail">Field</a>&nbsp;|&nbsp;</li>""",
                 "<!-- =========== FIELD SUMMARY =========== -->",
                 "<h2>Field Summary</h2>",
                 """
@@ -83,7 +83,7 @@ public class TestAnnotationTypes extends JavadocTester {
                     "<ul class=\"member-list\">",
                     "<li>",
                     """
-                        <section class="details" id="annotation.interface.element.detail">""",
+                        <section class="details" id="annotation-interface-element-detail">""",
                     "<h2>Element Details</h2>",
                     "</a>",
                     "<ul class=\"member-list\">",
@@ -122,10 +122,10 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                 """
-                    <span class="modifiers">public @interface </span><span class="element-name"><a href="../src-html/pkg/AnnotationType.html#line.31">AnnotationType</a></span></div>""");
+                    <span class="modifiers">public @interface </span><span class="element-name"><a href="../src-html/pkg/AnnotationType.html#line-31">AnnotationType</a></span></div>""");
 
         checkOutput("pkg/AnnotationTypeField.html", true,
                 """
-                    <span class="modifiers">public @interface </span><span class="element-name"><a href="../src-html/pkg/AnnotationTypeField.html#line.31">AnnotationTypeField</a></span></div>""");
+                    <span class="modifiers">public @interface </span><span class="element-name"><a href="../src-html/pkg/AnnotationTypeField.html#line-31">AnnotationTypeField</a></span></div>""");
     }
 }
