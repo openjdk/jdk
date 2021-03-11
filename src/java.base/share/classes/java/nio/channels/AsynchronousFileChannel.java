@@ -209,8 +209,8 @@ public abstract class AsynchronousFileChannel
      * FileAttribute file-attributes} to set atomically when creating the file.
      *
      * <p> The new channel is created by invoking the {@link
-     * FileSystemProvider#newFileChannel newFileChannel} method on the
-     * provider that created the {@code Path}.
+     * FileSystemProvider#newAsynchronousFileChannel newAsynchronousFileChannel}
+     * method on the provider that created the {@code Path}.
      *
      * @param   file
      *          The path of the file to open or create
