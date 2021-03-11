@@ -2400,8 +2400,7 @@ public class ObjectStreamClass implements Serializable {
                 return true;
             }
 
-            if (obj instanceof FieldReflectorKey) {
-                FieldReflectorKey other = (FieldReflectorKey) obj;
+            if (obj instanceof FieldReflectorKey other) {
                 Class<?> referent;
                 return (nullClass ? other.nullClass
                                   : ((referent = get()) != null) &&
@@ -2597,8 +2596,7 @@ public class ObjectStreamClass implements Serializable {
 
             @Override
             public final boolean equals(Object obj) {
-                if (!(obj instanceof Key)) return false;
-                Key other = (Key) obj;
+                if (!(obj instanceof Key other)) return false;
                 int n = length();
                 if (n != other.length()) return false;
                 for (int i = 0; i < n; i++) if (fieldType(i) != other.fieldType(i)) return false;

@@ -251,16 +251,6 @@ bool SharedRuntime::is_wide_vector(int size) {
   return false;
 }
 
-size_t SharedRuntime::trampoline_size() {
-  return 16;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  InlinedAddress dest(destination);
-  __ indirect_jump(dest, Rtemp);
-  __ bind_literal(dest);
-}
-
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
                                         VMRegPair *regs2,

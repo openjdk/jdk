@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -776,11 +776,9 @@ public class AttributedString {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof AttributedStringIterator)) {
+            if (!(obj instanceof AttributedStringIterator that)) {
                 return false;
             }
-
-            AttributedStringIterator that = (AttributedStringIterator) obj;
 
             if (AttributedString.this != that.getString())
                 return false;
@@ -1096,10 +1094,9 @@ class AttributeEntry implements Map.Entry<Attribute,Object> {
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof AttributeEntry)) {
+        if (!(o instanceof AttributeEntry other)) {
             return false;
         }
-        AttributeEntry other = (AttributeEntry) o;
         return other.key.equals(key) && Objects.equals(other.value, value);
     }
 

@@ -27,7 +27,7 @@
 #include "logging/logMessage.hpp"
 #include "memory/dumpAllocStats.hpp"
 
-void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all) {
+void DumpAllocStats::print_stats(int ro_all, int rw_all) {
   // symbols
   _counts[RO][SymbolHashentryType] = _symbol_stats.hashentry_count;
   _bytes [RO][SymbolHashentryType] = _symbol_stats.hashentry_bytes;
@@ -41,10 +41,6 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all) {
 
   _counts[RO][StringBucketType] = _string_stats.bucket_count;
   _bytes [RO][StringBucketType] = _string_stats.bucket_bytes;
-
-  // TODO: count things like dictionary, vtable, etc
-  _bytes[RW][OtherType] += mc_all;
-  rw_all += mc_all; // mc is mapped Read/Write
 
   // prevent divide-by-zero
   if (ro_all < 1) {
@@ -66,7 +62,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all) {
 
   LogMessage(cds) msg;
 
-  msg.debug("Detailed metadata info (excluding heap regions; rw stats include mc regions):");
+  msg.debug("Detailed metadata info (excluding heap regions):");
   msg.debug("%s", hdr);
   msg.debug("%s", sep);
   for (int type = 0; type < int(_number_of_types); type ++) {
@@ -111,4 +107,3 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all) {
 
 #undef fmt_stats
 }
-
