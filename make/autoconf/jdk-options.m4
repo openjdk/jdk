@@ -598,7 +598,7 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],
       CHECKING_MSG: [if compatible cds region alignment enabled],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if CDS archive is available])
-        if test "x$BUILD_CDS_ARCHIVE" = "xfalse"; then
+        if test "x$ENABLE_CDS" = "xfalse"; then
           AVAILABLE=false
           AC_MSG_RESULT([no (CDS is disabled)])
         else
