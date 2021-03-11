@@ -161,15 +161,13 @@ public class JDIBase {
         while (!gotDesiredEvent) {
             getEventSet();
             Event event = eventIterator.nextEvent();
-            if (event instanceof ThreadStartEvent) {
-                ThreadStartEvent evt = (ThreadStartEvent)event;
+            if (event instanceof ThreadStartEvent evt) {
                 if (evt.thread().name().equals(threadName)) {
                     gotDesiredEvent = true;
                 } else {
                     log2("Got ThreadStartEvent for wrong thread: " + event);
                 }
-            } else if (event instanceof ThreadDeathEvent) {
-                ThreadDeathEvent evt = (ThreadDeathEvent)event;
+            } else if (event instanceof ThreadDeathEvent evt) {
                 if (evt.thread().name().equals(threadName)) {
                     gotDesiredEvent = true;
                 } else {
