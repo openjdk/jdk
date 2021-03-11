@@ -162,7 +162,7 @@ final class AllPermissionCollection
     private static final long serialVersionUID = -4023755556366636806L;
 
     /**
-     * true if any AllPermissions have been added
+     * True if any AllPermissions have been added.
      */
     private boolean all_allowed;
 

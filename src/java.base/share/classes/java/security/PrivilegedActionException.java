@@ -96,9 +96,10 @@ public class PrivilegedActionException extends Exception {
 
 
     /**
-     * Serializable fields for UndeclaredThrowableException.
+     * The exception thrown by the privileged computation that resulted
+     * in this {@code PrivilegedActionException}.
      *
-     * @serialField exception Exception the undeclaredThrowable
+     * @serialField exception Exception the thrown Exception
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {

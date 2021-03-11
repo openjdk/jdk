@@ -179,8 +179,8 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
      * Writes the state of this object to the stream.
 
      * @serialData this {@code KeyImpl} is serialized by
-     * writing out the ASN1 Encoded bytes of the encryption key.
-     * The ASN1 encoding is defined in RFC4120 and as  follows:
+     * writing out the ASN.1 Encoded bytes of the encryption key.
+     * The ASN.1 encoding is defined in RFC4120 as follows:
      * EncryptionKey   ::= SEQUENCE {
      *          keytype    [0] Int32 -- actually encryption type --,
      *          keyvalue   [1] OCTET STRING

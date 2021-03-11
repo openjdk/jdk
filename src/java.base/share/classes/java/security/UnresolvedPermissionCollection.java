@@ -154,10 +154,6 @@ implements java.io.Serializable
         new ObjectStreamField("permissions", Hashtable.class),
     };
 
-    /*
-     * @serialData Default field.
-     */
-
     /**
      * Writes the contents of the perms field out as a Hashtable
      * in which the values are Vectors for
