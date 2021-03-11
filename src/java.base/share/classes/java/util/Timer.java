@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package java.util;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.lang.ref.Cleaner.Cleanable;
+import jdk.internal.ref.CleanerFactory;
 
 /**
  * A facility for threads to schedule tasks for future execution in a
@@ -101,21 +103,29 @@ public class Timer {
     private final TimerThread thread = new TimerThread(queue);
 
     /**
-     * This object causes the timer's task execution thread to exit
-     * gracefully when there are no live references to the Timer object and no
-     * tasks in the timer queue.  It is used in preference to a finalizer on
-     * Timer as such a finalizer would be susceptible to a subclass's
-     * finalizer forgetting to call it.
+     * An object of this class is registered with a Cleaner as the cleanup
+     * handler for this Timer object.  This causes the execution thread to
+     * exit gracefully when there are no live references to the Timer object
+     * and no tasks in the timer queue.
      */
-    private final Object threadReaper = new Object() {
-        @SuppressWarnings("deprecation")
-        protected void finalize() throws Throwable {
+    private static class ThreadReaper implements Runnable {
+        private final TaskQueue queue;
+        private final TimerThread thread;
+
+        public ThreadReaper(TaskQueue queue, TimerThread thread) {
+            this.queue = queue;
+            this.thread = thread;
+        }
+
+        public void run() {
             synchronized(queue) {
                 thread.newTasksMayBeScheduled = false;
                 queue.notify(); // In case queue is empty.
             }
         }
-    };
+    }
+
+    private final Cleanable cleanup;
 
     /**
      * This ID is used to generate thread names.
@@ -157,8 +167,7 @@ public class Timer {
      * @since 1.5
      */
     public Timer(String name) {
-        thread.setName(name);
-        thread.start();
+        this(name, false);
     }
 
     /**
@@ -172,6 +181,8 @@ public class Timer {
      * @since 1.5
      */
     public Timer(String name, boolean isDaemon) {
+        var threadReaper = new ThreadReaper(queue, thread);
+        this.cleanup = CleanerFactory.cleaner().register(this, threadReaper);
         thread.setName(name);
         thread.setDaemon(isDaemon);
         thread.start();
@@ -428,9 +439,8 @@ public class Timer {
      */
     public void cancel() {
         synchronized(queue) {
-            thread.newTasksMayBeScheduled = false;
             queue.clear();
-            queue.notify();  // In case queue was already empty.
+            cleanup.clean();
         }
     }
 
