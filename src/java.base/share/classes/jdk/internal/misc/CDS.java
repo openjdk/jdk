@@ -26,6 +26,8 @@
 package jdk.internal.misc;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Map;
@@ -205,27 +207,60 @@ public class CDS {
     private static native void dumpClassList(String listFileName);
     private static native void dumpDynamicArchive(String archiveFileName);
 
+    private static void outputStdStream(InputStream stream) {
+        String line;
+        InputStreamReader isr = new InputStreamReader(stream);
+        BufferedReader rdr = new BufferedReader(isr);
+        try {
+            while((line = rdr.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("IOExeption happens during drain stream " + e.getMessage());
+        }
+    }
+
+    private static String[] excludeFlags = {
+         "-XX:DumpLoadedClassList=",
+         "-XX:+DumpSharedSpaces",
+         "-XX:+DynamicDumpSharedSpaces",
+         "-XX:+RecordDynamicDumpInfo",
+         "-Xshare:",
+         "-XX:SharedClassListFile=",
+         "-XX:SharedArchiveFile=",
+         "-XX:ArchiveClassesAtExit=",
+         "-XX:+UseSharedSpaces",
+         "-XX:+RequireSharedSpaces"};
     private static boolean containsExcludedFlags(String testStr) {
-       return testStr.contains("-XX:DumpLoadedClassList=")     ||
-              testStr.contains("-XX:+DumpSharedSpaces")        ||
-              testStr.contains("-XX:+DynamicDumpSharedSpaces") ||
-              testStr.contains("-XX:+RecordDynamicDumpInfo");
+       for (String e : excludeFlags) {
+           if (testStr.contains(e)) {
+               return true;
+           }
+       }
+       return false;
     }
 
     /**
     * called from jcmd VM.cds to dump static or dynamic shared archive
-    * @param isStatic indicates dump static archive of dynnamic archive.
+    * @param isStatic true for dump static archive or false for dynnamic archive.
     * @param fileName user input archive name, can be null.
     */
     private static void dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
-        boolean DEBUG =  System.getProperty("CDS.Debug") == "true";
         String archiveFile =  fileName != null ? fileName :
             "java_pid" + ProcessHandle.current().pid() + (isStatic ? "_static.jsa" : "_dynamic.jsa");
-        if (DEBUG) {
-            System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFile);
+        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFile);
+
+        // delete if archive file aready exists
+        File fileArchive = new File(archiveFile);
+        if (fileArchive.exists()) {
+            fileArchive.delete();
         }
         if (isStatic) {
             String listFile = archiveFile + ".classlist";
+            File fileList = new File(listFile);
+            if (fileList.exists()) {
+                fileList.delete();
+            }
             dumpClassList(listFile);
             String jdkHome = System.getProperty("java.home");
             ArrayList<String> cmds = new ArrayList<String>();
@@ -244,36 +279,37 @@ public class CDS {
                 }
             }
 
-            if (DEBUG) {
-                System.out.println("Static dump cmd: ");
-                for (String s : cmds) {
-                    System.out.print(s + " ");
-                }
-                System.out.println("");
+            System.out.println("Static dump cmd: ");
+            for (String s : cmds) {
+                System.out.print(s + " ");
             }
+            System.out.println("");
 
-            // Do not take parent env which will cause dumping fail.
+            // Do not take parent env which will cause check error on empty directory if
+            // classpath carried in envp.
             Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[0]),
                                new String[] {"EnvP=null"});
-            if (DEBUG) {
-                System.out.println("Dumping process " + proc.pid() + " Stdout: ");
-                String line;
-                InputStreamReader isr = new InputStreamReader(proc.getInputStream());
-                BufferedReader rdr = new BufferedReader(isr);
-                while((line = rdr.readLine()) != null) {
-                    System.out.println(line);
-                }
 
-                System.out.println("Dumping process " + proc.pid() + " Stderr: ");
-                isr = new InputStreamReader(proc.getErrorStream());
-                rdr = new BufferedReader(isr);
-                while((line = rdr.readLine()) != null) {
-                    System.out.println(line);
-                }
-            }
+            // Drain stdout in a separate thread.
+            new Thread( ()-> {
+                    System.out.println("Dumping process " + proc.pid() + " Stdout: ");
+                    outputStdStream(proc.getInputStream());
+                }).start();
+
+            // Drain stderr in a separate thread.
+            new Thread( ()-> {
+                    System.out.println("Dumping process " + proc.pid() + " Stdout: ");
+                    outputStdStream(proc.getErrorStream());
+                }).start();
+
             proc.waitFor();
         } else {
             dumpDynamicArchive(archiveFile);
+        }
+        // Check if archive has been successfully dumped. We won't reach here if exception happens.
+        // Throw exception if file is not created.
+        if (!fileArchive.exists()) {
+            throw new RuntimeException("Archive file " + archiveFile + " is not created");
         }
     }
 }

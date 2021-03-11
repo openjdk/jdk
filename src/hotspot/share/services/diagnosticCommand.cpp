@@ -1121,7 +1121,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
     fileh =  java_lang_String::create_from_str(_filename.value(), CHECK);
   }
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
-  Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
+  Klass*  cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
   args.push_int(is_static);
