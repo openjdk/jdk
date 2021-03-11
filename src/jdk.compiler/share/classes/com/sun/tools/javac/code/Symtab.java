@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -669,6 +669,10 @@ public class Symtab {
     }
 
     public PackageSymbol lookupPackage(ModuleSymbol msym, Name flatName) {
+        return lookupPackage(msym, flatName, false);
+    }
+
+    private PackageSymbol lookupPackage(ModuleSymbol msym, Name flatName, boolean onlyExisting) {
         Assert.checkNonNull(msym);
 
         if (flatName.isEmpty()) {
@@ -691,7 +695,7 @@ public class Symtab {
 
         pack = getPackage(msym, flatName);
 
-        if (pack != null && pack.exists())
+        if ((pack != null && pack.exists()) || onlyExisting)
             return pack;
 
         boolean dependsOnUnnamed = msym.requires != null &&
@@ -763,7 +767,8 @@ public class Symtab {
      */
     public boolean packageExists(ModuleSymbol msym, Name fullname) {
         Assert.checkNonNull(msym);
-        return lookupPackage(msym, fullname).exists();
+        PackageSymbol pack = lookupPackage(msym, fullname, true);
+        return pack != null && pack.exists();
     }
 
     /** Make a package, given its fully qualified name.
