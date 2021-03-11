@@ -186,6 +186,7 @@ static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
     for ( ; JavaThread* thr = jtiwh.next(); ) {
       if (thr->handshake_state()->operation_pending(op)) {
         log_error(handshake)("JavaThread " INTPTR_FORMAT " has not cleared handshake op: " INTPTR_FORMAT, p2i(thr), p2i(op));
+        // Remember the last one found for more diagnostics below.
         target = thr;
       }
     }
