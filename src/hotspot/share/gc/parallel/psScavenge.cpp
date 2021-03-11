@@ -180,12 +180,12 @@ public:
 class PSEvacuateFollowersClosure: public VoidClosure {
  private:
   PSPromotionManager* _promotion_manager;
-  TaskTerminator* _maybe_terminator;
+  TaskTerminator* _terminator;
   uint _worker_id;
 
  public:
-  PSEvacuateFollowersClosure(PSPromotionManager* pm, TaskTerminator* maybe_terminator, uint worker_id)
-    : _promotion_manager(pm), _maybe_terminator(maybe_terminator), _worker_id(worker_id) {}
+  PSEvacuateFollowersClosure(PSPromotionManager* pm, TaskTerminator* terminator, uint worker_id)
+    : _promotion_manager(pm), _terminator(terminator), _worker_id(worker_id) {}
 
   virtual void do_void() {
     assert(_promotion_manager != nullptr, "Sanity");
@@ -193,8 +193,8 @@ class PSEvacuateFollowersClosure: public VoidClosure {
     guarantee(_promotion_manager->stacks_empty(),
               "stacks should be empty at this point");
 
-    if (_maybe_terminator != nullptr) {
-      steal_work(*_maybe_terminator, _worker_id);
+    if (_terminator != nullptr) {
+      steal_work(*_terminator, _worker_id);
     }
   }
 };
@@ -202,7 +202,7 @@ class PSEvacuateFollowersClosure: public VoidClosure {
 class ParallelScavengeRefProcClosureContext : public AbstractRefProcClosureContext {
   uint _max_workers;
   TaskTerminator _terminator;
-  TaskTerminator* _maybe_terminator; // nullptr when no termination is to be done
+  TaskTerminator* _nullable_terminator; // nullptr when no termination is to be done
   PSIsAliveClosure _is_alive;
   PSKeepAliveClosure* _keep_alive;
   PSEvacuateFollowersClosure* _complete_gc;
@@ -211,7 +211,7 @@ public:
   ParallelScavengeRefProcClosureContext(uint max_workers)
     : _max_workers(max_workers),
       _terminator(_max_workers, PSPromotionManager::stack_array_depth()),
-      _maybe_terminator(nullptr),
+      _nullable_terminator(nullptr),
       _is_alive(),
       _keep_alive(NEW_C_HEAP_ARRAY(PSKeepAliveClosure, _max_workers, mtGC)),
       _complete_gc(NEW_C_HEAP_ARRAY(PSEvacuateFollowersClosure, _max_workers, mtGC)) {}
@@ -232,14 +232,14 @@ public:
 
   VoidClosure* complete_gc(uint worker_id) {
     PSPromotionManager* promotion_manager = PSPromotionManager::gc_thread_promotion_manager(worker_id);
-    return ::new (&_complete_gc[worker_id]) PSEvacuateFollowersClosure(promotion_manager, _maybe_terminator, worker_id);
+    return ::new (&_complete_gc[worker_id]) PSEvacuateFollowersClosure(promotion_manager, _nullable_terminator, worker_id);
   }
 
   void prepare_run_task(uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
     log_debug(gc, ref)("ParallelScavengeRefProcClosureContext: prepare_run_task");
     assert(queue_count <= _max_workers, "sanity");
     _terminator.reset_for_reuse(queue_count);
-    _maybe_terminator = (marks_oops_alive && tm == RefProcThreadModel::Multi)?&_terminator:nullptr;
+    _nullable_terminator = (marks_oops_alive && tm == RefProcThreadModel::Multi)?&_terminator:nullptr;
   };
 };
 

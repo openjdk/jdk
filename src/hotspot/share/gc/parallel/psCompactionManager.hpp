@@ -189,11 +189,11 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   class FollowStackClosure: public VoidClosure {
    private:
     ParCompactionManager* _compaction_manager;
-    TaskTerminator* _maybe_terminator;
+    TaskTerminator* _terminator;
     uint _worker_id;
    public:
-    FollowStackClosure(ParCompactionManager* cm, TaskTerminator* maybe_terminator, uint worker_id)
-      : _compaction_manager(cm), _maybe_terminator(maybe_terminator), _worker_id(worker_id) { }
+    FollowStackClosure(ParCompactionManager* cm, TaskTerminator* terminator, uint worker_id)
+      : _compaction_manager(cm), _terminator(terminator), _worker_id(worker_id) { }
     virtual void do_void();
   };
 
