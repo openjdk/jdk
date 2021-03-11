@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, Arm Limited. All rights reserved.
+// Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2021, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ dnl
 
 // AArch64 SVE Architecture Description File
 
+
+// 4 bit signed offset -- for predicated load/store
 dnl
 dnl OPERAND_VMEMORYA_IMMEDIATE_OFFSET($1,            $2,       $3     )
 dnl OPERAND_VMEMORYA_IMMEDIATE_OFFSET(imm_type_abbr, imm_type, imm_len)
@@ -42,9 +44,7 @@ operand vmemA_imm$1Offset$3()
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
-%}')
-dnl
-// 4 bit signed offset -- for predicated load/store
+%}')dnl
 OPERAND_VMEMORYA_IMMEDIATE_OFFSET(I, int,  4)
 OPERAND_VMEMORYA_IMMEDIATE_OFFSET(L, long, 4)
 dnl
@@ -63,8 +63,7 @@ operand vmemA_indOff$1$2(iRegP reg, vmemA_imm$1Offset$2 off)
     scale(0x0);
     disp($off);
   %}
-%}')
-dnl
+%}')dnl
 OPERAND_VMEMORYA_INDIRECT_OFFSET(I, 4)
 OPERAND_VMEMORYA_INDIRECT_OFFSET(L, 4)
 
@@ -75,7 +74,6 @@ source_hpp %{
 %}
 
 source %{
-
   static inline BasicType vector_element_basic_type(const MachNode* n) {
     const TypeVect* vt = n->bottom_type()->is_vect();
     return vt->element_basic_type();
@@ -197,13 +195,11 @@ source %{
         return true;
     }
   }
-
 %}
 
 definitions %{
   int_def SVE_COST             (200, 200);
 %}
-
 
 dnl
 dnl ELEMENT_SHORT_CHART($1, $2)
@@ -211,7 +207,7 @@ dnl ELEMENT_SHORT_CHART(etype, node)
 define(`ELEMENT_SHORT_CHAR',`ifelse(`$1', `T_SHORT',
   `($2->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
             ($2->bottom_type()->is_vect()->element_basic_type() == T_CHAR))',
-   `($2->bottom_type()->is_vect()->element_basic_type() == $1)')')
+   `($2->bottom_type()->is_vect()->element_basic_type() == $1)')')dnl
 dnl
 
 // All SVE instructions
@@ -263,7 +259,7 @@ instruct $1(vReg dst, vReg src) %{
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-
+dnl
 // vector abs
 UNARY_OP_TRUE_PREDICATE_ETYPE(vabsB, AbsVB, T_BYTE,   B, 16, sve_abs)
 UNARY_OP_TRUE_PREDICATE_ETYPE(vabsS, AbsVS, T_SHORT,  H, 8,  sve_abs)
@@ -743,12 +739,10 @@ REPLICATE(replicateB, ReplicateB, iRegIorL2I, B, 16)
 REPLICATE(replicateS, ReplicateS, iRegIorL2I, H, 8)
 REPLICATE(replicateI, ReplicateI, iRegIorL2I, S, 4)
 REPLICATE(replicateL, ReplicateL, iRegL,      D, 2)
-
 REPLICATE_IMM8(replicateB_imm8, ReplicateB, immI8,        B, 16)
 REPLICATE_IMM8(replicateS_imm8, ReplicateS, immI8_shift8, H, 8)
 REPLICATE_IMM8(replicateI_imm8, ReplicateI, immI8_shift8, S, 4)
 REPLICATE_IMM8(replicateL_imm8, ReplicateL, immL8_shift8, D, 2)
-
 FREPLICATE(replicateF, ReplicateF, vRegF, S, 4)
 FREPLICATE(replicateD, ReplicateD, vRegD, D, 2)
 dnl
@@ -767,9 +761,9 @@ instruct $1(vReg dst, vReg shift) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-dnl VSHIFT_IMM_UNPREDICATE($1,        $2,      $3,       $4,   $5,          $6  )
-dnl VSHIFT_IMM_UNPREDICATE(insn_name, op_name, op_name2, size, min_vec_len, insn)
-define(`VSHIFT_IMM_UNPREDICATE', `
+dnl VSHIFT_IMM_UNPREDICATED($1,        $2,      $3,       $4,   $5,          $6  )
+dnl VSHIFT_IMM_UNPREDICATED(insn_name, op_name, op_name2, size, min_vec_len, insn)
+define(`VSHIFT_IMM_UNPREDICATED', `
 instruct $1(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= $5);
   match(Set dst ($2 src ($3 shift)));
@@ -831,18 +825,18 @@ VSHIFT_TRUE_PREDICATE(vlsrB, URShiftVB, B, 16, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrS, URShiftVS, H,  8, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrI, URShiftVI, S,  4, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrL, URShiftVL, D,  2, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vasrB_imm, RShiftVB,  RShiftCntV, B, 16, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrS_imm, RShiftVS,  RShiftCntV, H,  8, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrI_imm, RShiftVI,  RShiftCntV, S,  4, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrL_imm, RShiftVL,  RShiftCntV, D,  2, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vlsrB_imm, URShiftVB, RShiftCntV, B, 16, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrS_imm, URShiftVS, RShiftCntV, H,  8, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrI_imm, URShiftVI, RShiftCntV, S,  4, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrL_imm, URShiftVL, RShiftCntV, D,  2, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlslB_imm, LShiftVB,  LShiftCntV, B, 16, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslS_imm, LShiftVS,  LShiftCntV, H,  8, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslI_imm, LShiftVI,  LShiftCntV, S,  4, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslL_imm, LShiftVL,  LShiftCntV, D,  2, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vasrB_imm, RShiftVB,  RShiftCntV, B, 16, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vasrS_imm, RShiftVS,  RShiftCntV, H,  8, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vasrI_imm, RShiftVI,  RShiftCntV, S,  4, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vasrL_imm, RShiftVL,  RShiftCntV, D,  2, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vlsrB_imm, URShiftVB, RShiftCntV, B, 16, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlsrS_imm, URShiftVS, RShiftCntV, H,  8, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlsrI_imm, URShiftVI, RShiftCntV, S,  4, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlsrL_imm, URShiftVL, RShiftCntV, D,  2, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlslB_imm, LShiftVB,  LShiftCntV, B, 16, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vlslS_imm, LShiftVS,  LShiftCntV, H,  8, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vlslI_imm, LShiftVI,  LShiftCntV, S,  4, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vlslL_imm, LShiftVL,  LShiftCntV, D,  2, sve_lsl)
 VSHIFT_COUNT(vshiftcntB, B, 16, T_BYTE)
 VSHIFT_COUNT(vshiftcntS, H,  8, T_SHORT)
 VSHIFT_COUNT(vshiftcntI, S,  4, T_INT)
@@ -859,4 +853,3 @@ BINARY_OP_UNPREDICATED(vsubI, SubVI, S, 4, sve_sub)
 BINARY_OP_UNPREDICATED(vsubL, SubVL, D, 2, sve_sub)
 BINARY_OP_UNPREDICATED(vsubF, SubVF, S, 4, sve_fsub)
 BINARY_OP_UNPREDICATED(vsubD, SubVD, D, 2, sve_fsub)
-
