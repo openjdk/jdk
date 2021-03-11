@@ -374,13 +374,14 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
+  JavaThread* current = JavaThread::current();
+  objArrayHandle resolved_references(current, cpool->resolved_references());
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, Thread::current());
+  ObjectLocker ol(resolved_references, current);
   if (!is_f1_null()) {
     return;
   }
@@ -482,10 +483,11 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
-  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
+  JavaThread* current = THREAD->as_Java_thread();
+  objArrayHandle resolved_references(current, cpool->resolved_references());
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, THREAD);
+  ObjectLocker ol(resolved_references, current);
 
   // if f1 is not null or the indy_resolution_failed flag is set then another
   // thread either succeeded in resolving the method or got a LinkageError

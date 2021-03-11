@@ -1820,7 +1820,7 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
   // So this whole "class index" feature should probably be removed.
 
   if (constant_pool->tag_at(index).is_unresolved_klass()) {
-    Klass* tk = constant_pool->klass_at_ignore_error(index, THREAD);
+    Klass* tk = constant_pool->klass_at(index, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // Exception happened during classloading. We ignore the exception here, since it
       // is going to be rethrown since the current activation is going to be deoptimized and
