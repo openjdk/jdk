@@ -618,45 +618,27 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
 JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
   (JNIEnv *env, jclass cls, jobject pf)
 {
-    jclass clsLcmsProfile;
-    jobject cmmProfile;
-    jfieldID fid;
-
     if (pf == NULL) {
         return NULL;
     }
-
     jclass pcls = (*env)->GetObjectClass(env, pf);
     if (pcls == NULL) {
         return NULL;
     }
-    jmethodID mid = (*env)->GetMethodID(env, pcls, "activate", "()V");
+    jmethodID mid = (*env)->GetMethodID(env, pcls, "cmmProfile",
+                                        "()Lsun/java2d/cmm/Profile;");
     if (mid == NULL) {
         return NULL;
     }
-    (*env)->CallVoidMethod(env, pf, mid);
+    jobject cmmProfile = (*env)->CallObjectMethod(env, pf, mid);
     if ((*env)->ExceptionOccurred(env)) {
         return NULL;
     }
-
-    fid = (*env)->GetFieldID(env, pcls, "cmmProfile",
-                             "Lsun/java2d/cmm/Profile;");
-    if (fid == NULL) {
+    jclass lcmsPCls = (*env)->FindClass(env, "sun/java2d/cmm/lcms/LCMSProfile");
+    if (lcmsPCls == NULL) {
         return NULL;
     }
-
-    clsLcmsProfile = (*env)->FindClass(env,
-            "sun/java2d/cmm/lcms/LCMSProfile");
-    if (clsLcmsProfile == NULL) {
-        return NULL;
-    }
-
-    cmmProfile = (*env)->GetObjectField (env, pf, fid);
-
-    if (JNU_IsNull(env, cmmProfile)) {
-        return NULL;
-    }
-    if ((*env)->IsInstanceOf(env, cmmProfile, clsLcmsProfile)) {
+    if ((*env)->IsInstanceOf(env, cmmProfile, lcmsPCls)) {
         return cmmProfile;
     }
     return NULL;
