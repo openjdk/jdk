@@ -698,7 +698,9 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
         Symbol* exception_klass_name = PENDING_EXCEPTION->klass()->name();
         if (exception_klass_name == vmSymbols::java_lang_ClassNotFoundException() ||
             exception_klass_name == vmSymbols::java_lang_UnsupportedClassVersionError()) {
-          // print a warning only when the pending exception is class not found
+          // print a warning only when the class is not found or has a version that's too old.
+          // Todo: the CDS test cases expect "Cannot find" in the log, but we should consider
+          // distinguishing the different failure modes.
           log_warning(cds)("Preload Warning: Cannot find %s", parser.current_class_name());
         }
       }
