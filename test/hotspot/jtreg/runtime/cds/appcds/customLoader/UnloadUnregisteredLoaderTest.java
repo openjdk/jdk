@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @requires vm.opt.final.ClassUnloading
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/testlibrary
- * @build sun.hotspot.WhiteBox ClassUnloadCommon
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @build sun.hotspot.WhiteBox runtime.testlibrary.ClassUnloadCommon
  * @compile test-classes/UnloadUnregisteredLoader.java test-classes/CustomLoadee.java
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                ClassUnloadCommon
- *                                ClassUnloadCommon$1
- *                                ClassUnloadCommon$TestFailure
+ *                 jdk.test.lib.classloader.ClassUnloadCommon
+ *                 jdk.test.lib.classloader.ClassUnloadCommon$1
+ *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure
  * @run driver UnloadUnregisteredLoaderTest
  */
 

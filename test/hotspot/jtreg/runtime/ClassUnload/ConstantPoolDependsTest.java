@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  *          java.compiler
- * @library /runtime/testlibrary /test/lib
+ * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @compile p2/c2.java MyDiffClassLoader.java
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
@@ -36,7 +36,7 @@
  */
 
 import sun.hotspot.WhiteBox;
-
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class ConstantPoolDependsTest {
     public static WhiteBox wb = WhiteBox.getWhiteBox();

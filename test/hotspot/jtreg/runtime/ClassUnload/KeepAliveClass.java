@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary This test case uses a java.lang.Class instance to keep a class alive.
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
- * @library /test/lib /runtime/testlibrary
+ * @library /test/lib
  * @library classes
  * @build sun.hotspot.WhiteBox test.Empty
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
@@ -35,6 +35,7 @@
 
 import java.lang.ref.SoftReference;
 import sun.hotspot.WhiteBox;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
  * Test that verifies that classes are not unloaded when specific types of references are kept to them.
