@@ -524,6 +524,9 @@ public class JavacFiler implements Filer, Closeable {
     }
 
     private JavaFileObject[] originatingFiles(Element[] originatingElements) {
+        if (originatingElements == null) {
+            return new JavaFileObject[0];
+        }
         JavaFileObject[] originatingFiles = Arrays.asList(originatingElements)
                 .stream()
                 .filter(el -> el instanceof Symbol)
