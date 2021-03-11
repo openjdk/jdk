@@ -188,4 +188,37 @@ static NSRange javaIntArrayToNSRange(JNIEnv* env, jintArray array) {
 
     return javaIntArrayToNSRange(env,axTextRange);
 }
+
+- (NSRange)accessibilityRangeForPositionAttribute:(NSPoint)point
+{
+
+    point.y = [[[[self view] window] screen] frame].size.height - point.y; // flip into java screen coords (0 is at upper-left corner of screen)
+
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CACCESSIBLETEXT_CLASS_RETURN(DEFAULT_RANGE);
+    DECLARE_STATIC_METHOD_RETURN(jm_getCharacterIndexAtPosition, sjc_CAccessibleText, "getCharacterIndexAtPosition",
+                           "(Ljavax/accessibility/Accessible;Ljava/awt/Component;II)I", DEFAULT_RANGE);
+    jint charIndex = (*env)->CallStaticIntMethod(env, sjc_CAccessibleText, jm_getCharacterIndexAtPosition,
+                            fAccessible, fComponent, point.x, point.y);
+    CHECK_EXCEPTION();
+    if (charIndex == -1) return DEFAULT_RANGE;
+
+    // AccessibleText.getIndexAtPoint returns -1 for an invalid point
+    return NSMakeRange(charIndex, 1); //range's length is 1 - one-character range
+}
+
+- (NSRange)accessibilityRangeForIndexAttribute:(int)index
+{
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CACCESSIBLETEXT_CLASS_RETURN(DEFAULT_RANGE);
+    DECLARE_STATIC_METHOD_RETURN(jm_getRangeForIndex, sjc_CAccessibleText, "getRangeForIndex",
+                    "(Ljavax/accessibility/Accessible;Ljava/awt/Component;I)[I", DEFAULT_RANGE);
+    jintArray axTextRange = (jintArray)(*env)->CallStaticObjectMethod(env, sjc_CAccessibleText, jm_getRangeForIndex,
+                              fAccessible, fComponent, index);
+    CHECK_EXCEPTION();
+    if (axTextRange == NULL) return DEFAULT_RANGE;
+
+    return javaIntArrayToNSRange(env, axTextRange);
+}
+
 @end

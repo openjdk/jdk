@@ -28,7 +28,7 @@
 #import <AppKit/NSAccessibility.h>
 
 
-@interface NavigableStaticTextAccessibility : StaticTextAccessibility<NSAccessibilityNavigableStaticText> {
+@interface NavigableStaticTextAccessibility : StaticTextAccessibility <NSAccessibilityNavigableStaticText> {
 
 };
 - (NSRect)accessibilityFrameForRange:(NSRange)range;

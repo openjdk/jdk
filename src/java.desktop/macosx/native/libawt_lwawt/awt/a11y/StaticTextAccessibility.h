@@ -37,5 +37,8 @@
 - (nullable NSString *)accessibilityAttributedString:(NSRange)range;
 - (nullable NSString *)accessibilityValue;
 - (NSRange)accessibilityVisibleCharacterRange;
+
+- (NSRange) accessibilityRangeForPoint:(NSPoint)point;
+- (NSRange)accessibilityRangeForIndex:(int)index;
 @end
 #endif

@@ -27,8 +27,9 @@
 
 @implementation StaticTextAccessibility
 
-- (nullable NSString *)accessibilityAttributedString:(NSRange)range
+- (nullable NSString *)accessibilityAttributedStringForRange:(NSRange)range
 {
+    NSLog(@"in accessibilityAttributedStringForRange");
     return [self accessibilityStringForRangeAttribute:range];
 }
 
@@ -40,6 +41,22 @@
 - (NSRange)accessibilityVisibleCharacterRange
 {
     return [self accessibilityVisibleCharacterRangeAttribute];
+}
+
+- (NSRange) accessibilityRangeForPoint:(NSPoint)point
+{
+    NSLog(@"in accessibilityRangeForPoint");
+    NSRange range = [self accessibilityRangeForPositionAttribute:point];
+    NSLog(@"String  for point %@ is %@", NSStringFromRange(range), NSStringFromPoint(point));
+    return range;
+}
+
+- (NSRange)accessibilityRangeForIndex:(int)index
+{
+    NSLog(@"in accessibilityRangeForIndex");
+    NSRange range = [self accessibilityRangeForIndexAttribute:index];
+    //NSLog(@"String  for index %d is %@", index, NSStringFromRange(range));
+    return range;
 }
 
 @end
