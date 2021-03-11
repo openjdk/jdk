@@ -37,10 +37,10 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires os.family != "windows"
  * @library /test/lib
- * @run main/othervm ClhsdbAttachToDebugServerWithCommandLine
+ * @run main/othervm ClhsdbTestConnectArgument
  */
 
-public class ClhsdbAttachToDebugServerWithCommandLine {
+public class ClhsdbTestConnectArgument {
 
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
@@ -57,7 +57,7 @@ public class ClhsdbAttachToDebugServerWithCommandLine {
             throw new SkippedException("Cannot run this test on OSX if adding privileges is required.");
         }
 
-        System.out.println("Starting ClhsdbAttachToDebugServerWithCommandLine test");
+        System.out.println("Starting ClhsdbTestConnectArgument test");
 
         LingeredApp theApp = null;
         DebugdUtils debugd = null;
