@@ -60,6 +60,7 @@
         <module>Difference</module>
         <module>NetworkConnection</module>
         <module>Coordinator</module>
+        <module>SelectionCoordinator</module>
     </modules>
 
     <properties>
