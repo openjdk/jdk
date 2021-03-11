@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 template <bool CONCURRENT>
@@ -81,43 +81,49 @@ ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::ShenandoahClassLoad
   if (!SINGLE_THREADED) {
     ClassLoaderDataGraph::clear_claimed_marks();
   }
-  if (CONCURRENT) {
+  if (CONCURRENT && !SINGLE_THREADED) {
     ClassLoaderDataGraph_lock->lock();
   }
+
+  // Non-concurrent mode only runs at safepoints by VM thread
+  assert(CONCURRENT || SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  assert(CONCURRENT || Thread::current()->is_VM_thread(), "Can only be done by VM thread");
 }
 
 template <bool CONCURRENT, bool SINGLE_THREADED>
 ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::~ShenandoahClassLoaderDataRoots() {
-  if (CONCURRENT) {
+  if (CONCURRENT && !SINGLE_THREADED) {
     ClassLoaderDataGraph_lock->unlock();
   }
 }
 
-
 template <bool CONCURRENT, bool SINGLE_THREADED>
-void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::always_strong_cld_do(CLDClosure* clds, uint worker_id) {
-  if (SINGLE_THREADED) {
-    assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-    assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
-    ClassLoaderDataGraph::always_strong_cld_do(clds);
-  } else if (_semaphore.try_acquire()) {
+void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do_impl(CldDo f, CLDClosure* clds, uint worker_id) {
+  if (CONCURRENT) {
+    if (_semaphore.try_acquire()) {
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+      if (SINGLE_THREADED){
+        MutexLocker ml(ClassLoaderDataGraph_lock, Mutex::_no_safepoint_check_flag);
+        f(clds);
+      } else {
+        f(clds);
+      }
+      _semaphore.claim_all();
+    }
+  } else {
     ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
-    ClassLoaderDataGraph::always_strong_cld_do(clds);
-    _semaphore.claim_all();
+    f(clds);
   }
 }
 
 template <bool CONCURRENT, bool SINGLE_THREADED>
+void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::always_strong_cld_do(CLDClosure* clds, uint worker_id) {
+  cld_do_impl(&ClassLoaderDataGraph::always_strong_cld_do, clds, worker_id);
+}
+
+template <bool CONCURRENT, bool SINGLE_THREADED>
 void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do(CLDClosure* clds, uint worker_id) {
-  if (SINGLE_THREADED) {
-    assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-    assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
-    ClassLoaderDataGraph::cld_do(clds);
-  } else if (_semaphore.try_acquire()) {
-    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
-    ClassLoaderDataGraph::cld_do(clds);
-    _semaphore.claim_all();
-  }
+  cld_do_impl(&ClassLoaderDataGraph::cld_do, clds, worker_id);
 }
 
 class ShenandoahParallelOopsDoThreadClosure : public ThreadClosure {
@@ -137,65 +143,44 @@ public:
   }
 };
 
-template <bool CONCURRENT>
-ShenandoahConcurrentRootScanner<CONCURRENT>::ShenandoahConcurrentRootScanner(uint n_workers,
-                                                                             ShenandoahPhaseTimings::Phase phase) :
-  _vm_roots(phase),
-  _cld_roots(phase, n_workers),
-  _dedup_roots(phase),
-  _codecache_snapshot(NULL),
-  _phase(phase) {
-  if (!ShenandoahHeap::heap()->unload_classes()) {
-    if (CONCURRENT) {
-      CodeCache_lock->lock_without_safepoint_check();
-    } else {
-      assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-    }
-    _codecache_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
-  }
-  assert(!CONCURRENT || !ShenandoahHeap::heap()->has_forwarded_objects(), "Not expecting forwarded pointers during concurrent marking");
-}
+// The rationale for selecting the roots to scan is as follows:
+//   a. With unload_classes = true, we only want to scan the actual strong roots from the
+//      code cache. This will allow us to identify the dead classes, unload them, *and*
+//      invalidate the relevant code cache blobs. This could be only done together with
+//      class unloading.
+//   b. With unload_classes = false, we have to nominally retain all the references from code
+//      cache, because there could be the case of embedded class/oop in the generated code,
+//      which we will never visit during mark. Without code cache invalidation, as in (a),
+//      we risk executing that code cache blob, and crashing.
+template <typename T>
+void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
+  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
+  CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
+  ResourceMark rm;
 
-template <bool CONCURRENT>
-ShenandoahConcurrentRootScanner<CONCURRENT>::~ShenandoahConcurrentRootScanner() {
-  if (!ShenandoahHeap::heap()->unload_classes()) {
-    ShenandoahCodeRoots::table()->finish_iteration(_codecache_snapshot);
-    if (CONCURRENT) {
-      CodeCache_lock->unlock();
-    }
-  }
-}
-
-template <bool CONCURRENT>
-void ShenandoahConcurrentRootScanner<CONCURRENT>::oops_do(OopClosure* oops, uint worker_id) {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  CLDToOopClosure clds_cl(oops, CONCURRENT ? ClassLoaderData::_claim_strong : ClassLoaderData::_claim_none);
-  _vm_roots.oops_do(oops, worker_id);
-
-  if (!heap->unload_classes()) {
-    AlwaysTrueClosure always_true;
-    _cld_roots.cld_do(&clds_cl, worker_id);
-    _dedup_roots.oops_do(&always_true, oops, worker_id);
-    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
-    CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-    _codecache_snapshot->parallel_blobs_do(&blobs);
+  if (_unload_classes) {
+    _thread_roots.oops_do(oops, &blobs_cl, worker_id);
+    _cld_roots.always_strong_cld_do(&clds, worker_id);
   } else {
-    _cld_roots.always_strong_cld_do(&clds_cl, worker_id);
+    AlwaysTrueClosure always_true;
+    _thread_roots.oops_do(oops, NULL, worker_id);
+    _code_roots.code_blobs_do(&blobs_cl, worker_id);
+    _cld_roots.cld_do(&clds, worker_id);
+    _dedup_roots.oops_do(&always_true, oops, worker_id);
   }
+
+  _vm_roots.oops_do<T>(oops, worker_id);
 }
 
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive) {
   CodeBlobToOopClosure update_blobs(keep_alive, CodeBlobToOopClosure::FixRelocations);
   ShenandoahCodeBlobAndDisarmClosure blobs_and_disarm_Cl(keep_alive);
-  CodeBlobToOopClosure* codes_cl = ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() ?
-                                  static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
-                                  static_cast<CodeBlobToOopClosure*>(&update_blobs);
+  CodeBlobToOopClosure* codes_cl = ClassUnloading ?
+                                   static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
+                                   static_cast<CodeBlobToOopClosure*>(&update_blobs);
 
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
-
-  // Process serial-claiming roots first
-  _serial_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
 
   // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(keep_alive, worker_id);

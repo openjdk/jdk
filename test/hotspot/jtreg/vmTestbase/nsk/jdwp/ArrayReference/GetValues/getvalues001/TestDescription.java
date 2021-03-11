@@ -57,9 +57,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ArrayReference.GetValues.getvalues001
- *        nsk.jdwp.ArrayReference.GetValues.getvalues001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.ArrayReference.GetValues.getvalues001a
+ * @run main/othervm
  *      nsk.jdwp.ArrayReference.GetValues.getvalues001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

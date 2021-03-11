@@ -47,8 +47,8 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // stall. We'll try to prefetch the object (for write, given that
   // we might need to install the forwarding reference) and we'll
   // get back to it when pop it from the queue
-  Prefetch::write(obj->mark_addr_raw(), 0);
-  Prefetch::read(obj->mark_addr_raw(), (HeapWordSize*2));
+  Prefetch::write(obj->mark_addr(), 0);
+  Prefetch::read(obj->mark_addr(), (HeapWordSize*2));
 
   // slightly paranoid test; I'm trying to catch potential
   // problems before we go into push_on_queue to know where the
@@ -215,9 +215,9 @@ void G1ParCopyHelper::trim_queue_partially() {
   _par_scan_state->trim_queue_partially();
 }
 
-template <G1Barrier barrier, G1Mark do_mark_object>
+template <G1Barrier barrier, bool should_mark>
 template <class T>
-void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
+void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
 
   if (CompressedOops::is_null(heap_oop)) {
@@ -231,7 +231,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   const G1HeapRegionAttr state = _g1h->region_attr(obj);
   if (state.is_in_cset()) {
     oop forwardee;
-    markWord m = obj->mark_raw();
+    markWord m = obj->mark();
     if (m.is_marked()) {
       forwardee = (oop) m.decode_pointer();
     } else {
@@ -250,9 +250,10 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
       _par_scan_state->remember_root_into_optional_region(p);
     }
 
-    // The object is not in collection set. If we're a root scanning
-    // closure during a concurrent start pause then attempt to mark the object.
-    if (do_mark_object == G1MarkFromRoot) {
+    // The object is not in the collection set. should_mark is true iff the
+    // current closure is applied on strong roots (and weak roots when class
+    // unloading is disabled) in a concurrent mark start pause.
+    if (should_mark) {
       mark_object(obj);
     }
   }

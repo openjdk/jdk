@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package java.util.zip;
 
+import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import sun.nio.ch.DirectBuffer;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * A class that can be used to compute the CRC-32 of a data stream.
@@ -95,8 +96,12 @@ public class CRC32 implements Checksum {
         int rem = limit - pos;
         if (rem <= 0)
             return;
-        if (buffer instanceof DirectBuffer) {
-            crc = updateByteBuffer(crc, ((DirectBuffer)buffer).address(), pos, rem);
+        if (buffer.isDirect()) {
+            try {
+                crc = updateByteBuffer(crc, ((DirectBuffer)buffer).address(), pos, rem);
+            } finally {
+                Reference.reachabilityFence(buffer);
+            }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(), rem);
         } else {
@@ -126,7 +131,7 @@ public class CRC32 implements Checksum {
         return (long)crc & 0xffffffffL;
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static native int update(int crc, int b);
 
     private static int updateBytes(int crc, byte[] b, int off, int len) {
@@ -134,7 +139,7 @@ public class CRC32 implements Checksum {
         return updateBytes0(crc, b, off, len);
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static native int updateBytes0(int crc, byte[] b, int off, int len);
 
     private static void updateBytesCheck(byte[] b, int off, int len) {
@@ -160,7 +165,7 @@ public class CRC32 implements Checksum {
         return updateByteBuffer0(alder, addr, off, len);
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static native int updateByteBuffer0(int alder, long addr,
                                                 int off, int len);
 

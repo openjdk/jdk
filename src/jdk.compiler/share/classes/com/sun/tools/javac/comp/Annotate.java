@@ -373,8 +373,8 @@ public class Annotate {
             if (!c.type.isErroneous()
                     && types.isSameType(c.type, syms.previewFeatureType)) {
                 toAnnotate.flags_field |= Flags.PREVIEW_API;
-                if (isAttributeTrue(c.member(names.essentialAPI))) {
-                    toAnnotate.flags_field |= Flags.PREVIEW_ESSENTIAL_API;
+                if (isAttributeTrue(c.member(names.reflective))) {
+                    toAnnotate.flags_field |= Flags.PREVIEW_REFLECTIVE;
                 }
             }
         }

@@ -65,13 +65,13 @@
  *          /test/lib
  * @build nsk.jdi.EventQueue.remove.remove004
  *        nsk.jdi.EventQueue.remove.remove004a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventQueue.remove.remove004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts} -Dtest.timeout.factor=${test.timeout.factor}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts} -Dtest.timeout.factor=${test.timeout.factor}"
  */
 

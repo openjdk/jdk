@@ -1,0 +1,7 @@
+DeclaredUsingPreviewDeclarations.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.sealed.classes)
+DeclaredUsingPreviewDeclarations.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.sealed.classes)
+DeclaredUsingPreviewDeclarations.java:4:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.sealed.classes)
+DeclaredUsingPreview.java:9:37: compiler.warn.declared.using.preview: kindname.class, DeclaredUsingPreviewDeclarations.C
+DeclaredUsingPreview.java:10:37: compiler.warn.declared.using.preview: kindname.class, DeclaredUsingPreviewDeclarations.C2
+DeclaredUsingPreviewDeclarations.java:4:33: compiler.warn.declared.using.preview: kindname.class, DeclaredUsingPreviewDeclarations.C
+6 warnings

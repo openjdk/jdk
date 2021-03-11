@@ -192,7 +192,7 @@ public class CompoundName implements Name {
       * @param syntax   A non-null list of properties that specify the syntax of
       *                 this compound name.  See class description for
       *                 contents of properties.
-      * @exception      InvalidNameException If 'n' violates the syntax specified
+      * @throws         InvalidNameException If 'n' violates the syntax specified
       *                 by {@code syntax}.
       */
     public CompoundName(String n, Properties syntax) throws InvalidNameException {
@@ -304,7 +304,7 @@ public class CompoundName implements Name {
      * @param   obj     The non-null object to compare against.
      * @return  a negative integer, zero, or a positive integer as this Name
      *          is less than, equal to, or greater than the given Object.
-     * @exception ClassCastException if obj is not a CompoundName.
+     * @throws ClassCastException if obj is not a CompoundName.
      * @see #equals(java.lang.Object)
      */
     public int compareTo(Object obj) {
@@ -352,7 +352,7 @@ public class CompoundName implements Name {
       * @param  posn    The 0-based index of the component to retrieve.
       *                 Must be in the range [0,size()).
       * @return The component at index posn.
-      * @exception ArrayIndexOutOfBoundsException if posn is outside the
+      * @throws ArrayIndexOutOfBoundsException if posn is outside the
       *         specified range.
       */
     public String get(int posn) {
@@ -371,7 +371,7 @@ public class CompoundName implements Name {
       *                 Must be in the range [0,size()].
       * @return A compound name consisting of the components at indexes in
       *         the range [0,posn).
-      * @exception ArrayIndexOutOfBoundsException
+      * @throws ArrayIndexOutOfBoundsException
       *         If posn is outside the specified range.
       */
     public Name getPrefix(int posn) {
@@ -391,7 +391,7 @@ public class CompoundName implements Name {
       * @return A compound name consisting of the components at indexes in
       *         the range [posn,size()).  If posn is equal to
       *         size(), an empty compound name is returned.
-      * @exception ArrayIndexOutOfBoundsException
+      * @throws ArrayIndexOutOfBoundsException
       *         If posn is outside the specified range.
       */
     public Name getSuffix(int posn) {
@@ -449,9 +449,9 @@ public class CompoundName implements Name {
       *  is not used or checked. They might be in the future.
       * @param suffix   The non-null components to add.
       * @return The updated CompoundName, not a new one. Cannot be null.
-      * @exception InvalidNameException If suffix is not a compound name,
-      *            or if the addition of the components violates the syntax
-      *            of this compound name (e.g. exceeding number of components).
+      * @throws InvalidNameException If suffix is not a compound name,
+      *         or if the addition of the components violates the syntax
+      *         of this compound name (e.g. exceeding number of components).
       */
     public Name addAll(Name suffix) throws InvalidNameException {
         if (suffix instanceof CompoundName) {
@@ -477,11 +477,11 @@ public class CompoundName implements Name {
       * @param posn     The index in this name at which to add the new
       *                 components.  Must be in the range [0,size()].
       * @return The updated CompoundName, not a new one. Cannot be null.
-      * @exception ArrayIndexOutOfBoundsException
+      * @throws ArrayIndexOutOfBoundsException
       *         If posn is outside the specified range.
-      * @exception InvalidNameException If n is not a compound name,
-      *            or if the addition of the components violates the syntax
-      *            of this compound name (e.g. exceeding number of components).
+      * @throws InvalidNameException If n is not a compound name,
+      *         or if the addition of the components violates the syntax
+      *         of this compound name (e.g. exceeding number of components).
       */
     public Name addAll(int posn, Name n) throws InvalidNameException {
         if (n instanceof CompoundName) {
@@ -498,8 +498,8 @@ public class CompoundName implements Name {
       *
       * @param comp     The non-null component to add.
       * @return The updated CompoundName, not a new one. Cannot be null.
-      * @exception InvalidNameException If adding comp at end of the name
-      *                         would violate the compound name's syntax.
+      * @throws InvalidNameException If adding comp at end of the name
+      *         would violate the compound name's syntax.
       */
     public Name add(String comp) throws InvalidNameException{
         impl.add(comp);
@@ -516,11 +516,11 @@ public class CompoundName implements Name {
       * @param  comp    The non-null component to add.
       * @param  posn    The index at which to add the new component.
       *                 Must be in the range [0,size()].
-      * @exception ArrayIndexOutOfBoundsException
+      * @throws ArrayIndexOutOfBoundsException
       *         If posn is outside the specified range.
       * @return The updated CompoundName, not a new one. Cannot be null.
-      * @exception InvalidNameException If adding comp at the specified position
-      *                         would violate the compound name's syntax.
+      * @throws InvalidNameException If adding comp at the specified position
+      *         would violate the compound name's syntax.
       */
     public Name add(int posn, String comp) throws InvalidNameException{
         impl.add(posn, comp);
@@ -536,11 +536,11 @@ public class CompoundName implements Name {
       * @param  posn    The index of the component to delete.
       *                 Must be in the range [0,size()).
       * @return The component removed (a String).
-      * @exception ArrayIndexOutOfBoundsException
+      * @throws ArrayIndexOutOfBoundsException
       *         If posn is outside the specified range (includes case where
       *         compound name is empty).
-      * @exception InvalidNameException If deleting the component
-      *                         would violate the compound name's syntax.
+      * @throws InvalidNameException If deleting the component
+      *         would violate the compound name's syntax.
       */
     public Object remove(int posn) throws InvalidNameException {
         return impl.remove(posn);

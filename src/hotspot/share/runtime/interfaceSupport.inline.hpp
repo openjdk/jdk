@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 #define SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
@@ -34,7 +35,6 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -128,26 +128,7 @@ class ThreadStateTransition : public StackObj {
 
 class ThreadInVMForHandshake : public ThreadStateTransition {
   const JavaThreadState _original_state;
-
-  void transition_back() {
-    // This can be invoked from transition states and must return to the original state properly
-    assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
-    // Change to transition state and ensure it is seen by the VM thread.
-    _thread->set_thread_state_fence(_thread_in_vm_trans);
-
-    SafepointMechanism::process_if_requested(_thread);
-
-    _thread->set_thread_state(_original_state);
-
-    if (_original_state != _thread_blocked_trans &&  _original_state != _thread_in_vm_trans &&
-        _thread->has_special_runtime_exit_condition()) {
-      _thread->handle_special_runtime_exit_condition(
-          !_thread->is_at_poll_safepoint() && (_original_state != _thread_in_native_trans));
-    }
-  }
-
  public:
-
   ThreadInVMForHandshake(JavaThread* thread) : ThreadStateTransition(thread),
       _original_state(thread->thread_state()) {
 
@@ -156,10 +137,14 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
     }
 
     thread->set_thread_state(_thread_in_vm);
+
+    // Threads shouldn't block if they are in the middle of printing, but...
+    ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
   }
 
   ~ThreadInVMForHandshake() {
-    transition_back();
+    assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
+    _thread->set_thread_state(_original_state);
   }
 
 };
@@ -170,8 +155,8 @@ class ThreadInVMfromJava : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
-    if (_thread->stack_yellow_reserved_zone_disabled()) {
-      _thread->enable_stack_yellow_reserved_zone();
+    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
+      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
     // Check for pending. async. exceptions or suspends.
@@ -206,6 +191,7 @@ class ThreadInVMfromUnknown {
 
 
 class ThreadInVMfromNative : public ThreadStateTransition {
+  ResetNoHandleMark __rnhm;
  public:
   ThreadInVMfromNative(JavaThread* thread) : ThreadStateTransition(thread) {
     trans_from_native(_thread_in_vm);
@@ -246,7 +232,6 @@ class ThreadBlockInVM : public ThreadStateTransition {
   }
   ~ThreadBlockInVM() {
     trans(_thread_blocked, _thread_in_vm);
-    OrderAccess::cross_modify_fence();
     // We don't need to clear_walkable because it will happen automagically when we return to java
   }
 };
@@ -296,7 +281,6 @@ class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
     }
 
     _thread->set_thread_state(_thread_in_vm);
-    OrderAccess::cross_modify_fence();
   }
 };
 
@@ -310,8 +294,8 @@ class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJavaNoAsyncException()  {
-    if (_thread->stack_yellow_reserved_zone_disabled()) {
-      _thread->enable_stack_yellow_reserved_zone();
+    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
+      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
     // NOTE: We do not check for pending. async. exceptions.
@@ -345,34 +329,16 @@ class VMNativeEntryWrapper {
   ~VMNativeEntryWrapper();
 };
 
-class RuntimeHistogramElement : public HistogramElement {
-  public:
-   RuntimeHistogramElement(const char* name);
-};
 #endif // ASSERT
-
-#ifdef ASSERT
-#define TRACE_CALL(result_type, header)                            \
-  if (CountRuntimeCalls) {                                         \
-    static RuntimeHistogramElement* e = new RuntimeHistogramElement(#header); \
-    if (e != NULL) e->increment_count();                           \
-  }
-#else
-#define TRACE_CALL(result_type, header)                            \
-  /* do nothing */
-#endif // ASSERT
-
 
 // LEAF routines do not lock, GC or throw exceptions
 
 #define VM_LEAF_BASE(result_type, header)                            \
-  TRACE_CALL(result_type, header)                                    \
   debug_only(NoHandleMark __hm;)                                     \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
 #define VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)         \
-  TRACE_CALL(result_type, header)                                    \
   debug_only(ResetNoHandleMark __rnhm;)                              \
   HandleMarkCleaner __hm(thread);                                    \
   Thread* THREAD = thread;                                           \
@@ -383,7 +349,6 @@ class RuntimeHistogramElement : public HistogramElement {
 // ENTRY routines may lock, GC and throw exceptions
 
 #define VM_ENTRY_BASE(result_type, header, thread)                   \
-  TRACE_CALL(result_type, header)                                    \
   HandleMarkCleaner __hm(thread);                                    \
   Thread* THREAD = thread;                                           \
   os::verify_stack_alignment();                                      \
@@ -426,7 +391,6 @@ class RuntimeHistogramElement : public HistogramElement {
 // to get back into Java from the VM
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
-    TRACE_CALL(result_type, header)                                  \
     HandleMarkCleaner __hm(thread);
 
 #define JRT_BLOCK                                                    \

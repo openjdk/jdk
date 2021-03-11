@@ -5,7 +5,7 @@
     <title>TIFF Metadata Format Specification and Usage Notes</title>
 </head>
 <!--
-Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ questions.
 
 <body>
 <main role="main">
-<div class="contentContainer">
 <h1>TIFF Metadata Format Specification and Usage Notes</h1>
 
 <a href="#Reading">Reading Images</a>
@@ -72,9 +71,9 @@ questions.
 
 <h2><a id="Reading">Reading Images</a></h2>
 
-TIFF images are read by an <a href="../../ImageReader.html">ImageReader</a>
+TIFF images are read by an {@link javax.imageio.ImageReader ImageReader}
 which may be controlled by its public interface as well as via a supplied
-<a href="../../plugins/tiff/TIFFImageReadParam.html">TIFFImageReadParam</a>.
+{@link javax.imageio.plugins.tiff.TIFFImageReadParam TIFFImageReadParam}.
 
 <!-- <h3>Supported Image Types</h3> -->
 
@@ -90,7 +89,7 @@ RGB using an internal color converter.</p>
 <h3><a id="ColorSpacesRead">Color Spaces</a></h3>
 
 The raw color space assigned by default, i.e., in the absence of a
-user-supplied <a href="../../ImageTypeSpecifier.html">ImageTypeSpecifier</a>,
+user-supplied {@link javax.imageio.ImageTypeSpecifier ImageTypeSpecifier},
 will be the first among the following which applies:
 
 <ul>
@@ -158,8 +157,8 @@ for the data in question.</p>
 <h3><a id="ICCProfilesRead">ICC Profiles</a></h3>
 
 If an ICC profile is contained in the image metadata
-(<a href="../../plugins/tiff/BaselineTIFFTagSet.html">
-BaselineTIFFTagSet</a>.TAG_ICC_PROFILE, tag number 34675),
+({@link javax.imageio.plugins.tiff.BaselineTIFFTagSet BaselineTIFFTagSet}.
+TAG_ICC_PROFILE, tag number 34675),
 an attempt will be made to use it to create the color space
 of the loaded image. It will be used if the data layout is of component type
 and the number of samples per pixel equals or is one greater than the number
@@ -174,15 +173,13 @@ it may be used manually by following this procedure:
 <li>Obtain the image metadata from
 <code>ImageReader.getImageMetadata</code></li>
 <li>Extract the ICC profile field and its value.</li>
-<li>Create an <a href="../../../../java/awt/color/ICC_ColorSpace.html">
-ICC_ColorSpace</a> from an
-<a href="../../../../java/awt/color/ICC_Profile.html">
-ICC_Profile</a> created from the ICC profile field data
+<li>Create an {@link java.awt.color.ICC_ColorSpace ICC_ColorSpace} from an
+{@link java.awt.color.ICC_Profile ICC_Profile} created from the ICC profile field data
 using <code>ICC_Profile.getInstance(byte[])</code>.</li>
 <li>Create an <code>ImageTypeSpecifier</code> from the new color
 space using one of its factory methods which accepts an
 <code>ICC_ColorSpace</code>.
-<li>Create a compatible <a href="../../ImageReadParam.html">ImageReadParam</a>
+<li>Create a compatible {@link javax.imageio.ImageReadParam ImageReadParam}
 and set the <code>ImageTypeSpecifier</code> using
 <code>ImageReadParam.setDestinationType</code>.</li>
 <li>Pass the parameter object to the appropriate <code>read</code> method.</li>
@@ -206,7 +203,7 @@ whether to read fields with unrecognized tags, and whether to ignore all
 metadata. The reader is informed to disregard all metadata as usual via the
 <code>ignoreMetadata</code> parameter of
 <code>ImageReader.setInput(Object,boolean,boolean)</code>. It is
-informed of which <a href="../../plugins/tiff/TIFFTag.html">TIFFTag</a>s to
+informed of which {@link javax.imageio.plugins.tiff.TIFFTag TIFFTag}s to
 recognize or not to recognize via
 <code>TIFFImageReadParam.addAllowedTagSet(TIFFTagSet)</code> and
 <code>TIFFImageReadParam.removeAllowedTagSet(TIFFTagSet)</code>.
@@ -221,7 +218,7 @@ by passing in a <code>TIFFImageReadParam</code> on which
 <code>TIFFImageReadParam.setReadUnknownTags(boolean)</code> has been
 invoked with parameter <code>true</code>.
 
-<p>Use of a <a href="../../plugins/tiff/TIFFDirectory.html">TIFFDirectory</a>
+<p>Use of a {@link javax.imageio.plugins.tiff.TIFFDirectory TIFFDirectory}
 object may simplify gaining access to metadata values. An instance of
 <code>TIFFDirectory</code> may be created from the <code>IIOMetadata</code>
 object returned by the TIFF reader using the
@@ -230,7 +227,7 @@ object returned by the TIFF reader using the
 <h4><a id="MapNativeStandard"></a>
 Mapping of TIFF Native Image Metadata to the Standard Metadata Format</h4>
 
-<table border="1">
+<table class="striped">
 <caption>The derivation of standard metadata format
 <a href="standard_metadata.html">javax_imageio_1.0</a>
 elements from <a href="#ImageMetadata">TIFF native image metadata</a> is given
@@ -481,9 +478,9 @@ empty; the primary image should be obtained using the JPEG reader itself.
 
 <h2><a id="Writing">Writing Images</a></h2>
 
-TIFF images are written by a <a href="../../ImageWriter.html">ImageWriter</a> which may be
+TIFF images are written by a {@link javax.imageio.ImageWriter ImageWriter} which may be
 controlled by its public interface as well as via a supplied
-<a href="../../ImageWriteParam.html">ImageWriteParam</a>.  For an <code>ImageWriteParam</code> returned
+{@link javax.imageio.ImageWriteParam ImageWriteParam}.  For an <code>ImageWriteParam</code> returned
 by the <code>getDefaultWriteParam()</code> method of the TIFF <code>ImageWriter</code>,
 the <code>canWriteTiles()</code> and <code>canWriteCompressed()</code> methods
 will return <code>true</code>; the <code>canOffsetTiles()</code> and
@@ -514,7 +511,7 @@ the <code>ImageWriteParam</code> after setting the compression mode to
 <code>MODE_EXPLICIT</code>. The set of innately
 supported compression types is listed in the following table:
 
-<table border=1>
+<table class="striped">
 <caption><b>Supported Compression Types</b></caption>
 <thead>
 <tr>
@@ -631,9 +628,9 @@ RGB using an internal color converter.</p>
 An <code>ICC Profile</code> field will be written if either:
 <ul>
 <li>one is present in the native image metadata
-<a href="../IIOMetadata.html">IIOMetadata</a> instance supplied to the writer,
+{@link javax.imageio.metadata.IIOMetadata IIOMetadata} instance supplied to the writer,
 or</li>
-<li>the <a href="../../../../java/awt/color/ColorSpace.html">ColorSpace</a>
+<li>the {@link java.awt.color.ColorSpace ColorSpace}
 of the destination <code>ImageTypeSpecifier</code> is an instance of
 <code>ICC_ColorSpace</code> which is not one of the standard
 color spaces defined by the <code>CS_*</code> constants in the
@@ -748,7 +745,7 @@ specification.</p>
 <p>Setting up the image metadata to write to a TIFF stream may be simplified
 by using the <code>TIFFDirectory</code> class
 which represents a TIFF IFD. A field in a TIFF IFD is represented by an
-instance of <a href="../../plugins/tiff/TIFFField.html">TIFFField</a>. For each
+instance of {@link javax.imageio.plugins.tiff.TIFFField TIFFField}. For each
 field to be written a <code>TIFFField</code> may be added to the
 <code>TIFFDirectory</code> and the latter converted to an
 <code>IIOMetadata</code> object by invoking
@@ -760,7 +757,7 @@ writer.</p>
 Mapping of the Standard Metadata Format to TIFF Native Image Metadata</h4>
 
 
-<table border="1">
+<table class="striped">
 <caption>The derivation of <a href="#ImageMetadata">TIFF native image metadata</a>
 elements from the standard metadata format
 <a href="standard_metadata.html">javax_imageio_1.0</a> is
@@ -1236,7 +1233,6 @@ The DTD for the TIFF native image metadata format is as follows:
 </pre>
 
 @since 9
-</div>
 </main>
 </body>
 </html>

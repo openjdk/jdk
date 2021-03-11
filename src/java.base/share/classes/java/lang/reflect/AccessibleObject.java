@@ -75,7 +75,6 @@ import sun.security.util.SecurityConstants;
  * @jls 6.6 Access Control
  * @since 1.2
  * @revised 9
- * @spec JPMS
  */
 public class AccessibleObject implements AnnotatedElement {
     static {
@@ -120,7 +119,6 @@ public class AccessibleObject implements AnnotatedElement {
      * @see SecurityManager#checkPermission
      * @see ReflectPermission
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static void setAccessible(AccessibleObject[] array, boolean flag) {
@@ -198,7 +196,6 @@ public class AccessibleObject implements AnnotatedElement {
      * @see #trySetAccessible
      * @see java.lang.invoke.MethodHandles#privateLookupIn
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive   // overrides in Method/Field/Constructor are @CS
     public void setAccessible(boolean flag) {
@@ -258,7 +255,6 @@ public class AccessibleObject implements AnnotatedElement {
      * @throws SecurityException if the request is denied by the security manager
      *
      * @since 9
-     * @spec JPMS
      * @see java.lang.invoke.MethodHandles#privateLookupIn
      */
     @CallerSensitive
@@ -422,7 +418,6 @@ public class AccessibleObject implements AnnotatedElement {
      * it should use {@link #canAccess(Object)}.
      *
      * @revised 9
-     * @spec JPMS
      */
     @Deprecated(since="9")
     public boolean isAccessible() {
@@ -459,7 +454,6 @@ public class AccessibleObject implements AnnotatedElement {
      *         </ul>
      *
      * @since 9
-     * @spec JPMS
      * @jls 6.6 Access Control
      * @see #trySetAccessible
      * @see #setAccessible(boolean)
@@ -648,7 +642,7 @@ public class AccessibleObject implements AnnotatedElement {
         }
 
         boolean isCacheFor(Class<?> caller, Class<?> refc) {
-            return callerRef.get() == caller && targetRef.get() == refc;
+            return callerRef.refersTo(caller) && targetRef.refersTo(refc);
         }
 
         static Object protectedMemberCallerCache(Class<?> caller, Class<?> refc) {
@@ -680,7 +674,7 @@ public class AccessibleObject implements AnnotatedElement {
         if (cache instanceof WeakReference) {
             @SuppressWarnings("unchecked")
             WeakReference<Class<?>> ref = (WeakReference<Class<?>>) cache;
-            return ref.get() == caller;
+            return ref.refersTo(caller);
         }
         return false;
     }

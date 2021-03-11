@@ -1,2 +1,2 @@
-Digits.java:11:41: compiler.err.illegal.nonascii.digit
+Digits.java:11:43: compiler.err.illegal.nonascii.digit
 1 error

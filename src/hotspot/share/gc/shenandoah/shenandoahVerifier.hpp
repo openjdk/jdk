@@ -65,7 +65,11 @@ public:
     _verify_marked_incomplete,
 
     // Objects should be marked in "complete" bitmap.
-    _verify_marked_complete
+    _verify_marked_complete,
+
+    // Objects should be marked in "complete" bitmap, except j.l.r.Reference referents, which
+    // may be dangling after marking but before conc-weakrefs-processing.
+    _verify_marked_complete_except_references
   } VerifyMarked;
 
   typedef enum {
@@ -132,12 +136,6 @@ public:
     _verify_gcstate_evacuation
   } VerifyGCState;
 
-  typedef enum {
-    _verify_all_weak_roots,
-    _verify_serial_weak_roots,
-    _verify_concurrent_weak_roots
-  } VerifyWeakRoots;
-
   struct VerifyOptions {
     VerifyForwarded     _verify_forwarded;
     VerifyMarked        _verify_marked;
@@ -145,20 +143,17 @@ public:
     VerifyLiveness      _verify_liveness;
     VerifyRegions       _verify_regions;
     VerifyGCState       _verify_gcstate;
-    VerifyWeakRoots     _verify_weak_roots;
 
     VerifyOptions(VerifyForwarded verify_forwarded,
                   VerifyMarked verify_marked,
                   VerifyCollectionSet verify_collection_set,
                   VerifyLiveness verify_liveness,
                   VerifyRegions verify_regions,
-                  VerifyGCState verify_gcstate,
-                  VerifyWeakRoots verify_weak_roots = _verify_all_weak_roots) :
+                  VerifyGCState verify_gcstate) :
             _verify_forwarded(verify_forwarded), _verify_marked(verify_marked),
             _verify_cset(verify_collection_set),
             _verify_liveness(verify_liveness), _verify_regions(verify_regions),
-            _verify_gcstate(verify_gcstate),
-            _verify_weak_roots(verify_weak_roots) {}
+            _verify_gcstate(verify_gcstate) {}
   };
 
 private:
@@ -168,8 +163,7 @@ private:
                            VerifyCollectionSet cset,
                            VerifyLiveness liveness,
                            VerifyRegions regions,
-                           VerifyGCState gcstate,
-                           VerifyWeakRoots weakRoots);
+                           VerifyGCState gcstate);
 
 public:
   ShenandoahVerifier(ShenandoahHeap* heap, MarkBitMap* verification_bitmap) :
@@ -189,10 +183,8 @@ public:
 
   // Roots should only contain to-space oops
   void verify_roots_in_to_space();
-  void verify_roots_in_to_space_except(ShenandoahRootVerifier::RootTypes types);
 
   void verify_roots_no_forwarded();
-  void verify_roots_no_forwarded_except(ShenandoahRootVerifier::RootTypes types);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP

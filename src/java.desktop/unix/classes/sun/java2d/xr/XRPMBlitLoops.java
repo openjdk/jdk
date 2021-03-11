@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,12 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.lang.ref.*;
 
-public class XRPMBlitLoops {
+public final class XRPMBlitLoops {
 
     static WeakReference<SunVolatileImage> argbTmpPM = new WeakReference<SunVolatileImage>(null);
     static WeakReference<SunVolatileImage> rgbTmpPM = new WeakReference<SunVolatileImage>(null);
 
-    public XRPMBlitLoops() {
+    private XRPMBlitLoops() {
     }
 
     public static void register() {
@@ -355,19 +355,13 @@ class XrSwToPMBlit extends Blit {
     }
 
     public void Blit(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx, int sy, int dx, int dy, int w, int h) {
-        // If the blit is write-only (putimge), no need for a temporary VI.
-        if (CompositeType.SrcOverNoEa.equals(comp) && (src.getTransparency() == Transparency.OPAQUE)) {
-            Blit opaqueSwToSurfaceBlit = Blit.getFromCache(src.getSurfaceType(), CompositeType.SrcNoEa, dst.getSurfaceType());
-            opaqueSwToSurfaceBlit.Blit(src, dst, comp, clip, sx, sy, dx, dy, w, h);
-        } else {
-            try {
-                SunToolkit.awtLock();
+        try {
+            SunToolkit.awtLock();
 
-                XRSurfaceData vImgSurface = XRPMBlitLoops.cacheToTmpSurface(src, (XRSurfaceData) dst, w, h, sx, sy);
-                pmToSurfaceBlit.Blit(vImgSurface, dst, comp, clip, 0, 0, dx, dy, w, h);
-            } finally {
-                SunToolkit.awtUnlock();
-            }
+            XRSurfaceData vImgSurface = XRPMBlitLoops.cacheToTmpSurface(src, (XRSurfaceData) dst, w, h, sx, sy);
+            pmToSurfaceBlit.Blit(vImgSurface, dst, comp, clip, 0, 0, dx, dy, w, h);
+        } finally {
+            SunToolkit.awtUnlock();
         }
     }
 }

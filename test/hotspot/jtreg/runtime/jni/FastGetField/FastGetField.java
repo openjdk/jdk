@@ -26,6 +26,7 @@
  * @bug 8227680
  * @summary Tests that all FieldAccess notifications for Get*Field
             with primitive type are generated.
+ * @requires vm.jvmti
  * @compile FastGetField.java
  * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields FastGetField
  * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField

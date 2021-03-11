@@ -44,9 +44,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ReferenceType.FieldsWithGeneric.fldwithgeneric001
- *        nsk.jdwp.ReferenceType.FieldsWithGeneric.fldwithgeneric001t
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.ReferenceType.FieldsWithGeneric.fldwithgeneric001t
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.FieldsWithGeneric.fldwithgeneric001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

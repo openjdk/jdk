@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.beans;
 
-import java.io.Serializable;
-import java.io.ObjectStreamField;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map.Entry;
 
@@ -412,11 +414,16 @@ public class VetoableChangeSupport implements Serializable {
     }
 
     /**
+     * Writes serializable fields to stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData Null terminated list of {@code VetoableChangeListeners}.
      * <p>
      * At serialization time we skip non-serializable listeners and
      * only serialize the serializable listeners.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Hashtable<String, VetoableChangeSupport> children = null;
         VetoableChangeListener[] listeners = null;
@@ -451,6 +458,15 @@ public class VetoableChangeSupport implements Serializable {
         s.writeObject(null);
     }
 
+    /**
+     * Reads the {@code ObjectInputStream}.
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     */
+    @Serial
     private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
         this.map = new VetoableChangeListenerMap();
 
@@ -480,10 +496,15 @@ public class VetoableChangeSupport implements Serializable {
     private Object source;
 
     /**
-     * @serialField children                                   Hashtable
-     * @serialField source                                     Object
+     * @serialField children Hashtable
+     *              The list of {@code PropertyChangeListeners}
+     * @serialField source Object
+     *              The object to be provided as the "source" for any generated
+     *              events
      * @serialField vetoableChangeSupportSerializedDataVersion int
+     *              The version
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
             new ObjectStreamField("children", Hashtable.class),
             new ObjectStreamField("source", Object.class),
@@ -491,9 +512,10 @@ public class VetoableChangeSupport implements Serializable {
     };
 
     /**
-     * Serialization version ID, so we're compatible with JDK 1.1
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
-    static final long serialVersionUID = -5090210921595982017L;
+    @Serial
+    private static final long serialVersionUID = -5090210921595982017L;
 
     /**
      * This is a {@link ChangeListenerMap ChangeListenerMap} implementation

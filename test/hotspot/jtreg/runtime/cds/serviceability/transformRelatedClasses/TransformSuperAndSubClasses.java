@@ -28,7 +28,7 @@
  *  with CDS with SubClass and SuperClass
  * @library /test/lib /runtime/cds /testlibrary/jvmti
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @requires !vm.graal.enabled
  * @build TransformUtil TransformerAgent SubClass SuperClazz
  * @run main/othervm TransformRelatedClasses SuperClazz SubClass

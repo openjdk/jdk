@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 import sun.reflect.generics.repository.ConstructorRepository;
 
 /**
@@ -517,6 +518,7 @@ public abstract class Executable extends AccessibleObject
      * construct as defined by
      * <cite>The Java Language Specification</cite>.
      * @jls 13.1 The Form of a Binary
+     * @jvms 4.6 Methods
      */
     public boolean isSynthetic() {
         return Modifier.isSynthetic(getModifiers());
@@ -698,8 +700,29 @@ public abstract class Executable extends AccessibleObject
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
-                getDeclaringClass(),
+                parameterize(getDeclaringClass()),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
+    }
+
+    Type parameterize(Class<?> c) {
+        Class<?> ownerClass = c.getDeclaringClass();
+        TypeVariable<?>[] typeVars = c.getTypeParameters();
+
+        // base case, static nested classes, according to JLS 8.1.3, has no
+        // enclosing instance, therefore its owner is not generified.
+        if (ownerClass == null || Modifier.isStatic(c.getModifiers())) {
+            if (typeVars.length == 0)
+                return c;
+            else
+                return ParameterizedTypeImpl.make(c, typeVars, null);
+        }
+
+        // Resolve owner
+        Type ownerType = parameterize(ownerClass);
+        if (ownerType instanceof Class<?> && typeVars.length == 0) // We have yet to encounter type parameters
+            return c;
+        else
+            return ParameterizedTypeImpl.make(c, typeVars, ownerType);
     }
 
     /**
@@ -752,5 +775,4 @@ public abstract class Executable extends AccessibleObject
                 getGenericExceptionTypes(),
                 TypeAnnotation.TypeAnnotationTarget.THROWS);
     }
-
 }

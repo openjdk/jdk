@@ -345,11 +345,14 @@ public:
   // Vector ideal reg
   static const uint vector_ideal_reg(int len);
 
+  // Does the CPU supports vector variable shift instructions?
+  static bool supports_vector_variable_shifts(void);
+
+  // Does the CPU supports vector vairable rotate instructions?
+  static bool supports_vector_variable_rotates(void);
+
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();
-
-  // Should original key array reference be passed to AES stubs
-  static const bool pass_original_key_for_aes();
 
   // Used to determine a "low complexity" 64-bit constant.  (Zero is simple.)
   // The standard of comparison is one (StoreL ConL) vs. two (StoreI ConI).
@@ -370,20 +373,16 @@ public:
     return stack_alignment_in_bytes() / (VMRegImpl::stack_slot_size);
   }
 
-  // Array mapping arguments to registers.  Argument 0 is usually the 'this'
-  // pointer.  Registers can include stack-slots and regular registers.
-  static void calling_convention( BasicType *, VMRegPair *, uint len, bool is_outgoing );
-
   // Convert a sig into a calling convention register layout
   // and find interesting things about it.
-  static OptoReg::Name  find_receiver( bool is_outgoing );
+  static OptoReg::Name  find_receiver();
   // Return address register.  On Intel it is a stack-slot.  On PowerPC
   // it is the Link register.  On Sparc it is r31?
   virtual OptoReg::Name return_addr() const;
   RegMask              _return_addr_mask;
-  // Return value register.  On Intel it is EAX.  On Sparc i0/o0.
-  static OptoRegPair   return_value(uint ideal_reg, bool is_outgoing);
-  static OptoRegPair c_return_value(uint ideal_reg, bool is_outgoing);
+  // Return value register.  On Intel it is EAX.
+  static OptoRegPair   return_value(uint ideal_reg);
+  static OptoRegPair c_return_value(uint ideal_reg);
   RegMask                     _return_value_mask;
   // Inline Cache Register
   static OptoReg::Name  inline_cache_reg();
@@ -415,22 +414,12 @@ public:
   // The Method-klass-holder may be passed in the inline_cache_reg
   // and then expanded into the inline_cache_reg and a method_ptr register
 
-  static OptoReg::Name  interpreter_method_reg();
-  static int            interpreter_method_reg_encode();
-
-  static OptoReg::Name  compiler_method_reg();
-  static const RegMask &compiler_method_reg_mask();
-  static int            compiler_method_reg_encode();
-
   // Interpreter's Frame Pointer Register
   static OptoReg::Name  interpreter_frame_pointer_reg();
 
   // Java-Native calling convention
   // (what you use when intercalling between Java and C++ code)
 
-  // Array mapping arguments to registers.  Argument 0 is usually the 'this'
-  // pointer.  Registers can include stack-slots and regular registers.
-  static void c_calling_convention( BasicType*, VMRegPair *, uint );
   // Frame pointer. The frame pointer is kept at the base of the stack
   // and so is probably the stack pointer for most machines.  On Intel
   // it is ESP.  On the PowerPC it is R1.  On Sparc it is SP.
@@ -532,10 +521,6 @@ public:
   DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
 
  public:
-  // Perform a platform dependent implicit null fixup.  This is needed
-  // on windows95 to take care of some unusual register constraints.
-  void pd_implicit_null_fixup(MachNode *load, uint idx);
-
   // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
   static const bool strict_fp_requires_explicit_rounding;
 

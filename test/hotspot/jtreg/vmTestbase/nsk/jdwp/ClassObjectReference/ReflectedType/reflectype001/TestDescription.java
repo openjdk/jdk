@@ -59,9 +59,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ClassObjectReference.ReflectedType.reflectype001
- *        nsk.jdwp.ClassObjectReference.ReflectedType.reflectype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.ClassObjectReference.ReflectedType.reflectype001a
+ * @run main/othervm
  *      nsk.jdwp.ClassObjectReference.ReflectedType.reflectype001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

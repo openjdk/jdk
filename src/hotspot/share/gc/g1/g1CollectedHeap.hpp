@@ -47,7 +47,6 @@
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
-#include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -80,6 +79,7 @@ class G1CollectionSet;
 class G1Policy;
 class G1HotCardCache;
 class G1RemSet;
+class G1ServiceTask;
 class G1ServiceThread;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
@@ -155,6 +155,7 @@ class G1CollectedHeap : public CollectedHeap {
 
 private:
   G1ServiceThread* _service_thread;
+  G1ServiceTask* _periodic_gc_task;
 
   WorkGang* _workers;
   G1CardTable* _card_table;
@@ -177,20 +178,14 @@ private:
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
 
-  // Tears down the region sets / lists so that they are empty and the
-  // regions on the heap do not belong to a region set / list. The
-  // only exception is the humongous set which we leave unaltered. If
-  // free_list_only is true, it will only tear down the master free
-  // list. It is called before a Full GC (free_list_only == false) or
-  // before heap shrinking (free_list_only == true).
-  void tear_down_region_sets(bool free_list_only);
+public:
+  void prepare_region_for_full_compaction(HeapRegion* hr);
 
+private:
   // Rebuilds the region sets / lists so that they are repopulated to
   // reflect the contents of the heap. The only exception is the
   // humongous set which was not torn down in the first place. If
-  // free_list_only is true, it will only rebuild the master free
-  // list. It is called after a Full GC (free_list_only == false) or
-  // after heap shrinking (free_list_only == true).
+  // free_list_only is true, it will only rebuild the free list.
   void rebuild_region_sets(bool free_list_only);
 
   // Callback for region mapping changed events.
@@ -200,7 +195,7 @@ private:
   G1NUMA* _numa;
 
   // The sequence of all heap regions in the heap.
-  HeapRegionManager* _hrm;
+  HeapRegionManager _hrm;
 
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
@@ -570,6 +565,12 @@ public:
 
   void resize_heap_if_necessary();
 
+  // Check if there is memory to uncommit and if so schedule a task to do it.
+  void uncommit_regions_if_necessary();
+  // Immediately uncommit uncommittable regions.
+  uint uncommit_regions(uint region_limit);
+  bool has_uncommittable_regions();
+
   G1NUMA* numa() const { return _numa; }
 
   // Expand the garbage-first heap by at least the given size (in bytes!).
@@ -731,8 +732,6 @@ public:
   // mapping failed, with the same non-overlapping and sorted MemRegion array.
   void dealloc_archive_regions(MemRegion* range, size_t count);
 
-  oop materialize_archived_object(oop obj);
-
 private:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
@@ -745,6 +744,9 @@ private:
   void print_taskqueue_stats() const;
   void reset_taskqueue_stats();
   #endif // TASKQUEUE_STATS
+
+  // Start a concurrent cycle.
+  void start_concurrent_cycle(bool concurrent_operation_is_full_mark);
 
   // Schedule the VM operation that will do an evacuation pause to
   // satisfy an allocation request of word_size. *succeeded will
@@ -782,7 +784,23 @@ private:
   void calculate_collection_set(G1EvacuationInfo& evacuation_info, double target_pause_time_ms);
 
   // Actually do the work of evacuating the parts of the collection set.
-  void evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states);
+  // The has_optional_evacuation_work flag for the initial collection set
+  // evacuation indicates whether one or more optional evacuation steps may
+  // follow.
+  // If not set, G1 can avoid clearing the card tables of regions that we scan
+  // for roots from the heap: when scanning the card table for dirty cards after
+  // all remembered sets have been dumped onto it, for optional evacuation we
+  // mark these cards as "Scanned" to know that we do not need to re-scan them
+  // in the additional optional evacuation passes. This means that in the "Clear
+  // Card Table" phase we need to clear those marks. However, if there is no
+  // optional evacuation, g1 can immediately clean the dirty cards it encounters
+  // as nobody else will be looking at them again, saving the clear card table
+  // work later.
+  // This case is very common (young only collections and most mixed gcs), so
+  // depending on the ratio between scanned and evacuated regions (which g1 always
+  // needs to clear), this is a big win.
+  void evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states,
+                                       bool has_optional_evacuation_work);
   void evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states);
 private:
   // Evacuate the next set of optional regions.
@@ -1003,8 +1021,6 @@ public:
 
   inline G1GCPhaseTimes* phase_times() const;
 
-  HeapRegionManager* hrm() const { return _hrm; }
-
   const G1CollectionSet* collection_set() const { return &_collection_set; }
   G1CollectionSet* collection_set() { return &_collection_set; }
 
@@ -1050,7 +1066,7 @@ public:
   // But G1CollectedHeap doesn't yet support this.
 
   virtual bool is_maximal_no_gc() const {
-    return _hrm->available() == 0;
+    return _hrm.available() == 0;
   }
 
   // Returns whether there are any regions left in the heap for allocation.
@@ -1059,23 +1075,23 @@ public:
   }
 
   // The current number of regions in the heap.
-  uint num_regions() const { return _hrm->length(); }
+  uint num_regions() const { return _hrm.length(); }
 
   // The max number of regions reserved for the heap. Except for static array
   // sizing purposes you probably want to use max_regions().
-  uint max_reserved_regions() const { return _hrm->reserved_length(); }
+  uint max_reserved_regions() const { return _hrm.reserved_length(); }
 
   // Max number of regions that can be committed.
-  uint max_regions() const { return _hrm->max_length(); }
+  uint max_regions() const { return _hrm.max_length(); }
 
   // The number of regions that are completely free.
-  uint num_free_regions() const { return _hrm->num_free_regions(); }
+  uint num_free_regions() const { return _hrm.num_free_regions(); }
 
   // The number of regions that can be allocated into.
-  uint num_free_or_available_regions() const { return num_free_regions() + _hrm->available(); }
+  uint num_free_or_available_regions() const { return num_free_regions() + _hrm.available(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const {
-    return _hrm->get_auxiliary_data_memory_usage();
+    return _hrm.get_auxiliary_data_memory_usage();
   }
 
   // The number of regions that are not completely free.
@@ -1083,7 +1099,7 @@ public:
 
 #ifdef ASSERT
   bool is_on_master_free_list(HeapRegion* hr) {
-    return _hrm->is_free(hr);
+    return _hrm.is_free(hr);
   }
 #endif // ASSERT
 
@@ -1112,16 +1128,13 @@ public:
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
 
-  void remove_from_old_sets(const uint old_regions_removed, const uint humongous_regions_removed);
+  void remove_from_old_gen_sets(const uint old_regions_removed,
+                                const uint archive_regions_removed,
+                                const uint humongous_regions_removed);
   void prepend_to_freelist(FreeRegionList* list);
   void decrement_summary_bytes(size_t bytes);
 
   virtual bool is_in(const void* p) const;
-#ifdef ASSERT
-  // Returns whether p is in one of the available areas of the heap. Slow but
-  // extensive version.
-  bool is_in_exact(const void* p) const;
-#endif
 
   // Return "TRUE" iff the given object address is within the collection
   // set. Assumes that the reference points into the heap.
@@ -1143,7 +1156,7 @@ public:
   inline G1HeapRegionAttr region_attr(uint idx) const;
 
   MemRegion reserved() const {
-    return _hrm->reserved();
+    return _hrm.reserved();
   }
 
   bool is_in_reserved(const void* addr) const {
@@ -1249,7 +1262,6 @@ public:
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.
 
-  bool supports_tlab_allocation() const;
   size_t tlab_capacity(Thread* ignored) const;
   size_t tlab_used(Thread* ignored) const;
   size_t max_tlab_size() const;
@@ -1307,36 +1319,22 @@ public:
   bool check_young_list_empty();
 #endif
 
-  // *** Stuff related to concurrent marking.  It's not clear to me that so
-  // many of these need to be public.
-
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-  // This performs a concurrent marking of the live objects in a
-  // bitmap off to the side.
-  void do_concurrent_mark();
-
   bool is_marked_next(oop obj) const;
 
   // Determine if an object is dead, given the object and also
-  // the region to which the object belongs. An object is dead
-  // iff a) it was not allocated since the last mark, b) it
-  // is not marked, and c) it is not in an archive region.
+  // the region to which the object belongs.
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
-    return
-      hr->is_obj_dead(obj, _cm->prev_mark_bitmap()) &&
-      !hr->is_archive();
+    return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
   }
 
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
-  // been marked during this marking, and is not in an archive region.
+  // been marked during this marking, and is not in a closed archive region.
   bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_next_marking(obj) &&
       !is_marked_next(obj) &&
-      !hr->is_archive();
+      !hr->is_closed_archive();
   }
 
   // Determine if an object is dead, given only the object itself.
@@ -1417,9 +1415,10 @@ public:
 
   // WhiteBox testing support.
   virtual bool supports_concurrent_gc_breakpoints() const;
-  bool is_heterogeneous_heap() const;
 
   virtual WorkGang* safepoint_workers() { return _workers; }
+
+  virtual bool is_archived_object(oop object) const;
 
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption

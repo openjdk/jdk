@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public class StringBufferInputStream extends InputStream {
      * Returns the number of bytes that can be read from the input
      * stream without blocking.
      *
-     * @return     the value of <code>count&nbsp;-&nbsp;pos</code>, which is the
+     * @return     the value of {@code count - pos}, which is the
      *             number of bytes remaining to be read from the input buffer.
      */
     public synchronized int available() {

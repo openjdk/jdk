@@ -27,7 +27,7 @@
  * @summary When dumping the CDS archive, try to cause garbage collection while classes are being loaded.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @run driver GCDuringDump
  */
 
@@ -73,7 +73,7 @@ public class GCDuringDump {
             TestCommon.run(
                 "-cp", appJar,
                 "-Xmx32m",
-                "-XX:+PrintSharedSpaces",
+                "-Xlog:cds=info",
                 "-XX:+UnlockDiagnosticVMOptions", extraOption,
                 gcLog,
                 Hello.class.getName())

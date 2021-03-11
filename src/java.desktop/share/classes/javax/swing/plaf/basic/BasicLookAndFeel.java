@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,6 @@ import java.beans.PropertyChangeEvent;
  * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
- *
- * @author unattributed
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class BasicLookAndFeel extends LookAndFeel implements Serializable
@@ -2082,19 +2080,9 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                         if (resource == null) {
                             return null;
                         }
-                        BufferedInputStream in =
-                            new BufferedInputStream(resource);
-                        ByteArrayOutputStream out =
-                            new ByteArrayOutputStream(1024);
-                        byte[] buffer = new byte[1024];
-                        int n;
-                        while ((n = in.read(buffer)) > 0) {
-                            out.write(buffer, 0, n);
+                        try (BufferedInputStream in = new BufferedInputStream(resource)) {
+                            return in.readAllBytes();
                         }
-                        in.close();
-                        out.flush();
-                        buffer = out.toByteArray();
-                        return buffer;
                     } catch (IOException ioe) {
                         System.err.println(ioe.toString());
                         return null;

@@ -75,7 +75,9 @@ public class UseSHASpecificTestCaseForUnsupportedCPU
                 CommandLineOptionTest.prepareBooleanFlag(
                         DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, true));
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, true),
+                CommandLineOptionTest.prepareBooleanFlag(
+                        DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION, true));
 
         // Verify that UseSHA option remains disabled even if all
         // UseSHA*Intrinsics options were enabled and UseSHA was enabled as well.
@@ -94,6 +96,8 @@ public class UseSHASpecificTestCaseForUnsupportedCPU
                 CommandLineOptionTest.prepareBooleanFlag(
                         DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, true));
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, true),
+                CommandLineOptionTest.prepareBooleanFlag(
+                        DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION, true));
     }
 }

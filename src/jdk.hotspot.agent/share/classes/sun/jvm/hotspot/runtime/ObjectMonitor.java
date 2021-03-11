@@ -103,10 +103,6 @@ public class ObjectMonitor extends VMObject {
       return contentionsField.getValue(addr);
   }
 
-  // FIXME
-  //  oop*      object_addr();
-  //  void      set_object(oop obj);
-
   // The following four either aren't expressed as typed fields in
   // vmStructs.cpp because they aren't strongly typed in the VM, or
   // would confuse the SA's type system.

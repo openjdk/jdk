@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,7 @@
 
 // Included in orderAccess.hpp header file.
 
-#ifdef ARM
+#if defined(ARM)   // ----------------------------------------------------
 
 /*
  * ARM Kernel helper for memory barrier.
@@ -39,14 +39,10 @@
 typedef void (__kernel_dmb_t) (void);
 #define __kernel_dmb (*(__kernel_dmb_t *) 0xffff0fa0)
 
-#define FULL_MEM_BARRIER __kernel_dmb()
 #define LIGHT_MEM_BARRIER __kernel_dmb()
+#define FULL_MEM_BARRIER  __kernel_dmb()
 
-#else // ARM
-
-#define FULL_MEM_BARRIER __sync_synchronize()
-
-#ifdef PPC
+#elif defined(PPC) // ----------------------------------------------------
 
 #ifdef __NO_LWSYNC__
 #define LIGHT_MEM_BARRIER __asm __volatile ("sync":::"memory")
@@ -54,21 +50,21 @@ typedef void (__kernel_dmb_t) (void);
 #define LIGHT_MEM_BARRIER __asm __volatile ("lwsync":::"memory")
 #endif
 
-#else // PPC
+#define FULL_MEM_BARRIER  __sync_synchronize()
 
-#ifdef ALPHA
-
-#define LIGHT_MEM_BARRIER __sync_synchronize()
-
-#else // ALPHA
+#elif defined(X86) // ----------------------------------------------------
 
 #define LIGHT_MEM_BARRIER __asm __volatile ("":::"memory")
+#define FULL_MEM_BARRIER  __sync_synchronize()
 
-#endif // ALPHA
+#else              // ----------------------------------------------------
 
-#endif // PPC
+// Default to strongest barriers for correctness.
 
-#endif // ARM
+#define LIGHT_MEM_BARRIER __sync_synchronize()
+#define FULL_MEM_BARRIER  __sync_synchronize()
+
+#endif             // ----------------------------------------------------
 
 // Note: What is meant by LIGHT_MEM_BARRIER is a barrier which is sufficient
 // to provide TSO semantics, i.e. StoreStore | LoadLoad | LoadStore.
@@ -82,6 +78,6 @@ inline void OrderAccess::acquire()    { LIGHT_MEM_BARRIER; }
 inline void OrderAccess::release()    { LIGHT_MEM_BARRIER; }
 
 inline void OrderAccess::fence()      { FULL_MEM_BARRIER;  }
-inline void OrderAccess::cross_modify_fence()            { }
+inline void OrderAccess::cross_modify_fence_impl()            { }
 
 #endif // OS_CPU_LINUX_ZERO_ORDERACCESS_LINUX_ZERO_HPP

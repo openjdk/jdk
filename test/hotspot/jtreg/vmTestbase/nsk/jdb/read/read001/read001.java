@@ -52,7 +52,8 @@
  * @clean nsk.jdb.read.read001.read001a
  * @compile -g:lines,source,vars read001a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.read.read001.read001
+ * @run main/othervm
+ *      nsk.jdb.read.read001.read001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

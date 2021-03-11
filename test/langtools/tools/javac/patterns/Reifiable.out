@@ -2,6 +2,4 @@ Reifiable.java:10:16: compiler.err.instanceof.reifiable.not.safe: java.lang.Obje
 Reifiable.java:12:16: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Reifiable.List<java.lang.String>, Reifiable.ListImpl<Reifiable>)
 Reifiable.java:13:39: compiler.err.not.within.bounds: java.lang.String, T
 Reifiable.java:14:16: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Reifiable.List<Reifiable>, Reifiable.Unrelated<Reifiable>)
-- compiler.note.preview.filename: Reifiable.java
-- compiler.note.preview.recompile
 4 errors

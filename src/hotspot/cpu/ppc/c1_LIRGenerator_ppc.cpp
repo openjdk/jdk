@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "ci/ciTypeArrayKlass.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_ppc.inline.hpp"
 
@@ -293,11 +294,11 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
   assert(left != result, "should be different registers");
   if (is_power_of_2(c + 1)) {
-    __ shift_left(left, log2_int(c + 1), result);
+    __ shift_left(left, log2i_exact(c + 1), result);
     __ sub(result, left, result);
     return true;
   } else if (is_power_of_2(c - 1)) {
-    __ shift_left(left, log2_int(c - 1), result);
+    __ shift_left(left, log2i_exact(c - 1), result);
     __ add(result, left, result);
     return true;
   }

@@ -31,7 +31,7 @@ import java.security.ProviderException;
 import java.util.Arrays;
 import java.util.Objects;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Common base message digest implementation for the Sun provider.
@@ -144,7 +144,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         return implCompressMultiBlock0(b, ofs, limit);
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private int implCompressMultiBlock0(byte[] b, int ofs, int limit) {
         for (; ofs <= limit; ofs += blockSize) {
             implCompress(b, ofs);

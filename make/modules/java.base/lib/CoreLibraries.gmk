@@ -49,7 +49,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBFDLIBM, \
     CFLAGS_windows_debug := -DLOGGING, \
     CFLAGS_aix := -qfloat=nomaf, \
     DISABLED_WARNINGS_gcc := sign-compare misleading-indentation array-bounds, \
-    DISABLED_WARNINGS_clang := sign-compare, \
+    DISABLED_WARNINGS_clang := sign-compare misleading-indentation, \
     DISABLED_WARNINGS_microsoft := 4146 4244 4018, \
     ARFLAGS := $(ARFLAGS), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \

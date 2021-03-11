@@ -220,7 +220,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   // storing region crossing non-NULL, is card already dirty?
 
-  ExternalAddress cardtable((address) ct->byte_map_base());
   const Register card_addr = tmp;
 
   __ lsr(card_addr, store_addr, CardTable::card_shift);

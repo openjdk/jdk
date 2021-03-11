@@ -62,7 +62,7 @@ struct SVGDocumentIndexEntry
                                  * this index entry. */
   HBUINT16      endGlyphID;     /* The last glyph ID in the range described by
                                  * this index entry. Must be >= startGlyphID. */
-  LNNOffsetTo<UnsizedArrayOf<HBUINT8> >
+  LNNOffsetTo<UnsizedArrayOf<HBUINT8>>
                 svgDoc;         /* Offset from the beginning of the SVG Document Index
                                  * to an SVG document. Must be non-zero. */
   HBUINT32      svgDocLength;   /* Length of the SVG document.
@@ -80,7 +80,7 @@ struct SVG
   struct accelerator_t
   {
     void init (hb_face_t *face)
-    { table = hb_sanitize_context_t().reference_table<SVG> (face); }
+    { table = hb_sanitize_context_t ().reference_table<SVG> (face); }
     void fini () { table.destroy (); }
 
     hb_blob_t *reference_blob_for_glyph (hb_codepoint_t glyph_id) const
@@ -107,7 +107,7 @@ struct SVG
 
   protected:
   HBUINT16      version;        /* Table version (starting at 0). */
-  LOffsetTo<SortedArrayOf<SVGDocumentIndexEntry> >
+  LOffsetTo<SortedArrayOf<SVGDocumentIndexEntry>>
                 svgDocEntries;  /* Offset (relative to the start of the SVG table) to the
                                  * SVG Documents Index. Must be non-zero. */
                                 /* Array of SVG Document Index Entries. */

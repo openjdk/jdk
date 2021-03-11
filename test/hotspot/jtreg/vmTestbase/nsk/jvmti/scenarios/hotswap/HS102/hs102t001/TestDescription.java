@@ -38,11 +38,10 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.scenarios.hotswap.HS102.hs102t001
+ * @build nsk.jvmti.scenarios.hotswap.HS102.hs102t001
  *        nsk.share.jvmti.ProfileCollector
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:HotSwap=-waittime=5 package=java/lang samples=10 mode=compiled"
+ * @run main/othervm/native
+ *      -agentlib:HotSwap=-waittime=5,package=java/lang,samples=10,mode=compiled
  *      nsk.jvmti.scenarios.hotswap.HS102.hs102t001
  */
 

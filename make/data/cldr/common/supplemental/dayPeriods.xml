@@ -129,6 +129,14 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- sera -->
 			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- notte -->
 		</dayPeriodRules>
+		<dayPeriodRules locales="lij">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- mëzaneutte -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- mëzogiorno -->
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- mattin -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- depoidisnâ -->
+			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- seia -->
+			<dayPeriodRule type="night1" from="22:00" before="06:00"/>	<!-- neutte -->
+		</dayPeriodRules>
 		<dayPeriodRules locales="ro">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- la miezul nopții -->
 			<dayPeriodRule type="noon" at="12:00"/>	<!-- la amiază -->
@@ -751,6 +759,12 @@
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- pomeriggio -->
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- sera -->
 			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- notte -->
+		</dayPeriodRules>
+		<dayPeriodRules locales="lij">
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- mattin -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- depoidisnâ -->
+			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- seia -->
+			<dayPeriodRule type="night1" from="22:00" before="06:00"/>	<!-- neutte -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="ro">
 			<dayPeriodRule type="morning1" from="05:00" before="12:00"/>	<!-- dimineață -->

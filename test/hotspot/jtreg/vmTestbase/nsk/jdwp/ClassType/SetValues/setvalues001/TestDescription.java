@@ -65,9 +65,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ClassType.SetValues.setvalues001
- *        nsk.jdwp.ClassType.SetValues.setvalues001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.ClassType.SetValues.setvalues001a
+ * @run main/othervm
  *      nsk.jdwp.ClassType.SetValues.setvalues001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public interface DataSource  extends CommonDataSource, Wrapper {
    * this {@code DataSource} object represents.
    *
    * @return  a connection to the data source
-   * @exception SQLException if a database access error occurs
+   * @throws SQLException if a database access error occurs
    * @throws java.sql.SQLTimeoutException  when the driver has determined that the
    * timeout value specified by the {@code setLoginTimeout} method
    * has been exceeded and has at least tried to cancel the
@@ -99,7 +99,7 @@ public interface DataSource  extends CommonDataSource, Wrapper {
    *  being made
    * @param password the user's password
    * @return  a connection to the data source
-   * @exception SQLException if a database access error occurs
+   * @throws SQLException if a database access error occurs
    * @throws java.sql.SQLTimeoutException  when the driver has determined that the
    * timeout value specified by the {@code setLoginTimeout} method
    * has been exceeded and has at least tried to cancel the

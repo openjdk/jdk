@@ -165,6 +165,11 @@ public abstract class BaseOptions {
     private final List<Utils.Pair<String, String>> linkOfflineList = new ArrayList<>();
 
     /**
+     * Location of alternative platform link properties file.
+     */
+    private String linkPlatformProperties;
+
+    /**
      * Argument for command-line option {@code -linksource}.
      * True if we should generate browsable sources.
      */
@@ -184,6 +189,13 @@ public abstract class BaseOptions {
      * information.
      */
     private boolean noDeprecated = false;
+
+    /**
+     * Argument for command-line option {@code --no-platform-links}.
+     * True if command-line option "--no-platform-links" is used. Default value is
+     * false.
+     */
+    private boolean noPlatformLinks = false;
 
     /**
      * Argument for command-line option {@code -nosince}.
@@ -371,6 +383,15 @@ public abstract class BaseOptions {
                         return true;
                     }
                 },
+
+                new Option(resources, "--link-platform-properties", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        linkPlatformProperties = args.get(0);
+                        return true;
+                    }
+                },
+
                 new Option(resources, "-nocomment") {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -407,6 +428,14 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         addToSet(excludedQualifiers, args.get(0));
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--no-platform-links") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        noPlatformLinks = true;
                         return true;
                     }
                 },
@@ -756,6 +785,13 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --link-platform-properties}.
+     */
+    String linkPlatformProperties() {
+        return linkPlatformProperties;
+    }
+
+    /**
      * Argument for command-line option {@code -linksource}.
      * True if we should generate browsable sources.
      */
@@ -780,6 +816,15 @@ public abstract class BaseOptions {
      */
     public boolean noDeprecated() {
         return noDeprecated;
+    }
+
+    /**
+     * Argument for command-line option {@code --no-platform-links}.
+     * True if command-line option {@code --no-platform-links"} is used.
+     * Default value is false.
+     */
+    public boolean noPlatformLinks() {
+        return noPlatformLinks;
     }
 
     /**

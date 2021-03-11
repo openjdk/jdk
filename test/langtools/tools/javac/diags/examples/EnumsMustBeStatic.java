@@ -22,6 +22,8 @@
  */
 
 // key: compiler.err.static.declaration.not.allowed.in.inner.classes
+// key: compiler.warn.source.no.system.modules.path
+// options: -source 15
 
 class EnumsMustBeStatic {
     class Nested {

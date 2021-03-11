@@ -191,7 +191,7 @@ public final class EventWriter {
         }
     }
 
-    private void reset() {
+    public void reset() {
         currentPosition = startPosition;
         if (flushOnEnd) {
             flushOnEnd = flush();
@@ -220,6 +220,10 @@ public final class EventWriter {
 
     private void resetNotified() {
         notified = false;
+    }
+
+    private void resetStringPool() {
+        StringPool.reset();
     }
 
     private int usedSize() {
@@ -273,6 +277,7 @@ public final class EventWriter {
 
         if (isNotified()) {
             resetNotified();
+            resetStringPool();
             reset();
             // returning false will trigger restart of the event write attempt
             return false;

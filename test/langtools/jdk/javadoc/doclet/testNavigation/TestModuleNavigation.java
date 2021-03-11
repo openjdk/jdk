@@ -62,7 +62,7 @@ public class TestModuleNavigation extends JavadocTester {
                 .uses("p1.A")
                 .uses("p1.B")
                 .exports("p1")
-                .classes("package p1; public class A {}")
+                .classes("package p1; @Deprecated public class A {}")
                 .classes("package p1; public class B {}");
         mb.write(src);
         ModuleBuilder mb1 = new ModuleBuilder(tb, "m2")

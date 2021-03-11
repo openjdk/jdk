@@ -37,6 +37,7 @@ import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.management.EventSettingsModifier;
 
 /**
  * Permission for controlling access to Flight Recorder.
@@ -196,6 +197,11 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
         @Override
         public AccessControlContext getContext(SettingControl settingControl) {
             return settingControl.getContext();
+        }
+
+        @Override
+        public EventSettings newEventSettings(EventSettingsModifier esm) {
+            return new EventSettings.DelegatedEventSettings(esm);
         }
     }
 

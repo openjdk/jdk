@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,28 +162,29 @@ public class LineNumberReader extends BufferedReader {
     }
 
     /**
-     * Read characters into a portion of an array.
-     * <a href="#lt">Line terminators</a> are compressed into single newline
+     * Reads characters into a portion of an array.  This method will block
+     * until some input is available, an I/O error occurs, or the end of the
+     * stream is reached.
+     *
+     * <p> If {@code len} is zero, then no characters are read and {@code 0} is
+     * returned; otherwise, there is an attempt to read at least one character.
+     * If no character is available because the stream is at its end, the value
+     * {@code -1} is returned; otherwise, at least one character is read and
+     * stored into {@code cbuf}.
+     *
+     * <p><a href="#lt">Line terminators</a> are compressed into single newline
      * ('\n') characters.  The current line number is incremented whenever a
      * line terminator is read, or when the end of the stream is reached and
      * the last character in the stream is not a line terminator.
      *
-     * @param  cbuf
-     *         Destination buffer
+     * @param  cbuf  {@inheritDoc}
+     * @param  off   {@inheritDoc}
+     * @param  len   {@inheritDoc}
      *
-     * @param  off
-     *         Offset at which to start storing characters
-     *
-     * @param  len
-     *         Maximum number of characters to read
-     *
-     * @return  The number of characters read, or -1 if the end of the stream
-     *          has already been reached
-     *
-     * @throws  IOException
-     *          If an I/O error occurs
+     * @return  {@inheritDoc}
      *
      * @throws  IndexOutOfBoundsException {@inheritDoc}
+     * @throws  IOException {@inheritDoc}
      */
     @SuppressWarnings("fallthrough")
     public int read(char cbuf[], int off, int len) throws IOException {
@@ -267,18 +268,7 @@ public class LineNumberReader extends BufferedReader {
     private char skipBuffer[] = null;
 
     /**
-     * Skip characters.
-     *
-     * @param  n
-     *         The number of characters to skip
-     *
-     * @return  The number of characters actually skipped
-     *
-     * @throws  IOException
-     *          If an I/O error occurs
-     *
-     * @throws  IllegalArgumentException
-     *          If {@code n} is negative
+     * {@inheritDoc}
      */
     public long skip(long n) throws IOException {
         if (n < 0)

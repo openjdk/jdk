@@ -102,12 +102,18 @@ public class TestG1ClassUnloadingHWM {
       // Allocate past the MetaspaceSize limit
       long metaspaceSize = Long.parseLong(args[0]);
       long allocationBeyondMetaspaceSize  = metaspaceSize * 2;
-      long metaspace = wb.allocateMetaspace(null, allocationBeyondMetaspaceSize);
+
+      // There is a cap on how large a single metaspace allocation can get. So we may have to allocate in blocks.
+      final long max = wb.maxMetaspaceAllocationSize();
+      while (allocationBeyondMetaspaceSize > 0) {
+        long s = max < allocationBeyondMetaspaceSize ? max : allocationBeyondMetaspaceSize;
+        wb.allocateMetaspace(null, s);
+        allocationBeyondMetaspaceSize -= s;
+      }
 
       long youngGenSize = Long.parseLong(args[1]);
       triggerYoungGCs(youngGenSize);
 
-      wb.freeMetaspace(null, metaspace, metaspace);
     }
 
     public static void triggerYoungGCs(long youngGenSize) {

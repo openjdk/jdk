@@ -75,7 +75,6 @@ public:
 
   void assert_correct() NOT_DEBUG_RETURN;
   void assert_same_oops(bool allow_dead = false) NOT_DEBUG_RETURN;
-  static void assert_no_oops(nmethod* nm, bool allow_dea = false) NOT_DEBUG_RETURN;
 
 private:
   bool has_non_immed_oops() const { return _has_non_immed_oops; }

@@ -37,7 +37,7 @@ const char* get_basename(const char* filename) {
   const char *basename = filename;
   const char *cp;
   for (cp = basename; *cp; cp++) {
-    if (*cp == '/') {
+    if (*cp == '/' || *cp == '\\') {
       basename = cp+1;
     }
   }

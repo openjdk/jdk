@@ -45,9 +45,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.reenter.reenter001.reenter001
- *        nsk.jdb.reenter.reenter001.reenter001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.reenter.reenter001.reenter001
+ * @build nsk.jdb.reenter.reenter001.reenter001a
+ * @run main/othervm
+ *      nsk.jdb.reenter.reenter001.reenter001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

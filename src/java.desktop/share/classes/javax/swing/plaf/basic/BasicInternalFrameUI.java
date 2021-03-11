@@ -647,6 +647,10 @@ public class BasicInternalFrameUI extends InternalFrameUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
         /**
+         * Constructs an {@code InternalFramePropertyChangeListener}.
+         */
+        public InternalFramePropertyChangeListener() {}
+        /**
          * Detects changes in state from the JInternalFrame and handles
          * actions.
          */
@@ -663,6 +667,11 @@ public class BasicInternalFrameUI extends InternalFrameUI
     // its functionality has been moved into Handler. If you need to add
     // new functionality add it to the Handler, but make sure this
     // class calls into the Handler.
+    /**
+     * Constructs an {@code InternalFrameLayout}.
+     */
+    public InternalFrameLayout() {}
+
       /**
        * {@inheritDoc}
        */
@@ -841,6 +850,11 @@ public class BasicInternalFrameUI extends InternalFrameUI
         private boolean discardRelease = false;
 
         int resizeCornerSize = 16;
+
+        /**
+         * Constructs a {@code BorderListener}.
+         */
+        protected BorderListener() {}
 
         public void mouseClicked(MouseEvent e) {
             if(e.getClickCount() > 1 && e.getSource() == getNorthPane()) {
@@ -1305,6 +1319,11 @@ public class BasicInternalFrameUI extends InternalFrameUI
       // its functionality has been moved into Handler. If you need to add
       // new functionality add it to the Handler, but make sure this
       // class calls into the Handler.
+      /**
+       * Constructs a {@code ComponentHandler}.
+       */
+      protected ComponentHandler() {}
+
       /** Invoked when a JInternalFrame's parent's size changes. */
       public void componentResized(ComponentEvent e) {
           getHandler().componentResized(e);
@@ -1347,6 +1366,11 @@ public class BasicInternalFrameUI extends InternalFrameUI
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+        /**
+         * Constructs a {@code GlassPaneDispatcher}.
+         */
+        protected GlassPaneDispatcher() {}
+
         /**
          * {@inheritDoc}
          */
@@ -1414,6 +1438,11 @@ public class BasicInternalFrameUI extends InternalFrameUI
       // its functionality has been moved into Handler. If you need to add
       // new functionality add it to the Handler, but make sure this
       // class calls into the Handler.
+      /**
+       * Constructs a {@code BasicInternalFrameListener}.
+       */
+      protected BasicInternalFrameListener() {}
+
         /**
          * {@inheritDoc}
          */

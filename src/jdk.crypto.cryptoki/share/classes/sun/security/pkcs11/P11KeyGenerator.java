@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,9 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
  * KeyGenerator implementation class. This class currently supports
- * DES, DESede, AES, ARCFOUR, and Blowfish.
+ * DES, DESede, AES, ARCFOUR, Blowfish, Hmac using MD5, SHA, SHA-2 family
+ * (SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256), and SHA-3
+ * family (SHA3-224, SHA3-256, SHA3-384, SHA3-512) of digests.
  *
  * @author  Andreas Sterbenz
  * @since   1.5
@@ -65,6 +67,48 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
     // are supported.
     private boolean supportBothKeySizes;
 
+    // for determining if the specified key size is valid
+    private final CK_MECHANISM_INFO range;
+
+    // utility method for query the native key sizes and enforcing the
+    // java-specific lower limit; returned values are in bits
+    private static CK_MECHANISM_INFO getSupportedRange(Token token,
+        long mech) throws ProviderException {
+        // No need to query for fix-length algorithms
+        if (mech == CKM_DES_KEY_GEN || mech == CKM_DES2_KEY_GEN ||
+            mech == CKM_DES3_KEY_GEN) {
+            return null;
+        }
+
+        // Explicitly disallow keys shorter than 40-bits for security
+        int lower = 40;
+        int upper = Integer.MAX_VALUE;
+        try {
+            CK_MECHANISM_INFO info = token.getMechanismInfo(mech);
+            if (info != null) {
+                boolean isBytes = ((mech != CKM_GENERIC_SECRET_KEY_GEN
+                        && mech != CKM_RC4_KEY_GEN) || info.iMinKeySize < 8);
+                lower = Math.max(lower, (isBytes?
+                        Math.multiplyExact(info.iMinKeySize, 8) :
+                        info.iMinKeySize));
+                // NSS CKM_GENERIC_SECRET_KEY_GEN mech info is not precise;
+                // its upper limit is too low and does not match its impl
+                if (mech == CKM_GENERIC_SECRET_KEY_GEN &&
+                    info.iMaxKeySize <= 32) {
+                    // ignore and leave upper limit at MAX_VALUE;
+                } else if (info.iMaxKeySize != Integer.MAX_VALUE) {
+                    upper = (isBytes?
+                            Math.multiplyExact(info.iMaxKeySize, 8) :
+                            info.iMaxKeySize);
+                }
+            }
+        } catch (PKCS11Exception p11e) {
+            // Should never happen
+            throw new ProviderException("Cannot retrieve mechanism info", p11e);
+        }
+        return new CK_MECHANISM_INFO(lower, upper, 0 /* flags not used */);
+    }
+
     /**
      * Utility method for checking if the specified key size is valid
      * and within the supported range. Return the significant key size
@@ -78,8 +122,15 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
      * @throws ProviderException if this mechanism isn't supported by SunPKCS11
      * or underlying native impl.
      */
+    // called by P11SecretKeyFactory to check key size
     static int checkKeySize(long keyGenMech, int keySize, Token token)
         throws InvalidAlgorithmParameterException, ProviderException {
+        CK_MECHANISM_INFO range = getSupportedRange(token, keyGenMech);
+        return checkKeySize(keyGenMech, keySize, range);
+    }
+
+    private static int checkKeySize(long keyGenMech, int keySize,
+        CK_MECHANISM_INFO range) throws InvalidAlgorithmParameterException {
         int sigKeySize;
         switch ((int)keyGenMech) {
             case (int)CKM_DES_KEY_GEN:
@@ -102,50 +153,36 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
                 break;
             default:
                 // Handle all variable-key-length algorithms here
-                CK_MECHANISM_INFO info = null;
-                try {
-                    info = token.getMechanismInfo(keyGenMech);
-                } catch (PKCS11Exception p11e) {
-                    // Should never happen
-                    throw new ProviderException
-                            ("Cannot retrieve mechanism info", p11e);
-                }
-                if (info == null) {
-                    // XXX Unable to retrieve the supported key length from
-                    // the underlying native impl. Skip the checking for now.
-                    return keySize;
-                }
-                // PKCS#11 defines these to be in number of bytes except for
-                // RC4 which is in bits. However, some PKCS#11 impls still use
-                // bytes for all mechs, e.g. NSS. We try to detect this
-                // inconsistency if the minKeySize seems unreasonably small.
-                int minKeySize = info.iMinKeySize;
-                int maxKeySize = info.iMaxKeySize;
-                if (keyGenMech != CKM_RC4_KEY_GEN || minKeySize < 8) {
-                    minKeySize = Math.multiplyExact(minKeySize, 8);
-                    if (maxKeySize != Integer.MAX_VALUE) {
-                        maxKeySize = Math.multiplyExact(maxKeySize, 8);
-                    }
-                }
-                // Explicitly disallow keys shorter than 40-bits for security
-                if (minKeySize < 40) minKeySize = 40;
-                if (keySize < minKeySize || keySize > maxKeySize) {
+                if (range != null && keySize < range.iMinKeySize
+                    || keySize > range.iMaxKeySize) {
                     throw new InvalidAlgorithmParameterException
-                            ("Key length must be between " + minKeySize +
-                            " and " + maxKeySize + " bits");
+                        ("Key length must be between " + range.iMinKeySize +
+                        " and " + range.iMaxKeySize + " bits");
                 }
                 if (keyGenMech == CKM_AES_KEY_GEN) {
                     if ((keySize != 128) && (keySize != 192) &&
                         (keySize != 256)) {
                         throw new InvalidAlgorithmParameterException
-                                ("AES key length must be " + minKeySize +
-                                (maxKeySize >= 192? ", 192":"") +
-                                (maxKeySize >= 256? ", or 256":"") + " bits");
+                            ("AES key length must be 128, 192, or 256 bits");
                     }
                 }
                 sigKeySize = keySize;
         }
         return sigKeySize;
+    }
+
+    // check the supplied keysize (in bits) and adjust it based on the given
+    // range
+    private static int adjustKeySize(int ks, CK_MECHANISM_INFO mi) {
+        // adjust to fit within the supported range
+        if (mi != null) {
+            if (ks < mi.iMinKeySize) {
+                ks = mi.iMinKeySize;
+            } else if (ks > mi.iMaxKeySize) {
+                ks = mi.iMaxKeySize;
+            }
+        }
+        return ks;
     }
 
     P11KeyGenerator(Token token, String algorithm, long mechanism)
@@ -164,50 +201,118 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
                 (token.provider.config.isEnabled(CKM_DES2_KEY_GEN) &&
                  (token.getMechanismInfo(CKM_DES2_KEY_GEN) != null));
         }
-        setDefaultKeySize();
+        this.range = getSupportedRange(token, mechanism);
+        setDefault();
     }
 
-    // set default keysize and also initialize keyType
-    private void setDefaultKeySize() {
+    // set default keysize and keyType
+    private void setDefault() {
+        significantKeySize = -1;
         switch ((int)mechanism) {
         case (int)CKM_DES_KEY_GEN:
             keySize = 64;
             keyType = CKK_DES;
+            significantKeySize = 56;
             break;
         case (int)CKM_DES2_KEY_GEN:
             keySize = 128;
             keyType = CKK_DES2;
+            significantKeySize = 112;
             break;
         case (int)CKM_DES3_KEY_GEN:
             keySize = 192;
             keyType = CKK_DES3;
+            significantKeySize = 168;
             break;
         case (int)CKM_AES_KEY_GEN:
-            keySize = 128;
+            keySize = adjustKeySize(128, range);
             keyType = CKK_AES;
             break;
         case (int)CKM_RC4_KEY_GEN:
-            keySize = 128;
+            keySize = adjustKeySize(128, range);
             keyType = CKK_RC4;
             break;
         case (int)CKM_BLOWFISH_KEY_GEN:
-            keySize = 128;
+            keySize = adjustKeySize(128, range);
             keyType = CKK_BLOWFISH;
+            break;
+        case (int)CKM_SHA_1_KEY_GEN:
+            keySize = adjustKeySize(160, range);
+            keyType = CKK_SHA_1_HMAC;
+            break;
+        case (int)CKM_SHA224_KEY_GEN:
+            keySize = adjustKeySize(224, range);
+            keyType = CKK_SHA224_HMAC;
+            break;
+        case (int)CKM_SHA256_KEY_GEN:
+            keySize = adjustKeySize(256, range);
+            keyType = CKK_SHA256_HMAC;
+            break;
+        case (int)CKM_SHA384_KEY_GEN:
+            keySize = adjustKeySize(384, range);
+            keyType = CKK_SHA384_HMAC;
+            break;
+        case (int)CKM_SHA512_KEY_GEN:
+            keySize = adjustKeySize(512, range);
+            keyType = CKK_SHA512_HMAC;
+            break;
+        case (int)CKM_SHA512_224_KEY_GEN:
+            keySize = adjustKeySize(224, range);
+            keyType = CKK_SHA512_224_HMAC;
+            break;
+        case (int)CKM_SHA512_256_KEY_GEN:
+            keySize = adjustKeySize(256, range);
+            keyType = CKK_SHA512_256_HMAC;
+            break;
+        case (int)CKM_SHA3_224_KEY_GEN:
+            keySize = adjustKeySize(224, range);
+            keyType = CKK_SHA3_224_HMAC;
+            break;
+        case (int)CKM_SHA3_256_KEY_GEN:
+            keySize = adjustKeySize(256, range);
+            keyType = CKK_SHA3_256_HMAC;
+            break;
+        case (int)CKM_SHA3_384_KEY_GEN:
+            keySize = adjustKeySize(384, range);
+            keyType = CKK_SHA3_384_HMAC;
+            break;
+        case (int)CKM_SHA3_512_KEY_GEN:
+            keySize = adjustKeySize(512, range);
+            keyType = CKK_SHA3_512_HMAC;
+            break;
+        case (int)CKM_GENERIC_SECRET_KEY_GEN:
+            if (algorithm.startsWith("Hmac")) {
+                String digest = algorithm.substring(4);
+                keySize = adjustKeySize(switch (digest) {
+                    case "MD5" -> 512;
+                    case "SHA1" -> 160;
+                    case "SHA224", "SHA512/224", "SHA3-224" -> 224;
+                    case "SHA256", "SHA512/256", "SHA3-256" -> 256;
+                    case "SHA384", "SHA3-384" -> 384;
+                    case "SHA512", "SHA3-512" -> 512;
+                    default -> {
+                        throw new ProviderException("Unsupported algorithm " +
+                            algorithm);
+                    }
+                }, range);
+            } else {
+                throw new ProviderException("Unsupported algorithm " +
+                        algorithm);
+            }
+            keyType = CKK_GENERIC_SECRET;
             break;
         default:
             throw new ProviderException("Unknown mechanism " + mechanism);
         }
-        try {
-            significantKeySize = checkKeySize(mechanism, keySize, token);
-        } catch (InvalidAlgorithmParameterException iape) {
-            throw new ProviderException("Unsupported default key size", iape);
+        if (significantKeySize == -1) {
+            significantKeySize = keySize;
         }
     }
 
     // see JCE spec
     protected void engineInit(SecureRandom random) {
         token.ensureValid();
-        setDefaultKeySize();
+        setDefault();
     }
 
     // see JCE spec
@@ -222,7 +327,7 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
         token.ensureValid();
         int newSignificantKeySize;
         try {
-            newSignificantKeySize = checkKeySize(mechanism, keySize, token);
+            newSignificantKeySize = checkKeySize(mechanism, keySize, range);
         } catch (InvalidAlgorithmParameterException iape) {
             throw (InvalidParameterException)
                     (new InvalidParameterException().initCause(iape));
@@ -254,10 +359,11 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
         try {
             session = token.getObjSession();
             CK_ATTRIBUTE[] attributes;
-            switch ((int)keyType) {
-            case (int)CKK_DES:
-            case (int)CKK_DES2:
-            case (int)CKK_DES3:
+
+            switch ((int)mechanism) {
+            case (int)CKM_DES_KEY_GEN:
+            case (int)CKM_DES2_KEY_GEN:
+            case (int)CKM_DES3_KEY_GEN:
                 // fixed length, do not specify CKA_VALUE_LEN
                 attributes = new CK_ATTRIBUTE[] {
                     new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
@@ -282,5 +388,4 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
             token.releaseSession(session);
         }
     }
-
 }

@@ -48,14 +48,14 @@
  *        nsk.share.jdi.TestClass1
  *        nsk.share.jdi.TestClass2
  *        nsk.share.jdi.TestInterfaceImplementer1
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.VirtualMachine.instanceCounts.instancecounts001.instancecounts001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx256M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}"
  *      -forceGC
  */
 

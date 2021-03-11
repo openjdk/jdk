@@ -75,7 +75,7 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
     private int               sourceActions;
 
     private static volatile boolean dragDropInProgress = false;
-    private static boolean discardingMouseEvents = false;
+    private static volatile boolean discardingMouseEvents = false;
 
     /*
      * dispatch constants

@@ -30,7 +30,6 @@ package java.lang.instrument;
  *
  * @see Instrumentation#redefineModule
  * @since 9
- * @spec JPMS
  */
 
 public class UnmodifiableModuleException extends RuntimeException {

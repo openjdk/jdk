@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,8 +677,9 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
      * Inside timer action.
      */
     protected class insideTimerAction implements ActionListener {
+
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code insideTimerAction}.
          */
         protected insideTimerAction() {}
 
@@ -712,8 +713,9 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
      * Outside timer action.
      */
     protected class outsideTimerAction implements ActionListener {
+
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code outsideTimerAction}.
          */
         protected outsideTimerAction() {}
 
@@ -729,8 +731,9 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
      * Still inside timer action.
      */
     protected class stillInsideTimerAction implements ActionListener {
+
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code stillInsideTimerAction}.
          */
         protected stillInsideTimerAction() {}
 

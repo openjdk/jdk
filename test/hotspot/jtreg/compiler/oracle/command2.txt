@@ -1,7 +1,7 @@
-option,Test::test,ccstrlist,MyListOption,_foo,_bar
-option,Test::test,ccstr,MyStrOption,_foo
-option,Test::test,bool,MyBoolOption,false
-option,Test::test,intx,MyIntxOption,-1
-option,Test::test,uintx,MyUintxOption,1
-option,Test::test,MyFlag
-option,Test::test,double,MyDoubleOption,1.123
+option,Test::test,ccstrlist,TestOptionList,_foo,_bar
+option,Test::test,ccstr,TestOptionStr,_foo
+option,Test::test,bool,TestOptionBool,false
+option,Test::test,intx,TestOptionInt,-1
+option,Test::test,uintx,TestOptionUint,1
+option,Test::test,TestOptionBool2
+option,Test::test,double,TestOptionDouble,1.123

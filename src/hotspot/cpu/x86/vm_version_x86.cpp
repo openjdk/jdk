@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/codeBlob.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -44,6 +45,7 @@ int VM_Version::_model;
 int VM_Version::_stepping;
 bool VM_Version::_has_intel_jcc_erratum;
 VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
+const char* VM_Version::_features_names[] = { FEATURES_NAMES };
 
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = 0;
@@ -762,6 +764,8 @@ void VM_Version::get_processor_features() {
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;
+      _features &= ~CPU_AVX512BW;
+      _features &= ~CPU_AVX512VL;
     }
   }
 
@@ -772,65 +776,14 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[512];
-  int res = jio_snprintf(buf, sizeof(buf),
-              "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x"
-              "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s",
-
-               cores_per_cpu(), threads_per_core(),
-               cpu_family(), _model, _stepping, os::cpu_microcode_revision(),
-
-               (supports_cmov() ? ", cmov" : ""),
-               (supports_cmpxchg8() ? ", cx8" : ""),
-               (supports_fxsr() ? ", fxsr" : ""),
-               (supports_mmx()  ? ", mmx"  : ""),
-               (supports_sse()  ? ", sse"  : ""),
-               (supports_sse2() ? ", sse2" : ""),
-               (supports_sse3() ? ", sse3" : ""),
-               (supports_ssse3()? ", ssse3": ""),
-               (supports_sse4_1() ? ", sse4.1" : ""),
-               (supports_sse4_2() ? ", sse4.2" : ""),
-
-               (supports_popcnt() ? ", popcnt" : ""),
-               (supports_vzeroupper() ? ", vzeroupper" : ""),
-               (supports_avx()    ? ", avx" : ""),
-               (supports_avx2()   ? ", avx2" : ""),
-               (supports_aes()    ? ", aes" : ""),
-               (supports_clmul()  ? ", clmul" : ""),
-               (supports_erms()   ? ", erms" : ""),
-               (supports_rtm()    ? ", rtm" : ""),
-               (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
-               (supports_lzcnt()   ? ", lzcnt": ""),
-
-               (supports_sse4a()   ? ", sse4a": ""),
-               (supports_ht() ? ", ht": ""),
-               (supports_tsc() ? ", tsc": ""),
-               (supports_tscinv_bit() ? ", tscinvbit": ""),
-               (supports_tscinv() ? ", tscinv": ""),
-               (supports_bmi1() ? ", bmi1" : ""),
-               (supports_bmi2() ? ", bmi2" : ""),
-               (supports_adx() ? ", adx" : ""),
-               (supports_evex() ? ", avx512f" : ""),
-               (supports_avx512dq() ? ", avx512dq" : ""),
-
-               (supports_avx512pf() ? ", avx512pf" : ""),
-               (supports_avx512er() ? ", avx512er" : ""),
-               (supports_avx512cd() ? ", avx512cd" : ""),
-               (supports_avx512bw() ? ", avx512bw" : ""),
-               (supports_avx512vl() ? ", avx512vl" : ""),
-               (supports_avx512_vpopcntdq() ? ", avx512_vpopcntdq" : ""),
-               (supports_avx512_vpclmulqdq() ? ", avx512_vpclmulqdq" : ""),
-               (supports_avx512_vbmi() ? ", avx512_vbmi" : ""),
-               (supports_avx512_vbmi2() ? ", avx512_vbmi2" : ""),
-               (supports_avx512_vaes() ? ", avx512_vaes" : ""),
-
-               (supports_avx512_vnni() ? ", avx512_vnni" : ""),
-               (supports_sha() ? ", sha" : ""),
-               (supports_fma() ? ", fma" : ""),
-               (supports_clflush() ? ", clflush" : ""),
-               (supports_clflushopt() ? ", clflushopt" : ""),
-               (supports_clwb() ? ", clwb" : ""));
-
-  assert(res > 0, "not enough temporary space allocated"); // increase 'buf' size
+  int res = jio_snprintf(
+              buf, sizeof(buf),
+              "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
+              cores_per_cpu(), threads_per_core(),
+              cpu_family(), _model, _stepping, os::cpu_microcode_revision());
+  assert(res > 0, "not enough temporary space allocated");
+  assert(log2i_exact((uint64_t)CPU_MAX_FEATURE) + 1 == sizeof(_features_names) / sizeof(char*), "wrong size features_names");
+  insert_features_names(buf + res, sizeof(buf) - res, _features_names);
 
   _features_string = os::strdup(buf);
 
@@ -1029,6 +982,11 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
@@ -1048,7 +1006,7 @@ void VM_Version::get_processor_features() {
 
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking) {
-    if (is_client_compilation_mode_vm()) {
+    if (!CompilerConfig::is_c2_enabled()) {
       // Only C2 does RTM locking optimization.
       // Can't continue because UseRTMLocking affects UseBiasedLocking flag
       // setting during arguments processing. See use_biased_locking().
@@ -1161,13 +1119,6 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // COMPILER2 && ASSERT
-
-  if (!FLAG_IS_DEFAULT(AVX3Threshold)) {
-    if (!is_power_of_2(AVX3Threshold)) {
-      warning("AVX3Threshold must be a power of 2");
-      FLAG_SET_DEFAULT(AVX3Threshold, 4096);
-    }
-  }
 
 #ifdef _LP64
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
@@ -1361,9 +1312,10 @@ void VM_Version::get_processor_features() {
     }
 #endif // COMPILER2
 
-    // Some defaults for AMD family 17h || Hygon family 18h
-    if (cpu_family() == 0x17 || cpu_family() == 0x18) {
-      // On family 17h processors use XMM and UnalignedLoadStores for Array Copy
+    // Some defaults for AMD family >= 17h && Hygon family 18h
+    if (cpu_family() >= 0x17) {
+      // On family >=17h processors use XMM and UnalignedLoadStores
+      // for Array Copy
       if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         FLAG_SET_DEFAULT(UseXMMForArrayCopy, true);
       }
@@ -1412,6 +1364,7 @@ void VM_Version::get_processor_features() {
         MaxLoopPad = 11;
       }
 #endif // COMPILER2
+
       if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
       }
@@ -1449,6 +1402,38 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
+#ifdef COMPILER2
+    if (UseAVX > 2) {
+      if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
+          (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
+           ArrayCopyPartialInlineSize != 0 &&
+           ArrayCopyPartialInlineSize != 32 &&
+           ArrayCopyPartialInlineSize != 16 &&
+           ArrayCopyPartialInlineSize != 64)) {
+        int inline_size = 0;
+        if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
+          inline_size = 64;
+        } else if (MaxVectorSize >= 32) {
+          inline_size = 32;
+        } else if (MaxVectorSize >= 16) {
+          inline_size = 16;
+        }
+        if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
+          warning("Setting ArrayCopyPartialInlineSize as %d", inline_size);
+        }
+        ArrayCopyPartialInlineSize = inline_size;
+      }
+
+      if (ArrayCopyPartialInlineSize > MaxVectorSize) {
+        ArrayCopyPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+        if (ArrayCopyPartialInlineSize) {
+          warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+        } else {
+          warning("Setting ArrayCopyPartialInlineSize as " INTX_FORMAT, ArrayCopyPartialInlineSize);
+        }
+      }
+    }
+#endif
   }
 
 #ifdef _LP64
@@ -1535,6 +1520,22 @@ void VM_Version::get_processor_features() {
     warning("fast-string operations are not available on this CPU");
     FLAG_SET_DEFAULT(UseFastStosb, false);
   }
+
+  // For AMD Processors use XMM/YMM MOVDQU instructions
+  // for Object Initialization as default
+  if (is_amd() && cpu_family() >= 0x19) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = false;
+    }
+  }
+
+#ifdef COMPILER2
+  if (is_intel() && MaxVectorSize > 16) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = false;
+    }
+  }
+#endif
 
   // Use XMM/YMM MOVDQU instruction for Object Initialization
   if (!UseFastStosb && UseSSE >= 2 && UseUnalignedLoadStores) {

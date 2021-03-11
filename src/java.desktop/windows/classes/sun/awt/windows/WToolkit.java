@@ -1234,7 +1234,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
-    public native boolean syncNativeQueue(final long timeout);
+    public native boolean syncNativeQueue(long timeout);
 
     @Override
     public boolean isDesktopSupported() {

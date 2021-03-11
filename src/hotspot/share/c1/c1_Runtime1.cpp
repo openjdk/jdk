@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
 #include "code/compiledIC.hpp"
@@ -52,9 +52,11 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -63,6 +65,8 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackWatermarkSet.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
@@ -465,7 +469,7 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, Meth
     }
     bci = branch_bci + offset;
   }
-  osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
+  osr_nm = CompilationPolicy::event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
   return osr_nm;
 }
 
@@ -505,6 +509,17 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   thread->set_is_method_handle_return(false);
 
   Handle exception(thread, ex);
+
+  // This function is called when we are about to throw an exception. Therefore,
+  // we have to poll the stack watermark barrier to make sure that not yet safe
+  // stack frames are made safe before returning into them.
+  if (thread->last_frame().cb() == Runtime1::blob_for(Runtime1::handle_exception_from_callee_id)) {
+    // The Runtime1::handle_exception_from_callee_id handler is invoked after the
+    // frame has been unwound. It instead builds its own stub frame, to call the
+    // runtime. But the throwing frame has already been unwound here.
+    StackWatermarkSet::after_unwind(thread);
+  }
+
   nm = CodeCache::find_nmethod(pc);
   assert(nm != NULL, "this is not an nmethod");
   // Adjust the pc as needed/
@@ -515,20 +530,29 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
     pc = exception_frame.pc();
   }
-#ifdef ASSERT
   assert(exception.not_null(), "NULL exceptions should be handled by throw_exception");
-  // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
-  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
-    if (ExitVMOnVerifyError) vm_exit(-1);
-    ShouldNotReachHere();
+  // Check that exception is a subclass of Throwable
+  assert(exception->is_a(vmClasses::Throwable_klass()),
+         "Exception not subclass of Throwable");
+
+  // debugging support
+  // tracing
+  if (log_is_enabled(Info, exceptions)) {
+    ResourceMark rm;
+    stringStream tempst;
+    assert(nm->method() != NULL, "Unexpected NULL method()");
+    tempst.print("C1 compiled method <%s>\n"
+                 " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
+                 nm->method()->print_value_string(), p2i(pc), p2i(thread));
+    Exceptions::log_exception(exception, tempst.as_string());
   }
-#endif
+  // for AbortVMOnException flag
+  Exceptions::debug_check_abort(exception);
 
   // Check the stack guard pages and reenable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
-  bool guard_pages_enabled = thread->stack_guards_enabled();
-  if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
+  bool guard_pages_enabled = thread->stack_overflow_state()->reguard_stack_if_needed();
 
   if (JvmtiExport::can_post_on_exceptions()) {
     // To ensure correct notification of exception catches and throws
@@ -570,20 +594,6 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
 
     // New exception handling mechanism can support inlined methods
     // with exception handlers since the mappings are from PC to PC
-
-    // debugging support
-    // tracing
-    if (log_is_enabled(Info, exceptions)) {
-      ResourceMark rm;
-      stringStream tempst;
-      assert(nm->method() != NULL, "Unexpected NULL method()");
-      tempst.print("compiled method <%s>\n"
-                   " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
-                   nm->method()->print_value_string(), p2i(pc), p2i(thread));
-      Exceptions::log_exception(exception, tempst.as_string());
-    }
-    // for AbortVMOnException flag
-    Exceptions::debug_check_abort(exception);
 
     // Clear out the exception oop and pc since looking up an
     // exception handler can cause class loading, which might throw an
@@ -630,7 +640,7 @@ address Runtime1::exception_handler_for_pc(JavaThread* thread) {
   oop exception = thread->exception_oop();
   address pc = thread->exception_pc();
   // Still in Java mode
-  DEBUG_ONLY(ResetNoHandleMark rnhm);
+  DEBUG_ONLY(NoHandleMark nhm);
   nmethod* nm = NULL;
   address continuation = NULL;
   {
@@ -1255,32 +1265,32 @@ JRT_END
 
 #else // DEOPTIMIZE_WHEN_PATCHING
 
-JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id ))
-  RegisterMap reg_map(thread, false);
+void Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id) {
+  NOT_PRODUCT(_patch_code_slowcase_cnt++);
 
-  NOT_PRODUCT(_patch_code_slowcase_cnt++;)
   if (TracePatching) {
     tty->print_cr("Deoptimizing because patch is needed");
   }
 
+  RegisterMap reg_map(thread, false);
+
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
+  assert(caller_frame.is_compiled_frame(), "Wrong frame type");
 
-  // It's possible the nmethod was invalidated in the last
-  // safepoint, but if it's still alive then make it not_entrant.
+  // Make sure the nmethod is invalidated, i.e. made not entrant.
   nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
   if (nm != NULL) {
     nm->make_not_entrant();
   }
 
   Deoptimization::deoptimize_frame(thread, caller_frame.id());
-
   // Return to the now deoptimized frame.
-JRT_END
+  postcond(caller_is_deopted());
+}
 
 #endif // DEOPTIMIZE_WHEN_PATCHING
 
-//
 // Entry point for compiled code. We want to patch a nmethod.
 // We don't do a normal VM transition here because we want to
 // know after the patching is complete and any safepoint(s) are taken
@@ -1297,7 +1307,6 @@ int Runtime1::move_klass_patching(JavaThread* thread) {
   debug_only(NoHandleMark nhm;)
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, load_klass_patching_id);
   }
@@ -1316,7 +1325,6 @@ int Runtime1::move_mirror_patching(JavaThread* thread) {
   debug_only(NoHandleMark nhm;)
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, load_mirror_patching_id);
   }
@@ -1335,7 +1343,6 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
   debug_only(NoHandleMark nhm;)
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, load_appendix_patching_id);
   }
@@ -1345,7 +1352,7 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
 
   return caller_is_deopted();
 }
-//
+
 // Entry point for compiled code. We want to patch a nmethod.
 // We don't do a normal VM transition here because we want to
 // know after the patching is complete and any safepoint(s) are taken
@@ -1354,16 +1361,15 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
 // completes we can check for deoptimization. This simplifies the
 // assembly code in the cpu directories.
 //
-
 int Runtime1::access_field_patching(JavaThread* thread) {
-//
-// NOTE: we are still in Java
-//
-  Thread* THREAD = thread;
-  debug_only(NoHandleMark nhm;)
+  //
+  // NOTE: we are still in Java
+  //
+  // Handles created in this function will be deleted by the
+  // HandleMarkCleaner in the transition to the VM.
+  NoHandleMark nhm;
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, access_field_patching_id);
   }
@@ -1372,7 +1378,7 @@ int Runtime1::access_field_patching(JavaThread* thread) {
   // Return true if calling code is deoptimized
 
   return caller_is_deopted();
-JRT_END
+}
 
 
 JRT_LEAF(void, Runtime1::trace_block_entry(jint block_id))
@@ -1396,8 +1402,6 @@ JRT_END
 JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
   ResourceMark rm;
 
-  assert(!TieredCompilation, "incompatible with tiered compilation");
-
   RegisterMap reg_map(thread, false);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
@@ -1415,7 +1419,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
     Method::build_interpreter_method_data(m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // Only metaspace OOM is expected. No Java code executed.
-      assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+      assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
       CLEAR_PENDING_EXCEPTION;
     }
     mdo = m->method_data();

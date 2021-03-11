@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,15 @@
 #ifndef SHARE_MEMORY_HEAPSHARED_INLINE_HPP
 #define SHARE_MEMORY_HEAPSHARED_INLINE_HPP
 
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "memory/heapShared.hpp"
 #include "utilities/align.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1Allocator.inline.hpp"
-#endif
 
 #if INCLUDE_CDS_JAVA_HEAP
 
 bool HeapShared::is_archived_object(oop p) {
-  return (p == NULL) ? false : G1ArchiveAllocator::is_archived_object(p);
+  return Universe::heap()->is_archived_object(p);
 }
 
 inline oop HeapShared::decode_from_archive(narrowOop v) {

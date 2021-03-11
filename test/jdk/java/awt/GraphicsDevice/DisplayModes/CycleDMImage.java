@@ -41,7 +41,7 @@ import java.util.ArrayList;
 
 /**
  * @test
- * @bug 4836241 6364134 8232200
+ * @bug 4836241 6364134 8232200 8252133
  * @key headful
  * @summary verify that images are restored correctly after display mode
  *          switches and that no other rendering or crash problems occur

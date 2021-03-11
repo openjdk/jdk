@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ public class StartTlsRequest implements ExtendedRequest {
      *                   Its value is ignored because a Start TLS response
      *                   is not expected to contain any response value.
      * @return           The StartTLS extended response object.
-     * @exception        NamingException If a naming exception was encountered
+     * @throws           NamingException If a naming exception was encountered
      *                   while creating the StartTLS extended response object.
      */
     public ExtendedResponse createExtendedResponse(String id, byte[] berValue,

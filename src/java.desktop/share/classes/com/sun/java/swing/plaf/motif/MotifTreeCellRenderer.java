@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,18 @@
 
 package com.sun.java.swing.plaf.motif;
 
-import javax.swing.*;
-import javax.swing.plaf.*;
-import javax.swing.tree.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.io.*;
-import java.util.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.io.Serializable;
+
+import javax.swing.Icon;
+import javax.swing.UIManager;
+import javax.swing.plaf.IconUIResource;
+import javax.swing.tree.DefaultTreeCellRenderer;
 
 /**
  * Motif rendered to display a tree cell.
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
  *
  * @author Jeff Dinkins
  */
@@ -62,13 +56,6 @@ public class MotifTreeCellRenderer extends DefaultTreeCellRenderer
 
     /**
      * Icon for a node with no children.
-     * <p>
-     * <strong>Warning:</strong>
-     * Serialized objects of this class will not be compatible with
-     * future Swing releases.  The current serialization support is appropriate
-     * for short term storage or RMI between applications running the same
-     * version of Swing.  A future release of Swing will provide support for
-     * long term persistence.
      */
     @SuppressWarnings("serial") // Same-version serialization only
     public static class TreeLeafIcon implements Icon, Serializable {

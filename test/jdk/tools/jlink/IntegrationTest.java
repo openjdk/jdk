@@ -168,16 +168,20 @@ public class IntegrationTest {
         //Strip debug
         {
             Map<String, String> config1 = new HashMap<>();
-            config1.put(DefaultStripDebugPlugin.NAME, "");
             Plugin strip = Jlink.newPlugin("strip-debug", config1, null);
+            config1.put(strip.getName(), "");
             lst.add(strip);
         }
         // compress
         {
             Map<String, String> config1 = new HashMap<>();
-            config1.put(DefaultCompressPlugin.NAME, "2");
+            String pluginName = "compress";
+            config1.put(pluginName, "2");
             Plugin compress
-                    = Jlink.newPlugin("compress", config1, null);
+                    = Jlink.newPlugin(pluginName, config1, null);
+            if(!pluginName.equals(compress.getName())) {
+                throw new AssertionError("compress plugin name doesn't match test constant");
+            }
             lst.add(compress);
         }
         // Post processor

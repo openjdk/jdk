@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ public interface LdapContext extends DirContext {
      * If null, the context is initialized with no request controls.
      *
      * @return A non-null {@code LdapContext} instance.
-     * @exception NamingException If an error occurred while creating
+     * @throws NamingException If an error occurred while creating
      * the new instance.
      * @see InitialLdapContext
      */
@@ -239,7 +239,7 @@ public interface LdapContext extends DirContext {
      * in the class description for implementation details.
      * @param connCtls The possibly null controls to use. If null, no
      * controls are used.
-     * @exception NamingException If an error occurred while reconnecting.
+     * @throws NamingException If an error occurred while reconnecting.
      * @see #getConnectControls
      * @see #newInstance
      */
@@ -253,7 +253,7 @@ public interface LdapContext extends DirContext {
      *
      * @return A possibly-null array of controls. null means no connect controls
      * have been set for this context.
-     * @exception NamingException If an error occurred while getting the request
+     * @throws NamingException If an error occurred while getting the request
      * controls.
      */
     public Control[] getConnectControls() throws NamingException;
@@ -279,7 +279,7 @@ public interface LdapContext extends DirContext {
      * {@code getRequestControls()}.
      * @param requestControls The possibly null controls to use. If null, no
      * controls are used.
-     * @exception NamingException If an error occurred while setting the
+     * @throws NamingException If an error occurred while setting the
      * request controls.
      * @see #getRequestControls
      */

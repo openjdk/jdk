@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@
 void ModRefBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                    Register src, Register dst, Register count, Register preserve1, Register preserve2) {
   if (type == T_OBJECT) {
-    gen_write_ref_array_pre_barrier(masm, decorators, src, dst, count, preserve1, preserve2);
+    gen_write_ref_array_pre_barrier(masm, decorators,
+                                    src, dst, count,
+                                    preserve1, preserve2);
 
     bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
     if (!checkcast) {
@@ -58,10 +60,17 @@ void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Decorat
 
 void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                          Register base, RegisterOrConstant ind_or_offs, Register val,
-                                         Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
+                                         Register tmp1, Register tmp2, Register tmp3,
+                                         MacroAssembler::PreservationLevel preservation_level) {
   if (is_reference_type(type)) {
-    oop_store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
+    oop_store_at(masm, decorators, type,
+                 base, ind_or_offs, val,
+                 tmp1, tmp2, tmp3,
+                 preservation_level);
   } else {
-    BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
+    BarrierSetAssembler::store_at(masm, decorators, type,
+                                  base, ind_or_offs, val,
+                                  tmp1, tmp2, tmp3,
+                                  preservation_level);
   }
 }

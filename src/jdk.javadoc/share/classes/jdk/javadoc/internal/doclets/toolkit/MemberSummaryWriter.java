@@ -44,42 +44,45 @@ import com.sun.source.doctree.DocTree;
 public interface MemberSummaryWriter {
 
     /**
-     * Get the member summary header for the given class.
+     * Returns the member summary header for the given class.
      *
-     * @param typeElement the class the summary belongs to
+     * @param typeElement       the class the summary belongs to
      * @param memberSummaryTree the content tree to which the member summary will be added
+     *
      * @return a content tree for the member summary header
      */
     Content getMemberSummaryHeader(TypeElement typeElement, Content memberSummaryTree);
 
     /**
-     * Get the summary table for the given class.
+     * Returns the summary table for the given class.
      *
      * @param typeElement the class the summary table belongs to
+     *
      * @return a content tree for the member summary table
      */
     Content getSummaryTableTree(TypeElement typeElement);
 
     /**
-     * Add the member summary for the given class and member.
+     * Adds the member summary for the given class and member.
      *
-     * @param typeElement the class the summary belongs to
-     * @param member the member that is documented
-     * @param firstSentenceTags the tags for the sentence being documented
+     * @param typeElement        the class the summary belongs to
+     * @param member             the member that is documented
+     * @param firstSentenceTrees the tags for the sentence being documented
      */
     void addMemberSummary(TypeElement typeElement, Element member,
-                          List<? extends DocTree> firstSentenceTags);
+                          List<? extends DocTree> firstSentenceTrees);
 
     /**
-     * Get the inherited member summary header for the given class.
+     * Returns the inherited member summary header for the given class.
      *
      * @param typeElement the class the summary belongs to
+     *
      * @return a content tree containing the inherited summary header
      */
     Content getInheritedSummaryHeader(TypeElement typeElement);
 
     /**
-     * Add the inherited member summary for the given class and member.
+     * Adds the inherited member summary for the given class and member.
      *
      * @param typeElement the class the inherited member belongs to
      * @param member the inherited member that is being documented
@@ -92,7 +95,7 @@ public interface MemberSummaryWriter {
                                    Content linksTree);
 
     /**
-     * Get inherited summary links.
+     * Returns the inherited summary links.
      *
      * @return a content tree containing the inherited summary links
      */
@@ -107,9 +110,10 @@ public interface MemberSummaryWriter {
     void addSummary(Content summariesList, Content content);
 
     /**
-     * Get the member tree.
+     * Returns the member tree.
      *
      * @param memberTree the content tree representing the member
+     *
      * @return a content tree for the member
      */
     Content getMemberTree(Content memberTree);

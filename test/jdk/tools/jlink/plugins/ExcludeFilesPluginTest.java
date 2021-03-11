@@ -69,8 +69,8 @@ public class ExcludeFilesPluginTest {
 
     public void checkFiles(String s, String sample, String module, boolean exclude) throws Exception {
         Map<String, String> prop = new HashMap<>();
-        prop.put(ExcludeFilesPlugin.NAME, s);
         ExcludeFilesPlugin fplug = new ExcludeFilesPlugin();
+        prop.put(fplug.getName(), s);
         fplug.configure(prop);
         ResourcePoolManager files = new ResourcePoolManager();
         ResourcePoolManager fresult = new ResourcePoolManager();

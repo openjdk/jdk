@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,17 @@ public class LDAPTestUtils {
      * Process command line arguments and return properties in a Hashtable.
      */
     public static Hashtable<Object, Object> initEnv(String testname,
-            String[] args) {
+                                                    String[] args) {
         return initEnv(null, testname, args, false);
     }
 
     public static Hashtable<Object, Object> initEnv(ServerSocket socket,
-            String testname, String[] args, boolean authInfo) {
+                                                    String testname, String[] args, boolean authInfo) {
+        return initEnv(socket, null, testname, args, authInfo);
+    }
+
+    public static Hashtable<Object, Object> initEnv(ServerSocket socket, String providerUrl,
+                                                    String testname, String[] args, boolean authInfo) {
 
         Hashtable<Object, Object> env = new Hashtable<>();
         String root = "o=IMC,c=US";
@@ -103,8 +108,9 @@ public class LDAPTestUtils {
             if (socket != null) {
                 env.put(TEST_LDAP_SERVER_THREAD,
                         startLDAPServer(socket, getCaptureFile(testname)));
-                env.put("java.naming.provider.url",
-                        "ldap://localhost:" + socket.getLocalPort());
+                String url = providerUrl != null ? providerUrl :
+                        "ldap://localhost:" + socket.getLocalPort();
+                env.put("java.naming.provider.url", url);
             } else {
                 // for tests which run against remote server or no server
                 // required

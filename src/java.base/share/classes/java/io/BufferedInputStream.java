@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,8 +296,8 @@ public class BufferedInputStream extends FilterInputStream {
      * starting at the given offset.
      *
      * <p> This method implements the general contract of the corresponding
-     * <code>{@link InputStream#read(byte[], int, int) read}</code> method of
-     * the <code>{@link InputStream}</code> class.  As an additional
+     * {@link InputStream#read(byte[], int, int) read} method of
+     * the {@link InputStream} class.  As an additional
      * convenience, it attempts to read as many bytes as possible by repeatedly
      * invoking the {@code read} method of the underlying stream.  This
      * iterated {@code read} continues until one of the following
@@ -394,8 +394,8 @@ public class BufferedInputStream extends FilterInputStream {
      * many bytes will not block, but may read or skip fewer bytes.
      * <p>
      * This method returns the sum of the number of bytes remaining to be read in
-     * the buffer (<code>count&nbsp;- pos</code>) and the result of calling the
-     * {@link java.io.FilterInputStream#in in}.available().
+     * the buffer ({@code count - pos}) and the result of calling the
+     * {@link java.io.FilterInputStream#in in}{@code .available()}.
      *
      * @return     an estimate of the number of bytes that can be read (or skipped
      *             over) from this input stream without blocking.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,21 +145,19 @@ public interface Types {
     List<? extends TypeMirror> directSupertypes(TypeMirror t);
 
     /**
-     * Returns the erasure of a type.
+     * {@return the erasure of a type}
      *
      * @param t  the type to be erased
-     * @return the erasure of the given type
      * @throws IllegalArgumentException if given a type for a package or module
      * @jls 4.6 Type Erasure
      */
     TypeMirror erasure(TypeMirror t);
 
     /**
-     * Returns the class of a boxed value of a given primitive type.
+     * {@return the class of a boxed value of the primitive type argument}
      * That is, <i>boxing conversion</i> is applied.
      *
      * @param p  the primitive type to be converted
-     * @return the class of a boxed value of type {@code p}
      * @jls 5.1.7 Boxing Conversion
      */
     TypeElement boxedClass(PrimitiveType p);
@@ -187,18 +185,15 @@ public interface Types {
     TypeMirror capture(TypeMirror t);
 
     /**
-     * Returns a primitive type.
+     * {@return a primitive type}
      *
      * @param kind  the kind of primitive type to return
-     * @return a primitive type
      * @throws IllegalArgumentException if {@code kind} is not a primitive kind
      */
     PrimitiveType getPrimitiveType(TypeKind kind);
 
     /**
-     * Returns the null type.  This is the type of {@code null}.
-     *
-     * @return the null type
+     * {@return the null type}  This is the type of {@code null}.
      */
     NullType getNullType();
 
@@ -222,30 +217,28 @@ public interface Types {
     NoType getNoType(TypeKind kind);
 
     /**
-     * Returns an array type with the specified component type.
+     * {@return an array type with the specified component type}
      *
      * @param componentType  the component type
-     * @return an array type with the specified component type.
      * @throws IllegalArgumentException if the component type is not valid for
      *          an array
      */
     ArrayType getArrayType(TypeMirror componentType);
 
     /**
-     * Returns a new wildcard type argument.  Either of the wildcard's
+     * {@return a new wildcard type}  Either of the wildcard's
      * bounds may be specified, or neither, but not both.
      *
      * @param extendsBound  the extends (upper) bound, or {@code null} if none
      * @param superBound    the super (lower) bound, or {@code null} if none
-     * @return a new wildcard
      * @throws IllegalArgumentException if bounds are not valid
      */
     WildcardType getWildcardType(TypeMirror extendsBound,
                                  TypeMirror superBound);
 
     /**
-     * Returns the type corresponding to a type element and
-     * actual type arguments.
+     * {@return the type corresponding to a type element and
+     * actual type arguments}
      * Given the type element for {@code Set} and the type mirror
      * for {@code String},
      * for example, this method may be used to get the
@@ -265,8 +258,6 @@ public interface Types {
      *
      * @param typeElem  the type element
      * @param typeArgs  the actual type arguments
-     * @return the type corresponding to the type element and
-     *          actual type arguments
      * @throws IllegalArgumentException if too many or too few
      *          type arguments are given, or if an inappropriate type
      *          argument or type element is provided

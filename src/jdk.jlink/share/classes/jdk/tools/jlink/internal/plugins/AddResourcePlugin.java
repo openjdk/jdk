@@ -29,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Function;
 
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -37,25 +36,14 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
 /**
  * Base plugin to add a resource
  */
-abstract class AddResourcePlugin implements Plugin {
+abstract class AddResourcePlugin extends AbstractPlugin {
 
-    private final String name;
     private final String path;
     private String value;
 
-    protected AddResourcePlugin(String n, String p) {
-        name = n;
+    protected AddResourcePlugin(String name, String p) {
+        super(name);
         path = p;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(name);
     }
 
     @Override
@@ -73,14 +61,10 @@ abstract class AddResourcePlugin implements Plugin {
         return true;
     }
 
-    @Override
-    public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(name);
-    }
 
     @Override
     public void configure(Map<String, String> config) {
-        var v = config.get(name);
+        var v = config.get(getName());
         if (v == null)
             throw new AssertionError();
         value = v;

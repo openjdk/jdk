@@ -33,7 +33,7 @@
  *     /test/hotspot/jtreg/runtime/cds/appcds/customLoader
  *     /test/hotspot/jtreg/runtime/cds/appcds/customLoader/test-classes
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @requires !vm.graal.enabled
  * @build TransformUtil TransformerAgent SubClass SuperClazz
  * @run main/othervm TransformRelatedClassesAppCDS SuperClazz SubClass

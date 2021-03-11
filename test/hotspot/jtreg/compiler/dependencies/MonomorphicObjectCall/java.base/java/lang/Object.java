@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package java.lang;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Slightly modified version of java.lang.Object that replaces
@@ -31,30 +31,30 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  */
 public class Object {
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public Object() {}
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public final native Class<?> getClass();
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native int hashCode();
 
     public boolean equals(Object obj) {
         return (this == obj);
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     protected native Object clone() throws CloneNotSupportedException;
 
     public String toString() {
         return getClass().getName() + "@" + Integer.toHexString(hashCode());
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public final native void notify();
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public final native void notifyAll();
 
     public final native void wait(long timeout) throws InterruptedException;

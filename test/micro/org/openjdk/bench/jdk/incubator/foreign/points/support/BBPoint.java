@@ -27,6 +27,10 @@ import java.nio.ByteOrder;
 
 public class BBPoint {
 
+    static {
+        System.loadLibrary("JNIPoint");
+    }
+
     private final ByteBuffer buff;
 
     public BBPoint(int x, int y) {
@@ -50,4 +54,10 @@ public class BBPoint {
     public void setY(int y) {
         buff.putInt(0, y);
     }
+
+    public double distanceTo(BBPoint other) {
+        return distance(buff, other.buff);
+    }
+
+    private static native double distance(ByteBuffer p1, ByteBuffer p2);
 }

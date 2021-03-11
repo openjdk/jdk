@@ -23,8 +23,10 @@
  * questions.
  */
 
+#import "JNIUtilities.h"
+#import "ThreadUtilities.h"
+
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "sun_lwawt_macosx_CFRetainedResource.h"
 
@@ -47,17 +49,17 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CFRetainedResource_nativeCFRelease
             }];
         } else {
             // could happen if we are embedded inside SWT/FX application,
-            [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^() {
+            [ThreadUtilities performOnMainThreadWaiting:NO block:^() {
                 CFRelease(jlong_to_ptr(ptr));
             }];
         }
     } else {
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
         CFRelease(jlong_to_ptr(ptr));
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     }
 }

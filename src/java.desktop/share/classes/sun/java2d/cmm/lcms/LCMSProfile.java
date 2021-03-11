@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 
 package sun.java2d.cmm.lcms;
 
-import java.awt.color.CMMException;
-import java.util.Arrays;
 import java.util.HashMap;
+
 import sun.java2d.cmm.Profile;
 
 final class LCMSProfile extends Profile {
@@ -55,55 +54,40 @@ final class LCMSProfile extends Profile {
         tagCache.clear();
     }
 
-    static class TagCache  {
-        final LCMSProfile profile;
-        private HashMap<Integer, TagData> tags;
+    private static final class TagCache  {
+        private final LCMSProfile profile;
+        private final HashMap<Integer, TagData> tags = new HashMap<>();
 
-        TagCache(LCMSProfile p) {
+        private TagCache(LCMSProfile p) {
             profile = p;
-            tags = new HashMap<>();
         }
 
-        TagData getTag(int sig) {
+        private TagData getTag(int sig) {
             TagData t = tags.get(sig);
             if (t == null) {
                 byte[] tagData = LCMS.getTagNative(profile.getNativePtr(), sig);
                 if (tagData != null) {
-                    t = new TagData(sig, tagData);
+                    t = new TagData(tagData);
                     tags.put(sig, t);
                 }
             }
             return t;
         }
 
-        void clear() {
+        private void clear() {
             tags.clear();
         }
     }
 
-    static class TagData {
-        private int signature;
-        private byte[] data;
+    static final class TagData {
+        private final byte[] data;
 
-        TagData(int sig, byte[] data) {
-            this.signature = sig;
+        TagData(byte[] data) {
             this.data = data;
         }
 
-        int getSize() {
-            return data.length;
-        }
-
         byte[] getData() {
-            return Arrays.copyOf(data, data.length);
-        }
-
-        void copyDataTo(byte[] dst) {
-            System.arraycopy(data, 0, dst, 0, data.length);
-        }
-
-        int getSignature() {
-            return signature;
+            return data.clone();
         }
     }
 }

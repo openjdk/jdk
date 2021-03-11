@@ -46,14 +46,14 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.instances.instances003.instances003
  *        nsk.share.jdi.TestClass1
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.ReferenceType.instances.instances003.instances003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx128M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx128M ${test.vm.opts} ${test.java.opts}"
  *      -testClassNames nsk.share.jdi.TestClass1:boolean[]:float[]
  */
 

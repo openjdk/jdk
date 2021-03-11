@@ -60,19 +60,14 @@ define SetTestOpt
   endif
 endef
 
-# Setup _NT_SYMBOL_PATH on Windows
+# Setup _NT_SYMBOL_PATH on Windows, which points to our pdb files.
 ifeq ($(call isTargetOs, windows), true)
   ifndef _NT_SYMBOL_PATH
-    # Can't use PathList here as it adds quotes around the value.
-    _NT_SYMBOL_PATH := \
-        $(subst $(SPACE),;,$(strip \
-            $(foreach p, $(sort $(dir $(wildcard \
-                $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb)))), \
-              $(call FixPath, $p) \
-            ) \
-        ))
-    export _NT_SYMBOL_PATH
-    $(call LogDebug, Rewriting _NT_SYMBOL_PATH to $(_NT_SYMBOL_PATH))
+    SYMBOL_PATH := $(call PathList, $(sort $(patsubst %/, %, $(dir $(wildcard \
+        $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb))))))
+    export _NT_SYMBOL_PATH := $(subst \\,\, $(call FixPath, \
+        $(subst $(DQUOTE),, $(SYMBOL_PATH))))
+    $(call LogDebug, Setting _NT_SYMBOL_PATH to $(_NT_SYMBOL_PATH))
   endif
 endif
 
@@ -609,9 +604,11 @@ define SetupRunGtestTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, ( \
+	    $$(CD) $$($1_TEST_SUPPORT_DIR) && \
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/$$($1_VARIANT)/gtestLauncher \
 	        -jdk $(JDK_UNDER_TEST) $$($1_GTEST_FILTER) \
 	        --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
+	        --gtest_catch_exceptions=0 \
 	        $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) $$(GTEST_VM_OPTIONS) \
 	        $$(GTEST_JAVA_OPTIONS) $$($1_AOT_OPTIONS) \
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) \

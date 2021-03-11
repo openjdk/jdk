@@ -31,6 +31,7 @@
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
  * @modules java.instrument
+ * @requires vm.jvmti
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

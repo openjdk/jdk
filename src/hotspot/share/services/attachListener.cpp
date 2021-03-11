@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -38,6 +39,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/attachListener.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/heapDumper.hpp"
@@ -120,7 +122,7 @@ static jint load_agent(AttachOperation* op, outputStream* out) {
     JavaValue result(T_OBJECT);
     Handle h_module_name = java_lang_String::create_from_str("java.instrument", THREAD);
     JavaCalls::call_static(&result,
-                           SystemDictionary::module_Modules_klass(),
+                           vmClasses::module_Modules_klass(),
                            vmSymbols::loadModule_name(),
                            vmSymbols::loadModule_signature(),
                            h_module_name,
@@ -218,6 +220,7 @@ static jint jcmd(AttachOperation* op, outputStream* out) {
 // Input arguments :-
 //   arg0: Name of the dump file
 //   arg1: "-live" or "-all"
+//   arg2: Compress level
 jint dump_heap(AttachOperation* op, outputStream* out) {
   const char* path = op->arg(0);
   if (path == NULL || path[0] == '\0') {
@@ -233,11 +236,22 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
       live_objects_only = strcmp(arg1, "-live") == 0;
     }
 
+    const char* num_str = op->arg(2);
+    uintx level = 0;
+    if (num_str != NULL && num_str[0] != '\0') {
+      if (!Arguments::parse_uintx(num_str, &level, 0)) {
+        out->print_cr("Invalid compress level: [%s]", num_str);
+        return JNI_ERR;
+      } else if (level < 1 || level > 9) {
+        out->print_cr("Compression level out of range (1-9): " UINTX_FORMAT, level);
+        return JNI_ERR;
+      }
+    }
     // Request a full GC before heap dump if live_objects_only = true
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(op->arg(0), out);
+    dumper.dump(op->arg(0), out, (int)level);
   }
   return JNI_OK;
 }
@@ -303,7 +317,7 @@ static jint set_flag(AttachOperation* op, outputStream* out) {
 
   FormatBuffer<80> err_msg("%s", "");
 
-  int ret = WriteableFlags::set_flag(op->arg(0), op->arg(1), JVMFlag::ATTACH_ON_DEMAND, err_msg);
+  int ret = WriteableFlags::set_flag(op->arg(0), op->arg(1), JVMFlagOrigin::ATTACH_ON_DEMAND, err_msg);
   if (ret != JVMFlag::SUCCESS) {
     if (ret == JVMFlag::NON_WRITABLE) {
       // if the flag is not manageable try to change it through
@@ -450,7 +464,7 @@ void AttachListener::init() {
 
   // Initialize thread_oop to put it into the system threadGroup
   Handle thread_group (THREAD, Universe::system_thread_group());
-  Handle thread_oop = JavaCalls::construct_new_instance(SystemDictionary::Thread_klass(),
+  Handle thread_oop = JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
@@ -460,7 +474,7 @@ void AttachListener::init() {
     return;
   }
 
-  Klass* group = SystemDictionary::ThreadGroup_klass();
+  Klass* group = vmClasses::ThreadGroup_klass();
   JavaValue result(T_VOID);
   JavaCalls::call_special(&result,
                         thread_group,

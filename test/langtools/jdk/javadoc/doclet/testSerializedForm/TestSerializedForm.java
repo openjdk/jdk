@@ -115,6 +115,7 @@ public class TestSerializedForm extends JavadocTester {
         javadoc("-private",
                 "-d", "out-private",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 testSrc("SerializedForm.java"), testSrc("ExternalizedForm.java"), "pkg1");
         checkExit(Exit.OK);
 
@@ -166,6 +167,7 @@ public class TestSerializedForm extends JavadocTester {
         javadoc("-private",
                 "-d", "out-2",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "pkg2");
         checkExit(Exit.OK);
 

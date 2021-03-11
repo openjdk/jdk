@@ -43,6 +43,7 @@ import org.graalvm.compiler.debug.DebugContext.Activation;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.hotspot.CompilationCounters.Options;
+import org.graalvm.compiler.hotspot.HotSpotGraalRuntime.HotSpotGC;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.phases.OnStackReplacementPhase;
 import org.graalvm.compiler.java.GraphBuilderPhase;
@@ -235,13 +236,13 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler, Cancellable {
         return result;
     }
 
-    public CompilationResult compile(ResolvedJavaMethod method,
+    public CompilationResult compile(StructuredGraph graph,
+                    ResolvedJavaMethod method,
                     int entryBCI,
                     boolean useProfilingInfo,
                     boolean shouldRetainLocalVariables,
                     CompilationIdentifier compilationId,
                     DebugContext debug) {
-        StructuredGraph graph = createGraph(method, entryBCI, useProfilingInfo, compilationId, debug.getOptions(), debug);
         CompilationResult result = new CompilationResult(compilationId);
         return compileHelper(CompilationResultBuilderFactory.Default, result, graph, method, entryBCI, useProfilingInfo, shouldRetainLocalVariables, debug.getOptions());
     }
@@ -322,5 +323,14 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler, Cancellable {
                 }
             }
         };
+    }
+
+    @Override
+    public boolean isGCSupported(int gcIdentifier) {
+        HotSpotGC gc = HotSpotGC.forName(gcIdentifier, graalRuntime.getVMConfig());
+        if (gc != null) {
+            return gc.supported;
+        }
+        return false;
     }
 }

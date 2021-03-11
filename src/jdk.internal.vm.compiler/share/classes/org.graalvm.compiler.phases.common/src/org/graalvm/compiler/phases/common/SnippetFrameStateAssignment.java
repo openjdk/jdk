@@ -216,13 +216,20 @@ public class SnippetFrameStateAssignment {
                     afterCount++;
                 }
             }
+            NodeStateAssignment selected = null;
             if (invalidCount > 0) {
-                stateMapping.put(loop, NodeStateAssignment.INVALID);
+                selected = NodeStateAssignment.INVALID;
             } else {
                 if (afterCount > 0) {
-                    stateMapping.put(loop, NodeStateAssignment.AFTER_BCI);
+                    selected = NodeStateAssignment.AFTER_BCI;
                 } else {
-                    stateMapping.put(loop, NodeStateAssignment.BEFORE_BCI);
+                    selected = NodeStateAssignment.BEFORE_BCI;
+                }
+            }
+            stateMapping.put(loop, selected);
+            if (selected != initialState) {
+                for (LoopExitNode exit : loop.loopExits()) {
+                    loopInfo.exitStates.put(exit, selected);
                 }
             }
             return loopInfo.exitStates;

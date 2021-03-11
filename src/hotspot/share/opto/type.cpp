@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/stringUtils.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -439,16 +440,22 @@ void Type::Initialize_shared(Compile* current) {
   BOTTOM  = make(Bottom);       // Everything
   HALF    = make(Half);         // Placeholder half of doublewide type
 
+  TypeF::MAX = TypeF::make(max_jfloat); // Float MAX
+  TypeF::MIN = TypeF::make(min_jfloat); // Float MIN
   TypeF::ZERO = TypeF::make(0.0); // Float 0 (positive zero)
   TypeF::ONE  = TypeF::make(1.0); // Float 1
   TypeF::POS_INF = TypeF::make(jfloat_cast(POSITIVE_INFINITE_F));
   TypeF::NEG_INF = TypeF::make(-jfloat_cast(POSITIVE_INFINITE_F));
 
+  TypeD::MAX = TypeD::make(max_jdouble); // Double MAX
+  TypeD::MIN = TypeD::make(min_jdouble); // Double MIN
   TypeD::ZERO = TypeD::make(0.0); // Double 0 (positive zero)
   TypeD::ONE  = TypeD::make(1.0); // Double 1
   TypeD::POS_INF = TypeD::make(jdouble_cast(POSITIVE_INFINITE_D));
   TypeD::NEG_INF = TypeD::make(-jdouble_cast(POSITIVE_INFINITE_D));
 
+  TypeInt::MAX = TypeInt::make(max_jint); // Int MAX
+  TypeInt::MIN = TypeInt::make(min_jint); // Int MIN
   TypeInt::MINUS_1 = TypeInt::make(-1);  // -1
   TypeInt::ZERO    = TypeInt::make( 0);  //  0
   TypeInt::ONE     = TypeInt::make( 1);  //  1
@@ -477,6 +484,8 @@ void Type::Initialize_shared(Compile* current) {
   assert( TypeInt::CC_GE == TypeInt::BOOL,    "types must match for CmpL to work" );
   assert( (juint)(TypeInt::CC->_hi - TypeInt::CC->_lo) <= SMALLINT, "CC is truly small");
 
+  TypeLong::MAX = TypeLong::make(max_jlong);  // Long MAX
+  TypeLong::MIN = TypeLong::make(min_jlong);  // Long MIN
   TypeLong::MINUS_1 = TypeLong::make(-1);        // -1
   TypeLong::ZERO    = TypeLong::make( 0);        //  0
   TypeLong::ONE     = TypeLong::make( 1);        //  1
@@ -693,15 +702,8 @@ void Type::Initialize(Compile* current) {
   Arena* type_arena = current->type_arena();
 
   // Create the hash-cons'ing dictionary with top-level storage allocation
-  Dict *tdic = new (type_arena) Dict( (CmpKey)Type::cmp,(Hash)Type::uhash, type_arena, 128 );
+  Dict *tdic = new (type_arena) Dict(*_shared_type_dict, type_arena);
   current->set_type_dict(tdic);
-
-  // Transfer the shared types.
-  DictI i(_shared_type_dict);
-  for( ; i.test(); ++i ) {
-    Type* t = (Type*)i._value;
-    tdic->Insert(t,t);  // New Type, insert into Type table
-  }
 }
 
 //------------------------------hashcons---------------------------------------
@@ -813,18 +815,26 @@ bool Type::interface_vs_oop(const Type *t) const {
 
 #endif
 
-void Type::check_symmetrical(const Type *t, const Type *mt) const {
+void Type::check_symmetrical(const Type* t, const Type* mt) const {
 #ifdef ASSERT
-  assert(mt == t->xmeet(this), "meet not commutative");
+  const Type* mt2 = t->xmeet(this);
+  if (mt != mt2) {
+    tty->print_cr("=== Meet Not Commutative ===");
+    tty->print("t           = ");   t->dump(); tty->cr();
+    tty->print("this        = ");      dump(); tty->cr();
+    tty->print("t meet this = "); mt2->dump(); tty->cr();
+    tty->print("this meet t = ");  mt->dump(); tty->cr();
+    fatal("meet not commutative");
+  }
   const Type* dual_join = mt->_dual;
-  const Type *t2t    = dual_join->xmeet(t->_dual);
-  const Type *t2this = dual_join->xmeet(this->_dual);
+  const Type* t2t    = dual_join->xmeet(t->_dual);
+  const Type* t2this = dual_join->xmeet(this->_dual);
 
   // Interface meet Oop is Not Symmetric:
   // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
   // Interface:NotNull meet Oop:NotNull == java/lang/Object:NotNull
 
-  if( !interface_vs_oop(t) && (t2t != t->_dual || t2this != this->_dual) ) {
+  if (!interface_vs_oop(t) && (t2t != t->_dual || t2this != this->_dual)) {
     tty->print_cr("=== Meet Not Symmetric ===");
     tty->print("t   =                   ");              t->dump(); tty->cr();
     tty->print("this=                   ");                 dump(); tty->cr();
@@ -837,7 +847,7 @@ void Type::check_symmetrical(const Type *t, const Type *mt) const {
     tty->print("mt_dual meet t_dual=    "); t2t           ->dump(); tty->cr();
     tty->print("mt_dual meet this_dual= "); t2this        ->dump(); tty->cr();
 
-    fatal("meet not symmetric" );
+    fatal("meet not symmetric");
   }
 #endif
 }
@@ -1104,6 +1114,73 @@ void Type::dump_stats() {
 }
 #endif
 
+//------------------------------category---------------------------------------
+#ifndef PRODUCT
+Type::Category Type::category() const {
+  const TypeTuple* tuple;
+  switch (base()) {
+    case Type::Int:
+    case Type::Long:
+    case Type::Half:
+    case Type::NarrowOop:
+    case Type::NarrowKlass:
+    case Type::Array:
+    case Type::VectorA:
+    case Type::VectorS:
+    case Type::VectorD:
+    case Type::VectorX:
+    case Type::VectorY:
+    case Type::VectorZ:
+    case Type::AnyPtr:
+    case Type::RawPtr:
+    case Type::OopPtr:
+    case Type::InstPtr:
+    case Type::AryPtr:
+    case Type::MetadataPtr:
+    case Type::KlassPtr:
+    case Type::Function:
+    case Type::Return_Address:
+    case Type::FloatTop:
+    case Type::FloatCon:
+    case Type::FloatBot:
+    case Type::DoubleTop:
+    case Type::DoubleCon:
+    case Type::DoubleBot:
+      return Category::Data;
+    case Type::Memory:
+      return Category::Memory;
+    case Type::Control:
+      return Category::Control;
+    case Type::Top:
+    case Type::Abio:
+    case Type::Bottom:
+      return Category::Other;
+    case Type::Bad:
+    case Type::lastype:
+      return Category::Undef;
+    case Type::Tuple:
+      // Recursive case. Return CatMixed if the tuple contains types of
+      // different categories (e.g. CallStaticJavaNode's type), or the specific
+      // category if all types are of the same category (e.g. IfNode's type).
+      tuple = is_tuple();
+      if (tuple->cnt() == 0) {
+        return Category::Undef;
+      } else {
+        Category first = tuple->field_at(0)->category();
+        for (uint i = 1; i < tuple->cnt(); i++) {
+          if (tuple->field_at(i)->category() != first) {
+            return Category::Mixed;
+          }
+        }
+        return first;
+      }
+    default:
+      assert(false, "unmatched base type: all base types must be categorized");
+  }
+  return Category::Undef;
+}
+#endif
+
 //------------------------------typerr-----------------------------------------
 void Type::typerr( const Type *t ) const {
 #ifndef PRODUCT
@@ -1119,6 +1196,8 @@ void Type::typerr( const Type *t ) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeF *TypeF::MAX;        // Floating point max
+const TypeF *TypeF::MIN;        // Floating point min
 const TypeF *TypeF::ZERO;       // Floating point zero
 const TypeF *TypeF::ONE;        // Floating point one
 const TypeF *TypeF::POS_INF;    // Floating point positive infinity
@@ -1229,6 +1308,8 @@ bool TypeF::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeD *TypeD::MAX;        // Floating point max
+const TypeD *TypeD::MIN;        // Floating point min
 const TypeD *TypeD::ZERO;       // Floating point zero
 const TypeD *TypeD::ONE;        // Floating point one
 const TypeD *TypeD::POS_INF;    // Floating point positive infinity
@@ -1333,8 +1414,34 @@ bool TypeD::empty(void) const {
   return false;                 // always exactly a singleton
 }
 
+const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::make(checked_cast<jint>(lo), checked_cast<jint>(hi), w);
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::make(lo, hi, w);
+}
+
+jlong TypeInteger::get_con_as_long(BasicType bt) const {
+  if (bt == T_INT) {
+    return is_int()->get_con();
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return is_long()->get_con();
+}
+
+const TypeInteger* TypeInteger::bottom(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::INT;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::LONG;
+}
+
 //=============================================================================
 // Convience common pre-built types.
+const TypeInt *TypeInt::MAX;    // INT_MAX
+const TypeInt *TypeInt::MIN;    // INT_MIN
 const TypeInt *TypeInt::MINUS_1;// -1
 const TypeInt *TypeInt::ZERO;   // 0
 const TypeInt *TypeInt::ONE;    // 1
@@ -1356,7 +1463,7 @@ const TypeInt *TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
 const TypeInt *TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
 //------------------------------TypeInt----------------------------------------
-TypeInt::TypeInt( jint lo, jint hi, int w ) : Type(Int), _lo(lo), _hi(hi), _widen(w) {
+TypeInt::TypeInt( jint lo, jint hi, int w ) : TypeInteger(Int), _lo(lo), _hi(hi), _widen(w) {
 }
 
 //------------------------------make-------------------------------------------
@@ -1604,6 +1711,8 @@ bool TypeInt::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeLong *TypeLong::MAX;
+const TypeLong *TypeLong::MIN;
 const TypeLong *TypeLong::MINUS_1;// -1
 const TypeLong *TypeLong::ZERO; // 0
 const TypeLong *TypeLong::ONE;  // 1
@@ -1614,7 +1723,7 @@ const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
 const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 //------------------------------TypeLong---------------------------------------
-TypeLong::TypeLong( jlong lo, jlong hi, int w ) : Type(Long), _lo(lo), _hi(hi), _widen(w) {
+TypeLong::TypeLong(jlong lo, jlong hi, int w) : TypeInteger(Long), _lo(lo), _hi(hi), _widen(w) {
 }
 
 //------------------------------make-------------------------------------------
@@ -3030,9 +3139,11 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int o
         } else if (klass() == ciEnv::current()->Class_klass() &&
                    _offset >= InstanceMirrorKlass::offset_of_static_fields()) {
           // Static fields
-          assert(o != NULL, "must be constant");
-          ciInstanceKlass* k = o->as_instance()->java_lang_Class_klass()->as_instance_klass();
-          ciField* field = k->get_field_by_offset(_offset, true);
+          ciField* field = NULL;
+          if (const_oop() != NULL) {
+            ciInstanceKlass* k = const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
+            field = k->get_field_by_offset(_offset, true);
+          }
           if (field != NULL) {
             BasicType basic_elem_type = field->layout_type();
             _is_ptr_to_narrowoop = UseCompressedOops && is_reference_type(basic_elem_type);
@@ -3993,15 +4104,23 @@ int TypeInstPtr::hash(void) const {
 //------------------------------dump2------------------------------------------
 // Dump oop Type
 #ifndef PRODUCT
-void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
+void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
   // Print the name of the klass.
   klass()->print_name_on(st);
 
   switch( _ptr ) {
   case Constant:
-    // TO DO: Make CI print the hex address of the underlying oop.
     if (WizardMode || Verbose) {
-      const_oop()->print_oop(st);
+      ResourceMark rm;
+      stringStream ss;
+
+      st->print(" ");
+      const_oop()->print_oop(&ss);
+      // 'const_oop->print_oop()' may emit newlines('\n') into ss.
+      // suppress newlines from it so -XX:+Verbose -XX:+PrintIdeal dumps one-liner for each node.
+      char* buf = ss.as_string(/* c_heap= */false);
+      StringUtils::replace_no_expand(buf, "\n", "");
+      st->print_raw(buf);
     }
   case BotPTR:
     if (!WizardMode && !Verbose) {

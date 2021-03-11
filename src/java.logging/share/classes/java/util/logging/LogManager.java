@@ -777,7 +777,7 @@ public class LogManager {
             }
             LoggerWeakRef ref = namedLoggers.get(name);
             if (ref != null) {
-                if (ref.get() == null) {
+                if (ref.refersTo(null)) {
                     // It's possible that the Logger was GC'ed after a
                     // drainLoggerRefQueueBounded() call above so allow
                     // a new one to be registered.
@@ -1920,7 +1920,7 @@ public class LogManager {
      * </thead>
      * <tbody>
      * <tr>
-     * <th scope="row" valign="top">{@code <logger>.level}</th>
+     * <th scope="row" style="vertical-align:top">{@code <logger>.level}</th>
      * <td>
      * <ul>
      *   <li>If the resulting configuration defines a level for a logger and
@@ -1941,7 +1941,7 @@ public class LogManager {
      * </ul>
      * </td>
      * <tr>
-     * <th scope="row" valign="top">{@code <logger>.useParentHandlers}</th>
+     * <th scope="row" style="vertical-align:top">{@code <logger>.useParentHandlers}</th>
      * <td>
      * <ul>
      *   <li>If either the resulting or the old value for the useParentHandlers
@@ -1955,7 +1955,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <th scope="row" valign="top">{@code <logger>.handlers}</th>
+     * <th scope="row" style="vertical-align:top">{@code <logger>.handlers}</th>
      * <td>
      * <ul>
      *   <li>If the resulting configuration defines a list of handlers for a
@@ -1979,7 +1979,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <th scope="row" valign="top">{@code <handler-name>.*}</th>
+     * <th scope="row" style="vertical-align:top">{@code <handler-name>.*}</th>
      * <td>
      * <ul>
      *   <li>Properties configured/changed on handler classes will only affect
@@ -1991,7 +1991,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <th scope="row" valign="top">{@code config} and any other property</th>
+     * <th scope="row" style="vertical-align:top">{@code config} and any other property</th>
      * <td>
      * <ul>
      *   <li>The resulting value for these property will be stored in the

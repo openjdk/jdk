@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,19 +55,7 @@ public class BiasedLockingTest {
         analyzeOutputOn(pb);
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseBiasedLocking",
-                                                   "-XX:+TraceBiasedLocking",
-                                                   "-XX:BiasedLockingStartupDelay=0",
-                                                   InnerClass.class.getName());
-        analyzeOutputOn(pb);
-
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseBiasedLocking",
                                                    "-Xlog:biasedlocking=off",
-                                                   "-XX:BiasedLockingStartupDelay=0",
-                                                   InnerClass.class.getName());
-        analyzeOutputOff(pb);
-
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseBiasedLocking",
-                                                   "-XX:-TraceBiasedLocking",
                                                    "-XX:BiasedLockingStartupDelay=0",
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);

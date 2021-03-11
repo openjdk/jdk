@@ -24,8 +24,8 @@
 #ifndef SHARE_GC_Z_ZUNCOMMITTER_HPP
 #define SHARE_GC_Z_ZUNCOMMITTER_HPP
 
-#include "gc/z/zLock.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
+#include "gc/z/zLock.hpp"
 
 class ZPageAllocation;
 

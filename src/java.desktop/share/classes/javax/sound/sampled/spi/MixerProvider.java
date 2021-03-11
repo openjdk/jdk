@@ -40,7 +40,7 @@ import javax.sound.sampled.Mixer;
 public abstract class MixerProvider {
 
     /**
-     * Constructs a {@code MixerProvider}.
+     * Constructor for subclasses to call.
      */
     protected MixerProvider() {}
 

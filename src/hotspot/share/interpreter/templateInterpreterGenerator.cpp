@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,10 +68,6 @@ void TemplateInterpreterGenerator::generate_all() {
     CodeletMark cm(_masm, "bytecode tracing support");
     Interpreter::_trace_code =
       EntryPoint(
-                 generate_trace_code(btos),
-                 generate_trace_code(ztos),
-                 generate_trace_code(ctos),
-                 generate_trace_code(stos),
                  generate_trace_code(atos),
                  generate_trace_code(itos),
                  generate_trace_code(ltos),
@@ -83,50 +79,54 @@ void TemplateInterpreterGenerator::generate_all() {
 #endif // !PRODUCT
 
   { CodeletMark cm(_masm, "return entry points");
-    const int index_size = sizeof(u2);
     Interpreter::_return_entry[0] = EntryPoint();
     for (int i = 1; i < Interpreter::number_of_return_entries; i++) {
-      address return_itos = generate_return_entry_for(itos, i, index_size);
       Interpreter::_return_entry[i] =
         EntryPoint(
-                   return_itos,
-                   return_itos,
-                   return_itos,
-                   return_itos,
-                   generate_return_entry_for(atos, i, index_size),
-                   return_itos,
-                   generate_return_entry_for(ltos, i, index_size),
-                   generate_return_entry_for(ftos, i, index_size),
-                   generate_return_entry_for(dtos, i, index_size),
-                   generate_return_entry_for(vtos, i, index_size)
+                   generate_return_entry_for(atos, i, sizeof(u2)),
+                   generate_return_entry_for(itos, i, sizeof(u2)),
+                   generate_return_entry_for(ltos, i, sizeof(u2)),
+                   generate_return_entry_for(ftos, i, sizeof(u2)),
+                   generate_return_entry_for(dtos, i, sizeof(u2)),
+                   generate_return_entry_for(vtos, i, sizeof(u2))
                    );
     }
   }
 
   { CodeletMark cm(_masm, "invoke return entry points");
-    // These states are in order specified in TosState, except btos/ztos/ctos/stos are
-    // really the same as itos since there is no top of stack optimization for these types
-    const TosState states[] = {itos, itos, itos, itos, itos, ltos, ftos, dtos, atos, vtos, ilgl};
+    // These states are in order specified in TosState, except btos/ztos/ctos/stos which
+    // are the same as itos since there is no top of stack optimization for these types
+    const TosState states[] = {ilgl, ilgl, ilgl, ilgl, itos, ltos, ftos, dtos, atos, vtos, ilgl};
     const int invoke_length = Bytecodes::length_for(Bytecodes::_invokestatic);
     const int invokeinterface_length = Bytecodes::length_for(Bytecodes::_invokeinterface);
     const int invokedynamic_length = Bytecodes::length_for(Bytecodes::_invokedynamic);
 
-    for (int i = 0; i < Interpreter::number_of_return_addrs; i++) {
+    assert(invoke_length >= 0 && invoke_length < Interpreter::number_of_return_entries, "invariant");
+    assert(invokeinterface_length >= 0 && invokeinterface_length < Interpreter::number_of_return_entries, "invariant");
+
+    for (int i = itos; i < Interpreter::number_of_return_addrs; i++) {
       TosState state = states[i];
       assert(state != ilgl, "states array is wrong above");
-      Interpreter::_invoke_return_entry[i] = generate_return_entry_for(state, invoke_length, sizeof(u2));
-      Interpreter::_invokeinterface_return_entry[i] = generate_return_entry_for(state, invokeinterface_length, sizeof(u2));
-      Interpreter::_invokedynamic_return_entry[i] = generate_return_entry_for(state, invokedynamic_length, sizeof(u4));
+
+      // Reuse generated entry points
+      Interpreter::_invoke_return_entry[i]          = Interpreter::_return_entry[invoke_length].entry(state);
+      Interpreter::_invokeinterface_return_entry[i] = Interpreter::_return_entry[invokeinterface_length].entry(state);
+
+      Interpreter::_invokedynamic_return_entry[i]   = generate_return_entry_for(state, invokedynamic_length, sizeof(u4));
+    }
+
+    // set itos entry points for btos/ztos/ctos/stos
+    for (int i = 0; i < itos; i++) {
+      Interpreter::_invoke_return_entry[i]          = Interpreter::_invoke_return_entry[itos];
+      Interpreter::_invokeinterface_return_entry[i] = Interpreter::_invokeinterface_return_entry[itos];
+      Interpreter::_invokedynamic_return_entry[i]   = Interpreter::_invokedynamic_return_entry[itos];
     }
   }
 
   { CodeletMark cm(_masm, "earlyret entry points");
+    address earlyret_entry_itos = generate_earlyret_entry_for(itos);
     Interpreter::_earlyret_entry =
       EntryPoint(
-                 generate_earlyret_entry_for(btos),
-                 generate_earlyret_entry_for(ztos),
-                 generate_earlyret_entry_for(ctos),
-                 generate_earlyret_entry_for(stos),
                  generate_earlyret_entry_for(atos),
                  generate_earlyret_entry_for(itos),
                  generate_earlyret_entry_for(ltos),
@@ -153,10 +153,6 @@ void TemplateInterpreterGenerator::generate_all() {
   { CodeletMark cm(_masm, "safepoint entry points");
     Interpreter::_safept_entry =
       EntryPoint(
-                 generate_safept_entry_for(btos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                 generate_safept_entry_for(ztos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                 generate_safept_entry_for(ctos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                 generate_safept_entry_for(stos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
                  generate_safept_entry_for(atos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
                  generate_safept_entry_for(itos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
                  generate_safept_entry_for(ltos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
@@ -185,14 +181,14 @@ void TemplateInterpreterGenerator::generate_all() {
 #define method_entry(kind)                                              \
   { CodeletMark cm(_masm, "method entry point (kind = " #kind ")"); \
     Interpreter::_entry_table[Interpreter::kind] = generate_method_entry(Interpreter::kind); \
-    Interpreter::update_cds_entry_table(Interpreter::kind); \
   }
 
   // all non-native method kinds
   method_entry(zerolocals)
   method_entry(zerolocals_synchronized)
   method_entry(empty)
-  method_entry(accessor)
+  method_entry(getter)
+  method_entry(setter)
   method_entry(abstract)
   method_entry(java_lang_math_sin  )
   method_entry(java_lang_math_cos  )
@@ -242,12 +238,8 @@ void TemplateInterpreterGenerator::generate_all() {
       address deopt_itos = generate_deopt_entry_for(itos, i);
       Interpreter::_deopt_entry[i] =
         EntryPoint(
-                   deopt_itos, /* btos */
-                   deopt_itos, /* ztos */
-                   deopt_itos, /* ctos */
-                   deopt_itos, /* stos */
                    generate_deopt_entry_for(atos, i),
-                   deopt_itos, /* itos */
+                   generate_deopt_entry_for(itos, i),
                    generate_deopt_entry_for(ltos, i),
                    generate_deopt_entry_for(ftos, i),
                    generate_deopt_entry_for(dtos, i),
@@ -414,7 +406,8 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::native                 : native = true;                           break;
   case Interpreter::native_synchronized    : native = true; synchronized = true;      break;
   case Interpreter::empty                  : break;
-  case Interpreter::accessor               : break;
+  case Interpreter::getter                 : break;
+  case Interpreter::setter                 : break;
   case Interpreter::abstract               : entry_point = generate_abstract_entry(); break;
 
   case Interpreter::java_lang_math_sin     : // fall thru

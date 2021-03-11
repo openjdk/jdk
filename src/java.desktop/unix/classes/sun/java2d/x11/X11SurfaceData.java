@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,24 @@
 
 package sun.java2d.x11;
 
+import java.awt.Composite;
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Color;
-import java.awt.Composite;
-import java.awt.Rectangle;
-import java.awt.GraphicsConfiguration;
 import java.awt.Image;
-import java.awt.color.ColorSpace;
+import java.awt.Rectangle;
 import java.awt.Transparency;
-import java.awt.image.BufferedImage;
+import java.awt.color.ColorSpace;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.DirectColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
-import java.awt.peer.ComponentPeer;
 
 import sun.awt.SunHints;
 import sun.awt.SunToolkit;
 import sun.awt.X11ComponentPeer;
 import sun.awt.X11GraphicsConfig;
-import sun.awt.X11GraphicsEnvironment;
 import sun.awt.image.PixelConverter;
 import sun.font.X11TextRenderer;
 import sun.java2d.InvalidPipeException;
@@ -54,16 +50,15 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceData;
 import sun.java2d.SurfaceDataProxy;
-import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.CompositeType;
-import sun.java2d.loops.RenderLoops;
 import sun.java2d.loops.GraphicsPrimitive;
+import sun.java2d.loops.RenderLoops;
+import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.XORComposite;
-import sun.java2d.loops.Blit;
-import sun.java2d.pipe.ValidatePipe;
 import sun.java2d.pipe.PixelToShapeConverter;
-import sun.java2d.pipe.TextPipe;
 import sun.java2d.pipe.Region;
+import sun.java2d.pipe.TextPipe;
+import sun.java2d.pipe.ValidatePipe;
 
 public abstract class X11SurfaceData extends XSurfaceData {
     X11ComponentPeer peer;
@@ -411,11 +406,12 @@ public abstract class X11SurfaceData extends XSurfaceData {
                                                   int width, int height,
                                                   ColorModel cm, Image image,
                                                   long drawable,
-                                                  int transparency)
+                                                  int transparency,
+                                                  boolean isTexture)
     {
         return new X11PixmapSurfaceData(gc, width, height, image,
                                         getSurfaceType(gc, transparency, true),
-                                        cm, drawable, transparency);
+                                        cm, drawable, transparency, isTexture);
     }
 
 //    /**
@@ -699,11 +695,15 @@ public abstract class X11SurfaceData extends XSurfaceData {
         }
     }
 
-    public static class X11WindowSurfaceData extends X11SurfaceData {
+    private final static class X11WindowSurfaceData extends X11SurfaceData {
+
+        private final int scale;
+
         public X11WindowSurfaceData(X11ComponentPeer peer,
                                     X11GraphicsConfig gc,
                                     SurfaceType sType) {
             super(peer, gc, sType, peer.getColorModel());
+            this.scale = gc.getDevice().getScaleFactor();
             if (isDrawableValid()) {
                 makePipes();
             }
@@ -716,6 +716,8 @@ public abstract class X11SurfaceData extends XSurfaceData {
         public Rectangle getBounds() {
             Rectangle r = peer.getBounds();
             r.x = r.y = 0;
+            r.width *= scale;
+            r.height *= scale;
             return r;
         }
 
@@ -730,27 +732,40 @@ public abstract class X11SurfaceData extends XSurfaceData {
         public Object getDestination() {
             return peer.getTarget();
         }
+
+        @Override
+        public double getDefaultScaleX() {
+            return scale;
+        }
+
+        @Override
+        public double getDefaultScaleY() {
+            return scale;
+        }
     }
 
-    public static class X11PixmapSurfaceData extends X11SurfaceData {
+    private final static class X11PixmapSurfaceData extends X11SurfaceData {
 
-        Image                   offscreenImage;
-        int                     width;
-        int                     height;
-        int                     transparency;
+        private final Image offscreenImage;
+        private final int width;
+        private final int height;
+        private final int transparency;
+        private final int scale;
 
         public X11PixmapSurfaceData(X11GraphicsConfig gc,
                                     int width, int height,
                                     Image image,
                                     SurfaceType sType, ColorModel cm,
-                                    long drawable, int transparency)
+                                    long drawable, int transparency,
+                                    boolean isTexture)
         {
             super(null, gc, sType, cm);
-            this.width = width;
-            this.height = height;
+            this.scale = isTexture ? 1 : gc.getDevice().getScaleFactor();
+            this.width = width * scale;
+            this.height = height * scale;
             offscreenImage = image;
             this.transparency = transparency;
-            initSurface(depth, width, height, drawable);
+            initSurface(depth, this.width, this.height, drawable);
             makePipes();
         }
 
@@ -797,6 +812,16 @@ public abstract class X11SurfaceData extends XSurfaceData {
          */
         public Object getDestination() {
             return offscreenImage;
+        }
+
+        @Override
+        public double getDefaultScaleX() {
+            return scale;
+        }
+
+        @Override
+        public double getDefaultScaleY() {
+            return scale;
         }
     }
 

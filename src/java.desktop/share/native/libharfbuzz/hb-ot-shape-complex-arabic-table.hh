@@ -6,10 +6,10 @@
  *
  * on files with these headers:
  *
- * # ArabicShaping-11.0.0.txt
- * # Date: 2018-02-21, 14:50:00 GMT [KW, RP]
- * # Blocks-11.0.0.txt
- * # Date: 2017-10-16, 24:39:00 GMT [KW]
+ * # ArabicShaping-13.0.0.txt
+ * # Date: 2020-01-31, 23:55:00 GMT [KW, RP]
+ * # Blocks-13.0.0.txt
+ * # Date: 2019-07-10, 19:06:00 GMT [KW]
  * UnicodeData.txt does not have a header.
  */
 
@@ -17,15 +17,15 @@
 #define HB_OT_SHAPE_COMPLEX_ARABIC_TABLE_HH
 
 
-#define X       JOINING_TYPE_X
+#define A       JOINING_GROUP_ALAPH
+#define DR      JOINING_GROUP_DALATH_RISH
+#define C       JOINING_TYPE_C
+#define D       JOINING_TYPE_D
+#define L       JOINING_TYPE_L
 #define R       JOINING_TYPE_R
 #define T       JOINING_TYPE_T
 #define U       JOINING_TYPE_U
-#define A       JOINING_GROUP_ALAPH
-#define DR      JOINING_GROUP_DALATH_RISH
-#define L       JOINING_TYPE_L
-#define C       JOINING_TYPE_C
-#define D       JOINING_TYPE_D
+#define X       JOINING_TYPE_X
 
 static const uint8_t joining_table[] =
 {
@@ -71,7 +71,7 @@ static const uint8_t joining_table[] =
 
   /* Mandaic */
 
-  /* 0840 */ R,D,D,D,D,D,R,R,D,R,D,D,D,D,D,D,D,D,D,D,R,D,U,U,U,X,X,X,X,X,X,X,
+  /* 0840 */ R,D,D,D,D,D,R,R,D,R,D,D,D,D,D,D,D,D,D,D,R,D,R,R,R,X,X,X,X,X,X,X,
 
   /* Syriac Supplement */
 
@@ -80,8 +80,8 @@ static const uint8_t joining_table[] =
 
   /* Arabic Extended-A */
 
-  /* 08A0 */ D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,D,D,X,D,D,D,R,D,D,D,D,X,X,
-  /* 08C0 */ X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+  /* 08A0 */ D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,D,D,X,D,D,D,R,D,D,D,D,D,D,
+  /* 08C0 */ D,D,D,D,D,D,D,D,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
   /* 08E0 */ X,X,U,
 
 #define joining_offset_0x1806u 739
@@ -139,22 +139,29 @@ static const uint8_t joining_table[] =
   /* 10F20 */                                 D,D,D,R,D,D,D,D,D,D,D,D,D,D,D,D,
   /* 10F40 */ D,D,D,D,D,U,X,X,X,X,X,X,X,X,X,X,X,D,D,D,R,
 
-#define joining_offset_0x110bdu 1219
+#define joining_offset_0x10fb0u 1219
+
+  /* Chorasmian */
+
+  /* 10FA0 */                                 D,U,D,D,R,R,R,U,D,R,R,D,D,R,D,D,
+  /* 10FC0 */ U,D,R,R,D,U,U,U,U,R,D,L,
+
+#define joining_offset_0x110bdu 1247
 
   /* Kaithi */
 
   /* 110A0 */                                                           U,X,X,
   /* 110C0 */ X,X,X,X,X,X,X,X,X,X,X,X,X,U,
 
-#define joining_offset_0x1e900u 1236
+#define joining_offset_0x1e900u 1264
 
   /* Adlam */
 
   /* 1E900 */ D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
   /* 1E920 */ D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
-  /* 1E940 */ D,D,D,D,
+  /* 1E940 */ D,D,D,D,X,X,X,X,X,X,X,T,
 
-}; /* Table items: 1304; occupancy: 56% */
+}; /* Table items: 1340; occupancy: 57% */
 
 
 static unsigned int
@@ -183,6 +190,7 @@ joining_type (hb_codepoint_t u)
       if (hb_in_range<hb_codepoint_t> (u, 0x10B80u, 0x10BAFu)) return joining_table[u - 0x10B80u + joining_offset_0x10b80u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10D00u, 0x10D23u)) return joining_table[u - 0x10D00u + joining_offset_0x10d00u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10F30u, 0x10F54u)) return joining_table[u - 0x10F30u + joining_offset_0x10f30u];
+      if (hb_in_range<hb_codepoint_t> (u, 0x10FB0u, 0x10FCBu)) return joining_table[u - 0x10FB0u + joining_offset_0x10fb0u];
       break;
 
     case 0x11u:
@@ -190,7 +198,7 @@ joining_type (hb_codepoint_t u)
       break;
 
     case 0x1Eu:
-      if (hb_in_range<hb_codepoint_t> (u, 0x1E900u, 0x1E943u)) return joining_table[u - 0x1E900u + joining_offset_0x1e900u];
+      if (hb_in_range<hb_codepoint_t> (u, 0x1E900u, 0x1E94Bu)) return joining_table[u - 0x1E900u + joining_offset_0x1e900u];
       break;
 
     default:
@@ -199,15 +207,15 @@ joining_type (hb_codepoint_t u)
   return X;
 }
 
-#undef X
+#undef A
+#undef DR
+#undef C
+#undef D
+#undef L
 #undef R
 #undef T
 #undef U
-#undef A
-#undef DR
-#undef L
-#undef C
-#undef D
+#undef X
 
 
 static const uint16_t shaping_table[][4] =
@@ -406,16 +414,16 @@ static const struct ligature_set_t {
 } ligature_table[] =
 {
   { 0xFEDFu, {
-    { 0xFE88u, 0xFEF9u }, /* ARABIC LIGATURE LAM WITH ALEF WITH HAMZA BELOW ISOLATED FORM */
     { 0xFE82u, 0xFEF5u }, /* ARABIC LIGATURE LAM WITH ALEF WITH MADDA ABOVE ISOLATED FORM */
-    { 0xFE8Eu, 0xFEFBu }, /* ARABIC LIGATURE LAM WITH ALEF ISOLATED FORM */
     { 0xFE84u, 0xFEF7u }, /* ARABIC LIGATURE LAM WITH ALEF WITH HAMZA ABOVE ISOLATED FORM */
+    { 0xFE88u, 0xFEF9u }, /* ARABIC LIGATURE LAM WITH ALEF WITH HAMZA BELOW ISOLATED FORM */
+    { 0xFE8Eu, 0xFEFBu }, /* ARABIC LIGATURE LAM WITH ALEF ISOLATED FORM */
   }},
   { 0xFEE0u, {
-    { 0xFE88u, 0xFEFAu }, /* ARABIC LIGATURE LAM WITH ALEF WITH HAMZA BELOW FINAL FORM */
     { 0xFE82u, 0xFEF6u }, /* ARABIC LIGATURE LAM WITH ALEF WITH MADDA ABOVE FINAL FORM */
-    { 0xFE8Eu, 0xFEFCu }, /* ARABIC LIGATURE LAM WITH ALEF FINAL FORM */
     { 0xFE84u, 0xFEF8u }, /* ARABIC LIGATURE LAM WITH ALEF WITH HAMZA ABOVE FINAL FORM */
+    { 0xFE88u, 0xFEFAu }, /* ARABIC LIGATURE LAM WITH ALEF WITH HAMZA BELOW FINAL FORM */
+    { 0xFE8Eu, 0xFEFCu }, /* ARABIC LIGATURE LAM WITH ALEF FINAL FORM */
   }},
 };
 

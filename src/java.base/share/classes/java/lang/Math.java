@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.math.BigDecimal;
 import java.util.Random;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.math.DoubleConsts;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * The class {@code Math} contains methods for performing basic
@@ -37,7 +37,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * square root, and trigonometric functions.
  *
  * <p>Unlike some of the numeric methods of class
- * {@code StrictMath}, all implementations of the equivalent
+ * {@link java.lang.StrictMath StrictMath}, all implementations of the equivalent
  * functions of class {@code Math} are not defined to return the
  * bit-for-bit same results.  This relaxation permits
  * better-performing implementations where strict reproducibility is
@@ -99,7 +99,28 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * occurs only with a specific minimum or maximum value and
  * should be checked against the minimum or maximum as appropriate.
  *
- * @author  unascribed
+ * <h2><a id=Ieee754RecommendedOps>IEEE 754 Recommended
+ * Operations</a></h2>
+ *
+ * The 2019 revision of the IEEE 754 floating-point standard includes
+ * a section of recommended operations and the semantics of those
+ * operations if they are included in a programming environment. The
+ * recommended operations present in this class include {@link sin
+ * sin}, {@link cos cos}, {@link tan tan}, {@link asin asin}, {@link
+ * acos acos}, {@link atan atan}, {@link exp exp}, {@link expm1
+ * expm1}, {@link log log}, {@link log10 log10}, {@link log1p log1p},
+ * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link
+ * hypot hypot}, and {@link pow pow}.  (The {@link sqrt sqrt}
+ * operation is a required part of IEEE 754 from a different section
+ * of the standard.) The special case behavior of the recommended
+ * operations generally follows the guidance of the IEEE 754
+ * standard. However, the {@code pow} method defines different
+ * behavior for some arguments, as noted in its {@linkplain pow
+ * specification}. The IEEE 754 standard defines its operations to be
+ * correctly rounded, which is a more stringent quality of
+ * implementation condition than required for most of the methods in
+ * question that are also included in this class.
+ *
  * @author  Joseph D. Darcy
  * @since   1.0
  */
@@ -149,7 +170,7 @@ public final class Math {
      * @param   a   an angle, in radians.
      * @return  the sine of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double sin(double a) {
         return StrictMath.sin(a); // default impl. delegates to StrictMath
     }
@@ -157,7 +178,9 @@ public final class Math {
     /**
      * Returns the trigonometric cosine of an angle. Special cases:
      * <ul><li>If the argument is NaN or an infinity, then the
-     * result is NaN.</ul>
+     * result is NaN.
+     * <li>If the argument is zero, then the result is {@code 1.0}.
+     *</ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -165,7 +188,7 @@ public final class Math {
      * @param   a   an angle, in radians.
      * @return  the cosine of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double cos(double a) {
         return StrictMath.cos(a); // default impl. delegates to StrictMath
     }
@@ -183,7 +206,7 @@ public final class Math {
      * @param   a   an angle, in radians.
      * @return  the tangent of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double tan(double a) {
         return StrictMath.tan(a); // default impl. delegates to StrictMath
     }
@@ -210,7 +233,9 @@ public final class Math {
      * Returns the arc cosine of a value; the returned angle is in the
      * range 0.0 through <i>pi</i>.  Special case:
      * <ul><li>If the argument is NaN or its absolute value is greater
-     * than 1, then the result is NaN.</ul>
+     * than 1, then the result is NaN.
+     * <li>If the argument is {@code 1.0}, the result is positive zero.
+     * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -227,7 +252,11 @@ public final class Math {
      * range -<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
      * <ul><li>If the argument is NaN, then the result is NaN.
      * <li>If the argument is zero, then the result is a zero with the
-     * same sign as the argument.</ul>
+     * same sign as the argument.
+     * <li>If the argument is {@linkplain Double#isInfinite infinite},
+     * then the result is the closest value to <i>pi</i>/2 with the
+     * same sign as the input.
+     * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -276,7 +305,9 @@ public final class Math {
      * <li>If the argument is positive infinity, then the result is
      * positive infinity.
      * <li>If the argument is negative infinity, then the result is
-     * positive zero.</ul>
+     * positive zero.
+     * <li>If the argument is zero, then the result is {@code 1.0}.
+     * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -285,7 +316,7 @@ public final class Math {
      * @return  the value <i>e</i><sup>{@code a}</sup>,
      *          where <i>e</i> is the base of the natural logarithms.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double exp(double a) {
         return StrictMath.exp(a); // default impl. delegates to StrictMath
     }
@@ -298,7 +329,10 @@ public final class Math {
      * <li>If the argument is positive infinity, then the result is
      * positive infinity.
      * <li>If the argument is positive zero or negative zero, then the
-     * result is negative infinity.</ul>
+     * result is negative infinity.
+     * <li>If the argument is {@code 1.0}, then the result is positive
+     * zero.
+     * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -307,7 +341,7 @@ public final class Math {
      * @return  the value ln&nbsp;{@code a}, the natural logarithm of
      *          {@code a}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double log(double a) {
         return StrictMath.log(a); // default impl. delegates to StrictMath
     }
@@ -322,8 +356,10 @@ public final class Math {
      * positive infinity.
      * <li>If the argument is positive zero or negative zero, then the
      * result is negative infinity.
-     * <li> If the argument is equal to 10<sup><i>n</i></sup> for
-     * integer <i>n</i>, then the result is <i>n</i>.
+     * <li>If the argument is equal to 10<sup><i>n</i></sup> for
+     * integer <i>n</i>, then the result is <i>n</i>. In particular,
+     * if the argument is {@code 1.0} (10<sup>0</sup>), then the
+     * result is positive zero.
      * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
@@ -333,7 +369,7 @@ public final class Math {
      * @return  the base 10 logarithm of  {@code a}.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double log10(double a) {
         return StrictMath.log10(a); // default impl. delegates to StrictMath
     }
@@ -355,7 +391,7 @@ public final class Math {
      * @return  the positive square root of {@code a}.
      *          If the argument is NaN or less than zero, the result is NaN.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double sqrt(double a) {
         return StrictMath.sqrt(a); // default impl. delegates to StrictMath
                                    // Note that hardware sqrt instructions
@@ -440,7 +476,7 @@ public final class Math {
      *          floating-point value that is greater than or equal to
      *          the argument and is equal to a mathematical integer.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double ceil(double a) {
         return StrictMath.ceil(a); // default impl. delegates to StrictMath
     }
@@ -460,7 +496,7 @@ public final class Math {
      *          floating-point value that less than or equal to the argument
      *          and is equal to a mathematical integer.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double floor(double a) {
         return StrictMath.floor(a); // default impl. delegates to StrictMath
     }
@@ -480,7 +516,7 @@ public final class Math {
      * @return  the closest floating-point value to {@code a} that is
      *          equal to a mathematical integer.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double rint(double a) {
         return StrictMath.rint(a); // default impl. delegates to StrictMath
     }
@@ -530,6 +566,15 @@ public final class Math {
      * <p>The computed result must be within 2 ulps of the exact result.
      * Results must be semi-monotonic.
      *
+     * @apiNote
+     * For <i>y</i> with a positive sign and finite nonzero
+     * <i>x</i>, the exact mathematical value of {@code atan2} is
+     * equal to:
+     * <ul>
+     * <li>If <i>x</i> {@literal >} 0, atan(abs(<i>y</i>/<i>x</i>))
+     * <li>If <i>x</i> {@literal <} 0, &pi; - atan(abs(<i>y</i>/<i>x</i>))
+     * </ul>
+     *
      * @param   y   the ordinate coordinate
      * @param   x   the abscissa coordinate
      * @return  the <i>theta</i> component of the point
@@ -537,7 +582,7 @@ public final class Math {
      *          in polar coordinates that corresponds to the point
      *          (<i>x</i>,&nbsp;<i>y</i>) in Cartesian coordinates.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double atan2(double y, double x) {
         return StrictMath.atan2(y, x); // default impl. delegates to StrictMath
     }
@@ -661,11 +706,21 @@ public final class Math {
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
      *
+     * @apiNote
+     * The special cases definitions of this method differ from the
+     * special case definitions of the IEEE 754 recommended {@code
+     * pow} operation for &plusmn;{@code 1.0} raised to an infinite
+     * power. This method treats such cases as indeterminate and
+     * specifies a NaN is returned. The IEEE 754 specification treats
+     * the infinite power as a large integer (large-magnitude
+     * floating-point numbers are numerically integers, specifically
+     * even integers) and therefore specifies {@code 1.0} be returned.
+     *
      * @param   a   the base.
      * @param   b   the exponent.
      * @return  the value {@code a}<sup>{@code b}</sup>.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double pow(double a, double b) {
         return StrictMath.pow(a, b); // default impl. delegates to StrictMath
     }
@@ -820,7 +875,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int addExact(int x, int y) {
         int r = x + y;
         // HD 2-12 Overflow iff both arguments have the opposite sign of the result
@@ -840,7 +895,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long addExact(long x, long y) {
         long r = x + y;
         // HD 2-12 Overflow iff both arguments have the opposite sign of the result
@@ -860,7 +915,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int subtractExact(int x, int y) {
         int r = x - y;
         // HD 2-12 Overflow iff the arguments have different signs and
@@ -881,7 +936,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long subtractExact(long x, long y) {
         long r = x - y;
         // HD 2-12 Overflow iff the arguments have different signs and
@@ -902,7 +957,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int multiplyExact(int x, int y) {
         long r = (long)x * (long)y;
         if ((int)r != r) {
@@ -935,7 +990,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long multiplyExact(long x, long y) {
         long r = x * y;
         long ax = Math.abs(x);
@@ -962,7 +1017,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int incrementExact(int a) {
         if (a == Integer.MAX_VALUE) {
             throw new ArithmeticException("integer overflow");
@@ -981,7 +1036,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long incrementExact(long a) {
         if (a == Long.MAX_VALUE) {
             throw new ArithmeticException("long overflow");
@@ -1000,7 +1055,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int decrementExact(int a) {
         if (a == Integer.MIN_VALUE) {
             throw new ArithmeticException("integer overflow");
@@ -1019,7 +1074,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long decrementExact(long a) {
         if (a == Long.MIN_VALUE) {
             throw new ArithmeticException("long overflow");
@@ -1038,7 +1093,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int negateExact(int a) {
         if (a == Integer.MIN_VALUE) {
             throw new ArithmeticException("integer overflow");
@@ -1057,7 +1112,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long negateExact(long a) {
         if (a == Long.MIN_VALUE) {
             throw new ArithmeticException("long overflow");
@@ -1103,7 +1158,7 @@ public final class Math {
      * @return the result
      * @since 9
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long multiplyHigh(long x, long y) {
         if (x < 0 || y < 0) {
             // Use technique from section 8-2 of Henry S. Warren, Jr.,
@@ -1365,7 +1420,7 @@ public final class Math {
      * @return  the absolute value of the argument.
      * @see Math#absExact(int)
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int abs(int a) {
         return (a < 0) ? -a : a;
     }
@@ -1411,7 +1466,7 @@ public final class Math {
      * @return  the absolute value of the argument.
      * @see Math#absExact(long)
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long abs(long a) {
         return (a < 0) ? -a : a;
     }
@@ -1462,7 +1517,7 @@ public final class Math {
      * @param   a   the argument whose absolute value is to be determined
      * @return  the absolute value of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float abs(float a) {
         return (a <= 0.0F) ? 0.0F - a : a;
     }
@@ -1487,7 +1542,7 @@ public final class Math {
      * @param   a   the argument whose absolute value is to be determined
      * @return  the absolute value of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double abs(double a) {
         return (a <= 0.0D) ? 0.0D - a : a;
     }
@@ -1502,7 +1557,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int max(int a, int b) {
         return (a >= b) ? a : b;
     }
@@ -1539,7 +1594,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float max(float a, float b) {
         if (a != a)
             return a;   // a is NaN
@@ -1566,7 +1621,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double max(double a, double b) {
         if (a != a)
             return a;   // a is NaN
@@ -1589,7 +1644,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int min(int a, int b) {
         return (a <= b) ? a : b;
     }
@@ -1622,7 +1677,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float min(float a, float b) {
         if (a != a)
             return a;   // a is NaN
@@ -1649,7 +1704,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double min(double a, double b) {
         if (a != a)
             return a;   // a is NaN
@@ -1712,7 +1767,7 @@ public final class Math {
      *
      * @since 9
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double fma(double a, double b, double c) {
         /*
          * Infinity and NaN arithmetic is not quite the same with two
@@ -1829,34 +1884,23 @@ public final class Math {
      *
      * @since 9
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float fma(float a, float b, float c) {
-        /*
-         *  Since the double format has more than twice the precision
-         *  of the float format, the multiply of a * b is exact in
-         *  double. The add of c to the product then incurs one
-         *  rounding error. Since the double format moreover has more
-         *  than (2p + 2) precision bits compared to the p bits of the
-         *  float format, the two roundings of (a * b + c), first to
-         *  the double format and then secondarily to the float format,
-         *  are equivalent to rounding the intermediate result directly
-         *  to the float format.
-         *
-         * In terms of strictfp vs default-fp concerns related to
-         * overflow and underflow, since
-         *
-         * (Float.MAX_VALUE * Float.MAX_VALUE) << Double.MAX_VALUE
-         * (Float.MIN_VALUE * Float.MIN_VALUE) >> Double.MIN_VALUE
-         *
-         * neither the multiply nor add will overflow or underflow in
-         * double. Therefore, it is not necessary for this method to
-         * be declared strictfp to have reproducible
-         * behavior. However, it is necessary to explicitly store down
-         * to a float variable to avoid returning a value in the float
-         * extended value set.
-         */
-        float result = (float)(((double) a * (double) b ) + (double) c);
-        return result;
+        if (Float.isFinite(a) && Float.isFinite(b) && Float.isFinite(c)) {
+            if (a == 0.0 || b == 0.0) {
+                return a * b + c; // Handled signed zero cases
+            } else {
+                return (new BigDecimal((double)a * (double)b) // Exact multiply
+                        .add(new BigDecimal((double)c)))      // Exact sum
+                    .floatValue();                            // One rounding
+                                                              // to a float value
+            }
+        } else {
+            // At least one of a,b, and c is non-finite. The result
+            // will be non-finite as well and will be the same
+            // non-finite value under double as float arithmetic.
+            return (float)fma((double)a, (double)b, (double)c);
+        }
     }
 
     /**
@@ -1977,7 +2021,7 @@ public final class Math {
      * @author Joseph D. Darcy
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double signum(double d) {
         return (d == 0.0 || Double.isNaN(d))?d:copySign(1.0, d);
     }
@@ -1999,7 +2043,7 @@ public final class Math {
      * @author Joseph D. Darcy
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float signum(float f) {
         return (f == 0.0f || Float.isNaN(f))?f:copySign(1.0f, f);
     }
@@ -2114,6 +2158,7 @@ public final class Math {
      * <li> If either argument is NaN and neither argument is infinite,
      * then the result is NaN.
      *
+     * <li> If both arguments are zero, the result is positive zero.
      * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact
@@ -2220,7 +2265,7 @@ public final class Math {
      * and the sign of {@code sign}.
      * @since 1.6
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double copySign(double magnitude, double sign) {
         return Double.longBitsToDouble((Double.doubleToRawLongBits(sign) &
                                         (DoubleConsts.SIGN_BIT_MASK)) |
@@ -2244,7 +2289,7 @@ public final class Math {
      * and the sign of {@code sign}.
      * @since 1.6
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float copySign(float magnitude, float sign) {
         return Float.intBitsToFloat((Float.floatToRawIntBits(sign) &
                                      (FloatConsts.SIGN_BIT_MASK)) |

@@ -46,7 +46,6 @@ public class MaxMetaspaceSize {
     if (Platform.is64bit()) {
       processArgs.add("-XX:MaxMetaspaceSize=3m");
       processArgs.add("-XX:CompressedClassSpaceSize=1m");
-      processArgs.add("-XX:InitialBootClassLoaderMetaspaceSize=1m");
     } else {
       processArgs.add("-XX:MaxMetaspaceSize=1m");
     }

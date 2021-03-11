@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8035968
- * @summary C2 support for MD5/SHA-1/SHA-224/SHA-256/SHA-384/SHA-512
+ * @summary C2 support for MD5/SHA-1/SHA-224/SHA-256/SHA-384/SHA-512/SHA3
  *
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=MD5
@@ -43,6 +43,18 @@
  *      compiler.intrinsics.sha.TestDigest
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-512
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-224
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-256
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-384
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-512
  *      compiler.intrinsics.sha.TestDigest
  *
  * @run main/othervm/timeout=600 -Xbatch
@@ -63,6 +75,18 @@
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-512 -Doffset=1
  *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-224 -Doffset=1
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-256 -Doffset=1
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-384 -Doffset=1
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-512 -Doffset=1
+ *      compiler.intrinsics.sha.TestDigest
  *
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA-256
@@ -79,6 +103,31 @@
  *      compiler.intrinsics.sha.TestDigest
  * @run main/othervm/timeout=600 -Xbatch
  *      -Dalgorithm=MD5     -Dalgorithm2=SHA-1
+ *      compiler.intrinsics.sha.TestDigest
+ *
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA3-224
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA3-256
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA3-384
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA3-512
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-224 -Dalgorithm2=SHA-1
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-256 -Dalgorithm2=SHA-1
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-384 -Dalgorithm2=SHA-1
+ *      compiler.intrinsics.sha.TestDigest
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA3-512 -Dalgorithm2=SHA-1
  *      compiler.intrinsics.sha.TestDigest
  */
 

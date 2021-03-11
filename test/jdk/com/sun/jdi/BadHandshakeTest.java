@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,28 +112,51 @@ public class BadHandshakeTest {
                 throw error;
             }
 
-            log("cleaning...");
-            // Attach to server debuggee and resume it so it can exit
+            log("final attach...");
+            // Attach to server debuggee to ensure it's still available to attach and resume it so it can exit
             AttachingConnector conn = (AttachingConnector)findConnector("com.sun.jdi.SocketAttach");
-            Map<String, Argument> conn_args = conn.defaultArguments();
-            Connector.IntegerArgument port_arg =
-                    (Connector.IntegerArgument)conn_args.get("port");
-            port_arg.setValue(port);
-            VirtualMachine vm = conn.attach(conn_args);
-
-            // The first event is always a VMStartEvent, and it is always in
-            // an EventSet by itself.  Wait for it.
-            EventSet evtSet = vm.eventQueue().remove();
-            for (Event event : evtSet) {
-                if (event instanceof VMStartEvent) {
-                    break;
+            retryDelay = 20;
+            for (int retry = 0; retry < 5; retry++) {
+                if (error != null) {
+                    try {
+                        Thread.sleep(retryDelay);
+                    } catch (InterruptedException ex) {
+                        // ignore
+                    }
+                    retryDelay *= 2;
+                    error = null;
                 }
-                throw new RuntimeException("Test failed - debuggee did not start properly");
+                try {
+                    log("retry: " + retry);
+                    Map<String, Argument> conn_args = conn.defaultArguments();
+                    Connector.IntegerArgument port_arg =
+                            (Connector.IntegerArgument)conn_args.get("port");
+                    port_arg.setValue(port);
+                    VirtualMachine vm = conn.attach(conn_args);
+
+                    // The first event is always a VMStartEvent, and it is always in
+                    // an EventSet by itself.  Wait for it.
+                    EventSet evtSet = vm.eventQueue().remove();
+                    for (Event event : evtSet) {
+                        if (event instanceof VMStartEvent) {
+                            break;
+                        }
+                        throw new RuntimeException("Test failed - debuggee did not start properly");
+                    }
+
+                    vm.eventRequestManager().deleteAllBreakpoints();
+                    vm.resume();
+                    break;
+                } catch (ConnectException ex) {
+                    log("got exception: " + ex.toString());
+                    error = ex;
+                }
+            }
+            if (error != null) {
+                throw error;
             }
 
-            vm.eventRequestManager().deleteAllBreakpoints();
-            vm.resume();
-
+            // give the debuggee some time to exit before forcibly terminating it
             debuggee.waitFor(10, TimeUnit.SECONDS);
         }
     }

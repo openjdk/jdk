@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,38 +25,56 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import java.beans.PropertyChangeListener;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
-import javax.swing.plaf.basic.*;
-import javax.swing.plaf.*;
-import javax.swing.border.*;
-import javax.swing.*;
-import java.awt.event.*;
-import java.awt.*;
+import java.beans.PropertyChangeListener;
+
+import javax.swing.ButtonModel;
+import javax.swing.ComboBoxEditor;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicComboBoxEditor;
+import javax.swing.plaf.basic.BasicComboBoxRenderer;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.BasicComboPopup;
+import javax.swing.plaf.basic.ComboPopup;
+
+import com.sun.java.swing.plaf.windows.WindowsBorders.DashedBorder;
+import sun.swing.DefaultLookup;
+import sun.swing.StringUIClientPropertyKey;
 
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
-import sun.swing.DefaultLookup;
-import sun.swing.StringUIClientPropertyKey;
-
-import com.sun.java.swing.plaf.windows.WindowsBorders.DashedBorder;
-
 /**
  * Windows combo box.
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
  *
  * @author Tom Santos
  * @author Igor Kushnirskiy
  */
-
 public class WindowsComboBoxUI extends BasicComboBoxUI {
 
     private static final MouseListener rolloverListener =
@@ -496,34 +514,6 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
 
         WindowsComboBoxUI getWindowsComboBoxUI() {
             return WindowsComboBoxUI.this;
-        }
-    }
-
-
-    /**
-     * Subclassed to add Windows specific Key Bindings.
-     * This class is now obsolete and doesn't do anything.
-     * Only included for backwards API compatibility.
-     * Do not call or override.
-     *
-     * @deprecated As of Java 2 platform v1.4.
-     */
-    @Deprecated
-    @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class WindowsComboPopup extends BasicComboPopup {
-
-        public WindowsComboPopup( JComboBox<Object> cBox ) {
-            super( cBox );
-        }
-
-        protected KeyListener createKeyListener() {
-            return new InvocationKeyHandler();
-        }
-
-        protected class InvocationKeyHandler extends BasicComboPopup.InvocationKeyHandler {
-            protected InvocationKeyHandler() {
-                WindowsComboPopup.this.super();
-            }
         }
     }
 

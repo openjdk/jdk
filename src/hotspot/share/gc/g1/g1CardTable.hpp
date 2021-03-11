@@ -79,11 +79,12 @@ public:
   STATIC_ASSERT(BitsPerByte == 8);
   static const size_t WordAlreadyScanned = (SIZE_MAX / 255) * g1_card_already_scanned;
 
-  G1CardTable(MemRegion whole_heap): CardTable(whole_heap, /* scanned concurrently */ true), _listener() {
+  G1CardTable(MemRegion whole_heap): CardTable(whole_heap), _listener() {
     _listener.set_card_table(this);
   }
 
   static CardValue g1_young_card_val() { return g1_young_gen; }
+  static CardValue g1_scanned_card_val() { return g1_card_already_scanned; }
 
   void verify_g1_young_region(MemRegion mr) PRODUCT_RETURN;
   void g1_mark_as_young(const MemRegion& mr);
@@ -103,8 +104,8 @@ public:
   // be inaccurate as it does not perform the dirtying atomically.
   inline size_t mark_region_dirty(size_t start_card_index, size_t num_cards);
 
-  // Mark the given range of cards as Scanned. All of these cards must be Dirty.
-  inline void mark_as_scanned(size_t start_card_index, size_t num_cards);
+  // Change the given range of dirty cards to "which". All of these cards must be Dirty.
+  inline void change_dirty_cards_to(size_t start_card_index, size_t num_cards, CardValue which);
 
   inline uint region_idx_for(CardValue* p);
 

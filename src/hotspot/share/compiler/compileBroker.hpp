@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "utilities/stack.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
@@ -228,8 +228,14 @@ class CompileBroker: AllStatic {
 
   static volatile int _print_compilation_warning;
 
+  enum ThreadType {
+    compiler_t,
+    sweeper_t,
+    deoptimizer_t
+  };
+
   static Handle create_thread_oop(const char* name, TRAPS);
-  static JavaThread* make_thread(jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD);
+  static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD);
   static void init_compiler_sweeper_threads();
   static void possibly_add_compiler_threads(Thread* THREAD);
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
@@ -271,10 +277,6 @@ class CompileBroker: AllStatic {
   static void shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread);
 
 public:
-
-  static DirectivesStack* dirstack();
-  static void set_dirstack(DirectivesStack* stack);
-
   enum {
     // The entry bci used for non-OSR compilations.
     standard_entry_bci = InvocationEntryBci
@@ -289,7 +291,6 @@ public:
   static bool compilation_is_complete(const methodHandle& method, int osr_bci, int comp_level);
   static bool compilation_is_in_queue(const methodHandle& method);
   static void print_compile_queues(outputStream* st);
-  static void print_directives(outputStream* st);
   static int queue_size(int comp_level) {
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;
@@ -366,9 +367,7 @@ public:
     return old == 0;
   }
   // Return total compilation ticks
-  static jlong total_compilation_ticks() {
-    return _perf_total_compilation != NULL ? _perf_total_compilation->get_value() : 0;
-  }
+  static jlong total_compilation_ticks();
 
   // Redefine Classes support
   static void mark_on_stack();

@@ -35,7 +35,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage application version testing
  * @library ../../../../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile JLinkOptionsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.JLinkOptionsTest
@@ -92,7 +92,7 @@ public final class JLinkOptionsTest {
                     // should have whatever it needs
                     new String[]{"java.base", "com.other"},
                     // should not have whatever it doesn't need
-                    new String[]{"jdk.incubator.jpackage"},
+                    new String[]{"jdk.jpackage"},
                     },
 
             // bind-services and limit-options

@@ -43,6 +43,9 @@ import sun.awt.SunToolkit;
 import sun.awt.image.SunWritableRaster;
 import sun.java2d.SunGraphicsEnvironment;
 
+import static sun.java2d.SunGraphicsEnvironment.toDeviceSpace;
+import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
+
 /**
  * This class is used to generate native system input events
  * for the purposes of test automation, self-running demos, and
@@ -385,13 +388,9 @@ public class Robot {
      */
     public synchronized Color getPixelColor(int x, int y) {
         checkScreenCaptureAllowed();
-        AffineTransform tx = GraphicsEnvironment.
-                getLocalGraphicsEnvironment().getDefaultScreenDevice().
-                getDefaultConfiguration().getDefaultTransform();
-        x = (int) (x * tx.getScaleX());
-        y = (int) (y * tx.getScaleY());
-        Color color = new Color(peer.getRGBPixel(x, y));
-        return color;
+        Point point = peer.useAbsoluteCoordinates() ? toDeviceSpaceAbs(x, y)
+                                                    : toDeviceSpace(x, y);
+        return new Color(peer.getRGBPixel(point.x, point.y));
     }
 
     /**
@@ -523,17 +522,16 @@ public class Robot {
             imageArray[0] = highResolutionImage;
 
         } else {
-
-            int sX = (int) Math.floor(screenRect.x * uiScaleX);
-            int sY = (int) Math.floor(screenRect.y * uiScaleY);
-            int sWidth = (int) Math.ceil(screenRect.width * uiScaleX);
-            int sHeight = (int) Math.ceil(screenRect.height * uiScaleY);
-            int[] temppixels;
-            Rectangle scaledRect = new Rectangle(sX, sY, sWidth, sHeight);
-            temppixels = peer.getRGBPixels(scaledRect);
-
+            Rectangle scaledRect;
+            if (peer.useAbsoluteCoordinates()) {
+                scaledRect = toDeviceSpaceAbs(gc, screenRect.x,
+                        screenRect.y, screenRect.width, screenRect.height);
+            } else {
+                scaledRect = toDeviceSpace(gc, screenRect.x,
+                        screenRect.y, screenRect.width, screenRect.height);
+            }
             // HighResolutionImage
-            pixels = temppixels;
+            pixels = peer.getRGBPixels(scaledRect);
             buffer = new DataBufferInt(pixels, pixels.length);
             raster = Raster.createPackedRaster(buffer, scaledRect.width,
                     scaledRect.height, scaledRect.width, bandmasks, null);

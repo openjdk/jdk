@@ -97,11 +97,14 @@ public class IntrinsicPredicates {
               new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] { "avx2", "bmi2" }, null),
                               new CPUSpecificPredicate("x86_64",    new String[] { "avx2", "bmi2" }, null)))))))));
 
+    public static final BooleanSupplier SHA3_INSTRUCTION_AVAILABLE
+            // sha3 is only implemented on aarch64 for now
+            = new CPUSpecificPredicate("aarch64.*", new String[] {"sha3"          }, null);
+
     public static final BooleanSupplier ANY_SHA_INSTRUCTION_AVAILABLE
             = new OrPredicate(IntrinsicPredicates.SHA1_INSTRUCTION_AVAILABLE,
-                    new OrPredicate(
-                            IntrinsicPredicates.SHA256_INSTRUCTION_AVAILABLE,
-                            IntrinsicPredicates.SHA512_INSTRUCTION_AVAILABLE));
+              new OrPredicate(IntrinsicPredicates.SHA256_INSTRUCTION_AVAILABLE,
+              new OrPredicate(IntrinsicPredicates.SHA512_INSTRUCTION_AVAILABLE, IntrinsicPredicates.SHA3_INSTRUCTION_AVAILABLE)));
 
     public static BooleanSupplier isMD5IntrinsicAvailable() {
         return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
@@ -121,6 +124,11 @@ public class IntrinsicPredicates {
     public static BooleanSupplier isSHA512IntrinsicAvailable() {
         return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
                                 IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA5", "implCompress0"));
+    }
+
+    public static BooleanSupplier isSHA3IntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA3", "implCompress0"));
     }
 
     private static BooleanSupplier isIntrinsicAvailable(String klass, String method) {

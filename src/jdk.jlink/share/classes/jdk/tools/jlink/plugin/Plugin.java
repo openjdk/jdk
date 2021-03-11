@@ -125,6 +125,14 @@ public interface Plugin {
     }
 
     /**
+     * The plugin usage for printing to console.
+     * @return The usage.
+     */
+    public default String getUsage() {
+        return "";
+    }
+
+    /**
      * The option that identifies this plugin. This may be null.
      * "--" is prefixed to the String (when non-null) when invoking
      * this plugin from jlink command line.

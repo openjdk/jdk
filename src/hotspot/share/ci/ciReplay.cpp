@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,19 @@
 #include "ci/ciSymbol.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -283,7 +288,7 @@ class CompileReplay : public StackObj {
       return NULL;
     }
 
-    int actual_size = sizeof(MethodData);
+    int actual_size = sizeof(MethodData::CompilerCounters);
     char *result = NEW_RESOURCE_ARRAY(char, actual_size);
     int i = 0;
     if (read_size != actual_size) {
@@ -474,18 +479,12 @@ class CompileReplay : public StackObj {
     if (!is_compile(comp_level)) {
       msg = NEW_RESOURCE_ARRAY(char, msg_len);
       jio_snprintf(msg, msg_len, "%d isn't compilation level", comp_level);
-    } else if (!TieredCompilation && (comp_level != CompLevel_highest_tier)) {
+    } else if (is_c1_compile(comp_level) && !CompilerConfig::is_c1_enabled()) {
       msg = NEW_RESOURCE_ARRAY(char, msg_len);
-      switch (comp_level) {
-        case CompLevel_simple:
-          jio_snprintf(msg, msg_len, "compilation level %d requires Client VM or TieredCompilation", comp_level);
-          break;
-        case CompLevel_full_optimization:
-          jio_snprintf(msg, msg_len, "compilation level %d requires Server VM", comp_level);
-          break;
-        default:
-          jio_snprintf(msg, msg_len, "compilation level %d requires TieredCompilation", comp_level);
-      }
+      jio_snprintf(msg, msg_len, "compilation level %d requires C1", comp_level);
+    } else if (is_c2_compile(comp_level) && !CompilerConfig::is_c2_enabled()) {
+      msg = NEW_RESOURCE_ARRAY(char, msg_len);
+      jio_snprintf(msg, msg_len, "compilation level %d requires C2", comp_level);
     }
     if (msg != NULL) {
       report_error(msg);
@@ -494,7 +493,7 @@ class CompileReplay : public StackObj {
     return true;
   }
 
-  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> <depth> <bci> <klass> <name> <signature> ...
+  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <klass> <name> <signature>)*
   void* process_inline(ciMethod* imethod, Method* m, int entry_bci, int comp_level, TRAPS) {
     _imethod    = m;
     _iklass     = imethod->holder();
@@ -524,7 +523,7 @@ class CompileReplay : public StackObj {
     return NULL;
   }
 
-  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> <depth> <bci> <klass> <name> <signature> ...
+  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <klass> <name> <signature>)*
   void process_compile(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -534,11 +533,7 @@ class CompileReplay : public StackObj {
     // old version w/o comp_level
     if (had_error() && (error_message() == comp_level_label)) {
       // use highest available tier
-      if (TieredCompilation) {
-        comp_level = TieredStopAtLevel;
-      } else {
-        comp_level = CompLevel_highest_tier;
-      }
+      comp_level = CompilationPolicy::highest_compile_level();
     }
     if (!is_valid_comp_level(comp_level)) {
       return;
@@ -606,8 +601,6 @@ class CompileReplay : public StackObj {
   }
 
   // ciMethod <klass> <name> <signature> <invocation_counter> <backedge_counter> <interpreter_invocation_count> <interpreter_throwout_count> <instructions_size>
-  //
-  //
   void process_ciMethod(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -619,7 +612,7 @@ class CompileReplay : public StackObj {
     rec->_instructions_size = parse_int("instructions_size");
   }
 
-  // ciMethodData <klass> <name> <signature> <state> <current mileage> orig <length> # # ... data <length> # # ... oops <length> # ... methods <length>
+  // ciMethodData <klass> <name> <signature> <state> <current_mileage> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -694,7 +687,7 @@ class CompileReplay : public StackObj {
     Klass* k = parse_klass(CHECK);
   }
 
-  // ciInstanceKlass <name> <is_linked> <is_initialized> <length> tag # # # ...
+  // ciInstanceKlass <name> <is_linked> <is_initialized> <length> tag*
   //
   // Load the klass 'name' and link or initialize it.  Verify that the
   // constant pool is the same length as 'length' and make sure the
@@ -789,10 +782,12 @@ class CompileReplay : public StackObj {
     }
   }
 
+  // staticfield <klass> <name> <signature> <value>
+  //
   // Initialize a class and fill in the value for a static field.
   // This is useful when the compile was dependent on the value of
   // static fields but it's impossible to properly rerun the static
-  // initiailizer.
+  // initializer.
   void process_staticfield(TRAPS) {
     InstanceKlass* k = (InstanceKlass *)parse_klass(CHECK);
 
@@ -906,6 +901,7 @@ class CompileReplay : public StackObj {
   }
 
 #if INCLUDE_JVMTI
+  // JvmtiExport <field> <value>
   void process_JvmtiExport(TRAPS) {
     const char* field = parse_string();
     bool value = parse_int("JvmtiExport flag") != 0;

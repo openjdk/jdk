@@ -293,29 +293,33 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
         }
 
         //  Memory and Swap
-        oldVal = metrics.getMemoryAndSwapFailCount();
-        newVal = getLongValueFromFile(Controller.MEMORY, "memory.memsw.failcnt");
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail(Controller.MEMORY, "memory.memsw.failcnt", oldVal, newVal);
-        }
 
-        oldVal = metrics.getMemoryAndSwapLimit();
-        newVal = getLongValueFromFile(Controller.MEMORY, "memory.memsw.limit_in_bytes");
-        newVal = newVal > unlimited_minimum ? CgroupSubsystem.LONG_RETVAL_UNLIMITED : newVal;
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail(Controller.MEMORY, "memory.memsw.limit_in_bytes", oldVal, newVal);
-        }
+        // Skip swap tests if no swap is configured.
+        if (metrics.getMemoryAndSwapLimit() > metrics.getMemoryLimit()) {
+            oldVal = metrics.getMemoryAndSwapFailCount();
+            newVal = getLongValueFromFile(Controller.MEMORY, "memory.memsw.failcnt");
+            if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
+                fail(Controller.MEMORY, "memory.memsw.failcnt", oldVal, newVal);
+            }
 
-        oldVal = metrics.getMemoryAndSwapMaxUsage();
-        newVal = getLongValueFromFile(Controller.MEMORY, "memory.memsw.max_usage_in_bytes");
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail(Controller.MEMORY, "memory.memsw.max_usage_in_bytes", oldVal, newVal);
-        }
+            oldVal = metrics.getMemoryAndSwapLimit();
+            newVal = getLongValueFromFile(Controller.MEMORY, "memory.memsw.limit_in_bytes");
+            newVal = newVal > unlimited_minimum ? CgroupSubsystem.LONG_RETVAL_UNLIMITED : newVal;
+            if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
+                fail(Controller.MEMORY, "memory.memsw.limit_in_bytes", oldVal, newVal);
+            }
 
-        oldVal = metrics.getMemoryAndSwapUsage();
-        newVal = getLongValueFromFile(Controller.MEMORY, "memory.memsw.usage_in_bytes");
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail(Controller.MEMORY, "memory.memsw.usage_in_bytes", oldVal, newVal);
+            oldVal = metrics.getMemoryAndSwapMaxUsage();
+            newVal = getLongValueFromFile(Controller.MEMORY, "memory.memsw.max_usage_in_bytes");
+            if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
+                fail(Controller.MEMORY, "memory.memsw.max_usage_in_bytes", oldVal, newVal);
+            }
+
+            oldVal = metrics.getMemoryAndSwapUsage();
+            newVal = getLongValueFromFile(Controller.MEMORY, "memory.memsw.usage_in_bytes");
+            if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
+                fail(Controller.MEMORY, "memory.memsw.usage_in_bytes", oldVal, newVal);
+            }
         }
 
         oldVal = metrics.getMemorySoftLimit();

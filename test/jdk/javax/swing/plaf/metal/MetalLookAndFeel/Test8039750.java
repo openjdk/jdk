@@ -22,6 +22,7 @@
  */
 
 import javax.swing.UIDefaults;
+import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
@@ -32,35 +33,37 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
  * @author Sergey Malenkov
  */
 public class Test8039750 {
-    public static void main(String[] args) {
-        UIDefaults table= new MetalLookAndFeel().getDefaults();
-        test(table.get("ToolBar.rolloverBorder"),
-                "javax.swing.plaf.metal.MetalBorders$ButtonBorder",
-                "javax.swing.plaf.metal.MetalBorders$RolloverMarginBorder");
-        test(table.get("ToolBar.nonrolloverBorder"),
-                "javax.swing.plaf.metal.MetalBorders$ButtonBorder",
-                "javax.swing.plaf.metal.MetalBorders$RolloverMarginBorder");
-        test(table.get("RootPane.frameBorder"),
-                "javax.swing.plaf.metal.MetalBorders$FrameBorder");
-        test(table.get("RootPane.plainDialogBorder"),
-                "javax.swing.plaf.metal.MetalBorders$DialogBorder");
-        test(table.get("RootPane.informationDialogBorder"),
-                "javax.swing.plaf.metal.MetalBorders$DialogBorder");
-        test(table.get("RootPane.errorDialogBorder"),
-                "javax.swing.plaf.metal.MetalBorders$ErrorDialogBorder");
-        test(table.get("RootPane.colorChooserDialogBorder"),
-                "javax.swing.plaf.metal.MetalBorders$QuestionDialogBorder");
-        test(table.get("RootPane.fileChooserDialogBorder"),
-                "javax.swing.plaf.metal.MetalBorders$QuestionDialogBorder");
-        test(table.get("RootPane.questionDialogBorder"),
-                "javax.swing.plaf.metal.MetalBorders$QuestionDialogBorder");
-        test(table.get("RootPane.warningDialogBorder"),
-                "javax.swing.plaf.metal.MetalBorders$WarningDialogBorder");
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            UIDefaults table= new MetalLookAndFeel().getDefaults();
+            test(table.get("ToolBar.rolloverBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$ButtonBorder",
+                    "javax.swing.plaf.metal.MetalBorders$RolloverMarginBorder");
+            test(table.get("ToolBar.nonrolloverBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$ButtonBorder",
+                    "javax.swing.plaf.metal.MetalBorders$RolloverMarginBorder");
+            test(table.get("RootPane.frameBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$FrameBorder");
+            test(table.get("RootPane.plainDialogBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$DialogBorder");
+            test(table.get("RootPane.informationDialogBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$DialogBorder");
+            test(table.get("RootPane.errorDialogBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$ErrorDialogBorder");
+            test(table.get("RootPane.colorChooserDialogBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$QuestionDialogBorder");
+            test(table.get("RootPane.fileChooserDialogBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$QuestionDialogBorder");
+            test(table.get("RootPane.questionDialogBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$QuestionDialogBorder");
+            test(table.get("RootPane.warningDialogBorder"),
+                    "javax.swing.plaf.metal.MetalBorders$WarningDialogBorder");
+        });
     }
 
     private static void test(Object value, String name) {
         if (!value.getClass().getName().equals(name)) {
-            throw new Error(name);
+            throw new RuntimeException(name);
         }
     }
 
@@ -70,7 +73,7 @@ public class Test8039750 {
             test(border.getOutsideBorder(), one);
             test(border.getInsideBorder(), two);
         } else {
-            throw new Error("CompoundBorder");
+            throw new RuntimeException("CompoundBorder");
         }
     }
 }

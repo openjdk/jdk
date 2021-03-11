@@ -4013,7 +4013,8 @@ public class XSDHandler {
                     ","+oldName:currSchema.fTargetNamespace+","+oldName;
             int attGroupRefsCount = changeRedefineGroup(processedBaseName, componentType, newName, child, currSchema);
             if (attGroupRefsCount > 1) {
-                reportSchemaError("src-redefine.7.1", new Object []{new Integer(attGroupRefsCount)}, child);
+                reportSchemaError("src-redefine.7.1",
+                        new Object []{attGroupRefsCount}, child);
             }
             else if (attGroupRefsCount == 1) {
                 //                return true;
@@ -4029,7 +4030,7 @@ public class XSDHandler {
                     ","+oldName:currSchema.fTargetNamespace+","+oldName;
             int groupRefsCount = changeRedefineGroup(processedBaseName, componentType, newName, child, currSchema);
             if (groupRefsCount > 1) {
-                reportSchemaError("src-redefine.6.1.1", new Object []{new Integer(groupRefsCount)}, child);
+                reportSchemaError("src-redefine.6.1.1", new Object []{groupRefsCount}, child);
             }
             else if (groupRefsCount == 1) {
                 //                return true;

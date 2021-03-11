@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -220,8 +221,9 @@ address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop
   }
   assert(inst1_found, "inst is not lis");
 
-  int xc = (data >> 16) & 0xffff;
-  int xd = (data >>  0) & 0xffff;
+  uint32_t data_value = CompressedOops::narrow_oop_value(data);
+  int xc = (data_value >> 16) & 0xffff;
+  int xd = (data_value >>  0) & 0xffff;
 
   set_imm((int *)inst1_addr, (short)(xc)); // see enc_load_con_narrow_hi/_lo
   set_imm((int *)inst2_addr,        (xd)); // unsigned int
@@ -254,7 +256,7 @@ narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   uint xl = ((unsigned int) (get_imm(inst2_addr, 0) & 0xffff));
   uint xh = (((get_imm(inst1_addr, 0)) & 0xffff) << 16);
 
-  return (int) (xl | xh);
+  return CompressedOops::narrow_oop_cast(xl | xh);
 }
 #endif // _LP64
 
@@ -379,25 +381,6 @@ AddressLiteral MacroAssembler::constant_oop_address(jobject obj) {
   assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
   int oop_index = oop_recorder()->find_index(obj);
   return AddressLiteral(address(obj), oop_Relocation::spec(oop_index));
-}
-
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp, int offset) {
-  intptr_t value = *delayed_value_addr;
-  if (value != 0) {
-    return RegisterOrConstant(value + offset);
-  }
-
-  // Load indirectly to solve generation ordering problem.
-  // static address, no relocation
-  int simm16_offset = load_const_optimized(tmp, delayed_value_addr, noreg, true);
-  ld(tmp, simm16_offset, tmp); // must be aligned ((xa & 3) == 0)
-
-  if (offset != 0) {
-    addi(tmp, tmp, offset);
-  }
-
-  return RegisterOrConstant(tmp);
 }
 
 #ifndef PRODUCT
@@ -724,6 +707,30 @@ address MacroAssembler::get_dest_of_bxx64_patchable_at(address instruction_addr,
   }
 }
 
+void MacroAssembler::clobber_volatile_gprs(Register excluded_register) {
+  const int magic_number = 0x42;
+
+  // Preserve stack pointer register (R1_SP) and system thread id register (R13);
+  // although they're technically volatile
+  for (int i = 2; i < 13; i++) {
+    Register reg = as_Register(i);
+    if (reg == excluded_register) {
+      continue;
+    }
+
+    li(reg, magic_number);
+  }
+}
+
+void MacroAssembler::clobber_carg_stack_slots(Register tmp) {
+  const int magic_number = 0x43;
+
+  li(tmp, magic_number);
+  for (int m = 0; m <= 7; m++) {
+    std(tmp, frame::abi_minframe_size + m * 8, R1_SP);
+  }
+}
+
 // Uses ordering which corresponds to ABI:
 //    _savegpr0_14:  std  r14,-144(r1)
 //    _savegpr0_15:  std  r15,-136(r1)
@@ -814,9 +821,11 @@ void MacroAssembler::restore_nonvolatile_gprs(Register src, int offset) {
 }
 
 // For verify_oops.
-void MacroAssembler::save_volatile_gprs(Register dst, int offset) {
+void MacroAssembler::save_volatile_gprs(Register dst, int offset, bool include_fp_regs, bool include_R3_RET_reg) {
   std(R2,  offset, dst);   offset += 8;
-  std(R3,  offset, dst);   offset += 8;
+  if (include_R3_RET_reg) {
+    std(R3, offset, dst);  offset += 8;
+  }
   std(R4,  offset, dst);   offset += 8;
   std(R5,  offset, dst);   offset += 8;
   std(R6,  offset, dst);   offset += 8;
@@ -827,26 +836,30 @@ void MacroAssembler::save_volatile_gprs(Register dst, int offset) {
   std(R11, offset, dst);   offset += 8;
   std(R12, offset, dst);   offset += 8;
 
-  stfd(F0, offset, dst);   offset += 8;
-  stfd(F1, offset, dst);   offset += 8;
-  stfd(F2, offset, dst);   offset += 8;
-  stfd(F3, offset, dst);   offset += 8;
-  stfd(F4, offset, dst);   offset += 8;
-  stfd(F5, offset, dst);   offset += 8;
-  stfd(F6, offset, dst);   offset += 8;
-  stfd(F7, offset, dst);   offset += 8;
-  stfd(F8, offset, dst);   offset += 8;
-  stfd(F9, offset, dst);   offset += 8;
-  stfd(F10, offset, dst);  offset += 8;
-  stfd(F11, offset, dst);  offset += 8;
-  stfd(F12, offset, dst);  offset += 8;
-  stfd(F13, offset, dst);
+  if (include_fp_regs) {
+    stfd(F0, offset, dst);   offset += 8;
+    stfd(F1, offset, dst);   offset += 8;
+    stfd(F2, offset, dst);   offset += 8;
+    stfd(F3, offset, dst);   offset += 8;
+    stfd(F4, offset, dst);   offset += 8;
+    stfd(F5, offset, dst);   offset += 8;
+    stfd(F6, offset, dst);   offset += 8;
+    stfd(F7, offset, dst);   offset += 8;
+    stfd(F8, offset, dst);   offset += 8;
+    stfd(F9, offset, dst);   offset += 8;
+    stfd(F10, offset, dst);  offset += 8;
+    stfd(F11, offset, dst);  offset += 8;
+    stfd(F12, offset, dst);  offset += 8;
+    stfd(F13, offset, dst);
+  }
 }
 
 // For verify_oops.
-void MacroAssembler::restore_volatile_gprs(Register src, int offset) {
+void MacroAssembler::restore_volatile_gprs(Register src, int offset, bool include_fp_regs, bool include_R3_RET_reg) {
   ld(R2,  offset, src);   offset += 8;
-  ld(R3,  offset, src);   offset += 8;
+  if (include_R3_RET_reg) {
+    ld(R3,  offset, src);   offset += 8;
+  }
   ld(R4,  offset, src);   offset += 8;
   ld(R5,  offset, src);   offset += 8;
   ld(R6,  offset, src);   offset += 8;
@@ -857,35 +870,37 @@ void MacroAssembler::restore_volatile_gprs(Register src, int offset) {
   ld(R11, offset, src);   offset += 8;
   ld(R12, offset, src);   offset += 8;
 
-  lfd(F0, offset, src);   offset += 8;
-  lfd(F1, offset, src);   offset += 8;
-  lfd(F2, offset, src);   offset += 8;
-  lfd(F3, offset, src);   offset += 8;
-  lfd(F4, offset, src);   offset += 8;
-  lfd(F5, offset, src);   offset += 8;
-  lfd(F6, offset, src);   offset += 8;
-  lfd(F7, offset, src);   offset += 8;
-  lfd(F8, offset, src);   offset += 8;
-  lfd(F9, offset, src);   offset += 8;
-  lfd(F10, offset, src);  offset += 8;
-  lfd(F11, offset, src);  offset += 8;
-  lfd(F12, offset, src);  offset += 8;
-  lfd(F13, offset, src);
+  if (include_fp_regs) {
+    lfd(F0, offset, src);   offset += 8;
+    lfd(F1, offset, src);   offset += 8;
+    lfd(F2, offset, src);   offset += 8;
+    lfd(F3, offset, src);   offset += 8;
+    lfd(F4, offset, src);   offset += 8;
+    lfd(F5, offset, src);   offset += 8;
+    lfd(F6, offset, src);   offset += 8;
+    lfd(F7, offset, src);   offset += 8;
+    lfd(F8, offset, src);   offset += 8;
+    lfd(F9, offset, src);   offset += 8;
+    lfd(F10, offset, src);  offset += 8;
+    lfd(F11, offset, src);  offset += 8;
+    lfd(F12, offset, src);  offset += 8;
+    lfd(F13, offset, src);
+  }
 }
 
 void MacroAssembler::save_LR_CR(Register tmp) {
   mfcr(tmp);
-  std(tmp, _abi(cr), R1_SP);
+  std(tmp, _abi0(cr), R1_SP);
   mflr(tmp);
-  std(tmp, _abi(lr), R1_SP);
+  std(tmp, _abi0(lr), R1_SP);
   // Tmp must contain lr on exit! (see return_addr and prolog in ppc64.ad)
 }
 
 void MacroAssembler::restore_LR_CR(Register tmp) {
   assert(tmp != R1_SP, "must be distinct");
-  ld(tmp, _abi(lr), R1_SP);
+  ld(tmp, _abi0(lr), R1_SP);
   mtlr(tmp);
-  ld(tmp, _abi(cr), R1_SP);
+  ld(tmp, _abi0(cr), R1_SP);
   mtcr(tmp);
 }
 
@@ -906,7 +921,7 @@ void MacroAssembler::resize_frame(Register offset, Register tmp) {
 #endif
 
   // tmp <- *(SP)
-  ld(tmp, _abi(callers_sp), R1_SP);
+  ld(tmp, _abi0(callers_sp), R1_SP);
   // addr <- SP + offset;
   // *(addr) <- tmp;
   // SP <- addr
@@ -918,7 +933,7 @@ void MacroAssembler::resize_frame(int offset, Register tmp) {
   assert_different_registers(tmp, R1_SP);
   assert((offset & (frame::alignment_in_bytes-1))==0, "resize_frame: unaligned");
   // tmp <- *(SP)
-  ld(tmp, _abi(callers_sp), R1_SP);
+  ld(tmp, _abi0(callers_sp), R1_SP);
   // addr <- SP + offset;
   // *(addr) <- tmp;
   // SP <- addr
@@ -972,7 +987,7 @@ void MacroAssembler::push_frame_reg_args_nonvolatiles(unsigned int bytes,
 
 // Pop current C frame.
 void MacroAssembler::pop_frame() {
-  ld(R1_SP, _abi(callers_sp), R1_SP);
+  ld(R1_SP, _abi0(callers_sp), R1_SP);
 }
 
 #if defined(ABI_ELFv2)
@@ -2836,10 +2851,10 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // Load markWord from object into displaced_header.
   ld(displaced_header, oopDesc::mark_offset_in_bytes(), oop);
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
     lwz(temp, in_bytes(Klass::access_flags_offset()), temp);
-    testbitdi(flag, R0, temp, exact_log2(JVM_ACC_IS_BOX_CLASS));
+    testbitdi(flag, R0, temp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     bne(flag, cont);
   }
 
@@ -3043,15 +3058,16 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  ld(temp_reg, in_bytes(Thread::polling_page_offset()), R16_thread);
+  ld(temp_reg, in_bytes(Thread::polling_word_offset()), R16_thread);
   // Armed page has poll_bit set.
   andi_(temp_reg, temp_reg, SafepointMechanism::poll_bit());
   bne(CCR0, slow_path);
 }
 
-void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame) {
+void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2,
+                                     MacroAssembler::PreservationLevel preservation_level) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->resolve_jobject(this, value, tmp1, tmp2, needs_frame);
+  bs->resolve_jobject(this, value, tmp1, tmp2, preservation_level);
 }
 
 // Values for last_Java_pc, and last_Java_sp must comply to the rules
@@ -3171,10 +3187,25 @@ void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
 }
 
 int MacroAssembler::instr_size_for_decode_klass_not_null() {
-  if (!UseCompressedClassPointers) return 0;
-  int num_instrs = 1;  // shift or move
-  if (CompressedKlassPointers::base() != 0) num_instrs = 7;  // shift + load const + add
-  return num_instrs * BytesPerInstWord;
+  static int computed_size = -1;
+
+  // Not yet computed?
+  if (computed_size == -1) {
+
+    if (!UseCompressedClassPointers) {
+      computed_size = 0;
+    } else {
+      // Determine by scratch emit.
+      ResourceMark rm;
+      int code_size = 8 * BytesPerInstWord;
+      CodeBuffer cb("decode_klass_not_null scratch buffer", code_size, 0);
+      MacroAssembler* a = new MacroAssembler(&cb);
+      a->decode_klass_not_null(R11_scratch1);
+      computed_size = a->offset();
+    }
+  }
+
+  return computed_size;
 }
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
@@ -3202,16 +3233,22 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 }
 
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result) {
-  // OopHandle::resolve is an indirection.
-  ld(result, 0, result);
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2,
+                                        MacroAssembler::PreservationLevel preservation_level) {
+  access_load_at(T_OBJECT, IN_NATIVE, result, noreg, result, tmp1, tmp2, preservation_level);
 }
 
-void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
-  ld(mirror, in_bytes(ConstMethod::constants_offset()), const_method);
-  ld(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
-  ld(mirror, in_bytes(Klass::java_mirror_offset()), mirror);
-  resolve_oop_handle(mirror);
+void MacroAssembler::resolve_weak_handle(Register result, Register tmp1, Register tmp2,
+                                         MacroAssembler::PreservationLevel preservation_level) {
+  Label resolved;
+
+  // A null weak handle resolves to null.
+  cmpdi(CCR0, result, 0);
+  beq(CCR0, resolved);
+
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, result, noreg, result, tmp1, tmp2,
+                 preservation_level);
+  bind(resolved);
 }
 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
@@ -3342,7 +3379,7 @@ int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register t
   assert(!VM_Version::has_vpmsumb(), "Vector version should be used instead!");
 
   // Point to 4 byte folding tables (byte-reversed version for Big Endian)
-  // Layout: See StubRoutines::generate_crc_constants.
+  // Layout: See StubRoutines::ppc::generate_crc_constants.
 #ifdef VM_LITTLE_ENDIAN
   const int ix0 = 3 * CRC32_TABLE_SIZE;
   const int ix1 = 2 * CRC32_TABLE_SIZE;

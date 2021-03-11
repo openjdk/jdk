@@ -622,8 +622,11 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="zen">Zenaga</language>
 			<language type="zgh">Marokkanescht Standard-Tamazight</language>
 			<language type="zh">Chinesesch</language>
+			<language type="zh" alt="menu" draft="unconfirmed">Chineesesch, Mandarinn</language>
 			<language type="zh_Hans">Chinesesch (vereinfacht)</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">Chineesesch, Mandarinn (vereinfacht)</language>
 			<language type="zh_Hant">Chinesesch (traditionell)</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">Chineesesch (Mandarinn)</language>
 			<language type="zu">Zulu</language>
 			<language type="zun">Zuni-Sprooch</language>
 			<language type="zxx">Keng Sproochinhalter</language>

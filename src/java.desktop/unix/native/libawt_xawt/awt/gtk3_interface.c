@@ -22,6 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#ifdef HEADLESS
+    #error This file should not be included in headless library
+#endif
+
 #include <dlfcn.h>
 #include <setjmp.h>
 #include <X11/Xlib.h>
@@ -703,7 +708,7 @@ static int gtk3_unload()
  */
 static void flush_gtk_event_loop()
 {
-    while((*fp_g_main_context_iteration)(NULL));
+    while((*fp_g_main_context_iteration)(NULL, FALSE));
 }
 
 /*

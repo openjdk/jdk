@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Checks that the appropriate default value is given to the canonical ctr
  * @library /test/lib
  * @modules jdk.compiler
- * @compile --enable-preview -source ${jdk.version} AssignableFrom.java Point.java
- *          DefaultValues.java SuperStreamFields.java DefaultValuesTest.java
- * @run testng/othervm --enable-preview DefaultValuesTest
+ * @compile AssignableFrom.java Point.java DefaultValues.java SuperStreamFields.java
+ * @run testng DefaultValuesTest
  */
 
 import java.io.ByteArrayOutputStream;

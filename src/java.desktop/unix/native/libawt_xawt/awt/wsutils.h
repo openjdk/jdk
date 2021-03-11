@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,10 @@ from The Open Group.
  * a set of example utility procedures contained in the file "wsutils.c".
  *
  ******************************************************************************/
+
+#ifdef HEADLESS
+    #error This file should not be included in headless library
+#endif
 
 typedef unsigned long Pixel;
 

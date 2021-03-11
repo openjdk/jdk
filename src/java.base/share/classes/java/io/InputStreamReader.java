@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,6 @@ public class InputStreamReader extends Reader {
      * @param  cs       A charset
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public InputStreamReader(InputStream in, Charset cs) {
         super(in);
@@ -119,7 +118,6 @@ public class InputStreamReader extends Reader {
      * @param  dec      A charset decoder
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public InputStreamReader(InputStream in, CharsetDecoder dec) {
         super(in);
@@ -146,7 +144,6 @@ public class InputStreamReader extends Reader {
      * @see java.nio.charset.Charset
      *
      * @revised 1.4
-     * @spec JSR-51
      */
     public String getEncoding() {
         return sd.getEncoding();
@@ -165,20 +162,11 @@ public class InputStreamReader extends Reader {
     }
 
     /**
-     * Reads characters into a portion of an array.
-     *
-     * @param      cbuf     Destination buffer
-     * @param      offset   Offset at which to start storing characters
-     * @param      length   Maximum number of characters to read
-     *
-     * @return     The number of characters read, or -1 if the end of the
-     *             stream has been reached
-     *
-     * @throws     IOException  If an I/O error occurs
-     * @throws     IndexOutOfBoundsException {@inheritDoc}
+     * {@inheritDoc}
+     * @throws     IndexOutOfBoundsException  {@inheritDoc}
      */
-    public int read(char cbuf[], int offset, int length) throws IOException {
-        return sd.read(cbuf, offset, length);
+    public int read(char[] cbuf, int off, int len) throws IOException {
+        return sd.read(cbuf, off, len);
     }
 
     /**

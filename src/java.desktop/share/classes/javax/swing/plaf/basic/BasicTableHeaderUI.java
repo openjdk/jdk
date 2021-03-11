@@ -70,6 +70,11 @@ public class BasicTableHeaderUI extends TableHeaderUI {
     // The column that should be highlighted when the table header has the focus.
     private int selectedColumnIndex = 0; // Read ONLY via getSelectedColumnIndex!
 
+    /**
+     * Constructs a {@code BasicTableHeaderUI}.
+     */
+    public BasicTableHeaderUI() {}
+
     private static FocusListener focusListener = new FocusListener() {
         public void focusGained(FocusEvent e) {
             repaintHeader(e.getSource());
@@ -103,6 +108,11 @@ public class BasicTableHeaderUI extends TableHeaderUI {
 
         private int mouseXOffset;
         private Cursor otherCursor = resizeCursor;
+
+        /**
+         * Constructs a {@code MouseInputHandler}.
+         */
+        public MouseInputHandler() {}
 
         public void mouseClicked(MouseEvent e) {
             if (!header.isEnabled()) {

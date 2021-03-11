@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
 import java.awt.event.FocusEvent;
@@ -29,6 +30,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.LightweightPeer;
+import java.io.Serial;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -52,7 +54,7 @@ import sun.util.logging.PlatformLogger;
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
  * How to Use the Focus Subsystem</a>,
  * a section in <em>The Java Tutorial</em>, and the
- * <a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+ * <a href="doc-files/FocusSpec.html">Focus Specification</a>
  * for more information.
  *
  * @author David Mendenhall
@@ -227,9 +229,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private static class DefaultKeyboardFocusManagerSentEvent
         extends SentEvent
     {
-        /*
-         * serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.6 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -2924743257508701758L;
 
         public DefaultKeyboardFocusManagerSentEvent(AWTEvent nested,
@@ -971,9 +974,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             focusLog.finest(">>> Markers dump, time: {0}", System.currentTimeMillis());
             synchronized (this) {
                 if (typeAheadMarkers.size() != 0) {
-                    Iterator<TypeAheadMarker> iter = typeAheadMarkers.iterator();
-                    while (iter.hasNext()) {
-                        TypeAheadMarker marker = iter.next();
+                    for (TypeAheadMarker marker : typeAheadMarkers) {
                         focusLog.finest("    {0}", marker);
                     }
                 }

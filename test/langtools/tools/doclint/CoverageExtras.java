@@ -25,13 +25,14 @@
  * @test
  * @bug 8006263
  * @summary Supplementary test cases needed for doclint
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  */
 
-import com.sun.tools.doclint.Checker;
-import com.sun.tools.doclint.HtmlTag;
-import com.sun.tools.doclint.Messages;
 import java.util.Objects;
+
+import jdk.javadoc.internal.doclint.Checker;
+import jdk.javadoc.internal.doclint.HtmlTag;
+import jdk.javadoc.internal.doclint.Messages;
 
 public class CoverageExtras {
     public static void main(String... args) {

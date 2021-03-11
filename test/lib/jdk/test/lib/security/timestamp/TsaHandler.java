@@ -33,15 +33,13 @@ import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import sun.security.util.KnownOIDs;
+import sun.security.util.SignatureUtil;
 import sun.security.x509.AlgorithmId;
 
 /**
@@ -208,9 +206,18 @@ public class TsaHandler implements HttpHandler {
     protected String getSignerAlias(String alias, String sigAlgo)
             throws Exception {
         if (alias == null) {
-            String keyAlgo = sigAlgo == null
-                             ? null
-                             : AlgorithmId.getEncAlgFromSigAlg(sigAlgo);
+            String keyAlgo;
+            if (sigAlgo == null) {
+                keyAlgo = null;
+            } else {
+                String lower = sigAlgo.toLowerCase(Locale.ROOT);
+                int pos = lower.indexOf("with");
+                if (pos < 0) {
+                    keyAlgo = sigAlgo;
+                } else {
+                    keyAlgo = sigAlgo.substring(pos + 4);
+                }
+            }
             Enumeration<String> aliases = keyStore.aliases();
             while(aliases.hasMoreElements()) {
                 String bufAlias = aliases.nextElement();

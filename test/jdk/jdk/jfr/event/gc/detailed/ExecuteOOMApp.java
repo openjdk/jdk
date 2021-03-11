@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class ExecuteOOMApp {
         OutputAnalyzer out = AppExecutorHelper.executeAndRecord(settings, jfrFilename, additionalVmFlagsList.toArray(new String[0]),
                                                                 OOMApp.class.getName(), String.valueOf(bytesToAllocate));
 
-        if ((out.getExitValue() == 1 && out.getOutput().contains("Exception: java.lang.OutOfMemoryError"))) {
+        if ((out.getExitValue() == 1 && out.getOutput().contains("java.lang.OutOfMemoryError"))) {
             return false;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
+import java.awt.event.ComponentEvent;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.InvocationEvent;
+import java.awt.event.WindowEvent;
 import java.awt.peer.DialogPeer;
-import java.awt.event.*;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicLong;
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import javax.accessibility.*;
-import sun.awt.AppContext;
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+
 import sun.awt.AWTPermissions;
+import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.util.IdentityArrayList;
 import sun.awt.util.IdentityLinkedList;
-import java.security.AccessControlException;
 
 /**
  * A Dialog is a top-level window with a title and a border
@@ -307,9 +317,10 @@ public class Dialog extends Window {
     private static final String base = "dialog";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 5920926903803293709L;
 
     /**
@@ -1047,9 +1058,7 @@ public class Dialog extends Window {
                     // if this dialog is toolkit-modal, the filter should be added
                     // to all EDTs (for all AppContexts)
                     if (modalityType == ModalityType.TOOLKIT_MODAL) {
-                        Iterator<AppContext> it = AppContext.getAppContexts().iterator();
-                        while (it.hasNext()) {
-                            AppContext appContext = it.next();
+                        for (AppContext appContext : AppContext.getAppContexts()) {
                             if (appContext == showAppContext) {
                                 continue;
                             }
@@ -1077,9 +1086,7 @@ public class Dialog extends Window {
                     // if this dialog is toolkit-modal, its filter must be removed
                     // from all EDTs (for all AppContexts)
                     if (modalityType == ModalityType.TOOLKIT_MODAL) {
-                        Iterator<AppContext> it = AppContext.getAppContexts().iterator();
-                        while (it.hasNext()) {
-                            AppContext appContext = it.next();
+                        for (AppContext appContext : AppContext.getAppContexts()) {
                             if (appContext == showAppContext) {
                                 continue;
                             }
@@ -1587,6 +1594,17 @@ public class Dialog extends Window {
         }
     }
 
+    /**
+     * Reads serializable fields from stream.
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
+     */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -1653,10 +1671,16 @@ public class Dialog extends Window {
      */
     protected class AccessibleAWTDialog extends AccessibleAWTWindow
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 4837230331833941201L;
+
+        /**
+         * Constructs an {@code AccessibleAWTDialog}.
+         */
+        protected AccessibleAWTDialog() {}
 
         /**
          * Get the role of this object.

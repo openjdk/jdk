@@ -36,37 +36,28 @@ template<typename IsAlive, typename KeepAlive>
 ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::ShenandoahParallelWeakRootsCleaningTask(ShenandoahPhaseTimings::Phase phase,
                                                                                                      IsAlive* is_alive,
                                                                                                      KeepAlive* keep_alive,
-                                                                                                     uint num_workers,
-                                                                                                     bool include_concurrent_roots) :
+                                                                                                     uint num_workers) :
   AbstractGangTask("Shenandoah Weak Root Cleaning"),
-  _phase(phase), _weak_processing_task(num_workers), _serial_weak_roots(phase),
-  _is_alive(is_alive), _keep_alive(keep_alive), _include_concurrent_roots(include_concurrent_roots) {
+  _phase(phase),
+  _weak_processing_task(num_workers),
+  _dedup_roots(phase),
+  _is_alive(is_alive),
+  _keep_alive(keep_alive) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    StringDedup::gc_prologue(false);
-  }
 }
 
 template<typename IsAlive, typename KeepAlive>
 ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::~ShenandoahParallelWeakRootsCleaningTask() {
-  if (StringDedup::is_enabled()) {
-    StringDedup::gc_epilogue();
-  }
   _weak_processing_task.report_num_dead();
 }
 
 template<typename IsAlive, typename KeepAlive>
 void ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::work(uint worker_id) {
-  if (_include_concurrent_roots) {
+  {
+    ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
     _weak_processing_task.work<IsAlive, KeepAlive>(worker_id, _is_alive, _keep_alive);
-  } else {
-    _serial_weak_roots.weak_oops_do(_is_alive, _keep_alive, worker_id);
   }
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::parallel_oops_do(_phase, _is_alive, _keep_alive, worker_id);
-  }
+  _dedup_roots.oops_do(_is_alive, _keep_alive, worker_id);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_INLINE_HPP

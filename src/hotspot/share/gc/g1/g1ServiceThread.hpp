@@ -28,43 +28,113 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
 
+class G1ServiceTaskQueue;
+class G1ServiceThread;
+
+class G1ServiceTask : public CHeapObj<mtGC> {
+  friend class G1ServiceTaskQueue;
+  friend class G1ServiceThread;
+
+  // The next absolute time this task should be executed.
+  jlong _time;
+  // Name of the task.
+  const char* _name;
+  // Next task in the task queue.
+  G1ServiceTask* _next;
+  // The service thread this task is registered with.
+  G1ServiceThread* _service_thread;
+
+  void set_service_thread(G1ServiceThread* thread);
+  bool is_registered();
+
+public:
+  G1ServiceTask(const char* name);
+
+  jlong time();
+  const char* name();
+  G1ServiceTask* next();
+
+  // Do the actual work for the task. To get added back to the
+  // execution queue a task can call schedule(delay_ms).
+  virtual void execute() = 0;
+
+protected:
+  // Schedule the task on the associated service thread using
+  // the provided delay in milliseconds. Can only be used when
+  // currently running on the service thread.
+  void schedule(jlong delay_ms);
+
+  // These setters are protected for use by testing and the
+  // sentinel task only.
+  void set_time(jlong time);
+  void set_next(G1ServiceTask* next);
+};
+
+class G1SentinelTask : public G1ServiceTask {
+public:
+  G1SentinelTask();
+  virtual void execute();
+};
+
+class G1ServiceTaskQueue {
+  // The sentinel task is the entry point of this priority queue holding the
+  // service tasks. The queue is ordered by the time the tasks are scheduled
+  // to run. To simplify list management the sentinel task has its time set
+  // to max_jlong, guaranteeing it to be the last task in the queue.
+  G1SentinelTask _sentinel;
+
+  // Verify that the queue is ordered.
+  void verify_task_queue() NOT_DEBUG_RETURN;
+public:
+  G1ServiceTaskQueue();
+  G1ServiceTask* pop();
+  G1ServiceTask* peek();
+  void add_ordered(G1ServiceTask* task);
+  bool is_empty();
+};
+
 // The G1ServiceThread is used to periodically do a number of different tasks:
 //   - re-assess the validity of the prediction for the
 //     remembered set lengths of the young generation.
 //   - check if a periodic GC should be scheduled.
 class G1ServiceThread: public ConcurrentGCThread {
-private:
+  friend class G1ServiceTask;
+  // The monitor is used to ensure thread safety for the task queue
+  // and allow other threads to signal the service thread to wake up.
   Monitor _monitor;
-
-  double _last_periodic_gc_attempt_s;
-
-  double _vtime_accum;  // Accumulated virtual time.
-
-  // Sample the current length of remembered sets for young.
-  //
-  // At the end of the GC G1 determines the length of the young gen based on
-  // how much time the next GC can take, and when the next GC may occur
-  // according to the MMU.
-  //
-  // The assumption is that a significant part of the GC is spent on scanning
-  // the remembered sets (and many other components), so this thread constantly
-  // reevaluates the prediction for the remembered set scanning costs, and potentially
-  // G1Policy resizes the young gen. This may do a premature GC or even
-  // increase the young gen size to keep pause time length goal.
-  void sample_young_list_rs_length();
+  G1ServiceTaskQueue _task_queue;
 
   void run_service();
-  void check_for_periodic_gc();
-
   void stop_service();
 
+  // Returns the time in milliseconds until the next task is due.
+  // Used both to determine if there are tasks ready to run and
+  // how long to sleep when nothing is ready.
+  int64_t time_to_next_task_ms();
   void sleep_before_next_cycle();
 
-  bool should_start_periodic_gc();
+  G1ServiceTask* pop_due_task();
+  void run_task(G1ServiceTask* task);
+
+  // Helper used by both schedule_task() and G1ServiceTask::schedule()
+  // to schedule a registered task to run after the given delay.
+  void schedule(G1ServiceTask* task, jlong delay);
+
+  // Notify a change to the service thread. Used to either stop
+  // the service or to force check for new tasks.
+  void notify();
 
 public:
   G1ServiceThread();
-  double vtime_accum() { return _vtime_accum; }
+
+  // Register a task with the service thread. The task is guaranteed not to run
+  // until at least `delay_ms` has passed. If no delay is specified or the
+  // delay is 0, the task will run in the earliest time possible.
+  void register_task(G1ServiceTask* task, jlong delay_ms = 0);
+
+  // Schedule an already-registered task to run in at least `delay_ms` time,
+  // and notify the service thread.
+  void schedule_task(G1ServiceTask* task, jlong delay_ms);
 };
 
 #endif // SHARE_GC_G1_G1SERVICETHREAD_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,34 +24,11 @@
 #ifndef SHARE_GC_Z_ZRELOCATIONSET_INLINE_HPP
 #define SHARE_GC_Z_ZRELOCATIONSET_INLINE_HPP
 
+#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zRelocationSet.hpp"
-#include "runtime/atomic.hpp"
 
-template <bool parallel>
-inline ZRelocationSetIteratorImpl<parallel>::ZRelocationSetIteratorImpl(ZRelocationSet* relocation_set) :
-    _relocation_set(relocation_set),
-    _next(0) {}
-
-template <bool parallel>
-inline bool ZRelocationSetIteratorImpl<parallel>::next(ZForwarding** forwarding) {
-  const size_t nforwardings = _relocation_set->_nforwardings;
-
-  if (parallel) {
-    if (_next < nforwardings) {
-      const size_t next = Atomic::fetch_and_add(&_next, 1u);
-      if (next < nforwardings) {
-        *forwarding = _relocation_set->_forwardings[next];
-        return true;
-      }
-    }
-  } else {
-    if (_next < nforwardings) {
-      *forwarding = _relocation_set->_forwardings[_next++];
-      return true;
-    }
-  }
-
-  return false;
-}
+template <bool Parallel>
+inline ZRelocationSetIteratorImpl<Parallel>::ZRelocationSetIteratorImpl(ZRelocationSet* relocation_set) :
+    ZArrayIteratorImpl<ZForwarding*, Parallel>(relocation_set->_forwardings, relocation_set->_nforwardings) {}
 
 #endif // SHARE_GC_Z_ZRELOCATIONSET_INLINE_HPP

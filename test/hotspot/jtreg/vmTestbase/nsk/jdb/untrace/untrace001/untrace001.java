@@ -53,9 +53,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.untrace.untrace001.untrace001
- *        nsk.jdb.untrace.untrace001.untrace001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.untrace.untrace001.untrace001
+ * @build nsk.jdb.untrace.untrace001.untrace001a
+ * @run main/othervm
+ *      nsk.jdb.untrace.untrace001.untrace001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

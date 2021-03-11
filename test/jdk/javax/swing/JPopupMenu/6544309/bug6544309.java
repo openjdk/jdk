@@ -22,16 +22,13 @@
  */
 /*
    @test
-  @key headful
+   @key headful
    @bug 6544309
    @summary Checks that 'Select Input Method' popup menu allows to select
             items with keyboard.
-   @author Mikhail Lapshin
-   @library /lib/client
-   @build ExtendedRobot
    @run main bug6544309
 */
-
+import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -44,12 +41,15 @@ import javax.swing.SwingUtilities;
 public class bug6544309 {
     private JDialog dialog;
     private boolean passed;
-    private static ExtendedRobot robot;
+    private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
+        robot.setAutoDelay(100);
         // move mouse outside menu to prevent auto selection
         robot.mouseMove(100,100);
+        robot.waitForIdle();
+
         final bug6544309 test = new bug6544309();
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -57,6 +57,8 @@ public class bug6544309 {
                     test.setupUI();
                 }
             });
+            robot.waitForIdle();
+            robot.delay(1000);
             test.test();
             System.out.println("Test passed");
         } finally {
@@ -95,13 +97,16 @@ public class bug6544309 {
     private void testImpl() throws Exception {
         robot.waitForIdle();
         System.out.println("Pressing DOWN ARROW");
-        robot.type(KeyEvent.VK_DOWN);
+        robot.keyPress(KeyEvent.VK_DOWN);
+        robot.keyRelease(KeyEvent.VK_DOWN);
         robot.waitForIdle();
         System.out.println("Pressing DOWN ARROW");
-        robot.type(KeyEvent.VK_DOWN);
+        robot.keyPress(KeyEvent.VK_DOWN);
+        robot.keyRelease(KeyEvent.VK_DOWN);
         robot.waitForIdle();
         System.out.println("Pressing SPACE");
-        robot.type(KeyEvent.VK_SPACE);
+        robot.keyPress(KeyEvent.VK_SPACE);
+        robot.keyRelease(KeyEvent.VK_SPACE);
     }
 
     private void checkResult() {

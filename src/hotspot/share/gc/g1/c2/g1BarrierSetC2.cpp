@@ -604,7 +604,9 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool is_unordered = (decorators & MO_UNORDERED) != 0;
+  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
   bool is_mixed = !in_heap && !in_native;
   bool need_cpu_mem_bar = !is_unordered || mismatched || is_mixed;
 
@@ -618,8 +620,8 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   // SATB log buffer using the pre-barrier mechanism.
   // Also we need to add memory barrier to prevent commoning reads
   // from this field across safepoint since GC can change its value.
-  bool need_read_barrier = in_heap && (on_weak ||
-                                       (unknown && offset != top && obj != top));
+  bool need_read_barrier = (((on_weak || on_phantom) && !no_keepalive) ||
+                            (in_heap && unknown && offset != top && obj != top));
 
   if (!access.is_oop() || !need_read_barrier) {
     return load;
@@ -629,7 +631,7 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
   GraphKit* kit = parse_access.kit();
 
-  if (on_weak) {
+  if (on_weak || on_phantom) {
     // Use the pre-barrier to record the value in the referent field
     pre_barrier(kit, false /* do_load */,
                 kit->control(),

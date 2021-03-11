@@ -34,20 +34,20 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.aod.VirtualMachine.VirtualMachine03.VirtualMachine03
- *        nsk.share.aod.DummyTargetApplication
- * @run main/othervm -Djdk.attach.allowAttachSelf -XX:+UsePerfData
- *      PropertyResolvingWrapper
+ * @build nsk.share.aod.DummyTargetApplication
+ * @run main/othervm
+ *      -Djdk.attach.allowAttachSelf
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine03.VirtualMachine03
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.DummyTargetApplication
  */
 
 package nsk.aod.VirtualMachine.VirtualMachine03;
 
 import com.sun.tools.attach.VirtualMachine;
-import nsk.share.aod.*;
+import nsk.share.aod.AODTestRunner;
 import nsk.share.test.TestUtils;
 
 /*
@@ -63,23 +63,21 @@ public class VirtualMachine03 extends AODTestRunner {
         String currentVMId = getCurrentVMId();
 
         VirtualMachine vm1 = VirtualMachine.attach(currentVMId);
-
-        VirtualMachine vm2 = VirtualMachine.attach(targetVMId);
-
         try {
-            TestUtils.assertEquals(vm1.id(), currentVMId, "vm.id() returns unexpected value: " + vm1.id());
+            VirtualMachine vm2 = VirtualMachine.attach(targetVMId);
+            try {
+                TestUtils.assertEquals(vm1.id(), currentVMId, "vm.id() returns unexpected value: " + vm1.id());
+                TestUtils.assertEquals(vm2.id(), targetVMId, "vm.id() returns unexpected value: " + vm2.id());
 
-            TestUtils.assertEquals(vm2.id(), targetVMId, "vm.id() returns unexpected value: " + vm2.id());
+                TestUtils.assertTrue(!vm1.equals(vm2), vm1 + ".equals(" + vm2 + ") returns 'true'");
 
-            TestUtils.assertTrue(!vm1.equals(vm2), vm1 + ".equals(" + vm2 + ") returns 'true'");
-
-            checkVM(vm1);
-
-            checkVM(vm2);
+                checkVM(vm1);
+                checkVM(vm2);
+            } finally {
+                vm2.detach();
+            }
         } finally {
             vm1.detach();
-
-            vm2.detach();
         }
     }
 
@@ -90,15 +88,13 @@ public class VirtualMachine03 extends AODTestRunner {
         VirtualMachine vm2 = VirtualMachine.attach(vm1.id());
         try {
             TestUtils.assertEquals(vm1, vm2, vm1 + ".equals(" + vm2 + ") returns 'false'");
-
             TestUtils.assertTrue(vm1.hashCode() == vm2.hashCode(), "vm.hashCode() returns different values for " + vm1 + " and " + vm2);
-
             TestUtils.assertEquals(vm1.provider(), vm2.provider(), "vm.provider() returns non-equals objects for " + vm1 + " and " + vm2);
         } finally {
             vm2.detach();
         }
 
-        TestUtils.assertTrue(!vm1.equals(new String()), "vm.equals(String) returns 'true'");
+        TestUtils.assertTrue(!vm1.equals(""), "vm.equals(String) returns 'true'");
 
         TestUtils.assertTrue(!vm1.equals(null), "vm.equals(null) returns 'true'");
     }

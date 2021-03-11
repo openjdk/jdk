@@ -79,7 +79,7 @@ public class bug6361367 {
         waitForFocus(textComponent);
         Robot robot = new Robot();
         robot.setAutoWaitForIdle(true);
-        robot.setAutoDelay(250);
+        robot.setAutoDelay(100);
         robot.keyPress(KeyEvent.VK_END);
         robot.keyRelease(KeyEvent.VK_END);
         robot.keyPress(KeyEvent.VK_SHIFT);

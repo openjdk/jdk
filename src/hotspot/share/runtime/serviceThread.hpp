@@ -55,7 +55,7 @@ class ServiceThread : public JavaThread {
   static void add_oop_handle_release(OopHandle handle);
 
   // GC support
-  void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
   void nmethods_do(CodeBlobClosure* cf);
 };
 

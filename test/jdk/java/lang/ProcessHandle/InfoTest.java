@@ -298,7 +298,14 @@ public class InfoTest {
                 }
                 if (info.command().isPresent()) {
                     String command = info.command().get();
-                    String expected = Platform.isWindows() ? "sleep.exe" : "sleep";
+                    String expected = "sleep";
+                    if (Platform.isWindows()) {
+                        expected = "sleep.exe";
+                    } else if (Platform.isBusybox("/bin/sleep")) {
+                        // With busybox sleep is just a sym link to busybox.
+                        // The busbox executable is seen as ProcessHandle.Info command.
+                        expected = "busybox";
+                    }
                     Assert.assertTrue(command.endsWith(expected), "Command: expected: \'" +
                             expected + "\', actual: " + command);
 

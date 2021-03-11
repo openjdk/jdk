@@ -45,13 +45,13 @@
  *          /test/lib
  * @build nsk.jdi.ListeningConnector.accept.accept001
  *        nsk.jdi.ListeningConnector.accept.accept001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ListeningConnector.accept.accept001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

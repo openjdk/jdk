@@ -62,6 +62,11 @@ public class BasicIconFactory implements Serializable
     private static Icon menuArrowIcon;
 
     /**
+     * Constructs a {@code BasicIconFactory}.
+     */
+    public BasicIconFactory() {}
+
+    /**
      * Returns a menu item check icon.
      *
      * @return a menu item check icon

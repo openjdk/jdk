@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
 import java.awt.peer.ComponentPeer;
-
+import java.io.Serial;
 
 /**
  * A FocusTraversalPolicy that determines traversal order based on the order
@@ -57,7 +58,7 @@ import java.awt.peer.ComponentPeer;
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
  * How to Use the Focus Subsystem</a>,
  * a section in <em>The Java Tutorial</em>, and the
- * <a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+ * <a href="doc-files/FocusSpec.html">Focus Specification</a>
  * for more information.
  *
  * @author David Mendenhall
@@ -70,9 +71,10 @@ import java.awt.peer.ComponentPeer;
 public class DefaultFocusTraversalPolicy
     extends ContainerOrderFocusTraversalPolicy
 {
-    /*
-     * serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.6 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 8876966522510157497L;
 
     /**

@@ -39,7 +39,7 @@ import javax.sound.midi.MidiDevice;
 public abstract class MidiDeviceProvider {
 
     /**
-     * Constructs a {@code MidiDeviceProvider}.
+     * Constructor for subclasses to call.
      */
     protected MidiDeviceProvider() {}
 

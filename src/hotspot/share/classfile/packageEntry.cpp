@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
@@ -207,7 +208,7 @@ static ArchivedPackageEntries* _archived_packages_entries = NULL;
 
 PackageEntry* PackageEntry::allocate_archived_entry() const {
   assert(!in_unnamed_module(), "unnamed packages/modules are not archived");
-  PackageEntry* archived_entry = (PackageEntry*)MetaspaceShared::read_write_space_alloc(sizeof(PackageEntry));
+  PackageEntry* archived_entry = (PackageEntry*)ArchiveBuilder::rw_region_alloc(sizeof(PackageEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(PackageEntry));
 
   if (_archived_packages_entries == NULL) {
@@ -221,8 +222,11 @@ PackageEntry* PackageEntry::allocate_archived_entry() const {
 
 PackageEntry* PackageEntry::get_archived_entry(PackageEntry* orig_entry) {
   PackageEntry** ptr = _archived_packages_entries->get(orig_entry);
-  assert(ptr != NULL && *ptr != NULL, "must have been allocated");
-  return *ptr;
+  if (ptr != NULL) {
+    return *ptr;
+  } else {
+    return NULL;
+  }
 }
 
 void PackageEntry::iterate_symbols(MetaspaceClosure* closure) {
@@ -238,6 +242,7 @@ void PackageEntry::init_as_archived_entry() {
   _module = ModuleEntry::get_archived_entry(_module);
   _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
   _defined_by_cds_in_class_path = 0;
+  JFR_ONLY(set_trace_id(0)); // re-init at runtime
 
   ArchivePtrMarker::mark_pointer((address*)literal_addr());
   ArchivePtrMarker::mark_pointer((address*)&_module);
@@ -273,7 +278,7 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
     }
   }
 
-  Array<PackageEntry*>* archived_packages = MetaspaceShared::new_rw_array<PackageEntry*>(n);
+  Array<PackageEntry*>* archived_packages = ArchiveBuilder::new_rw_array<PackageEntry*>(n);
   for (n = 0, i = 0; i < table_size(); ++i) {
     for (PackageEntry* p = bucket(i); p != NULL; p = p->next()) {
       if (p->module()->name() != NULL) {

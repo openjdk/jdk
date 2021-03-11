@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,38 @@
  *
  */
 #include "precompiled.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "runtime/handles.inline.hpp"
+
+MethodCounters::MethodCounters(const methodHandle& mh) :
+#if INCLUDE_AOT
+  _method(mh()),
+#endif
+  _prev_time(0),
+  _rate(0),
+  _nmethod_age(INT_MAX),
+  _highest_comp_level(0),
+  _highest_osr_comp_level(0)
+{
+  set_interpreter_throwout_count(0);
+  JVMTI_ONLY(clear_number_of_breakpoints());
+  invocation_counter()->init();
+  backedge_counter()->init();
+
+  if (StressCodeAging) {
+    set_nmethod_age(HotMethodDetectionLimit);
+  }
+
+  // Set per-method thresholds.
+  double scale = 1.0;
+  CompilerOracle::has_option_value(mh, CompileCommand::CompileThresholdScaling, scale);
+
+  _invoke_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _backedge_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+}
 
 MethodCounters* MethodCounters::allocate(const methodHandle& mh, TRAPS) {
   ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
@@ -35,43 +64,12 @@ void MethodCounters::clear_counters() {
   invocation_counter()->reset();
   backedge_counter()->reset();
   set_interpreter_throwout_count(0);
-  set_interpreter_invocation_count(0);
   set_nmethod_age(INT_MAX);
-#ifdef TIERED
   set_prev_time(0);
+  set_prev_event_count(0);
   set_rate(0);
   set_highest_comp_level(0);
   set_highest_osr_comp_level(0);
-#endif
-}
-
-
-int MethodCounters::highest_comp_level() const {
-#ifdef TIERED
-  return _highest_comp_level;
-#else
-  return CompLevel_none;
-#endif
-}
-
-void MethodCounters::set_highest_comp_level(int level) {
-#ifdef TIERED
-  _highest_comp_level = level;
-#endif
-}
-
-int MethodCounters::highest_osr_comp_level() const {
-#ifdef TIERED
-  return _highest_osr_comp_level;
-#else
-  return CompLevel_none;
-#endif
-}
-
-void MethodCounters::set_highest_osr_comp_level(int level) {
-#ifdef TIERED
-  _highest_osr_comp_level = level;
-#endif
 }
 
 void MethodCounters::metaspace_pointers_do(MetaspaceClosure* it) {

@@ -57,9 +57,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.EventRequest.Clear.clear001
- *        nsk.jdwp.EventRequest.Clear.clear001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.EventRequest.Clear.clear001a
+ * @run main/othervm
  *      nsk.jdwp.EventRequest.Clear.clear001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

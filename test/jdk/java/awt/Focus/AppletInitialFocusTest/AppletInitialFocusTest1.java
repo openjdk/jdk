@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,65 +21,51 @@
  * questions.
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Button;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 
-/*
-  @test
-  @key headful
-  @bug 4411534 4517274
-  @summary ensures that user's requestFocus() during applet initialization
-           is not ignored
-  @library ../../regtesthelpers
-  @build   Util
-  @run main AppletInitialFocusTest1
+/**
+ * @test
+ * @key headful
+ * @bug 4411534 4517274
+ * @summary ensures that user's requestFocus() during applet initialization
+ *          is not ignored
  */
 public class AppletInitialFocusTest1 extends Frame implements FocusListener {
 
     Button button1 = new Button("Button1");
     Button button2 = new Button("Button2");
-
-    Object lock = new Object();
+    private static volatile Object focused;
 
     public static void main(final String[] args) throws Exception {
         AppletInitialFocusTest1 app = new AppletInitialFocusTest1();
-        app.init();
-        Thread.sleep(10000);
-    }
+        try {
+            app.setSize(200, 200);
+            app.setLocationRelativeTo(null);
+            app.setLayout(new FlowLayout());
 
-    public void init() {
-        setSize(200, 200);
-        setLocationRelativeTo(null);
-        setLayout(new FlowLayout());
-
-        Component parent = this;
-        while (parent != null && !(parent instanceof Window)) {
-            parent = parent.getParent();
-        }
-        /*
-         * This applet is designed to be run only with appletviewer,
-         * so there always should be a toplevel frame.
-         */
-        if (parent == null) {
-            synchronized (lock) {
-                System.err.println("appletviewer not running");
-                System.exit(3);
+            app.button1.addFocusListener(app);
+            app.button2.addFocusListener(app);
+            app.add(app.button1);
+            app.add(app.button2);
+            app.setVisible(true);
+            app.button2.requestFocus();
+            // wait for the very very last focus event
+            Thread.sleep(10000);
+            if (app.button2 != focused) {
+                throw new RuntimeException("Wrong focus owner: " + focused);
             }
+        } finally {
+            app.dispose();
         }
-        button1.addFocusListener(this);
-        button2.addFocusListener(this);
-        add(button1);
-        add(button2);
-        setVisible(true);
-        button2.requestFocus();
     }
 
     public void focusGained(FocusEvent e) {
-        if (e.getSource() == button1) {
-            synchronized (lock) {
-                throw new RuntimeException("failed: focus on the wrong button");
-            }
-        }
+        focused = e.getSource();
+        System.out.println("focused = " + focused);
     }
 
     public void focusLost(FocusEvent e) {

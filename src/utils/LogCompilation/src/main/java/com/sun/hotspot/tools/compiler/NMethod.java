@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,11 @@ public class NMethod extends BasicLogEvent {
     private long size;
 
     /**
+     * The nmethod's insts size in bytes.
+     */
+    private long instSize;
+
+    /**
      * The nmethod's compilation level.
      */
     private long level;
@@ -77,6 +82,14 @@ public class NMethod extends BasicLogEvent {
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    public long getInstSize() {
+        return instSize;
+    }
+
+    public void setInstSize(long size) {
+        this.instSize = size;
     }
 
     /**

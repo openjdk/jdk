@@ -33,6 +33,7 @@ public final class PluginsResourceBundle {
 
     static final String DESCRIPTION = "description";
     static final String ARGUMENT = "argument";
+    static final String USAGE = "usage";
     private static final ResourceBundle pluginsBundle;
 
     static {
@@ -55,6 +56,10 @@ public final class PluginsResourceBundle {
 
     public static String getDescription(String name) {
         return getMessage(name + "." + DESCRIPTION, name);
+    }
+
+    public static String getUsage(String name) {
+        return getMessage(name + "." + USAGE, name);
     }
 
     public static String getOption(String name, String option) {

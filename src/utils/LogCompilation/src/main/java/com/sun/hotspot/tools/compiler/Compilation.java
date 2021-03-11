@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,8 +221,17 @@ public class Compilation implements LogEvent {
                     stream.print(" " + nmethod.getLevel());
                 }
             }
+
+            String codeSize = "";
+            if (nmethod != null) {
+                long nmethodSize = nmethod.getInstSize();
+                if (nmethodSize > 0) {
+                    codeSize = "(code size: " + nmethodSize + ")";
+                }
+            }
+
             int bc = isOsr() ? getBCI() : -1;
-            stream.print(getMethod().decodeFlags(bc) + " " + getCompiler() + " " + getMethod().format(bc));
+            stream.print(getMethod().decodeFlags(bc) + " " + getCompiler() + " " + getMethod().format(bc) + codeSize);
             stream.println();
             if (getFailureReason() != null) {
                 stream.println("COMPILE SKIPPED: " + getFailureReason() + " (not retryable)");

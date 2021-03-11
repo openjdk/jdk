@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,20 @@
 package java.awt;
 
 import java.awt.dnd.DropTarget;
-
-import java.awt.event.*;
-
-import java.awt.peer.ContainerPeer;
+import java.awt.event.AWTEventListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.peer.ComponentPeer;
+import java.awt.peer.ContainerPeer;
 import java.awt.peer.LightweightPeer;
-
 import java.beans.PropertyChangeListener;
-
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -42,31 +47,28 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.Serializable;
-
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
-
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.accessibility.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
 
-import sun.util.logging.PlatformLogger;
-
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
+import sun.awt.AppContext;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
-
 import sun.awt.dnd.SunDropTargetEvent;
-
 import sun.java2d.pipe.Region;
-
 import sun.security.action.GetBooleanAction;
+import sun.util.logging.PlatformLogger;
 
 /**
  * A generic Abstract Window Toolkit(AWT) container object is a component
@@ -82,7 +84,7 @@ import sun.security.action.GetBooleanAction;
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
  * How to Use the Focus Subsystem</a>,
  * a section in <em>The Java Tutorial</em>, and the
- * <a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+ * <a href="doc-files/FocusSpec.html">Focus Specification</a>
  * for more information.
  *
  * @author      Arthur van Hoff
@@ -180,8 +182,9 @@ public class Container extends Component {
     transient Color preserveBackgroundColor = null;
 
     /**
-     * JDK 1.1 serialVersionUID
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 4613797578919906343L;
 
     /**
@@ -239,6 +242,7 @@ public class Container extends Component {
      * @serialField focusTraversalPolicyProvider    boolean
      *       Stores the value of focusTraversalPolicyProvider property.
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("ncomponents", Integer.TYPE),
         new ObjectStreamField("component", Component[].class),
@@ -3666,7 +3670,8 @@ public class Container extends Component {
      *        is Serializable; otherwise, {@code null} is written.</li>
      * </ul>
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData {@code null} terminated sequence of 0 or more pairs;
      *   the pair consists of a {@code String} and {@code Object};
      *   the {@code String} indicates the type of object and
@@ -3680,6 +3685,7 @@ public class Container extends Component {
      * @see Container#containerListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         ObjectOutputStream.PutField f = s.putFields();
         f.put("ncomponents", component.size());
@@ -3713,11 +3719,15 @@ public class Container extends Component {
      *        as optional data.</li>
      * </ul>
      *
-     * @param s the {@code ObjectInputStream} to read
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      * @serial
      * @see #addContainerListener
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {
@@ -3802,9 +3812,15 @@ public class Container extends Component {
     protected class AccessibleAWTContainer extends AccessibleAWTComponent {
 
         /**
-         * JDK1.3 serialVersionUID
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 5081320404842566097L;
+
+        /**
+         * Constructs an {@code AccessibleAWTContainer}.
+         */
+        protected AccessibleAWTContainer() {}
 
         /**
          * Returns the number of accessible children in the object.  If all
@@ -3861,7 +3877,17 @@ public class Container extends Component {
          */
         protected class AccessibleContainerHandler
             implements ContainerListener, Serializable {
+
+            /**
+             * Use serialVersionUID from JDK 1.3 for interoperability.
+             */
+            @Serial
             private static final long serialVersionUID = -480855353991814677L;
+
+            /**
+             * Constructs an {@code AccessibleContainerHandler}.
+             */
+            protected AccessibleContainerHandler() {}
 
             public void componentAdded(ContainerEvent e) {
                 Component c = e.getChild();
@@ -4412,9 +4438,10 @@ public class Container extends Component {
  */
 class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 5184291520170872969L;
     /*
      * Our own mouse event for when we're dragged over from another hw

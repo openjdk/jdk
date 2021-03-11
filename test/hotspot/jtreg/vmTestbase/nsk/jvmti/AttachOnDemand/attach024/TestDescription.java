@@ -46,8 +46,7 @@
  *        nsk.jvmti.AttachOnDemand.attach024.attach024Agent00
  *
  * @comment compile modified java.util.TooManyListenersException
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
  *      -cp ${test.class.path}
  *      -d ./bin/classes
@@ -56,22 +55,22 @@
  *      ${test.src}/java.base/java/util/TooManyListenersException.java
  *
  * @comment create attach024Agent00.jar in current directory
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach024Agent00.jar ${test.src}/attach024Agent00.mf
  *      -C ./bin/classes
  *      java/util/TooManyListenersException.class
  * @run driver ClassFileInstaller
  *      nsk.jvmti.AttachOnDemand.attach024.attach024Agent00
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -uf attach024Agent00.jar
  *      nsk/jvmti/AttachOnDemand/attach024/attach024Agent00.class
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
- *      "-javaOpts=--add-reads java.base=ALL-UNNAMED -XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="--add-reads java.base=ALL-UNNAMED -XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -ja attach024Agent00.jar
  */

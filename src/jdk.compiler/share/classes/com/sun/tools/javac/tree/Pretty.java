@@ -460,6 +460,7 @@ public class Pretty extends JCTree.Visitor {
             if (tree.directives == null) {
                 print(";");
             } else {
+                print(" ");
                 printBlock(tree.directives);
             }
             println();
@@ -895,9 +896,7 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitBindingPattern(JCBindingPattern patt) {
         try {
-            printExpr(patt.vartype);
-            print(" ");
-            print(patt.name);
+            printExpr(patt.var);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

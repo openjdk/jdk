@@ -84,17 +84,18 @@ $(eval $(call SetupJavaCompilation, BUILD_INDIFY, \
 #### Compile Targets
 
 # Building microbenchmark requires the jdk.unsupported and java.management modules.
+# sun.security.util is required to compile Cache benchmark
 
 # Build microbenchmark suite for the current JDK
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
     CLASSPATH := $(MICROBENCHMARK_CLASSPATH), \
-    DISABLED_WARNINGS := processing rawtypes cast serial preview, \
+    DISABLED_WARNINGS := processing rawtypes cast serial, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
+    JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED, \
     JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management, \
-    JAVAC_FLAGS := --enable-preview, \
 ))
 
 $(BUILD_JDK_MICROBENCHMARK): $(JMH_COMPILE_JARS)

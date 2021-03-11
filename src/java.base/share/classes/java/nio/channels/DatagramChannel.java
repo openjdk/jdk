@@ -150,6 +150,9 @@ public abstract class DatagramChannel
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * @see     <a href="../../net/doc-files/net-properties.html#Ipv4IPv6">
+     *          java.net.preferIPv4Stack</a> system property
      */
     public static DatagramChannel open() throws IOException {
         return SelectorProvider.provider().openDatagramChannel();
@@ -169,6 +172,9 @@ public abstract class DatagramChannel
      * java.nio.channels.spi.SelectorProvider} object.  The channel will not be
      * connected.
      *
+     * @apiNote <a href="package-summary.html#unixdomain">Unix domain</a> sockets
+     * are not supported by DatagramChannel.
+     *
      * @param   family
      *          The protocol family
      *
@@ -181,6 +187,9 @@ public abstract class DatagramChannel
      *          but IPv6 is not enabled on the platform.
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * @see     <a href="../../net/doc-files/net-properties.html#Ipv4IPv6">
+     *          java.net.preferIPv4Stack</a> system property
      *
      * @since   1.7
      */
@@ -629,5 +638,4 @@ public abstract class DatagramChannel
      */
     @Override
     public abstract SocketAddress getLocalAddress() throws IOException;
-
 }

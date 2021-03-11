@@ -46,14 +46,14 @@
  * @build nsk.jdi.ReferenceType.sourceDebugExtension.srcdebugx002
  *        nsk.jdi.ReferenceType.sourceDebugExtension.srcdebugx002t
  * @compile srcdebugx002x.jcod
- * @build ExecDriver
- * @run main/othervm PropertyResolvingWrapper
+ *
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.sourceDebugExtension.srcdebugx002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

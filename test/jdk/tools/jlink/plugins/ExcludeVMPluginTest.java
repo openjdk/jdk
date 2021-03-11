@@ -187,7 +187,7 @@ public class ExcludeVMPluginTest {
         Plugin p = new ExcludeVMPlugin();
         Map<String, String> config = new HashMap<>();
         if (vm != null) {
-            config.put(ExcludeVMPlugin.NAME, vm);
+            config.put(p.getName(), vm);
         }
         p.configure(config);
         ResourcePool out = p.transform(poolMgr.resourcePool(), outMgr.resourcePoolBuilder());

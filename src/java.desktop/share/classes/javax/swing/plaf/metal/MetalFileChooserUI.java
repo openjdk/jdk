@@ -586,6 +586,10 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     @Deprecated(since = "9")
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileRenderer extends DefaultListCellRenderer  {
+        /**
+         * Constructs a {@code FileRenderer}.
+         */
+        protected FileRenderer() {}
     }
 
     public void uninstallUI(JComponent c) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
@@ -58,6 +57,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
@@ -380,6 +380,14 @@ void SafepointSynchronize::begin() {
   assert(_waiting_to_block == 0, "No thread should be running");
 
 #ifndef PRODUCT
+  // Mark all threads
+  if (VerifyCrossModifyFence) {
+    JavaThreadIteratorWithHandle jtiwh;
+    for (; JavaThread *cur = jtiwh.next(); ) {
+      cur->set_requires_cross_modify_fence(true);
+    }
+  }
+
   if (safepoint_limit_time != 0) {
     jlong current_time = os::javaTimeNanos();
     if (safepoint_limit_time < current_time) {
@@ -497,10 +505,20 @@ bool SafepointSynchronize::is_cleanup_needed() {
   return false;
 }
 
+class ParallelSPCleanupThreadClosure : public ThreadClosure {
+public:
+  void do_thread(Thread* thread) {
+    if (thread->is_Java_thread()) {
+      StackWatermarkSet::start_processing(thread->as_Java_thread(), StackWatermarkKind::gc);
+    }
+  }
+};
+
 class ParallelSPCleanupTask : public AbstractGangTask {
 private:
   SubTasksDone _subtasks;
   uint _num_workers;
+  bool _do_lazy_roots;
 
   class Tracer {
   private:
@@ -522,12 +540,17 @@ public:
   ParallelSPCleanupTask(uint num_workers) :
     AbstractGangTask("Parallel Safepoint Cleanup"),
     _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
-    _num_workers(num_workers) {}
+    _num_workers(num_workers),
+    _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
+                   Universe::heap()->uses_stack_watermark_barrier()) {}
 
   void work(uint worker_id) {
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
-      Tracer t("deflating idle monitors");
-      ObjectSynchronizer::do_safepoint_work();
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
+      if (_do_lazy_roots) {
+        Tracer t("lazy partial thread root processing");
+        ParallelSPCleanupThreadClosure cl;
+        Threads::threads_do(&cl);
+      }
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
@@ -537,7 +560,7 @@ public:
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
       Tracer t("compilation policy safepoint handler");
-      CompilationPolicy::policy()->do_safepoint_work();
+      CompilationPolicy::do_safepoint_work();
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
@@ -567,7 +590,7 @@ public:
       OopStorage::trigger_cleanup_if_needed();
     }
 
-    _subtasks.all_tasks_completed(_num_workers);
+    _subtasks.all_tasks_claimed();
   }
 };
 
@@ -591,6 +614,12 @@ void SafepointSynchronize::do_cleanup_tasks() {
   }
 
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
+
+  if (log_is_enabled(Debug, monitorinflation)) {
+    // The VMThread calls do_final_audit_and_print_stats() which calls
+    // audit_and_print_stats() at the Info level at VM exit time.
+    ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
+  }
 }
 
 // Methods for determining if a JavaThread is safepoint safe.
@@ -654,39 +683,6 @@ bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
   return false;
 }
 
-// See if the thread is running inside a lazy critical native and
-// update the thread critical count if so.  Also set a suspend flag to
-// cause the native wrapper to return into the JVM to do the unlock
-// once the native finishes.
-static void check_for_lazy_critical_native(JavaThread *thread, JavaThreadState state) {
-  if (state == _thread_in_native &&
-      thread->has_last_Java_frame() &&
-      thread->frame_anchor()->walkable()) {
-    // This thread might be in a critical native nmethod so look at
-    // the top of the stack and increment the critical count if it
-    // is.
-    frame wrapper_frame = thread->last_frame();
-    CodeBlob* stub_cb = wrapper_frame.cb();
-    if (stub_cb != NULL &&
-        stub_cb->is_nmethod() &&
-        stub_cb->as_nmethod_or_null()->is_lazy_critical_native()) {
-      // A thread could potentially be in a critical native across
-      // more than one safepoint, so only update the critical state on
-      // the first one.  When it returns it will perform the unlock.
-      if (!thread->do_critical_native_unlock()) {
-#ifdef ASSERT
-        if (!thread->in_critical()) {
-          GCLocker::increment_debug_jni_lock_count();
-        }
-#endif
-        thread->enter_critical();
-        // Make sure the native wrapper calls back on return to
-        // perform the needed critical unlock.
-        thread->set_critical_native_unlock();
-      }
-    }
-  }
-}
 
 // -------------------------------------------------------------------------------------------------------
 // Implementation of Safepoint blocking point
@@ -750,30 +746,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
   guarantee(thread->safepoint_state()->get_safepoint_id() == InactiveSafepointCounter,
             "The safepoint id should be set only in block path");
 
-  // Check for pending. async. exceptions or suspends - except if the
-  // thread was blocked inside the VM. has_special_runtime_exit_condition()
-  // is called last since it grabs a lock and we only want to do that when
-  // we must.
-  //
-  // Note: we never deliver an async exception at a polling point as the
-  // compiler may not have an exception handler for it. The polling
-  // code will notice the async and deoptimize and the exception will
-  // be delivered. (Polling at a return point is ok though). Sure is
-  // a lot of bother for a deprecated feature...
-  //
-  // We don't deliver an async exception if the thread state is
-  // _thread_in_native_trans so JNI functions won't be called with
-  // a surprising pending exception. If the thread state is going back to java,
-  // async exception is checked in check_special_condition_for_native_trans().
-
-  if (state != _thread_blocked_trans &&
-      state != _thread_in_vm_trans &&
-      thread->has_special_runtime_exit_condition()) {
-    thread->handle_special_runtime_exit_condition(
-      !thread->is_at_poll_safepoint() && (state != _thread_in_native_trans));
-  }
-
-  // cross_modify_fence is done by SafepointMechanism::process_operation_if_requested_slow
+  // cross_modify_fence is done by SafepointMechanism::process_if_requested
   // which is the only caller here.
 }
 
@@ -880,7 +853,6 @@ void ThreadSafepointState::examine_state_of_thread(uint64_t safepoint_count) {
   }
 
   if (safepoint_safe_with(_thread, stable_state)) {
-    check_for_lazy_critical_native(_thread, stable_state);
     account_safe_thread();
     return;
   }
@@ -924,19 +896,21 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 
 // Process pending operation.
 void ThreadSafepointState::handle_polling_page_exception() {
+  JavaThread* self = thread();
+  assert(self == Thread::current()->as_Java_thread(), "must be self");
 
   // Step 1: Find the nmethod from the return address
-  address real_return_addr = thread()->saved_exception_pc();
+  address real_return_addr = self->saved_exception_pc();
 
   CodeBlob *cb = CodeCache::find_blob(real_return_addr);
   assert(cb != NULL && cb->is_compiled(), "return address should be in nmethod");
   CompiledMethod* nm = (CompiledMethod*)cb;
 
   // Find frame of caller
-  frame stub_fr = thread()->last_frame();
+  frame stub_fr = self->last_frame();
   CodeBlob* stub_cb = stub_fr.cb();
   assert(stub_cb->is_safepoint_stub(), "must be a safepoint stub");
-  RegisterMap map(thread(), true);
+  RegisterMap map(self, true, false);
   frame caller_fr = stub_fr.sender(&map);
 
   // Should only be poll_return or poll
@@ -957,12 +931,17 @@ void ThreadSafepointState::handle_polling_page_exception() {
       // to keep it in a handle.
       oop result = caller_fr.saved_oop_result(&map);
       assert(oopDesc::is_oop_or_null(result), "must be oop");
-      return_value = Handle(thread(), result);
+      return_value = Handle(self, result);
       assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
     }
 
+    // We get here if compiled return polls found a reason to call into the VM.
+    // One condition for that is that the top frame is not yet safe to use.
+    // The following stack watermark barrier poll will catch such situations.
+    StackWatermarkSet::after_unwind(self);
+
     // Process pending operation
-    SafepointMechanism::process_if_requested(thread());
+    SafepointMechanism::process_if_requested_with_exit_check(self, true /* check asyncs */);
 
     // restore oop result, if any
     if (return_oop) {
@@ -972,27 +951,32 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
   // This is a safepoint poll. Verify the return address and block.
   else {
-    set_at_poll_safepoint(true);
 
     // verify the blob built the "return address" correctly
     assert(real_return_addr == caller_fr.pc(), "must match");
 
+    set_at_poll_safepoint(true);
     // Process pending operation
-    SafepointMechanism::process_if_requested(thread());
+    // We never deliver an async exception at a polling point as the
+    // compiler may not have an exception handler for it. The polling
+    // code will notice the pending async exception, deoptimize and
+    // the exception will be delivered. (Polling at a return point
+    // is ok though). Sure is a lot of bother for a deprecated feature...
+    SafepointMechanism::process_if_requested_with_exit_check(self, false /* check asyncs */);
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame
     // as otherwise we may never deliver it.
-    if (thread()->has_async_condition()) {
-      ThreadInVMfromJavaNoAsyncException __tiv(thread());
-      Deoptimization::deoptimize_frame(thread(), caller_fr.id());
+    if (self->has_async_condition()) {
+      ThreadInVMfromJavaNoAsyncException __tiv(self);
+      Deoptimization::deoptimize_frame(self, caller_fr.id());
     }
 
     // If an exception has been installed we must check for a pending deoptimization
     // Deoptimize frame if exception has been thrown.
 
-    if (thread()->has_pending_exception() ) {
-      RegisterMap map(thread(), true);
+    if (self->has_pending_exception() ) {
+      RegisterMap map(self, true, false);
       frame caller_fr = stub_fr.sender(&map);
       if (caller_fr.is_deoptimized_frame()) {
         // The exception patch will destroy registers that are still

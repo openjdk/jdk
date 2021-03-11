@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
 
             // If standalone names are requested and no "standalone." resources are found,
             // try the default ones instead.
-            if (strings == null && key.indexOf("standalone.") != -1) {
+            if (strings == null && key.contains("standalone.")) {
                 key = key.replaceFirst("standalone.", "");
                 strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
             }
@@ -129,7 +129,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         return name;
     }
 
-    private static int[] REST_OF_STYLES = {
+    private static final int[] REST_OF_STYLES = {
         SHORT_STANDALONE, LONG_FORMAT, LONG_STANDALONE,
         NARROW_FORMAT, NARROW_STANDALONE
     };
@@ -166,23 +166,26 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
 
             // If standalone names are requested and no "standalone." resources are found,
             // try the default ones instead.
-            if (strings == null && key.indexOf("standalone.") != -1) {
+            if (strings == null && key.contains("standalone.")) {
                 key = key.replaceFirst("standalone.", "");
                 strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
             }
 
             if (strings != null) {
-                if (!hasDuplicates(strings)) {
+                if (!hasDuplicates(strings) || field == AM_PM) {
                     if (field == YEAR) {
                         if (strings.length > 0) {
                             map.put(strings[0], 1);
                         }
                     } else {
                         int base = (field == DAY_OF_WEEK) ? 1 : 0;
-                        for (int i = 0; i < strings.length; i++) {
+                        // Duplicates can happen with AM_PM field. In such a case,
+                        // am/pm (index 0 and 1) have precedence over day
+                        // periods.
+                        for (int i = strings.length - 1; i >= 0; i--) {
                             String name = strings[i];
                             // Ignore any empty string (some standalone month names
-                            // are not defined)
+                            // or flexible day periods are not defined)
                             if (name.isEmpty()) {
                                 continue;
                             }

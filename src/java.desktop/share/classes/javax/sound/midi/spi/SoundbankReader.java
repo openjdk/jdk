@@ -45,7 +45,7 @@ import javax.sound.midi.Synthesizer;
 public abstract class SoundbankReader {
 
     /**
-     * Constructs a {@code SoundbankReader}.
+     * Constructor for subclasses to call.
      */
     protected SoundbankReader() {}
 

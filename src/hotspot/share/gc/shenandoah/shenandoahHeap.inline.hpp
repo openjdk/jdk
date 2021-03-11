@@ -29,6 +29,7 @@
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
@@ -53,7 +54,7 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
-  size_t new_index = Atomic::add(&_index, (size_t) 1);
+  size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns NULL on OOB.
   return _heap->get_region(new_index - 1);
 }
@@ -93,51 +94,47 @@ inline void ShenandoahHeap::leave_evacuation(Thread* t) {
 }
 
 template <class T>
-inline oop ShenandoahHeap::update_with_forwarded_not_null(T* p, oop obj) {
-  if (in_collection_set(obj)) {
-    shenandoah_assert_forwarded_except(p, obj, is_full_gc_in_progress() || cancelled_gc() || is_degenerated_gc_in_progress());
-    obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-    RawAccess<IS_NOT_NULL>::oop_store(p, obj);
-  }
-#ifdef ASSERT
-  else {
-    shenandoah_assert_not_forwarded(p, obj);
-  }
-#endif
-  return obj;
-}
-
-template <class T>
-inline oop ShenandoahHeap::maybe_update_with_forwarded(T* p) {
+inline void ShenandoahHeap::update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    return maybe_update_with_forwarded_not_null(p, obj);
-  } else {
-    return NULL;
+    if (in_collection_set(obj)) {
+      // Corner case: when evacuation fails, there are objects in collection
+      // set that are not really forwarded. We can still go and try and update them
+      // (uselessly) to simplify the common path.
+      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
+      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+
+      // Unconditionally store the update: no concurrent updates expected.
+      RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
+    }
   }
 }
 
 template <class T>
-inline oop ShenandoahHeap::evac_update_with_forwarded(T* p) {
+inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
-    oop heap_oop = CompressedOops::decode_not_null(o);
-    if (in_collection_set(heap_oop)) {
-      oop forwarded_oop = ShenandoahBarrierSet::resolve_forwarded_not_null(heap_oop);
-      if (forwarded_oop == heap_oop) {
-        forwarded_oop = evacuate_object(heap_oop, Thread::current());
-      }
-      oop prev = cas_oop(forwarded_oop, p, heap_oop);
-      if (prev == heap_oop) {
-        return forwarded_oop;
-      } else {
-        return NULL;
-      }
+    oop obj = CompressedOops::decode_not_null(o);
+    if (in_collection_set(obj)) {
+      // Corner case: when evacuation fails, there are objects in collection
+      // set that are not really forwarded. We can still go and try CAS-update them
+      // (uselessly) to simplify the common path.
+      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
+      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+
+      // Sanity check: we should not be updating the cset regions themselves,
+      // unless we are recovering from the evacuation failure.
+      shenandoah_assert_not_in_cset_loc_except(p, !is_in(p) || cancelled_gc());
+
+      // Either we succeed in updating the reference, or something else gets in our way.
+      // We don't care if that is another concurrent GC update, or another mutator update.
+      // We only check that non-NULL store still updated with non-forwarded reference.
+      oop witness = cas_oop(fwd, p, obj);
+      shenandoah_assert_not_forwarded_except(p, witness, (witness == NULL) || (witness == obj));
     }
-    return heap_oop;
-  } else {
-    return NULL;
   }
 }
 
@@ -149,57 +146,14 @@ inline oop ShenandoahHeap::cas_oop(oop n, oop* addr, oop c) {
 inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, narrowOop c) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop val = CompressedOops::encode(n);
-  return CompressedOops::decode((narrowOop) Atomic::cmpxchg(addr, c, val));
+  return CompressedOops::decode(Atomic::cmpxchg(addr, c, val));
 }
 
 inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, oop c) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop cmp = CompressedOops::encode(c);
   narrowOop val = CompressedOops::encode(n);
-  return CompressedOops::decode((narrowOop) Atomic::cmpxchg(addr, cmp, val));
-}
-
-template <class T>
-inline oop ShenandoahHeap::maybe_update_with_forwarded_not_null(T* p, oop heap_oop) {
-  shenandoah_assert_not_in_cset_loc_except(p, !is_in(p) || is_full_gc_in_progress() || is_degenerated_gc_in_progress());
-  shenandoah_assert_correct(p, heap_oop);
-
-  if (in_collection_set(heap_oop)) {
-    oop forwarded_oop = ShenandoahBarrierSet::resolve_forwarded_not_null(heap_oop);
-    if (forwarded_oop == heap_oop) {
-      // E.g. during evacuation.
-      return forwarded_oop;
-    }
-
-    shenandoah_assert_forwarded_except(p, heap_oop, is_full_gc_in_progress() || is_degenerated_gc_in_progress());
-    shenandoah_assert_not_forwarded(p, forwarded_oop);
-    shenandoah_assert_not_in_cset_except(p, forwarded_oop, cancelled_gc());
-
-    // If this fails, another thread wrote to p before us, it will be logged in SATB and the
-    // reference be updated later.
-    oop witness = cas_oop(forwarded_oop, p, heap_oop);
-
-    if (witness != heap_oop) {
-      // CAS failed, someone had beat us to it. Normally, we would return the failure witness,
-      // because that would be the proper write of to-space object, enforced by strong barriers.
-      // However, there is a corner case with arraycopy. It can happen that a Java thread
-      // beats us with an arraycopy, which first copies the array, which potentially contains
-      // from-space refs, and only afterwards updates all from-space refs to to-space refs,
-      // which leaves a short window where the new array elements can be from-space.
-      // In this case, we can just resolve the result again. As we resolve, we need to consider
-      // the contended write might have been NULL.
-      oop result = ShenandoahBarrierSet::resolve_forwarded(witness);
-      shenandoah_assert_not_forwarded_except(p, result, (result == NULL));
-      shenandoah_assert_not_in_cset_except(p, result, (result == NULL) || cancelled_gc());
-      return result;
-    } else {
-      // Success! We have updated with known to-space copy. We have already asserted it is sane.
-      return forwarded_oop;
-    }
-  } else {
-    shenandoah_assert_not_forwarded(p, heap_oop);
-    return heap_oop;
-  }
+  return CompressedOops::decode(Atomic::cmpxchg(addr, cmp, val));
 }
 
 inline bool ShenandoahHeap::cancelled_gc() const {
@@ -328,7 +282,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
   oop obj = oop(entry);
-  return !_marking_context->is_marked(obj);
+  return !_marking_context->is_marked_strong(obj);
 }
 
 inline bool ShenandoahHeap::in_collection_set(oop p) const {
@@ -401,7 +355,6 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
   ShenandoahMarkingContext* const ctx = complete_marking_context();
   assert(ctx->is_complete(), "sanity");
 
-  MarkBitMap* mark_bit_map = ctx->mark_bit_map();
   HeapWord* tams = ctx->top_at_mark_start(region);
 
   size_t skip_bitmap_delta = 1;
@@ -413,7 +366,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
 
   // Try to scan the initial candidate. If the candidate is above the TAMS, it would
   // fail the subsequent "< limit_bitmap" checks, and fall through to Step 2.
-  HeapWord* cb = mark_bit_map->get_next_marked_addr(start, end);
+  HeapWord* cb = ctx->get_next_marked_addr(start, end);
 
   intx dist = ShenandoahMarkScanPrefetch;
   if (dist > 0) {
@@ -440,7 +393,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
         slots[avail++] = cb;
         cb += skip_bitmap_delta;
         if (cb < limit_bitmap) {
-          cb = mark_bit_map->get_next_marked_addr(cb, limit_bitmap);
+          cb = ctx->get_next_marked_addr(cb, limit_bitmap);
         }
       }
 
@@ -463,7 +416,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
       cl->do_object(obj);
       cb += skip_bitmap_delta;
       if (cb < limit_bitmap) {
-        cb = mark_bit_map->get_next_marked_addr(cb, limit_bitmap);
+        cb = ctx->get_next_marked_addr(cb, limit_bitmap);
       }
     }
   }

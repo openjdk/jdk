@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,13 +155,13 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
         @Override
         X509TrustManager getInstance(ManagerFactoryParameters spec)
                 throws InvalidAlgorithmParameterException {
-            if (spec instanceof CertPathTrustManagerParameters == false) {
+            if (!(spec instanceof CertPathTrustManagerParameters)) {
                 throw new InvalidAlgorithmParameterException
                     ("Parameters must be CertPathTrustManagerParameters");
             }
             CertPathParameters params =
                 ((CertPathTrustManagerParameters)spec).getParameters();
-            if (params instanceof PKIXBuilderParameters == false) {
+            if (!(params instanceof PKIXBuilderParameters)) {
                 throw new InvalidAlgorithmParameterException
                     ("Encapsulated parameters must be PKIXBuilderParameters");
             }

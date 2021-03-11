@@ -53,6 +53,7 @@ define create-info-file
   $(call info-file-item, "JAVA_VERSION_DATE", "$(VERSION_DATE)")
   $(call info-file-item, "OS_NAME", "$(RELEASE_FILE_OS_NAME)")
   $(call info-file-item, "OS_ARCH", "$(RELEASE_FILE_OS_ARCH)")
+  $(call info-file-item, "LIBC", "$(RELEASE_FILE_LIBC)")
 endef
 
 # Param 1 - The file containing the MODULES list

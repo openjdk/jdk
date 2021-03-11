@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.stream.Stream;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -357,6 +358,19 @@ public class ListFactories {
     @Test(expectedExceptions=NullPointerException.class)
     public void copyOfRejectsNullElements() {
         List<Integer> list = List.copyOf(Arrays.asList(1, null, 3));
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void copyOfRejectsNullElements2() {
+        List<String> list = List.copyOf(Stream.of("a", null, "c").toList());
+    }
+
+    @Test
+    public void copyOfCopiesNullAllowingList() {
+        List<String> orig = Stream.of("a", "b", "c").toList();
+        List<String> copy = List.copyOf(orig);
+
+        assertNotSame(orig, copy);
     }
 
     @Test

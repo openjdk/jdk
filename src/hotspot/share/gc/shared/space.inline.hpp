@@ -117,7 +117,7 @@ public:
       _allowed_deadspace_words -= dead_length;
       CollectedHeap::fill_with_object(dead_start, dead_length);
       oop obj = oop(dead_start);
-      obj->set_mark_raw(obj->mark_raw().set_marked());
+      obj->set_mark(obj->mark().set_marked());
 
       assert(dead_length == (size_t)obj->size(), "bad filler object size");
       log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", " SIZE_FORMAT "b",
@@ -336,7 +336,7 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
       // copy object and reinit its mark
       assert(cur_obj != compaction_top, "everything in this pass should be moving");
       Copy::aligned_conjoint_words(cur_obj, compaction_top, size);
-      oop(compaction_top)->init_mark_raw();
+      oop(compaction_top)->init_mark();
       assert(oop(compaction_top)->klass() != NULL, "should have a class");
 
       debug_only(prev_obj = cur_obj);

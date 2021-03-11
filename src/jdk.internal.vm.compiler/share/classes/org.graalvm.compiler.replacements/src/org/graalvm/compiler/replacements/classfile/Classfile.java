@@ -49,7 +49,7 @@ public class Classfile {
     private final List<ClassfileBytecode> codeAttributes;
 
     private static final int MAJOR_VERSION_JAVA_MIN = 51; // JDK7
-    private static final int MAJOR_VERSION_JAVA_MAX = 60; // JDK16
+    private static final int MAJOR_VERSION_JAVA_MAX = 61; // JDK17
     private static final int MAGIC = 0xCAFEBABE;
 
     /**

@@ -27,7 +27,7 @@ package jdk.jfr.internal;
 
 import java.util.List;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.jfr.Event;
 import jdk.jfr.internal.handlers.EventHandler;
 
@@ -102,7 +102,7 @@ public final class JVM {
      * @return the time, in ticks
      *
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native long counterTime();
 
     /**
@@ -139,7 +139,7 @@ public final class JVM {
      *
      * @return a unique class identifier
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native long getClassId(Class<?> clazz);
 
     // temporary workaround until we solve intrinsics supporting epoch shift tagging
@@ -438,7 +438,7 @@ public final class JVM {
      *
      * @return thread local EventWriter
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native Object getEventWriter();
 
     /**
@@ -488,18 +488,9 @@ public final class JVM {
      *
      * @param s string constant to be added, not null
      *
-     * @return the current epoch of this insertion attempt
+     * @return true, if the string was successfully added.
      */
-    public static native boolean addStringConstant(boolean epoch, long id, String s);
-
-    /**
-     * Gets the address of the jboolean epoch.
-     *
-     * The epoch alternates every checkpoint.
-     *
-     * @return The address of the jboolean.
-     */
-    public native long getEpochAddress();
+    public static native boolean addStringConstant(long id, String s);
 
     public native void uncaughtException(Thread thread, Throwable t);
 
@@ -515,6 +506,18 @@ public final class JVM {
      * @return true, if it could be set
      */
     public native boolean setCutoff(long eventTypeId, long cutoffTicks);
+
+    /**
+     * Sets the event emission rate in event sample size per time unit.
+     *
+     * Determines how events are throttled.
+     *
+     * @param eventTypeId the id of the event type
+     * @param eventSampleSize event sample size
+     * @param period_ms time period in milliseconds
+     * @return true, if it could be set
+     */
+    public native boolean setThrottle(long eventTypeId, long eventSampleSize, long period_ms);
 
     /**
      * Emit old object sample events.

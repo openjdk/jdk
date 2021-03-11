@@ -27,7 +27,7 @@
  *  with CDS with Interface/Implementor pair
  * @library /test/lib /runtime/cds /testlibrary/jvmti
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @requires !vm.graal.enabled
  * @build TransformUtil TransformerAgent Interface Implementor
  * @run main/othervm TransformRelatedClasses Interface Implementor

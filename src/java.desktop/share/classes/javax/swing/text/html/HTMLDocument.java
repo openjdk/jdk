@@ -194,7 +194,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *     <th><code>setInnerHTML</code></th>
  *     <th><code>setOuterHTML</code></th>
  *   </tr>
- *   <tr valign="top">
+ *   <tr style="vertical-align:top">
  *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <p>Paragraph 1</p>

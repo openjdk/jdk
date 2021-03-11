@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,27 +26,35 @@
 #define SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
 
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/vmEnums.hpp"
+#include <type_traits>
 
 class outputStream;
 
-// function type that will construct default range string
-typedef const char* (*RangeStrFunc)(void);
+enum class JVMFlagOrigin : int {
+  // This is the value returned by JVMFlag::get_origin(). It records who
+  // has most recently changed the value of a JVMFlag. DEFAULT means that the
+  // flag was never changed, or was most recently changed by FLAG_SET_DEFAULT.
+  DEFAULT          = 0,
+  COMMAND_LINE     = 1,
+  ENVIRON_VAR      = 2,
+  CONFIG_FILE      = 3,
+  MANAGEMENT       = 4,
+  ERGONOMIC        = 5,
+  ATTACH_ON_DEMAND = 6,
+  INTERNAL         = 7,
+  JIMAGE_RESOURCE  = 8,
+};
 
-struct JVMFlag {
+ENUMERATOR_RANGE(JVMFlagOrigin, JVMFlagOrigin::DEFAULT, JVMFlagOrigin::JIMAGE_RESOURCE)
+
+class JVMFlag {
+  friend class VMStructs;
+
+public:
   enum Flags : int {
-    // latest value origin
-    DEFAULT          = 0,
-    COMMAND_LINE     = 1,
-    ENVIRON_VAR      = 2,
-    CONFIG_FILE      = 3,
-    MANAGEMENT       = 4,
-    ERGONOMIC        = 5,
-    ATTACH_ON_DEMAND = 6,
-    INTERNAL         = 7,
-    JIMAGE_RESOURCE  = 8,
-
-    LAST_VALUE_ORIGIN = JIMAGE_RESOURCE,
     VALUE_ORIGIN_BITS = 4,
     VALUE_ORIGIN_MASK = right_n_bits(VALUE_ORIGIN_BITS),
 
@@ -64,10 +72,15 @@ struct JVMFlag {
     KIND_LP64_PRODUCT       = 1 << 14,
     KIND_JVMCI              = 1 << 15,
 
-    // set this bit if the flag was set on the command line
-    ORIG_COMMAND_LINE       = 1 << 17,
+    // Note the difference:
+    // f->get_origin() == COMMAND_LINE
+    //    f was mostly recently set by the command-line
+    // f->_flags & WAS_SET_ON_COMMAND_LINE
+    //    f was specified on the command-line (but may have since been updated by
+    //    someone else like FLAG_SET_ERGO)
+    WAS_SET_ON_COMMAND_LINE = 1 << 17,
 
-    KIND_MASK = ~(VALUE_ORIGIN_MASK | ORIG_COMMAND_LINE)
+    KIND_MASK = ~(VALUE_ORIGIN_MASK | WAS_SET_ON_COMMAND_LINE)
   };
 
   enum Error {
@@ -105,12 +118,36 @@ struct JVMFlag {
     NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD
   };
 
-  const char* _type;
-  const char* _name;
+#define JVM_FLAG_NON_STRING_TYPES_DO(f) \
+    f(bool) \
+    f(int) \
+    f(uint) \
+    f(intx) \
+    f(uintx) \
+    f(uint64_t) \
+    f(size_t) \
+    f(double)
+
+#define JVM_FLAG_TYPE_DECLARE(t) \
+  TYPE_ ## t,
+
+  enum FlagType : int {
+    JVM_FLAG_NON_STRING_TYPES_DO(JVM_FLAG_TYPE_DECLARE)
+    // The two string types are a bit irregular: is_ccstr() returns true for both types.
+    TYPE_ccstr,
+    TYPE_ccstrlist,
+    NUM_FLAG_TYPES
+  };
+
+private:
   void* _addr;
+  const char* _name;
   Flags _flags;
+  int   _type;
+
   NOT_PRODUCT(const char* _doc;)
 
+public:
   // points to all Flags static array
   static JVMFlag* flags;
 
@@ -121,12 +158,12 @@ private:
   static JVMFlag* find_flag(const char* name, size_t length, bool allow_locked, bool return_flag);
 
 public:
-  constexpr JVMFlag() : _type(), _name(), _addr(), _flags() NOT_PRODUCT(COMMA _doc()) {}
+  constexpr JVMFlag() : _addr(), _name(), _flags(), _type() NOT_PRODUCT(COMMA _doc()) {}
 
-  constexpr JVMFlag(int flag_enum, const char* type, const char* name,
+  constexpr JVMFlag(int flag_enum, FlagType type, const char* name,
                     void* addr, int flags, int extra_flags, const char* doc);
 
-  constexpr JVMFlag(int flag_enum,  const char* type, const char* name,
+  constexpr JVMFlag(int flag_enum,  FlagType type, const char* name,
                     void* addr, int flags, const char* doc);
 
   static JVMFlag* find_flag(const char* name) {
@@ -141,94 +178,110 @@ public:
 
   static JVMFlag* fuzzy_match(const char* name, size_t length, bool allow_locked = false);
 
-  static const char* get_int_default_range_str();
-  static const char* get_uint_default_range_str();
-  static const char* get_intx_default_range_str();
-  static const char* get_uintx_default_range_str();
-  static const char* get_uint64_t_default_range_str();
-  static const char* get_size_t_default_range_str();
-  static const char* get_double_default_range_str();
-
-  static void assert_valid_flag_enum(int i) NOT_DEBUG_RETURN;
+  static void assert_valid_flag_enum(JVMFlagsEnum i) NOT_DEBUG_RETURN;
   static void check_all_flag_declarations() NOT_DEBUG_RETURN;
 
-  inline int flag_enum() const {
-    int i = this - JVMFlag::flags;
+  inline JVMFlagsEnum flag_enum() const {
+    JVMFlagsEnum i = static_cast<JVMFlagsEnum>(this - JVMFlag::flags);
     assert_valid_flag_enum(i);
     return i;
   }
 
-  static JVMFlag* flag_from_enum(int flag_enum) {
+  static JVMFlag* flag_from_enum(JVMFlagsEnum flag_enum) {
     assert_valid_flag_enum(flag_enum);
     return &JVMFlag::flags[flag_enum];
   }
 
-  bool is_bool() const;
-  bool get_bool() const                       { return *((bool*) _addr); }
-  void set_bool(bool value) const             { *((bool*) _addr) = value; }
+#define JVM_FLAG_TYPE_ACCESSOR(t)                                                                 \
+  bool is_##t() const                      { return _type == TYPE_##t;}                           \
+  t get_##t() const                        { assert(is_##t(), "sanity"); return *((t*) _addr); }  \
+  void set_##t(t value)                    { assert(is_##t(), "sanity"); *((t*) _addr) = value; }
 
-  bool is_int() const;
-  int get_int() const                         { return *((int*) _addr); }
-  void set_int(int value) const               { *((int*) _addr) = value; }
+  JVM_FLAG_NON_STRING_TYPES_DO(JVM_FLAG_TYPE_ACCESSOR)
 
-  bool is_uint() const;
-  uint get_uint() const                       { return *((uint*) _addr); }
-  void set_uint(uint value) const             { *((uint*) _addr) = value; }
+  bool is_ccstr()                      const { return _type == TYPE_ccstr || _type == TYPE_ccstrlist; }
+  bool ccstr_accumulates()             const { return _type == TYPE_ccstrlist; }
+  ccstr get_ccstr()                    const { assert(is_ccstr(), "sanity"); return *((ccstr*) _addr); }
+  void set_ccstr(ccstr value)                { assert(is_ccstr(), "sanity"); *((ccstr*) _addr) = value; }
 
-  bool is_intx() const;
-  intx get_intx() const                       { return *((intx*) _addr); }
-  void set_intx(intx value) const             { *((intx*) _addr) = value; }
+#define JVM_FLAG_AS_STRING(t) \
+  case TYPE_##t: return STR(t);
 
-  bool is_uintx() const;
-  uintx get_uintx() const                     { return *((uintx*) _addr); }
-  void set_uintx(uintx value) const           { *((uintx*) _addr) = value; }
+  const char* type_string() const {
+    return type_string_for((FlagType)_type);
+  }
 
-  bool is_uint64_t() const;
-  uint64_t get_uint64_t() const               { return *((uint64_t*) _addr); }
-  void set_uint64_t(uint64_t value) const     { *((uint64_t*) _addr) = value; }
+  static const char* type_string_for(FlagType t) {
+    switch(t) {
+    JVM_FLAG_NON_STRING_TYPES_DO(JVM_FLAG_AS_STRING)
+    case TYPE_ccstr:     return "ccstr";
+    case TYPE_ccstrlist: return "ccstrlist";
+    default:
+        ShouldNotReachHere();
+        return "unknown";
+    }
+  }
 
-  bool is_size_t() const;
-  size_t get_size_t() const                   { return *((size_t*) _addr); }
-  void set_size_t(size_t value) const         { *((size_t*) _addr) = value; }
+  int type() const { return _type; }
+  const char* name() const { return _name; }
 
-  bool is_double() const;
-  double get_double() const                   { return *((double*) _addr); }
-  void set_double(double value) const         { *((double*) _addr) = value; }
+  void assert_type(int type_enum) const {
+    if (type_enum == JVMFlag::TYPE_ccstr) {
+      assert(is_ccstr(), "type check"); // ccstr or ccstrlist
+    } else {
+      assert(_type == type_enum, "type check");
+    }
+  }
 
-  bool is_ccstr() const;
-  bool ccstr_accumulates() const;
-  ccstr get_ccstr() const                     { return *((ccstr*) _addr); }
-  void set_ccstr(ccstr value) const           { *((ccstr*) _addr) = value; }
+  // Do not use JVMFlag::read() or JVMFlag::write() directly unless you know
+  // what you're doing. Use FLAG_SET_XXX macros or JVMFlagAccess instead.
+  template <typename T, int type_enum> T read() const {
+    assert_type(type_enum);
+    return *static_cast<T*>(_addr);
+  }
 
-  Flags get_origin() const;
-  void set_origin(Flags origin);
+  template <typename T, int type_enum> void write(T value) {
+    assert_type(type_enum);
+    *static_cast<T*>(_addr) = value;
+  }
 
-  bool is_default() const;
-  bool is_ergonomic() const;
-  bool is_jimage_resource() const;
-  bool is_command_line() const;
-  void set_command_line();
+  JVMFlagOrigin get_origin() const {  return JVMFlagOrigin(_flags & VALUE_ORIGIN_MASK);   }
+  void set_origin(JVMFlagOrigin origin);
 
-  bool is_product() const;
-  bool is_manageable() const;
-  bool is_diagnostic() const;
-  bool is_experimental() const;
-  bool is_notproduct() const;
-  bool is_develop() const;
+  bool is_default() const         { return (get_origin() == JVMFlagOrigin::DEFAULT);          }
+  bool is_ergonomic() const       { return (get_origin() == JVMFlagOrigin::ERGONOMIC);        }
+  bool is_command_line() const    { return (_flags & WAS_SET_ON_COMMAND_LINE) != 0;           }
+  void set_command_line()         { _flags = Flags(_flags | WAS_SET_ON_COMMAND_LINE);         }
+  bool is_jimage_resource() const { return (get_origin() == JVMFlagOrigin::JIMAGE_RESOURCE);  }
+  bool is_product() const         { return (_flags & KIND_PRODUCT) != 0;                      }
+  bool is_manageable() const      { return (_flags & KIND_MANAGEABLE) != 0;                   }
+  bool is_diagnostic() const      { return (_flags & KIND_DIAGNOSTIC) != 0;                   }
+  bool is_experimental() const    { return (_flags & KIND_EXPERIMENTAL) != 0;                 }
+  bool is_notproduct() const      { return (_flags & KIND_NOT_PRODUCT) != 0;                  }
+  bool is_develop() const         { return (_flags & KIND_DEVELOP) != 0;                      }
 
   bool is_constant_in_binary() const;
 
   bool is_unlocker() const;
   bool is_unlocked() const;
-  bool is_writeable() const;
-  bool is_external() const;
+
+  // Only manageable flags can be accessed by writeableFlags.cpp
+  bool is_writeable() const       { return is_manageable();                      }
+  // All flags except "manageable" are assumed to be internal flags.
+  bool is_external() const        { return is_manageable();                      }
 
   void clear_diagnostic();
   void clear_experimental();
   void set_product();
 
   JVMFlag::MsgType get_locked_message(char*, int) const;
-  JVMFlag::MsgType get_locked_message_ext(char*, int) const;
+
+  static bool is_default(JVMFlagsEnum flag);
+  static bool is_ergo(JVMFlagsEnum flag);
+  static bool is_cmdline(JVMFlagsEnum flag);
+  static bool is_jimage_resource(JVMFlagsEnum flag);
+  static void setOnCmdLine(JVMFlagsEnum flag);
+
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
   void print_on(outputStream* st, bool withComments = false, bool printRanges = false) const;
@@ -238,36 +291,27 @@ public:
 
   static const char* flag_error_str(JVMFlag::Error error);
 
+  // type checking
+#define CHECK_COMPATIBLE(type) \
+  case TYPE_##type: \
+    assert(sizeof(T) == sizeof(type) && \
+           std::is_integral<T>::value == std::is_integral<type>::value && \
+           std::is_signed  <T>::value == std::is_signed  <type>::value, "must be"); \
+    break;
+
+  template <typename T>
+  static void assert_compatible_type(int type_enum) {
+#ifndef PRODUCT
+    switch (type_enum) {
+      JVM_FLAG_NON_STRING_TYPES_DO(CHECK_COMPATIBLE);
+      default: ShouldNotReachHere();
+    }
+#endif
+  }
+
+#undef CHECK_COMPATIBLE
+
 public:
-  static JVMFlag::Error boolAt(const JVMFlag* flag, bool* value);
-  static JVMFlag::Error boolAtPut(JVMFlag* flag, bool* value, JVMFlag::Flags origin);
-
-  static JVMFlag::Error intAt(const JVMFlag* flag, int* value);
-  static JVMFlag::Error intAtPut(JVMFlag* flag, int* value, JVMFlag::Flags origin);
-
-  static JVMFlag::Error uintAt(const JVMFlag* flag, uint* value);
-  static JVMFlag::Error uintAtPut(JVMFlag* flag, uint* value, JVMFlag::Flags origin);
-
-  static JVMFlag::Error intxAt(const JVMFlag* flag, intx* value);
-  static JVMFlag::Error intxAtPut(JVMFlag* flag, intx* value, JVMFlag::Flags origin);
-
-  static JVMFlag::Error uintxAt(const JVMFlag* flag, uintx* value);
-  static JVMFlag::Error uintxAtPut(JVMFlag* flag, uintx* value, JVMFlag::Flags origin);
-
-  static JVMFlag::Error size_tAt(const JVMFlag* flag, size_t* value);
-  static JVMFlag::Error size_tAtPut(JVMFlag* flag, size_t* value, JVMFlag::Flags origin);
-
-  static JVMFlag::Error uint64_tAt(const JVMFlag* flag, uint64_t* value);
-  static JVMFlag::Error uint64_tAtPut(JVMFlag* flag, uint64_t* value, JVMFlag::Flags origin);
-
-  static JVMFlag::Error doubleAt(const JVMFlag* flag, double* value);
-  static JVMFlag::Error doubleAtPut(JVMFlag* flag, double* value, JVMFlag::Flags origin);
-
-  static JVMFlag::Error ccstrAt(const JVMFlag* flag, ccstr* value);
-  // Contract:  JVMFlag will make private copy of the incoming value.
-  // Outgoing value is always malloc-ed, and caller MUST call free.
-  static JVMFlag::Error ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlag::Flags origin);
-
   static void printSetFlags(outputStream* out);
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges

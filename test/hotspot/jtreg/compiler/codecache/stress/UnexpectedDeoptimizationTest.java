@@ -60,6 +60,13 @@ public class UnexpectedDeoptimizationTest implements Runnable {
     @Override
     public void run() {
         Helper.WHITE_BOX.deoptimizeFrames(rng.nextBoolean());
+        // Sleep a short while to allow the stacks to grow - otherwise
+        //  we end up running almost all code in the interpreter
+        try {
+            Thread.sleep(10);
+        } catch (Exception e) {
+        }
+
     }
 
 }

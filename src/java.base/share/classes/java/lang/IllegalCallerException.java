@@ -29,7 +29,6 @@ package java.lang;
  * Thrown to indicate that a method has been called by an inappropriate caller.
  *
  * @since 9
- * @spec JPMS
  * @see StackWalker#getCallerClass
  */
 public class IllegalCallerException extends RuntimeException {

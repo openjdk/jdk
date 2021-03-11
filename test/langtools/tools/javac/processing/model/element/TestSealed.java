@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,32 +115,32 @@ public class TestSealed extends TestRunner {
         );
 
         List<String> expected = List.of(
-                "Note: visiting: SealedInterface Modifiers: [abstract, sealed]",
-                "Note:     this class has: 2, permitted subclasses",
-                "Note:     permitted subclass: NonSealedClass1",
-                "Note:     permitted subclass: SealedClass",
-                "Note: visiting: NonSealedClass1 Modifiers: [non-sealed]",
-                "Note:     this class has: 0, permitted subclasses",
-                "Note: visiting: SealedClass Modifiers: [sealed]",
-                "Note:     this class has: 2, permitted subclasses",
-                "Note:     permitted subclass: FinalClass",
-                "Note:     permitted subclass: NonSealedClass2",
-                "Note: visiting: FinalClass Modifiers: [final]",
-                "Note:     this class has: 0, permitted subclasses",
-                "Note: visiting: NonSealedClass2 Modifiers: [non-sealed]",
-                "Note:     this class has: 0, permitted subclasses",
-                "Note: visiting: ClassOutOfSealedHierarchy Modifiers: []",
-                "Note:     this class has: 0, permitted subclasses",
-                "Note: testSealedClassesProcessor" + File.separator + "src" + File.separator
-                        + "Test" + File.separator + "SealedInterface.java uses preview language features.",
-                "Note: Recompile with -Xlint:preview for details."
+                "- compiler.note.proc.messager: visiting: SealedInterface Modifiers: [abstract, sealed]",
+                "- compiler.note.proc.messager:     this class has: 2, permitted subclasses",
+                "- compiler.note.proc.messager:     permitted subclass: NonSealedClass1",
+                "- compiler.note.proc.messager:     permitted subclass: SealedClass",
+                "- compiler.note.proc.messager: visiting: NonSealedClass1 Modifiers: [non-sealed]",
+                "- compiler.note.proc.messager:     this class has: 0, permitted subclasses",
+                "- compiler.note.proc.messager: visiting: SealedClass Modifiers: [sealed]",
+                "- compiler.note.proc.messager:     this class has: 2, permitted subclasses",
+                "- compiler.note.proc.messager:     permitted subclass: FinalClass",
+                "- compiler.note.proc.messager:     permitted subclass: NonSealedClass2",
+                "- compiler.note.proc.messager: visiting: FinalClass Modifiers: [final]",
+                "- compiler.note.proc.messager:     this class has: 0, permitted subclasses",
+                "- compiler.note.proc.messager: visiting: NonSealedClass2 Modifiers: [non-sealed]",
+                "- compiler.note.proc.messager:     this class has: 0, permitted subclasses",
+                "- compiler.note.proc.messager: visiting: ClassOutOfSealedHierarchy Modifiers: []",
+                "- compiler.note.proc.messager:     this class has: 0, permitted subclasses",
+                "- compiler.note.preview.filename: SealedInterface.java, DEFAULT",
+                "- compiler.note.preview.recompile"
         );
 
         for (Mode mode : new Mode[] {Mode.API}) {
             List<String> log = new JavacTask(tb, mode)
                     .options("-processor", SealedClassesProcessor.class.getName(),
                             "--enable-preview",
-                            "-source", Integer.toString(Runtime.version().feature()))
+                            "-source", Integer.toString(Runtime.version().feature()),
+                            "-XDrawDiagnostics")
                     .files(findJavaFiles(src))
                     .outdir(classes)
                     .run()

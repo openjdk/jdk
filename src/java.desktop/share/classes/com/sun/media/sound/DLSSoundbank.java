@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -987,11 +987,7 @@ public final class DLSSoundbank implements Soundbank {
             RIFFWriter data_chunk = writer.writeChunk("data");
             AudioInputStream stream = AudioSystem.getAudioInputStream(
                     audioformat, (AudioInputStream)sample.getData());
-            byte[] buff = new byte[1024];
-            int ret;
-            while ((ret = stream.read(buff)) != -1) {
-                data_chunk.write(buff, 0, ret);
-            }
+            stream.transferTo(data_chunk);
         } else {
             RIFFWriter data_chunk = writer.writeChunk("data");
             ModelByteBuffer databuff = sample.getDataBuffer();

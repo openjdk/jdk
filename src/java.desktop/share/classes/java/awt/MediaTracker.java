@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package java.awt;
 
-import java.awt.Component;
-import java.awt.Image;
 import java.awt.image.ImageObserver;
+import java.io.Serial;
+
 import sun.awt.image.MultiResolutionToolkitImage;
 
 /**
@@ -188,9 +188,10 @@ public class MediaTracker implements java.io.Serializable {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     MediaEntry head;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -483174189758638095L;
 
     /**
@@ -923,6 +924,10 @@ abstract class MediaEntry {
     }
 }
 
+/**
+ * The entry of the list of {@code Images} that is being tracked by the
+ * {@code MediaTracker}.
+ */
 @SuppressWarnings("serial") // MediaEntry does not have a no-arg ctor
 class ImageMediaEntry extends MediaEntry implements ImageObserver,
 java.io.Serializable {
@@ -931,9 +936,10 @@ java.io.Serializable {
     int width;
     int height;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 4739377000350280650L;
 
     ImageMediaEntry(MediaTracker mt, Image img, int c, int w, int h) {

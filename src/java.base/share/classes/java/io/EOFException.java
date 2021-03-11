@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class EOFException extends IOException {
     /**
      * Constructs an {@code EOFException} with the specified detail
      * message. The string {@code s} may later be retrieved by the
-     * <code>{@link java.lang.Throwable#getMessage}</code> method of class
+     * {@link java.lang.Throwable#getMessage} method of class
      * {@code java.lang.Throwable}.
      *
      * @param   s   the detail message.

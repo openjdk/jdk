@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -430,22 +429,6 @@ class AbstractAssembler : public ResourceObj  {
     }
     return ptr;
   }
-
-  // Bootstrapping aid to cope with delayed determination of constants.
-  // Returns a static address which will eventually contain the constant.
-  // The value zero (NULL) stands instead of a constant which is still uncomputed.
-  // Thus, the eventual value of the constant must not be zero.
-  // This is fine, since this is designed for embedding object field
-  // offsets in code which must be generated before the object class is loaded.
-  // Field offsets are never zero, since an object's header (mark word)
-  // is located at offset zero.
-  RegisterOrConstant delayed_value(int(*value_fn)(), Register tmp, int offset = 0);
-  RegisterOrConstant delayed_value(address(*value_fn)(), Register tmp, int offset = 0);
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr, Register tmp, int offset) = 0;
-  // Last overloading is platform-dependent; look in assembler_<arch>.cpp.
-  static intptr_t* delayed_value_addr(int(*constant_fn)());
-  static intptr_t* delayed_value_addr(address(*constant_fn)());
-  static void update_delayed_values();
 
   // Bang stack to trigger StackOverflowError at a safe location
   // implementation delegates to machine-specific bang_stack_with_offset

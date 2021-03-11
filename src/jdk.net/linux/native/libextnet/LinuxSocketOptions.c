@@ -23,6 +23,8 @@
  * questions.
  */
 #include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/types.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -107,6 +109,29 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_LinuxSocketOptions_getQuickAck0
 JNIEXPORT jboolean JNICALL Java_jdk_net_LinuxSocketOptions_quickAckSupported0
 (JNIEnv *env, jobject unused) {
     return socketOptionSupported(SOL_SOCKET, TCP_QUICKACK);
+}
+
+/*
+ * Class:     jdk_net_LinuxSocketOptions
+ * Method:    getSoPeerCred0
+ * Signature: (I)L
+ */
+JNIEXPORT jlong JNICALL Java_jdk_net_LinuxSocketOptions_getSoPeerCred0
+  (JNIEnv *env, jclass clazz, jint fd) {
+
+    int rv;
+    struct ucred cred;
+    socklen_t len = sizeof(cred);
+
+    if ((rv=getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &len)) < 0) {
+        handleError(env, rv, "get SO_PEERCRED failed");
+    } else {
+        if ((int)cred.uid == -1) {
+            handleError(env, -1, "get SO_PEERCRED failed");
+            cred.uid = cred.gid = -1;
+        }
+    }
+    return (((jlong)cred.uid) << 32) | (cred.gid & 0xffffffffL);
 }
 
 /*

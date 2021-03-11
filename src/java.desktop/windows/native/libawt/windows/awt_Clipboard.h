@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,7 @@
 class AwtClipboard {
 private:
     static BOOL isGettingOwnership;
-    // handle to the next window in the clipboard viewer chain
-    static volatile HWND hwndNextViewer;
     static volatile BOOL isClipboardViewerRegistered;
-    static volatile BOOL skipInitialWmDrawClipboardMsg;
     static volatile jmethodID handleContentsChangedMID;
 
 public:
@@ -57,8 +54,7 @@ public:
     }
 
     static void LostOwnership(JNIEnv *env);
-    static void WmChangeCbChain(WPARAM wparam, LPARAM lparam);
-    static void WmDrawClipboard(JNIEnv *env, WPARAM wparam, LPARAM lparam);
+    static void WmClipboardUpdate(JNIEnv *env);
     static void RegisterClipboardViewer(JNIEnv *env, jobject jclipboard);
     static void UnregisterClipboardViewer(JNIEnv *env);
 };

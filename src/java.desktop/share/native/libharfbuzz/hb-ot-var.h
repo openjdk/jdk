@@ -68,7 +68,7 @@ hb_ot_var_get_axis_count (hb_face_t *face);
 typedef enum { /*< flags >*/
   HB_OT_VAR_AXIS_FLAG_HIDDEN    = 0x00000001u,
 
-  _HB_OT_VAR_AXIS_FLAG_MAX_VALUE= 0x7FFFFFFFu /*< skip >*/
+  _HB_OT_VAR_AXIS_FLAG_MAX_VALUE= HB_TAG_MAX_SIGNED /*< skip >*/
 } hb_ot_var_axis_flags_t;
 
 /**

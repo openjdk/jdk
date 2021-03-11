@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 #include "precompiled.hpp"
-
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/memTracker.hpp"
@@ -290,7 +290,7 @@ size_t ReservedMemoryRegion::committed_size() const {
 
 void ReservedMemoryRegion::set_flag(MEMFLAGS f) {
   assert((flag() == mtNone || flag() == f),
-         "Overwrite memory type for region [" PTR_FORMAT "-" PTR_FORMAT "), %u->%u.",
+         "Overwrite memory type for region [" INTPTR_FORMAT "-" INTPTR_FORMAT "), %u->%u.",
          p2i(base()), p2i(end()), (unsigned)flag(), (unsigned)f);
   if (flag() != f) {
     VirtualMemorySummary::move_reserved_memory(flag(), f, size());
@@ -343,11 +343,17 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   ReservedMemoryRegion  rgn(base_addr, size, stack, flag);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
+  log_debug(nmt)("Add reserved region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+                rgn.flag_name(), p2i(rgn.base()), rgn.size());
   if (reserved_rgn == NULL) {
     VirtualMemorySummary::record_reserved_memory(size, flag);
     return _reserved_regions->add(rgn) != NULL;
   } else {
-    if (reserved_rgn->same_region(base_addr, size)) {
+    // Deal with recursive reservation
+    // os::reserve_memory() -> pd_reserve_memory() -> os::reserve_memory()
+    // See JDK-8198226.
+    if (reserved_rgn->same_region(base_addr, size) &&
+        (reserved_rgn->flag() == flag || reserved_rgn->flag() == mtNone)) {
       reserved_rgn->set_call_stack(stack);
       reserved_rgn->set_flag(flag);
       return true;
@@ -377,6 +383,8 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // CDS reserves the whole region for mapping CDS archive, then maps each section into the region.
       // NMT reports CDS as a whole.
       if (reserved_rgn->flag() == mtClassShared) {
+        log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+                      reserved_rgn->flag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved CDS region should contain this mapping region");
         return true;
       }
@@ -384,14 +392,16 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // Mapped CDS string region.
       // The string region(s) is part of the java heap.
       if (reserved_rgn->flag() == mtJavaHeap) {
+        log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+                      reserved_rgn->flag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved heap region should contain this mapping region");
         return true;
       }
 
       // Print some more details. Don't use UL here to avoid circularities.
 #ifdef ASSERT
-      tty->print_cr("Error: existing region: [" PTR_FORMAT "-" PTR_FORMAT "), flag %u.\n"
-                    "       new region: [" PTR_FORMAT "-" PTR_FORMAT "), flag %u.",
+      tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), flag %u.\n"
+                    "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), flag %u.",
                     p2i(reserved_rgn->base()), p2i(reserved_rgn->end()), (unsigned)reserved_rgn->flag(),
                     p2i(base_addr), p2i(base_addr + size), (unsigned)flag);
 #endif
@@ -426,9 +436,15 @@ bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
-  assert(reserved_rgn != NULL, "No reserved region");
+  if (reserved_rgn == NULL) {
+    log_debug(nmt)("Add committed region \'%s\', No reserved region found for  (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+                  rgn.flag_name(),  p2i(rgn.base()), rgn.size());
+  }
+  assert(reserved_rgn != NULL, "Add committed region, No reserved region found");
   assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
   bool result = reserved_rgn->add_committed_region(addr, size, stack);
+  log_debug(nmt)("Add committed region \'%s\'(" INTPTR_FORMAT ", " SIZE_FORMAT ") %s",
+                reserved_rgn->flag_name(),  p2i(rgn.base()), rgn.size(), (result ? "Succeeded" : "Failed"));
   return result;
 }
 
@@ -439,9 +455,12 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) 
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
-  assert(reserved_rgn != NULL, "No reserved region");
+  assert(reserved_rgn != NULL, "No reserved region (" INTPTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), size);
   assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
+  const char* flag_name = reserved_rgn->flag_name();  // after remove, info is not complete
   bool result = reserved_rgn->remove_uncommitted_region(addr, size);
+  log_debug(nmt)("Removed uncommitted region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") %s",
+                flag_name,  p2i(addr), size, (result ? " Succeeded" : "Failed"));
   return result;
 }
 
@@ -450,12 +469,19 @@ bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
   assert(_reserved_regions != NULL, "Sanity check");
 
   // uncommit regions within the released region
-  if (!rgn->remove_uncommitted_region(rgn->base(), rgn->size())) {
+  ReservedMemoryRegion backup(*rgn);
+  bool result = rgn->remove_uncommitted_region(rgn->base(), rgn->size());
+  log_debug(nmt)("Remove uncommitted region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") %s",
+                backup.flag_name(), p2i(backup.base()), backup.size(), (result ? "Succeeded" : "Failed"));
+  if (!result) {
     return false;
   }
 
   VirtualMemorySummary::record_released_memory(rgn->size(), rgn->flag());
-  return _reserved_regions->remove(*rgn);
+  result =  _reserved_regions->remove(*rgn);
+  log_debug(nmt)("Removed region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") from _resvered_regions %s" ,
+                backup.flag_name(), p2i(backup.base()), backup.size(), (result ? "Succeeded" : "Failed"));
+  return result;
 }
 
 bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
@@ -466,6 +492,10 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
+  if (reserved_rgn == NULL) {
+    log_debug(nmt)("No reserved region found for (" INTPTR_FORMAT ", " SIZE_FORMAT ")!",
+                  p2i(rgn.base()), rgn.size());
+  }
   assert(reserved_rgn != NULL, "No reserved region");
   if (reserved_rgn->same_region(addr, size)) {
     return remove_released_region(reserved_rgn);
@@ -476,12 +506,26 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
     return false;
   }
 
-  if (reserved_rgn->flag() == mtClassShared &&
-      reserved_rgn->contain_region(addr, size)) {
-    // This is an unmapped CDS region, which is part of the reserved shared
-    // memory region.
-    // See special handling in VirtualMemoryTracker::add_reserved_region also.
-    return true;
+  if (reserved_rgn->flag() == mtClassShared) {
+    if (reserved_rgn->contain_region(addr, size)) {
+      // This is an unmapped CDS region, which is part of the reserved shared
+      // memory region.
+      // See special handling in VirtualMemoryTracker::add_reserved_region also.
+      return true;
+    }
+
+    if (size > reserved_rgn->size()) {
+      // This is from release the whole region spanning from archive space to class space,
+      // so we release them altogether.
+      ReservedMemoryRegion class_rgn(addr + reserved_rgn->size(),
+                                     (size - reserved_rgn->size()));
+      ReservedMemoryRegion* cls_rgn = _reserved_regions->find(class_rgn);
+      assert(cls_rgn != NULL, "Class space region  not recorded?");
+      assert(cls_rgn->flag() == mtClass, "Must be class type");
+      remove_released_region(reserved_rgn);
+      remove_released_region(cls_rgn);
+      return true;
+    }
   }
 
   VirtualMemorySummary::record_released_memory(size, reserved_rgn->flag());
@@ -523,8 +567,10 @@ bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size
   NativeCallStack original_stack = *reserved_rgn->call_stack();
   MEMFLAGS original_flags = reserved_rgn->flag();
 
+  const char* name = reserved_rgn->flag_name();
   remove_released_region(reserved_rgn);
-
+  log_debug(nmt)("Split region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ")  with size " SIZE_FORMAT,
+                name, p2i(rgn.base()), rgn.size(), split);
   // Now, create two new regions.
   add_reserved_region(addr, split, original_stack, original_flags);
   add_reserved_region(addr + split, size - split, original_stack, original_flags);
@@ -667,15 +713,14 @@ void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot
   mss._committed_in_bytes[type]  = MetaspaceUtils::committed_bytes(type);
   mss._used_in_bytes[type]       = MetaspaceUtils::used_bytes(type);
 
-  size_t free_in_bytes = (MetaspaceUtils::capacity_bytes(type) - MetaspaceUtils::used_bytes(type))
-                       + MetaspaceUtils::free_chunks_total_bytes(type)
-                       + MetaspaceUtils::free_in_vs_bytes(type);
-  mss._free_in_bytes[type] = free_in_bytes;
+  // The answer to "what is free" in metaspace is complex and cannot be answered with a single number.
+  // Free as in available to all loaders? Free, pinned to one loader? For now, keep it simple.
+  mss._free_in_bytes[type] = mss._committed_in_bytes[type] - mss._used_in_bytes[type];
 }
 
 void MetaspaceSnapshot::snapshot(MetaspaceSnapshot& mss) {
-  snapshot(Metaspace::ClassType, mss);
+  snapshot(Metaspace::NonClassType, mss);
   if (Metaspace::using_class_space()) {
-    snapshot(Metaspace::NonClassType, mss);
+    snapshot(Metaspace::ClassType, mss);
   }
 }

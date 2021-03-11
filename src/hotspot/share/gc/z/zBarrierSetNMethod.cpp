@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
-#include "gc/z/zOopClosures.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "logging/log.hpp"
@@ -53,18 +52,17 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  // Heal oops and disarm
-  ZNMethodOopClosure cl;
-  ZNMethod::nmethod_oops_do(nm, &cl);
+  // Heal oops
+  ZNMethod::nmethod_oops_barrier(nm);
+
+  // Disarm
   disarm(nm);
 
   return true;
 }
 
 int* ZBarrierSetNMethod::disarmed_value_address() const {
-  const uintptr_t mask_addr = reinterpret_cast<uintptr_t>(&ZAddressBadMask);
-  const uintptr_t disarmed_addr = mask_addr + ZNMethodDisarmedOffset;
-  return reinterpret_cast<int*>(disarmed_addr);
+  return (int*)ZAddressBadMaskHighOrderBitsAddr;
 }
 
 ByteSize ZBarrierSetNMethod::thread_disarmed_offset() const {

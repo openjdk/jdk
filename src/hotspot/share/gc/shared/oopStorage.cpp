@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
@@ -697,7 +697,7 @@ void OopStorage::release(const oop* ptr) {
   check_release_entry(ptr);
   Block* block = find_block_or_null(ptr);
   assert(block != NULL, "%s: invalid release " PTR_FORMAT, name(), p2i(ptr));
-  log_trace(oopstorage, ref)("%s: released " PTR_FORMAT, name(), p2i(ptr));
+  log_trace(oopstorage, ref)("%s: releasing " PTR_FORMAT, name(), p2i(ptr));
   block->release_entries(block->bitmask_for_entry(ptr), this);
   Atomic::dec(&_allocation_count);
 }
@@ -708,7 +708,6 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
     check_release_entry(ptrs[i]);
     Block* block = find_block_or_null(ptrs[i]);
     assert(block != NULL, "%s: invalid release " PTR_FORMAT, name(), p2i(ptrs[i]));
-    log_trace(oopstorage, ref)("%s: released " PTR_FORMAT, name(), p2i(ptrs[i]));
     size_t count = 0;
     uintx releasing = 0;
     for ( ; i < size; ++i) {
@@ -717,7 +716,7 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
       // If entry not in block, finish block and resume outer loop with entry.
       if (!block->contains(entry)) break;
       // Add entry to releasing bitmap.
-      log_trace(oopstorage, ref)("%s: released " PTR_FORMAT, name(), p2i(entry));
+      log_trace(oopstorage, ref)("%s: releasing " PTR_FORMAT, name(), p2i(entry));
       uintx entry_bitmask = block->bitmask_for_entry(entry);
       assert((releasing & entry_bitmask) == 0,
              "Duplicate entry: " PTR_FORMAT, p2i(entry));
@@ -788,6 +787,21 @@ OopStorage::~OopStorage() {
   os::free(const_cast<char*>(_name));
 }
 
+void OopStorage::register_num_dead_callback(NumDeadCallback f) {
+  assert(_num_dead_callback == NULL, "Only one callback function supported");
+  _num_dead_callback = f;
+}
+
+void OopStorage::report_num_dead(size_t num_dead) const {
+  if (_num_dead_callback != NULL) {
+    _num_dead_callback(num_dead);
+  }
+}
+
+bool OopStorage::should_report_num_dead() const {
+  return _num_dead_callback != NULL;
+}
+
 // Managing service thread notifications.
 //
 // We don't want cleanup work to linger indefinitely, but we also don't want
@@ -815,21 +829,6 @@ static jlong cleanup_trigger_permit_time = 0;
 // permitted.  The value of 500ms was an arbitrary choice; frequent, but not
 // too frequent.
 const jlong cleanup_trigger_defer_period = 500 * NANOSECS_PER_MILLISEC;
-
-void OopStorage::register_num_dead_callback(NumDeadCallback f) {
-  assert(_num_dead_callback == NULL, "Only one callback function supported");
-  _num_dead_callback = f;
-}
-
-void OopStorage::report_num_dead(size_t num_dead) const {
-  if (_num_dead_callback != NULL) {
-    _num_dead_callback(num_dead);
-  }
-}
-
-bool OopStorage::should_report_num_dead() const {
-  return _num_dead_callback != NULL;
-}
 
 void OopStorage::trigger_cleanup_if_needed() {
   MonitorLocker ml(Service_lock, Monitor::_no_safepoint_check_flag);

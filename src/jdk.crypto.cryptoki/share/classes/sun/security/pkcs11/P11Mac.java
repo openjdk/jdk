@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,9 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
  * MAC implementation class. This class currently supports HMAC using
- * MD5, SHA-1, SHA-224, SHA-256, SHA-384, and SHA-512 and the SSL3 MAC
- * using MD5 and SHA-1.
+ * MD5, SHA-1, SHA-2 family (SHA-224, SHA-256, SHA-384, and SHA-512),
+ * SHA-3 family (SHA3-224, SHA3-256, SHA3-384, and SHA3-512), and the
+ * SSL3 MAC using MD5 and SHA-1.
  *
  * Note that unlike other classes (e.g. Signature), this does not
  * composite various operations if the token only supports part of the
@@ -92,16 +93,20 @@ final class P11Mac extends MacSpi {
             break;
         case (int)CKM_SHA224_HMAC:
         case (int)CKM_SHA512_224_HMAC:
+        case (int)CKM_SHA3_224_HMAC:
             macLength = 28;
             break;
         case (int)CKM_SHA256_HMAC:
         case (int)CKM_SHA512_256_HMAC:
+        case (int)CKM_SHA3_256_HMAC:
             macLength = 32;
             break;
         case (int)CKM_SHA384_HMAC:
+        case (int)CKM_SHA3_384_HMAC:
             macLength = 48;
             break;
         case (int)CKM_SHA512_HMAC:
+        case (int)CKM_SHA3_512_HMAC:
             macLength = 64;
             break;
         case (int)CKM_SSL3_MD5_MAC:
@@ -146,6 +151,13 @@ final class P11Mac extends MacSpi {
         try {
             token.p11.C_SignFinal(session.id(), 0);
         } catch (PKCS11Exception e) {
+            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+                // Cancel Operation may be invoked after an error on a PKCS#11
+                // call. If the operation inside the token was already cancelled,
+                // do not fail here. This is part of a defensive mechanism for
+                // PKCS#11 libraries that do not strictly follow the standard.
+                return;
+            }
             throw new ProviderException("Cancel failed", e);
         }
     }
@@ -208,6 +220,12 @@ final class P11Mac extends MacSpi {
             ensureInitialized();
             return token.p11.C_SignFinal(session.id(), 0);
         } catch (PKCS11Exception e) {
+            // As per the PKCS#11 standard, C_SignFinal may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are handled at OpenJDK's libj2pkcs11 native
+            // library. Thus, P11Mac::reset can be called with a 'false'
+            // doCancel argument from here.
             throw new ProviderException("doFinal() failed", e);
         } finally {
             reset(false);

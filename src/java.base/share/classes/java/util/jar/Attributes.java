@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
 
 import sun.nio.cs.UTF_8;
@@ -672,7 +672,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
 
         static {
 
-            VM.initializeFromArchive(Attributes.Name.class);
+            CDS.initializeFromArchive(Attributes.Name.class);
 
             if (KNOWN_NAMES == null) {
                 MANIFEST_VERSION = new Name("Manifest-Version");

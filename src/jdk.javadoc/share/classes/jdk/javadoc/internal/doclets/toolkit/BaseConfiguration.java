@@ -25,18 +25,37 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
-import java.util.*;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.function.Function;
+
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor14;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.DocTreePath;
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.doclet.Doclet;
@@ -44,7 +63,6 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.doclet.Taglet;
-import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
 import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
@@ -60,6 +78,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberCache;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.doclint.DocLint;
 
 /**
  * Configure the output based on the options. Doclets should sub-class
@@ -86,16 +105,6 @@ public abstract class BaseConfiguration {
      * The taglet manager.
      */
     public TagletManager tagletManager;
-
-    /**
-     * The path to the builder XML input file.
-     */
-    public String builderXMLPath;
-
-    /**
-     * The default path to the builder XML.
-     */
-    public static final String DEFAULT_BUILDER_XML = "resources/doclet.xml";
 
     /**
      * The meta tag keywords instance.
@@ -201,7 +210,7 @@ public abstract class BaseConfiguration {
      * @apiNote The {@code doclet} parameter is used when
      * {@link Taglet#init(DocletEnvironment, Doclet) initializing tags}.
      * Some doclets (such as the {@link StandardDoclet}), may delegate to another
-     * (such as the {@link HtmlDoclet}).  In such cases, the primary doclet (i.e
+     * (such as the {@code HtmlDoclet}).  In such cases, the primary doclet (i.e
      * {@code StandardDoclet}) should be provided here, and not any internal
      * class like {@code HtmlDoclet}.
      *
@@ -219,7 +228,8 @@ public abstract class BaseConfiguration {
 
     private boolean initialized = false;
 
-    protected void initConfiguration(DocletEnvironment docEnv) {
+    protected void initConfiguration(DocletEnvironment docEnv,
+                                     Function<String, String> resourceKeyMapper) {
         if (initialized) {
             throw new IllegalStateException("configuration previously initialized");
         }
@@ -232,6 +242,8 @@ public abstract class BaseConfiguration {
         if (!options.javafx()) {
             options.setJavaFX(isJavaFXMode());
         }
+
+        getDocResources().setKeyMapper(resourceKeyMapper);
 
         // Once docEnv and Utils have been initialized, others should be safe.
         metakeywords = new MetaKeywords(this);
@@ -358,6 +370,9 @@ public abstract class BaseConfiguration {
         for (Pair<String, String> linkOfflinePair : options.linkOfflineList()) {
             extern.link(linkOfflinePair.first, linkOfflinePair.second, reporter);
         }
+        if (!options.noPlatformLinks()) {
+            extern.checkPlatformLinks(options.linkPlatformProperties(), reporter);
+        }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
         initTagletManager(options.customTagStrs());
         options.groupPairs().forEach(grp -> {
@@ -367,7 +382,16 @@ public abstract class BaseConfiguration {
                 group.checkPackageGroups(grp.first, grp.second);
             }
         });
-        overviewElement = new OverviewElement(workArounds.getUnnamedPackage(), getOverviewPath());
+
+        PackageElement unnamedPackage;
+        Elements elementUtils = utils.elementUtils;
+        if (docEnv.getSourceVersion().compareTo(SourceVersion.RELEASE_9) >= 0) {
+            ModuleElement unnamedModule = elementUtils.getModuleElement("");
+            unnamedPackage = elementUtils.getPackageElement(unnamedModule, "");
+        } else {
+            unnamedPackage = elementUtils.getPackageElement("");
+        }
+        overviewElement = new OverviewElement(unnamedPackage, getOverviewPath());
         return true;
     }
 
@@ -380,10 +404,8 @@ public abstract class BaseConfiguration {
     public boolean setOptions() throws DocletException {
         initPackages();
         initModules();
-        if (!finishOptionSettings0() || !finishOptionSettings())
-            return false;
-
-        return true;
+        return finishOptionSettings0()
+                && finishOptionSettings();
     }
 
     private void initDestDirectory() throws DocletException {
@@ -575,18 +597,6 @@ public abstract class BaseConfiguration {
     public abstract WriterFactory getWriterFactory();
 
     /**
-     * Return the input stream to the builder XML.
-     *
-     * @return the input steam to the builder XML.
-     * @throws DocFileIOException when the given XML file cannot be found or opened.
-     */
-    public InputStream getBuilderXML() throws DocFileIOException {
-        return builderXMLPath == null ?
-                BaseConfiguration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
-                DocFile.createFileForInput(this, builderXMLPath).openInputStream();
-    }
-
-    /**
      * Return the Locale for this document.
      *
      * @return the current locale
@@ -690,4 +700,89 @@ public abstract class BaseConfiguration {
                 || javafxModule.isUnnamed()
                 || javafxModule.getQualifiedName().contentEquals("javafx.base");
     }
+
+
+    //<editor-fold desc="DocLint support">
+
+    private DocLint doclint;
+
+    Map<CompilationUnitTree, Boolean> shouldCheck = new HashMap<>();
+
+    public void runDocLint(TreePath path) {
+        CompilationUnitTree unit = path.getCompilationUnit();
+        if (doclint != null && shouldCheck.computeIfAbsent(unit, doclint::shouldCheck)) {
+            doclint.scan(path);
+        }
+    }
+
+    /**
+     * Initializes DocLint, if appropriate, depending on options derived
+     * from the doclet command-line options, and the set of custom tags
+     * that should be ignored by DocLint.
+     *
+     * DocLint is not enabled if the option {@code -Xmsgs:none} is given,
+     * and it is not followed by any options to enable any groups.
+     * Note that arguments for {@code -Xmsgs:} can be given individually
+     * in separate {@code -Xmsgs:} options, or in a comma-separated list
+     * for a single option. For example, the following are equivalent:
+     * <ul>
+     *     <li>{@code -Xmsgs:all} {@code -Xmsgs:-html}
+     *     <li>{@code -Xmsgs:all,-html}
+     * </ul>
+     *
+     * @param opts  options for DocLint, derived from the corresponding doclet
+     *              command-line options
+     * @param customTagNames the names of custom tags, to be ignored by doclint
+     */
+    public void initDocLint(List<String> opts, Set<String> customTagNames) {
+        List<String> doclintOpts = new ArrayList<>();
+
+        // basic analysis of -Xmsgs and -Xmsgs: options to see if doclint is enabled
+        Set<String> groups = new HashSet<>();
+        boolean seenXmsgs = false;
+        for (String opt : opts) {
+            if (opt.equals(DocLint.XMSGS_OPTION)) {
+                groups.add("all");
+                seenXmsgs = true;
+            } else if (opt.startsWith(DocLint.XMSGS_CUSTOM_PREFIX)) {
+                String[] args = opt.substring(DocLint.XMSGS_CUSTOM_PREFIX.length())
+                        .split(DocLint.SEPARATOR);
+                for (String a : args) {
+                    if (a.equals("none")) {
+                        groups.clear();
+                    } else if (a.startsWith("-")) {
+                        groups.remove(a.substring(1));
+                    } else {
+                        groups.add(a);
+                    }
+                }
+                seenXmsgs = true;
+            }
+            doclintOpts.add(opt);
+        }
+
+        if (seenXmsgs) {
+            if (groups.isEmpty()) {
+                // no groups enabled; do not init doclint
+                return;
+            }
+        } else {
+            // no -Xmsgs options of any kind, use default
+            doclintOpts.add(DocLint.XMSGS_OPTION);
+        }
+
+        if (!customTagNames.isEmpty()) {
+            String customTags = String.join(DocLint.SEPARATOR, customTagNames);
+            doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags);
+        }
+
+        doclint = new DocLint();
+        doclint.init(docEnv.getDocTrees(), docEnv.getElementUtils(), docEnv.getTypeUtils(),
+                doclintOpts.toArray(new String[0]));
+    }
+
+    public boolean haveDocLint() {
+        return (doclint != null);
+    }
+    //</editor-fold>
 }

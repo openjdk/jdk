@@ -87,7 +87,7 @@
 # Corrections are welcome.
 
 # Algeria
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Algeria	1916	only	-	Jun	14	23:00s	1:00	S
 Rule	Algeria	1916	1919	-	Oct	Sun>=1	23:00s	0	-
 Rule	Algeria	1917	only	-	Mar	24	23:00s	1:00	S
@@ -110,10 +110,9 @@ Rule	Algeria	1978	only	-	Mar	24	 1:00	1:00	S
 Rule	Algeria	1978	only	-	Sep	22	 3:00	0	-
 Rule	Algeria	1980	only	-	Apr	25	 0:00	1:00	S
 Rule	Algeria	1980	only	-	Oct	31	 2:00	0	-
-# Shanks & Pottenger give 0:09:20 for Paris Mean Time; go with Howse's
-# more precise 0:09:21.
+# See Europe/Paris for PMT-related transitions.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Algiers	0:12:12 -	LMT	1891 Mar 15  0:01
+Zone	Africa/Algiers	0:12:12 -	LMT	1891 Mar 16
 			0:09:21	-	PMT	1911 Mar 11 # Paris Mean Time
 			0:00	Algeria	WE%sT	1940 Feb 25  2:00
 			1:00	Algeria	CE%sT	1946 Oct  7
@@ -199,7 +198,7 @@ Link Africa/Abidjan Atlantic/St_Helena	# St Helena
 # Egypt was mean noon at the Great Pyramid, 2:04:30.5, but apparently this
 # did not apply to Cairo, Alexandria, or Port Said.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Egypt	1940	only	-	Jul	15	0:00	1:00	S
 Rule	Egypt	1940	only	-	Oct	 1	0:00	0	-
 Rule	Egypt	1941	only	-	Apr	15	0:00	1:00	S
@@ -410,36 +409,87 @@ Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 
 # Ghana
 
-# From Paul Eggert (2018-01-30):
-# Whitman says DST was observed from 1931 to "the present";
-# Shanks & Pottenger say 1936 to 1942 with 20 minutes of DST,
-# with transitions on 09-01 and 12-31 at 00:00.
-# Page 33 of Parish GCB, Colonial Reports - Annual. No. 1066. Gold
-# Coast. Report for 1919. (March 1921), OCLC 784024077
-# http://libsysdigi.library.illinois.edu/ilharvest/africana/books2011-05/5530214/5530214_1919/5530214_1919_opt.pdf
-# lists the Determination of the Time Ordinance, 1919, No. 18,
-# "to advance the time observed locally by the space of twenty minutes
-# during the last four months of each year; the object in view being
-# to extend during those months the period of daylight-time available
-# for evening recreation after office hours."
-# Vanessa Ogle, The Global Transformation of Time, 1870-1950 (2015), p 33,
-# writes "In 1919, the Gold Coast (Ghana as of 1957) made Greenwich
-# time its legal time and simultaneously legalized a summer time of
-# UTC - 00:20 minutes from March to October."; a footnote lists
-# the ordinance as being dated 1919-11-24.
-# The Crown Colonist, Volume 12 (1942), p 176, says "the Government
-# intend advancing Gold Coast time half an hour ahead of G.M.T.
-# The actual date of the alteration has not yet been announced."
-# These sources are incomplete and contradictory.  Possibly what is
-# now Ghana observed different DST regimes in different years.  For
-# lack of better info, use Shanks except treat the minus sign as a
-# typo, and assume DST started in 1920 not 1936.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Ghana	1920	1942	-	Sep	 1	0:00	0:20	-
-Rule	Ghana	1920	1942	-	Dec	31	0:00	0	-
+# From P Chan (2020-11-20):
+# Interpretation Amendment Ordinance, 1915 (No.24 of 1915) [1915-11-02]
+# Ordinances of the Gold Coast, Ashanti, Northern Territories 1915, p 69-71
+# https://books.google.com/books?id=ErA-AQAAIAAJ&pg=PA70
+# This Ordinance added "'Time' shall mean Greenwich Mean Time" to the
+# Interpretation Ordinance, 1876.
+#
+# Determination of the Time Ordinance, 1919 (No. 18 of 1919) [1919-11-24]
+# Ordinances of the Gold Coast, Ashanti, Northern Territories 1919, p 75-76
+# https://books.google.com/books?id=MbA-AQAAIAAJ&pg=PA75
+# This Ordinance removed the previous definition of time and introduced DST.
+#
+# Time Determination Ordinance (Cap. 214)
+# The Laws of the Gold Coast (including Togoland Under British Mandate)
+# Vol. II (1937), p 2328
+# https://books.google.com/books?id=Z7M-AQAAIAAJ&pg=PA2328
+# Revised edition of the 1919 Ordinance.
+#
+# Time Determination (Amendment) Ordinance, 1940 (No. 9 of 1940) [1940-04-06]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1940, p 22
+# https://books.google.com/books?id=1ao-AQAAIAAJ&pg=PA22
+# This Ordinance changed the forward transition from September to May.
+#
+# Defence (Time Determination Ordinance Amendment) Regulations, 1942
+# (Regulations No. 6 of 1942) [1942-01-31, commenced on 1942-02-08]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1942, p 48
+# https://books.google.com/books?id=Das-AQAAIAAJ&pg=PA48
+# These regulations advanced the [standard] time by thirty minutes.
+#
+# Defence (Time Determination Ordinance Amendment (No.2)) Regulations,
+# 1942 (Regulations No. 28 of 1942) [1942-04-25]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1942, p 87
+# https://books.google.com/books?id=Das-AQAAIAAJ&pg=PA87
+# These regulations abolished DST and changed the time to GMT+0:30.
+#
+# Defence (Revocation) (No.4) Regulations, 1945 (Regulations No. 45 of
+# 1945) [1945-10-24, commenced on 1946-01-06]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1945, p 256
+# https://books.google.com/books?id=9as-AQAAIAAJ&pg=PA256
+# These regulations revoked the previous two sets of Regulations.
+#
+# Time Determination (Amendment) Ordinance, 1945 (No. 18 of 1945) [1946-01-06]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1945, p 69
+# https://books.google.com/books?id=9as-AQAAIAAJ&pg=PA69
+# This Ordinance abolished DST.
+#
+# Time Determination (Amendment) Ordinance, 1950 (No. 26 of 1950) [1950-07-22]
+# Annual Volume of the Laws of the Gold Coast:
+# Containing All Legislation Enacted During Year 1950, p 35
+# https://books.google.com/books?id=e60-AQAAIAAJ&pg=PA35
+# This Ordinance restored DST but with thirty minutes offset.
+#
+# Time Determination Ordinance (Cap. 264)
+# The Laws of the Gold Coast, Vol. V (1954), p 380
+# https://books.google.com/books?id=Mqc-AQAAIAAJ&pg=PA380
+# Revised edition of the Time Determination Ordinance.
+#
+# Time Determination (Amendment) Ordinance, 1956 (No. 21 of 1956) [1956-08-29]
+# Annual Volume of the Ordinances of the Gold Coast Enacted During the
+# Year 1956, p 83
+# https://books.google.com/books?id=VLE-AQAAIAAJ&pg=PA83
+# This Ordinance abolished DST.
+
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	Ghana	1919	only	-	Nov	24	0:00	0:20	+0020
+Rule	Ghana	1920	1942	-	Jan	 1	2:00	0	GMT
+Rule	Ghana	1920	1939	-	Sep	 1	2:00	0:20	+0020
+Rule	Ghana	1940	1941	-	May	 1	2:00	0:20	+0020
+Rule	Ghana	1950	1955	-	Sep	 1	2:00	0:30	+0030
+Rule	Ghana	1951	1956	-	Jan	 1	2:00	0	GMT
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Accra	-0:00:52 -	LMT	1918
-			 0:00	Ghana	GMT/+0020
+Zone	Africa/Accra	-0:00:52 -	LMT	1915 Nov  2
+			 0:00	Ghana	%s	1942 Feb  8
+			 0:30	-	+0030	1946 Jan  6
+			 0:00	Ghana	%s
 
 # Guinea
 # See Africa/Abidjan.
@@ -457,11 +507,54 @@ Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
 			 0:00	-	GMT
 
 # Kenya
+
+# From P Chan (2020-10-24):
+#
+# The standard time of GMT+2:30 was adopted in the East Africa Protectorate....
+# [The Official Gazette, 1908-05-01, p 274]
+# https://books.google.com/books?id=e-cAC-sjPSEC&pg=PA274
+#
+# At midnight on 30 June 1928 the clocks throughout Kenya was put forward
+# half an hour by the Alteration of Time Ordinance, 1928.
+# https://gazettes.africa/archive/ke/1928/ke-government-gazette-dated-1928-05-11-no-28.pdf
+# [Ordinance No. 11 of 1928, The Offical Gazette, 1928-06-26, p 813]
+# https://books.google.com/books?id=2S0S6os32ZUC&pg=PA813
+#
+# The 1928 ordinance was repealed by the Alteration of Time (repeal) Ordinance,
+# 1929 and the time was restored to GMT+2:30 at midnight on 4 January 1930.
+# [Ordinance No. 97 of 1929, The Official Gazette, 1929-12-31, p 2701]
+# https://books.google.com/books?id=_g18jIZQlwwC&pg=PA2701
+#
+# The Alteration of Time Ordinance, 1936 changed the time to GMT+2:45
+# and repealed the previous ordinance at midnight on 31 December 1936.
+# [The Official Gazette, 1936-07-21, p 705]
+# https://books.google.com/books?id=K7j41z0aC5wC&pg=PA705
+#
+# The Defence (Amendment of Laws No. 120) Regulations changed the time
+# to GMT+3 at midnight on 31 July 1942.
+# [Kenya Official Gazette Supplement No. 32, 1942-07-21, p 331]
+# https://books.google.com/books?hl=zh-TW&id=c_E-AQAAIAAJ&pg=PA331
+# The provision of the 1936 ordinance was not repealed and was later
+# incorporated in the Interpretation and General Clauses Ordinance in 1948.
+# Although it was overridden by the 1942 regulations.
+# [The Laws of Kenya in force on 1948-09-21, Title I, Chapter 1, 31]
+# https://dds.crl.edu/item/217517 (p.101)
+# In 1950 the Interpretation and General Clauses Ordinance was amended to adopt
+# GMT+3 permanently as the 1942 regulations were due to expire on 10 December.
+# https://books.google.com/books?id=jvR8mUDAwR0C&pg=PA787
+# [Ordinance No. 44 of 1950, Kenya Ordinances 1950, Vol. XXIX, p 294]
+# https://books.google.com/books?id=-_dQAQAAMAAJ&pg=PA294
+
+# From Paul Eggert (2020-10-24):
+# The 1908-05-01 announcement does not give an effective date,
+# so just say "1908 May".
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Nairobi	2:27:16	-	LMT	1928 Jul
-			3:00	-	EAT	1930
-			2:30	-	+0230	1940
-			2:45	-	+0245	1960
+Zone	Africa/Nairobi	2:27:16	-	LMT	1908 May
+			2:30	-	+0230	1928 Jun 30 24:00
+			3:00	-	EAT	1930 Jan  4 24:00
+			2:30	-	+0230	1936 Dec 31 24:00
+			2:45	-	+0245	1942 Jul 31 24:00
 			3:00	-	EAT
 Link Africa/Nairobi Africa/Addis_Ababa	 # Ethiopia
 Link Africa/Nairobi Africa/Asmara	 # Eritrea
@@ -524,7 +617,7 @@ Zone	Africa/Monrovia	-0:43:08 -	LMT	1882
 # From Paul Eggert (2013-10-25):
 # For now, assume they're reverting to the pre-2012 rules of permanent UT +02.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Libya	1951	only	-	Oct	14	2:00	1:00	S
 Rule	Libya	1952	only	-	Jan	 1	0:00	0	-
 Rule	Libya	1953	only	-	Oct	 9	2:00	1:00	S
@@ -647,7 +740,7 @@ Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 # "The trial ended on March 29, 2009, when the clocks moved back by one hour
 # at 2am (or 02:00) local time..."
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule Mauritius	1982	only	-	Oct	10	0:00	1:00	-
 Rule Mauritius	1983	only	-	Mar	21	0:00	0	-
 Rule Mauritius	2008	only	-	Oct	lastSun	2:00	1:00	-
@@ -898,17 +991,30 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # https://maroc-diplomatique.net/maroc-le-retour-a-lheure-gmt-est-prevu-dimanche-prochain/
 # http://aujourdhui.ma/actualite/gmt1-retour-a-lheure-normale-dimanche-prochain-1
 #
-# From Paul Eggert (2020-04-14):
+# From Milamber (2020-05-31)
+# In Morocco (where I live), the end of Ramadan (Arabic month) is followed by
+# the Eid al-Fitr, and concretely it's 1 or 2 day offs for the people (with
+# traditional visiting of family, big lunches/dinners, etc.).  So for this
+# year the astronomical calculations don't include the following 2 days off in
+# the calc.  These 2 days fall in a Sunday/Monday, so it's not acceptable by
+# people to have a time shift during these 2 days off.  Perhaps you can modify
+# the (predicted) rules for next years: if the end of Ramadan is a (probable)
+# Friday or Saturday (and so the 2 days off are on a weekend), the next time
+# shift will be the next weekend.
+#
+# From Paul Eggert (2020-05-31):
 # For now, guess that in the future Morocco will fall back at 03:00
 # the last Sunday before Ramadan, and spring forward at 02:00 the
-# first Sunday after the day after Ramadan.  To implement this,
-# transition dates for 2021 through 2087 were determined by running
-# the following program under GNU Emacs 26.3.
-# (let ((islamic-year 1442))
+# first Sunday after two days after Ramadan.  To implement this,
+# transition dates and times for 2019 through 2087 were determined by
+# running the following program under GNU Emacs 26.3.  (This algorithm
+# also produces the correct transition dates for 2016 through 2018,
+# though the times differ due to Morocco's time zone change in 2018.)
+# (let ((islamic-year 1440))
 #   (require 'cal-islam)
 #   (while (< islamic-year 1511)
 #     (let ((a (calendar-islamic-to-absolute (list 9 1 islamic-year)))
-#           (b (1+ (calendar-islamic-to-absolute (list 10 1 islamic-year))))
+#           (b (+ 2 (calendar-islamic-to-absolute (list 10 1 islamic-year))))
 #           (sunday 0))
 #       (while (/= sunday (mod (setq a (1- a)) 7)))
 #       (while (/= sunday (mod b 7))
@@ -923,7 +1029,7 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 #         (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
 #     (setq islamic-year (+ 1 islamic-year))))
 
-# RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	-
 Rule	Morocco	1939	only	-	Nov	19	 0:00	0	-
 Rule	Morocco	1940	only	-	Feb	25	 0:00	1:00	-
@@ -974,7 +1080,7 @@ Rule	Morocco	2021	only	-	May	16	 2:00	0	-
 Rule	Morocco	2022	only	-	Mar	27	 3:00	-1:00	-
 Rule	Morocco	2022	only	-	May	 8	 2:00	0	-
 Rule	Morocco	2023	only	-	Mar	19	 3:00	-1:00	-
-Rule	Morocco	2023	only	-	Apr	23	 2:00	0	-
+Rule	Morocco	2023	only	-	Apr	30	 2:00	0	-
 Rule	Morocco	2024	only	-	Mar	10	 3:00	-1:00	-
 Rule	Morocco	2024	only	-	Apr	14	 2:00	0	-
 Rule	Morocco	2025	only	-	Feb	23	 3:00	-1:00	-
@@ -990,7 +1096,7 @@ Rule	Morocco	2029	only	-	Feb	18	 2:00	0	-
 Rule	Morocco	2029	only	-	Dec	30	 3:00	-1:00	-
 Rule	Morocco	2030	only	-	Feb	10	 2:00	0	-
 Rule	Morocco	2030	only	-	Dec	22	 3:00	-1:00	-
-Rule	Morocco	2031	only	-	Jan	26	 2:00	0	-
+Rule	Morocco	2031	only	-	Feb	 2	 2:00	0	-
 Rule	Morocco	2031	only	-	Dec	14	 3:00	-1:00	-
 Rule	Morocco	2032	only	-	Jan	18	 2:00	0	-
 Rule	Morocco	2032	only	-	Nov	28	 3:00	-1:00	-
@@ -1006,7 +1112,7 @@ Rule	Morocco	2036	only	-	Nov	23	 2:00	0	-
 Rule	Morocco	2037	only	-	Oct	 4	 3:00	-1:00	-
 Rule	Morocco	2037	only	-	Nov	15	 2:00	0	-
 Rule	Morocco	2038	only	-	Sep	26	 3:00	-1:00	-
-Rule	Morocco	2038	only	-	Oct	31	 2:00	0	-
+Rule	Morocco	2038	only	-	Nov	 7	 2:00	0	-
 Rule	Morocco	2039	only	-	Sep	18	 3:00	-1:00	-
 Rule	Morocco	2039	only	-	Oct	23	 2:00	0	-
 Rule	Morocco	2040	only	-	Sep	 2	 3:00	-1:00	-
@@ -1022,7 +1128,7 @@ Rule	Morocco	2044	only	-	Aug	28	 2:00	0	-
 Rule	Morocco	2045	only	-	Jul	 9	 3:00	-1:00	-
 Rule	Morocco	2045	only	-	Aug	20	 2:00	0	-
 Rule	Morocco	2046	only	-	Jul	 1	 3:00	-1:00	-
-Rule	Morocco	2046	only	-	Aug	 5	 2:00	0	-
+Rule	Morocco	2046	only	-	Aug	12	 2:00	0	-
 Rule	Morocco	2047	only	-	Jun	23	 3:00	-1:00	-
 Rule	Morocco	2047	only	-	Jul	28	 2:00	0	-
 Rule	Morocco	2048	only	-	Jun	 7	 3:00	-1:00	-
@@ -1038,7 +1144,7 @@ Rule	Morocco	2052	only	-	Jun	 2	 2:00	0	-
 Rule	Morocco	2053	only	-	Apr	13	 3:00	-1:00	-
 Rule	Morocco	2053	only	-	May	25	 2:00	0	-
 Rule	Morocco	2054	only	-	Apr	 5	 3:00	-1:00	-
-Rule	Morocco	2054	only	-	May	10	 2:00	0	-
+Rule	Morocco	2054	only	-	May	17	 2:00	0	-
 Rule	Morocco	2055	only	-	Mar	28	 3:00	-1:00	-
 Rule	Morocco	2055	only	-	May	 2	 2:00	0	-
 Rule	Morocco	2056	only	-	Mar	12	 3:00	-1:00	-
@@ -1054,7 +1160,7 @@ Rule	Morocco	2060	only	-	Mar	 7	 2:00	0	-
 Rule	Morocco	2061	only	-	Jan	16	 3:00	-1:00	-
 Rule	Morocco	2061	only	-	Feb	27	 2:00	0	-
 Rule	Morocco	2062	only	-	Jan	 8	 3:00	-1:00	-
-Rule	Morocco	2062	only	-	Feb	12	 2:00	0	-
+Rule	Morocco	2062	only	-	Feb	19	 2:00	0	-
 Rule	Morocco	2062	only	-	Dec	31	 3:00	-1:00	-
 Rule	Morocco	2063	only	-	Feb	 4	 2:00	0	-
 Rule	Morocco	2063	only	-	Dec	16	 3:00	-1:00	-
@@ -1070,7 +1176,7 @@ Rule	Morocco	2067	only	-	Dec	11	 2:00	0	-
 Rule	Morocco	2068	only	-	Oct	21	 3:00	-1:00	-
 Rule	Morocco	2068	only	-	Dec	 2	 2:00	0	-
 Rule	Morocco	2069	only	-	Oct	13	 3:00	-1:00	-
-Rule	Morocco	2069	only	-	Nov	17	 2:00	0	-
+Rule	Morocco	2069	only	-	Nov	24	 2:00	0	-
 Rule	Morocco	2070	only	-	Oct	 5	 3:00	-1:00	-
 Rule	Morocco	2070	only	-	Nov	 9	 2:00	0	-
 Rule	Morocco	2071	only	-	Sep	20	 3:00	-1:00	-
@@ -1086,7 +1192,7 @@ Rule	Morocco	2075	only	-	Sep	15	 2:00	0	-
 Rule	Morocco	2076	only	-	Jul	26	 3:00	-1:00	-
 Rule	Morocco	2076	only	-	Sep	 6	 2:00	0	-
 Rule	Morocco	2077	only	-	Jul	18	 3:00	-1:00	-
-Rule	Morocco	2077	only	-	Aug	22	 2:00	0	-
+Rule	Morocco	2077	only	-	Aug	29	 2:00	0	-
 Rule	Morocco	2078	only	-	Jul	10	 3:00	-1:00	-
 Rule	Morocco	2078	only	-	Aug	14	 2:00	0	-
 Rule	Morocco	2079	only	-	Jun	25	 3:00	-1:00	-
@@ -1096,13 +1202,13 @@ Rule	Morocco	2080	only	-	Jul	21	 2:00	0	-
 Rule	Morocco	2081	only	-	Jun	 1	 3:00	-1:00	-
 Rule	Morocco	2081	only	-	Jul	13	 2:00	0	-
 Rule	Morocco	2082	only	-	May	24	 3:00	-1:00	-
-Rule	Morocco	2082	only	-	Jun	28	 2:00	0	-
+Rule	Morocco	2082	only	-	Jul	 5	 2:00	0	-
 Rule	Morocco	2083	only	-	May	16	 3:00	-1:00	-
 Rule	Morocco	2083	only	-	Jun	20	 2:00	0	-
 Rule	Morocco	2084	only	-	Apr	30	 3:00	-1:00	-
 Rule	Morocco	2084	only	-	Jun	11	 2:00	0	-
 Rule	Morocco	2085	only	-	Apr	22	 3:00	-1:00	-
-Rule	Morocco	2085	only	-	May	27	 2:00	0	-
+Rule	Morocco	2085	only	-	Jun	 3	 2:00	0	-
 Rule	Morocco	2086	only	-	Apr	14	 3:00	-1:00	-
 Rule	Morocco	2086	only	-	May	19	 2:00	0	-
 Rule	Morocco	2087	only	-	Mar	30	 3:00	-1:00	-
@@ -1203,7 +1309,7 @@ Link Africa/Maputo Africa/Lusaka	# Zambia
 # Use plain "WAT" and "CAT" for the time zone abbreviations, to be compatible
 # with Namibia's neighbors.
 
-# RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # Vanguard section, for zic and other parsers that support negative DST.
 Rule	Namibia	1994	only	-	Mar	21	0:00	-1:00	WAT
 Rule	Namibia	1994	2017	-	Sep	Sun>=1	2:00	0	CAT
@@ -1235,8 +1341,69 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 # See Africa/Lagos.
 
 # Nigeria
+
+# From P Chan (2020-12-03):
+# GMT was adopted as the standard time of Lagos on 1905-07-01.
+# Lagos Weekly Record, 1905-06-24, p 3
+# http://ddsnext.crl.edu/titles/31558#?c=0&m=668&s=0&cv=2&r=0&xywh=1446%2C5221%2C1931%2C1235
+# says "It is officially notified that on and after the 1st of July 1905
+# Greenwich Mean Solar Time will be adopted thought the Colony and
+# Protectorate, and that it will be necessary to put all clocks 13 minutes and
+# 35 seconds back, recording local mean time."
+#
+# It seemed that Lagos returned to LMT on 1908-07-01.
+# [The Lagos Standard], 1908-07-01, p 5
+# http://ddsnext.crl.edu/titles/31556#?c=0&m=78&s=0&cv=4&r=0&xywh=-92%2C3590%2C3944%2C2523
+# says "Scarcely have the people become accustomed to this new time, when
+# another official notice has now appeared announcing that from and after the
+# 1st July next, return will be made to local mean time."
+#
+# From P Chan (2020-11-27):
+# On 1914-01-01, standard time of GMT+0:30 was adopted for the unified Nigeria.
+# Colonial Reports - Annual. No. 878. Nigeria. Report for 1914. (April 1916),
+# p 27
+# https://libsysdigi.library.illinois.edu/ilharvest/Africana/Books2011-05/3064634/3064634_1914/3064634_1914_opt.pdf#page=27
+# "On January 1st [1914], a universal standard time for Nigeria was adopted,
+# viz., half an hour fast on Greenwich mean time, corresponding to the meridian
+# 7 [degrees] 30' E. long."
+# Lloyd's Register of Shipping (1915) says "Hitherto the time observed in Lagos
+# was the local mean time. On 1st January, 1914, standard time for the whole of
+# Nigeria was introduced ... Lagos time has been advanced about 16 minutes
+# accordingly."
+#
+# In 1919, standard time was changed to GMT+1.
+# Interpretation Ordinance (Cap 2)
+# The Laws of Nigeria, Containing the Ordinances of Nigeria, in Force on the
+# 1st Day of January, 1923, Vol.I [p 16]
+# https://books.google.com/books?id=BOMrAQAAMAAJ&pg=PA16
+# "The expression 'Standard time' means standard time as used in Nigeria:
+# namely, 60 minutes in advance of Greenwich mean time.  (As amended by 18 of
+# 1919, s. 2.)"
+# From Tim Parenti (2020-12-10):
+# The Lagos Weekly Record, 1919-09-20, p 3 details discussion on the first
+# reading of this Bill by the Legislative Council of the Colony of Nigeria on
+# Thursday 1919-08-28:
+# http://ddsnext.crl.edu/titles/31558?terms&item_id=303484#?m=1118&c=1&s=0&cv=2&r=0&xywh=1261%2C3408%2C2994%2C1915
+# "The proposal is that the Globe should be divided into twelve zones East and
+# West of Greenwich, of one hour each, Nigeria falling into the zone with a
+# standard of one hour fast on Greenwich Mean Time.  Nigeria standard time is
+# now 30 minutes in advance of Greenwich Mean Time ... according to the new
+# proposal, standard time will be advanced another 30 minutes".  It was further
+# proposed that the firing of the time guns likewise be adjusted by 30 minutes
+# to compensate.
+# From Tim Parenti (2020-12-10), per P Chan (2020-12-11):
+# The text of Ordinance 18 of 1919, published in Nigeria Gazette, Vol 6, No 52,
+# shows that the change was assented to the following day and took effect "on
+# the 1st day of September, 1919."
+# Nigeria Gazette and Supplements 1919 Jan-Dec, Reference: 73266B-40,
+# img 245-246
+# https://microform.digital/boa/collections/77/volumes/539/nigeria-lagos-1887-1919
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Lagos	0:13:36 -	LMT	1919 Sep
+Zone	Africa/Lagos	0:13:35 -	LMT	1905 Jul  1
+			0:00	-	GMT	1908 Jul  1
+			0:13:35	-	LMT	1914 Jan  1
+			0:30	-	+0030	1919 Sep  1
 			1:00	-	WAT
 Link Africa/Lagos Africa/Bangui	     # Central African Republic
 Link Africa/Lagos Africa/Brazzaville # Rep. of the Congo
@@ -1309,8 +1476,21 @@ Zone	Africa/Sao_Tome	 0:26:56 -	LMT	1884
 # See Africa/Abidjan.
 
 # Seychelles
+
+# From P Chan (2020-11-27):
+# Standard Time was adopted on 1907-01-01.
+#
+# Standard Time Ordinance (Chapter 237)
+# The Laws of Seychelles in Force on the 31st December, 1971, Vol. 6, p 571
+# https://books.google.com/books?id=efE-AQAAIAAJ&pg=PA571
+#
+# From Tim Parenti (2020-12-05):
+# A footnote on https://books.google.com/books?id=DYdDAQAAMAAJ&pg=PA1689
+# confirms that Ordinance No. 9 of 1906 "was brought into force on the 1st
+# January, 1907."
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Indian/Mahe	3:41:48 -	LMT	1906 Jun # Victoria
+Zone	Indian/Mahe	3:41:48 -	LMT	1907 Jan  1 # Victoria
 			4:00	-	+04
 # From Paul Eggert (2001-05-30):
 # Aldabra, Farquhar, and Desroches, originally dependencies of the
@@ -1326,7 +1506,7 @@ Zone	Indian/Mahe	3:41:48 -	LMT	1906 Jun # Victoria
 # See Africa/Nairobi.
 
 # South Africa
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	SA	1942	1943	-	Sep	Sun>=15	2:00	1:00	-
 Rule	SA	1943	1944	-	Mar	Sun>=15	2:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -1359,7 +1539,7 @@ Link Africa/Johannesburg Africa/Mbabane    # Eswatini
 # Abdalla of NTC, archived at:
 # https://mm.icann.org/pipermail/tz/2017-October/025333.html
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Sudan	1970	only	-	May	 1	0:00	1:00	S
 Rule	Sudan	1970	1985	-	Oct	15	0:00	0	-
 Rule	Sudan	1971	only	-	Apr	30	0:00	1:00	S
@@ -1370,11 +1550,17 @@ Zone	Africa/Khartoum	2:10:08 -	LMT	1931
 			3:00	-	EAT	2017 Nov  1
 			2:00	-	CAT
 
+# From Steffen Thorsen (2021-01-18):
+# "South Sudan will change its time zone by setting the clock back 1
+# hour on February 1, 2021...."
+# from https://eyeradio.org/south-sudan-adopts-new-time-zone-makuei/
+
 # South Sudan
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Juba	2:06:28 -	LMT	1931
 			2:00	Sudan	CA%sT	2000 Jan 15 12:00
-			3:00	-	EAT
+			3:00	-	EAT	2021 Feb  1 00:00
+			2:00	-	CAT
 
 # Tanzania
 # See Africa/Nairobi.
@@ -1447,7 +1633,7 @@ Zone	Africa/Juba	2:06:28 -	LMT	1931
 # http://www.almadenahnews.com/newss/news.php?c=118&id=38036
 # http://www.worldtimezone.com/dst_news/dst_news_tunis02.html
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Tunisia	1939	only	-	Apr	15	23:00s	1:00	S
 Rule	Tunisia	1939	only	-	Nov	18	23:00s	0	-
 Rule	Tunisia	1940	only	-	Feb	25	23:00s	1:00	S
@@ -1474,9 +1660,7 @@ Rule	Tunisia	2005	only	-	Sep	30	 1:00s	0	-
 Rule	Tunisia	2006	2008	-	Mar	lastSun	 2:00s	1:00	S
 Rule	Tunisia	2006	2008	-	Oct	lastSun	 2:00s	0	-
 
-# Shanks & Pottenger give 0:09:20 for Paris Mean Time; go with Howse's
-# more precise 0:09:21.
-# Shanks & Pottenger say the 1911 switch was on Mar 9; go with Howse's Mar 11.
+# See Europe/Paris for PMT-related transitions.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Tunis	0:40:44 -	LMT	1881 May 12
 			0:09:21	-	PMT	1911 Mar 11 # Paris Mean Time

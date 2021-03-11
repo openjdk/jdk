@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,10 @@
 #include "utilities/decoder.hpp"
 #include "utilities/formatBuffer.hpp"
 
-RegisterMap::RegisterMap(JavaThread *thread, bool update_map) {
+RegisterMap::RegisterMap(JavaThread *thread, bool update_map, bool process_frames) {
   _thread         = thread;
   _update_map     = update_map;
+  _process_frames = process_frames;
   clear();
   debug_only(_update_for_id = NULL;)
 #ifndef PRODUCT
@@ -68,6 +69,7 @@ RegisterMap::RegisterMap(const RegisterMap* map) {
   assert(map != NULL, "RegisterMap must be present");
   _thread                = map->thread();
   _update_map            = map->update_map();
+  _process_frames        = map->process_frames();
   _include_argument_oops = map->include_argument_oops();
   debug_only(_update_for_id = map->_update_for_id;)
   pd_initialize_from(map);
@@ -507,7 +509,7 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
     current->obj()->print_value_on(st);
     st->print_cr("]");
     st->print(" - lock   [");
-    current->lock()->print_on(st);
+    current->lock()->print_on(st, current->obj());
     st->print_cr("]");
   }
   // monitor
@@ -538,9 +540,11 @@ void frame::print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
   int offset;
   bool found;
 
+  if (buf == NULL || buflen < 1) return;
   // libname
+  buf[0] = '\0';
   found = os::dll_address_to_library_name(pc, buf, buflen, &offset);
-  if (found) {
+  if (found && buf[0] != '\0') {
     // skip directory names
     const char *p1, *p2;
     p1 = buf;
@@ -896,10 +900,11 @@ void frame::oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, 
   finder.oops_do();
 }
 
-void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* reg_map) const {
+void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* reg_map,
+                              DerivedPointerIterationMode derived_mode) const {
   assert(_cb != NULL, "sanity check");
   if (_cb->oop_maps() != NULL) {
-    OopMapSet::oops_do(this, reg_map, f);
+    OopMapSet::oops_do(this, reg_map, f, derived_mode);
 
     // Preserve potential arguments for a callee. We handle this by dispatching
     // on the codeblob. For c2i, we do
@@ -938,6 +943,7 @@ class CompiledArgumentOopFinder: public SignatureIterator {
     // In LP64-land, the high-order bits are valid but unhelpful.
     VMReg reg = _regs[_offset].first();
     oop *loc = _fr.oopmapreg_to_location(reg, _reg_map);
+    assert(loc != NULL, "missing register map entry");
     _f->do_oop(loc);
   }
 
@@ -1035,8 +1041,23 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) const {
   entry_frame_call_wrapper()->oops_do(f);
 }
 
+void frame::oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+                    DerivedPointerIterationMode derived_mode) const {
+  oops_do_internal(f, cf, map, true, derived_mode);
+}
 
-void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
+void frame::oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const {
+#if COMPILER2_OR_JVMCI
+  oops_do_internal(f, cf, map, true, DerivedPointerTable::is_active() ?
+                                     DerivedPointerIterationMode::_with_table :
+                                     DerivedPointerIterationMode::_ignore);
+#else
+  oops_do_internal(f, cf, map, true, DerivedPointerIterationMode::_ignore);
+#endif
+}
+
+void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+                             bool use_interpreter_oop_map_cache, DerivedPointerIterationMode derived_mode) const {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
   if (CrashGCForDumpingJavaThread) {
@@ -1049,7 +1070,7 @@ void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterM
   } else if (is_entry_frame()) {
     oops_entry_do(f, map);
   } else if (CodeCache::contains(pc())) {
-    oops_code_blob_do(f, cf, map);
+    oops_code_blob_do(f, cf, map, derived_mode);
   } else {
     ShouldNotReachHere();
   }
@@ -1086,7 +1107,7 @@ void frame::verify(const RegisterMap* map) const {
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "must be empty before verify");
 #endif
-  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, map, false);
+  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, map, false, DerivedPointerIterationMode::_ignore);
 }
 
 
@@ -1123,6 +1144,8 @@ void frame::interpreter_frame_verify_monitor(BasicObjectLock* value) const {
 #endif
 
 #ifndef PRODUCT
+// callers need a ResourceMark because of name_and_sig_as_C_string() usage,
+// RA allocated string is returned to the caller
 void frame::describe(FrameValues& values, int frame_no) {
   // boundaries: sp and the 'real' frame pointer
   values.describe(-1, sp(), err_msg("sp for #%d", frame_no), 1);
@@ -1219,7 +1242,7 @@ void frame::describe(FrameValues& values, int frame_no) {
 //-----------------------------------------------------------------------------------
 // StackFrameStream implementation
 
-StackFrameStream::StackFrameStream(JavaThread *thread, bool update) : _reg_map(thread, update) {
+StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames) : _reg_map(thread, update, process_frames) {
   assert(thread->has_last_Java_frame(), "sanity check");
   _fr = thread->last_frame();
   _is_done = false;
@@ -1267,7 +1290,7 @@ void FrameValues::validate() {
 }
 #endif // ASSERT
 
-void FrameValues::print(JavaThread* thread) {
+void FrameValues::print_on(JavaThread* thread, outputStream* st) {
   _values.sort(compare);
 
   // Sometimes values like the fp can be invalid values if the
@@ -1300,14 +1323,14 @@ void FrameValues::print(JavaThread* thread) {
   for (int i = max_index; i >= min_index; i--) {
     FrameValue fv = _values.at(i);
     while (cur > fv.location) {
-      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT, p2i(cur), *cur);
+      st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT, p2i(cur), *cur);
       cur--;
     }
     if (last == fv.location) {
       const char* spacer = "          " LP64_ONLY("        ");
-      tty->print_cr(" %s  %s %s", spacer, spacer, fv.description);
+      st->print_cr(" %s  %s %s", spacer, spacer, fv.description);
     } else {
-      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
+      st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
       last = fv.location;
       cur--;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
  */
 
 // no precompiled headers
+#include "jvm_io.h"
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
-#include "interpreter/zero/bytecodeInterpreterProfiling.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
@@ -36,6 +38,8 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -45,14 +49,15 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCritical.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 
 // no precompiled headers
 
@@ -102,12 +107,12 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define SAFEPOINT                                                                 \
-    {                                                                             \
-       /* zap freed handles rather than GC'ing them */                            \
-       HandleMarkCleaner __hmc(THREAD);                                           \
-       CALL_VM(SafepointMechanism::process_if_requested(THREAD), handle_exception); \
-    }
+#define SAFEPOINT                                                                                         \
+    if (SafepointMechanism::should_process(THREAD)) {                                                     \
+      HandleMarkCleaner __hmc(THREAD);                                                                    \
+      CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
+              handle_exception);                                                                          \
+    }                                                                                                     \
 
 /*
  * VM_JAVA_ERROR - Macro for throwing a java exception from
@@ -133,22 +138,28 @@
 #ifdef PRODUCT
 #define DO_UPDATE_INSTRUCTION_COUNT(opcode)
 #else
-#define DO_UPDATE_INSTRUCTION_COUNT(opcode)                                                          \
-{                                                                                                    \
-    BytecodeCounter::_counter_value++;                                                               \
-    BytecodeHistogram::_counters[(Bytecodes::Code)opcode]++;                                         \
-    if (StopInterpreterAt && StopInterpreterAt == BytecodeCounter::_counter_value) os::breakpoint(); \
-    if (TraceBytecodes) {                                                                            \
-      CALL_VM((void)InterpreterRuntime::trace_bytecode(THREAD, 0,                    \
-                                        topOfStack[Interpreter::expr_index_at(1)],   \
-                                        topOfStack[Interpreter::expr_index_at(2)]),  \
-                                        handle_exception);                           \
-    }                                                                                \
+#define DO_UPDATE_INSTRUCTION_COUNT(opcode)                                            \
+{                                                                                      \
+    if (PrintBytecodeHistogram) {                                                      \
+      BytecodeHistogram::_counters[(Bytecodes::Code)opcode]++;                         \
+    }                                                                                  \
+    if (CountBytecodes || TraceBytecodes || StopInterpreterAt > 0) {                   \
+      BytecodeCounter::_counter_value++;                                               \
+      if (StopInterpreterAt == BytecodeCounter::_counter_value) {                      \
+        os::breakpoint();                                                              \
+      }                                                                                \
+      if (TraceBytecodes) {                                                            \
+        CALL_VM((void)InterpreterRuntime::trace_bytecode(THREAD, 0,                    \
+                                          topOfStack[Interpreter::expr_index_at(1)],   \
+                                          topOfStack[Interpreter::expr_index_at(2)]),  \
+                                          handle_exception);                           \
+      }                                                                                \
+    }                                                                                  \
 }
 #endif
 
 #undef DEBUGGER_SINGLE_STEP_NOTIFY
-#ifdef VM_JVMTI
+#if INCLUDE_JVMTI
 /* NOTE: (kbr) This macro must be called AFTER the PC has been
    incremented. JvmtiExport::at_single_stepping_point() may cause a
    breakpoint opcode to get inserted at the current PC to allow the
@@ -158,33 +169,31 @@
    to get the current opcode. This will override any other prefetching
    that might have occurred.
 */
-#define DEBUGGER_SINGLE_STEP_NOTIFY()                                            \
-{                                                                                \
-      if (_jvmti_interp_events) {                                                \
-        if (JvmtiExport::should_post_single_step()) {                            \
-          DECACHE_STATE();                                                       \
-          SET_LAST_JAVA_FRAME();                                                 \
-          ThreadInVMfromJava trans(THREAD);                                      \
-          JvmtiExport::at_single_stepping_point(THREAD,                          \
-                                          istate->method(),                      \
-                                          pc);                                   \
-          RESET_LAST_JAVA_FRAME();                                               \
-          CACHE_STATE();                                                         \
-          if (THREAD->has_pending_popframe() &&                                  \
-              !THREAD->pop_frame_in_process()) {                                 \
-            goto handle_Pop_Frame;                                               \
-          }                                                                      \
-          if (THREAD->jvmti_thread_state() &&                                    \
-              THREAD->jvmti_thread_state()->is_earlyret_pending()) {             \
-            goto handle_Early_Return;                                            \
-          }                                                                      \
-          opcode = *pc;                                                          \
-        }                                                                        \
-      }                                                                          \
+#define DEBUGGER_SINGLE_STEP_NOTIFY()                                        \
+{                                                                            \
+    if (JVMTI_ENABLED && JvmtiExport::should_post_single_step()) {           \
+      DECACHE_STATE();                                                       \
+      SET_LAST_JAVA_FRAME();                                                 \
+      ThreadInVMfromJava trans(THREAD);                                      \
+      JvmtiExport::at_single_stepping_point(THREAD,                          \
+                                           istate->method(),                 \
+                                           pc);                              \
+      RESET_LAST_JAVA_FRAME();                                               \
+      CACHE_STATE();                                                         \
+      if (THREAD->has_pending_popframe() &&                                  \
+        !THREAD->pop_frame_in_process()) {                                   \
+        goto handle_Pop_Frame;                                               \
+      }                                                                      \
+      if (THREAD->jvmti_thread_state() &&                                    \
+          THREAD->jvmti_thread_state()->is_earlyret_pending()) {             \
+        goto handle_Early_Return;                                            \
+      }                                                                      \
+      opcode = *pc;                                                          \
+   }                                                                         \
 }
 #else
 #define DEBUGGER_SINGLE_STEP_NOTIFY()
-#endif
+#endif // INCLUDE_JVMTI
 
 /*
  * CONTINUE - Macro for executing the next opcode.
@@ -382,22 +391,18 @@
 
 /*
  * BytecodeInterpreter::run(interpreterState istate)
- * BytecodeInterpreter::runWithChecks(interpreterState istate)
  *
  * The real deal. This is where byte codes actually get interpreted.
  * Basically it's a big while loop that iterates until we return from
  * the method passed in.
- *
- * The runWithChecks is used if JVMTI is enabled.
- *
  */
-#if defined(VM_JVMTI)
-void
-BytecodeInterpreter::runWithChecks(interpreterState istate) {
-#else
-void
-BytecodeInterpreter::run(interpreterState istate) {
-#endif
+
+// Instantiate two variants of the method for future linking.
+template void BytecodeInterpreter::run<true>(interpreterState istate);
+template void BytecodeInterpreter::run<false>(interpreterState istate);
+
+template<bool JVMTI_ENABLED>
+void BytecodeInterpreter::run(interpreterState istate) {
 
   // In order to simplify some tests based on switches set at runtime
   // we invoke the interpreter a single time after switches are enabled
@@ -412,16 +417,10 @@ BytecodeInterpreter::run(interpreterState istate) {
   if (checkit && *c_addr != c_value) {
     os::breakpoint();
   }
-#ifdef VM_JVMTI
-  static bool _jvmti_interp_events = 0;
-#endif
-
-  static int _compiling;  // (UseCompiler || CountCompiledCalls)
 
 #ifdef ASSERT
   if (istate->_msg != initialize) {
     assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-    IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
   }
   // Verify linkages.
   interpreterState l = istate;
@@ -546,15 +545,12 @@ BytecodeInterpreter::run(interpreterState istate) {
          topOfStack < istate->stack_base(),
          "Stack top out of range");
 
-  const uint mdo_last_branch_taken_count = 0;
+  assert(!UseCompiler, "Zero does not support compilers");
+  assert(!CountCompiledCalls, "Zero does not support counting compiled calls");
 
   switch (istate->msg()) {
     case initialize: {
       if (initialized++) ShouldNotReachHere(); // Only one initialize call.
-      _compiling = (UseCompiler || CountCompiledCalls);
-#ifdef VM_JVMTI
-      _jvmti_interp_events = JvmtiExport::can_post_interpreter_events();
-#endif
       return;
     }
     break;
@@ -562,11 +558,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       THREAD->set_do_not_unlock();
       // count invocations
       assert(initialized, "Interpreter not initialized");
-      if (_compiling) {
-        // Get or create profile data. Check for pending (async) exceptions.
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-        SAFEPOINT;
-      }
 
       if ((istate->_stack_base - istate->_stack_limit) != istate->method()->max_stack() + 1) {
         // initialize
@@ -583,103 +574,36 @@ BytecodeInterpreter::run(interpreterState istate) {
           rcvr = LOCALS_OBJECT(0);
           VERIFY_OOP(rcvr);
         }
+
         // The initial monitor is ours for the taking.
         // Monitor not filled in frame manager any longer as this caused race condition with biased locking.
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
-        bool success = false;
-        uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
-        markWord mark = rcvr->mark();
-        intptr_t hash = (intptr_t) markWord::no_hash;
-        // Implies UseBiasedLocking.
-        if (mark.has_bias_pattern()) {
-          uintptr_t thread_ident;
-          uintptr_t anticipated_bias_locking_value;
-          thread_ident = (uintptr_t)istate->thread();
-          anticipated_bias_locking_value =
-            ((rcvr->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-            ~(markWord::age_mask_in_place);
 
-          if (anticipated_bias_locking_value == 0) {
-            // Already biased towards this thread, nothing to do.
-            if (PrintBiasedLockingStatistics) {
-              (* BiasedLocking::biased_lock_entry_count_addr())++;
-            }
-            success = true;
-          } else if ((anticipated_bias_locking_value & markWord::biased_lock_mask_in_place) != 0) {
-            // Try to revoke bias.
-            markWord header = rcvr->klass()->prototype_header();
-            if (hash != markWord::no_hash) {
-              header = header.copy_set_hash(hash);
-            }
-            if (rcvr->cas_set_mark(header, mark) == mark) {
-              if (PrintBiasedLockingStatistics)
-                (*BiasedLocking::revoked_lock_entry_count_addr())++;
-            }
-          } else if ((anticipated_bias_locking_value & epoch_mask_in_place) != 0) {
-            // Try to rebias.
-            markWord new_header( (intptr_t) rcvr->klass()->prototype_header().value() | thread_ident);
-            if (hash != markWord::no_hash) {
-              new_header = new_header.copy_set_hash(hash);
-            }
-            if (rcvr->cas_set_mark(new_header, mark) == mark) {
-              if (PrintBiasedLockingStatistics) {
-                (* BiasedLocking::rebiased_lock_entry_count_addr())++;
-              }
-            } else {
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
-            }
-            success = true;
-          } else {
-            // Try to bias towards thread in case object is anonymously biased.
-            markWord header(mark.value() &
-                            (markWord::biased_lock_mask_in_place |
-                             markWord::age_mask_in_place | epoch_mask_in_place));
-            if (hash != markWord::no_hash) {
-              header = header.copy_set_hash(hash);
-            }
-            markWord new_header(header.value() | thread_ident);
-            // Debugging hint.
-            DEBUG_ONLY(mon->lock()->set_displaced_header(markWord((uintptr_t) 0xdeaddead));)
-            if (rcvr->cas_set_mark(new_header, header) == header) {
-              if (PrintBiasedLockingStatistics) {
-                (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
-              }
-            } else {
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
-            }
-            success = true;
-          }
-        }
+        assert(!UseBiasedLocking, "Not implemented");
 
         // Traditional lightweight locking.
-        if (!success) {
-          markWord displaced = rcvr->mark().set_unlocked();
-          mon->lock()->set_displaced_header(displaced);
-          bool call_vm = UseHeavyMonitors;
-          if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
-            // Is it simple recursive case?
-            if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-              mon->lock()->set_displaced_header(markWord::from_pointer(NULL));
-            } else {
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
-            }
+        markWord displaced = rcvr->mark().set_unlocked();
+        mon->lock()->set_displaced_header(displaced);
+        bool call_vm = UseHeavyMonitors;
+        if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
+          // Is it simple recursive case?
+          if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+            mon->lock()->set_displaced_header(markWord::from_pointer(NULL));
+          } else {
+            CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
           }
         }
       }
       THREAD->clr_do_not_unlock();
 
-      // Notify jvmti
-#ifdef VM_JVMTI
-      if (_jvmti_interp_events) {
-        // Whenever JVMTI puts a thread in interp_only_mode, method
-        // entry/exit events are sent for that thread to track stack depth.
-        if (THREAD->is_interp_only_mode()) {
-          CALL_VM(InterpreterRuntime::post_method_entry(THREAD),
-                  handle_exception);
-        }
+      // Notify jvmti.
+      // Whenever JVMTI puts a thread in interp_only_mode, method
+      // entry/exit events are sent for that thread to track stack depth.
+      if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
+        CALL_VM(InterpreterRuntime::post_method_entry(THREAD),
+                handle_exception);
       }
-#endif /* VM_JVMTI */
 
       goto run;
     }
@@ -689,12 +613,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       // clear the message so we don't confuse ourselves later
       assert(THREAD->pop_frame_in_process(), "wrong frame pop state");
       istate->set_msg(no_request);
-      if (_compiling) {
-        // Set MDX back to the ProfileData of the invoke bytecode that will be
-        // restarted.
-        SET_MDX(NULL);
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-      }
       THREAD->clr_pop_frame_in_process();
       goto run;
     }
@@ -716,11 +634,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       if (THREAD->has_pending_exception()) goto handle_exception;
       // Update the pc by the saved amount of the invoke bytecode size
       UPDATE_PC(istate->bcp_advance());
-
-      if (_compiling) {
-        // Get or create profile data. Check for pending (async) exceptions.
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-      }
       goto run;
     }
 
@@ -728,11 +641,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       // Returned from an opcode that will reexecute. Deopt was
       // a result of a PopFrame request.
       //
-
-      if (_compiling) {
-        // Get or create profile data. Check for pending (async) exceptions.
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-      }
       goto run;
     }
 
@@ -755,11 +663,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       }
       UPDATE_PC(Bytecodes::length_at(METHOD, pc));
       if (THREAD->has_pending_exception()) goto handle_exception;
-
-      if (_compiling) {
-        // Get or create profile data. Check for pending (async) exceptions.
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-      }
       goto run;
     }
     case got_monitors: {
@@ -772,84 +675,19 @@ BytecodeInterpreter::run(interpreterState istate) {
       BasicObjectLock* entry = (BasicObjectLock*) istate->stack_base();
       assert(entry->obj() == NULL, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
-      bool success = false;
-      uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
 
-      markWord mark = lockee->mark();
-      intptr_t hash = (intptr_t) markWord::no_hash;
-      // implies UseBiasedLocking
-      if (mark.has_bias_pattern()) {
-        uintptr_t thread_ident;
-        uintptr_t anticipated_bias_locking_value;
-        thread_ident = (uintptr_t)istate->thread();
-        anticipated_bias_locking_value =
-          ((lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-          ~(markWord::age_mask_in_place);
-
-        if  (anticipated_bias_locking_value == 0) {
-          // already biased towards this thread, nothing to do
-          if (PrintBiasedLockingStatistics) {
-            (* BiasedLocking::biased_lock_entry_count_addr())++;
-          }
-          success = true;
-        } else if ((anticipated_bias_locking_value & markWord::biased_lock_mask_in_place) != 0) {
-          // try revoke bias
-          markWord header = lockee->klass()->prototype_header();
-          if (hash != markWord::no_hash) {
-            header = header.copy_set_hash(hash);
-          }
-          if (lockee->cas_set_mark(header, mark) == mark) {
-            if (PrintBiasedLockingStatistics) {
-              (*BiasedLocking::revoked_lock_entry_count_addr())++;
-            }
-          }
-        } else if ((anticipated_bias_locking_value & epoch_mask_in_place) !=0) {
-          // try rebias
-          markWord new_header( (intptr_t) lockee->klass()->prototype_header().value() | thread_ident);
-          if (hash != markWord::no_hash) {
-            new_header = new_header.copy_set_hash(hash);
-          }
-          if (lockee->cas_set_mark(new_header, mark) == mark) {
-            if (PrintBiasedLockingStatistics) {
-              (* BiasedLocking::rebiased_lock_entry_count_addr())++;
-            }
-          } else {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
-          success = true;
-        } else {
-          // try to bias towards thread in case object is anonymously biased
-          markWord header(mark.value() & (markWord::biased_lock_mask_in_place |
-                                          markWord::age_mask_in_place | epoch_mask_in_place));
-          if (hash != markWord::no_hash) {
-            header = header.copy_set_hash(hash);
-          }
-          markWord new_header(header.value() | thread_ident);
-          // debugging hint
-          DEBUG_ONLY(entry->lock()->set_displaced_header(markWord((uintptr_t) 0xdeaddead));)
-          if (lockee->cas_set_mark(new_header, header) == header) {
-            if (PrintBiasedLockingStatistics) {
-              (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
-            }
-          } else {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
-          success = true;
-        }
-      }
+      assert(!UseBiasedLocking, "Not implemented");
 
       // traditional lightweight locking
-      if (!success) {
-        markWord displaced = lockee->mark().set_unlocked();
-        entry->lock()->set_displaced_header(displaced);
-        bool call_vm = UseHeavyMonitors;
-        if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-          // Is it simple recursive case?
-          if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-            entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
-          } else {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
+      markWord displaced = lockee->mark().set_unlocked();
+      entry->lock()->set_displaced_header(displaced);
+      bool call_vm = UseHeavyMonitors;
+      if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
+        // Is it simple recursive case?
+        if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+          entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
+        } else {
+          CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
         }
       }
       UPDATE_PC_AND_TOS(1, -1);
@@ -1058,9 +896,6 @@ run:
                   UPDATE_PC_AND_CONTINUE(6);
               }
               case Bytecodes::_ret:
-                  // Profile ret.
-                  BI_PROFILE_UPDATE_RET(/*bci=*/((int)(intptr_t)(LOCALS_ADDR(reg))));
-                  // Now, update the pc.
                   pc = istate->method()->code_base() + (intptr_t)(LOCALS_ADDR(reg));
                   UPDATE_PC_AND_CONTINUE(0);
               default:
@@ -1370,23 +1205,17 @@ run:
 
 #define COMPARISON_OP(name, comparison)                                      \
       CASE(_if_icmp##name): {                                                \
-          const bool cmp = (STACK_INT(-2) comparison STACK_INT(-1));         \
-          int skip = cmp                                                     \
+          int skip = (STACK_INT(-2) comparison STACK_INT(-1))                \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -2);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
       }                                                                      \
       CASE(_if##name): {                                                     \
-          const bool cmp = (STACK_INT(-1) comparison 0);                     \
-          int skip = cmp                                                     \
+          int skip = (STACK_INT(-1) comparison 0)                            \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1395,12 +1224,9 @@ run:
 #define COMPARISON_OP2(name, comparison)                                     \
       COMPARISON_OP(name, comparison)                                        \
       CASE(_if_acmp##name): {                                                \
-          const bool cmp = (STACK_OBJECT(-2) comparison STACK_OBJECT(-1));   \
-          int skip = cmp                                                     \
+          int skip = (STACK_OBJECT(-2) comparison STACK_OBJECT(-1))          \
                        ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;            \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -2);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1408,12 +1234,9 @@ run:
 
 #define NULL_COMPARISON_NOT_OP(name)                                         \
       CASE(_if##name): {                                                     \
-          const bool cmp = (!(STACK_OBJECT(-1) == NULL));                    \
-          int skip = cmp                                                     \
+          int skip = (!(STACK_OBJECT(-1) == NULL))                           \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1421,12 +1244,9 @@ run:
 
 #define NULL_COMPARISON_OP(name)                                             \
       CASE(_if##name): {                                                     \
-          const bool cmp = ((STACK_OBJECT(-1) == NULL));                     \
-          int skip = cmp                                                     \
+          int skip = ((STACK_OBJECT(-1) == NULL))                            \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1450,13 +1270,10 @@ run:
           int32_t  skip;
           key -= low;
           if (((uint32_t) key > (uint32_t)(high - low))) {
-            key = -1;
             skip = Bytes::get_Java_u4((address)&lpc[0]);
           } else {
             skip = Bytes::get_Java_u4((address)&lpc[key + 3]);
           }
-          // Profile switch.
-          BI_PROFILE_UPDATE_SWITCH(/*switch_index=*/key);
           // Does this really need a full backedge check (osr)?
           address branch_pc = pc;
           UPDATE_PC_AND_TOS(skip, -1);
@@ -1470,21 +1287,14 @@ run:
           jint* lpc  = (jint*)VMalignWordUp(pc+1);
           int32_t  key  = STACK_INT(-1);
           int32_t  skip = Bytes::get_Java_u4((address) lpc); /* default amount */
-          // Remember index.
-          int      index = -1;
-          int      newindex = 0;
           int32_t  npairs = Bytes::get_Java_u4((address) &lpc[1]);
           while (--npairs >= 0) {
             lpc += 2;
             if (key == (int32_t)Bytes::get_Java_u4((address)lpc)) {
               skip = Bytes::get_Java_u4((address)&lpc[1]);
-              index = newindex;
               break;
             }
-            newindex += 1;
           }
-          // Profile switch.
-          BI_PROFILE_UPDATE_SWITCH(/*switch_index=*/index);
           address branch_pc = pc;
           UPDATE_PC_AND_TOS(skip, -1);
           DO_BACKEDGE_CHECKS(skip, branch_pc);
@@ -1564,10 +1374,13 @@ run:
 #define ARRAY_INTRO(arrayOff)                                                  \
       arrayOop arrObj = (arrayOop)STACK_OBJECT(arrayOff);                      \
       jint     index  = STACK_INT(arrayOff + 1);                               \
-      char message[jintAsStringSize];                                          \
+      /* Two integers, the additional message, and the null-terminator */      \
+      char message[2 * jintAsStringSize + 33];                                 \
       CHECK_NULL(arrObj);                                                      \
       if ((uint32_t)index >= (uint32_t)arrObj->length()) {                     \
-          sprintf(message, "%d", index);                                       \
+          jio_snprintf(message, sizeof(message),                               \
+                  "Index %d out of bounds for length %d",                      \
+                  index, arrObj->length());                                    \
           VM_JAVA_ERROR(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), \
                         message);                                              \
       }
@@ -1650,15 +1463,8 @@ run:
             // Seems way more expensive now that we must dispatch
             //
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
-              // Decrement counter if subtype check failed.
-              BI_PROFILE_SUBTYPECHECK_FAILED(rhsKlass);
               VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "");
             }
-            // Profile checkcast with null_seen and receiver.
-            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/false, rhsKlass);
-          } else {
-            // Profile checkcast with null_seen and receiver.
-            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/true, NULL);
           }
           ((objArrayOop) arrObj)->obj_at_put(index, rhsObject);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -3);
@@ -1712,87 +1518,19 @@ run:
         }
         if (entry != NULL) {
           entry->set_obj(lockee);
-          int success = false;
-          uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
 
-          markWord mark = lockee->mark();
-          intptr_t hash = (intptr_t) markWord::no_hash;
-          // implies UseBiasedLocking
-          if (mark.has_bias_pattern()) {
-            uintptr_t thread_ident;
-            uintptr_t anticipated_bias_locking_value;
-            thread_ident = (uintptr_t)istate->thread();
-            anticipated_bias_locking_value =
-              ((lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-              ~(markWord::age_mask_in_place);
-
-            if  (anticipated_bias_locking_value == 0) {
-              // already biased towards this thread, nothing to do
-              if (PrintBiasedLockingStatistics) {
-                (* BiasedLocking::biased_lock_entry_count_addr())++;
-              }
-              success = true;
-            }
-            else if ((anticipated_bias_locking_value & markWord::biased_lock_mask_in_place) != 0) {
-              // try revoke bias
-              markWord header = lockee->klass()->prototype_header();
-              if (hash != markWord::no_hash) {
-                header = header.copy_set_hash(hash);
-              }
-              if (lockee->cas_set_mark(header, mark) == mark) {
-                if (PrintBiasedLockingStatistics)
-                  (*BiasedLocking::revoked_lock_entry_count_addr())++;
-              }
-            }
-            else if ((anticipated_bias_locking_value & epoch_mask_in_place) !=0) {
-              // try rebias
-              markWord new_header( (intptr_t) lockee->klass()->prototype_header().value() | thread_ident);
-              if (hash != markWord::no_hash) {
-                new_header = new_header.copy_set_hash(hash);
-              }
-              if (lockee->cas_set_mark(new_header, mark) == mark) {
-                if (PrintBiasedLockingStatistics)
-                  (* BiasedLocking::rebiased_lock_entry_count_addr())++;
-              }
-              else {
-                CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-              }
-              success = true;
-            }
-            else {
-              // try to bias towards thread in case object is anonymously biased
-              markWord header(mark.value() & (markWord::biased_lock_mask_in_place |
-                                              markWord::age_mask_in_place |
-                                              epoch_mask_in_place));
-              if (hash != markWord::no_hash) {
-                header = header.copy_set_hash(hash);
-              }
-              markWord new_header(header.value() | thread_ident);
-              // debugging hint
-              DEBUG_ONLY(entry->lock()->set_displaced_header(markWord((uintptr_t) 0xdeaddead));)
-              if (lockee->cas_set_mark(new_header, header) == header) {
-                if (PrintBiasedLockingStatistics)
-                  (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
-              }
-              else {
-                CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-              }
-              success = true;
-            }
-          }
+          assert(!UseBiasedLocking, "Not implemented");
 
           // traditional lightweight locking
-          if (!success) {
-            markWord displaced = lockee->mark().set_unlocked();
-            entry->lock()->set_displaced_header(displaced);
-            bool call_vm = UseHeavyMonitors;
-            if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-              // Is it simple recursive case?
-              if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-                entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
-              } else {
-                CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-              }
+          markWord displaced = lockee->mark().set_unlocked();
+          entry->lock()->set_displaced_header(displaced);
+          bool call_vm = UseHeavyMonitors;
+          if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
+            // Is it simple recursive case?
+            if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+              entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
+            } else {
+              CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
             }
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
@@ -1814,16 +1552,17 @@ run:
             BasicLock* lock = most_recent->lock();
             markWord header = lock->displaced_header();
             most_recent->set_obj(NULL);
-            if (!lockee->mark().has_bias_pattern()) {
-              bool call_vm = UseHeavyMonitors;
-              // If it isn't recursive we either must swap old header or call the runtime
-              if (header.to_pointer() != NULL || call_vm) {
-                markWord old_header = markWord::encode(lock);
-                if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
-                  // restore object for the slow case
-                  most_recent->set_obj(lockee);
-                  CALL_VM(InterpreterRuntime::monitorexit(THREAD, most_recent), handle_exception);
-                }
+
+            assert(!UseBiasedLocking, "Not implemented");
+
+            // If it isn't recursive we either must swap old header or call the runtime
+            bool call_vm = UseHeavyMonitors;
+            if (header.to_pointer() != NULL || call_vm) {
+              markWord old_header = markWord::encode(lock);
+              if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
+                // restore object for the slow case
+                most_recent->set_obj(lockee);
+                InterpreterRuntime::monitorexit(most_recent);
               }
             }
             UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
@@ -1858,8 +1597,7 @@ run:
             cache = cp->entry_at(index);
           }
 
-#ifdef VM_JVMTI
-          if (_jvmti_interp_events) {
+          if (JVMTI_ENABLED) {
             int *count_addr;
             oop obj;
             // Check to see if a field modification watch has been set
@@ -1878,7 +1616,6 @@ run:
                                           handle_exception);
             }
           }
-#endif /* VM_JVMTI */
 
           oop obj;
           if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
@@ -1899,46 +1636,74 @@ run:
             if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
               OrderAccess::fence();
             }
-            if (tos_type == atos) {
-              VERIFY_OOP(obj->obj_field_acquire(field_offset));
-              SET_STACK_OBJECT(obj->obj_field_acquire(field_offset), -1);
-            } else if (tos_type == itos) {
-              SET_STACK_INT(obj->int_field_acquire(field_offset), -1);
-            } else if (tos_type == ltos) {
-              SET_STACK_LONG(obj->long_field_acquire(field_offset), 0);
-              MORE_STACK(1);
-            } else if (tos_type == btos || tos_type == ztos) {
-              SET_STACK_INT(obj->byte_field_acquire(field_offset), -1);
-            } else if (tos_type == ctos) {
-              SET_STACK_INT(obj->char_field_acquire(field_offset), -1);
-            } else if (tos_type == stos) {
-              SET_STACK_INT(obj->short_field_acquire(field_offset), -1);
-            } else if (tos_type == ftos) {
-              SET_STACK_FLOAT(obj->float_field_acquire(field_offset), -1);
-            } else {
-              SET_STACK_DOUBLE(obj->double_field_acquire(field_offset), 0);
-              MORE_STACK(1);
+            switch (tos_type) {
+              case btos:
+              case ztos:
+                SET_STACK_INT(obj->byte_field_acquire(field_offset), -1);
+                break;
+              case ctos:
+                SET_STACK_INT(obj->char_field_acquire(field_offset), -1);
+                break;
+              case stos:
+                SET_STACK_INT(obj->short_field_acquire(field_offset), -1);
+                break;
+              case itos:
+                SET_STACK_INT(obj->int_field_acquire(field_offset), -1);
+                break;
+              case ftos:
+                SET_STACK_FLOAT(obj->float_field_acquire(field_offset), -1);
+                break;
+              case ltos:
+                SET_STACK_LONG(obj->long_field_acquire(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case dtos:
+                SET_STACK_DOUBLE(obj->double_field_acquire(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case atos: {
+                oop val = obj->obj_field_acquire(field_offset);
+                VERIFY_OOP(val);
+                SET_STACK_OBJECT(val, -1);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           } else {
-            if (tos_type == atos) {
-              VERIFY_OOP(obj->obj_field(field_offset));
-              SET_STACK_OBJECT(obj->obj_field(field_offset), -1);
-            } else if (tos_type == itos) {
-              SET_STACK_INT(obj->int_field(field_offset), -1);
-            } else if (tos_type == ltos) {
-              SET_STACK_LONG(obj->long_field(field_offset), 0);
-              MORE_STACK(1);
-            } else if (tos_type == btos || tos_type == ztos) {
-              SET_STACK_INT(obj->byte_field(field_offset), -1);
-            } else if (tos_type == ctos) {
-              SET_STACK_INT(obj->char_field(field_offset), -1);
-            } else if (tos_type == stos) {
-              SET_STACK_INT(obj->short_field(field_offset), -1);
-            } else if (tos_type == ftos) {
-              SET_STACK_FLOAT(obj->float_field(field_offset), -1);
-            } else {
-              SET_STACK_DOUBLE(obj->double_field(field_offset), 0);
-              MORE_STACK(1);
+            switch (tos_type) {
+              case btos:
+              case ztos:
+                SET_STACK_INT(obj->byte_field(field_offset), -1);
+                break;
+              case ctos:
+                SET_STACK_INT(obj->char_field(field_offset), -1);
+                break;
+              case stos:
+                SET_STACK_INT(obj->short_field(field_offset), -1);
+                break;
+              case itos:
+                SET_STACK_INT(obj->int_field(field_offset), -1);
+                break;
+              case ftos:
+                SET_STACK_FLOAT(obj->float_field(field_offset), -1);
+                break;
+              case ltos:
+                SET_STACK_LONG(obj->long_field(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case dtos:
+                SET_STACK_DOUBLE(obj->double_field(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case atos: {
+                oop val = obj->obj_field(field_offset);
+                VERIFY_OOP(val);
+                SET_STACK_OBJECT(val, -1);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           }
 
@@ -1956,8 +1721,7 @@ run:
             cache = cp->entry_at(index);
           }
 
-#ifdef VM_JVMTI
-          if (_jvmti_interp_events) {
+          if (JVMTI_ENABLED) {
             int *count_addr;
             oop obj;
             // Check to see if a field modification watch has been set
@@ -1983,7 +1747,6 @@ run:
                                           handle_exception);
             }
           }
-#endif /* VM_JVMTI */
 
           // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
           // out so c++ compiler has a chance for constant prop to fold everything possible away.
@@ -2010,49 +1773,75 @@ run:
           //
           int field_offset = cache->f2_as_index();
           if (cache->is_volatile()) {
-            if (tos_type == itos) {
-              obj->release_int_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == atos) {
-              VERIFY_OOP(STACK_OBJECT(-1));
-              obj->release_obj_field_put(field_offset, STACK_OBJECT(-1));
-            } else if (tos_type == btos) {
-              obj->release_byte_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ztos) {
-              int bool_field = STACK_INT(-1);  // only store LSB
-              obj->release_byte_field_put(field_offset, (bool_field & 1));
-            } else if (tos_type == ltos) {
-              obj->release_long_field_put(field_offset, STACK_LONG(-1));
-            } else if (tos_type == ctos) {
-              obj->release_char_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == stos) {
-              obj->release_short_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ftos) {
-              obj->release_float_field_put(field_offset, STACK_FLOAT(-1));
-            } else {
-              obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
+            switch (tos_type) {
+              case ztos:
+                obj->release_byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
+                break;
+              case btos:
+                obj->release_byte_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ctos:
+                obj->release_char_field_put(field_offset, STACK_INT(-1));
+                break;
+              case stos:
+                obj->release_short_field_put(field_offset, STACK_INT(-1));
+                break;
+              case itos:
+                obj->release_int_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ftos:
+                obj->release_float_field_put(field_offset, STACK_FLOAT(-1));
+                break;
+              case ltos:
+                obj->release_long_field_put(field_offset, STACK_LONG(-1));
+                break;
+              case dtos:
+                obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
+                break;
+              case atos: {
+                oop val = STACK_OBJECT(-1);
+                VERIFY_OOP(val);
+                obj->release_obj_field_put(field_offset, val);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
             OrderAccess::storeload();
           } else {
-            if (tos_type == itos) {
-              obj->int_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == atos) {
-              VERIFY_OOP(STACK_OBJECT(-1));
-              obj->obj_field_put(field_offset, STACK_OBJECT(-1));
-            } else if (tos_type == btos) {
-              obj->byte_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ztos) {
-              int bool_field = STACK_INT(-1);  // only store LSB
-              obj->byte_field_put(field_offset, (bool_field & 1));
-            } else if (tos_type == ltos) {
-              obj->long_field_put(field_offset, STACK_LONG(-1));
-            } else if (tos_type == ctos) {
-              obj->char_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == stos) {
-              obj->short_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ftos) {
-              obj->float_field_put(field_offset, STACK_FLOAT(-1));
-            } else {
-              obj->double_field_put(field_offset, STACK_DOUBLE(-1));
+            switch (tos_type) {
+              case ztos:
+                obj->byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
+                break;
+              case btos:
+                obj->byte_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ctos:
+                obj->char_field_put(field_offset, STACK_INT(-1));
+                break;
+              case stos:
+                obj->short_field_put(field_offset, STACK_INT(-1));
+                break;
+              case itos:
+                obj->int_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ftos:
+                obj->float_field_put(field_offset, STACK_FLOAT(-1));
+                break;
+              case ltos:
+                obj->long_field_put(field_offset, STACK_LONG(-1));
+                break;
+              case dtos:
+                obj->double_field_put(field_offset, STACK_DOUBLE(-1));
+                break;
+              case atos: {
+                oop val = STACK_OBJECT(-1);
+                VERIFY_OOP(val);
+                obj->obj_field_put(field_offset, val);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           }
 
@@ -2069,41 +1858,21 @@ run:
           if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
             size_t obj_size = ik->size_helper();
             oop result = NULL;
-            // If the TLAB isn't pre-zeroed then we'll have to do it
-            bool need_zero = !ZeroTLAB;
             if (UseTLAB) {
               result = (oop) THREAD->tlab().allocate(obj_size);
             }
-            // Disable non-TLAB-based fast-path, because profiling requires that all
-            // allocations go through InterpreterRuntime::_new() if THREAD->tlab().allocate
-            // returns NULL.
-            if (result == NULL) {
-              need_zero = true;
-              // Try allocate in shared eden
-            retry:
-              HeapWord* compare_to = *Universe::heap()->top_addr();
-              HeapWord* new_top = compare_to + obj_size;
-              if (new_top <= *Universe::heap()->end_addr()) {
-                if (Atomic::cmpxchg(Universe::heap()->top_addr(), compare_to, new_top) != compare_to) {
-                  goto retry;
-                }
-                result = (oop) compare_to;
-              }
-            }
             if (result != NULL) {
-              // Initialize object (if nonzero size and need) and then the header
-              if (need_zero ) {
+              // Initialize object (if nonzero size and need) and then the header.
+              // If the TLAB isn't pre-zeroed then we'll have to do it.
+              if (!ZeroTLAB) {
                 HeapWord* to_zero = cast_from_oop<HeapWord*>(result) + sizeof(oopDesc) / oopSize;
                 obj_size -= sizeof(oopDesc) / oopSize;
                 if (obj_size > 0 ) {
                   memset(to_zero, 0, obj_size * HeapWordSize);
                 }
               }
-              if (UseBiasedLocking) {
-                result->set_mark(ik->prototype_header());
-              } else {
-                result->set_mark(markWord::prototype());
-              }
+              assert(!UseBiasedLocking, "Not implemented");
+              result->set_mark(markWord::prototype());
               result->set_klass_gap(0);
               result->set_klass(ik);
               // Must prevent reordering of stores for object initialization
@@ -2169,26 +1938,17 @@ run:
             // Seems way more expensive now that we must dispatch.
             //
             if (objKlass != klassOf && !objKlass->is_subtype_of(klassOf)) {
-              // Decrement counter at checkcast.
-              BI_PROFILE_SUBTYPECHECK_FAILED(objKlass);
               ResourceMark rm(THREAD);
               char* message = SharedRuntime::generate_class_cast_message(
                 objKlass, klassOf);
               VM_JAVA_ERROR(vmSymbols::java_lang_ClassCastException(), message);
             }
-            // Profile checkcast with null_seen and receiver.
-            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/false, objKlass);
-          } else {
-            // Profile checkcast with null_seen and receiver.
-            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/true, NULL);
           }
           UPDATE_PC_AND_CONTINUE(3);
 
       CASE(_instanceof):
           if (STACK_OBJECT(-1) == NULL) {
             SET_STACK_INT(0, -1);
-            // Profile instanceof with null_seen and receiver.
-            BI_PROFILE_UPDATE_INSTANCEOF(/*null_seen=*/true, NULL);
           } else {
             VERIFY_OOP(STACK_OBJECT(-1));
             u2 index = Bytes::get_Java_u2(pc+1);
@@ -2207,11 +1967,7 @@ run:
               SET_STACK_INT(1, -1);
             } else {
               SET_STACK_INT(0, -1);
-              // Decrement counter at checkcast.
-              BI_PROFILE_SUBTYPECHECK_FAILED(objKlass);
             }
-            // Profile instanceof with null_seen and receiver.
-            BI_PROFILE_UPDATE_INSTANCEOF(/*null_seen=*/false, objKlass);
           }
           UPDATE_PC_AND_CONTINUE(3);
 
@@ -2266,6 +2022,7 @@ run:
             break;
 
           case JVM_CONSTANT_Dynamic:
+          case JVM_CONSTANT_DynamicInError:
             {
               CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
               oop result = THREAD->vm_result();
@@ -2307,6 +2064,7 @@ run:
             break;
 
           case JVM_CONSTANT_Dynamic:
+          case JVM_CONSTANT_DynamicInError:
             {
               CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
               oop result = THREAD->vm_result();
@@ -2386,9 +2144,6 @@ run:
         istate->set_callee_entry_point(method->from_interpreted_entry());
         istate->set_bcp_advance(5);
 
-        // Invokedynamic has got a call counter, just like an invokestatic -> increment!
-        BI_PROFILE_UPDATE_CALL();
-
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
 
@@ -2417,9 +2172,6 @@ run:
         istate->set_callee_entry_point(method->from_interpreted_entry());
         istate->set_bcp_advance(3);
 
-        // Invokehandle has got a call counter, just like a final call -> increment!
-        BI_PROFILE_UPDATE_FINALCALL();
-
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
 
@@ -2445,8 +2197,6 @@ run:
           CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
           if (cache->is_vfinal()) {
             callee = cache->f2_as_vfinal_method();
-            // Profile 'special case of invokeinterface' final call.
-            BI_PROFILE_UPDATE_FINALCALL();
           } else {
             // Get receiver.
             int parms = cache->parameter_size();
@@ -2455,8 +2205,6 @@ run:
             VERIFY_OOP(rcvr);
             Klass* rcvrKlass = rcvr->klass();
             callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
-            // Profile 'special case of invokeinterface' virtual call.
-            BI_PROFILE_UPDATE_VIRTUALCALL(rcvrKlass);
           }
         } else if (cache->is_vfinal()) {
           // private interface method invocations
@@ -2483,11 +2231,9 @@ run:
         if (callee != NULL) {
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-          if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+          if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
             istate->set_callee_entry_point(callee->interpreter_entry());
           }
-#endif /* VM_JVMTI */
           istate->set_bcp_advance(5);
           UPDATE_PC_AND_RETURN(0); // I'll be back...
         }
@@ -2543,16 +2289,11 @@ run:
                   handle_exception);
         }
 
-        // Profile virtual call.
-        BI_PROFILE_UPDATE_VIRTUALCALL(rcvr->klass());
-
         istate->set_callee(callee);
         istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-        if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+        if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
           istate->set_callee_entry_point(callee->interpreter_entry());
         }
-#endif /* VM_JVMTI */
         istate->set_bcp_advance(5);
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
@@ -2579,8 +2320,6 @@ run:
             CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             if (cache->is_vfinal()) {
               callee = cache->f2_as_vfinal_method();
-              // Profile final call.
-              BI_PROFILE_UPDATE_FINALCALL();
             } else {
               // get receiver
               int parms = cache->parameter_size();
@@ -2610,26 +2349,19 @@ run:
                   Because vtables have the same offset for ArrayKlass and InstanceKlass.
               */
               callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
-              // Profile virtual call.
-              BI_PROFILE_UPDATE_VIRTUALCALL(rcvrKlass);
             }
           } else {
             if ((Bytecodes::Code)opcode == Bytecodes::_invokespecial) {
               CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             }
             callee = cache->f1_as_method();
-
-            // Profile call.
-            BI_PROFILE_UPDATE_CALL();
           }
 
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-          if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+          if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
             istate->set_callee_entry_point(callee->interpreter_entry());
           }
-#endif /* VM_JVMTI */
           istate->set_bcp_advance(3);
           UPDATE_PC_AND_RETURN(0); // I'll be back...
         }
@@ -2675,8 +2407,6 @@ run:
       CASE(_goto):
       {
           int16_t offset = (int16_t)Bytes::get_Java_u2(pc + 1);
-          // Profile jump.
-          BI_PROFILE_UPDATE_JUMP();
           address branch_pc = pc;
           UPDATE_PC(offset);
           DO_BACKEDGE_CHECKS(offset, branch_pc);
@@ -2693,8 +2423,6 @@ run:
       CASE(_goto_w):
       {
           int32_t offset = Bytes::get_Java_u4(pc + 1);
-          // Profile jump.
-          BI_PROFILE_UPDATE_JUMP();
           address branch_pc = pc;
           UPDATE_PC(offset);
           DO_BACKEDGE_CHECKS(offset, branch_pc);
@@ -2704,9 +2432,6 @@ run:
       /* return from a jsr or jsr_w */
 
       CASE(_ret): {
-          // Profile ret.
-          BI_PROFILE_UPDATE_RET(/*bci=*/((int)(intptr_t)(LOCALS_ADDR(pc[1]))));
-          // Now, update the pc.
           pc = istate->method()->code_base() + (intptr_t)(LOCALS_ADDR(pc[1]));
           UPDATE_PC_AND_CONTINUE(0);
       }
@@ -2789,9 +2514,6 @@ run:
       }
       // for AbortVMOnException flag
       Exceptions::debug_check_abort(except_oop);
-
-      // Update profiling data.
-      BI_PROFILE_ALIGN_TO_CURRENT_BCI();
       goto run;
     }
     if (log_is_enabled(Info, exceptions)) {
@@ -2902,7 +2624,9 @@ run:
     // a NULL oop in it and then overwrite the oop later as needed. This isn't
     // unfortunately isn't possible.
 
-    THREAD->clear_pending_exception();
+    if (THREAD->has_pending_exception()) {
+      THREAD->clear_pending_exception();
+    }
 
     //
     // As far as we are concerned we have returned. If we have a pending exception
@@ -2952,21 +2676,18 @@ run:
           markWord header = lock->displaced_header();
           end->set_obj(NULL);
 
-          if (!lockee->mark().has_bias_pattern()) {
-            // If it isn't recursive we either must swap old header or call the runtime
-            if (header.to_pointer() != NULL) {
-              markWord old_header = markWord::encode(lock);
-              if (lockee->cas_set_mark(header, old_header) != old_header) {
-                // restore object for the slow case
-                end->set_obj(lockee);
-                {
-                  // Prevent any HandleMarkCleaner from freeing our live handles
-                  HandleMark __hm(THREAD);
-                  CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, end));
-                }
-              }
+          assert(!UseBiasedLocking, "Not implemented");
+
+          // If it isn't recursive we either must swap old header or call the runtime
+          if (header.to_pointer() != NULL) {
+            markWord old_header = markWord::encode(lock);
+            if (lockee->cas_set_mark(header, old_header) != old_header) {
+              // restore object for the slow case
+              end->set_obj(lockee);
+              InterpreterRuntime::monitorexit(end);
             }
           }
+
           // One error is plenty
           if (illegal_state_oop() == NULL && !suppress_error) {
             {
@@ -3013,11 +2734,7 @@ run:
               THREAD->clear_pending_exception();
             }
           } else if (UseHeavyMonitors) {
-            {
-              // Prevent any HandleMarkCleaner from freeing our live handles.
-              HandleMark __hm(THREAD);
-              CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, base));
-            }
+            InterpreterRuntime::monitorexit(base);
             if (THREAD->has_pending_exception()) {
               if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
@@ -3027,23 +2744,18 @@ run:
             markWord header = lock->displaced_header();
             base->set_obj(NULL);
 
-            if (!rcvr->mark().has_bias_pattern()) {
-              base->set_obj(NULL);
-              // If it isn't recursive we either must swap old header or call the runtime
-              if (header.to_pointer() != NULL) {
-                markWord old_header = markWord::encode(lock);
-                if (rcvr->cas_set_mark(header, old_header) != old_header) {
-                  // restore object for the slow case
-                  base->set_obj(rcvr);
-                  {
-                    // Prevent any HandleMarkCleaner from freeing our live handles
-                    HandleMark __hm(THREAD);
-                    CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, base));
-                  }
-                  if (THREAD->has_pending_exception()) {
-                    if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
-                    THREAD->clear_pending_exception();
-                  }
+            assert(!UseBiasedLocking, "Not implemented");
+
+            // If it isn't recursive we either must swap old header or call the runtime
+            if (header.to_pointer() != NULL) {
+              markWord old_header = markWord::encode(lock);
+              if (rcvr->cas_set_mark(header, old_header) != old_header) {
+                // restore object for the slow case
+                base->set_obj(rcvr);
+                InterpreterRuntime::monitorexit(base);
+                if (THREAD->has_pending_exception()) {
+                  if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
+                  THREAD->clear_pending_exception();
                 }
               }
             }
@@ -3072,25 +2784,16 @@ run:
     // (with this note) in anticipation of changing the vm and the tests
     // simultaneously.
 
-
-    //
     suppress_exit_event = suppress_exit_event || illegal_state_oop() != NULL;
 
+    // Whenever JVMTI puts a thread in interp_only_mode, method
+    // entry/exit events are sent for that thread to track stack depth.
 
-
-#ifdef VM_JVMTI
-      if (_jvmti_interp_events) {
-        // Whenever JVMTI puts a thread in interp_only_mode, method
-        // entry/exit events are sent for that thread to track stack depth.
-        if ( !suppress_exit_event && THREAD->is_interp_only_mode() ) {
-          {
-            // Prevent any HandleMarkCleaner from freeing our live handles
-            HandleMark __hm(THREAD);
-            CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
-          }
-        }
-      }
-#endif /* VM_JVMTI */
+    if (JVMTI_ENABLED && !suppress_exit_event && THREAD->is_interp_only_mode()) {
+      // Prevent any HandleMarkCleaner from freeing our live handles
+      HandleMark __hm(THREAD);
+      CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
+    }
 
     //
     // See if we are returning any exception
@@ -3141,13 +2844,6 @@ finish:
   return;
 }
 
-/*
- * All the code following this point is only produced once and is not present
- * in the JVMTI version of the interpreter
-*/
-
-#ifndef VM_JVMTI
-
 // This constructor should only be used to contruct the object to signal
 // interpreter initialization. All other instances should be created by
 // the frame manager.
@@ -3158,150 +2854,11 @@ BytecodeInterpreter::BytecodeInterpreter(messages msg) {
   _prev_link = NULL;
 }
 
-// Inline static functions for Java Stack and Local manipulation
-
-// The implementations are platform dependent. We have to worry about alignment
-// issues on some machines which can change on the same platform depending on
-// whether it is an LP64 machine also.
-address BytecodeInterpreter::stack_slot(intptr_t *tos, int offset) {
-  return (address) tos[Interpreter::expr_index_at(-offset)];
-}
-
-jint BytecodeInterpreter::stack_int(intptr_t *tos, int offset) {
-  return *((jint*) &tos[Interpreter::expr_index_at(-offset)]);
-}
-
-jfloat BytecodeInterpreter::stack_float(intptr_t *tos, int offset) {
-  return *((jfloat *) &tos[Interpreter::expr_index_at(-offset)]);
-}
-
-oop BytecodeInterpreter::stack_object(intptr_t *tos, int offset) {
-  return cast_to_oop(tos [Interpreter::expr_index_at(-offset)]);
-}
-
-jdouble BytecodeInterpreter::stack_double(intptr_t *tos, int offset) {
-  return ((VMJavaVal64*) &tos[Interpreter::expr_index_at(-offset)])->d;
-}
-
-jlong BytecodeInterpreter::stack_long(intptr_t *tos, int offset) {
-  return ((VMJavaVal64 *) &tos[Interpreter::expr_index_at(-offset)])->l;
-}
-
-// only used for value types
-void BytecodeInterpreter::set_stack_slot(intptr_t *tos, address value,
-                                                        int offset) {
-  *((address *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-void BytecodeInterpreter::set_stack_int(intptr_t *tos, int value,
-                                                       int offset) {
-  *((jint *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-void BytecodeInterpreter::set_stack_float(intptr_t *tos, jfloat value,
-                                                         int offset) {
-  *((jfloat *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-void BytecodeInterpreter::set_stack_object(intptr_t *tos, oop value,
-                                                          int offset) {
-  *((oop *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-// needs to be platform dep for the 32 bit platforms.
-void BytecodeInterpreter::set_stack_double(intptr_t *tos, jdouble value,
-                                                          int offset) {
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->d = value;
-}
-
-void BytecodeInterpreter::set_stack_double_from_addr(intptr_t *tos,
-                                              address addr, int offset) {
-  (((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->d =
-                        ((VMJavaVal64*)addr)->d);
-}
-
-void BytecodeInterpreter::set_stack_long(intptr_t *tos, jlong value,
-                                                        int offset) {
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset+1)])->l = 0xdeedbeeb;
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->l = value;
-}
-
-void BytecodeInterpreter::set_stack_long_from_addr(intptr_t *tos,
-                                            address addr, int offset) {
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset+1)])->l = 0xdeedbeeb;
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->l =
-                        ((VMJavaVal64*)addr)->l;
-}
-
-// Locals
-
-address BytecodeInterpreter::locals_slot(intptr_t* locals, int offset) {
-  return (address)locals[Interpreter::local_index_at(-offset)];
-}
-jint BytecodeInterpreter::locals_int(intptr_t* locals, int offset) {
-  return (jint)locals[Interpreter::local_index_at(-offset)];
-}
-jfloat BytecodeInterpreter::locals_float(intptr_t* locals, int offset) {
-  return (jfloat)locals[Interpreter::local_index_at(-offset)];
-}
-oop BytecodeInterpreter::locals_object(intptr_t* locals, int offset) {
-  return cast_to_oop(locals[Interpreter::local_index_at(-offset)]);
-}
-jdouble BytecodeInterpreter::locals_double(intptr_t* locals, int offset) {
-  return ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d;
-}
-jlong BytecodeInterpreter::locals_long(intptr_t* locals, int offset) {
-  return ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l;
-}
-
-// Returns the address of locals value.
-address BytecodeInterpreter::locals_long_at(intptr_t* locals, int offset) {
-  return ((address)&locals[Interpreter::local_index_at(-(offset+1))]);
-}
-address BytecodeInterpreter::locals_double_at(intptr_t* locals, int offset) {
-  return ((address)&locals[Interpreter::local_index_at(-(offset+1))]);
-}
-
-// Used for local value or returnAddress
-void BytecodeInterpreter::set_locals_slot(intptr_t *locals,
-                                   address value, int offset) {
-  *((address*)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_int(intptr_t *locals,
-                                   jint value, int offset) {
-  *((jint *)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_float(intptr_t *locals,
-                                   jfloat value, int offset) {
-  *((jfloat *)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_object(intptr_t *locals,
-                                   oop value, int offset) {
-  *((oop *)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_double(intptr_t *locals,
-                                   jdouble value, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d = value;
-}
-void BytecodeInterpreter::set_locals_long(intptr_t *locals,
-                                   jlong value, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l = value;
-}
-void BytecodeInterpreter::set_locals_double_from_addr(intptr_t *locals,
-                                   address addr, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d = ((VMJavaVal64*)addr)->d;
-}
-void BytecodeInterpreter::set_locals_long_from_addr(intptr_t *locals,
-                                   address addr, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l = ((VMJavaVal64*)addr)->l;
-}
-
 void BytecodeInterpreter::astore(intptr_t* tos,    int stack_offset,
                           intptr_t* locals, int locals_offset) {
   intptr_t value = tos[Interpreter::expr_index_at(-stack_offset)];
   locals[Interpreter::local_index_at(-locals_offset)] = value;
 }
-
 
 void BytecodeInterpreter::copy_stack_slot(intptr_t *tos, int from_offset,
                                    int to_offset) {
@@ -3312,6 +2869,7 @@ void BytecodeInterpreter::copy_stack_slot(intptr_t *tos, int from_offset,
 void BytecodeInterpreter::dup(intptr_t *tos) {
   copy_stack_slot(tos, -1, 0);
 }
+
 void BytecodeInterpreter::dup2(intptr_t *tos) {
   copy_stack_slot(tos, -2, 0);
   copy_stack_slot(tos, -1, 1);
@@ -3395,7 +2953,6 @@ BytecodeInterpreter::print() {
     char *method_name = _method->name_and_sig_as_C_string();
     tty->print_cr("method: " INTPTR_FORMAT "[ %s ]",  (uintptr_t) this->_method, method_name);
   }
-  tty->print_cr("mdx: " INTPTR_FORMAT, (uintptr_t) this->_mdx);
   tty->print_cr("stack: " INTPTR_FORMAT, (uintptr_t) this->_stack);
   tty->print_cr("msg: %s", C_msg(this->_msg));
   tty->print_cr("result_to_call._callee: " INTPTR_FORMAT, (uintptr_t) this->_result._to_call._callee);
@@ -3417,5 +2974,3 @@ extern "C" {
   }
 }
 #endif // PRODUCT
-
-#endif // JVMTI

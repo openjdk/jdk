@@ -25,14 +25,14 @@
  * @bug 5015163 7172553 8249258
  * @summary tests StringJoinerTest
  * @modules java.base/jdk.internal.util
- * @requires os.maxMemory > 4G
+ * @requires vm.bits == "64" & os.maxMemory > 4G
  * @run testng/othervm -Xmx4g -XX:+CompactStrings StringJoinerTest
  * @author Jim Gish
  */
 import java.util.ArrayList;
 import java.util.StringJoiner;
 import org.testng.annotations.Test;
-import static jdk.internal.util.ArraysSupport.MAX_ARRAY_LENGTH;
+import static jdk.internal.util.ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -49,7 +49,7 @@ public class StringJoinerTest {
     private static final String FOUR = "Four";
     private static final String FIVE = "Five";
     private static final String DASH = "-";
-    private static final String MAX_STRING = "*".repeat(MAX_ARRAY_LENGTH);
+    private static final String MAX_STRING = "*".repeat(SOFT_MAX_ARRAY_LENGTH);
 
     public void addAddAll() {
         StringJoiner sj = new StringJoiner(DASH, "{", "}");

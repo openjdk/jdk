@@ -61,20 +61,22 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   }
 
   // Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
-  if( in(1)->Opcode() == Op_AddI ) {
-    if( phase->eqv(in(1)->in(2),in(2)) )
+  if (in(1)->Opcode() == Op_AddI) {
+    if (in(1)->in(2) == in(2)) {
       return in(1)->in(1);
-    if (phase->eqv(in(1)->in(1),in(2)))
+    }
+    if (in(1)->in(1) == in(2)) {
       return in(1)->in(2);
+    }
 
     // Also catch: "(X + Opaque2(Y)) - Y".  In this case, 'Y' is a loop-varying
     // trip counter and X is likely to be loop-invariant (that's how O2 Nodes
     // are originally used, although the optimizer sometimes jiggers things).
     // This folding through an O2 removes a loop-exit use of a loop-varying
     // value and generally lowers register pressure in and around the loop.
-    if( in(1)->in(2)->Opcode() == Op_Opaque2 &&
-        phase->eqv(in(1)->in(2)->in(1),in(2)) )
+    if (in(1)->in(2)->Opcode() == Op_Opaque2 && in(1)->in(2)->in(1) == in(2)) {
       return in(1)->in(1);
+    }
   }
 
   return ( phase->type( in(2) )->higher_equal( zero ) ) ? in(1) : this;
@@ -113,6 +115,18 @@ const Type* SubNode::Value(PhaseGVN* phase) const {
 
 }
 
+SubNode* SubNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new SubINode(in1, in2);
+    case T_LONG:
+      return new SubLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return NULL;
+}
+
 //=============================================================================
 //------------------------------Helper function--------------------------------
 
@@ -124,7 +138,7 @@ static bool is_cloop_increment(Node* inc) {
   }
   const PhiNode* phi = inc->in(1)->as_Phi();
 
-  if (phi->is_copy() || !phi->region()->is_CountedLoop()) {
+  if (!phi->region()->is_CountedLoop()) {
     return false;
   }
 
@@ -154,11 +168,12 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 
 #ifdef ASSERT
   // Check for dead loop
-  if( phase->eqv( in1, this ) || phase->eqv( in2, this ) ||
-      ( ( op1 == Op_AddI || op1 == Op_SubI ) &&
-        ( phase->eqv( in1->in(1), this ) || phase->eqv( in1->in(2), this ) ||
-          phase->eqv( in1->in(1), in1  ) || phase->eqv( in1->in(2), in1 ) ) ) )
+  if ((in1 == this) || (in2 == this) ||
+      ((op1 == Op_AddI || op1 == Op_SubI) &&
+       ((in1->in(1) == this) || (in1->in(2) == this) ||
+        (in1->in(1) == in1)  || (in1->in(2) == in1)))) {
     assert(false, "dead loop in SubINode::Ideal");
+  }
 #endif
 
   const Type *t2 = phase->type( in2 );
@@ -200,24 +215,25 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 
 #ifdef ASSERT
   // Check for dead loop
-  if( ( op2 == Op_AddI || op2 == Op_SubI ) &&
-      ( phase->eqv( in2->in(1), this ) || phase->eqv( in2->in(2), this ) ||
-        phase->eqv( in2->in(1), in2  ) || phase->eqv( in2->in(2), in2  ) ) )
+  if ((op2 == Op_AddI || op2 == Op_SubI) &&
+      ((in2->in(1) == this) || (in2->in(2) == this) ||
+       (in2->in(1) == in2)  || (in2->in(2) == in2))) {
     assert(false, "dead loop in SubINode::Ideal");
+  }
 #endif
 
   // Convert "x - (x+y)" into "-y"
-  if( op2 == Op_AddI &&
-      phase->eqv( in1, in2->in(1) ) )
-    return new SubINode( phase->intcon(0),in2->in(2));
+  if (op2 == Op_AddI && in1 == in2->in(1)) {
+    return new SubINode(phase->intcon(0), in2->in(2));
+  }
   // Convert "(x-y) - x" into "-y"
-  if( op1 == Op_SubI &&
-      phase->eqv( in1->in(1), in2 ) )
-    return new SubINode( phase->intcon(0),in1->in(2));
+  if (op1 == Op_SubI && in1->in(1) == in2) {
+    return new SubINode(phase->intcon(0), in1->in(2));
+  }
   // Convert "x - (y+x)" into "-y"
-  if( op2 == Op_AddI &&
-      phase->eqv( in1, in2->in(2) ) )
-    return new SubINode( phase->intcon(0),in2->in(1));
+  if (op2 == Op_AddI && in1 == in2->in(2)) {
+    return new SubINode(phase->intcon(0), in2->in(1));
+  }
 
   // Convert "0 - (x-y)" into "y-x"
   if( t1 == TypeInt::ZERO && op2 == Op_SubI )
@@ -296,11 +312,12 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 #ifdef ASSERT
   // Check for dead loop
-  if( phase->eqv( in1, this ) || phase->eqv( in2, this ) ||
-      ( ( op1 == Op_AddL || op1 == Op_SubL ) &&
-        ( phase->eqv( in1->in(1), this ) || phase->eqv( in1->in(2), this ) ||
-          phase->eqv( in1->in(1), in1  ) || phase->eqv( in1->in(2), in1  ) ) ) )
+  if ((in1 == this) || (in2 == this) ||
+      ((op1 == Op_AddL || op1 == Op_SubL) &&
+       ((in1->in(1) == this) || (in1->in(2) == this) ||
+        (in1->in(1) == in1)  || (in1->in(2) == in1)))) {
     assert(false, "dead loop in SubLNode::Ideal");
+  }
 #endif
 
   if( phase->type( in2 ) == Type::TOP ) return NULL;
@@ -340,20 +357,21 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 #ifdef ASSERT
   // Check for dead loop
-  if( ( op2 == Op_AddL || op2 == Op_SubL ) &&
-      ( phase->eqv( in2->in(1), this ) || phase->eqv( in2->in(2), this ) ||
-        phase->eqv( in2->in(1), in2  ) || phase->eqv( in2->in(2), in2  ) ) )
+  if ((op2 == Op_AddL || op2 == Op_SubL) &&
+      ((in2->in(1) == this) || (in2->in(2) == this) ||
+       (in2->in(1) == in2)  || (in2->in(2) == in2))) {
     assert(false, "dead loop in SubLNode::Ideal");
+  }
 #endif
 
   // Convert "x - (x+y)" into "-y"
-  if( op2 == Op_AddL &&
-      phase->eqv( in1, in2->in(1) ) )
-    return new SubLNode( phase->makecon(TypeLong::ZERO), in2->in(2));
+  if (op2 == Op_AddL && in1 == in2->in(1)) {
+    return new SubLNode(phase->makecon(TypeLong::ZERO), in2->in(2));
+  }
   // Convert "x - (y+x)" into "-y"
-  if( op2 == Op_AddL &&
-      phase->eqv( in1, in2->in(2) ) )
-    return new SubLNode( phase->makecon(TypeLong::ZERO),in2->in(1));
+  if (op2 == Op_AddL && in1 == in2->in(2)) {
+    return new SubLNode(phase->makecon(TypeLong::ZERO), in2->in(1));
+  }
 
   // Convert "0 - (x-y)" into "y-x"
   if( phase->type( in1 ) == TypeLong::ZERO && op2 == Op_SubL )
@@ -421,8 +439,8 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 
   // if both operands are infinity of same sign, the result is NaN; do
   // not replace with zero
-  if( (t1->is_finite() && t2->is_finite()) ) {
-    if( phase->eqv(in1, in2) ) return add_id();
+  if (t1->is_finite() && t2->is_finite() && in1 == in2) {
+    return add_id();
   }
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
@@ -445,11 +463,10 @@ Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Not associative because of boundary conditions (infinity)
-  if( IdealizedNumerics && !phase->C->method()->is_strict() ) {
+  if (IdealizedNumerics && !phase->C->method()->is_strict() &&
+      in(2)->is_Add() && in(1) == in(2)->in(1)) {
     // Convert "x - (x+y)" into "-y"
-    if( in(2)->is_Add() &&
-        phase->eqv(in(1),in(2)->in(1) ) )
-      return new SubFNode( phase->makecon(TypeF::ZERO),in(2)->in(2));
+    return new SubFNode(phase->makecon(TypeF::ZERO), in(2)->in(2));
   }
 
   // Cannot replace 0.0-X with -X because a 'fsub' bytecode computes
@@ -488,11 +505,10 @@ Node *SubDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   }
 
   // Not associative because of boundary conditions (infinity)
-  if( IdealizedNumerics && !phase->C->method()->is_strict() ) {
+  if (IdealizedNumerics && !phase->C->method()->is_strict() &&
+      in(2)->is_Add() && in(1) == in(2)->in(1)) {
     // Convert "x - (x+y)" into "-y"
-    if( in(2)->is_Add() &&
-        phase->eqv(in(1),in(2)->in(1) ) )
-      return new SubDNode( phase->makecon(TypeD::ZERO),in(2)->in(2));
+    return new SubDNode(phase->makecon(TypeD::ZERO), in(2)->in(2));
   }
 
   // Cannot replace 0.0-X with -X because a 'dsub' bytecode computes
@@ -559,7 +575,26 @@ void CmpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_re
     }
   }
 }
+
 #endif
+
+CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
+  switch (bt) {
+    case T_INT:
+      if (unsigned_comp) {
+        return new CmpUNode(in1, in2);
+      }
+      return new CmpINode(in1, in2);
+    case T_LONG:
+      if (unsigned_comp) {
+        return new CmpULNode(in1, in2);
+      }
+      return new CmpLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return NULL;
+}
 
 //=============================================================================
 //------------------------------cmp--------------------------------------------

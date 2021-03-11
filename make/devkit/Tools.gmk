@@ -87,11 +87,20 @@ endif
 # Define external dependencies
 
 # Latest that could be made to work.
-GCC_VER := 9.2.0
-ifeq ($(GCC_VER), 9.2.0)
+GCC_VER := 10.2.0
+ifeq ($(GCC_VER), 10.2.0)
+  gcc_ver := gcc-10.2.0
+  binutils_ver := binutils-2.35
+  ccache_ver := ccache-3.7.11
+  mpfr_ver := mpfr-4.1.0
+  gmp_ver := gmp-6.2.0
+  mpc_ver := mpc-1.1.0
+  gdb_ver := gdb-9.2
+  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
+else ifeq ($(GCC_VER), 9.2.0)
   gcc_ver := gcc-9.2.0
   binutils_ver := binutils-2.34
-  ccache_ver := 3.7.3
+  ccache_ver := ccache-3.7.3
   mpfr_ver := mpfr-3.1.5
   gmp_ver := gmp-6.1.2
   mpc_ver := mpc-1.0.3
@@ -99,7 +108,7 @@ ifeq ($(GCC_VER), 9.2.0)
 else ifeq ($(GCC_VER), 8.3.0)
   gcc_ver := gcc-8.3.0
   binutils_ver := binutils-2.32
-  ccache_ver := 3.7.3
+  ccache_ver := ccache-3.7.3
   mpfr_ver := mpfr-3.1.5
   gmp_ver := gmp-6.1.2
   mpc_ver := mpc-1.0.3
@@ -107,7 +116,7 @@ else ifeq ($(GCC_VER), 8.3.0)
 else ifeq ($(GCC_VER), 7.3.0)
   gcc_ver := gcc-7.3.0
   binutils_ver := binutils-2.30
-  ccache_ver := 3.3.6
+  ccache_ver := ccache-3.3.6
   mpfr_ver := mpfr-3.1.5
   gmp_ver := gmp-6.1.2
   mpc_ver := mpc-1.0.3
@@ -115,7 +124,7 @@ else ifeq ($(GCC_VER), 7.3.0)
 else ifeq ($(GCC_VER), 4.9.2)
   gcc_ver := gcc-4.9.2
   binutils_ver := binutils-2.25
-  ccache_ver := 3.2.1
+  ccache_ver := ccache-3.2.1
   mpfr_ver := mpfr-3.0.1
   gmp_ver := gmp-4.3.2
   mpc_ver := mpc-1.0.1
@@ -124,9 +133,20 @@ else
   $(error Unsupported GCC version)
 endif
 
+ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
+  MAKE_MAJOR_VERSION := $(word 1,$(subst ., ,$(MAKE_VERSION)))
+  SUPPORTED_MAKE_VERSION := $(shell [ $(MAKE_MAJOR_VERSION) -ge $(REQUIRED_MIN_MAKE_MAJOR_VERSION) ] && echo true)
+  ifneq ($(SUPPORTED_MAKE_VERSION),true)
+    $(error "Make v$(MAKE_VERSION) is too old, must use v$(REQUIRED_MIN_MAKE_MAJOR_VERSION) or above")
+  endif
+endif
+
+ccache_ver_only := $(patsubst ccache-%,%,$(ccache_ver))
+
+
 GCC := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.xz
 BINUTILS := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.gz
-CCACHE := https://github.com/ccache/ccache/releases/download/v$(ccache_ver)/ccache-$(ccache_ver).tar.xz
+CCACHE := https://github.com/ccache/ccache/releases/download/v$(ccache_ver_only)/$(ccache_ver).tar.xz
 MPFR := https://www.mpfr.org/${mpfr_ver}/${mpfr_ver}.tar.bz2
 GMP := http://ftp.gnu.org/pub/gnu/gmp/${gmp_ver}.tar.bz2
 MPC := http://ftp.gnu.org/pub/gnu/mpc/${mpc_ver}.tar.gz

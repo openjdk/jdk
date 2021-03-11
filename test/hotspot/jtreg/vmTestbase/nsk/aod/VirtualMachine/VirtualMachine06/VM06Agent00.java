@@ -20,11 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package nsk.aod.VirtualMachine.VirtualMachine06;
 
-import java.lang.instrument.Instrumentation;
-
 import nsk.share.aod.TargetApplicationWaitingAgents;
+
+import java.lang.instrument.Instrumentation;
 
 public class VM06Agent00 {
     public static void agentmain(String options, Instrumentation inst) {

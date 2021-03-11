@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
+#include "oops/method.hpp"
 
 class Dependencies;
 class ExceptionHandlerTable;
@@ -157,7 +158,6 @@ protected:
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
-  unsigned int _lazy_critical_native:1;      // Lazy JNI critical native
   unsigned int _has_wide_vectors:1;          // Preserve wide vectors at safepoints
 
   Method*   _method;
@@ -195,9 +195,6 @@ public:
 
   bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
-
-  bool  is_lazy_critical_native() const           { return _lazy_critical_native; }
-  void  set_lazy_critical_native(bool z)          { _lazy_critical_native = z; }
 
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
   void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
@@ -253,8 +250,6 @@ public:
     // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
     return _mark_for_deoptimization_status != deoptimize_noupdate;
   }
-
-  static bool nmethod_access_is_safe(nmethod* nm);
 
   // tells whether frames described by this nmethod can be deoptimized
   // note: native wrappers cannot be deoptimized.

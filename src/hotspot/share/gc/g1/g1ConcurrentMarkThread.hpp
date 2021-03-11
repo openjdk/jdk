@@ -40,15 +40,15 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   G1ConcurrentMark* _cm;
 
-  enum ServiceState {
+  enum ServiceState : uint {
     Idle,
-    Started,
-    InProgress
+    FullMark,
+    UndoMark
   };
 
   volatile ServiceState _state;
 
-  // Wait for next cycle. Returns false if the service should be stopped.
+  // Wait for next cycle. Returns the command passed over.
   bool wait_for_next_cycle();
 
   bool mark_loop_needs_restart() const;
@@ -74,8 +74,10 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   void concurrent_cycle_start();
 
-  void full_concurrent_cycle_do();
-  void concurrent_cycle_end();
+  void concurrent_mark_cycle_do();
+  void concurrent_undo_cycle_do();
+
+  void concurrent_cycle_end(bool mark_cycle_completed);
 
   // Delay pauses to meet MMU.
   void delay_to_keep_mmu(bool remark);
@@ -93,24 +95,19 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   // Marking virtual time so far this thread and concurrent marking tasks.
   double vtime_mark_accum();
 
-  G1ConcurrentMark* cm()   { return _cm; }
+  G1ConcurrentMark* cm() { return _cm; }
 
-  void set_idle()          { assert(_state != Started, "must not be starting a new cycle"); _state = Idle; }
-  bool idle()              { return _state == Idle; }
-  void set_started()       { assert(_state == Idle, "cycle in progress"); _state = Started; }
-  bool started()           { return _state == Started; }
-  void set_in_progress()   { assert(_state == Started, "must be starting a cycle"); _state = InProgress; }
-  bool in_progress()       { return _state == InProgress; }
+  void set_idle();
+  void start_full_mark();
+  void start_undo_mark();
 
-  // Returns true from the moment a marking cycle is
+  bool idle() const;
+  // Returns true from the moment a concurrent cycle is
   // initiated (during the concurrent start pause when started() is set)
   // to the moment when the cycle completes (just after the next
   // marking bitmap has been cleared and in_progress() is
-  // cleared). While during_cycle() is true we will not start another cycle
-  // so that cycles do not overlap. We cannot use just in_progress()
-  // as the CM thread might take some time to wake up before noticing
-  // that started() is set and set in_progress().
-  bool during_cycle()      { return !idle(); }
+  // cleared).
+  bool in_progress() const;
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP

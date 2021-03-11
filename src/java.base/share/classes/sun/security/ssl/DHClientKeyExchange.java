@@ -67,7 +67,7 @@ final class DHClientKeyExchange {
      */
     private static final
             class DHClientKeyExchangeMessage extends HandshakeMessage {
-        private byte[] y;        // 1 to 2^16 - 1 bytes
+        private final byte[] y;        // 1 to 2^16 - 1 bytes
 
         DHClientKeyExchangeMessage(
                 HandshakeContext handshakeContext) throws IOException {

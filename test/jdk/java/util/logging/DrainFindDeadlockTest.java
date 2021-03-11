@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@ import java.lang.management.ThreadMXBean;
 import java.lang.Thread.State;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.Random;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.Map;
+import jdk.test.lib.RandomFactory;
 
 /**
  * @test
@@ -36,6 +38,7 @@ import java.util.Map;
  * @author jim.gish@oracle.com
  * @modules java.logging
  *          java.management
+ * @library /test/lib
  * @build DrainFindDeadlockTest
  * @run main/othervm DrainFindDeadlockTest
  * @key randomness
@@ -50,6 +53,8 @@ import java.util.Map;
 public class DrainFindDeadlockTest {
     private LogManager mgr = LogManager.getLogManager();
     private static final int MAX_ITERATIONS = 100;
+    private static final Random random = RandomFactory.getRandom();
+    private static int preventLoopElision;
 
     // Get a ThreadMXBean so we can check for deadlock.  N.B. this may
     // not be supported on all platforms, which means we will have to
@@ -66,12 +71,13 @@ public class DrainFindDeadlockTest {
     }
 
     public static void randomDelay() {
-        int runs = (int) Math.random() * 1000000;
+        int runs = random.nextInt(1000000);
         int c = 0;
 
         for (int i=0; i<runs; ++i) {
             c=c+i;
         }
+        preventLoopElision = c;
     }
 
     public void testForDeadlock() throws IOException, Exception {

@@ -3427,9 +3427,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>𑄇𑄣𑄨𑄚𑄨𑄋𑄴𑄉𑄳𑄢𑄓𑄴</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>𑄥𑄨𑄟𑄴𑄜𑄬𑄢𑄮𑄛𑄮𑄣𑄴</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>𑄟𑄧𑄌𑄴𑄇𑄮</exemplarCity>
 			</zone>
@@ -3621,6 +3618,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>𑄇𑄨𑄠𑄬𑄞𑄴</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>𑄥𑄨𑄟𑄴𑄜𑄬𑄢𑄮𑄛𑄮𑄣𑄴</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>𑄎𑄬𑄛𑄮𑄢𑄮𑄎𑄭𑄠𑄭</exemplarCity>

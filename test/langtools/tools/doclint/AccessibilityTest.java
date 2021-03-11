@@ -1,8 +1,8 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832
+ * @bug 8004832 8247955 8247957
  * @summary Add new doclint package
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:-accessibility AccessibilityTest.java
  * @run main DocLintTester -ref AccessibilityTest.out AccessibilityTest.java
@@ -48,11 +48,6 @@ public class AccessibilityTest {
     public void missing_alt() { }
 
     /**
-     * <table summary="ok"><tr><th>head<tr><td>data</table>
-     */
-    public void table_with_summary() { }
-
-    /**
      * <table><caption>ok</caption><tr><th>head<tr><td>data</table>
      */
     public void table_with_caption() { }
@@ -60,6 +55,12 @@ public class AccessibilityTest {
     /**
      * <table><tr><th>head<tr><td>data</table>
      */
-    public void table_without_summary_and_caption() { }
+    public void table_without_caption() { }
+
+    /**
+     * <table role="presentation"><tr><th>head<tr><td>data</table>
+     */
+    public void table_presentation() { }
+
 }
 

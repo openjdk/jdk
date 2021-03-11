@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public interface RMIServerSocketFactory {
      * an anonymous port).
      * @param  port the port number
      * @return the server socket on the specified port
-     * @exception IOException if an I/O error occurs during server socket
+     * @throws IOException if an I/O error occurs during server socket
      * creation
      * @since 1.2
      */

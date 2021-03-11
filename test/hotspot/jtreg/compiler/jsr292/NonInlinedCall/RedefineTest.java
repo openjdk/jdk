@@ -28,7 +28,7 @@
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib / ../patches
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  *
  * @build sun.hotspot.WhiteBox
  *        java.base/java.lang.invoke.MethodHandleHelper

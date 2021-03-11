@@ -11,10 +11,10 @@ BadEnd.java:15: error: element not closed: code
  * <code> text <code>
    ^
 BadEnd.java:14: error: element not closed: a
- * <a name="here"> text <a>
-                        ^
+ * <a id="here"> text <a>
+                      ^
 BadEnd.java:14: error: element not closed: a
- * <a name="here"> text <a>
+ * <a id="here"> text <a>
    ^
 4 errors
 2 warnings

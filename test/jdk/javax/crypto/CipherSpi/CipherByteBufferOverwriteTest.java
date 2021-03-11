@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,21 @@
  * @bug 8181386
  * @summary CipherSpi ByteBuffer to byte array conversion fails for
  *          certain data overlap conditions
- * @run main CipherByteBufferOverwriteTest 0 false
- * @run main CipherByteBufferOverwriteTest 0 true
- * @run main CipherByteBufferOverwriteTest 4 false
- * @run main CipherByteBufferOverwriteTest 4 true
+ * @run main CipherByteBufferOverwriteTest AES/CBC/PKCS5Padding 0 false
+ * @run main CipherByteBufferOverwriteTest AES/CBC/PKCS5Padding 0 true
+ * @run main CipherByteBufferOverwriteTest AES/CBC/PKCS5Padding 4 false
+ * @run main CipherByteBufferOverwriteTest AES/CBC/PKCS5Padding 4 true
+ * @run main CipherByteBufferOverwriteTest AES/GCM/NoPadding 0 false
+ * @run main CipherByteBufferOverwriteTest AES/GCM/NoPadding 0 true
+ * @run main CipherByteBufferOverwriteTest AES/GCM/NoPadding 4 false
+ * @run main CipherByteBufferOverwriteTest AES/GCM/NoPadding 4 true
  */
 
+import java.math.BigInteger;
 import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
@@ -44,7 +50,7 @@ public class CipherByteBufferOverwriteTest {
 
     private static final boolean DEBUG = false;
 
-    private static final String TRANSFORMATION = "AES/CBC/PKCS5Padding";
+    private static String transformation;
 
     // must be larger than the temp array size, i.e. 4096, hardcoded in
     // javax.crypto.CipherSpi class
@@ -53,8 +59,7 @@ public class CipherByteBufferOverwriteTest {
     private static final int CIPHERTEXT_BUFFER_SIZE = PLAINTEXT_SIZE + 32;
 
     private static final SecretKey KEY = new SecretKeySpec(new byte[16], "AES");
-    private static final AlgorithmParameterSpec PARAMS =
-            new IvParameterSpec(new byte[16]);
+    private static AlgorithmParameterSpec params;
 
     private static ByteBuffer inBuf;
     private static ByteBuffer outBuf;
@@ -65,9 +70,15 @@ public class CipherByteBufferOverwriteTest {
 
     public static void main(String[] args) throws Exception {
 
-        int offset = Integer.parseInt(args[0]);
-        boolean useRO = Boolean.parseBoolean(args[1]);
+        transformation = args[0];
+        int offset = Integer.parseInt(args[1]);
+        boolean useRO = Boolean.parseBoolean(args[2]);
 
+        if (transformation.equalsIgnoreCase("AES/GCM/NoPadding")) {
+            params = new GCMParameterSpec(16 * 8, new byte[16]);
+        } else {
+            params = new IvParameterSpec(new byte[16]);
+        }
         // an all-zeros plaintext is the easiest way to demonstrate the issue,
         // but it fails with any plaintext, of course
         byte[] expectedPT = new byte[PLAINTEXT_SIZE];
@@ -75,8 +86,8 @@ public class CipherByteBufferOverwriteTest {
         System.arraycopy(expectedPT, 0, buf, 0, PLAINTEXT_SIZE);
 
         // generate expected cipher text using byte[] methods
-        Cipher c = Cipher.getInstance(TRANSFORMATION);
-        c.init(Cipher.ENCRYPT_MODE, KEY, PARAMS);
+        Cipher c = Cipher.getInstance(transformation);
+        c.init(Cipher.ENCRYPT_MODE, KEY, params);
         byte[] expectedCT = c.doFinal(expectedPT);
 
         // Test#1: against ByteBuffer generated with allocate(int) call
@@ -89,9 +100,9 @@ public class CipherByteBufferOverwriteTest {
         // Test#2: against direct ByteBuffer
         prepareBuffers(BufferType.DIRECT, useRO, buf.length,
                 buf, 0, PLAINTEXT_SIZE, offset);
-        System.out.println("\tDIRECT: passed");
 
         runTest(offset, expectedPT, expectedCT);
+        System.out.println("\tDIRECT: passed");
 
         // Test#3: against ByteBuffer wrapping existing array
         prepareBuffers(BufferType.WRAP, useRO, buf.length,
@@ -150,8 +161,8 @@ public class CipherByteBufferOverwriteTest {
     private static void runTest(int ofs, byte[] expectedPT, byte[] expectedCT)
             throws Exception {
 
-        Cipher c = Cipher.getInstance(TRANSFORMATION);
-        c.init(Cipher.ENCRYPT_MODE, KEY, PARAMS);
+        Cipher c = Cipher.getInstance(transformation);
+        c.init(Cipher.ENCRYPT_MODE, KEY, params);
         int ciphertextSize = c.doFinal(inBuf, outBuf);
 
         // read out the encrypted result
@@ -166,14 +177,20 @@ public class CipherByteBufferOverwriteTest {
         outBuf.get(finalCT);
 
         if (!Arrays.equals(finalCT, expectedCT)) {
+            System.err.println("Ciphertext mismatch:" +
+                "\nresult   (len=" + finalCT.length + "):\n" +
+                String.format("%0" + (finalCT.length << 1) + "x",
+                    new BigInteger(1, finalCT)) +
+                "\nexpected (len=" + expectedCT.length + "):\n" +
+                String.format("%0" + (expectedCT.length << 1) + "x",
+                    new BigInteger(1, expectedCT)));
             throw new Exception("ERROR: Ciphertext does not match");
         }
 
         // now do decryption
         outBuf.position(ofs);
         outBuf.limit(ofs + ciphertextSize);
-
-        c.init(Cipher.DECRYPT_MODE, KEY, PARAMS);
+        c.init(Cipher.DECRYPT_MODE, KEY, params);
         ByteBuffer finalPTBuf = ByteBuffer.allocate(
                 c.getOutputSize(outBuf.remaining()));
         c.doFinal(outBuf, finalPTBuf);
@@ -184,6 +201,13 @@ public class CipherByteBufferOverwriteTest {
         finalPTBuf.get(finalPT);
 
         if (!Arrays.equals(finalPT, expectedPT)) {
+            System.err.println("Ciphertext mismatch " +
+                "):\nresult   (len=" + finalCT.length + "):\n" +
+                String.format("%0" + (finalCT.length << 1) + "x",
+                    new BigInteger(1, finalCT)) +
+                "\nexpected (len=" + expectedCT.length + "):\n" +
+                String.format("%0" + (expectedCT.length << 1) + "x",
+                    new BigInteger(1, expectedCT)));
             throw new Exception("ERROR: Plaintext does not match");
         }
     }

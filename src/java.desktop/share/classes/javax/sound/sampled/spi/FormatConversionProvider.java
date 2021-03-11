@@ -52,7 +52,7 @@ import static javax.sound.sampled.AudioFormat.Encoding;
 public abstract class FormatConversionProvider {
 
     /**
-     * Constructs a {@code FormatConversionProvider}.
+     * Constructor for subclasses to call.
      */
     protected FormatConversionProvider() {}
 

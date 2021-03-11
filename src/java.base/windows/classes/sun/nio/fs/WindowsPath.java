@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ class WindowsPath implements Path {
         // directory on removal media devices can change during the lifetime
         // of the VM)
         if (type != WindowsPathType.DRIVE_RELATIVE) {
-            synchronized (path) {
+            synchronized (this) {
                 pathForWin32Calls = new WeakReference<String>(resolved);
             }
         }
@@ -689,9 +689,7 @@ class WindowsPath implements Path {
             throw new IllegalArgumentException();
 
         StringBuilder sb = new StringBuilder();
-        Integer[] nelems = new Integer[endIndex - beginIndex];
         for (int i = beginIndex; i < endIndex; i++) {
-            nelems[i-beginIndex] = sb.length();
             sb.append(elementAsString(i));
             if (i != (endIndex-1))
                 sb.append("\\");
@@ -800,8 +798,8 @@ class WindowsPath implements Path {
 
     @Override
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof WindowsPath)) {
-            return compareTo((Path)obj) == 0;
+        if (obj instanceof WindowsPath path) {
+            return compareTo(path) == 0;
         }
         return false;
     }
@@ -833,12 +831,52 @@ class WindowsPath implements Path {
         int flags = FILE_FLAG_BACKUP_SEMANTICS;
         if (!followLinks)
             flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+        try {
+            return openFileForReadAttributeAccess(flags);
+        } catch (WindowsException e) {
+            if (followLinks && e.lastError() == ERROR_CANT_ACCESS_FILE) {
+                // Object could be a Unix domain socket
+                try {
+                    return openSocketForReadAttributeAccess();
+                } catch (WindowsException ignore) {}
+            }
+            throw e;
+        }
+    }
+
+    private long openFileForReadAttributeAccess(int flags)
+        throws WindowsException
+    {
         return CreateFile(getPathForWin32Calls(),
-                          FILE_READ_ATTRIBUTES,
-                          (FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE),
-                          0L,
-                          OPEN_EXISTING,
-                          flags);
+                            FILE_READ_ATTRIBUTES,
+                            (FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE),
+                            0L,
+                            OPEN_EXISTING,
+                            flags);
+    }
+
+    /**
+     * Returns a handle to the file if it is a socket.
+     * Throws WindowsException if file is not a socket
+     */
+    private long openSocketForReadAttributeAccess()
+        throws WindowsException
+    {
+        // needs to specify FILE_FLAG_OPEN_REPARSE_POINT if the file is a socket
+        int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
+
+        long handle = openFileForReadAttributeAccess(flags);
+
+        try {
+            WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(handle);
+            if (!attrs.isUnixDomainSocket()) {
+                throw new WindowsException("not a socket");
+            }
+            return handle;
+        } catch (WindowsException e) {
+            CloseHandle(handle);
+            throw e;
+        }
     }
 
     void checkRead() {

@@ -50,18 +50,18 @@ void ShenandoahEvacOOMHandler::register_thread(Thread* thr) {
 
   assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must not be set");
   while (true) {
+    // Check for OOM.
+    // If offender has OOM_MARKER_MASK, then loop until no more threads in evac
+    if ((threads_in_evac & OOM_MARKER_MASK) != 0) {
+      wait_for_no_evac_threads();
+      return;
+    }
+
     jint other = Atomic::cmpxchg(&_threads_in_evac, threads_in_evac, threads_in_evac + 1);
     if (other == threads_in_evac) {
       // Success: caller may safely enter evacuation
       return;
     } else {
-      // Failure:
-      //  - if offender has OOM_MARKER_MASK, then loop until no more threads in evac
-      //  - otherwise re-try CAS
-      if ((other & OOM_MARKER_MASK) != 0) {
-        wait_for_no_evac_threads();
-        return;
-      }
       threads_in_evac = other;
     }
   }

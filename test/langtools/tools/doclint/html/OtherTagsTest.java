@@ -1,9 +1,9 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8006251 8022173
+ * @bug 8006251 8022173 8247957
  * @summary test other tags
  * @library ..
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs -ref OtherTagsTest.out OtherTagsTest.java
  */

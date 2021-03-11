@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
@@ -103,7 +102,6 @@ public class Contents {
     public final Content fieldDetailsLabel;
     public final Content fieldSummaryLabel;
     public final Content fields;
-    public final Content framesLabel;
     public final Content fromLabel;
     public final Content functionalInterface;
     public final Content functionalInterfaceMessage;
@@ -140,8 +138,6 @@ public class Contents {
     public final Content navProperty;
     public final Content navServices;
     public final Content nestedClassSummary;
-    public final Content newPage;
-    public final Content noFramesLabel;
     public final Content noScriptMessage;
     public final Content openModuleLabel;
     public final Content openedTo;
@@ -152,6 +148,10 @@ public class Contents {
     public final Content package_;
     public final Content packagesLabel;
     public final Content parameters;
+    public final Content previewAPI;
+    public final Content previewLabel;
+    public final Content previewMark;
+    public final Content previewPhrase;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
@@ -178,6 +178,15 @@ public class Contents {
 
     private final EnumMap<VisibleMemberTable.Kind, Content> navLinkLabels;
 
+    public final String annotationTypeSummary;
+    public final String classSummary;
+    public final String enumSummary;
+    public final String errorSummary;
+    public final String exceptionSummary;
+    public final String interfaceSummary;
+    public final String packageSummary;
+    public final String recordSummary;
+
     private final Resources resources;
 
     /**
@@ -189,10 +198,10 @@ public class Contents {
     Contents(HtmlConfiguration configuration) {
         this.resources = configuration.getDocResources();
 
-        allClassesLabel = getNonBreakContent("doclet.All_Classes");
+        allClassesLabel = getNonBreakResource("doclet.All_Classes");
         allImplementedInterfacesLabel = getContent("doclet.All_Implemented_Interfaces");
-        allModulesLabel = getNonBreakContent("doclet.All_Modules");
-        allPackagesLabel = getNonBreakContent("doclet.All_Packages");
+        allModulesLabel = getNonBreakResource("doclet.All_Modules");
+        allPackagesLabel = getNonBreakResource("doclet.All_Packages");
         allSuperinterfacesLabel = getContent("doclet.All_Superinterfaces");
         also = getContent("doclet.also");
         annotationTypeOptionalMemberLabel = getContent("doclet.Annotation_Type_Optional_Member");
@@ -213,7 +222,7 @@ public class Contents {
         constructorSummaryLabel = getContent("doclet.Constructor_Summary");
         constructors = getContent("doclet.Constructors");
         contentsHeading = getContent("doclet.Contents");
-        defaultPackageLabel = new StringContent(DocletConstants.DEFAULT_PACKAGE_NAME);
+        defaultPackageLabel = getContent("doclet.Unnamed_Package");
         default_ = getContent("doclet.Default");
         deprecatedAPI = getContent("doclet.Deprecated_API");
         deprecatedLabel = getContent("doclet.navDeprecated");
@@ -239,7 +248,6 @@ public class Contents {
         fieldSummaryLabel = getContent("doclet.Field_Summary");
         fieldLabel = getContent("doclet.Field");
         fields = getContent("doclet.Fields");
-        framesLabel = getContent("doclet.Frames");
         fromLabel = getContent("doclet.From");
         functionalInterface = getContent("doclet.Functional_Interface");
         functionalInterfaceMessage = getContent("doclet.Functional_Interface_Message");
@@ -276,8 +284,6 @@ public class Contents {
         navProperty = getContent("doclet.navProperty");
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
-        newPage = new Comment(resources.getText("doclet.New_Page"));
-        noFramesLabel = getNonBreakContent("doclet.No_Frames");
         noScriptMessage = getContent("doclet.No_Script_Message");
         openedTo = getContent("doclet.OpenedTo");
         openModuleLabel = getContent("doclet.Open_Module");
@@ -288,11 +294,15 @@ public class Contents {
         package_ = getContent("doclet.package");
         packagesLabel = getContent("doclet.Packages");
         parameters = getContent("doclet.Parameters");
+        previewAPI = getContent("doclet.Preview_API");
+        previewLabel = getContent("doclet.Preview_Label");
+        previewMark = getContent("doclet.Preview_Mark");
+        previewPhrase = getContent("doclet.Preview");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
         propertySummaryLabel = getContent("doclet.Property_Summary");
-        record = getContent("doclet.Record");
+        record = getContent("doclet.RecordClass");
         recordComponents = getContent("doclet.RecordComponents");
         referencedIn = getContent("doclet.ReferencedIn");
         returns = getContent("doclet.Returns");
@@ -318,6 +328,15 @@ public class Contents {
         navLinkLabels.put(VisibleMemberTable.Kind.FIELDS, getContent("doclet.navField"));
         navLinkLabels.put(VisibleMemberTable.Kind.CONSTRUCTORS, getContent("doclet.navConstructor"));
         navLinkLabels.put(VisibleMemberTable.Kind.METHODS, getContent("doclet.navMethod"));
+
+        this.annotationTypeSummary = resources.getText("doclet.Annotation_Types_Summary");
+        this.classSummary = resources.getText("doclet.Class_Summary");
+        this.enumSummary = resources.getText("doclet.Enum_Summary");
+        this.errorSummary = resources.getText("doclet.Error_Summary");
+        this.exceptionSummary = resources.getText("doclet.Exception_Summary");
+        this.interfaceSummary = resources.getText("doclet.Interface_Summary");
+        this.packageSummary = resources.getText("doclet.Package_Summary");
+        this.recordSummary = resources.getText("doclet.Record_Class_Summary");
     }
 
     /**
@@ -328,7 +347,7 @@ public class Contents {
      * @return a content tree for the string
      */
     public Content getContent(String key) {
-        return new FixedStringContent(resources.getText(key));
+        return Text.of(resources.getText(key));
     }
 
     /**
@@ -401,6 +420,27 @@ public class Contents {
     }
 
     /**
+     * Returns content composed of items joined together with the specified separator.
+     *
+     * @param separator the separator
+     * @param items     the items
+     * @return the content
+     */
+    public Content join(Content separator, Collection<Content> items) {
+        Content result = new ContentBuilder();
+        boolean first = true;
+        for (Content c : items) {
+            if (first) {
+                first = false;
+            } else {
+                result.add(separator);
+            }
+            result.add(c);
+        }
+        return result;
+    }
+
+    /**
      * Gets a {@code Content} object, containing the string for
      * a given key in the doclet's resources, substituting
      * <code>&nbsp;</code> for any space characters found in
@@ -409,8 +449,19 @@ public class Contents {
      * @param key the key for the desired string
      * @return a content tree for the string
      */
-    private Content getNonBreakContent(String key) {
-        String text = resources.getText(key); // TODO: cache
+    private Content getNonBreakResource(String key) {
+        return getNonBreakString(resources.getText(key));
+    }
+
+    /**
+     * Gets a {@code Content} object for a string, substituting
+     * <code>&nbsp;</code> for any space characters found in
+     * the named resource string.
+     *
+     * @param text the string
+     * @return a content tree for the string
+     */
+    public Content getNonBreakString(String text) {
         Content c = new ContentBuilder();
         int start = 0;
         int p;

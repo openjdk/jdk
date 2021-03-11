@@ -49,9 +49,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.unwatch.unwatch001.unwatch001
- *        nsk.jdb.unwatch.unwatch001.unwatch001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.unwatch.unwatch001.unwatch001
+ * @build nsk.jdb.unwatch.unwatch001.unwatch001a
+ * @run main/othervm
+ *      nsk.jdb.unwatch.unwatch001.unwatch001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

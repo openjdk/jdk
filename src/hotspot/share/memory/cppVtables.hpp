@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,19 +29,19 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class ArchiveBuilder;
 class Method;
 class SerializeClosure;
+class CppVtableInfo;
 
 // Support for C++ vtables in CDS archive.
 class CppVtables : AllStatic {
-  static void patch_cpp_vtable_pointers();
+  static CppVtableInfo** _index;
 public:
-  static char* allocate_cpp_vtable_clones();
-  static void allocate_cloned_cpp_vtptrs();
-  static void clone_cpp_vtables(intptr_t* p);
-  static void zero_cpp_vtable_clones_for_writing();
-  static intptr_t* get_archived_cpp_vtable(MetaspaceObj::Type msotype, address obj);
-  static void serialize_cloned_cpp_vtptrs(SerializeClosure* sc);
+  static char* dumptime_init(ArchiveBuilder* builder);
+  static void zero_archived_vtables();
+  static intptr_t* get_archived_vtable(MetaspaceObj::Type msotype, address obj);
+  static void serialize(SerializeClosure* sc);
   static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
 };
 

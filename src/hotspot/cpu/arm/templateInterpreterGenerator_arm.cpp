@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -41,6 +42,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -363,9 +365,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
 //
 // Uses R0, R1, Rtemp.
 //
-void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow,
-                                                 Label* profile_method,
-                                                 Label* profile_method_continue) {
+void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   Label done;
   const Register Rcounters = Rtemp;
   const Address invocation_counter(Rcounters,
@@ -374,79 +374,25 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow,
 
   // Note: In tiered we increment either counters in MethodCounters* or
   // in MDO depending if we're profiling or not.
-  if (TieredCompilation) {
-    int increment = InvocationCounter::count_increment;
-    Label no_mdo;
-    if (ProfileInterpreter) {
-      // Are we profiling?
-      __ ldr(R1_tmp, Address(Rmethod, Method::method_data_offset()));
-      __ cbz(R1_tmp, no_mdo);
-      // Increment counter in the MDO
-      const Address mdo_invocation_counter(R1_tmp,
-                    in_bytes(MethodData::invocation_counter_offset()) +
-                    in_bytes(InvocationCounter::counter_offset()));
-      const Address mask(R1_tmp, in_bytes(MethodData::invoke_mask_offset()));
-      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, R0_tmp, Rtemp, eq, overflow);
-      __ b(done);
-    }
-    __ bind(no_mdo);
-    __ get_method_counters(Rmethod, Rcounters, done);
-    const Address mask(Rcounters, in_bytes(MethodCounters::invoke_mask_offset()));
-    __ increment_mask_and_jump(invocation_counter, increment, mask, R0_tmp, R1_tmp, eq, overflow);
-    __ bind(done);
-  } else { // not TieredCompilation
-    const Address backedge_counter(Rcounters,
-                  MethodCounters::backedge_counter_offset() +
-                  InvocationCounter::counter_offset());
-
-    const Register Ricnt = R0_tmp;  // invocation counter
-    const Register Rbcnt = R1_tmp;  // backedge counter
-
-    __ get_method_counters(Rmethod, Rcounters, done);
-
-    if (ProfileInterpreter) {
-      const Register Riic = R1_tmp;
-      __ ldr_s32(Riic, Address(Rcounters, MethodCounters::interpreter_invocation_counter_offset()));
-      __ add(Riic, Riic, 1);
-      __ str_32(Riic, Address(Rcounters, MethodCounters::interpreter_invocation_counter_offset()));
-    }
-
-    // Update standard invocation counters
-
-    __ ldr_u32(Ricnt, invocation_counter);
-    __ ldr_u32(Rbcnt, backedge_counter);
-
-    __ add(Ricnt, Ricnt, InvocationCounter::count_increment);
-
-    __ bic(Rbcnt, Rbcnt, ~InvocationCounter::count_mask_value); // mask out the status bits
-
-    __ str_32(Ricnt, invocation_counter);            // save invocation count
-    __ add(Ricnt, Ricnt, Rbcnt);                     // add both counters
-
-    // profile_method is non-null only for interpreted method so
-    // profile_method != NULL == !native_call
-    // BytecodeInterpreter only calls for native so code is elided.
-
-    if (ProfileInterpreter && profile_method != NULL) {
-      assert(profile_method_continue != NULL, "should be non-null");
-
-      // Test to see if we should create a method data oop
-      // Reuse R1_tmp as we don't need backedge counters anymore.
-      Address profile_limit(Rcounters, in_bytes(MethodCounters::interpreter_profile_limit_offset()));
-      __ ldr_s32(R1_tmp, profile_limit);
-      __ cmp_32(Ricnt, R1_tmp);
-      __ b(*profile_method_continue, lt);
-
-      // if no method data exists, go to profile_method
-      __ test_method_data_pointer(R1_tmp, *profile_method);
-    }
-
-    Address invoke_limit(Rcounters, in_bytes(MethodCounters::interpreter_invocation_limit_offset()));
-    __ ldr_s32(R1_tmp, invoke_limit);
-    __ cmp_32(Ricnt, R1_tmp);
-    __ b(*overflow, hs);
-    __ bind(done);
+  int increment = InvocationCounter::count_increment;
+  Label no_mdo;
+  if (ProfileInterpreter) {
+    // Are we profiling?
+    __ ldr(R1_tmp, Address(Rmethod, Method::method_data_offset()));
+    __ cbz(R1_tmp, no_mdo);
+    // Increment counter in the MDO
+    const Address mdo_invocation_counter(R1_tmp,
+                  in_bytes(MethodData::invocation_counter_offset()) +
+                  in_bytes(InvocationCounter::counter_offset()));
+    const Address mask(R1_tmp, in_bytes(MethodData::invoke_mask_offset()));
+    __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, R0_tmp, Rtemp, eq, overflow);
+    __ b(done);
   }
+  __ bind(no_mdo);
+  __ get_method_counters(Rmethod, Rcounters, done);
+  const Address mask(Rcounters, in_bytes(MethodCounters::invoke_mask_offset()));
+  __ increment_mask_and_jump(invocation_counter, increment, mask, R0_tmp, R1_tmp, eq, overflow);
+  __ bind(done);
 }
 
 void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue) {
@@ -485,10 +431,10 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const int overhead_size = (frame::sender_sp_offset - frame::interpreter_frame_initial_sp_offset)*wordSize + entry_size;
 
   // Pages reserved for VM runtime calls and subsequent Java calls.
-  const int reserved_pages = JavaThread::stack_shadow_zone_size();
+  const int reserved_pages = StackOverflow::stack_shadow_zone_size();
 
   // Thread::stack_size() includes guard pages, and they should not be touched.
-  const int guard_pages = JavaThread::stack_guard_zone_size();
+  const int guard_pages = StackOverflow::stack_guard_zone_size();
 
   __ ldr(R0, Address(Rthread, Thread::stack_base_offset()));
   __ ldr(R1, Address(Rthread, Thread::stack_size_offset()));
@@ -808,7 +754,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
       // been locked yet.
       __ set_do_not_unlock_if_synchronized(true, Rtemp);
     }
-    generate_counter_incr(&invocation_counter_overflow, NULL, NULL);
+    generate_counter_incr(&invocation_counter_overflow);
   }
 
   Label continue_after_compile;
@@ -1016,7 +962,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // reguard stack if StackOverflow exception happened while in native.
   {
     __ ldr_u32(Rtemp, Address(Rthread, JavaThread::stack_guard_state_offset()));
-    __ cmp_32(Rtemp, JavaThread::stack_guard_yellow_reserved_disabled);
+    __ cmp_32(Rtemp, StackOverflow::stack_guard_yellow_reserved_disabled);
   __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages), relocInfo::none, eq);
 #if R9_IS_SCRATCHED
   __ restore_method();
@@ -1033,8 +979,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   if (synchronized) {
     // address of first monitor
-    __ sub(R1, FP, - (frame::interpreter_frame_monitor_block_bottom_offset - frame::interpreter_frame_monitor_size()) * wordSize);
-    __ unlock_object(R1);
+    __ sub(R0, FP, - (frame::interpreter_frame_monitor_block_bottom_offset - frame::interpreter_frame_monitor_size()) * wordSize);
+    __ unlock_object(R0);
   }
 
   // jvmti/dtrace support
@@ -1153,18 +1099,13 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // increment invocation count & check for overflow
   Label invocation_counter_overflow;
-  Label profile_method;
-  Label profile_method_continue;
   if (inc_counter) {
     if (synchronized) {
       // Avoid unlocking method's monitor in case of exception, as it has not
       // been locked yet.
       __ set_do_not_unlock_if_synchronized(true, Rtemp);
     }
-    generate_counter_incr(&invocation_counter_overflow, &profile_method, &profile_method_continue);
-    if (ProfileInterpreter) {
-      __ bind(profile_method_continue);
-    }
+    generate_counter_incr(&invocation_counter_overflow);
   }
   Label continue_after_compile;
   __ bind(continue_after_compile);
@@ -1217,16 +1158,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // invocation counter overflow
   if (inc_counter) {
-    if (ProfileInterpreter) {
-      // We have decided to profile this method in the interpreter
-      __ bind(profile_method);
-
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-      __ set_method_data_pointer_for_bcp();
-
-      __ b(profile_method_continue);
-    }
-
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(continue_after_compile);

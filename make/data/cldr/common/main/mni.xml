@@ -29,6 +29,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_US" alt="short">য়ু এস ইংলিস</language>
 			<language type="es">স্পেনিস</language>
 			<language type="es_419">লেটিন অমেরিকান স্পেনিস</language>
+			<language type="es_ES">য়ুরোপিয়ান স্পেনিস</language>
+			<language type="es_MX">মেক্সিকান স্পেনিস</language>
 			<language type="fr">ফ্রেঞ্চ</language>
 			<language type="fr_CA">কানাদিয়ান ফ্রেঞ্চ</language>
 			<language type="fr_CH">স্বিজ ফ্রেঞ্চ</language>
@@ -51,8 +53,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Arab">আরবিক</script>
 			<script type="Beng">বাংলা</script>
 			<script type="Cyrl">সিরিলিক</script>
-			<script type="Hans">সিমপ্লিফাইদ</script>
-			<script type="Hans" alt="stand-alone">সিমপ্লিফাইদ চাইনিজ</script>
+			<script type="Hans">লাইথোকহল্লবা</script>
+			<script type="Hans" alt="stand-alone">লাইথোকহল্লবা চাইনিজ</script>
 			<script type="Hant">ত্রেদিস্নেল</script>
 			<script type="Hant" alt="stand-alone">ত্রেদিস্নেল চাইনিজ</script>
 			<script type="Latn">লেটিন</script>
@@ -230,10 +232,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="5">মে</month>
 							<month type="6">জুন</month>
 							<month type="7">জুলাই</month>
-							<month type="8">আগস্ট</month>
+							<month type="8">ওগষ্ট</month>
 							<month type="9">সেপ্টেম্বর</month>
 							<month type="10">ওক্টোবর</month>
-							<month type="11">নভেম্বর</month>
+							<month type="11">নবেম্বর</month>
 							<month type="12">ডিসেম্বর</month>
 						</monthWidth>
 					</monthContext>
@@ -250,7 +252,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">থাংজ</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun">নো</day>
+							<day type="sun">নোং</day>
 							<day type="mon">নিং</day>
 							<day type="tue">লৈ</day>
 							<day type="wed">য়ুম</day>

@@ -78,6 +78,10 @@ void Phase::print_timers() {
        }
     }
     tty->print_cr ("         Renumber Live:       %7.3f s", timers[_t_renumberLive].seconds());
+    tty->print_cr ("         Vector:              %7.3f s", timers[_t_vector].seconds());
+    tty->print_cr ("           Box elimination:   %7.3f s", timers[_t_vector_elimination].seconds());
+    tty->print_cr ("             IGVN:            %7.3f s", timers[_t_vector_igvn].seconds());
+    tty->print_cr ("             Prune Useless:   %7.3f s", timers[_t_vector_pru].seconds());
     tty->print_cr ("         IdealLoop:           %7.3f s", timers[_t_idealLoop].seconds());
     tty->print_cr ("         IdealLoop Verify:    %7.3f s", timers[_t_idealLoopVerify].seconds());
     tty->print_cr ("         Cond Const Prop:     %7.3f s", timers[_t_ccp].seconds());

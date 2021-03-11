@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,10 @@
  * questions.
  */
 
+#ifdef HEADLESS
+    #error This file should not be included in headless library
+#endif
+
 #include "GraphicsPrimitiveMgr.h"
 #include "Region.h"
 #include "Trace.h"
@@ -43,20 +47,16 @@
 #include <dlfcn.h>
 #include <setjmp.h>
 
-#ifndef HEADLESS
 jfieldID pictID;
 jfieldID xidID;
 jfieldID blitMaskPMID;
 jfieldID blitMaskPictID;
-#endif /* !HEADLESS */
 
 JNIEXPORT void JNICALL
    Java_sun_java2d_xr_XRSurfaceData_initXRPicture(JNIEnv *env, jobject xsd,
                                                   jlong pXSData,
                                                   jint pictFormat)
 {
-#ifndef HEADLESS
-
   X11SDOps *xsdo;
   XRenderPictFormat *fmt;
 
@@ -78,13 +78,11 @@ JNIEXPORT void JNICALL
 
   (*env)->SetIntField (env, xsd, pictID, xsdo->xrPic);
   (*env)->SetIntField (env, xsd, xidID, xsdo->drawable);
-#endif /* !HEADLESS */
 }
 
 JNIEXPORT void JNICALL
 Java_sun_java2d_xr_XRSurfaceData_initIDs(JNIEnv *env, jclass xsd)
 {
-#ifndef HEADLESS
   J2dTraceLn(J2D_TRACE_INFO, "in XRSurfaceData_initIDs");
 
   pictID = (*env)->GetFieldID(env, xsd, "picture", "I");
@@ -97,7 +95,6 @@ Java_sun_java2d_xr_XRSurfaceData_initIDs(JNIEnv *env, jclass xsd)
   }
 
   XShared_initIDs(env, JNI_FALSE);
-#endif /* !HEADLESS */
 }
 
 
@@ -107,7 +104,6 @@ Java_sun_java2d_xr_XRSurfaceData_XRInitSurface(JNIEnv *env, jclass xsd,
                                                jint width, jint height,
                                                jlong drawable, jint pictFormat)
 {
-#ifndef HEADLESS
     X11SDOps *xsdo;
 
     J2dTraceLn(J2D_TRACE_INFO, "in XRSurfaceData_initSurface");
@@ -118,7 +114,6 @@ Java_sun_java2d_xr_XRSurfaceData_XRInitSurface(JNIEnv *env, jclass xsd,
     }
 
     XShared_initSurface(env, xsdo, depth, width, height, drawable);
-#endif /* !HEADLESS */
 }
 
 
@@ -127,7 +122,6 @@ JNIEXPORT void JNICALL
 Java_sun_java2d_xr_XRSurfaceData_freeXSDOPicture(JNIEnv *env, jobject xsd,
                                                   jlong pXSData)
 {
-#ifndef HEADLESS
     X11SDOps *xsdo;
 
     J2dTraceLn(J2D_TRACE_INFO, "in XRSurfaceData_freeXSDOPicture");
@@ -141,5 +135,4 @@ Java_sun_java2d_xr_XRSurfaceData_freeXSDOPicture(JNIEnv *env, jobject xsd,
        XRenderFreePicture(awt_display, xsdo->xrPic);
        xsdo->xrPic = None;
     }
-#endif /* !HEADLESS */
 }

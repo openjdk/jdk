@@ -27,8 +27,8 @@
  * @summary Verify there are no unnecessary checkcasts and conditions generated
  *          for the pattern matching in instanceof.
  * @modules jdk.jdeps/com.sun.tools.classfile
- * @compile --enable-preview -source ${jdk.version} NoUnnecessaryCast.java
- * @run main/othervm --enable-preview NoUnnecessaryCast
+ * @compile NoUnnecessaryCast.java
+ * @run main NoUnnecessaryCast
  */
 
 import java.io.File;
@@ -67,11 +67,9 @@ public class NoUnnecessaryCast {
                               .get();
         String expectedInstructions = """
                                       aload_1
-                                      astore_3
-                                      aload_3
                                       instanceof
                                       ifeq
-                                      aload_3
+                                      aload_1
                                       checkcast
                                       astore_2
                                       aload_2

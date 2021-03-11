@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,11 @@
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "classfile/vmClassMacros.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
+#include "compiler/compilerThread.hpp"
 #include "compiler/oopMap.hpp"
 #include "oops/methodData.hpp"
 #include "runtime/thread.hpp"
@@ -73,19 +75,19 @@ private:
   bool  _jvmti_can_post_on_exceptions;
   bool  _jvmti_can_pop_frame;
   bool  _jvmti_can_get_owned_monitor_info; // includes can_get_owned_monitor_stack_depth_info
+  bool  _jvmti_can_walk_any_space;
 
   // Cache DTrace flags
   bool  _dtrace_extended_probes;
-  bool  _dtrace_monitor_probes;
   bool  _dtrace_method_probes;
   bool  _dtrace_alloc_probes;
 
   // Distinguished instances of certain ciObjects..
   static ciObject*              _null_object_instance;
 
-#define WK_KLASS_DECL(name, ignore_s) static ciInstanceKlass* _##name;
-  WK_KLASSES_DO(WK_KLASS_DECL)
-#undef WK_KLASS_DECL
+#define VM_CLASS_DECL(name, ignore_s) static ciInstanceKlass* _##name;
+  VM_CLASSES_DO(VM_CLASS_DECL)
+#undef VM_CLASS_DECL
 
   static ciSymbol*        _unloaded_cisymbol;
   static ciInstanceKlass* _unloaded_ciinstance_klass;
@@ -348,11 +350,11 @@ public:
   bool  jvmti_can_hotswap_or_post_breakpoint() const { return _jvmti_can_hotswap_or_post_breakpoint; }
   bool  jvmti_can_post_on_exceptions()         const { return _jvmti_can_post_on_exceptions; }
   bool  jvmti_can_get_owned_monitor_info()     const { return _jvmti_can_get_owned_monitor_info; }
+  bool  jvmti_can_walk_any_space()             const { return _jvmti_can_walk_any_space; }
 
   // Cache DTrace flags
   void  cache_dtrace_flags();
   bool  dtrace_extended_probes() const { return _dtrace_extended_probes; }
-  bool  dtrace_monitor_probes()  const { return _dtrace_monitor_probes; }
   bool  dtrace_method_probes()   const { return _dtrace_method_probes; }
   bool  dtrace_alloc_probes()    const { return _dtrace_alloc_probes; }
 
@@ -377,16 +379,17 @@ public:
                        AbstractCompiler*         compiler,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
-                       RTMState                  rtm_state = NoRTM);
+                       RTMState                  rtm_state = NoRTM,
+                       const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY);
 
 
   // Access to certain well known ciObjects.
-#define WK_KLASS_FUNC(name, ignore_s) \
+#define VM_CLASS_FUNC(name, ignore_s) \
   ciInstanceKlass* name() { \
     return _##name;\
   }
-  WK_KLASSES_DO(WK_KLASS_FUNC)
-#undef WK_KLASS_FUNC
+  VM_CLASSES_DO(VM_CLASS_FUNC)
+#undef VM_CLASS_FUNC
 
   ciInstance* NullPointerException_instance() {
     assert(_NullPointerException_instance != NULL, "initialization problem");
@@ -416,7 +419,6 @@ public:
   }
   ciInstance* unloaded_ciinstance();
 
-  ciKlass*  find_system_klass(ciSymbol* klass_name);
   // Note:  To find a class from its name string, use ciSymbol::make,
   // but consider adding to vmSymbols.hpp instead.
 
@@ -425,10 +427,6 @@ public:
   // the bytecodes could be an array type.  Basically this converts
   // array types into java/lang/Object and other types stay as they are.
   static ciInstanceKlass* get_instance_klass_for_declared_method_holder(ciKlass* klass);
-
-  // Return the machine-level offset of o, which must be an element of a.
-  // This may be used to form constant-loading expressions in lieu of simpler encodings.
-  int       array_element_offset_in_bytes(ciArray* a, ciObject* o);
 
   // Access to the compile-lifetime allocation arena.
   Arena*    arena() { return _arena; }
@@ -456,7 +454,7 @@ public:
 
   void record_failure(const char* reason);      // Record failure and report later
   void report_failure(const char* reason);      // Report failure immediately
-  void record_method_not_compilable(const char* reason, bool all_tiers = true);
+  void record_method_not_compilable(const char* reason, bool all_tiers = false);
   void record_out_of_memory_failure();
 
   // RedefineClasses support

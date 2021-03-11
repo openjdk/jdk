@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -616,7 +616,7 @@ bool PhaseChaitin::remove_node_if_not_used(Block* b, uint location, Node* n, uin
     if (lrg._def == n) {
       lrg._def = 0;
     }
-    n->disconnect_inputs(NULL, C);
+    n->disconnect_inputs(C);
     _cfg.unmap_node_from_block(n);
     n->replace_by(C->top());
     return true;

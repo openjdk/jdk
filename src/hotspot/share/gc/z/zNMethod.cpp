@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,13 @@
 #include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zNMethodData.hpp"
 #include "gc/z/zNMethodTable.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
@@ -40,6 +41,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
@@ -55,7 +57,7 @@ void ZNMethod::attach_gc_data(nmethod* nm) {
   GrowableArray<oop*> immediate_oops;
   bool non_immediate_oops = false;
 
-  // Find all oops relocations
+  // Find all oop relocations
   RelocIterator iter(nm);
   while (iter.next()) {
     if (iter.type() != relocInfo::oop_type) {
@@ -189,30 +191,29 @@ void ZNMethod::flush_nmethod(nmethod* nm) {
 
 bool ZNMethod::supports_entry_barrier(nmethod* nm) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs != NULL) {
-    return bs->supports_entry_barrier(nm);
-  }
-
-  return false;
+  return bs->supports_entry_barrier(nm);
 }
 
 bool ZNMethod::is_armed(nmethod* nm) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs != NULL) {
-    return bs->is_armed(nm);
-  }
-
-  return false;
+  return bs->is_armed(nm);
 }
 
 void ZNMethod::disarm(nmethod* nm) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs != NULL) {
-    bs->disarm(nm);
-  }
+  bs->disarm(nm);
 }
 
 void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
+  ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
+  if (!nm->is_alive()) {
+    return;
+  }
+
+  ZNMethod::nmethod_oops_do_inner(nm, cl);
+}
+
+void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
   // Process oops table
   {
     oop* const begin = nm->oops_begin();
@@ -243,30 +244,36 @@ void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
   }
 }
 
-class ZNMethodToOopsDoClosure : public NMethodClosure {
-private:
-  OopClosure* _cl;
-
+class ZNMethodOopClosure : public OopClosure {
 public:
-  ZNMethodToOopsDoClosure(OopClosure* cl) :
-      _cl(cl) {}
+  virtual void do_oop(oop* p) {
+    if (ZResurrection::is_blocked()) {
+      ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(p);
+    } else {
+      ZBarrier::load_barrier_on_root_oop_field(p);
+    }
+  }
 
-  virtual void do_nmethod(nmethod* nm) {
-    ZNMethod::nmethod_oops_do(nm, _cl);
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
   }
 };
 
-void ZNMethod::oops_do_begin() {
+void ZNMethod::nmethod_oops_barrier(nmethod* nm) {
+  ZNMethodOopClosure cl;
+  nmethod_oops_do_inner(nm, &cl);
+}
+
+void ZNMethod::nmethods_do_begin() {
   ZNMethodTable::nmethods_do_begin();
 }
 
-void ZNMethod::oops_do_end() {
+void ZNMethod::nmethods_do_end() {
   ZNMethodTable::nmethods_do_end();
 }
 
-void ZNMethod::oops_do(OopClosure* cl) {
-  ZNMethodToOopsDoClosure nmethod_cl(cl);
-  ZNMethodTable::nmethods_do(&nmethod_cl);
+void ZNMethod::nmethods_do(NMethodClosure* cl) {
+  ZNMethodTable::nmethods_do(cl);
 }
 
 class ZNMethodUnlinkClosure : public NMethodClosure {
@@ -321,8 +328,7 @@ public:
 
     if (ZNMethod::is_armed(nm)) {
       // Heal oops and disarm
-      ZNMethodOopClosure cl;
-      ZNMethod::nmethod_oops_do(nm, &cl);
+      ZNMethod::nmethod_oops_barrier(nm);
       ZNMethod::disarm(nm);
     }
 

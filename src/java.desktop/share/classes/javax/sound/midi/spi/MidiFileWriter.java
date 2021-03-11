@@ -43,7 +43,7 @@ import javax.sound.midi.Sequence;
 public abstract class MidiFileWriter {
 
     /**
-     * Constructs a {@code MidiFileWriter}.
+     * Constructor for subclasses to call.
      */
     protected MidiFileWriter() {}
 

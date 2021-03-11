@@ -24,6 +24,8 @@
 #ifndef SHARE_GC_Z_ZRELOCATIONSETSELECTOR_INLINE_HPP
 #define SHARE_GC_Z_ZRELOCATIONSETSELECTOR_INLINE_HPP
 
+#include "gc/z/zArray.inline.hpp"
+#include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRelocationSetSelector.hpp"
 
 inline size_t ZRelocationSetSelectorGroupStats::npages() const {
@@ -38,20 +40,12 @@ inline size_t ZRelocationSetSelectorGroupStats::live() const {
   return _live;
 }
 
-inline size_t ZRelocationSetSelectorGroupStats::garbage() const {
-  return _garbage;
-}
-
 inline size_t ZRelocationSetSelectorGroupStats::empty() const {
   return _empty;
 }
 
-inline size_t ZRelocationSetSelectorGroupStats::compacting_from() const {
-  return _compacting_from;
-}
-
-inline size_t ZRelocationSetSelectorGroupStats::compacting_to() const {
-  return _compacting_to;
+inline size_t ZRelocationSetSelectorGroupStats::relocate() const {
+  return _relocate;
 }
 
 inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::small() const {
@@ -66,16 +60,77 @@ inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::larg
   return _large;
 }
 
-inline ZPage* const* ZRelocationSetSelectorGroup::selected() const {
-  return _sorted_pages;
+inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
+  const uint8_t type = page->type();
+  const size_t size = page->size();
+  const size_t live = page->live_bytes();
+  const size_t garbage = size - live;
+
+  if (garbage > _fragmentation_limit) {
+    _live_pages.append(page);
+  }
+
+  _stats._npages++;
+  _stats._total += size;
+  _stats._live += live;
 }
 
-inline size_t ZRelocationSetSelectorGroup::nselected() const {
-  return _nselected;
+inline void ZRelocationSetSelectorGroup::register_empty_page(ZPage* page) {
+  const size_t size = page->size();
+
+  _stats._npages++;
+  _stats._total += size;
+  _stats._empty += size;
+}
+
+inline const ZArray<ZPage*>* ZRelocationSetSelectorGroup::selected() const {
+  return &_live_pages;
+}
+
+inline size_t ZRelocationSetSelectorGroup::forwarding_entries() const {
+  return _forwarding_entries;
 }
 
 inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorGroup::stats() const {
   return _stats;
+}
+
+inline void ZRelocationSetSelector::register_live_page(ZPage* page) {
+  const uint8_t type = page->type();
+
+  if (type == ZPageTypeSmall) {
+    _small.register_live_page(page);
+  } else if (type == ZPageTypeMedium) {
+    _medium.register_live_page(page);
+  } else {
+    _large.register_live_page(page);
+  }
+}
+
+inline void ZRelocationSetSelector::register_empty_page(ZPage* page) {
+  const uint8_t type = page->type();
+
+  if (type == ZPageTypeSmall) {
+    _small.register_empty_page(page);
+  } else if (type == ZPageTypeMedium) {
+    _medium.register_empty_page(page);
+  } else {
+    _large.register_empty_page(page);
+  }
+
+  _empty_pages.append(page);
+}
+
+inline bool ZRelocationSetSelector::should_free_empty_pages(int bulk) const {
+  return _empty_pages.length() >= bulk && _empty_pages.is_nonempty();
+}
+
+inline const ZArray<ZPage*>* ZRelocationSetSelector::empty_pages() const {
+  return &_empty_pages;
+}
+
+inline void ZRelocationSetSelector::clear_empty_pages() {
+  return _empty_pages.clear();
 }
 
 inline size_t ZRelocationSetSelector::total() const {
@@ -86,12 +141,20 @@ inline size_t ZRelocationSetSelector::empty() const {
   return _small.stats().empty() + _medium.stats().empty() + _large.stats().empty();
 }
 
-inline size_t ZRelocationSetSelector::compacting_from() const {
-  return _small.stats().compacting_from() + _medium.stats().compacting_from() + _large.stats().compacting_from();
+inline size_t ZRelocationSetSelector::relocate() const {
+  return _small.stats().relocate() + _medium.stats().relocate() + _large.stats().relocate();
 }
 
-inline size_t ZRelocationSetSelector::compacting_to() const {
-  return _small.stats().compacting_to() + _medium.stats().compacting_to() + _large.stats().compacting_to();
+inline const ZArray<ZPage*>* ZRelocationSetSelector::small() const {
+  return _small.selected();
+}
+
+inline const ZArray<ZPage*>* ZRelocationSetSelector::medium() const {
+  return _medium.selected();
+}
+
+inline size_t ZRelocationSetSelector::forwarding_entries() const {
+  return _small.forwarding_entries() + _medium.forwarding_entries();
 }
 
 #endif // SHARE_GC_Z_ZRELOCATIONSETSELECTOR_INLINE_HPP

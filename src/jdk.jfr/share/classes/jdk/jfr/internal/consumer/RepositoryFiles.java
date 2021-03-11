@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public final class RepositoryFiles {
 
     private volatile boolean closed;
 
-    RepositoryFiles(FileAccess fileAccess, Path repository) {
+    public RepositoryFiles(FileAccess fileAccess, Path repository) {
         this.repository = repository;
         this.fileAccess = fileAccess;
         this.waitObject = repository == null ? WAIT_OBJECT : new Object();
@@ -71,26 +71,27 @@ public final class RepositoryFiles {
         return pathLookup.get(p);
     }
 
-    Path lastPath() {
-        if (waitForPaths()) {
+    public Path lastPath(boolean wait) {
+        if (updatePaths(wait)) {
             return pathSet.lastEntry().getValue();
         }
         return null; // closed
     }
 
-    Path firstPath(long startTimeNanos) {
-        if (waitForPaths()) {
+    public Path firstPath(long startTimeNanos, boolean wait) {
+        if (updatePaths(wait)) {
             // Pick closest chunk before timestamp
             Long time = pathSet.floorKey(startTimeNanos);
             if (time != null) {
                 startTimeNanos = time;
             }
-            return path(startTimeNanos);
+            return path(startTimeNanos, wait);
         }
         return null; // closed
     }
 
-    private boolean waitForPaths() {
+    private boolean updatePaths(boolean wait) {
+        int beforeSize = pathLookup.size();
         while (!closed) {
             try {
                 if (updatePaths()) {
@@ -103,12 +104,16 @@ public final class RepositoryFiles {
                 // was accessed, or if new file has been written yet
                 // Just ignore, and retry later.
             }
-            nap();
+            if (wait) {
+                nap();
+            } else {
+                return pathLookup.size() > beforeSize;
+            }
         }
         return !closed;
     }
 
-    Path nextPath(long startTimeNanos) {
+    public Path nextPath(long startTimeNanos, boolean wait) {
         if (closed) {
             return null;
         }
@@ -127,10 +132,10 @@ public final class RepositoryFiles {
             // ignore
         }
         // try to get the next file
-        return path(startTimeNanos);
+        return path(startTimeNanos, wait);
     }
 
-    private Path path(long timestamp) {
+    private Path path(long timestamp, boolean wait) {
         if (closed) {
             return null;
         }
@@ -143,7 +148,7 @@ public final class RepositoryFiles {
                 }
                 return path;
             }
-            if (!waitForPaths()) {
+            if (!updatePaths(wait)) {
                 return null; // closed
             }
         }

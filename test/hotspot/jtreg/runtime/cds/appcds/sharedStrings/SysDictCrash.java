@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,9 @@
  * @run driver SysDictCrash
  */
 
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class SysDictCrash {
     public static void main(String[] args) throws Exception {
@@ -43,16 +44,16 @@ public class SysDictCrash {
         String vmOptionsPrefix[] = SharedStringsUtils.getChildVMOptionsPrefix();
 
         // SharedBaseAddress=0 puts the archive at a very high address, which provokes the crash.
-        ProcessBuilder dumpPb = ProcessTools.createTestJvm(
-          TestCommon.concat(vmOptionsPrefix,
-            "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
-            "-cp", ".",
-            "-XX:SharedBaseAddress=0", "-XX:SharedArchiveFile=./SysDictCrash.jsa",
-            "-Xshare:dump",
-            "-showversion", "-Xlog:cds,cds+hashtables"));
-
         boolean continueTest = true;
-        OutputAnalyzer output = TestCommon.executeAndLog(dumpPb, "dump");
+
+        CDSOptions opts = (new CDSOptions())
+            .addPrefix(vmOptionsPrefix,
+                       "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
+                       "-cp", ".",
+                       "-XX:SharedBaseAddress=0",
+                       "-showversion", "-Xlog:cds,cds+hashtables")
+            .setArchiveName("./SysDictCrash.jsa");
+        OutputAnalyzer output = CDSTestUtils.createArchive(opts);
         try {
             TestCommon.checkDump(output);
         } catch (java.lang.RuntimeException re) {
@@ -68,13 +69,15 @@ public class SysDictCrash {
             return;
         }
 
-        ProcessBuilder runPb = ProcessTools.createTestJvm(
-          TestCommon.concat(vmOptionsPrefix,
-            "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
-            "-XX:SharedArchiveFile=./SysDictCrash.jsa",
-            "-Xshare:on",
-            "-version"));
-
-        TestCommon.checkExec(TestCommon.executeAndLog(runPb, "exec"));
+        opts = (new CDSOptions())
+            .setArchiveName("./SysDictCrash.jsa") // prevents the assignment of a default archive name
+            .setUseVersion(false) // the -version must be the last arg for this test to work
+            .addSuffix(vmOptionsPrefix,
+                       "-Xlog:cds",
+                       "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
+                       "-XX:SharedArchiveFile=./SysDictCrash.jsa",
+                       "-version");
+        CDSTestUtils.run(opts)
+                    .assertNormalExit();
     }
 }

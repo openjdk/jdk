@@ -5,7 +5,7 @@
   <title>AWT Desktop Properties</title>
 </head>
 <!--
- Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,12 @@
 
 <body>
 <main role="main">
-<div class="contentContainer">
 <h1>AWT Desktop Properties</h1>
 
 The following refers to standard AWT desktop properties that
 may be obtained via the
-<a href="../Toolkit.html#getDesktopProperty(java.lang.String)">
-<code>Toolkit.getDesktopProperty</code></a> method.
+{@link java.awt.Toolkit#getDesktopProperty(java.lang.String)
+Toolkit.getDesktopProperty} method.
 <p>
 Each desktop property is named by a unique string, which
 is the "name" of that property.
@@ -54,7 +53,7 @@ setting, they may not be available in environments that do
 not support them. In the event that a desktop property is
 unavailable for any reason, the implementation will return
 <code>null</code>.
-<table border=1>
+<table class="striped">
 <caption>The following table summarizes the desktop properties documented
 here, and their value types.</caption>
 <thead>
@@ -86,9 +85,9 @@ Modern desktops support various forms of text antialiasing (font smoothing).
 These are applied by platform-specific heavyweight components.
 However an application may want to render text using the same text
 antialiasing on a drawing surface or lightweight (non-platform) component using
-<a href="../Graphics2D.html"> <code>Graphics2D</code></a> methods.
+{@link java.awt.Graphics2D Graphics2D} methods.
 This is particularly important when creating
-<a href="../../../javax/swing/JComponent.html"> Swing components</a> which
+{@link javax.swing.JComponent Swing components} which
 are required to appear consistent with native desktop components or other
 Swing components.
 
@@ -97,9 +96,8 @@ The standard desktop property named
 <b>"awt.font.desktophints"</b>
 can be used to obtain the rendering hints that best match the desktop settings.
 
-The return value is a
-<a href="../../util/Map.html"> Map</a> of
-<a href="../RenderingHints.html"> <code>RenderingHints</code></a> which
+The return value is a {@link java.util.Map Map} of
+{@link java.awt.RenderingHints RenderingHints} which
 can be directly applied to a <code>Graphics2D</code>.
 <p>
 It is a <code>Map</code> as more than one hint may be needed.
@@ -116,8 +114,7 @@ if (map != null) {
 <h4>Listening for changes</h4>
 <p>
 An application can listen for changes in the property
-using a <a href="../../beans/PropertyChangeListener.html">
-<code>PropertyChangeListener</code></a> :
+using a {@link java.beans.PropertyChangeListener PropertyChangeListener}:
 <pre><code>
 tk.addPropertyChangeListener("awt.font.desktophints", pcl);
 </code></pre>
@@ -134,10 +131,10 @@ do provide this capability.
 <h4>Text Measurement</h4>
 <p>
 Text always needs to be measured using the same
-<a href="../font/FontRenderContext.html"> <code>FontRenderContext</code></a>
+{@link java.awt.font.FontRenderContext FontRenderContext}
 as used for rendering. The text anti-aliasing hint is a component of
 the <code>FontRenderContext</code>.
-A <a href="../FontMetrics.html"> <code>FontMetrics</code></a>
+A {@link java.awt.FontMetrics FontMetrics}
 obtained from the <code>Graphics</code> object on which the hint
 has been set will measure text appropriately.
 This is not a unique requirement for clients that specify this hint
@@ -276,7 +273,6 @@ only: {@code NOBUTTON}, {@code BUTTON1}, {@code BUTTON2} and
 This property should be used when there is no need in listening mouse events fired as a result of
 activity with extra mouse button.
 By default this property is set to {@code true}.
-</div>
 </main>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledMethod.inline.hpp"
@@ -47,6 +47,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "opto/ad.hpp"
@@ -61,6 +62,7 @@
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -68,6 +70,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
@@ -784,18 +787,12 @@ const TypeFunc* OptoRuntime::array_fill_Type() {
 const TypeFunc* OptoRuntime::aescrypt_block_Type() {
   // create input type (domain)
   int num_args      = 3;
-  if (Matcher::pass_original_key_for_aes()) {
-    num_args = 4;
-  }
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL;    // src
   fields[argp++] = TypePtr::NOTNULL;    // dest
   fields[argp++] = TypePtr::NOTNULL;    // k array
-  if (Matcher::pass_original_key_for_aes()) {
-    fields[argp++] = TypePtr::NOTNULL;    // original k array
-  }
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -877,9 +874,6 @@ const TypeFunc* OptoRuntime::updateBytesAdler32_Type() {
 const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   // create input type (domain)
   int num_args      = 5;
-  if (Matcher::pass_original_key_for_aes()) {
-    num_args = 6;
-  }
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -888,9 +882,6 @@ const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // k array
   fields[argp++] = TypePtr::NOTNULL;    // r array
   fields[argp++] = TypeInt::INT;        // src len
-  if (Matcher::pass_original_key_for_aes()) {
-    fields[argp++] = TypePtr::NOTNULL;    // original k array
-  }
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -905,9 +896,6 @@ const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
 const TypeFunc* OptoRuntime::electronicCodeBook_aescrypt_Type() {
   // create input type (domain)
   int num_args = 4;
-  if (Matcher::pass_original_key_for_aes()) {
-     num_args = 5;
-  }
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -915,9 +903,6 @@ const TypeFunc* OptoRuntime::electronicCodeBook_aescrypt_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // dest
   fields[argp++] = TypePtr::NOTNULL;    // k array
   fields[argp++] = TypeInt::INT;        // src len
-  if (Matcher::pass_original_key_for_aes()) {
-     fields[argp++] = TypePtr::NOTNULL;    // original k array
-  }
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
 
@@ -932,9 +917,6 @@ const TypeFunc* OptoRuntime::electronicCodeBook_aescrypt_Type() {
 const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
   // create input type (domain)
   int num_args = 7;
-  if (Matcher::pass_original_key_for_aes()) {
-    num_args = 8;
-  }
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -945,9 +927,6 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
   fields[argp++] = TypeInt::INT; // src len
   fields[argp++] = TypePtr::NOTNULL; // saved_encCounter
   fields[argp++] = TypePtr::NOTNULL; // saved used addr
-  if (Matcher::pass_original_key_for_aes()) {
-    fields[argp++] = TypePtr::NOTNULL; // original k array
-  }
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
   // returning cipher len (int)
@@ -960,14 +939,15 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
 /*
  * void implCompress(byte[] buf, int ofs)
  */
-const TypeFunc* OptoRuntime::digestBase_implCompress_Type() {
+const TypeFunc* OptoRuntime::digestBase_implCompress_Type(bool is_sha3) {
   // create input type (domain)
-  int num_args = 2;
+  int num_args = is_sha3 ? 3 : 2;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
+  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -981,14 +961,15 @@ const TypeFunc* OptoRuntime::digestBase_implCompress_Type() {
 /*
  * int implCompressMultiBlock(byte[] b, int ofs, int limit)
  */
-const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type() {
+const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
   // create input type (domain)
-  int num_args = 4;
+  int num_args = is_sha3 ? 5 : 4;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
+  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
   fields[argp++] = TypeInt::INT;     // ofs
   fields[argp++] = TypeInt::INT;     // limit
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
@@ -1191,6 +1172,27 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
+// Base64 decode function
+const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
+  int argcnt = 6;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // src array
+  fields[argp++] = TypeInt::INT;        // src offset
+  fields[argp++] = TypeInt::INT;        // src length
+  fields[argp++] = TypePtr::NOTNULL;    // dest array
+  fields[argp++] = TypeInt::INT;        // dest offset
+  fields[argp++] = TypeInt::BOOL;       // isURL
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT; // count of bytes written to dst
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
 
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
@@ -1206,60 +1208,6 @@ const TypeFunc* OptoRuntime::osr_end_Type() {
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
-
-//-------------- methodData update helpers
-
-const TypeFunc* OptoRuntime::profile_receiver_type_Type() {
-  // create input type (domain)
-  const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeAryPtr::NOTNULL;    // methodData pointer
-  fields[TypeFunc::Parms+1] = TypeInstPtr::BOTTOM;    // receiver oop
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
-
-  // create result type
-  fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
-  return TypeFunc::make(domain,range);
-}
-
-JRT_LEAF(void, OptoRuntime::profile_receiver_type_C(DataLayout* data, oopDesc* receiver))
-  if (receiver == NULL) return;
-  Klass* receiver_klass = receiver->klass();
-
-  intptr_t* mdp = ((intptr_t*)(data)) + DataLayout::header_size_in_cells();
-  int empty_row = -1;           // free row, if any is encountered
-
-  // ReceiverTypeData* vc = new ReceiverTypeData(mdp);
-  for (uint row = 0; row < ReceiverTypeData::row_limit(); row++) {
-    // if (vc->receiver(row) == receiver_klass)
-    int receiver_off = ReceiverTypeData::receiver_cell_index(row);
-    intptr_t row_recv = *(mdp + receiver_off);
-    if (row_recv == (intptr_t) receiver_klass) {
-      // vc->set_receiver_count(row, vc->receiver_count(row) + DataLayout::counter_increment);
-      int count_off = ReceiverTypeData::receiver_count_cell_index(row);
-      *(mdp + count_off) += DataLayout::counter_increment;
-      return;
-    } else if (row_recv == 0) {
-      // else if (vc->receiver(row) == NULL)
-      empty_row = (int) row;
-    }
-  }
-
-  if (empty_row != -1) {
-    int receiver_off = ReceiverTypeData::receiver_cell_index(empty_row);
-    // vc->set_receiver(empty_row, receiver_klass);
-    *(mdp + receiver_off) = (intptr_t) receiver_klass;
-    // vc->set_receiver_count(empty_row, DataLayout::counter_increment);
-    int count_off = ReceiverTypeData::receiver_count_cell_index(empty_row);
-    *(mdp + count_off) = DataLayout::counter_increment;
-  } else {
-    // Receiver did not match any saved receiver and there is no empty row for it.
-    // Increment total counter to indicate polymorphic case.
-    intptr_t* count_p = (intptr_t*)(((uint8_t*)(data)) + in_bytes(CounterData::count_offset()));
-    *count_p += DataLayout::counter_increment;
-  }
-JRT_END
 
 //-------------------------------------------------------------------------------------
 // register policy
@@ -1286,7 +1234,6 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
 // directly from compiled code. Compiled code will call the C++ method following.
 // We can't allow async exception to be installed during  exception processing.
 JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* thread, nmethod* &nm))
-
   // Do not confuse exception_oop with pending_exception. The exception_oop
   // is only used to pass arguments into the method. Not for general
   // exception handling.  DO NOT CHANGE IT to use pending_exception, since
@@ -1314,7 +1261,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   Exceptions::debug_check_abort(exception);
 
 #ifdef ASSERT
-  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
+  if (!(exception->is_a(vmClasses::Throwable_klass()))) {
     // should throw an exception here
     ShouldNotReachHere();
   }
@@ -1344,7 +1291,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     // otherwise, forcibly unwind the frame.
     //
     // 4826555: use default current sp for reguard_stack instead of &nm: it's more accurate.
-    bool force_unwind = !thread->reguard_stack();
+    bool force_unwind = !thread->stack_overflow_state()->reguard_stack();
     bool deopting = false;
     if (nm->is_deopt_pc(pc)) {
       deopting = true;
@@ -1464,12 +1411,17 @@ address OptoRuntime::handle_exception_C(JavaThread* thread) {
 // *THIS IS NOT RECOMMENDED PROGRAMMING STYLE*
 //
 address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address ret_pc) {
+  // The frame we rethrow the exception to might not have been processed by the GC yet.
+  // The stack watermark barrier takes care of detecting that and ensuring the frame
+  // has updated oops.
+  StackWatermarkSet::after_unwind(thread);
+
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows
 #endif
   assert (exception != NULL, "should have thrown a NULLPointerException");
 #ifdef ASSERT
-  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
+  if (!(exception->is_a(vmClasses::Throwable_klass()))) {
     // should throw an exception here
     ShouldNotReachHere();
   }

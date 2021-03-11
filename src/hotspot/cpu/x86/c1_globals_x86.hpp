@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,8 @@
 // Sets the default values for platform dependent flags used by the client compiler.
 // (see c1_globals.hpp)
 
-#ifndef TIERED
+#ifndef COMPILER2
 define_pd_global(bool, BackgroundCompilation,          true );
-define_pd_global(bool, UseTLAB,                        true );
-define_pd_global(bool, ResizeTLAB,                     true );
 define_pd_global(bool, InlineIntrinsics,               true );
 define_pd_global(bool, PreferInterpreterNativeStubs,   false);
 define_pd_global(bool, ProfileTraps,                   false);
@@ -53,11 +51,10 @@ define_pd_global(bool,   ProfileInterpreter,           false);
 define_pd_global(uintx,  CodeCacheExpansionSize,       32*K );
 define_pd_global(uintx,  CodeCacheMinBlockLength,      1    );
 define_pd_global(uintx,  CodeCacheMinimumUseSpace,     400*K);
-define_pd_global(size_t, MetaspaceSize,                12*M );
 define_pd_global(bool,   NeverActAsServerClassMachine, true );
 define_pd_global(uint64_t, MaxRAM,                    1ULL*G);
 define_pd_global(bool,   CICompileOSR,                 true );
-#endif // !TIERED
+#endif // !COMPILER2
 define_pd_global(bool, UseTypeProfile,                 false);
 
 define_pd_global(bool, OptimizeSinglePrecision,        true );

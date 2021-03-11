@@ -28,3 +28,4 @@
 //--------------------------------------------------------
 
 // No FPU stack on AARCH64
+#include "precompiled.hpp"

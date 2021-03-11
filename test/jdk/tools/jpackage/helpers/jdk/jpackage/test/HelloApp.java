@@ -34,10 +34,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 
@@ -225,7 +229,7 @@ public final class HelloApp {
     public static Path createBundle(JavaAppDesc appDesc, Path outputDir) {
         String jmodFileName = appDesc.jmodFileName();
         if (jmodFileName != null) {
-            final Path jmodFilePath = outputDir.resolve(jmodFileName);
+            final Path jmodPath = outputDir.resolve(jmodFileName);
             TKit.withTempDirectory("jmod-workdir", jmodWorkDir -> {
                 var jarAppDesc = JavaAppDesc.parse(appDesc.toString())
                         .setBundleFileName("tmp.jar");
@@ -233,8 +237,7 @@ public final class HelloApp {
                 Executor exec = new Executor()
                         .setToolProvider(JavaTool.JMOD)
                         .addArguments("create", "--class-path")
-                        .addArgument(jarPath)
-                        .addArgument(jmodFilePath);
+                        .addArgument(jarPath);
 
                 if (appDesc.isWithMainClass()) {
                     exec.addArguments("--main-class", appDesc.className());
@@ -244,11 +247,50 @@ public final class HelloApp {
                     exec.addArguments("--module-version", appDesc.moduleVersion());
                 }
 
-                Files.createDirectories(jmodFilePath.getParent());
+                final Path jmodFilePath;
+                if (appDesc.isExplodedModule()) {
+                    jmodFilePath = jmodWorkDir.resolve("tmp.jmod");
+                    exec.addArgument(jmodFilePath);
+                    TKit.deleteDirectoryRecursive(jmodPath);
+                } else {
+                    jmodFilePath = jmodPath;
+                    exec.addArgument(jmodFilePath);
+                    TKit.deleteIfExists(jmodPath);
+                }
+
+                Files.createDirectories(jmodPath.getParent());
                 exec.execute();
+
+                if (appDesc.isExplodedModule()) {
+                    TKit.trace(String.format("Explode [%s] module file...",
+                            jmodFilePath.toAbsolutePath().normalize()));
+                    // Explode contents of the root `classes` directory of
+                    // temporary .jmod file
+                    final Path jmodRootDir = Path.of("classes");
+                    try (var archive = new ZipFile(jmodFilePath.toFile())) {
+                        archive.stream()
+                        .filter(Predicate.not(ZipEntry::isDirectory))
+                        .sequential().forEachOrdered(ThrowingConsumer.toConsumer(
+                            entry -> {
+                                try (var in = archive.getInputStream(entry)) {
+                                    Path entryName = Path.of(entry.getName());
+                                    if (entryName.startsWith(jmodRootDir)) {
+                                        entryName = jmodRootDir.relativize(entryName);
+                                    }
+                                    final Path fileName = jmodPath.resolve(entryName);
+                                    TKit.trace(String.format(
+                                            "Save [%s] zip entry in [%s] file...",
+                                            entry.getName(),
+                                            fileName.toAbsolutePath().normalize()));
+                                    Files.createDirectories(fileName.getParent());
+                                    Files.copy(in, fileName);
+                                }
+                            }));
+                    }
+                }
             });
 
-            return jmodFilePath;
+            return jmodPath;
         }
 
         final JavaAppDesc jarAppDesc;
@@ -273,14 +315,15 @@ public final class HelloApp {
             String... args) {
         AppOutputVerifier av = getVerifier(cmd, args);
         if (av != null) {
-            av.executeAndVerifyOutput(args);
+            // when running app launchers, clear users environment
+            av.executeAndVerifyOutput(true, args);
         }
     }
 
     public static Executor.Result executeLauncher(JPackageCommand cmd,
             String... args) {
         AppOutputVerifier av = getVerifier(cmd, args);
-        return av.executeOnly(args);
+        return av.executeOnly(true, args);
     }
 
     private static AppOutputVerifier getVerifier(JPackageCommand cmd,
@@ -351,8 +394,18 @@ public final class HelloApp {
         }
 
         public void executeAndVerifyOutput(String... args) {
-            getExecutor(args).dumpOutput().execute();
+            executeAndVerifyOutput(false, args);
+        }
 
+        public void executeAndVerifyOutput(boolean removePath,
+                List<String> launcherArgs, List<String> appArgs) {
+            getExecutor(launcherArgs.toArray(new String[0])).dumpOutput()
+                    .setRemovePath(removePath).execute();
+            Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
+            verifyOutputFile(outputFile, appArgs, params);
+        }
+
+        public void executeAndVerifyOutput(boolean removePath, String... args) {
             final List<String> launcherArgs = List.of(args);
             final List<String> appArgs;
             if (launcherArgs.isEmpty()) {
@@ -361,12 +414,14 @@ public final class HelloApp {
                 appArgs = launcherArgs;
             }
 
-            Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
-            verifyOutputFile(outputFile, appArgs, params);
+            executeAndVerifyOutput(removePath, launcherArgs, appArgs);
         }
 
-        public Executor.Result executeOnly(String...args) {
-            return getExecutor(args).saveOutput().executeWithoutExitCodeCheck();
+        public Executor.Result executeOnly(boolean removePath, String...args) {
+            return getExecutor(args)
+                    .saveOutput()
+                    .setRemovePath(removePath)
+                    .executeWithoutExitCodeCheck();
         }
 
         private Executor getExecutor(String...args) {

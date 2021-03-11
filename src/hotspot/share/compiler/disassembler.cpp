@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,22 +48,18 @@ bool        Disassembler::_library_usable        = false;
 
 // This routine is in the shared library:
 Disassembler::decode_func_virtual Disassembler::_decode_instructions_virtual = NULL;
-Disassembler::decode_func Disassembler::_decode_instructions = NULL;
 
 static const char hsdis_library_name[] = "hsdis-" HOTSPOT_LIB_ARCH;
 static const char decode_instructions_virtual_name[] = "decode_instructions_virtual";
-static const char decode_instructions_name[] = "decode_instructions";
-static bool use_new_version = true;
 #define COMMENT_COLUMN  52 LP64_ONLY(+8) /*could be an option*/
 #define BYTES_COMMENT   ";..."  /* funky byte display comment */
 
 class decode_env {
  private:
   outputStream* _output;      // where the disassembly is directed to
-  CodeBuffer*   _codeBuffer;  // != NULL only when decoding a CodeBuffer
   CodeBlob*     _codeBlob;    // != NULL only when decoding a CodeBlob
   nmethod*      _nm;          // != NULL only when decoding a nmethod
-  CodeStrings   _strings;
+
   address       _start;       // != NULL when decoding a range of unknown type
   address       _end;         // != NULL when decoding a range of unknown type
 
@@ -77,6 +73,7 @@ class decode_env {
   bool          _print_help;
   bool          _helpPrinted;
   static bool   _optionsParsed;
+  NOT_PRODUCT(const CodeStrings* _strings;)
 
   enum {
     tabspacing = 8
@@ -202,17 +199,23 @@ class decode_env {
       15889,      // prime number
       ResourceObj::C_HEAP> SourceFileInfoTable;
 
-  static SourceFileInfoTable _src_table;
+  static SourceFileInfoTable* _src_table;
   static const char* _cached_src;
   static GrowableArray<const char*>* _cached_src_lines;
 
+  static SourceFileInfoTable& src_table() {
+    if (_src_table == NULL) {
+      _src_table = new (ResourceObj::C_HEAP, mtCode)SourceFileInfoTable();
+    }
+    return *_src_table;
+  }
+
  public:
-  decode_env(CodeBuffer* code, outputStream* output);
-  decode_env(CodeBlob*   code, outputStream* output, CodeStrings c = CodeStrings() /* , ptrdiff_t offset */);
-  decode_env(nmethod*    code, outputStream* output, CodeStrings c = CodeStrings());
+  decode_env(CodeBlob*   code, outputStream* output);
+  decode_env(nmethod*    code, outputStream* output);
   // Constructor for a 'decode_env' to decode an arbitrary
   // piece of memory, hopefully containing code.
-  decode_env(address start, address end, outputStream* output);
+  decode_env(address start, address end, outputStream* output, const CodeStrings* strings = NULL);
 
   // Add 'original_start' argument which is the the original address
   // the instructions were located at (if this is not equal to 'start').
@@ -229,7 +232,7 @@ class decode_env {
 
 bool decode_env::_optionsParsed = false;
 
-decode_env::SourceFileInfoTable decode_env::_src_table;
+decode_env::SourceFileInfoTable* decode_env::_src_table = NULL;
 const char* decode_env::_cached_src = NULL;
 GrowableArray<const char*>* decode_env::_cached_src_lines = NULL;
 
@@ -238,17 +241,17 @@ void decode_env::hook(const char* file, int line, address pc) {
   // necessary as we add to the table only when PrintInterpreter is true,
   // which means we are debugging the VM and a little bit of extra
   // memory usage doesn't matter.
-  SourceFileInfo* found = _src_table.get(pc);
+  SourceFileInfo* found = src_table().get(pc);
   if (found != NULL) {
     found->append(file, line);
   } else {
     SourceFileInfo sfi(file, line);
-    _src_table.put(pc, sfi); // sfi is copied by value
+    src_table().put(pc, sfi); // sfi is copied by value
   }
 }
 
 void decode_env::print_hook_comments(address pc, bool newline) {
-  SourceFileInfo* found = _src_table.get(pc);
+  SourceFileInfo* found = src_table().get(pc);
   outputStream* st = output();
   if (found != NULL) {
     for (SourceFileInfo::Link *link = found->head; link; link = link->next) {
@@ -315,34 +318,10 @@ void decode_env::print_hook_comments(address pc, bool newline) {
   }
 }
 
-decode_env::decode_env(CodeBuffer* code, outputStream* output) :
+decode_env::decode_env(CodeBlob* code, outputStream* output) :
   _output(output ? output : tty),
-  _codeBuffer(code),
-  _codeBlob(NULL),
-  _nm(NULL),
-  _strings(),
-  _start(NULL),
-  _end(NULL),
-  _option_buf(),
-  _print_raw(0),
-  _cur_insn(NULL),
-  _bytes_per_line(0),
-  _pre_decode_alignment(0),
-  _post_decode_alignment(0),
-  _print_file_name(false),
-  _print_help(false),
-  _helpPrinted(false) {
-
-  memset(_option_buf, 0, sizeof(_option_buf));
-  process_options(_output);
-}
-
-decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
-  _output(output ? output : tty),
-  _codeBuffer(NULL),
   _codeBlob(code),
   _nm(_codeBlob != NULL && _codeBlob->is_nmethod() ? (nmethod*) code : NULL),
-  _strings(),
   _start(NULL),
   _end(NULL),
   _option_buf(),
@@ -353,19 +332,18 @@ decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false) {
+  _helpPrinted(false)
+  NOT_PRODUCT(COMMA _strings(NULL)) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
-  _strings.copy(c);
   process_options(_output);
+
 }
 
-decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
+decode_env::decode_env(nmethod* code, outputStream* output) :
   _output(output ? output : tty),
-  _codeBuffer(NULL),
   _codeBlob(NULL),
   _nm(code),
-  _strings(),
   _start(_nm->code_begin()),
   _end(_nm->code_end()),
   _option_buf(),
@@ -376,21 +354,19 @@ decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false) {
+  _helpPrinted(false)
+  NOT_PRODUCT(COMMA _strings(NULL))  {
 
   memset(_option_buf, 0, sizeof(_option_buf));
-  _strings.copy(c);
   process_options(_output);
 }
 
 // Constructor for a 'decode_env' to decode a memory range [start, end)
 // of unknown origin, assuming it contains code.
-decode_env::decode_env(address start, address end, outputStream* output) :
+decode_env::decode_env(address start, address end, outputStream* output, const CodeStrings* c) :
   _output(output ? output : tty),
-  _codeBuffer(NULL),
   _codeBlob(NULL),
   _nm(NULL),
-  _strings(),
   _start(start),
   _end(end),
   _option_buf(),
@@ -401,7 +377,8 @@ decode_env::decode_env(address start, address end, outputStream* output) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false) {
+  _helpPrinted(false)
+  NOT_PRODUCT(COMMA _strings(c))  {
 
   assert(start < end, "Range must have a positive size, [" PTR_FORMAT ".." PTR_FORMAT ").", p2i(start), p2i(end));
   memset(_option_buf, 0, sizeof(_option_buf));
@@ -675,10 +652,11 @@ void decode_env::print_insn_labels() {
     if (_codeBlob != NULL) {
       _codeBlob->print_block_comment(st, p);
     }
-    if (_codeBuffer != NULL) {
-      _codeBuffer->print_block_comment(st, p);
+#ifndef PRODUCT
+    if (_strings != NULL) {
+      _strings->print_block_comment(st, (intptr_t)(p - _start));
     }
-    _strings.print_block_comment(st, (intptr_t)(p - _start));
+#endif
   }
 }
 
@@ -754,34 +732,22 @@ address decode_env::decode_instructions(address start, address end, address orig
     // This is mainly for debugging the library itself.
     FILE* out = stdout;
     FILE* xmlout = (_print_raw > 1 ? out : NULL);
-    return use_new_version ?
+    return
       (address)
       (*Disassembler::_decode_instructions_virtual)((uintptr_t)start, (uintptr_t)end,
                                                     start, end - start,
                                                     NULL, (void*) xmlout,
                                                     NULL, (void*) out,
-                                                    options(), 0/*nice new line*/)
-      :
-      (address)
-      (*Disassembler::_decode_instructions)(start, end,
-                                            NULL, (void*) xmlout,
-                                            NULL, (void*) out,
-                                            options());
+                                                    options(), 0/*nice new line*/);
   }
 
-  return use_new_version ?
+  return
     (address)
     (*Disassembler::_decode_instructions_virtual)((uintptr_t)start, (uintptr_t)end,
                                                   start, end - start,
                                                   &event_to_env,  (void*) this,
                                                   &printf_to_env, (void*) this,
-                                                  options(), 0/*nice new line*/)
-    :
-    (address)
-    (*Disassembler::_decode_instructions)(start, end,
-                                          &event_to_env,  (void*) this,
-                                          &printf_to_env, (void*) this,
-                                          options());
+                                                  options(), 0/*nice new line*/);
 }
 
 // ----------------------------------------------------------------------------
@@ -833,25 +799,25 @@ bool Disassembler::load_library(outputStream* st) {
 
   // Find the disassembler shared library.
   // Search for several paths derived from libjvm, in this order:
-  // 1. <home>/jre/lib/<arch>/<vm>/libhsdis-<arch>.so  (for compatibility)
-  // 2. <home>/jre/lib/<arch>/<vm>/hsdis-<arch>.so
-  // 3. <home>/jre/lib/<arch>/hsdis-<arch>.so
+  // 1. <home>/lib/<vm>/libhsdis-<arch>.so  (for compatibility)
+  // 2. <home>/lib/<vm>/hsdis-<arch>.so
+  // 3. <home>/lib/hsdis-<arch>.so
   // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
   if (jvm_offset >= 0) {
-    // 1. <home>/jre/lib/<arch>/<vm>/libhsdis-<arch>.so
+    // 1. <home>/lib/<vm>/libhsdis-<arch>.so
     strcpy(&buf[jvm_offset], hsdis_library_name);
     strcat(&buf[jvm_offset], os::dll_file_extension());
     if (Verbose) st->print_cr("Trying to load: %s", buf);
     _library = os::dll_load(buf, ebuf, sizeof ebuf);
     if (_library == NULL && lib_offset >= 0) {
-      // 2. <home>/jre/lib/<arch>/<vm>/hsdis-<arch>.so
+      // 2. <home>/lib/<vm>/hsdis-<arch>.so
       strcpy(&buf[lib_offset], hsdis_library_name);
       strcat(&buf[lib_offset], os::dll_file_extension());
       if (Verbose) st->print_cr("Trying to load: %s", buf);
       _library = os::dll_load(buf, ebuf, sizeof ebuf);
     }
     if (_library == NULL && lib_offset > 0) {
-      // 3. <home>/jre/lib/<arch>/hsdis-<arch>.so
+      // 3. <home>/lib/hsdis-<arch>.so
       buf[lib_offset - 1] = '\0';
       const char* p = strrchr(buf, *os::file_separator());
       if (p != NULL) {
@@ -871,21 +837,13 @@ bool Disassembler::load_library(outputStream* st) {
     _library = os::dll_load(buf, ebuf, sizeof ebuf);
   }
 
-  // load the decoder function to use (new or old version).
+  // load the decoder function to use.
   if (_library != NULL) {
     _decode_instructions_virtual = CAST_TO_FN_PTR(Disassembler::decode_func_virtual,
                                           os::dll_lookup(_library, decode_instructions_virtual_name));
   }
-  if (_decode_instructions_virtual == NULL && _library != NULL) {
-    // could not spot in new version, try old version
-    _decode_instructions = CAST_TO_FN_PTR(Disassembler::decode_func,
-                                          os::dll_lookup(_library, decode_instructions_name));
-    use_new_version = false;
-  } else {
-    use_new_version = true;
-  }
   _tried_to_load_library = true;
-  _library_usable        = _decode_instructions_virtual != NULL || _decode_instructions != NULL;
+  _library_usable        = _decode_instructions_virtual != NULL;
 
   // Create a dummy environment to initialize PrintAssemblyOptions.
   // The PrintAssemblyOptions must be known for abstract disassemblies as well.
@@ -912,49 +870,13 @@ bool Disassembler::load_library(outputStream* st) {
 }
 
 
-// Directly disassemble code buffer.
-void Disassembler::decode(CodeBuffer* cb, address start, address end, outputStream* st) {
-#if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
-  //---<  Test memory before decoding  >---
-  if (!(cb->contains(start) && cb->contains(end))) {
-    //---<  Allow output suppression, but prevent writing to a NULL stream. Could happen with +PrintStubCode.  >---
-    if (st != NULL) {
-      st->print("Memory range [" PTR_FORMAT ".." PTR_FORMAT "] not contained in CodeBuffer", p2i(start), p2i(end));
-    }
-    return;
-  }
-  if (!os::is_readable_range(start, end)) {
-    //---<  Allow output suppression, but prevent writing to a NULL stream. Could happen with +PrintStubCode.  >---
-    if (st != NULL) {
-      st->print("Memory range [" PTR_FORMAT ".." PTR_FORMAT "] not readable", p2i(start), p2i(end));
-    }
-    return;
-  }
-
-  decode_env env(cb, st);
-  env.output()->print_cr("--------------------------------------------------------------------------------");
-  env.output()->print("Decoding CodeBuffer (" PTR_FORMAT ")", p2i(cb));
-  if (cb->name() != NULL) {
-    env.output()->print(", name: %s,", cb->name());
-  }
-  env.output()->print_cr(" at  [" PTR_FORMAT ", " PTR_FORMAT "]  " JLONG_FORMAT " bytes", p2i(start), p2i(end), ((jlong)(end - start)));
-
-  if (is_abstract()) {
-    AbstractDisassembler::decode_abstract(start, end, env.output(), Assembler::instr_maxlen());
-  } else {
-    env.decode_instructions(start, end);
-  }
-  env.output()->print_cr("--------------------------------------------------------------------------------");
-#endif
-}
-
 // Directly disassemble code blob.
-void Disassembler::decode(CodeBlob* cb, outputStream* st, CodeStrings c) {
+void Disassembler::decode(CodeBlob* cb, outputStream* st) {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   if (cb->is_nmethod()) {
     // If we  have an nmethod at hand,
     // call the specialized decoder directly.
-    decode((nmethod*)cb, st, c);
+    decode((nmethod*)cb, st);
     return;
   }
 
@@ -992,7 +914,7 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st, CodeStrings c) {
 // Decode a nmethod.
 // This includes printing the constant pool and all code segments.
 // The nmethod data structures (oop maps, relocations and the like) are not printed.
-void Disassembler::decode(nmethod* nm, outputStream* st, CodeStrings c) {
+void Disassembler::decode(nmethod* nm, outputStream* st) {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   ttyLocker ttyl;
 
@@ -1011,7 +933,7 @@ void Disassembler::decode(nmethod* nm, outputStream* st, CodeStrings c) {
 }
 
 // Decode a range, given as [start address, end address)
-void Disassembler::decode(address start, address end, outputStream* st, CodeStrings c /*, ptrdiff_t offset */) {
+void Disassembler::decode(address start, address end, outputStream* st, const CodeStrings* c) {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   //---<  Test memory before decoding  >---
   if (!os::is_readable_range(start, end)) {
@@ -1039,7 +961,7 @@ void Disassembler::decode(address start, address end, outputStream* st, CodeStri
 #endif
   {
     // This seems to be just a chunk of memory.
-    decode_env env(start, end, st);
+    decode_env env(start, end, st, c);
     env.output()->print_cr("--------------------------------------------------------------------------------");
     env.decode_instructions(start, end);
     env.output()->print_cr("--------------------------------------------------------------------------------");

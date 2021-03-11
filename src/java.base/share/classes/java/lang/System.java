@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -77,6 +76,7 @@ import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
 import jdk.internal.util.SystemProps;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.fs.DefaultFileSystemProvider;
 import sun.reflect.annotation.AnnotationType;
@@ -427,7 +427,7 @@ public final class System {
      *          the current time and midnight, January 1, 1970 UTC.
      * @see     java.util.Date
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native long currentTimeMillis();
 
     /**
@@ -471,7 +471,7 @@ public final class System {
      *         high-resolution time source, in nanoseconds
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native long nanoTime();
 
     /**
@@ -566,7 +566,7 @@ public final class System {
      * @throws     NullPointerException if either {@code src} or
      *             {@code dest} is {@code null}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native void arraycopy(Object src,  int  srcPos,
                                         Object dest, int destPos,
                                         int length);
@@ -584,7 +584,7 @@ public final class System {
      * @see Object#hashCode
      * @see java.util.Objects#hashCode(Object)
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native int identityHashCode(Object x);
 
     /**
@@ -1981,6 +1981,11 @@ public final class System {
      * Initialize the system class.  Called after thread initialization.
      */
     private static void initPhase1() {
+
+        // register the shared secrets - do this first, since SystemProps.initProperties
+        // might initialize CharsetDecoders that rely on it
+        setJavaLangAccess();
+
         // VM might invoke JNU_NewStringPlatform() to set those encoding
         // sensitive properties (user.home, user.name, boot.class.path, etc.)
         // during "props" initialization.
@@ -2026,8 +2031,6 @@ public final class System {
         Thread current = Thread.currentThread();
         current.getThreadGroup().add(current);
 
-        // register shared secrets
-        setJavaLangAccess();
 
         // Subsystems that are invoked during initialization can invoke
         // VM.isBooted() in order to avoid doing things that should
@@ -2221,6 +2224,9 @@ public final class System {
             public void addReadsAllUnnamed(Module m) {
                 m.implAddReadsAllUnnamed();
             }
+            public void addExports(Module m, String pn) {
+                m.implAddExports(pn);
+            }
             public void addExports(Module m, String pn, Module other) {
                 m.implAddExports(pn, other);
             }
@@ -2259,19 +2265,27 @@ public final class System {
             }
 
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return StringCoding.newStringNoRepl(bytes, cs);
+                return String.newStringNoRepl(bytes, cs);
             }
 
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-                return StringCoding.getBytesNoRepl(s, cs);
+                return String.getBytesNoRepl(s, cs);
             }
 
             public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return StringCoding.newStringUTF8NoRepl(bytes, off, len);
+                return String.newStringUTF8NoRepl(bytes, off, len);
             }
 
             public byte[] getBytesUTF8NoRepl(String s) {
-                return StringCoding.getBytesUTF8NoRepl(s);
+                return String.getBytesUTF8NoRepl(s);
+            }
+
+            public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+                StringLatin1.inflate(src, srcOff, dst, dstOff, len);
+            }
+
+            public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+                return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
             public void setCause(Throwable t, Throwable cause) {

@@ -60,7 +60,7 @@ public class SecondaryErrorTest {
 
     // we should have crashed with a SIGFPE
     output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
-    output_detail.shouldMatch("# +SIGFPE.*");
+    output_detail.shouldMatch("#.+SIGFPE.*");
 
     // extract hs-err file
     String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);

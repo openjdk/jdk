@@ -48,6 +48,11 @@ import sun.swing.SwingUtilities2;
 public class BasicBorders {
 
     /**
+     * Constructs a {@code BasicBorders}.
+     */
+    public BasicBorders() {}
+
+    /**
      * Returns a border instance for a {@code JButton}.
      *
      * @return a border instance for a {@code JButton}
@@ -473,6 +478,11 @@ public class BasicBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MarginBorder extends AbstractBorder implements UIResource {
+        /**
+         * Constructs a {@code MarginBorder}.
+         */
+        public MarginBorder() {}
+
         public Insets getBorderInsets(Component c, Insets insets)       {
             Insets margin = null;
             //

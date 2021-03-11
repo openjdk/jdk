@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_C2_SHENANDOAHSUPPORT_HPP
 #define SHARE_GC_SHENANDOAH_C2_SHENANDOAHSUPPORT_HPP
 
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "memory/allocation.hpp"
 #include "opto/addnode.hpp"
 #include "opto/graphKit.hpp"
@@ -60,7 +61,8 @@ private:
   static void test_null(Node*& ctrl, Node* val, Node*& null_ctrl, PhaseIdealLoop* phase);
   static void test_gc_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
                             PhaseIdealLoop* phase, int flags);
-  static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase);
+  static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem,
+                            DecoratorSet decorators, PhaseIdealLoop* phase);
   static void test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
   static void move_gc_state_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);
   static void merge_back_to_back_tests(Node* n, PhaseIdealLoop* phase);
@@ -85,9 +87,9 @@ public:
 #endif
 };
 
-class ShenandoahEnqueueBarrierNode : public Node {
+class ShenandoahIUBarrierNode : public Node {
 public:
-  ShenandoahEnqueueBarrierNode(Node* val);
+  ShenandoahIUBarrierNode(Node* val);
 
   const Type *bottom_type() const;
   const Type* Value(PhaseGVN* phase) const;
@@ -229,12 +231,12 @@ public:
   };
 
 private:
-  bool _native;
+  DecoratorSet _decorators;
 
 public:
-  ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* val, bool native);
+  ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* val, DecoratorSet decorators);
 
-  bool is_native() const;
+  DecoratorSet decorators() const;
   virtual int Opcode() const;
   virtual const Type* bottom_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;

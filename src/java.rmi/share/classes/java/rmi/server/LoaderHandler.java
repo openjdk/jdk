@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,12 @@ public interface LoaderHandler {
      *
      * @param  name the name of the class to load
      * @return the <code>Class</code> object representing the loaded class
-     * @exception MalformedURLException
-     *            if the system property <b>java.rmi.server.codebase</b>
-     *            contains an invalid URL
-     * @exception ClassNotFoundException
-     *            if a definition for the class could not
-     *            be found at the codebase location.
+     * @throws MalformedURLException
+     *         if the system property <b>java.rmi.server.codebase</b>
+     *         contains an invalid URL
+     * @throws ClassNotFoundException
+     *         if a definition for the class could not
+     *         be found at the codebase location.
      * @since 1.1
      * @deprecated no replacement
      */
@@ -69,12 +69,12 @@ public interface LoaderHandler {
      * @param codebase  the URL from which to load the class
      * @param name      the name of the class to load
      * @return the <code>Class</code> object representing the loaded class
-     * @exception MalformedURLException
-     *            if the <code>codebase</code> paramater
-     *            contains an invalid URL
-     * @exception ClassNotFoundException
-     *            if a definition for the class could not
-     *            be found at the specified URL
+     * @throws MalformedURLException
+     *         if the <code>codebase</code> paramater
+     *         contains an invalid URL
+     * @throws ClassNotFoundException
+     *         if a definition for the class could not
+     *         be found at the specified URL
      * @since 1.1
      * @deprecated no replacement
      */

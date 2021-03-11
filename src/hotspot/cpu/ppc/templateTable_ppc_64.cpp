@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -36,12 +37,14 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -65,7 +68,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register           tmp3,
                          DecoratorSet       decorators) {
   assert_different_registers(tmp1, tmp2, tmp3, val, base);
-  __ store_heap_oop(val, offset, base, tmp1, tmp2, tmp3, false, decorators);
+  __ store_heap_oop(val, offset, base, tmp1, tmp2, tmp3, MacroAssembler::PRESERVATION_NONE, decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
@@ -77,14 +80,7 @@ static void do_oop_load(InterpreterMacroAssembler* _masm,
                         DecoratorSet decorators) {
   assert_different_registers(base, tmp1, tmp2);
   assert_different_registers(dst, tmp1, tmp2);
-  __ load_heap_oop(dst, offset, base, tmp1, tmp2, false, decorators);
-}
-
-// ============================================================================
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No ppc64 specific initialization.
+  __ load_heap_oop(dst, offset, base, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE, decorators);
 }
 
 Address TemplateTable::at_bcp(int offset) {
@@ -309,19 +305,18 @@ void TemplateTable::fast_aldc(bool wide) {
   transition(vtos, atos);
 
   int index_size = wide ? sizeof(u2) : sizeof(u1);
-  const Register Rscratch = R11_scratch1;
   Label is_null;
 
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (CallSite, etc.)
-  __ get_cache_index_at_bcp(Rscratch, 1, index_size);  // Load index.
-  __ load_resolved_reference_at_index(R17_tos, Rscratch, &is_null);
+  __ get_cache_index_at_bcp(R31, 1, index_size);  // Load index.
+  __ load_resolved_reference_at_index(R17_tos, R31, R11_scratch1, R12_scratch2, &is_null);
 
   // Convert null sentinel to NULL
-  int simm16_rest = __ load_const_optimized(Rscratch, Universe::the_null_sentinel_addr(), R0, true);
-  __ ld(Rscratch, simm16_rest, Rscratch);
-  __ resolve_oop_handle(Rscratch);
-  __ cmpld(CCR0, R17_tos, Rscratch);
+  int simm16_rest = __ load_const_optimized(R11_scratch1, Universe::the_null_sentinel_addr(), R0, true);
+  __ ld(R31, simm16_rest, R11_scratch1);
+  __ resolve_oop_handle(R31, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_NONE);
+  __ cmpld(CCR0, R17_tos, R31);
   if (VM_Version::has_isel()) {
     __ isel_0(R17_tos, CCR0, Assembler::equal);
   } else {
@@ -1597,10 +1592,7 @@ void TemplateTable::lcmp() {
   __ pop_l(Rscratch); // first operand, deeper in stack
 
   __ cmpd(CCR0, Rscratch, R17_tos); // compare
-  __ mfcr(R17_tos); // set bit 32..33 as follows: <: 0b10, =: 0b00, >: 0b01
-  __ srwi(Rscratch, R17_tos, 30);
-  __ srawi(R17_tos, R17_tos, 31);
-  __ orr(R17_tos, Rscratch, R17_tos); // set result as follows: <: -1, =: 0, >: 1
+  __ set_cmp3(R17_tos); // set result as follows: <: -1, =: 0, >: 1
 }
 
 // fcmpl/fcmpg and dcmpl/dcmpg bytecodes
@@ -1617,21 +1609,10 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
     __ pop_d(Rfirst);
   }
 
-  Label Lunordered, Ldone;
   __ fcmpu(CCR0, Rfirst, Rsecond); // compare
-  if (unordered_result) {
-    __ bso(CCR0, Lunordered);
-  }
-  __ mfcr(R17_tos); // set bit 32..33 as follows: <: 0b10, =: 0b00, >: 0b01
-  __ srwi(Rscratch, R17_tos, 30);
-  __ srawi(R17_tos, R17_tos, 31);
-  __ orr(R17_tos, Rscratch, R17_tos); // set result as follows: <: -1, =: 0, >: 1
-  if (unordered_result) {
-    __ b(Ldone);
-    __ bind(Lunordered);
-    __ load_const_optimized(R17_tos, unordered_result);
-  }
-  __ bind(Ldone);
+  // if unordered_result is 1, treat unordered_result like 'greater than'
+  assert(unordered_result == 1 || unordered_result == -1, "unordered_result can be either 1 or -1");
+  __ set_cmpu3(R17_tos, unordered_result != 1);
 }
 
 // Branch_conditional which takes TemplateTable::Condition.
@@ -1708,97 +1689,78 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
     __ get_method_counters(R19_method, R4_counters, Lforward);
 
-    if (TieredCompilation) {
-      Label Lno_mdo, Loverflow;
-      const int increment = InvocationCounter::count_increment;
-      if (ProfileInterpreter) {
-        Register Rmdo = Rscratch1;
+    Label Lno_mdo, Loverflow;
+    const int increment = InvocationCounter::count_increment;
+    if (ProfileInterpreter) {
+      Register Rmdo = Rscratch1;
 
-        // If no method data exists, go to profile_continue.
-        __ ld(Rmdo, in_bytes(Method::method_data_offset()), R19_method);
-        __ cmpdi(CCR0, Rmdo, 0);
-        __ beq(CCR0, Lno_mdo);
+      // If no method data exists, go to profile_continue.
+      __ ld(Rmdo, in_bytes(Method::method_data_offset()), R19_method);
+      __ cmpdi(CCR0, Rmdo, 0);
+      __ beq(CCR0, Lno_mdo);
 
-        // Increment backedge counter in the MDO.
-        const int mdo_bc_offs = in_bytes(MethodData::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
-        __ lwz(Rscratch2, mdo_bc_offs, Rmdo);
-        __ lwz(Rscratch3, in_bytes(MethodData::backedge_mask_offset()), Rmdo);
-        __ addi(Rscratch2, Rscratch2, increment);
-        __ stw(Rscratch2, mdo_bc_offs, Rmdo);
-        if (UseOnStackReplacement) {
-          __ and_(Rscratch3, Rscratch2, Rscratch3);
-          __ bne(CCR0, Lforward);
-          __ b(Loverflow);
-        } else {
-          __ b(Lforward);
-        }
-      }
-
-      // If there's no MDO, increment counter in method.
-      const int mo_bc_offs = in_bytes(MethodCounters::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
-      __ bind(Lno_mdo);
-      __ lwz(Rscratch2, mo_bc_offs, R4_counters);
-      __ lwz(Rscratch3, in_bytes(MethodCounters::backedge_mask_offset()), R4_counters);
+      // Increment backedge counter in the MDO.
+      const int mdo_bc_offs = in_bytes(MethodData::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+      __ lwz(Rscratch2, mdo_bc_offs, Rmdo);
+      __ lwz(Rscratch3, in_bytes(MethodData::backedge_mask_offset()), Rmdo);
       __ addi(Rscratch2, Rscratch2, increment);
-      __ stw(Rscratch2, mo_bc_offs, R4_counters);
+      __ stw(Rscratch2, mdo_bc_offs, Rmdo);
       if (UseOnStackReplacement) {
         __ and_(Rscratch3, Rscratch2, Rscratch3);
         __ bne(CCR0, Lforward);
+        __ b(Loverflow);
       } else {
         __ b(Lforward);
       }
-      __ bind(Loverflow);
-
-      // Notify point for loop, pass branch bytecode.
-      __ subf(R4_ARG2, Rdisp, R14_bcp); // Compute branch bytecode (previous bcp).
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
-
-      // Was an OSR adapter generated?
-      __ cmpdi(CCR0, R3_RET, 0);
-      __ beq(CCR0, Lforward);
-
-      // Has the nmethod been invalidated already?
-      __ lbz(R0, nmethod::state_offset(), R3_RET);
-      __ cmpwi(CCR0, R0, nmethod::in_use);
-      __ bne(CCR0, Lforward);
-
-      // Migrate the interpreter frame off of the stack.
-      // We can use all registers because we will not return to interpreter from this point.
-
-      // Save nmethod.
-      const Register osr_nmethod = R31;
-      __ mr(osr_nmethod, R3_RET);
-      __ set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R11_scratch1);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), R16_thread);
-      __ reset_last_Java_frame();
-      // OSR buffer is in ARG1.
-
-      // Remove the interpreter frame.
-      __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
-
-      // Jump to the osr code.
-      __ ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
-      __ mtlr(R0);
-      __ mtctr(R11_scratch1);
-      __ bctr();
-
-    } else {
-
-      const Register invoke_ctr = Rscratch1;
-      // Update Backedge branch separately from invocations.
-      __ increment_backedge_counter(R4_counters, invoke_ctr, Rscratch2, Rscratch3);
-
-      if (ProfileInterpreter) {
-        __ test_invocation_counter_for_mdp(invoke_ctr, R4_counters, Rscratch2, Lforward);
-        if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(bumped_count, R4_counters, R14_bcp, Rdisp, Rscratch2);
-        }
-      } else {
-        if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(invoke_ctr, R4_counters, R14_bcp, Rdisp, Rscratch2);
-        }
-      }
     }
+
+    // If there's no MDO, increment counter in method.
+    const int mo_bc_offs = in_bytes(MethodCounters::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+    __ bind(Lno_mdo);
+    __ lwz(Rscratch2, mo_bc_offs, R4_counters);
+    __ lwz(Rscratch3, in_bytes(MethodCounters::backedge_mask_offset()), R4_counters);
+    __ addi(Rscratch2, Rscratch2, increment);
+    __ stw(Rscratch2, mo_bc_offs, R4_counters);
+    if (UseOnStackReplacement) {
+      __ and_(Rscratch3, Rscratch2, Rscratch3);
+      __ bne(CCR0, Lforward);
+    } else {
+      __ b(Lforward);
+    }
+    __ bind(Loverflow);
+
+    // Notify point for loop, pass branch bytecode.
+    __ subf(R4_ARG2, Rdisp, R14_bcp); // Compute branch bytecode (previous bcp).
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
+
+    // Was an OSR adapter generated?
+    __ cmpdi(CCR0, R3_RET, 0);
+    __ beq(CCR0, Lforward);
+
+    // Has the nmethod been invalidated already?
+    __ lbz(R0, nmethod::state_offset(), R3_RET);
+    __ cmpwi(CCR0, R0, nmethod::in_use);
+    __ bne(CCR0, Lforward);
+
+    // Migrate the interpreter frame off of the stack.
+    // We can use all registers because we will not return to interpreter from this point.
+
+    // Save nmethod.
+    const Register osr_nmethod = R31;
+    __ mr(osr_nmethod, R3_RET);
+    __ set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R11_scratch1);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), R16_thread);
+    __ reset_last_Java_frame();
+    // OSR buffer is in ARG1.
+
+    // Remove the interpreter frame.
+    __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
+
+    // Jump to the osr code.
+    __ ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
+    __ mtlr(R0);
+    __ mtctr(R11_scratch1);
+    __ bctr();
 
     __ bind(Lforward);
   }
@@ -1917,7 +1879,7 @@ void TemplateTable::tableswitch() {
 
   // Align bcp.
   __ addi(Rdef_offset_addr, R14_bcp, BytesPerInt);
-  __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, log2_long((jlong)BytesPerInt));
+  __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, LogBytesPerInt);
 
   // Load lo & hi.
   __ get_u4(Rlow_byte, Rdef_offset_addr, BytesPerInt, InterpreterMacroAssembler::Unsigned);
@@ -1976,7 +1938,7 @@ void TemplateTable::fast_linearswitch() {
 
   // Align bcp.
   __ addi(Rdef_offset_addr, R14_bcp, BytesPerInt);
-  __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, log2_long((jlong)BytesPerInt));
+  __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, LogBytesPerInt);
 
   // Setup loop counter and limit.
   __ get_u4(Rcount, Rdef_offset_addr, BytesPerInt, InterpreterMacroAssembler::Unsigned);
@@ -2064,7 +2026,7 @@ void TemplateTable::fast_binaryswitch() {
 
   // Find Array start,
   __ addi(Rarray, R14_bcp, 3 * BytesPerInt);
-  __ clrrdi(Rarray, Rarray, log2_long((jlong)BytesPerInt));
+  __ clrrdi(Rarray, Rarray, LogBytesPerInt);
 
   // initialize i & j
   __ li(Ri,0);
@@ -2180,7 +2142,7 @@ void TemplateTable::_return(TosState state) {
 
   if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
     Label no_safepoint;
-    __ ld(R11_scratch1, in_bytes(Thread::polling_page_offset()), R16_thread);
+    __ ld(R11_scratch1, in_bytes(Thread::polling_word_offset()), R16_thread);
     __ andi_(R11_scratch1, R11_scratch1, SafepointMechanism::poll_bit());
     __ beq(CCR0, no_safepoint);
     __ push(state);
@@ -2290,14 +2252,16 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
 //   - Rcache, Rindex
 // Output:
 //   - Robj, Roffset, Rflags
+// Kills:
+//   - R11, R12
 void TemplateTable::load_field_cp_cache_entry(Register Robj,
                                               Register Rcache,
                                               Register Rindex /* unused on PPC64 */,
                                               Register Roffset,
                                               Register Rflags,
-                                              bool is_static = false) {
-  assert_different_registers(Rcache, Rflags, Roffset);
-  // assert(Rindex == noreg, "parameter not used on PPC64");
+                                              bool is_static) {
+  assert_different_registers(Rcache, Rflags, Roffset, R11_scratch1, R12_scratch2);
+  assert(Rindex == noreg, "parameter not used on PPC64");
 
   ByteSize cp_base_offset = ConstantPoolCache::base_offset();
   __ ld(Rflags, in_bytes(cp_base_offset) + in_bytes(ConstantPoolCacheEntry::flags_offset()), Rcache);
@@ -2305,7 +2269,7 @@ void TemplateTable::load_field_cp_cache_entry(Register Robj,
   if (is_static) {
     __ ld(Robj, in_bytes(cp_base_offset) + in_bytes(ConstantPoolCacheEntry::f1_offset()), Rcache);
     __ ld(Robj, in_bytes(Klass::java_mirror_offset()), Robj);
-    __ resolve_oop_handle(Robj);
+    __ resolve_oop_handle(Robj, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_NONE);
     // Acquire not needed here. Following access has an address dependency on this value.
   }
 }
@@ -2464,8 +2428,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
                  Roffset       = R23_tmp3,
                  Rflags        = R31,
                  Rbtable       = R5_ARG3,
-                 Rbc           = R6_ARG4,
-                 Rscratch      = R12_scratch2;
+                 Rbc           = R30,
+                 Rscratch      = R11_scratch1; // used by load_field_cp_cache_entry
+                 // R12_scratch2 used by load_field_cp_cache_entry
 
   static address field_branch_table[number_of_states],
                  static_branch_table[number_of_states];
@@ -2479,7 +2444,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   jvmti_post_field_access(Rcache, Rscratch, is_static, false);
 
   // Load after possible GC.
-  load_field_cp_cache_entry(Rclass_or_obj, Rcache, noreg, Roffset, Rflags, is_static);
+  load_field_cp_cache_entry(Rclass_or_obj, Rcache, noreg, Roffset, Rflags, is_static); // Uses R11, R12
 
   // Load pointer to branch table.
   __ load_const_optimized(Rbtable, (address)branch_table, Rscratch);
@@ -2499,7 +2464,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   // Load from branch table and dispatch (volatile case: one instruction ahead).
   __ sldi(Rflags, Rflags, LogBytesPerWord);
-  __ cmpwi(CCR6, Rscratch, 1); // Volatile?
+  __ cmpwi(CCR2, Rscratch, 1); // Volatile?
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ sldi(Rscratch, Rscratch, exact_log2(BytesPerInstWord)); // Volatile ? size of 1 instruction : 0.
   }
@@ -2550,7 +2515,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   }
   {
     Label acquire_double;
-    __ beq(CCR6, acquire_double); // Volatile?
+    __ beq(CCR2, acquire_double); // Volatile?
     __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
     __ bind(acquire_double);
@@ -2571,7 +2536,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   }
   {
     Label acquire_float;
-    __ beq(CCR6, acquire_float); // Volatile?
+    __ beq(CCR2, acquire_float); // Volatile?
     __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
     __ bind(acquire_float);
@@ -2590,7 +2555,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   if (!is_static && rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_igetfield, Rbc, Rscratch);
   }
-  __ beq(CCR6, Lacquire); // Volatile?
+  __ beq(CCR2, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
   __ align(32, 28, 28); // Align load.
@@ -2603,7 +2568,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   if (!is_static && rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_lgetfield, Rbc, Rscratch);
   }
-  __ beq(CCR6, Lacquire); // Volatile?
+  __ beq(CCR2, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
   __ align(32, 28, 28); // Align load.
@@ -2617,7 +2582,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   if (!is_static && rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_bgetfield, Rbc, Rscratch);
   }
-  __ beq(CCR6, Lacquire); // Volatile?
+  __ beq(CCR2, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
   __ align(32, 28, 28); // Align load.
@@ -2631,7 +2596,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     // use btos rewriting, no truncating to t/f bit is needed for getfield.
     patch_bytecode(Bytecodes::_fast_bgetfield, Rbc, Rscratch);
   }
-  __ beq(CCR6, Lacquire); // Volatile?
+  __ beq(CCR2, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
   __ align(32, 28, 28); // Align load.
@@ -2644,7 +2609,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   if (!is_static && rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_cgetfield, Rbc, Rscratch);
   }
-  __ beq(CCR6, Lacquire); // Volatile?
+  __ beq(CCR2, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
   __ align(32, 28, 28); // Align load.
@@ -2657,7 +2622,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   if (!is_static && rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_sgetfield, Rbc, Rscratch);
   }
-  __ beq(CCR6, Lacquire); // Volatile?
+  __ beq(CCR2, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
   __ align(32, 28, 28); // Align load.
@@ -2672,7 +2637,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   if (!is_static && rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_agetfield, Rbc, Rscratch);
   }
-  __ beq(CCR6, Lacquire); // Volatile?
+  __ beq(CCR2, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
   __ align(32, 12);
@@ -2796,10 +2761,10 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register Rcache        = R5_ARG3,  // Do not use ARG1/2 (causes trouble in jvmti_post_field_mod).
                  Rclass_or_obj = R31,      // Needs to survive C call.
                  Roffset       = R22_tmp2, // Needs to survive C call.
-                 Rflags        = R3_ARG1,
+                 Rflags        = R30,
                  Rbtable       = R4_ARG2,
-                 Rscratch      = R11_scratch1,
-                 Rscratch2     = R12_scratch2,
+                 Rscratch      = R11_scratch1, // used by load_field_cp_cache_entry
+                 Rscratch2     = R12_scratch2, // used by load_field_cp_cache_entry
                  Rscratch3     = R6_ARG4,
                  Rbc           = Rscratch3;
   const ConditionRegister CR_is_vol = CCR2; // Non-volatile condition register (survives runtime call in do_oop_store).
@@ -2818,7 +2783,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   // Load the field offset.
   resolve_cache_and_index(byte_no, Rcache, Rscratch, sizeof(u2));
   jvmti_post_field_mod(Rcache, Rscratch, is_static);
-  load_field_cp_cache_entry(Rclass_or_obj, Rcache, noreg, Roffset, Rflags, is_static);
+  load_field_cp_cache_entry(Rclass_or_obj, Rcache, noreg, Roffset, Rflags, is_static); // Uses R11, R12
 
   // Load pointer to branch table.
   __ load_const_optimized(Rbtable, (address)branch_table, Rscratch);
@@ -3045,15 +3010,15 @@ void TemplateTable::fast_storefield(TosState state) {
                  Rclass_or_obj = R31,      // Needs to survive C call.
                  Roffset       = R22_tmp2, // Needs to survive C call.
                  Rflags        = R3_ARG1,
-                 Rscratch      = R11_scratch1,
-                 Rscratch2     = R12_scratch2,
+                 Rscratch      = R11_scratch1, // used by load_field_cp_cache_entry
+                 Rscratch2     = R12_scratch2, // used by load_field_cp_cache_entry
                  Rscratch3     = R4_ARG2;
   const ConditionRegister CR_is_vol = CCR2; // Non-volatile condition register (survives runtime call in do_oop_store).
 
   // Constant pool already resolved => Load flags and offset of field.
   __ get_cache_and_index_at_bcp(Rcache, 1);
   jvmti_post_field_mod(Rcache, Rscratch, false /* not static */);
-  load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false);
+  load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // Get the obj and the final store addr.
   pop_and_check_object(Rclass_or_obj); // Kills R11_scratch1.
@@ -3128,11 +3093,12 @@ void TemplateTable::fast_accessfield(TosState state) {
                  Rclass_or_obj = R17_tos,
                  Roffset       = R22_tmp2,
                  Rflags        = R23_tmp3,
-                 Rscratch      = R12_scratch2;
+                 Rscratch      = R11_scratch1; // used by load_field_cp_cache_entry
+                 // R12_scratch2 used by load_field_cp_cache_entry
 
   // Constant pool already resolved. Get the field offset.
   __ get_cache_and_index_at_bcp(Rcache, 1);
-  load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false);
+  load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support
   jvmti_post_field_access(Rcache, Rscratch, false, true);
@@ -3264,13 +3230,14 @@ void TemplateTable::fast_xaccess(TosState state) {
                  Rclass_or_obj = R17_tos,
                  Roffset       = R22_tmp2,
                  Rflags        = R23_tmp3,
-                 Rscratch      = R12_scratch2;
+                 Rscratch      = R11_scratch1;
+                 // R12_scratch2 used by load_field_cp_cache_entry
 
   __ ld(Rclass_or_obj, 0, R18_locals);
 
   // Constant pool already resolved. Get the field offset.
   __ get_cache_and_index_at_bcp(Rcache, 2);
-  load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false);
+  load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support not needed, since we switch back to single bytecode as soon as debugger attaches.
 
@@ -3355,7 +3322,8 @@ void TemplateTable::prepare_invoke(int byte_no,
                                    Register Rindex,   // itable index, MethodType, Method, etc.
                                    Register Rrecv,    // If caller wants to see it.
                                    Register Rflags,   // If caller wants to test it.
-                                   Register Rscratch
+                                   Register Rscratch1,
+                                   Register Rscratch2
                                    ) {
   // Determine flags.
   const Bytecodes::Code code = bytecode();
@@ -3367,9 +3335,9 @@ void TemplateTable::prepare_invoke(int byte_no,
   const bool load_receiver       = (Rrecv != noreg);
   assert(load_receiver == (code != Bytecodes::_invokestatic && code != Bytecodes::_invokedynamic), "");
 
-  assert_different_registers(Rmethod, Rindex, Rflags, Rscratch);
-  assert_different_registers(Rmethod, Rrecv, Rflags, Rscratch);
-  assert_different_registers(Rret_addr, Rscratch);
+  assert_different_registers(Rmethod, Rindex, Rflags, Rscratch1);
+  assert_different_registers(Rmethod, Rrecv, Rflags, Rscratch1);
+  assert_different_registers(Rret_addr, Rscratch1);
 
   load_invoke_cp_cache_entry(byte_no, Rmethod, Rindex, Rflags, is_invokevirtual, false, is_invokedynamic);
 
@@ -3378,20 +3346,23 @@ void TemplateTable::prepare_invoke(int byte_no,
   // Maybe push "appendix" to arguments.
   if (is_invokedynamic || is_invokehandle) {
     Label Ldone;
+    Register reference = Rscratch1;
+
     __ rldicl_(R0, Rflags, 64-ConstantPoolCacheEntry::has_appendix_shift, 63);
     __ beq(CCR0, Ldone);
     // Push "appendix" (MethodType, CallSite, etc.).
     // This must be done before we get the receiver,
     // since the parameter_size includes it.
-    __ load_resolved_reference_at_index(Rscratch, Rindex);
-    __ verify_oop(Rscratch);
-    __ push_ptr(Rscratch);
+    __ load_resolved_reference_at_index(reference, Rindex, /* temp */ Rret_addr, Rscratch2);
+    __ verify_oop(reference);
+    __ push_ptr(reference);
+
     __ bind(Ldone);
   }
 
   // Load receiver if needed (after appendix is pushed so parameter size is correct).
   if (load_receiver) {
-    const Register Rparam_count = Rscratch;
+    Register Rparam_count = Rscratch1;
     __ andi(Rparam_count, Rflags, ConstantPoolCacheEntry::parameter_size_mask);
     __ load_receiver(Rparam_count, Rrecv);
     __ verify_oop(Rrecv);
@@ -3399,7 +3370,7 @@ void TemplateTable::prepare_invoke(int byte_no,
 
   // Get return address.
   {
-    Register Rtable_addr = Rscratch;
+    Register Rtable_addr = Rscratch1;
     Register Rret_type = Rret_addr;
     address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
 
@@ -3530,7 +3501,7 @@ void TemplateTable::invokespecial(int byte_no) {
            Rreceiver   = R6_ARG4,
            Rmethod     = R31;
 
-  prepare_invoke(byte_no, Rmethod, Rret_addr, noreg, Rreceiver, Rflags, R11_scratch1);
+  prepare_invoke(byte_no, Rmethod, Rret_addr, noreg, Rreceiver, Rflags, R11_scratch1, R12_scratch2);
 
   // Receiver NULL check.
   __ null_check_throw(Rreceiver, -1, R11_scratch1);
@@ -3549,7 +3520,7 @@ void TemplateTable::invokestatic(int byte_no) {
            Rret_addr   = R4_ARG2,
            Rflags      = R5_ARG3;
 
-  prepare_invoke(byte_no, R19_method, Rret_addr, noreg, noreg, Rflags, R11_scratch1);
+  prepare_invoke(byte_no, R19_method, Rret_addr, noreg, noreg, Rflags, R11_scratch1, R12_scratch2);
 
   __ profile_call(R11_scratch1, R12_scratch2);
   // Argument and return type profiling.
@@ -3601,7 +3572,7 @@ void TemplateTable::invokeinterface(int byte_no) {
                  Rrecv_klass      = R4_ARG2,
                  Rflags           = R7_ARG5;
 
-  prepare_invoke(byte_no, Rinterface_klass, Rret_addr, Rmethod, Rreceiver, Rflags, Rscratch1);
+  prepare_invoke(byte_no, Rinterface_klass, Rret_addr, Rmethod, Rreceiver, Rflags, Rscratch1, /* temp */ Rrecv_klass);
 
   // First check for Object case, then private interface method,
   // then regular interface method.
@@ -3686,12 +3657,13 @@ void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
 
   const Register Rret_addr = R3_ARG1,
-                 Rflags    = R4_ARG2,
+                 Rflags    = R31,
                  Rmethod   = R22_tmp2,
-                 Rscratch1 = R11_scratch1,
-                 Rscratch2 = R12_scratch2;
+                 Rscratch1 = R30,
+                 Rscratch2 = R11_scratch1,
+                 Rscratch3 = R12_scratch2;
 
-  prepare_invoke(byte_no, Rmethod, Rret_addr, Rscratch1, noreg, Rflags, Rscratch2);
+  prepare_invoke(byte_no, Rmethod, Rret_addr, Rscratch1, noreg, Rflags, Rscratch2, Rscratch3);
 
   // Profile this call.
   __ profile_call(Rscratch1, Rscratch2);
@@ -3710,13 +3682,14 @@ void TemplateTable::invokehandle(int byte_no) {
   transition(vtos, vtos);
 
   const Register Rret_addr = R3_ARG1,
-                 Rflags    = R4_ARG2,
+                 Rflags    = R31,
                  Rrecv     = R5_ARG3,
                  Rmethod   = R22_tmp2,
-                 Rscratch1 = R11_scratch1,
-                 Rscratch2 = R12_scratch2;
+                 Rscratch1 = R30,
+                 Rscratch2 = R11_scratch1,
+                 Rscratch3 = R12_scratch2;
 
-  prepare_invoke(byte_no, Rmethod, Rret_addr, Rscratch1, Rrecv, Rflags, Rscratch2);
+  prepare_invoke(byte_no, Rmethod, Rret_addr, Rscratch1, Rrecv, Rflags, Rscratch2, Rscratch3);
   __ verify_method_ptr(Rmethod);
   __ null_check_throw(Rrecv, -1, Rscratch2);
 

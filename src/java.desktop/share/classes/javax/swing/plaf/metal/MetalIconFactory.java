@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,33 @@
 
 package javax.swing.plaf.metal;
 
-import javax.swing.*;
-import javax.swing.plaf.UIResource;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
-import java.util.Enumeration;
 import java.util.Vector;
+
+import javax.swing.ButtonModel;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JRadioButton;
+import javax.swing.plaf.UIResource;
+
 import sun.swing.CachedPainter;
-import static sun.swing.SwingUtilities2.setAntialiasingHintForScaledGraphics;
+
 import static sun.swing.SwingUtilities2.getAndSetAntialisingHintForScaledGraphics;
+import static sun.swing.SwingUtilities2.setAntialiasingHintForScaledGraphics;
 
 /**
  * Factory object that vends <code>Icon</code>s for
@@ -2401,6 +2418,8 @@ private static class VerticalSliderThumbIcon implements Icon, Serializable, UIRe
         boolean leftToRight = MetalUtils.isLeftToRight(c);
 
         g.translate( x, y );
+        Rectangle clip = g.getClipBounds();
+        g.clipRect(0, 0, getIconWidth(), getIconHeight());
 
         // Draw the frame
         if ( c.hasFocus() ) {
@@ -2479,6 +2498,7 @@ private static class VerticalSliderThumbIcon implements Icon, Serializable, UIRe
             }
         }
 
+        g.setClip(clip);
         g.translate( -x, -y );
     }
 
@@ -2508,6 +2528,8 @@ private static class HorizontalSliderThumbIcon implements Icon, Serializable, UI
 
     public void paintIcon( Component c, Graphics g, int x, int y ) {
         g.translate( x, y );
+        Rectangle clip = g.getClipBounds();
+        g.clipRect(0, 0, getIconWidth(), getIconHeight());
 
         // Draw the frame
         if ( c.hasFocus() ) {
@@ -2558,6 +2580,7 @@ private static class HorizontalSliderThumbIcon implements Icon, Serializable, UI
             g.drawLine( 1, 1, 1, 8 );
         }
 
+        g.setClip(clip);
         g.translate( -x, -y );
     }
 

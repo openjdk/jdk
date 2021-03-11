@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compiledICHolder.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -69,9 +71,15 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
 }
 
 void CompiledMethod::init_defaults() {
+  { // avoid uninitialized fields, even for short time periods
+    _is_far_code                = false;
+    _scopes_data_begin          = NULL;
+    _deopt_handler_begin        = NULL;
+    _deopt_mh_handler_begin     = NULL;
+    _exception_cache            = NULL;
+  }
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
-  _lazy_critical_native       = 0;
   _has_wide_vectors           = 0;
 }
 
@@ -286,17 +294,13 @@ void CompiledMethod::verify_oop_relocations() {
 ScopeDesc* CompiledMethod::scope_desc_at(address pc) {
   PcDesc* pd = pc_desc_at(pc);
   guarantee(pd != NULL, "scope must be present");
-  return new ScopeDesc(this, pd->scope_decode_offset(),
-                       pd->obj_decode_offset(), pd->should_reexecute(), pd->rethrow_exception(),
-                       pd->return_oop());
+  return new ScopeDesc(this, pd);
 }
 
 ScopeDesc* CompiledMethod::scope_desc_near(address pc) {
   PcDesc* pd = pc_desc_near(pc);
   guarantee(pd != NULL, "scope must be present");
-  return new ScopeDesc(this, pd->scope_decode_offset(),
-                       pd->obj_decode_offset(), pd->should_reexecute(), pd->rethrow_exception(),
-                       pd->return_oop());
+  return new ScopeDesc(this, pd);
 }
 
 address CompiledMethod::oops_reloc_begin() const {
@@ -357,6 +361,7 @@ void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *
   if (method() != NULL && !method()->is_native()) {
     address pc = fr.pc();
     SimpleScopeDesc ssd(this, pc);
+    if (ssd.is_optimized_linkToNative()) return; // call was replaced
     Bytecode_invoke call(methodHandle(Thread::current(), ssd.method()), ssd.bci());
     bool has_receiver = call.has_receiver();
     bool has_appendix = call.has_appendix();
@@ -692,21 +697,6 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
   return true;
 }
 
-// Iterating over all nmethods, e.g. with the help of CodeCache::nmethods_do(fun) was found
-// to not be inherently safe. There is a chance that fields are seen which are not properly
-// initialized. This happens despite the fact that nmethods_do() asserts the CodeCache_lock
-// to be held.
-// To bundle knowledge about necessary checks in one place, this function was introduced.
-// It is not claimed that these checks are sufficient, but they were found to be necessary.
-bool CompiledMethod::nmethod_access_is_safe(nmethod* nm) {
-  Method* method = (nm == NULL) ? NULL : nm->method();  // nm->method() may be uninitialized, i.e. != NULL, but invalid
-  return (nm != NULL) && (method != NULL) && (method->signature() != NULL) &&
-         !nm->is_zombie() && !nm->is_not_installed() &&
-         os::is_readable_pointer(method) &&
-         os::is_readable_pointer(method->constants()) &&
-         os::is_readable_pointer(method->signature());
-}
-
 address CompiledMethod::continuation_for_implicit_exception(address pc, bool for_div0_check) {
   // Exception happened outside inline-cache check code => we are inside
   // an active nmethod => use cpc to determine a return address
@@ -715,8 +705,6 @@ address CompiledMethod::continuation_for_implicit_exception(address pc, bool for
 #ifdef ASSERT
   if (cont_offset == 0) {
     Thread* thread = Thread::current();
-    ResetNoHandleMark rnm; // Might be called from LEAF/QUICK ENTRY
-    HandleMark hm(thread);
     ResourceMark rm(thread);
     CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb != NULL && cb == this, "");

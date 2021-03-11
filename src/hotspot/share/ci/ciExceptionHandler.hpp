@@ -72,9 +72,6 @@ public:
   bool      is_in_range(int bci) {
     return start() <= bci && bci < limit();
   }
-  bool      catches(ciInstanceKlass *exc) {
-    return is_catch_all() || exc->is_subtype_of(catch_klass());
-  }
   bool      is_rethrow() { return handler_bci() == -1; }
 
   void      print();

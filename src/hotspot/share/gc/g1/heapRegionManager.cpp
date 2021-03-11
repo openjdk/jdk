@@ -26,11 +26,11 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "gc/g1/g1NUMAStats.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
-#include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -60,29 +60,17 @@ public:
   const char* get_description() { return "Free Regions"; }
 };
 
-HeapRegionRange::HeapRegionRange(uint start, uint end) : _start(start), _end(end) {
-  assert(start <= end, "Invariant");
-}
-
 HeapRegionManager::HeapRegionManager() :
   _bot_mapper(NULL),
   _cardtable_mapper(NULL),
   _card_counts_mapper(NULL),
-  _available_map(mtGC),
-  _num_committed(0),
+  _committed_map(),
   _allocated_heapregions_length(0),
   _regions(), _heap_mapper(NULL),
   _prev_bitmap_mapper(NULL),
   _next_bitmap_mapper(NULL),
   _free_list("Free list", new MasterFreeRegionListChecker())
 { }
-
-HeapRegionManager* HeapRegionManager::create_manager(G1CollectedHeap* heap) {
-  if (G1Arguments::is_heterogeneous_heap()) {
-    return new HeterogeneousHeapRegionManager((uint)(G1Arguments::heap_max_size_bytes() / HeapRegion::GrainBytes) /*heap size as num of regions*/);
-  }
-  return new HeapRegionManager();
-}
 
 void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
                                    G1RegionToSpaceMapper* prev_bitmap,
@@ -104,11 +92,7 @@ void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
 
   _regions.initialize(heap_storage->reserved(), HeapRegion::GrainBytes);
 
-  _available_map.initialize(_regions.length());
-}
-
-bool HeapRegionManager::is_available(uint region) const {
-  return _available_map.at(region);
+  _committed_map.initialize(reserved_length());
 }
 
 HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint requested_node_index) {
@@ -182,12 +166,25 @@ HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
   return g1h->new_heap_region(hrm_index, mr);
 }
 
+void HeapRegionManager::expand(uint start, uint num_regions, WorkGang* pretouch_gang) {
+  commit_regions(start, num_regions, pretouch_gang);
+  for (uint i = start; i < start + num_regions; i++) {
+    HeapRegion* hr = _regions.get_by_index(i);
+    if (hr == NULL) {
+      hr = new_heap_region(i);
+      OrderAccess::storestore();
+      _regions.set_by_index(i, hr);
+      _allocated_heapregions_length = MAX2(_allocated_heapregions_length, i + 1);
+    }
+    G1CollectedHeap::heap()->hr_printer()->commit(hr);
+  }
+  activate_regions(start, num_regions);
+}
+
 void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkGang* pretouch_gang) {
   guarantee(num_regions > 0, "Must commit more than zero regions");
   guarantee(num_regions <= available(),
             "Cannot commit more than the maximum amount of regions");
-
-  _num_committed += (uint)num_regions;
 
   _heap_mapper->commit_regions(index, num_regions, pretouch_gang);
 
@@ -201,26 +198,21 @@ void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkGang*
   _card_counts_mapper->commit_regions(index, num_regions, pretouch_gang);
 }
 
-void HeapRegionManager::uncommit_regions(uint start, size_t num_regions) {
-  guarantee(num_regions >= 1, "Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start);
-  guarantee(_num_committed >= num_regions, "pre-condition");
+void HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
+  guarantee(num_regions > 0, "No point in calling this for zero regions");
 
-  // Reset node index to distinguish with committed regions.
-  for (uint i = start; i < start + num_regions; i++) {
-    at(i)->set_node_index(G1NUMA::UnknownNodeIndex);
-  }
-
-  // Print before uncommitting.
-  if (G1CollectedHeap::heap()->hr_printer()->is_active()) {
-    for (uint i = start; i < start + num_regions; i++) {
-      HeapRegion* hr = at(i);
-      G1CollectedHeap::heap()->hr_printer()->uncommit(hr);
+  uint end = start + num_regions;
+  G1HRPrinter* printer = G1CollectedHeap::heap()->hr_printer();
+  if (printer->is_active()) {
+    for (uint i = start; i < end; i++) {
+      // Can't use at() here since region is no longer marked available.
+      HeapRegion* hr = _regions.get_by_index(i);
+      assert(hr != NULL, "Region should still be present");
+      printer->uncommit(hr);
     }
   }
 
-  _num_committed -= (uint)num_regions;
-
-  _available_map.par_clear_range(start, start + num_regions, BitMap::unknown_range);
+  // Uncommit heap memory
   _heap_mapper->uncommit_regions(start, num_regions);
 
   // Also uncommit auxiliary data
@@ -231,33 +223,61 @@ void HeapRegionManager::uncommit_regions(uint start, size_t num_regions) {
   _cardtable_mapper->uncommit_regions(start, num_regions);
 
   _card_counts_mapper->uncommit_regions(start, num_regions);
+
+  _committed_map.uncommit(start, end);
 }
 
-void HeapRegionManager::make_regions_available(uint start, uint num_regions, WorkGang* pretouch_gang) {
-  guarantee(num_regions > 0, "No point in calling this for zero regions");
-  commit_regions(start, num_regions, pretouch_gang);
-  for (uint i = start; i < start + num_regions; i++) {
-    if (_regions.get_by_index(i) == NULL) {
-      HeapRegion* new_hr = new_heap_region(i);
-      OrderAccess::storestore();
-      _regions.set_by_index(i, new_hr);
-      _allocated_heapregions_length = MAX2(_allocated_heapregions_length, i + 1);
-    }
-  }
-
-  _available_map.par_set_range(start, start + num_regions, BitMap::unknown_range);
-
+void HeapRegionManager::initialize_regions(uint start, uint num_regions) {
   for (uint i = start; i < start + num_regions; i++) {
     assert(is_available(i), "Just made region %u available but is apparently not.", i);
     HeapRegion* hr = at(i);
-    if (G1CollectedHeap::heap()->hr_printer()->is_active()) {
-      G1CollectedHeap::heap()->hr_printer()->commit(hr);
-    }
 
     hr->initialize();
     hr->set_node_index(G1NUMA::numa()->index_for_region(hr));
-    insert_into_free_list(at(i));
+    insert_into_free_list(hr);
+    G1CollectedHeap::heap()->hr_printer()->active(hr);
   }
+}
+
+void HeapRegionManager::activate_regions(uint start, uint num_regions) {
+  _committed_map.activate(start, start + num_regions);
+  initialize_regions(start, num_regions);
+}
+
+void HeapRegionManager::reactivate_regions(uint start, uint num_regions) {
+  assert(num_regions > 0, "No point in calling this for zero regions");
+
+  clear_auxiliary_data_structures(start, num_regions);
+
+  _committed_map.reactivate(start, start + num_regions);
+  initialize_regions(start, num_regions);
+}
+
+void HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
+  assert(num_regions > 0, "Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start);
+  assert(length() >= num_regions, "pre-condition");
+
+  // Reset NUMA index to and print state change.
+  uint end = start + num_regions;
+  for (uint i = start; i < end; i++) {
+    HeapRegion* hr = at(i);
+    hr->set_node_index(G1NUMA::UnknownNodeIndex);
+    G1CollectedHeap::heap()->hr_printer()->inactive(hr);
+  }
+
+  _committed_map.deactivate(start, end);
+}
+
+void HeapRegionManager::clear_auxiliary_data_structures(uint start, uint num_regions) {
+  // Signal marking bitmaps to clear the given regions.
+  _prev_bitmap_mapper->signal_mapping_changed(start, num_regions);
+  _next_bitmap_mapper->signal_mapping_changed(start, num_regions);
+  // Signal G1BlockOffsetTable to clear the given regions.
+  _bot_mapper->signal_mapping_changed(start, num_regions);
+  // Signal G1CardTable to clear the given regions.
+  _cardtable_mapper->signal_mapping_changed(start, num_regions);
+  // Signal G1CardCounts to clear the given regions.
+  _card_counts_mapper->signal_mapping_changed(start, num_regions);
 }
 
 MemoryUsage HeapRegionManager::get_auxiliary_data_memory_usage() const {
@@ -278,30 +298,87 @@ MemoryUsage HeapRegionManager::get_auxiliary_data_memory_usage() const {
   return MemoryUsage(0, used_sz, committed_sz, committed_sz);
 }
 
-uint HeapRegionManager::expand_by(uint num_regions, WorkGang* pretouch_workers) {
-  return expand_at(0, num_regions, pretouch_workers);
+bool HeapRegionManager::has_inactive_regions() const {
+  return _committed_map.num_inactive() > 0;
 }
 
-uint HeapRegionManager::expand_at(uint start, uint num_regions, WorkGang* pretouch_workers) {
-  if (num_regions == 0) {
-    return 0;
-  }
+uint HeapRegionManager::uncommit_inactive_regions(uint limit) {
+  assert(limit > 0, "Need to specify at least one region to uncommit");
 
-  uint offset = start;
+  uint uncommitted = 0;
+  uint offset = 0;
+  do {
+    MutexLocker uc(Uncommit_lock, Mutex::_no_safepoint_check_flag);
+    HeapRegionRange range = _committed_map.next_inactive_range(offset);
+    // No more regions available for uncommit. Return the number of regions
+    // already uncommitted or 0 if there were no longer any inactive regions.
+    if (range.length() == 0) {
+      return uncommitted;
+    }
+
+    uint start = range.start();
+    uint num_regions = MIN2(range.length(), limit - uncommitted);
+    uncommitted += num_regions;
+    uncommit_regions(start, num_regions);
+  } while (uncommitted < limit);
+
+  assert(uncommitted == limit, "Invariant");
+  return uncommitted;
+}
+
+uint HeapRegionManager::expand_inactive(uint num_regions) {
+  uint offset = 0;
   uint expanded = 0;
 
   do {
-    HeapRegionRange regions = find_unavailable_from_idx(offset);
+    HeapRegionRange regions = _committed_map.next_inactive_range(offset);
     if (regions.length() == 0) {
       // No more unavailable regions.
       break;
     }
 
     uint to_expand = MIN2(num_regions - expanded, regions.length());
-    make_regions_available(regions.start(), to_expand, pretouch_workers);
+    reactivate_regions(regions.start(), to_expand);
     expanded += to_expand;
     offset = regions.end();
   } while (expanded < num_regions);
+
+  return expanded;
+}
+
+uint HeapRegionManager::expand_any(uint num_regions, WorkGang* pretouch_workers) {
+  assert(num_regions > 0, "Must expand at least 1 region");
+
+  uint offset = 0;
+  uint expanded = 0;
+
+  do {
+    HeapRegionRange regions = _committed_map.next_committable_range(offset);
+    if (regions.length() == 0) {
+      // No more unavailable regions.
+      break;
+    }
+
+    uint to_expand = MIN2(num_regions - expanded, regions.length());
+    expand(regions.start(), to_expand, pretouch_workers);
+    expanded += to_expand;
+    offset = regions.end();
+  } while (expanded < num_regions);
+
+  return expanded;
+}
+
+uint HeapRegionManager::expand_by(uint num_regions, WorkGang* pretouch_workers) {
+  assert(num_regions > 0, "Must expand at least 1 region");
+
+  // First "undo" any requests to uncommit memory concurrently by
+  // reverting such regions to being available.
+  uint expanded = expand_inactive(num_regions);
+
+  // Commit more regions if needed.
+  if (expanded < num_regions) {
+    expanded += expand_any(num_regions - expanded, pretouch_workers);
+  }
 
   verify_optional();
   return expanded;
@@ -312,9 +389,24 @@ void HeapRegionManager::expand_exact(uint start, uint num_regions, WorkGang* pre
   uint end = start + num_regions;
 
   for (uint i = start; i < end; i++) {
-    if (!is_available(i)) {
-      make_regions_available(i, 1, pretouch_workers);
+    // First check inactive. If the regions is inactive, try to reactivate it
+    // before it get uncommitted by the G1SeriveThread.
+    if (_committed_map.inactive(i)) {
+      // Need to grab the lock since this can be called by a java thread
+      // doing humongous allocations.
+      MutexLocker uc(Uncommit_lock, Mutex::_no_safepoint_check_flag);
+      // State might change while getting the lock.
+      if (_committed_map.inactive(i)) {
+        reactivate_regions(i, 1);
+      }
     }
+    // Not else-if to catch the case where the inactive region was uncommited
+    // while waiting to get the lock.
+    if (!_committed_map.active(i)) {
+      expand(i, 1, pretouch_workers);
+    }
+
+    assert(at(i)->is_free(), "Region must be free at this point");
   }
 
   verify_optional();
@@ -393,15 +485,13 @@ uint HeapRegionManager::find_contiguous_in_range(uint start, uint end, uint num_
 }
 
 uint HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
-  BitMap::idx_t range_start = 0;
-  BitMap::idx_t range_end = range_start;
   uint candidate = G1_NO_HRM_INDEX;
+  HeapRegionRange range(0,0);
 
   do {
-    range_start = _available_map.get_next_one_offset(range_end);
-    range_end = _available_map.get_next_zero_offset(range_start);
-    candidate = find_contiguous_in_range((uint) range_start, (uint) range_end, num_regions);
-  } while (candidate == G1_NO_HRM_INDEX && range_end < reserved_length());
+    range = _committed_map.next_active_range(range.end());
+    candidate = find_contiguous_in_range(range.start(), range.end(), num_regions);
+  } while (candidate == G1_NO_HRM_INDEX && range.end() < reserved_length());
 
   return candidate;
 }
@@ -443,34 +533,11 @@ void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
   }
 }
 
-HeapRegionRange HeapRegionManager::find_unavailable_from_idx(uint index) const {
-  guarantee(index <= reserved_length(), "checking");
-
-  // Find first unavailable region from offset.
-  BitMap::idx_t start = _available_map.get_next_zero_offset(index);
-  if (start == _available_map.size()) {
-    // No unavailable regions found.
-    return HeapRegionRange(reserved_length(), reserved_length());
-  }
-
-  // The end of the range is the next available region.
-  BitMap::idx_t end = _available_map.get_next_one_offset(start);
-
-  assert(!_available_map.at(start), "Found region (" SIZE_FORMAT ") is not unavailable", start);
-  assert(!_available_map.at(end - 1), "Last region (" SIZE_FORMAT ") in range is not unavailable", end - 1);
-  assert(end == _available_map.size() || _available_map.at(end), "Region (" SIZE_FORMAT ") is not available", end);
-
-  // Shrink returned range to number of regions left to commit if necessary.
-  end = MIN2(start + available(), end);
-  return HeapRegionRange((uint) start, (uint) end);
-}
-
 uint HeapRegionManager::find_highest_free(bool* expanded) {
   // Loop downwards from the highest region index, looking for an
   // entry which is either free or not yet committed.  If not yet
   // committed, expand at that index.
-  uint curr = reserved_length() - 1;
-  while (true) {
+  for (uint curr = reserved_length(); curr-- > 0;) {
     HeapRegion *hr = _regions.get_by_index(curr);
     if (hr == NULL || !is_available(curr)) {
       // Found uncommitted and free region, expand to make it available for use.
@@ -479,17 +546,13 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
 
       *expanded = true;
       return curr;
-    } else {
-      if (hr->is_free()) {
-        *expanded = false;
-        return curr;
-      }
     }
-    if (curr == 0) {
-      return G1_NO_HRM_INDEX;
+    if (hr->is_free()) {
+      *expanded = false;
+      return curr;
     }
-    curr--;
   }
+  return G1_NO_HRM_INDEX;
 }
 
 bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkGang* pretouch_workers) {
@@ -586,7 +649,8 @@ void HeapRegionManager::shrink_at(uint index, size_t num_regions) {
     assert(at(i)->is_free(), "Expected free region at index %u", i);
   }
 #endif
-  uncommit_regions(index, num_regions);
+  // Mark regions as inactive making them ready for uncommit.
+  deactivate_regions(index, (uint) num_regions);
 }
 
 uint HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const {
@@ -625,9 +689,9 @@ void HeapRegionManager::verify() {
   guarantee(_allocated_heapregions_length <= reserved_length(),
             "invariant: _allocated_length: %u _max_length: %u",
             _allocated_heapregions_length, reserved_length());
-  guarantee(_num_committed <= max_length(),
-            "invariant: _num_committed: %u max_regions: %u",
-            _num_committed, max_length());
+  guarantee(length() <= max_length(),
+            "invariant: committed regions: %u max_regions: %u",
+            length(), max_length());
 
   bool prev_committed = true;
   uint num_committed = 0;
@@ -658,7 +722,7 @@ void HeapRegionManager::verify() {
     guarantee(_regions.get_by_index(i) == NULL, "invariant i: %u", i);
   }
 
-  guarantee(num_committed == _num_committed, "Found %u committed regions, but should be %u", num_committed, _num_committed);
+  guarantee(num_committed == length(), "Found %u committed regions, but should be %u", num_committed, length());
   _free_list.verify();
 }
 
@@ -669,7 +733,7 @@ void HeapRegionManager::verify_optional() {
 #endif // PRODUCT
 
 HeapRegionClaimer::HeapRegionClaimer(uint n_workers) :
-    _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm->_allocated_heapregions_length), _claims(NULL) {
+    _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm._allocated_heapregions_length), _claims(NULL) {
   assert(n_workers > 0, "Need at least one worker.");
   uint* new_claims = NEW_C_HEAP_ARRAY(uint, _n_regions, mtGC);
   memset(new_claims, Unclaimed, sizeof(*_claims) * _n_regions);

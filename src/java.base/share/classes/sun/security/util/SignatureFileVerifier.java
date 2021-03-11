@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.CodeSigner;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.SignatureException;
 import java.security.Timestamp;
 import java.security.cert.CertPath;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -173,6 +175,7 @@ public class SignatureFileVerifier {
      * @param s file name
      * @return true if the input file name is a supported
      *          Signature File or PKCS7 block file name
+     * @see #getBlockExtension(PrivateKey)
      */
     public static boolean isBlockOrSF(String s) {
         // Note: keep this in sync with j.u.z.ZipFile.Source#isSignatureRelated
@@ -181,6 +184,26 @@ public class SignatureFileVerifier {
             || s.endsWith(".DSA")
             || s.endsWith(".RSA")
             || s.endsWith(".EC");
+    }
+
+    /**
+     * Returns the signed JAR block file extension for a key.
+     *
+     * @param key the key used to sign the JAR file
+     * @return the extension
+     * @see #isBlockOrSF(String)
+     */
+    public static String getBlockExtension(PrivateKey key) {
+        String keyAlgorithm = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
+        if (keyAlgorithm.equals("RSASSA-PSS")) {
+            return "RSA";
+        } else if (keyAlgorithm.equals("EDDSA")
+                || keyAlgorithm.equals("ED25519")
+                || keyAlgorithm.equals("ED448")) {
+            return "EC";
+        } else {
+            return keyAlgorithm;
+        }
     }
 
     /**
@@ -475,8 +498,8 @@ public class SignatureFileVerifier {
                     if (debug != null) {
                         debug.println("Signature File: Manifest digest " +
                                 algorithm);
-                        debug.println( "  sigfile  " + toHex(expectedHash));
-                        debug.println( "  computed " + toHex(computedHash));
+                        debug.println( "  sigfile  " + HexFormat.of().formatHex(expectedHash));
+                        debug.println( "  computed " + HexFormat.of().formatHex(computedHash));
                         debug.println();
                     }
 
@@ -546,8 +569,8 @@ public class SignatureFileVerifier {
                      debug.println("Signature File: " +
                                         "Manifest Main Attributes digest " +
                                         digest.getAlgorithm());
-                     debug.println( "  sigfile  " + toHex(expectedHash));
-                     debug.println( "  computed " + toHex(computedHash));
+                     debug.println( "  sigfile  " + HexFormat.of().formatHex(expectedHash));
+                     debug.println( "  computed " + HexFormat.of().formatHex(computedHash));
                      debug.println();
                     }
 
@@ -654,8 +677,8 @@ public class SignatureFileVerifier {
                         if (debug != null) {
                           debug.println("Signature Block File: " +
                                    name + " digest=" + digest.getAlgorithm());
-                          debug.println("  expected " + toHex(expected));
-                          debug.println("  computed " + toHex(computed));
+                          debug.println("  expected " + HexFormat.of().formatHex(expected));
+                          debug.println("  computed " + HexFormat.of().formatHex(computed));
                           debug.println();
                         }
 
@@ -668,7 +691,7 @@ public class SignatureFileVerifier {
                                computed = mde.digestWorkaround(digest);
                                if (MessageDigest.isEqual(computed, expected)) {
                                    if (debug != null) {
-                                       debug.println("  re-computed " + toHex(computed));
+                                       debug.println("  re-computed " + HexFormat.of().formatHex(computed));
                                        debug.println();
                                    }
                                    workaround = true;
@@ -739,26 +762,6 @@ public class SignatureFileVerifier {
         } else {
             return null;
         }
-    }
-
-    // for the toHex function
-    private static final char[] hexc =
-            {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
-    /**
-     * convert a byte array to a hex string for debugging purposes
-     * @param data the binary data to be converted to a hex string
-     * @return an ASCII hex string
-     */
-
-    static String toHex(byte[] data) {
-
-        StringBuilder sb = new StringBuilder(data.length*2);
-
-        for (int i=0; i<data.length; i++) {
-            sb.append(hexc[(data[i] >>4) & 0x0f]);
-            sb.append(hexc[data[i] & 0x0f]);
-        }
-        return sb.toString();
     }
 
     // returns true if set contains signer

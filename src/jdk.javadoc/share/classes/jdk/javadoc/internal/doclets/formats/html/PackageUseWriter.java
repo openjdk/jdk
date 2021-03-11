@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
@@ -39,9 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -60,8 +59,6 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
     final PackageElement packageElement;
     final SortedMap<String, Set<TypeElement>> usingPackageToUsedClasses = new TreeMap<>();
-    final String packageUseTableSummary;
-    private final Navigation navBar;
 
     /**
      * Constructor.
@@ -96,10 +93,6 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 }
             }
         }
-
-        packageUseTableSummary = resources.getText("doclet.Use_Table_Summary",
-                resources.getText("doclet.packages"));
-        this.navBar = new Navigation(packageElement, configuration, PageMode.USE, path);
     }
 
     /**
@@ -126,16 +119,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         HtmlTree body = getPackageUseHeader();
         Content mainContent = new ContentBuilder();
         if (usingPackageToUsedClasses.isEmpty()) {
-            mainContent.add(contents.getContent("doclet.ClassUse_No.usage.of.0", utils.getPackageName(packageElement)));
+            mainContent.add(contents.getContent("doclet.ClassUse_No.usage.of.0", getLocalizedPackageName(packageElement)));
         } else {
             addPackageUse(mainContent);
         }
         bodyContents.addMainContent(mainContent);
-        HtmlTree footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
-        bodyContents.setFooter(footer);
+        bodyContents.setFooter(getFooter());
         body.add(bodyContents);
         printHtmlDocument(null,
                 getDescription("use", packageElement),
@@ -164,15 +153,15 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void addPackageList(Content contentTree) {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
-                getPackageLink(packageElement, utils.getPackageName(packageElement)));
-        Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
+                getPackageLink(packageElement, getLocalizedPackageName(packageElement)));
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (String pkgname: usingPackageToUsedClasses.keySet()) {
             PackageElement pkg = utils.elementUtils.getPackageElement(pkgname);
-            Content packageLink = links.createLink(getPackageAnchorName(pkg),
-                    new StringContent(utils.getPackageName(pkg)));
+            Content packageLink = links.createLink(htmlIds.forPackage(pkg),
+                    getLocalizedPackageName(pkg));
             Content summary = new ContentBuilder();
             if (pkg != null && !pkg.isUnnamed()) {
                 addSummaryComment(pkg, summary);
@@ -197,22 +186,20 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
             HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail)
-                    .setId(getPackageAnchorName(usingPackage));
-            String tableSummary = resources.getText("doclet.Use_Table_Summary",
-                                                        resources.getText("doclet.classes"));
+                    .setId(htmlIds.forPackage(usingPackage));
             Content caption = contents.getContent(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
-                    getPackageLink(packageElement, utils.getPackageName(packageElement)),
-                    getPackageLink(usingPackage, utils.getPackageName(usingPackage)));
-            Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
+                    getPackageLink(packageElement, getLocalizedPackageName(packageElement)),
+                    getPackageLink(usingPackage, getLocalizedPackageName(usingPackage)));
+            Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(classTableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
             for (TypeElement te : usingPackageToUsedClasses.get(packageName)) {
                 DocPath dp = pathString(te,
                         DocPaths.CLASS_USE.resolve(docPaths.forName(te)));
-                Content stringContent = new StringContent(utils.getSimpleName(te));
-                Content typeContent = links.createLink(dp.fragment(getPackageAnchorName(usingPackage)),
+                Content stringContent = Text.of(utils.getSimpleName(te));
+                Content typeContent = links.createLink(dp.fragment(htmlIds.forPackage(usingPackage).name()),
                         stringContent);
                 Content summary = new ContentBuilder();
                 addIndexComment(te, summary);
@@ -236,13 +223,6 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         String name = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
         String title = resources.getText("doclet.Window_ClassUse_Header", packageText, name);
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                contents.moduleLabel);
-        navBar.setNavLinkModule(linkContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", packageText));
         headingContent.add(new HtmlTree(TagName.BR));
@@ -250,8 +230,16 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headingContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        bodyContents.setHeader(headerContent)
+        bodyContents.setHeader(getHeader(PageMode.USE, packageElement))
                 .addMainContent(div);
         return bodyTree;
+    }
+
+    @Override
+    protected Navigation getNavBar(PageMode pageMode, Element element) {
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
+                contents.moduleLabel);
+        return super.getNavBar(pageMode, element)
+                .setNavLinkModule(linkContent);
     }
 }

@@ -375,7 +375,7 @@ public class SSLFlowDelegate {
             scheduler.stop();
         }
 
-        AtomicInteger count = new AtomicInteger(0);
+        AtomicInteger count = new AtomicInteger();
 
         // minimum number of bytes required to call unwrap.
         // Usually this is 0, unless there was a buffer underflow.
@@ -1021,14 +1021,10 @@ public class SSLFlowDelegate {
         StringBuilder sb = new StringBuilder();
         int x = s & ~TASK_BITS;
         switch (x) {
-            case NOT_HANDSHAKING:
-                sb.append(" NOT_HANDSHAKING ");
-                break;
-            case HANDSHAKING:
-                sb.append(" HANDSHAKING ");
-                break;
-            default:
-                throw new InternalError();
+            case NOT_HANDSHAKING    -> sb.append(" NOT_HANDSHAKING ");
+            case HANDSHAKING        -> sb.append(" HANDSHAKING ");
+
+            default -> throw new InternalError();
         }
         if ((s & DOING_TASKS) > 0)
             sb.append("|DOING_TASKS");

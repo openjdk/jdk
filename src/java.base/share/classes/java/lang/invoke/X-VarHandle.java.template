@@ -45,12 +45,12 @@ final class VarHandle$Type$s {
 #end[Object]
 
         FieldInstanceReadOnly(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadOnly.FORM);
+            this(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadOnly.FORM, false);
         }
 
         protected FieldInstanceReadOnly(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType},
-                                        VarForm form) {
-            super(form);
+                                        VarForm form, boolean exact) {
+            super(form, exact);
             this.fieldOffset = fieldOffset;
             this.receiverType = receiverType;
 #if[Object]
@@ -59,8 +59,22 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        final MethodType accessModeTypeUncached(AccessMode accessMode) {
-            return accessMode.at.accessModeType(receiverType, {#if[Object]?fieldType:$type$.class});
+        public FieldInstanceReadOnly withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, true);
+        }
+
+        @Override
+        public FieldInstanceReadOnly withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, false);
+        }
+
+        @Override
+        final MethodType accessModeTypeUncached(AccessType at) {
+            return at.accessModeType(receiverType, {#if[Object]?fieldType:$type$.class});
         }
 
         @Override
@@ -110,7 +124,26 @@ final class VarHandle$Type$s {
     static final class FieldInstanceReadWrite extends FieldInstanceReadOnly {
 
         FieldInstanceReadWrite(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            super(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadWrite.FORM);
+            this(receiverType, fieldOffset{#if[Object]?, fieldType}, false);
+        }
+
+        private FieldInstanceReadWrite(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType},
+                                       boolean exact) {
+            super(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadWrite.FORM, exact);
+        }
+
+        @Override
+        public FieldInstanceReadWrite withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, true);
+        }
+
+        @Override
+        public FieldInstanceReadWrite withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
         @ForceInline
@@ -356,17 +389,31 @@ final class VarHandle$Type$s {
 #end[Object]
 
         FieldStaticReadOnly(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadOnly.FORM);
+            this(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadOnly.FORM, false);
         }
 
         protected FieldStaticReadOnly(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
-                                      VarForm form) {
-            super(form);
+                                      VarForm form, boolean exact) {
+            super(form, exact);
             this.base = base;
             this.fieldOffset = fieldOffset;
 #if[Object]
             this.fieldType = fieldType;
 #end[Object]
+        }
+
+        @Override
+        public FieldStaticReadOnly withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, true);
+        }
+
+        @Override
+        public FieldStaticReadOnly withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, false);
         }
 
         @Override
@@ -385,8 +432,8 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        final MethodType accessModeTypeUncached(AccessMode accessMode) {
-            return accessMode.at.accessModeType(null, {#if[Object]?fieldType:$type$.class});
+        final MethodType accessModeTypeUncached(AccessType at) {
+            return at.accessModeType(null, {#if[Object]?fieldType:$type$.class});
         }
 
         @ForceInline
@@ -423,7 +470,26 @@ final class VarHandle$Type$s {
     static final class FieldStaticReadWrite extends FieldStaticReadOnly {
 
         FieldStaticReadWrite(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            super(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.FORM);
+            this(base, fieldOffset{#if[Object]?, fieldType}, false);
+        }
+
+        private FieldStaticReadWrite(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
+                                     boolean exact) {
+            super(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.FORM, exact);
+        }
+
+        @Override
+        public FieldStaticReadWrite withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, true);
+        }
+
+        @Override
+        public FieldStaticReadWrite withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
         @ForceInline
@@ -670,13 +736,31 @@ final class VarHandle$Type$s {
 #end[Object]
 
         Array(int abase, int ashift{#if[Object]?, Class<?> arrayType}) {
-            super(Array.FORM);
+            this(abase, ashift{#if[Object]?, arrayType}, false);
+        }
+
+        private Array(int abase, int ashift{#if[Object]?, Class<?> arrayType}, boolean exact) {
+            super(Array.FORM, exact);
             this.abase = abase;
             this.ashift = ashift;
 #if[Object]
             this.arrayType = {#if[Object]?arrayType:$type$[].class};
             this.componentType = arrayType.getComponentType();
 #end[Object]
+        }
+
+        @Override
+        public Array withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new Array(abase, ashift{#if[Object]?, arrayType}, true);
+        }
+
+        @Override
+        public Array withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new Array(abase, ashift{#if[Object]?, arrayType}, false);
         }
 
         @Override
@@ -689,8 +773,8 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        final MethodType accessModeTypeUncached(AccessMode accessMode) {
-            return accessMode.at.accessModeType({#if[Object]?arrayType:$type$[].class}, {#if[Object]?arrayType.getComponentType():$type$.class}, int.class);
+        final MethodType accessModeTypeUncached(AccessType at) {
+            return at.accessModeType({#if[Object]?arrayType:$type$[].class}, {#if[Object]?arrayType.getComponentType():$type$.class}, int.class);
         }
 
 #if[Object]

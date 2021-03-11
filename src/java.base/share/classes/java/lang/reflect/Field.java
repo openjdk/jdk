@@ -199,6 +199,8 @@ class Field extends AccessibleObject implements Member {
      * be used to decode the modifiers.
      *
      * @see Modifier
+     * @jls 8.3 Field Declarations
+     * @jls 9.3 Field (Constant) Declarations
      */
     public int getModifiers() {
         return modifiers;
@@ -206,11 +208,12 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Returns {@code true} if this field represents an element of
-     * an enumerated type; returns {@code false} otherwise.
+     * an enumerated class; returns {@code false} otherwise.
      *
      * @return {@code true} if and only if this field represents an element of
-     * an enumerated type.
+     * an enumerated class.
      * @since 1.5
+     * @jls 8.9.1 Enum Constants
      */
     public boolean isEnumConstant() {
         return (getModifiers() & Modifier.ENUM) != 0;
@@ -258,7 +261,7 @@ class Field extends AccessibleObject implements Member {
      *     <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the generic type
      *     signature of the underlying field refers to a non-existent
-     *     type declaration
+     *     class or interface declaration
      * @throws MalformedParameterizedTypeException if the generic
      *     signature of the underlying field refers to a parameterized type
      *     that cannot be instantiated for any reason
@@ -279,8 +282,7 @@ class Field extends AccessibleObject implements Member {
      * and type.
      */
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof Field) {
-            Field other = (Field)obj;
+        if (obj instanceof Field other) {
             return (getDeclaringClass() == other.getDeclaringClass())
                 && (getName() == other.getName())
                 && (getType() == other.getType());

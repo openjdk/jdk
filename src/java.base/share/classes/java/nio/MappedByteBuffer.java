@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.util.Objects;
 
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
+import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.misc.Unsafe;
 
 
 /**
@@ -87,6 +89,8 @@ public abstract class MappedByteBuffer
     // determines the behavior of force operations.
     private final boolean isSync;
 
+    static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+
     // This should only be invoked by the DirectByteBuffer constructors
     //
     MappedByteBuffer(int mark, int pos, int lim, int cap, // package-private
@@ -129,7 +133,7 @@ public abstract class MappedByteBuffer
 
                     @Override
                     public void unmap() {
-                        throw new UnsupportedOperationException();
+                        Unsafe.getUnsafe().invokeCleaner(MappedByteBuffer.this);
                     }
                 } : null;
     }
@@ -173,7 +177,7 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return true;
         }
-        return MappedMemoryUtils.isLoaded(address, isSync, capacity());
+        return SCOPED_MEMORY_ACCESS.isLoaded(scope(), address, isSync, capacity());
     }
 
     /**
@@ -191,7 +195,7 @@ public abstract class MappedByteBuffer
             return this;
         }
         try {
-            MappedMemoryUtils.load(address, isSync, capacity());
+            SCOPED_MEMORY_ACCESS.load(scope(), address, isSync, capacity());
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -280,7 +284,7 @@ public abstract class MappedByteBuffer
         if ((address != 0) && (limit != 0)) {
             // check inputs
             Objects.checkFromIndexSize(index, length, limit);
-            MappedMemoryUtils.force(fd, address, isSync, index, length);
+            SCOPED_MEMORY_ACCESS.force(scope(), fd, address, isSync, index, length);
         }
         return this;
     }

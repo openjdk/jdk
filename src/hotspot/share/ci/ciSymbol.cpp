@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,30 +24,24 @@
 
 #include "precompiled.hpp"
 #include "ci/ciSymbol.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/oopFactory.hpp"
+#include "prims/methodHandles.hpp"
 
 // ------------------------------------------------------------------
 // ciSymbol::ciSymbol
-//
-// Preallocated symbol variant.  Used with symbols from vmSymbols.
-ciSymbol::ciSymbol(Symbol* s, vmSymbols::SID sid)
+ciSymbol::ciSymbol(Symbol* s, vmSymbolID sid)
   : _symbol(s), _sid(sid)
 {
   assert(_symbol != NULL, "adding null symbol");
   _symbol->increment_refcount();  // increment ref count
-  assert(sid_ok(), "must be in vmSymbols");
+  assert(sid_ok(), "sid must be consistent with vmSymbols");
 }
 
-// Normal case for non-famous symbols.
-ciSymbol::ciSymbol(Symbol* s)
-  : _symbol(s), _sid(vmSymbols::NO_SID)
-{
-  assert(_symbol != NULL, "adding null symbol");
-  _symbol->increment_refcount();  // increment ref count
-  assert(sid_ok(), "must not be in vmSymbols");
-}
+DEBUG_ONLY(bool ciSymbol::sid_ok() { return vmSymbols::find_sid(get_symbol()) == _sid; })
 
 // ciSymbol
 //

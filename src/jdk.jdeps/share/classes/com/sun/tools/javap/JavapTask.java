@@ -1024,7 +1024,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     private Diagnostic<JavaFileObject> createDiagnostic(
             final Diagnostic.Kind kind, final String key, final Object... args) {
-        return new Diagnostic<JavaFileObject>() {
+        return new Diagnostic<>() {
             public Kind getKind() {
                 return kind;
             }

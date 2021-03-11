@@ -44,16 +44,15 @@
  * @comment create attach010Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach010.attach010Agent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach010.attach010Agent00
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach010Agent00.jar ${test.src}/attach010Agent00.mf
  *      nsk/jvmti/AttachOnDemand/attach010/attach010Agent00.class
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -ja attach010Agent00.jar
  */

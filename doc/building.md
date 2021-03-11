@@ -3,11 +3,11 @@
 ## TL;DR (Instructions for the Impatient)
 
 If you are eager to try out building the JDK, these simple steps works most of
-the time. They assume that you have installed Mercurial (and Cygwin if running
+the time. They assume that you have installed Git (and Cygwin if running
 on Windows) and cloned the top-level JDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `hg clone http://hg.openjdk.java.net/jdk/jdk`
+    `git clone https://git.openjdk.java.net/jdk/`
 
  2. [Run configure](#running-configure): \
     `bash configure`
@@ -47,14 +47,14 @@ JDK.
 
 Make sure you are getting the correct version. As of JDK 10, the source is no
 longer split into separate repositories so you only need to clone one single
-repository. At the [OpenJDK Mercurial server](http://hg.openjdk.java.net/) you
+repository. At the [OpenJDK Git site](https://git.openjdk.java.net/) you
 can see a list of all available repositories. If you want to build an older version,
-e.g. JDK 8, it is recommended that you get the `jdk8u` forest, which contains
-incremental updates, instead of the `jdk8` forest, which was frozen at JDK 8 GA.
+e.g. JDK 11, it is recommended that you get the `jdk11u` repo, which contains
+incremental updates, instead of the `jdk11` repo, which was frozen at JDK 11 GA.
 
-If you are new to Mercurial, a good place to start is the [Mercurial Beginner's
-Guide](http://www.mercurial-scm.org/guide). The rest of this document assumes a
-working knowledge of Mercurial.
+If you are new to Git, a good place to start is the book [Pro
+Git](https://git-scm.com/book/en/v2). The rest of this document
+assumes a working knowledge of Git.
 
 ### Special Considerations
 
@@ -89,9 +89,21 @@ on where and how to check out the source code.
         directory. This is especially important if your user name contains
         spaces and/or mixed upper and lower case letters.
 
-      * Clone the JDK repository using the Cygwin command line `hg` client
-        as instructed in this document. That is, do *not* use another Mercurial
-        client such as TortoiseHg.
+      * You need to install a git client. You have two choices, Cygwin git or
+        Git for Windows. Unfortunately there are pros and cons with each choice.
+
+        * The Cygwin `git` client has no line ending issues and understands
+          Cygwin paths (which are used throughout the JDK build system).
+          However, it does not currently work well with the Skara CLI tooling.
+          Please see the [Skara wiki on Git clients](
+          https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git) for
+          up-to-date information about the Skara git client support.
+
+        * The [Git for Windows](https://gitforwindows.org) client has issues
+          with line endings, and do not understand Cygwin paths. It does work
+          well with the Skara CLI tooling, however. To alleviate the line ending
+          problems, make sure you set `core.autocrlf` to `false` (this is asked
+          during installation).
 
     Failure to follow this procedure might result in hard-to-debug build
     problems.
@@ -173,7 +185,7 @@ likely be possible to support in a future version but that would require effort
 to implement.)
 
 Internally in the build system, all paths are represented as Unix-style paths,
-e.g. `/cygdrive/c/hg/jdk9/Makefile` rather than `C:\hg\jdk9\Makefile`. This
+e.g. `/cygdrive/c/git/jdk/Makefile` rather than `C:\git\jdk\Makefile`. This
 rule also applies to input to the build system, e.g. in arguments to
 `configure`. So, use `--with-msvcr-dll=/cygdrive/c/msvcr100.dll` rather than
 `--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
@@ -273,6 +285,13 @@ For rpm-based distributions (Fedora, Red Hat, etc), try this:
 sudo yum groupinstall "Development Tools"
 ```
 
+For Alpine Linux, aside from basic tooling, install the GNU versions of some
+programs:
+
+```
+sudo apk add build-base bash grep zip
+```
+
 ### AIX
 
 Please consult the AIX section of the [Supported Build Platforms](
@@ -302,9 +321,9 @@ issues.
 
  Operating system   Toolchain version
  ------------------ -------------------------------------------------------
- Linux              gcc 9.2.0
+ Linux              gcc 10.2.0
  macOS              Apple Xcode 10.1 (using clang 10.0.0)
- Windows            Microsoft Visual Studio 2019 update 16.5.3
+ Windows            Microsoft Visual Studio 2019 update 16.7.2
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
@@ -316,7 +335,7 @@ features that it does support.
 The minimum accepted version of gcc is 5.0. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
-The JDK is currently known to be able to compile with at least version 9.2 of
+The JDK is currently known to be able to compile with at least version 10.2 of
 gcc.
 
 In general, any version between these two should be usable.
@@ -362,6 +381,9 @@ version of Visual Studio is 2019.
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
 setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
+
+If you have Visual Studio installed but `configure` fails to detect it, it may
+be because of [spaces in path](#spaces-in-path).
 
 ### IBM XL C/C++
 
@@ -431,6 +453,7 @@ rather than bundling the JDK's own copy.
     libfreetype6-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     freetype-devel`.
+  * To install on Alpine Linux, try running `sudo apk add freetype-dev`.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
@@ -445,6 +468,7 @@ your operating system.
     libcups2-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     cups-devel`.
+  * To install on Alpine Linux, try running `sudo apk add cups-dev`.
 
 Use `--with-cups=<path>` if `configure` does not properly locate your CUPS
 files.
@@ -458,6 +482,8 @@ Linux.
     libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel`.
+  * To install on Alpine Linux, try running `sudo apk add libx11-dev
+    libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev`.
 
 Use `--with-x=<path>` if `configure` does not properly locate your X11 files.
 
@@ -470,6 +496,7 @@ required on Linux. At least version 0.9.1 of ALSA is required.
     libasound2-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     alsa-lib-devel`.
+  * To install on Alpine Linux, try running `sudo apk add alsa-lib-dev`.
 
 Use `--with-alsa=<path>` if `configure` does not properly locate your ALSA
 files.
@@ -484,6 +511,7 @@ Hotspot.
     libffi-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     libffi-devel`.
+  * To install on Alpine Linux, try running `sudo apk add libffi-dev`.
 
 Use `--with-libffi=<path>` if `configure` does not properly locate your libffi
 files.
@@ -499,6 +527,7 @@ platforms. At least version 2.69 is required.
     autoconf`.
   * To install on an rpm-based Linux, try running `sudo yum install
     autoconf`.
+  * To install on Alpine Linux, try running `sudo apk add autoconf`.
   * To install on macOS, try running `brew install autoconf`.
   * To install on Windows, try running `<path to Cygwin setup>/setup-x86_64 -q
     -P autoconf`.
@@ -627,7 +656,7 @@ features, use `bash configure --help=short` instead.)
 On Linux, BSD and AIX, it is possible to override where Java by default
 searches for runtime/JNI libraries. This can be useful in situations where
 there is a special shared directory for system JNI libraries. This setting
-can in turn be overriden at runtime by setting the `java.library.path` property.
+can in turn be overridden at runtime by setting the `java.library.path` property.
 
   * `--with-jni-libpath=<path>` - Use the specified path as a default
   when searching for runtime libraries.
@@ -693,7 +722,7 @@ hard to use properly. Therefore, `configure` will print a warning if this is
 detected.
 
 However, there are a few `configure` variables, known as *control variables*
-that are supposed to be overriden on the command line. These are variables that
+that are supposed to be overridden on the command line. These are variables that
 describe the location of tools needed by the build, like `MAKE` or `GREP`. If
 any such variable is specified, `configure` will use that value instead of
 trying to autodetect the tool. For instance, `bash configure
@@ -773,7 +802,7 @@ broken build. Unless you're well versed in the build system, this is hard to
 use properly. Therefore, `make` will print a warning if this is detected.
 
 However, there are a few `make` variables, known as *control variables* that
-are supposed to be overriden on the command line. These make up the "make time"
+are supposed to be overridden on the command line. These make up the "make time"
 configuration, as opposed to the "configure time" configuration.
 
 #### General Make Control Variables
@@ -1072,23 +1101,39 @@ for foreign architectures with native compilation speed.
 For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Install cross-compiler on the *build* system:
-```
-apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
-```
+    ```
+    apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
+    ```
 
   * Create chroot on the *build* system, configuring it for *target* system:
-```
-sudo qemu-debootstrap --arch=arm64 --verbose \
-       --include=fakeroot,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng12-dev \
-       --resolve-deps jessie /chroots/arm64 http://httpredir.debian.org/debian/
-```
+    ```
+    sudo qemu-debootstrap \
+      --arch=arm64 \
+      --verbose \
+      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev \
+      --resolve-deps \
+      buster \
+      ~/sysroot-arm64 \
+      http://httpredir.debian.org/debian/
+    ```
+
+  * Make sure the symlinks inside the newly created chroot point to proper locations:
+    ```
+    sudo chroot ~/sysroot-arm64 symlinks -cr .
+    ```
 
   * Configure and build with newly created chroot as sysroot/toolchain-path:
-```
-CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure --openjdk-target=aarch64-linux-gnu --with-sysroot=/chroots/arm64/ --with-toolchain-path=/chroots/arm64/
-make images
-ls build/linux-aarch64-normal-server-release/
-```
+    ```
+    CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure \
+     --openjdk-target=aarch64-linux-gnu \
+     --with-sysroot=~/sysroot-arm64 \
+     --with-toolchain-path=~/sysroot-arm64 \
+     --with-freetype-lib=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/ \
+     --with-freetype-include=~/sysroot-arm64/usr/include/freetype2/ \
+     --x-libraries=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/
+    make images
+    ls build/linux-aarch64-server-release/
+    ```
 
 The build does not create new files in that chroot, so it can be reused for multiple builds
 without additional cleanup.
@@ -1112,6 +1157,25 @@ useful to set the ABI profile. A number of pre-defined ABI profiles are
 available using `--with-abi-profile`: arm-vfp-sflt, arm-vfp-hflt, arm-sflt,
 armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer
 properly supported by the JDK.
+
+### Building for musl
+
+Just like it's possible to cross-compile for a different CPU, it's possible to
+cross-compile for musl libc on a glibc-based *build* system.
+A devkit suitable for most target CPU architectures can be obtained from
+[musl.cc](https://musl.cc). After installing the required packages in the
+sysroot, configure the build with `--openjdk-target`:
+
+```
+sh ./configure --with-jvm-variants=server \
+--with-boot-jdk=$BOOT_JDK \
+--with-build-jdk=$BUILD_JDK \
+--openjdk-target=x86_64-unknown-linux-musl \
+--with-devkit=$DEVKIT \
+--with-sysroot=$SYSROOT
+```
+
+and run `make` normally.
 
 ### Verifying the Build
 
@@ -1237,14 +1301,14 @@ ERROR: Build failed for target 'hotspot' in configuration 'linux-x64' (exit code
 
 === Output from failing command(s) repeated here ===
 * For target hotspot_variant-server_libjvm_objs_psMemoryPool.o:
-/localhome/hg/jdk9-sandbox/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: 'failhere' does not name a type
+/localhome/git/jdk-sandbox/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: 'failhere' does not name a type
    ... (rest of output omitted)
 
-* All command lines available in /localhome/hg/jdk9-sandbox/build/linux-x64/make-support/failure-logs.
+* All command lines available in /localhome/git/jdk-sandbox/build/linux-x64/make-support/failure-logs.
 === End of repeated output ===
 
 === Make failed targets repeated here ===
-lib/CompileJvm.gmk:207: recipe for target '/localhome/hg/jdk9-sandbox/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o' failed
+lib/CompileJvm.gmk:207: recipe for target '/localhome/git/jdk-sandbox/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o' failed
 make/Main.gmk:263: recipe for target 'hotspot-server-libs' failed
 === End of repeated output ===
 
@@ -1342,7 +1406,7 @@ order. Most issues will be solved at step 1 or 2.
 
  1. Make sure your repository is up-to-date
 
-    Run `hg pull -u` to make sure you have the latest changes.
+    Run `git pull origin master` to make sure you have the latest changes.
 
  2. Clean build results
 
@@ -1367,13 +1431,13 @@ order. Most issues will be solved at step 1 or 2.
     make
     ```
 
- 4. Re-clone the Mercurial repository
+ 4. Re-clone the Git repository
 
-    Sometimes the Mercurial repository gets in a state that causes the product
+    Sometimes the Git repository gets in a state that causes the product
     to be un-buildable. In such a case, the simplest solution is often the
     "sledgehammer approach": delete the entire repository, and re-clone it.
     If you have local changes, save them first to a different location using
-    `hg export`.
+    `git format-patch`.
 
 ### Specific Build Issues
 
@@ -1405,6 +1469,15 @@ This can be a sign of a Cygwin problem. See the information about solving
 problems in the [Cygwin](#cygwin) section. Rebooting the computer might help
 temporarily.
 
+#### Spaces in Path
+
+On Windows, when configuring, `fixpath.sh` may report that some directory
+names have spaces. Usually, it assumes those directories have
+[short paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
+You can run `fsutil file setshortname` in `cmd` on certain directories, such as
+`Microsoft Visual Studio` or `Windows Kits`, to assign arbitrary short paths so
+`configure` can access them.
+
 ### Getting Help
 
 If none of the suggestions in this document helps you, or if you find what you
@@ -1417,33 +1490,6 @@ contact the Adoption Group. See the section on [Contributing to OpenJDK](
 #contributing-to-openjdk) for more information.
 
 ## Hints and Suggestions for Advanced Users
-
-### Setting Up a Repository for Pushing Changes (defpath)
-
-To help you prepare a proper push path for a Mercurial repository, there exists
-a useful tool known as [defpath](
-http://openjdk.java.net/projects/code-tools/defpath). It will help you setup a
-proper push path for pushing changes to the JDK.
-
-Install the extension by cloning
-`http://hg.openjdk.java.net/code-tools/defpath` and updating your `.hgrc` file.
-Here's one way to do this:
-
-```
-cd ~
-mkdir hg-ext
-cd hg-ext
-hg clone http://hg.openjdk.java.net/code-tools/defpath
-cat << EOT >> ~/.hgrc
-[extensions]
-defpath=~/hg-ext/defpath/defpath.py
-EOT
-```
-
-You can now setup a proper push path using:
-```
-hg defpath -d -u <your OpenJDK username>
-```
 
 ### Bash Completion
 
@@ -1510,8 +1556,8 @@ update. This might speed up the build, but comes at the risk of an incorrect
 build result. This is only recommended if you know what you're doing.
 
 From time to time, you will also need to modify the command line to `configure`
-due to changes. Use `make print-configure` to show the command line used for
-your current configuration.
+due to changes. Use `make print-configuration` to show the command line used
+for your current configuration.
 
 ### Using Fine-Grained Make Targets
 
@@ -1584,16 +1630,6 @@ pattern that will be used to limit the set of files being recompiled. For
 instance, `make java.base JDK_FILTER=javax/crypto` (or, to combine methods,
 `make java.base-java-only JDK_FILTER=javax/crypto`) will limit the compilation
 to files in the `javax.crypto` package.
-
-### Learn About Mercurial
-
-To become an efficient JDK developer, it is recommended that you invest in
-learning Mercurial properly. Here are some links that can get you started:
-
-  * [Mercurial for git users](http://www.mercurial-scm.org/wiki/GitConcepts)
-  * [The official Mercurial tutorial](http://www.mercurial-scm.org/wiki/Tutorial)
-  * [hg init](http://hginit.com/)
-  * [Mercurial: The Definitive Guide](http://hgbook.red-bean.com/read/)
 
 ## Understanding the Build System
 

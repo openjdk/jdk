@@ -28,6 +28,7 @@ package gc;
  * @key randomness
  * @summary Tests that all SoftReferences has been cleared at time of OOM.
  * @requires vm.gc != "Z"
+ * @requires vm.gc != "Shenandoah"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main/othervm -Xmx128m gc.TestSoftReferencesBehaviorOnOOME 512 2k
