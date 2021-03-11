@@ -709,15 +709,7 @@ class LoadVectorNode : public LoadNode {
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
   virtual BasicType memory_type() const { return T_VOID; }
-  virtual int memory_size() const {
-    if (type()->isa_vect() != NULL) {
-      return vect_type()->length_in_bytes();
-    } else {
-      // It's possible to be non-vector type during C2's optimization (e.g., Type::TOP).
-      // Return 0 for this case.
-      return 0;
-    }
-  }
+  virtual int memory_size() const { return vect_type()->length_in_bytes(); }
 
   virtual int store_Opcode() const { return Op_StoreVector; }
 
@@ -761,15 +753,7 @@ class StoreVectorNode : public StoreNode {
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
   virtual BasicType memory_type() const { return T_VOID; }
-  virtual int memory_size() const {
-    if (in(MemNode::ValueIn)->bottom_type()->isa_vect() != NULL) {
-      return vect_type()->length_in_bytes();
-    } else {
-      // It's possible to be non-vector type during C2's optimization (e.g., Type::TOP).
-      // Return 0 for this case.
-      return 0;
-    }
-  }
+  virtual int memory_size() const { return vect_type()->length_in_bytes(); }
 
   static StoreVectorNode* make(int opc, Node* ctl, Node* mem,
                                Node* adr, const TypePtr* atyp, Node* val,
