@@ -939,29 +939,38 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static Locale getDefault(Locale.Category category) {
         // do not synchronize this method - see 4071298
-        switch (category) {
-        case DISPLAY:
-            if (defaultDisplayLocale == null) {
-                synchronized(Locale.class) {
-                    if (defaultDisplayLocale == null) {
-                        defaultDisplayLocale = initDefault(category);
-                    }
-                }
+        Objects.requireNonNull(category);
+        if (category == Category.DISPLAY) {
+            Locale loc = defaultDisplayLocale; // volatile read
+            if (loc == null) {
+                loc = getDisplayLocale();
             }
-            return defaultDisplayLocale;
-        case FORMAT:
-            if (defaultFormatLocale == null) {
-                synchronized(Locale.class) {
-                    if (defaultFormatLocale == null) {
-                        defaultFormatLocale = initDefault(category);
-                    }
-                }
+            return loc;
+        } else {
+            assert category == Category.FORMAT : "Unknown category";
+            Locale loc = defaultFormatLocale; // volatile read
+            if (loc == null) {
+                loc = getFormatLocale();
             }
-            return defaultFormatLocale;
-        default:
-            assert false: "Unknown Category";
+            return loc;
         }
-        return getDefault();
+    }
+
+    private static synchronized Locale getDisplayLocale() {
+        Locale loc = defaultDisplayLocale;
+        if (loc == null) {
+            loc = defaultDisplayLocale = initDefault(Category.DISPLAY);
+        }
+        return loc;
+    }
+
+
+    private static synchronized Locale getFormatLocale() {
+        Locale loc = defaultFormatLocale;
+        if (loc == null) {
+            loc = defaultFormatLocale = initDefault(Category.FORMAT);
+        }
+        return loc;
     }
 
     private static Locale initDefault() {

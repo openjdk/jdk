@@ -43,6 +43,7 @@
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1GCTypes.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -63,7 +64,6 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1UncommitRegionTask.hpp"
 #include "gc/g1/g1VMOperations.hpp"
@@ -93,6 +93,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -1794,12 +1795,9 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Discovery is atomic - i.e. not concurrent.
   //     * Reference discovery will not need a barrier.
 
-  bool mt_processing = ParallelRefProcEnabled && (ParallelGCThreads > 1);
-
   // Concurrent Mark ref processor
   _ref_processor_cm =
     new ReferenceProcessor(&_is_subject_to_discovery_cm,
-                           mt_processing,                                  // mt processing
                            ParallelGCThreads,                              // degree of mt processing
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
                            MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
@@ -1810,7 +1808,6 @@ void G1CollectedHeap::ref_processing_init() {
   // STW ref processor
   _ref_processor_stw =
     new ReferenceProcessor(&_is_subject_to_discovery_stw,
-                           mt_processing,                        // mt processing
                            ParallelGCThreads,                    // degree of mt processing
                            (ParallelGCThreads > 1),              // mt discovery
                            ParallelGCThreads,                    // degree of mt discovery
@@ -2929,7 +2926,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   {
     G1EvacuationInfo evacuation_info;
 
-    _gc_tracer_stw->report_yc_type(collector_state()->yc_type());
+    _gc_tracer_stw->report_yc_phase(collector_state()->young_gc_phase());
 
     GCTraceCPUTime tcpu;
 
@@ -2943,7 +2940,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
     G1MonitoringScope ms(g1mm(),
                          false /* full_gc */,
-                         collector_state()->yc_type() == Mixed /* all_memory_pools_affected */);
+                         collector_state()->young_gc_phase() == Mixed /* all_memory_pools_affected */);
 
     G1HeapTransition heap_transition(this);
 

@@ -39,7 +39,6 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -68,38 +67,38 @@ public class HtmlIds {
     static final HtmlId ALL_CLASSES_TABLE = HtmlId.of("all-classes-table");
     static final HtmlId ALL_MODULES_TABLE = HtmlId.of("all-modules-table");
     static final HtmlId ALL_PACKAGES_TABLE = HtmlId.of("all-packages-table");
-    static final HtmlId ANNOTATION_TYPE_ELEMENT_DETAIL = HtmlId.of("annotation.interface.element.detail");
-    static final HtmlId ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY = HtmlId.of("annotation.interface.optional.element.summary");
-    static final HtmlId ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY = HtmlId.of("annotation.interface.required.element.summary");
-    static final HtmlId CONSTRUCTOR_DETAIL = HtmlId.of("constructor.detail");
-    static final HtmlId CONSTRUCTOR_SUMMARY = HtmlId.of("constructor.summary");
-    static final HtmlId ENUM_CONSTANT_DETAIL = HtmlId.of("enum.constant.detail");
-    static final HtmlId ENUM_CONSTANT_SUMMARY = HtmlId.of("enum.constant.summary");
-    static final HtmlId FIELD_DETAIL = HtmlId.of("field.detail");
-    static final HtmlId FIELD_SUMMARY = HtmlId.of("field.summary");
-    static final HtmlId FOR_REMOVAL = HtmlId.of("forRemoval");
-    static final HtmlId METHOD_DETAIL = HtmlId.of("method.detail");
-    static final HtmlId METHOD_SUMMARY = HtmlId.of("method.summary");
+    static final HtmlId ANNOTATION_TYPE_ELEMENT_DETAIL = HtmlId.of("annotation-interface-element-detail");
+    static final HtmlId ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY = HtmlId.of("annotation-interface-optional-element-summary");
+    static final HtmlId ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY = HtmlId.of("annotation-interface-required-element-summary");
+    static final HtmlId CONSTRUCTOR_DETAIL = HtmlId.of("constructor-detail");
+    static final HtmlId CONSTRUCTOR_SUMMARY = HtmlId.of("constructor-summary");
+    static final HtmlId ENUM_CONSTANT_DETAIL = HtmlId.of("enum-constant-detail");
+    static final HtmlId ENUM_CONSTANT_SUMMARY = HtmlId.of("enum-constant-summary");
+    static final HtmlId FIELD_DETAIL = HtmlId.of("field-detail");
+    static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
+    static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
+    static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
+    static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
-    static final HtmlId MODULES = HtmlId.of("modules.summary");
-    static final HtmlId MODULE_DESCRIPTION = HtmlId.of("module.description");
-    static final HtmlId NAVBAR_TOP = HtmlId.of("navbar.top");
-    static final HtmlId NAVBAR_TOP_FIRSTROW = HtmlId.of("navbar.top.firstrow");
-    static final HtmlId NESTED_CLASS_SUMMARY = HtmlId.of("nested.class.summary");
-    static final HtmlId PACKAGES = HtmlId.of("packages.summary");
-    static final HtmlId PACKAGE_DESCRIPTION = HtmlId.of("package.description");
+    static final HtmlId MODULES = HtmlId.of("modules-summary");
+    static final HtmlId MODULE_DESCRIPTION = HtmlId.of("module-description");
+    static final HtmlId NAVBAR_TOP = HtmlId.of("navbar-top");
+    static final HtmlId NAVBAR_TOP_FIRSTROW = HtmlId.of("navbar-top-firstrow");
+    static final HtmlId NESTED_CLASS_SUMMARY = HtmlId.of("nested-class-summary");
+    static final HtmlId PACKAGES = HtmlId.of("packages-summary");
+    static final HtmlId PACKAGE_DESCRIPTION = HtmlId.of("package-description");
     static final HtmlId PACKAGE_SUMMARY_TABLE = HtmlId.of("package-summary-table");
-    static final HtmlId PROPERTY_DETAIL = HtmlId.of("property.detail");
-    static final HtmlId PROPERTY_SUMMARY = HtmlId.of("property.summary");
-    static final HtmlId SERVICES = HtmlId.of("services.summary");
-    static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip.navbar.top");
-    static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed.package");
+    static final HtmlId PROPERTY_DETAIL = HtmlId.of("property-detail");
+    static final HtmlId PROPERTY_SUMMARY = HtmlId.of("property-summary");
+    static final HtmlId SERVICES = HtmlId.of("services-summary");
+    static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
+    static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
 
-    private static final String ENUM_CONSTANTS_INHERITANCE = "enum.constants.inherited.from.class.";
-    private static final String FIELDS_INHERITANCE = "fields.inherited.from.class.";
-    private static final String METHODS_INHERITANCE = "methods.inherited.from.class.";
-    private static final String NESTED_CLASSES_INHERITANCE = "nested.classes.inherited.from.class.";
-    private static final String PROPERTIES_INHERITANCE = "properties.inherited.from.class.";
+    private static final String ENUM_CONSTANTS_INHERITANCE = "enum-constants-inherited-from-class-";
+    private static final String FIELDS_INHERITANCE = "fields-inherited-from-class-";
+    private static final String METHODS_INHERITANCE = "methods-inherited-from-class-";
+    private static final String NESTED_CLASSES_INHERITANCE = "nested-classes-inherited-from-class-";
+    private static final String PROPERTIES_INHERITANCE = "properties-inherited-from-class-";
 
     /**
      * Creates a factory for element-specific ids.
@@ -356,7 +355,7 @@ public class HtmlIds {
      * @return the id
      */
     static HtmlId forLine(int lineNumber) {
-        return HtmlId.of("line." + lineNumber);
+        return HtmlId.of("line-" + lineNumber);
     }
 
     /**
@@ -405,16 +404,16 @@ public class HtmlIds {
             case PACKAGE -> "package";
             case INTERFACE -> "interface";
             case CLASS -> "class";
-            case ENUM -> "enum.class";
+            case ENUM -> "enum-class";
             case EXCEPTION -> "exception";
             case ERROR -> "error";
-            case ANNOTATION_TYPE -> "annotation.interface";
+            case ANNOTATION_TYPE -> "annotation-interface";
             case FIELD -> "field";
             case METHOD -> "method";
             case CONSTRUCTOR -> "constructor";
-            case ENUM_CONSTANT -> "enum.constant";
-            case ANNOTATION_TYPE_MEMBER -> "annotation.interface.member";
-            case RECORD_CLASS -> "record.class";
+            case ENUM_CONSTANT -> "enum-constant";
+            case ANNOTATION_TYPE_MEMBER -> "annotation-interface-member";
+            case RECORD_CLASS -> "record-class";
         });
     }
 

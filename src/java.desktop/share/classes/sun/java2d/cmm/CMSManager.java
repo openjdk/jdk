@@ -92,33 +92,19 @@ public final class CMSManager {
             return p;
         }
 
-        public int getProfileSize(Profile p) {
-            System.err.print(cName + ".getProfileSize(ID=" + p + ")");
-            int size = tcmm.getProfileSize(p);
-            System.err.println("=" + size);
-            return size;
-        }
-
-        public void getProfileData(Profile p, byte[] data) {
+        public byte[] getProfileData(Profile p) {
             System.err.print(cName + ".getProfileData(ID=" + p + ") ");
+            byte[] data = tcmm.getProfileData(p);
             System.err.println("requested " + data.length + " byte(s)");
-            tcmm.getProfileData(p, data);
+            return data;
         }
 
-        public int getTagSize(Profile p, int tagSignature) {
-            System.err.printf(cName + ".getTagSize(ID=%x, TagSig=%s)",
-                              p, signatureToString(tagSignature));
-            int size = tcmm.getTagSize(p, tagSignature);
-            System.err.println("=" + size);
-            return size;
-        }
-
-        public void getTagData(Profile p, int tagSignature,
-                               byte[] data) {
+        public byte[] getTagData(Profile p, int tagSignature) {
             System.err.printf(cName + ".getTagData(ID=%x, TagSig=%s)",
                               p, signatureToString(tagSignature));
+            byte[] data = tcmm.getTagData(p, tagSignature);
             System.err.println(" requested " + data.length + " byte(s)");
-            tcmm.getTagData(p, tagSignature, data);
+            return data;
         }
 
         public void setTagData(Profile p, int tagSignature,
