@@ -23,6 +23,8 @@
                         <publicPackages>
                           <publicPackage>com.sun.hotspot.igv.data</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.data.services</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.data.serialization</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.settings</publicPackage>
                         </publicPackages>
                     </configuration>
                 </plugin>
@@ -53,6 +55,7 @@
         <module>Util</module>
         <module>Layout</module>
         <module>Difference</module>
+        <module>NetworkConnection</module>
     </modules>
 
     <properties>
