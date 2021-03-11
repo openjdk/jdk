@@ -37,23 +37,23 @@
 class G1HeapRegionTypeConstant : public JfrSerializer {
 public:
   void serialize(JfrCheckpointWriter& writer) {
-  static const u4 nof_entries = G1HeapRegionTraceType::G1HeapRegionTypeEndSentinel;
-  writer.write_count(nof_entries);
-  for (u4 i = 0; i < nof_entries; ++i) {
-    writer.write_key(i);
-    writer.write(G1HeapRegionTraceType::to_string((G1HeapRegionTraceType::Type)i));
+    static const u4 nof_entries = G1HeapRegionTraceType::G1HeapRegionTypeEndSentinel;
+    writer.write_count(nof_entries);
+    for (u4 i = 0; i < nof_entries; ++i) {
+      writer.write_key(i);
+      writer.write(G1HeapRegionTraceType::to_string((G1HeapRegionTraceType::Type)i));
+    }
   }
-}
 };
 
 class G1YCTypeConstant : public JfrSerializer {
 public:
   void serialize(JfrCheckpointWriter& writer) {
-    static const u4 nof_entries = G1GCPauseTypeEndSentinel;
+    static const u4 nof_entries = static_cast<u4>(EnumRange<G1GCPauseType>{}.size());
     writer.write_count(nof_entries);
-    for (u4 i = 0; i < nof_entries; ++i) {
-      writer.write_key(i);
-      writer.write(G1GCPauseTypeHelper::to_string((G1GCPauseType)i));
+    for (auto index : EnumRange<G1GCPauseType>{}) {
+      writer.write_key(static_cast<uint>(index));
+      writer.write(G1GCPauseTypeHelper::to_string(index));
     }
   }
 };
@@ -129,7 +129,7 @@ void G1NewTracer::send_g1_young_gc_event() {
   EventG1GarbageCollection e(UNTIMED);
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
-    e.set_type(_pause);
+    e.set_type(static_cast<uint>(_pause));
     e.set_starttime(_shared_gc_info.start_timestamp());
     e.set_endtime(_shared_gc_info.end_timestamp());
     e.commit();

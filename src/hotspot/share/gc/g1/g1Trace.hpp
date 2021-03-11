@@ -36,7 +36,7 @@ class G1NewTracer : public YoungGCTracer {
   G1GCPauseType _pause;
 
 public:
-  G1NewTracer() : YoungGCTracer(G1New), _pause(G1GCPauseTypeEndSentinel) {}
+  G1NewTracer() : YoungGCTracer(G1New), _pause(G1GCPauseType::Invalid) {}
 
   void initialize();
   void report_yc_pause(G1GCPauseType pause);

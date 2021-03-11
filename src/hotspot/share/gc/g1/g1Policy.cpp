@@ -457,7 +457,7 @@ void G1Policy::record_full_collection_end() {
 
   _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * HeapRegion::GrainBytes);
 
-  record_pause(FullGC, _full_collection_start_sec, end_sec);
+  record_pause(G1GCPauseType::FullGC, _full_collection_start_sec, end_sec);
 }
 
 static void log_refinement_stats(const char* kind, const G1ConcurrentRefineStats& stats) {
@@ -551,7 +551,7 @@ void G1Policy::record_concurrent_mark_remark_end() {
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
 
-  record_pause(Remark, _mark_remark_start_sec, end_time_sec);
+  record_pause(G1GCPauseType::Remark, _mark_remark_start_sec, end_time_sec);
 }
 
 void G1Policy::record_concurrent_mark_cleanup_start() {
@@ -1120,7 +1120,7 @@ void G1Policy::record_concurrent_mark_cleanup_end() {
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
   _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
 
-  record_pause(Cleanup, _mark_cleanup_start_sec, end_sec);
+  record_pause(G1GCPauseType::Cleanup, _mark_cleanup_start_sec, end_sec);
 }
 
 double G1Policy::reclaimable_bytes_percent(size_t reclaimable_bytes) const {
@@ -1165,7 +1165,7 @@ void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_t
   _analytics->compute_pause_time_ratios(end_time_sec, pause_time_ms);
   _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
 
-  if (gc_type == Cleanup || gc_type == Remark) {
+  if (gc_type == G1GCPauseType::Cleanup || gc_type == G1GCPauseType::Remark) {
     _analytics->append_prev_collection_pause_end_ms(pause_time_ms);
   } else {
     _analytics->set_prev_collection_pause_end_ms(end_time_sec * 1000.0);
@@ -1176,7 +1176,7 @@ void G1Policy::record_pause(G1GCPauseType gc_type,
                             double start,
                             double end) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
-  if (gc_type != FullGC) {
+  if (gc_type != G1GCPauseType::FullGC) {
     _mmu_tracker->add_pause(start, end);
   }
 
@@ -1192,16 +1192,16 @@ void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
                                              double end) {
   // Manage the mutator time tracking from concurrent start to first mixed gc.
   switch (gc_type) {
-    case FullGC:
+    case G1GCPauseType::FullGC:
       abort_time_to_mixed_tracking();
       break;
-    case Cleanup:
-    case Remark:
-    case YoungGC:
-    case LastYoungGC:
+    case G1GCPauseType::Cleanup:
+    case G1GCPauseType::Remark:
+    case G1GCPauseType::YoungGC:
+    case G1GCPauseType::LastYoungGC:
       _concurrent_start_to_mixed.add_pause(end - start);
       break;
-    case ConcurrentStartMarkGC:
+    case G1GCPauseType::ConcurrentStartMarkGC:
       // Do not track time-to-mixed time for periodic collections as they are likely
       // to be not representative to regular operation as the mutators are idle at
       // that time. Also only track full concurrent mark cycles.
@@ -1209,12 +1209,12 @@ void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
         _concurrent_start_to_mixed.record_concurrent_start_end(end);
       }
       break;
-    case ConcurrentStartUndoGC:
+    case G1GCPauseType::ConcurrentStartUndoGC:
       assert(_g1h->gc_cause() == GCCause::_g1_humongous_allocation,
              "GC cause must be humongous allocation but is %d",
              _g1h->gc_cause());
       break;
-    case MixedGC:
+    case G1GCPauseType::MixedGC:
       _concurrent_start_to_mixed.record_mixed_gc_start(start);
       break;
     default:

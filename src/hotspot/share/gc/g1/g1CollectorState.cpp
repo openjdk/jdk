@@ -30,17 +30,18 @@ G1GCPauseType G1CollectorState::young_gc_pause_type(bool concurrent_operation_is
   assert(!in_full_gc(), "must be");
   if (in_concurrent_start_gc()) {
     assert(!in_young_gc_before_mixed(), "must be");
-    return concurrent_operation_is_full_mark ? ConcurrentStartMarkGC : ConcurrentStartUndoGC;
+    return concurrent_operation_is_full_mark ? G1GCPauseType::ConcurrentStartMarkGC :
+                                               G1GCPauseType::ConcurrentStartUndoGC;
   } else if (in_young_gc_before_mixed()) {
     assert(!in_concurrent_start_gc(), "must be");
-    return LastYoungGC;
+    return G1GCPauseType::LastYoungGC;
   } else if (in_mixed_phase()) {
     assert(!in_concurrent_start_gc(), "must be");
     assert(!in_young_gc_before_mixed(), "must be");
-    return MixedGC;
+    return G1GCPauseType::MixedGC;
   } else {
     assert(!in_concurrent_start_gc(), "must be");
     assert(!in_young_gc_before_mixed(), "must be");
-    return YoungGC;
+    return G1GCPauseType::YoungGC;
   }
 }
