@@ -22,6 +22,7 @@
                         <cluster>${brandingToken}</cluster>
                         <publicPackages>
                           <publicPackage>com.sun.hotspot.igv.data</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.data.services</publicPackage>
                         </publicPackages>
                     </configuration>
                 </plugin>
@@ -51,6 +52,7 @@
         <module>Settings</module>
         <module>Util</module>
         <module>Layout</module>
+        <module>Difference</module>
     </modules>
 
     <properties>
