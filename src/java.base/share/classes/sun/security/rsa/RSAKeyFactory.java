@@ -405,24 +405,19 @@ public class RSAKeyFactory extends KeyFactorySpi {
         } else if (key instanceof RSAPrivateKey) {
             if (keySpec.isAssignableFrom(PKCS8_KEYSPEC_CLS)) {
                 return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
-            } else if (keySpec.isAssignableFrom(RSA_PRIVCRT_KEYSPEC_CLS)) {
-                if (key instanceof RSAPrivateCrtKey) {
-                    RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey)key;
-                    return keySpec.cast(new RSAPrivateCrtKeySpec(
-                        crtKey.getModulus(),
-                        crtKey.getPublicExponent(),
-                        crtKey.getPrivateExponent(),
-                        crtKey.getPrimeP(),
-                        crtKey.getPrimeQ(),
-                        crtKey.getPrimeExponentP(),
-                        crtKey.getPrimeExponentQ(),
-                        crtKey.getCrtCoefficient(),
-                        crtKey.getParams()
-                    ));
-                } else {
-                    throw new InvalidKeySpecException
-                    ("RSAPrivateCrtKeySpec can only be used with CRT keys");
-                }
+            } else if (keySpec.isAssignableFrom(RSA_PRIVCRT_KEYSPEC_CLS) && key instanceof RSAPrivateCrtKey) {
+                RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey)key;
+                return keySpec.cast(new RSAPrivateCrtKeySpec(
+                    crtKey.getModulus(),
+                    crtKey.getPublicExponent(),
+                    crtKey.getPrivateExponent(),
+                    crtKey.getPrimeP(),
+                    crtKey.getPrimeQ(),
+                    crtKey.getPrimeExponentP(),
+                    crtKey.getPrimeExponentQ(),
+                    crtKey.getCrtCoefficient(),
+                    crtKey.getParams()
+                ));
             } else if (keySpec.isAssignableFrom(RSA_PRIV_KEYSPEC_CLS)) {
                 RSAPrivateKey rsaKey = (RSAPrivateKey)key;
                 return keySpec.cast(new RSAPrivateKeySpec(
@@ -430,6 +425,9 @@ public class RSAKeyFactory extends KeyFactorySpi {
                     rsaKey.getPrivateExponent(),
                     rsaKey.getParams()
                 ));
+	    } else if (keySpec.isAssignableFrom(RSA_PRIVCRT_KEYSPEC_CLS)) {
+                throw new InvalidKeySpecException
+                        ("RSAPrivateCrtKeySpec can only be used with CRT keys");
             } else {
                 throw new InvalidKeySpecException
                         ("KeySpec must be RSAPrivate(Crt)KeySpec or "
