@@ -603,7 +603,8 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     // Avoid constant pool verification at a safepoint, which takes the Module_lock.
     if (k != NULL && !SafepointSynchronize::is_at_safepoint()) {
       // Make sure that resolving is legal
-      EXCEPTION_MARK;
+      ExceptionMark em(thread);
+      Thread* THREAD = current; // For exception macros.
       // return NULL if verification fails
       verify_constant_pool_resolve(this_cp, k, THREAD);
       if (HAS_PENDING_EXCEPTION) {
