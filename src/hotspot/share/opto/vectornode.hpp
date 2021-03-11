@@ -60,13 +60,27 @@ class VectorNode : public TypeNode {
     init_req(4, n3);
   }
 
-  const TypeVect* vect_type() const { return type()->is_vect(); }
-  uint length() const { return vect_type()->length(); } // Vector length
-  uint length_in_bytes() const { return vect_type()->length_in_bytes(); }
+  const TypeVect* vect_type() const { return type()->isa_vect(); }
+
+  uint length() const {
+    if (vect_type() != NULL) {
+      return vect_type()->length();
+    } else {
+      return 0;
+    }
+  } // Vector length
+
+  uint length_in_bytes() const {
+    if (vect_type() != NULL) {
+      return vect_type()->length_in_bytes();
+    } else {
+      return 0;
+    }
+  }
 
   virtual int Opcode() const;
 
-  virtual uint ideal_reg() const { return Matcher::vector_ideal_reg(vect_type()->length_in_bytes()); }
+  virtual uint ideal_reg() const { return Matcher::vector_ideal_reg(length_in_bytes()); }
 
   static VectorNode* scalar2vector(Node* s, uint vlen, const Type* opd_t);
   static VectorNode* shift_count(int opc, Node* cnt, uint vlen, BasicType bt);
@@ -702,14 +716,28 @@ class LoadVectorNode : public LoadNode {
     set_mismatched_access();
   }
 
-  const TypeVect* vect_type() const { return type()->is_vect(); }
-  uint length() const { return vect_type()->length(); } // Vector length
+  const TypeVect* vect_type() const { return type()->isa_vect(); }
+
+  uint length() const {
+    if (vect_type() != NULL) {
+      return vect_type()->length();
+    } else {
+      return 0;
+    }
+  } // Vector length
 
   virtual int Opcode() const;
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
   virtual BasicType memory_type() const { return T_VOID; }
-  virtual int memory_size() const { return vect_type()->length_in_bytes(); }
+
+  virtual int memory_size() const {
+    if (vect_type() != NULL) {
+      return vect_type()->length_in_bytes();
+    } else {
+      return 0;
+    }
+  }
 
   virtual int store_Opcode() const { return Op_StoreVector; }
 
@@ -717,7 +745,14 @@ class LoadVectorNode : public LoadNode {
                               Node* adr, const TypePtr* atyp,
                               uint vlen, BasicType bt,
                               ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
-  uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
+
+  uint element_size(void) {
+    if (vect_type() != NULL) {
+      return type2aelembytes(vect_type()->element_basic_type());
+    } else {
+      return 0;
+    }
+  }
 };
 
 //------------------------------LoadVectorGatherNode------------------------------
@@ -746,14 +781,7 @@ class StoreVectorNode : public StoreNode {
     set_mismatched_access();
   }
 
-  const TypeVect* vect_type() const {
-    const Type* type = in(MemNode::ValueIn)->bottom_type();
-    if (type != Type::TOP) {
-      return type->is_vect();
-    } else {
-      return NULL;
-    }
-  }
+  const TypeVect* vect_type() const { return in(MemNode::ValueIn)->bottom_type()->isa_vect(); }
 
   uint length() const {
     if (vect_type() != NULL) {
@@ -1219,7 +1247,13 @@ class VectorLoadShuffleNode : public VectorNode {
     assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be BYTE");
   }
 
-  int GetOutShuffleSize() const { return type2aelembytes(vect_type()->element_basic_type()); }
+  int GetOutShuffleSize() const {
+    if (vect_type() != NULL) {
+      return type2aelembytes(vect_type()->element_basic_type());
+    } else {
+      return 0;
+    }
+  }
   virtual int Opcode() const;
 };
 
