@@ -2122,7 +2122,7 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
   Handle h_obj(THREAD, obj);
-  ObjectSynchronizer::enter(h_obj, lock, CHECK);
+  ObjectSynchronizer::enter(h_obj, lock, thread);
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
   JRT_BLOCK_END
 }
@@ -2144,7 +2144,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     }
     return;
   }
-  ObjectSynchronizer::exit(obj, lock, THREAD);
+  ObjectSynchronizer::exit(obj, lock, thread);
 }
 
 // Handles the uncommon cases of monitor unlocking in compiled code

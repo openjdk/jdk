@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1YCTYPES_HPP
-#define SHARE_GC_G1_G1YCTYPES_HPP
+/**
+ * @test
+ * @bug 8262351
+ * @summary Incorrect zero padding occurs in the presence of some leading sign
+ * flags for hexadecimal floating point conversions.
+ * @run testng HexFloatZeroPadding
+ */
 
-#include "utilities/debug.hpp"
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
-enum G1YCType {
-  Normal,
-  ConcurrentStart,
-  DuringMarkOrRebuild,
-  Mixed,
-  G1YCTypeEndSentinel
-};
+@Test
+public class HexFloatZeroPadding {
 
-class G1YCTypeHelper {
- public:
-  static const char* to_string(G1YCType type) {
-    switch(type) {
-      case Normal: return "Normal";
-      case ConcurrentStart: return "Concurrent Start";
-      case DuringMarkOrRebuild: return "During Mark";
-      case Mixed: return "Mixed";
-      default: ShouldNotReachHere(); return NULL;
+    public void testCorrectWidthHexFloatZeroPadding()
+    {
+        final int EXPECTEDLENGTH = 12;
+        assertEquals(String.format("|%010a|", 0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|% 010a|", 0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|%+010a|", 0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|%010a|", -0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|% 010a|", -0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|%+010a|", -0.0).length(), EXPECTEDLENGTH);
     }
-  }
-};
 
-#endif // SHARE_GC_G1_G1YCTYPES_HPP
+}

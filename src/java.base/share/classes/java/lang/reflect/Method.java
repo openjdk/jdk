@@ -234,6 +234,7 @@ public final class Method extends Executable {
 
     /**
      * {@inheritDoc}
+     * @jls 8.4.3 Method Modifiers
      */
     @Override
     public int getModifiers() {
@@ -244,6 +245,7 @@ public final class Method extends Executable {
      * {@inheritDoc}
      * @throws GenericSignatureFormatError {@inheritDoc}
      * @since 1.5
+     * @jls 8.4.4 Generic Methods
      */
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -613,6 +615,7 @@ public final class Method extends Executable {
     /**
      * {@inheritDoc}
      * @since 1.5
+     * @jls 8.4.1 Formal Parameters
      */
     @Override
     public boolean isVarArgs() {
@@ -640,6 +643,7 @@ public final class Method extends Executable {
      * @return true if and only if this method is a default
      * method as defined by the Java Language Specification.
      * @since 1.8
+     * @jls 9.4 Method Declarations
      */
     public boolean isDefault() {
         // Default methods are public non-abstract instance methods
@@ -697,6 +701,7 @@ public final class Method extends Executable {
      *     {@link Class} and no definition can be found for the
      *     default class value.
      * @since  1.5
+     * @jls 9.6.2 Defaults for Annotation Type Elements
      */
     public Object getDefaultValue() {
         if  (annotationDefault == null)
