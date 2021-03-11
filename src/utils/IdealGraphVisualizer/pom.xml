@@ -28,6 +28,7 @@
                           <publicPackage>com.sun.hotspot.igv.util</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.connection</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.difference</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.layout</publicPackage>
                         </publicPackages>
                     </configuration>
                 </plugin>
@@ -61,6 +62,7 @@
         <module>NetworkConnection</module>
         <module>Coordinator</module>
         <module>SelectionCoordinator</module>
+        <module>Graph</module>
     </modules>
 
     <properties>
