@@ -30,9 +30,9 @@ import com.sun.net.httpserver.*;
 
 public class UnmodifiableHeaders extends Headers {
 
-        public Headers map;
+        Headers map;
 
-        UnmodifiableHeaders(Headers map) {
+        public UnmodifiableHeaders(Headers map) {
             this.map = map;
         }
 
