@@ -3793,7 +3793,7 @@ void os::large_page_init() {
   // It is unclear if /sys/kernel/mm/hugepages/ and /proc/meminfo could disagree. Manually
   // re-add the default page size to the list of page sizes to be sure.
   all_large_pages.add(default_large_page_size);
-  
+
   for (size_t page_size = all_large_pages.largest(); page_size != 0;
          page_size = all_large_pages.next_smaller(page_size)) {
     _page_sizes.add(page_size);
