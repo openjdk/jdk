@@ -599,11 +599,11 @@ MTLBlitLoops_Blit(JNIEnv *env,
     SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
 }
 
-void copyFromMTLBuffer(void *pDst, id<MTLBuffer> srcBuf, jint offset, jint len, BOOL convertFromArgbPre) {
+void copyFromMTLBuffer(void *pDst, id<MTLBuffer> srcBuf, NSUInteger offset, NSUInteger len, BOOL convertFromArgbPre) {
     char *pSrc = (char*)srcBuf.contents + offset;
     if (convertFromArgbPre) {
-        jint pixelLen = len>>2;
-        for (int i = 0; i < pixelLen; i++) {
+        NSUInteger pixelLen = len >> 2;
+        for (NSUInteger i = 0; i < pixelLen; i++) {
             LoadIntArgbPreTo1IntArgb((jint*)pSrc, 0, i, ((jint*)pDst)[i]);
         }
     } else {
@@ -640,6 +640,10 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
     RETURN_IF_NULL(srcOps);
     RETURN_IF_NULL(dstOps);
     RETURN_IF_NULL(mtlc);
+    RETURN_IF_TRUE(width < 0);
+    RETURN_IF_TRUE(height < 0);
+    NSUInteger w = (NSUInteger)width;
+    NSUInteger h = (NSUInteger)height;
 
     srcInfo.bounds.x1 = srcx;
     srcInfo.bounds.y1 = srcy;
@@ -675,13 +679,13 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
             width = srcInfo.bounds.x2 - srcInfo.bounds.x1;
             height = srcInfo.bounds.y2 - srcInfo.bounds.y1;
 
-            pDst = PtrAddBytes(pDst, dstx * dstInfo.pixelStride);
+            pDst = PtrPixelsRow(pDst, dstx, dstInfo.pixelStride);
             pDst = PtrPixelsRow(pDst, dsty, dstInfo.scanStride);
 
             // Metal texture is (0,0) at left-top
             srcx = srcOps->xOffset + srcx;
             srcy = srcOps->yOffset + srcy;
-            const int byteLength = width * height * 4; // NOTE: assume that src format is MTLPixelFormatBGRA8Unorm
+            NSUInteger byteLength = w * h * 4; // NOTE: assume that src format is MTLPixelFormatBGRA8Unorm
 
             // Create MTLBuffer (or use static)
             id<MTLBuffer> mtlbuf;
@@ -708,7 +712,7 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
             }
             mtlbuf = mtlIntermediateBuffer;
 #else // USE_STATIC_BUFFER
-            mtlbuf = [mtlc.device newBufferWithLength:width*height*4 options:MTLResourceStorageModeShared];
+            mtlbuf = [mtlc.device newBufferWithLength:byteLength options:MTLResourceStorageModeShared];
 #endif // USE_STATIC_BUFFER
 
             // Read from surface into MTLBuffer
@@ -723,10 +727,10 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
                             sourceSlice:0
                             sourceLevel:0
                            sourceOrigin:MTLOriginMake(srcx, srcy, 0)
-                             sourceSize:MTLSizeMake(width, height, 1)
+                             sourceSize:MTLSizeMake(w, h, 1)
                                toBuffer:mtlbuf
-                      destinationOffset:0 /*offset already taken in: pDst = PtrAddBytes(pDst, dstx * dstInfo.pixelStride)*/
-                 destinationBytesPerRow:width*4
+                      destinationOffset:0 /*offset already taken in: pDst = PtrPixelsRow(pDst, dstx,  dstInfo.pixelStride)*/
+                 destinationBytesPerRow:w*4
                destinationBytesPerImage:byteLength];
             [blitEncoder endEncoding];
 
@@ -737,7 +741,7 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
             // Perform conversion if necessary
             BOOL convertFromPre = !RasterFormatInfos[dsttype].isPremult && !srcOps->isOpaque;
 
-            if ((dstInfo.scanStride == width * dstInfo.pixelStride) &&
+            if ((dstInfo.scanStride == w * dstInfo.pixelStride) &&
                 (height == (dstInfo.bounds.y2 - dstInfo.bounds.y1))) {
                 // mtlbuf.contents have same dimensions as of pDst
                 copyFromMTLBuffer(pDst, mtlbuf, 0, byteLength, convertFromPre);
@@ -746,7 +750,7 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
                 // copy each row from mtlbuf.contents at appropriate position in pDst
                 // Note : pDst is already addjusted for offsets using PtrAddBytes above
 
-                int rowSize = width * dstInfo.pixelStride;
+                NSUInteger rowSize = w * dstInfo.pixelStride;
                 for (int y = 0; y < height; y++) {
                     copyFromMTLBuffer(pDst, mtlbuf, y * rowSize, rowSize, convertFromPre);
                     pDst = PtrAddBytes(pDst, dstInfo.scanStride);
