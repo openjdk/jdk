@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -860,6 +860,8 @@ public abstract class Provider extends Properties {
     * is, then its double value will be used to populate both fields.
     *
     * @param in the {@code ObjectInputStream} to read
+    * @throws IOException if an I/O error occurs
+    * @throws ClassNotFoundException if a serialized class cannot be loaded
     * @serial
     */
     @java.io.Serial

@@ -30,6 +30,7 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.Scheduler;
 import java.util.*;
+import org.openide.ErrorManager;
 
 /**
  *
@@ -213,6 +214,12 @@ public class ServerCompilerScheduler implements Scheduler {
             inputNodeToNode = new HashMap<>(graph.getNodes().size());
 
             this.graph = graph;
+            if (!hasCategoryInformation()) {
+                ErrorManager.getDefault().log(ErrorManager.WARNING,
+                    "Cannot find node category information in the input graph. " +
+                    "The control-flow graph will not be approximated.");
+                return null;
+            }
             buildUpGraph();
             markCFGNodes();
             connectOrphansAndWidows();
@@ -589,6 +596,15 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
+    public boolean hasCategoryInformation() {
+        for (InputNode n : graph.getNodes()) {
+            if (n.getProperties().get("category") == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void buildUpGraph() {
 
         for (InputNode n : graph.getNodes()) {
@@ -640,9 +656,6 @@ public class ServerCompilerScheduler implements Scheduler {
     public void markCFGNodes() {
         for (Node n : nodes) {
             String category = n.inputNode.getProperties().get("category");
-            assert category != null :
-                "Node category not found, please use input from a compatible " +
-                "compiler version";
             if (category.equals("control") || category.equals("mixed")) {
                 // Example: If, IfTrue, CallStaticJava.
                 n.isCFG = true;
