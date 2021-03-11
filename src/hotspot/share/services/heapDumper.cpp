@@ -1725,7 +1725,6 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
   }
 
   void drain(ObjectClosure* cl) {
-    printf("drain large object queue at length %d\n", _length);
     while (_length > 0) {
       cl->do_object(pop());
     }
