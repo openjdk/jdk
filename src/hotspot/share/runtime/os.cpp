@@ -1473,7 +1473,7 @@ size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_
 
     for (size_t page_size = page_sizes().largest(); page_size != 0;
          page_size = page_sizes().next_smaller(page_size)) {
-      if (page_size <= max_page_size) {
+      if (page_size <= max_page_size && page_size > (size_t)vm_page_size()) {
         if (!must_be_aligned || is_aligned(region_size, page_size)) {
           return page_size;
         }
