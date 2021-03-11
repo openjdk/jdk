@@ -25,6 +25,9 @@
                           <publicPackage>com.sun.hotspot.igv.data.services</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.data.serialization</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.settings</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.util</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.connection</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.difference</publicPackage>
                         </publicPackages>
                     </configuration>
                 </plugin>
@@ -56,6 +59,7 @@
         <module>Layout</module>
         <module>Difference</module>
         <module>NetworkConnection</module>
+        <module>Coordinator</module>
     </modules>
 
     <properties>
