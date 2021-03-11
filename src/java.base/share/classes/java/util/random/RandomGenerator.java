@@ -750,6 +750,7 @@ public interface RandomGenerator {
      * @since 17
      */
     default double nextGaussian() {
+        // See Knuth, TAOCP, Vol. 2, 3rd edition, Section 3.4.1 Algorithm C.
         return RandomSupport.computeNextGaussian(this);
     }
 

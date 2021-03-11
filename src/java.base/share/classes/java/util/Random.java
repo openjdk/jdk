@@ -44,8 +44,9 @@ import jdk.internal.misc.Unsafe;
  * An instance of this class is used to generate a stream of
  * pseudorandom numbers; its period is only 2<sup>48</sup>.
  * The class uses a 48-bit seed, which is
- * modified using a linear congruential formula. (See Donald Knuth,
- * <cite>The Art of Computer Programming, Volume 2</cite>, Section 3.2.1.)
+ * modified using a linear congruential formula. (See Donald E. Knuth,
+ * <cite>The Art of Computer Programming, Volume 2, Third
+ * edition: Seminumerical Algorithms</cite>, Section 3.2.1.)
  * <p>
  * If two instances of {@code Random} are created with the same
  * seed, and the same sequence of method calls is made for each, they
@@ -504,12 +505,12 @@ public class Random extends AbstractSpliteratorGenerator
      *             }
      *           }}</pre>
      *
-     *           This uses the <i>polar method</i> of G. E. P. Box, M. E. Muller, and G.
-     *           Marsaglia, as described by Donald E. Knuth in <cite>The Art of Computer
-     *           Programming, Volume 2, third edition: Seminumerical Algorithms</cite>,
+     *           This uses the <i>polar method</i> of G. E. P. Box, M. E. Muller, and
+     *           G. Marsaglia, as described by Donald E. Knuth in <cite>The Art of
+     *           Computer Programming, Volume 2, third edition: Seminumerical Algorithms</cite>,
      *           section 3.4.1, subsection C, algorithm P. Note that it generates two
-     *           independent values at the cost of only one call to {@code
-     *           StrictMath.log} and one call to {@code StrictMath.sqrt}.
+     *           independent values at the cost of only one call to {@code StrictMath.log}
+     *           and one call to {@code StrictMath.sqrt}.
      *
      * @return the next pseudorandom, Gaussian ("normally") distributed
      *         {@code double} value with mean {@code 0.0} and
@@ -556,6 +557,11 @@ public class Random extends AbstractSpliteratorGenerator
     /**
      * Reconstitute the {@code Random} instance from a stream (that is,
      * deserialize it).
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     *
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
@@ -576,6 +582,10 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * Save the {@code Random} instance to a stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     *
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private synchronized void writeObject(ObjectOutputStream s)
