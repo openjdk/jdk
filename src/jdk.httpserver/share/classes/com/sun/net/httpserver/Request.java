@@ -83,8 +83,13 @@ public interface Request {
         Objects.requireNonNull(headerName);
         Objects.requireNonNull(headerValues);
         final Request r = this;
-        ((UnmodifiableHeaders) r.getRequestHeaders()).map
-                .putIfAbsent(headerName, headerValues);
+
+        Headers h = new Headers();
+        h.putAll(r.getRequestHeaders());
+        if (!h.containsKey(headerName)) {
+            h.put(headerName, headerValues);
+        }
+        UnmodifiableHeaders unmodifiableHeaders = new UnmodifiableHeaders(h);
         return new Request() {
             @Override
             public URI getRequestURI() { return r.getRequestURI(); }
@@ -93,7 +98,7 @@ public interface Request {
             public String getRequestMethod() { return r.getRequestMethod(); }
 
             @Override
-            public Headers getRequestHeaders() { return r.getRequestHeaders(); }
+            public Headers getRequestHeaders() { return unmodifiableHeaders; }
         };
     }
 }
