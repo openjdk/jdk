@@ -62,9 +62,9 @@ bool MethodComparator::methods_EMCP(Method* old_method, Method* new_method) {
   return true;
 }
 
-bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new,
-                                 BytecodeStream* s_old, BytecodeStream* s_new,
-                                 ConstantPool* old_cp,  ConstantPool* new_cp) {
+bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code const c_new,
+                                 BytecodeStream* const s_old,  BytecodeStream* const s_new,
+                                 ConstantPool*   const old_cp, ConstantPool*   const new_cp) {
   // BytecodeStream returns the correct standard Java bytecodes for various "fast"
   // bytecode versions, so we don't have to bother about them here..
   switch (c_old) {
@@ -259,7 +259,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new,
   return true;
 }
 
-bool MethodComparator::pool_constants_same(int cpi_old, int cpi_new, ConstantPool* old_cp, ConstantPool* new_cp) {
+bool MethodComparator::pool_constants_same(const int cpi_old, const int cpi_new,
+                                           ConstantPool* const old_cp, ConstantPool* const new_cp) {
   constantTag tag_old = old_cp->tag_at(cpi_old);
   constantTag tag_new = new_cp->tag_at(cpi_new);
   if (tag_old.is_int() || tag_old.is_float()) {

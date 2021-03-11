@@ -34,12 +34,14 @@
 
 class MethodComparator {
  private:
-  static bool args_same(Bytecodes::Code c_old, Bytecodes::Code c_new,
-                        BytecodeStream* s_old, BytecodeStream* s_new,
-                        ConstantPool* old_cp,  ConstantPool* new_cp);
-  static bool pool_constants_same(int cpi_old, int cpi_new,
-                                  ConstantPool* old_cp,  ConstantPool* new_cp);
-  static int check_stack_and_locals_size(Method* old_method, Method* new_method);
+  static bool args_same(Bytecodes::Code const c_old,  Bytecodes::Code const c_new,
+                        BytecodeStream* const s_old,  BytecodeStream* const s_new,
+                        ConstantPool*   const old_cp, ConstantPool*   const new_cp);
+
+  static bool pool_constants_same(const int cpi_old, const int cpi_new,
+                                  ConstantPool* const old_cp, ConstantPool* const new_cp);
+
+  static int check_stack_and_locals_size(Method* const old_method, Method* const new_method);
 
  public:
   // Check if the new method is equivalent to the old one modulo constant pool (EMCP).
