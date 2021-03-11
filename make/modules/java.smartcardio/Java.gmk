@@ -23,5 +23,5 @@
 # questions.
 #
 
-DOCLINT += -Xdoclint:all/protected,-accessibility \
+DOCLINT += -Xdoclint:all/protected,-accessibility,-missing \
     '-Xdoclint/package:java.*,javax.*'
