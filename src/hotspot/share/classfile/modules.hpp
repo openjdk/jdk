@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,10 @@ public:
   // * A package already exists in another module for this class loader
   // * Module is an unnamed module
   //  NullPointerExceptions are thrown if module is null.
-  static void define_module(jobject module, jboolean is_open, jstring version,
+  static void define_module(Handle module, jboolean is_open, jstring version,
                             jstring location, jobjectArray packages, TRAPS);
 
-  static void define_archived_modules(jobject platform_loader, jobject system_loader,
+  static void define_archived_modules(Handle h_platform_loader, Handle h_system_loader,
                                       TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Provides the java.lang.Module for the unnamed module defined
@@ -64,7 +64,7 @@ public:
   //  * Module is not a subclass of java.lang.Module
   //  * Module's class loader is not the boot loader
   //  NullPointerExceptions are thrown if module is null.
-  static void set_bootloader_unnamed_module(jobject module, TRAPS);
+  static void set_bootloader_unnamed_module(Handle module, TRAPS);
 
   // This either does a qualified export of package in module from_module to module
   // to_module or, if to_module is null, does an unqualified export of package.
@@ -76,7 +76,7 @@ public:
   // * Package is not syntactically correct
   // * Package is not defined for from_module's class loader
   // * Package is not in module from_module.
-  static void add_module_exports(jobject from_module, jstring package, jobject to_module, TRAPS);
+  static void add_module_exports(Handle from_module, jstring package, Handle to_module, TRAPS);
 
   // This does a qualified export of package in module from_module to module
   // to_module.  Any "." in the package name will be converted to "/"
@@ -87,7 +87,7 @@ public:
   // * Package is not syntactically correct
   // * Package is not defined for from_module's class loader
   // * Package is not in module from_module.
-  static void add_module_exports_qualified(jobject from_module, jstring package, jobject to_module, TRAPS);
+  static void add_module_exports_qualified(Handle from_module, jstring package, Handle to_module, TRAPS);
 
   // add_reads_module adds module to_module to the list of modules that from_module
   // can read.  If from_module is the same as to_module then this is a no-op.
@@ -95,7 +95,7 @@ public:
   // from_module can read all current and future unnamed  modules).
   // An IllegalArgumentException is thrown if from_module is null or either (non-null)
   // module does not exist.
-  static void add_reads_module(jobject from_module, jobject to_module, TRAPS);
+  static void add_reads_module(Handle from_module, Handle to_module, TRAPS);
 
   // Return the java.lang.Module object for this class object.
   static jobject get_module(jclass clazz, TRAPS);
@@ -112,7 +112,7 @@ public:
   // If either module or package is null then NullPointerException is thrown.
   // If module or package is bad, or module is unnamed, or package is not in
   // module then IllegalArgumentException is thrown.
-  static void add_module_exports_to_all_unnamed(jobject module, jstring package, TRAPS);
+  static void add_module_exports_to_all_unnamed(Handle module, jstring package, TRAPS);
 
   // Return TRUE iff package is defined by loader
   static bool is_package_defined(Symbol* package_name, Handle h_loader, TRAPS);

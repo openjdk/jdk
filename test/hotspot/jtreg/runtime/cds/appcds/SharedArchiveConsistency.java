@@ -70,7 +70,6 @@ public class SharedArchiveConsistency {
 
     // The following should be consistent with the enum in the C++ MetaspaceShared class
     public static String[] shared_region_name = {
-        "mc",          // MiscCode
         "rw",          // ReadWrite
         "ro",          // ReadOnly
         "bm",          // relocation bitmaps

@@ -390,8 +390,6 @@ class SharedRuntime: AllStatic {
 
   static size_t trampoline_size();
 
-  static void generate_trampoline(MacroAssembler *masm, address destination);
-
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
   // blobs. Unlike adapters in the tiger and earlier releases the code in these
   // blobs does not create a new frame and are therefore virtually invisible
@@ -695,7 +693,6 @@ class AdapterHandlerLibrary: public AllStatic {
   static AdapterHandlerEntry* _abstract_method_handler;
   static BufferBlob* buffer_blob();
   static void initialize();
-  static AdapterHandlerEntry* get_adapter0(const methodHandle& method);
 
  public:
 

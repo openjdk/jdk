@@ -277,10 +277,10 @@ public:
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
   static void add_resolution_error(const constantPoolHandle& pool, int which, Symbol* error,
-                                   Symbol* message);
+                                   Symbol* message, Symbol* cause = NULL, Symbol* cause_msg = NULL);
   static void delete_resolution_error(ConstantPool* pool);
   static Symbol* find_resolution_error(const constantPoolHandle& pool, int which,
-                                       Symbol** message);
+                                       Symbol** message, Symbol** cause, Symbol** cause_msg);
 
 
   // Record a nest host resolution/validation error
@@ -345,7 +345,7 @@ private:
   // waiting; relocks lockObject with correct recursion count
   // after waiting, but before reentering SystemDictionary_lock
   // to preserve lock order semantics.
-  static void double_lock_wait(Thread* thread, Handle lockObject);
+  static void double_lock_wait(JavaThread* thread, Handle lockObject);
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
   static InstanceKlass* find_or_define_helper(Symbol* class_name,
                                               Handle class_loader,
