@@ -2882,6 +2882,21 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
   return true;
 }
 
+void G1CollectedHeap::gc_tracer_report_gc_start() {
+  _gc_timer_stw->register_gc_start();
+  _gc_tracer_stw->report_gc_start(gc_cause(), _gc_timer_stw->gc_start());
+}
+
+void G1CollectedHeap::gc_tracer_report_gc_end(bool concurrent_operation_is_full_mark,
+                                              G1EvacuationInfo& evacuation_info) {
+  _gc_tracer_stw->report_evacuation_info(&evacuation_info);
+  _gc_tracer_stw->report_tenuring_threshold(_policy->tenuring_threshold());
+
+  _gc_timer_stw->register_gc_end();
+  _gc_tracer_stw->report_gc_end(_gc_timer_stw->gc_end(),
+  _gc_timer_stw->time_partitions());
+}
+
 void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_pause_time_ms) {
   GCIdMark gc_id_mark;
 
@@ -2890,8 +2905,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
   policy()->note_gc_start();
 
-  _gc_timer_stw->register_gc_start();
-  _gc_tracer_stw->report_gc_start(gc_cause(), _gc_timer_stw->gc_start());
+  gc_tracer_report_gc_start();
 
   wait_for_root_region_scanning();
 
@@ -2926,8 +2940,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   {
     G1EvacuationInfo evacuation_info;
 
-    _gc_tracer_stw->report_yc_phase(collector_state()->young_gc_phase());
-
     GCTraceCPUTime tcpu;
 
     GCTraceTime(Info, gc) tm(young_gc_name(), NULL, gc_cause(), true);
@@ -2940,7 +2952,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
     G1MonitoringScope ms(g1mm(),
                          false /* full_gc */,
-                         collector_state()->young_gc_phase() == Mixed /* all_memory_pools_affected */);
+                         collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
 
     G1HeapTransition heap_transition(this);
 
@@ -3008,6 +3020,10 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
         // evacuation, eventually aborting it.
         concurrent_operation_is_full_mark = policy()->concurrent_operation_is_full_mark("Revise IHOP");
 
+        // Need to report the collection pause now since record_collection_pause_end()
+        // modifies it to the next state.
+        _gc_tracer_stw->report_yc_pause(collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark));
+
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
         policy()->record_collection_pause_end(pause_time_ms, concurrent_operation_is_full_mark);
@@ -3042,10 +3058,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     // before any GC notifications are raised.
     g1mm()->update_sizes();
 
-    _gc_tracer_stw->report_evacuation_info(&evacuation_info);
-    _gc_tracer_stw->report_tenuring_threshold(_policy->tenuring_threshold());
-    _gc_timer_stw->register_gc_end();
-    _gc_tracer_stw->report_gc_end(_gc_timer_stw->gc_end(), _gc_timer_stw->time_partitions());
+    gc_tracer_report_gc_end(concurrent_operation_is_full_mark, evacuation_info);
   }
   // It should now be safe to tell the concurrent mark thread to start
   // without its logging output interfering with the logging output

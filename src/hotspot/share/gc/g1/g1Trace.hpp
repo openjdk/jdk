@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,24 +32,14 @@ class G1EvacuationInfo;
 class G1HeapSummary;
 class G1EvacSummary;
 
-class G1YoungGCInfo {
-  G1GCYoungPhase _phase;
-public:
-  G1YoungGCInfo() : _phase(G1GCYoungPhaseEndSentinel) {}
-  void set_phase(G1GCYoungPhase phase) {
-    _phase = phase;
-  }
-  G1GCYoungPhase phase() const { return _phase; }
-};
-
 class G1NewTracer : public YoungGCTracer {
-  G1YoungGCInfo _g1_young_gc_info;
+  G1GCPauseType _pause;
 
 public:
-  G1NewTracer() : YoungGCTracer(G1New) {}
+  G1NewTracer() : YoungGCTracer(G1New), _pause(G1GCPauseTypeEndSentinel) {}
 
   void initialize();
-  void report_yc_phase(G1GCYoungPhase phase);
+  void report_yc_pause(G1GCPauseType pause);
   void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
   void report_evacuation_info(G1EvacuationInfo* info);
   void report_evacuation_failed(EvacuationFailedInfo& ef_info);

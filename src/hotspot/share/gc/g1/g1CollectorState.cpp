@@ -44,17 +44,3 @@ G1GCPauseType G1CollectorState::young_gc_pause_type(bool concurrent_operation_is
     return YoungGC;
   }
 }
-
-G1GCYoungPhase G1CollectorState::young_gc_phase() const {
-  assert(!in_full_gc(), "must be");
-
-  if (in_concurrent_start_gc()) {
-    return ConcurrentStart;
-  } else if (mark_or_rebuild_in_progress()) {
-    return DuringMarkOrRebuild;
-  } else if (in_young_only_phase()) {
-    return Normal;
-  } else {
-    return Mixed;
-  }
-}

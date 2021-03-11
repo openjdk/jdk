@@ -27,15 +27,6 @@
 
 #include "utilities/debug.hpp"
 
-// Enumarate the phases in which the collection cycle can be.
-enum G1GCYoungPhase {
-  Normal,
-  ConcurrentStart,
-  DuringMarkOrRebuild,
-  Mixed,
-  G1GCYoungPhaseEndSentinel
-};
-
 enum G1GCPauseType {
   YoungGC,
   LastYoungGC,
@@ -48,8 +39,8 @@ enum G1GCPauseType {
   G1GCPauseTypeEndSentinel
 };
 
-class G1GCTypeHelper {
- public:
+class G1GCPauseTypeHelper {
+public:
 
   static void assert_is_young_pause(G1GCPauseType type) {
     assert(type != FullGC, "must be");
@@ -80,14 +71,18 @@ class G1GCTypeHelper {
     return type == ConcurrentStartMarkGC || type == ConcurrentStartUndoGC;
   }
 
-  static const char* to_string(G1GCYoungPhase type) {
-    switch(type) {
-      case Normal: return "Normal";
-      case ConcurrentStart: return "Concurrent Start";
-      case DuringMarkOrRebuild: return "During Mark";
-      case Mixed: return "Mixed";
-      default: ShouldNotReachHere(); return NULL;
-    }
+  static const char* to_string(G1GCPauseType type) {
+    static const char* pause_strings[] = { "Normal",
+                                           "Prepare Mixed",
+                                           "Concurrent Start Mark",
+                                           "Concurrent Start Undo",
+                                           "Cleanup",
+                                           "Remark",
+                                           "Mixed",
+                                           "Full" };
+    // Should never ask for the sentinel.
+    assert(type < (G1GCPauseTypeEndSentinel - 1), "must be");
+    return pause_strings[type];
   }
 };
 
