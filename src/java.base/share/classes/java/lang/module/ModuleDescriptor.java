@@ -310,9 +310,8 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Requires that))
-                return false;
-            return name.equals(that.name) && mods.equals(that.mods)
+            return (ob instanceof Requires that)
+                    && name.equals(that.name) && mods.equals(that.mods)
                     && Objects.equals(compiledVersion, that.compiledVersion)
                     && Objects.equals(rawCompiledVersion, that.rawCompiledVersion);
         }
@@ -530,9 +529,8 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Exports other))
-                return false;
-            return Objects.equals(this.mods, other.mods)
+            return (ob instanceof Exports other)
+                    && Objects.equals(this.mods, other.mods)
                     && Objects.equals(this.source, other.source)
                     && Objects.equals(this.targets, other.targets);
         }
@@ -734,11 +732,10 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Opens other))
-                return false;
-            return Objects.equals(this.mods, other.mods)
-                    && Objects.equals(this.source, other.source)
-                    && Objects.equals(this.targets, other.targets);
+           return (ob instanceof Opens other)
+                   && Objects.equals(this.mods, other.mods)
+                   && Objects.equals(this.source, other.source)
+                   && Objects.equals(this.targets, other.targets);
         }
 
         /**
@@ -869,10 +866,9 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Provides other))
-                return false;
-            return Objects.equals(this.service, other.service) &&
-                    Objects.equals(this.providers, other.providers);
+            return (ob instanceof Provides other)
+                    && Objects.equals(this.service, other.service)
+                    && Objects.equals(this.providers, other.providers);
         }
 
         /**
@@ -2237,9 +2233,8 @@ public class ModuleDescriptor
     public boolean equals(Object ob) {
         if (ob == this)
             return true;
-        if (!(ob instanceof ModuleDescriptor that))
-            return false;
-        return (name.equals(that.name)
+        return (ob instanceof ModuleDescriptor that)
+                && (name.equals(that.name)
                 && modifiers.equals(that.modifiers)
                 && requires.equals(that.requires)
                 && Objects.equals(packages, that.packages)

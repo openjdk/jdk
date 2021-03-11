@@ -1175,8 +1175,9 @@ class LambdaForm {
         public boolean equals(Object other) {
             if (this == other) return true;
             if (other == null) return false;
-            if (!(other instanceof NamedFunction that)) return false;
-            return this.member != null && this.member.equals(that.member);
+            return (other instanceof NamedFunction that)
+                    && this.member != null
+                    && this.member.equals(that.member);
         }
 
         @Override
