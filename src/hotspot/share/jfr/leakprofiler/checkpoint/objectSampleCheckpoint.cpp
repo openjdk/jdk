@@ -201,6 +201,7 @@ class StackTraceBlobInstaller {
  private:
   BlobCache _cache;
   void install(ObjectSample* sample);
+  const JfrStackTrace* resolve(const ObjectSample* sample) const;
  public:
   StackTraceBlobInstaller() : _cache(JfrOptionSet::old_object_queue_size()) {
     prepare_for_resolution();
@@ -224,13 +225,17 @@ static void validate_stack_trace(const ObjectSample* sample, const JfrStackTrace
 }
 #endif
 
+inline const JfrStackTrace* StackTraceBlobInstaller::resolve(const ObjectSample* sample) const {
+  return JfrStackTraceRepository::lookup_for_leak_profiler(sample->stack_trace_hash(), sample->stack_trace_id());
+}
+
 void StackTraceBlobInstaller::install(ObjectSample* sample) {
   JfrBlobHandle blob = _cache.get(sample);
   if (blob.valid()) {
     sample->set_stacktrace(blob);
     return;
   }
-  const JfrStackTrace* const stack_trace = JfrStackTraceRepository::lookup(sample->stack_trace_hash(), sample->stack_trace_id());
+  const JfrStackTrace* const stack_trace = resolve(sample);
   DEBUG_ONLY(validate_stack_trace(sample, stack_trace));
   JfrCheckpointWriter writer;
   writer.write_type(TYPE_STACKTRACE);

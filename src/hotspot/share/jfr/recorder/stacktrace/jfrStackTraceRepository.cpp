@@ -220,7 +220,7 @@ traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
 }
 
 // invariant is that the entry to be resolved actually exists in the table
-const JfrStackTrace* JfrStackTraceRepository::lookup(unsigned int hash, traceid id) {
+const JfrStackTrace* JfrStackTraceRepository::lookup_for_leak_profiler(unsigned int hash, traceid id) {
   const size_t index = (hash % TABLE_SIZE);
   const JfrStackTrace* trace = leak_profiler_instance()._table[index];
   while (trace != NULL && trace->id() != id) {

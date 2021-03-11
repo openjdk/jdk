@@ -60,7 +60,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   static size_t clear(JfrStackTraceRepository& repo);
   size_t write(JfrChunkWriter& cw, bool clear);
 
-  static const JfrStackTrace* lookup(unsigned int hash, traceid id);
+  static const JfrStackTrace* lookup_for_leak_profiler(unsigned int hash, traceid id);
   static void record_for_leak_profiler(JavaThread* thread, int skip = 0);
   static void clear_leak_profiler();
 
