@@ -49,27 +49,13 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         drawLine(sg2d, (float) x1, (float) y1, (float) x2, (float) y2);
     }
 
-    volatile Line2D lineToShape;
-
     public void drawLine(SunGraphics2D sg2d, float x1, float y1, float x2, float y2) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
             surfaceData.doLine(this, sg2d, x1, y1, x2, y2);
         } else {
-            Line2D lts = lineToShape;
-            if (lts == null) {
-                synchronized (this) {
-                    lts = lineToShape;
-                    if (lts == null) {
-                        lts = new Line2D.Float();
-                        lineToShape = lts;
-                    }
-                }
-            }
-            synchronized (lts) {
-                lts.setLine(x1, y1, x2, y2);
-                drawfillShape(sg2d, sg2d.stroke.createStrokedShape(lts), true, true);
-            }
+            Line2D lineToShape = new Line2D.Float(x1, y1, x2, y2);
+            drawfillShape(sg2d, sg2d.stroke.createStrokedShape(lineToShape), true, true);
         }
     }
 
@@ -79,8 +65,6 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         drawRect(sg2d, (float) x, (float) y, (float) width, (float) height);
     }
 
-    volatile Rectangle2D rectToShape;
-
     public void drawRect(SunGraphics2D sg2d, float x, float y, float width, float height) {
         if ((width < 0) || (height < 0)) return;
 
@@ -88,20 +72,8 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
             surfaceData.doRect(this, sg2d, x, y, width, height, false);
         } else {
-            Rectangle2D rts = rectToShape;
-            if (rts == null) {
-                synchronized (this) {
-                    rts = rectToShape;
-                    if (rts == null) {
-                        rts = new Rectangle2D.Float();
-                        rectToShape = rts;
-                    }
-                }
-            }
-            synchronized (rts) {
-                rts.setRect(x, y, width, height);
-                drawfillShape(sg2d, sg2d.stroke.createStrokedShape(rts), true, true);
-            }
+            Rectangle2D rectToShape = new Rectangle2D.Float(x, y, width, height);
+            drawfillShape(sg2d, sg2d.stroke.createStrokedShape(rectToShape), true, true);
         }
     }
 
@@ -122,8 +94,6 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         drawRoundRect(sg2d, (float) x, (float) y, (float) width, (float) height, (float) arcWidth, (float) arcHeight);
     }
 
-    volatile RoundRectangle2D roundrectToShape;
-
     public void drawRoundRect(SunGraphics2D sg2d, float x, float y, float width, float height, float arcWidth, float arcHeight) {
         if ((width < 0) || (height < 0)) return;
 
@@ -131,20 +101,8 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
             surfaceData.doRoundRect(this, sg2d, x, y, width, height, arcWidth, arcHeight, false);
         } else {
-            RoundRectangle2D rts = roundrectToShape;
-            if (rts == null) {
-                synchronized (this) {
-                    rts = roundrectToShape;
-                    if (rts == null) {
-                        rts = new RoundRectangle2D.Float();
-                        roundrectToShape = rts;
-                    }
-                }
-            }
-            synchronized (rts) {
-                rts.setRoundRect(x, y, width, height, arcWidth, arcHeight);
-                drawfillShape(sg2d, sg2d.stroke.createStrokedShape(rts), true, true);
-            }
+            RoundRectangle2D roundrectToShape = new RoundRectangle2D.Float(x, y, width, height, arcWidth, arcHeight);
+            drawfillShape(sg2d, sg2d.stroke.createStrokedShape(roundrectToShape), true, true);
         }
     }
 
@@ -164,8 +122,6 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         drawOval(sg2d, (float) x, (float) y, (float) width, (float) height);
     }
 
-    volatile Ellipse2D ovalToShape;
-
     public void drawOval(SunGraphics2D sg2d, float x, float y, float width, float height) {
         if ((width < 0) || (height < 0)) return;
 
@@ -173,20 +129,8 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
             surfaceData.doOval(this, sg2d, x, y, width, height, false);
         } else {
-            Ellipse2D ots = ovalToShape;
-            if (ots == null) {
-                synchronized (this) {
-                    ots = ovalToShape;
-                    if (ots == null) {
-                        ots = new Ellipse2D.Float();
-                        ovalToShape = ots;
-                    }
-                }
-            }
-            synchronized (ots) {
-                ots.setFrame(x, y, width, height);
-                drawfillShape(sg2d, sg2d.stroke.createStrokedShape(ots), true, true);
-            }
+            Ellipse2D ovalToShape = new Ellipse2D.Float(x, y, width, height);
+            drawfillShape(sg2d, sg2d.stroke.createStrokedShape(ovalToShape), true, true);
         }
     }
 
@@ -206,8 +150,6 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         drawArc(sg2d, x, y, width, height, startAngle, arcAngle, Arc2D.OPEN);
     }
 
-    volatile Arc2D arcToShape;
-
     public void drawArc(SunGraphics2D sg2d, float x, float y, float width, float height, float startAngle, float arcAngle, int type) {
         if ((width < 0) || (height < 0)) return;
 
@@ -215,20 +157,8 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
             surfaceData.doArc(this, sg2d, x, y, width, height, startAngle, arcAngle, type, false);
         } else {
-            Arc2D ats = arcToShape;
-            if (ats == null) {
-                synchronized (this) {
-                    ats = arcToShape;
-                    if (ats == null) {
-                        ats = new Arc2D.Float();
-                        arcToShape = ats;
-                    }
-                }
-            }
-            synchronized (ats) {
-                ats.setArc(x, y, width, height, startAngle, arcAngle, type);
-                drawfillShape(sg2d, sg2d.stroke.createStrokedShape(ats), true, true);
-            }
+            Arc2D arcToShape = new Arc2D.Float(x, y, width, height, startAngle, arcAngle, type);
+            drawfillShape(sg2d, sg2d.stroke.createStrokedShape(arcToShape), true, true);
         }
     }
 
