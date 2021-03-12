@@ -137,6 +137,10 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_class_unloading();
   }
 
+  if (heap->is_concurrent_weak_root_in_progress()) {
+    entry_rendezvous_roots();
+  }
+
   // Processing strong roots
   // This may be skipped if there is nothing to update/evacuate.
   // If so, strong_root_in_progress would be unset.
@@ -165,12 +169,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
-  } else {
-    // Concurrent weak/strong root flags are unset concurrently. We depend on updateref GC safepoints
-    // to ensure the changes are visible to all mutators before gc cycle is completed.
-    // In case of no evacuation, updateref GC safepoints are skipped. Therefore, we will need
-    // to perform thread handshake to ensure their consistences.
-    entry_rendezvous_roots();
   }
 
   return true;
@@ -804,10 +802,6 @@ void ShenandoahConcurrentGC::op_weak_roots() {
     ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
     heap->workers()->run_task(&task);
   }
-
-  if (!ShenandoahHeap::heap()->unload_classes()) {
-    heap->disable_concurrent_weak_root_in_progress_concurrently();
-  }
 }
 
 void ShenandoahConcurrentGC::op_class_unloading() {
@@ -816,7 +810,6 @@ void ShenandoahConcurrentGC::op_class_unloading() {
           heap->unload_classes(),
           "Checked by caller");
   heap->do_class_unloading();
-  heap->disable_concurrent_weak_root_in_progress_concurrently();
 }
 
 class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {
@@ -908,7 +901,7 @@ void ShenandoahConcurrentGC::op_cleanup_early() {
 }
 
 void ShenandoahConcurrentGC::op_rendezvous_roots() {
-  ShenandoahHeap::heap()->rendezvous_threads();
+  ShenandoahHeap::heap()->disable_concurrent_weak_root_in_progress_concurrently();
 }
 
 void ShenandoahConcurrentGC::op_evacuate() {

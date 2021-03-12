@@ -1731,14 +1731,21 @@ public:
 };
 
 void ShenandoahHeap::disable_concurrent_weak_root_in_progress_concurrently() {
-  // Perform handshake to flush out dead oops
-  {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
-    ShenandoahDisableWeakRootsClosure cl;
-    Handshake::execute(&cl);
-  }
 
+  // We need a rendezvous here to avoid the following race:
+  // 1. Java thread reads referent, sees non-null but unreachable oop
+  // 2. GC thread clears the referent
+  // 3. GC thread turns off conc-ref-processing (we are here!)
+  // 4. Java thread sees conc-ref-processing is off, publishes the dead oop
+  rendezvous_threads();
+
+  // We need to turn off global flag before propagating the change to thread, otherwise new
+  // threads might pick-up the old state but miss the update.
   _gc_state.set_cond(WEAK_ROOTS, false);
+
+  // Propagate flag-change to threads.
+  ShenandoahDisableWeakRootsClosure cl;
+  Handshake::execute(&cl);
 }
 
 GCTracer* ShenandoahHeap::tracer() {
