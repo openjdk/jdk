@@ -178,9 +178,9 @@ JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(
 JRT_END
 
 #if COMPILER2_OR_JVMCI
-static bool restore_allocations(JavaThread* thread, int exec_mode, CompiledMethod* compiled_method,
-                                frame& deoptee, RegisterMap& map, GrowableArray<compiledVFrame*>* chunk,
-                                bool& deoptimized_objects) {
+static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMethod* compiled_method,
+                                  frame& deoptee, RegisterMap& map, GrowableArray<compiledVFrame*>* chunk,
+                                  bool& deoptimized_objects) {
   bool realloc_failures = false;
   assert (chunk->at(0)->scope() != NULL,"expect only compiled java frames");
 
@@ -242,8 +242,8 @@ static bool restore_allocations(JavaThread* thread, int exec_mode, CompiledMetho
   return realloc_failures;
 }
 
-static void restore_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures,
-                          frame& deoptee, int exec_mode, bool& deoptimized_objects) {
+static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures,
+                                     frame& deoptee, int exec_mode, bool& deoptimized_objects) {
   JavaThread* deoptee_thread = chunk->at(0)->thread();
   assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee.id()), "must relock just once");
   assert(thread == Thread::current(), "should be");
@@ -305,7 +305,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
   // Reallocate the non-escaping objects and restore their fields.
   if (jvmci_enabled COMPILER2_PRESENT(|| (DoEscapeAnalysis && EliminateAllocations)
                                       || EliminateAutoBox || EnableVectorAggressiveReboxing)) {
-    realloc_failures = restore_allocations(thread, Unpack_none, cm, deoptee, map, chunk, deoptimized_objects);
+    realloc_failures = rematerialize_objects(thread, Unpack_none, cm, deoptee, map, chunk, deoptimized_objects);
   }
 
   // Revoke biases of objects with eliminated locks in the given frame.
@@ -316,7 +316,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
 
   // Now relock objects if synchronization on them was eliminated.
   if (jvmci_enabled COMPILER2_PRESENT(|| ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks))) {
-    restore_locks(thread, chunk, realloc_failures, deoptee, Unpack_none, deoptimized_objects);
+    restore_eliminated_locks(thread, chunk, realloc_failures, deoptee, Unpack_none, deoptimized_objects);
   }
   return deoptimized_objects;
 }
@@ -376,7 +376,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if (jvmci_enabled COMPILER2_PRESENT( || (DoEscapeAnalysis && EliminateAllocations)
                                        || EliminateAutoBox || EnableVectorAggressiveReboxing )) {
     bool unused;
-    realloc_failures = restore_allocations(thread, exec_mode, cm, deoptee, map, chunk, unused);
+    realloc_failures = rematerialize_objects(thread, exec_mode, cm, deoptee, map, chunk, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
@@ -394,7 +394,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if ((jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) ))
       && !EscapeBarrier::objs_are_deoptimized(thread, deoptee.id())) {
     bool unused;
-    restore_locks(thread, chunk, realloc_failures, deoptee, exec_mode, unused);
+    restore_eliminated_locks(thread, chunk, realloc_failures, deoptee, exec_mode, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
