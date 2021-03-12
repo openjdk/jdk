@@ -179,6 +179,9 @@ public final class Utils {
                 (!k.equalsIgnoreCase("Authorization")
                         && !k.equalsIgnoreCase("Proxy-Authorization"));
     }
+
+    public record ProxyHeaders(HttpHeaders userHeaders, HttpHeaders systemHeaders) {}
+
     private static final BiPredicate<String, String> HOST_RESTRICTED = (k,v) -> !"host".equalsIgnoreCase(k);
     public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client)  {
         return CONTEXT_RESTRICTED(client).and(HOST_RESTRICTED);
