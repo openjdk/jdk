@@ -2229,24 +2229,33 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // Print glibc outstanding allocations.
   // (note: there is no implementation of mallinfo for muslc)
 #ifdef __GLIBC__
+  void* mallinfo_ptr = NULL;
+  size_t total_allocated = 0;
+  bool might_have_wrapped = false;
 #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
-  struct mallinfo2 mi = ::mallinfo2();
-  const size_t total_allocated = mi.uordblks;
-  const bool might_have_wrapped = false;
-#else // __GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 33)
-  struct mallinfo mi = ::mallinfo();
-  // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
-  // So values may have wrapped around. Still useful enough to see how much glibc thinks
-  // we allocated.
-  const size_t total_allocated = static_cast<size_t>(mi.uordblks);
-  // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-  const bool might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
-#endif // __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
-  st->print("C-Heap outstanding allocations: " SIZE_FORMAT "K", total_allocated / K);
-  if (might_have_wrapped) {
-    st->print(" (may have wrapped)");
+  mallinfo_ptr = dlsym(RTLD_DEFAULT, "mallinfo2");
+  if (mallinfo_ptr != NULL) {
+    struct mallinfo2 mi = reinterpret_cast<struct mallinfo2 (*)(void)>(mallinfo_ptr)();
+    total_allocated = mi.uordblks;
   }
-  st->cr();
+#endif // __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
+  if (mallinfo_ptr == NULL) {
+    mallinfo_ptr = dlsym(RTLD_DEFAULT, "mallinfo");
+    if (mallinfo_ptr != NULL) {
+      // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
+      // So values may have wrapped around. Still useful enough to see how much glibc thinks
+      // we allocated.
+      struct mallinfo mi = reinterpret_cast<struct mallinfo (*)(void)>(mallinfo_ptr)();
+      total_allocated = (size_t)(unsigned)mi.uordblks;
+      // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
+      might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
+    }
+  }
+  if (mallinfo_ptr != NULL) {
+    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K%s",
+                 total_allocated / K,
+                 might_have_wrapped ? " (may have wrapped)" : "");
+  }
 #endif // __GLIBC__
 
 }
