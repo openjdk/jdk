@@ -96,6 +96,7 @@ class ValidOptions {
             options.put(CLIOptions.WIN_MENU_HINT.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_MENU_GROUP.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_SHORTCUT_HINT.getId(), USE.INSTALL);
+            options.put(CLIOptions.WIN_SHORTCUT_PROMPT.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_DIR_CHOOSER.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_UPGRADE_UUID.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_PER_USER_INSTALLATION.getId(),
