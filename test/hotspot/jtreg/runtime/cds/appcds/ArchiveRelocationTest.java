@@ -35,6 +35,7 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import jtreg.SkippedException;
 
 public class ArchiveRelocationTest {

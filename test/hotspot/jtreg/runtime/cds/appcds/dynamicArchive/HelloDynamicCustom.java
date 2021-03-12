@@ -41,6 +41,7 @@
 import java.io.File;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class HelloDynamicCustom extends DynamicArchiveTestBase {
     private static final String ARCHIVE_NAME = CDSTestUtils.getOutputFileName("top.jsa");

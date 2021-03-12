@@ -38,6 +38,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaProxyDuringShutdown
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class LambdaProxyDuringShutdown extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
         runTest(LambdaProxyDuringShutdown::test);

@@ -34,6 +34,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. SharedArchiveFileOption
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 import java.io.File;
 
 public class SharedArchiveFileOption extends DynamicArchiveTestBase {
