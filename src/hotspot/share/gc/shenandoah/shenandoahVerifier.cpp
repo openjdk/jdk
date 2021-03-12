@@ -604,7 +604,7 @@ private:
 public:
   VerifyThreadGCState(const char* label, char expected) : _label(label), _expected(expected) {}
   void do_thread(Thread* t) {
-    char actual = ShenandoahThreadLocalData::gc_state(t) & ~((char)ShenandoahHeap::WEAK_ROOTS);
+    char actual = ShenandoahThreadLocalData::gc_state(t);
     if (actual != _expected) {
       fatal("%s: Thread %s: expected gc-state %d, actual %d", _label, t->name(), _expected, actual);
     }
@@ -639,10 +639,22 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
       case _verify_gcstate_evacuation:
         enabled = true;
         expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::EVACUATION;
+        if (!_heap->is_stw_gc_in_progress()) {
+          // Only concurrent GC sets this.
+          expected |= ShenandoahHeap::WEAK_ROOTS;
+        }
         break;
       case _verify_gcstate_stable:
         enabled = true;
         expected = ShenandoahHeap::STABLE;
+        break;
+      case _verify_gcstate_stable_weakroots:
+        enabled = true;
+        expected = ShenandoahHeap::STABLE;
+        if (!_heap->is_stw_gc_in_progress()) {
+          // Only concurrent GC sets this.
+          expected |= ShenandoahHeap::WEAK_ROOTS;
+        }
         break;
       default:
         enabled = false;
@@ -650,7 +662,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
     }
 
     if (enabled) {
-      char actual = _heap->gc_state() & ~((char)ShenandoahHeap::WEAK_ROOTS);
+      char actual = _heap->gc_state();
       if (actual != expected) {
         fatal("%s: Global gc-state: expected %d, actual %d", label, expected, actual);
       }
@@ -799,7 +811,7 @@ void ShenandoahVerifier::verify_after_concmark() {
           _verify_cset_none,           // no references to cset anymore
           _verify_liveness_complete,   // liveness data must be complete here
           _verify_regions_disable,     // trash regions not yet recycled
-          _verify_gcstate_stable       // mark should have stabilized the heap
+          _verify_gcstate_stable_weakroots  // heap is still stable, weakroots are in progress
   );
 }
 
@@ -811,7 +823,7 @@ void ShenandoahVerifier::verify_before_evacuation() {
           _verify_cset_disable,                      // non-forwarded references to cset expected
           _verify_liveness_complete,                 // liveness data must be complete here
           _verify_regions_disable,                   // trash regions not yet recycled
-          _verify_gcstate_stable                     // mark should have stabilized the heap
+          _verify_gcstate_stable_weakroots           // heap is still stable, weakroots are in progress
   );
 }
 

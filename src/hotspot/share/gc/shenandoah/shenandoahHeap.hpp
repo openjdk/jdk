@@ -264,7 +264,7 @@ public:
     // Heap is under updating: needs no additional barriers.
     UPDATEREFS_BITPOS = 3,
 
-    // Weak-reference/roots-processing in progress: need weak-LRB
+    // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
     WEAK_ROOTS_BITPOS  = 4,
   };
 
