@@ -371,7 +371,7 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
         }
 
         @Override
-        public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location, String className, Kind kind, JavaFileObject... originatingFiles) throws IOException {
+        public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location, String className, Kind kind, FileObject... originatingFiles) throws IOException {
             throwUserExceptionIfNeeded(fileManagerMethod, "getJavaFileForOutputForOriginatingFiles");
             return wrap(super.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles));
         }
@@ -389,7 +389,7 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
         }
 
         @Override
-        public FileObject getFileForOutputForOriginatingFiles(Location location, String packageName, String relativeName, JavaFileObject... originatingFiles) throws IOException {
+        public FileObject getFileForOutputForOriginatingFiles(Location location, String packageName, String relativeName, FileObject... originatingFiles) throws IOException {
             throwUserExceptionIfNeeded(fileManagerMethod, "getFileForOutputForOriginatingFiles");
             return wrap(super.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles));
         }

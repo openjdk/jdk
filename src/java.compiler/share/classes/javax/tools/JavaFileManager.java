@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.Set;
+import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
 
 import static javax.tools.JavaFileObject.Kind;
@@ -358,7 +359,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @param kind the kind of file, must be one of {@link
      * JavaFileObject.Kind#SOURCE SOURCE} or {@link
      * JavaFileObject.Kind#CLASS CLASS}
-     * @param originatingFiles XXX
+     * @param originatingFiles the files which are contributing to this newly created file (see {@code originatingElements} in {@link Filer#createSourceFile}
      * @return a file object for output
      * @throws IllegalArgumentException if sibling is not known to
      * this file manager, or if the location is not known to this file
@@ -374,7 +375,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     default JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location,
                                         String className,
                                         Kind kind,
-                                        JavaFileObject... originatingFiles)
+                                        FileObject... originatingFiles)
         throws IOException {
         return getJavaFileForOutput(location, className, kind, originatingFiles != null && originatingFiles.length > 0 ? originatingFiles[0] : null);
     }
@@ -498,7 +499,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @param location an output location
      * @param packageName a package name
      * @param relativeName a relative name
-     * @param originatingFiles XXX
+     * @param originatingFiles the files which are contributing to this newly created file (see {@code originatingElements} in {@link Filer#createResource})
      * @return a file object
      * @throws IllegalArgumentException if sibling is not known to
      * this file manager, or if the location is not known to this file
@@ -514,7 +515,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     default FileObject getFileForOutputForOriginatingFiles(Location location,
                                 String packageName,
                                 String relativeName,
-                                JavaFileObject... originatingFiles)
+                                FileObject... originatingFiles)
         throws IOException {
         return getFileForOutput(location, packageName, relativeName, originatingFiles != null && originatingFiles.length > 0 ? originatingFiles[0] : null);
     }

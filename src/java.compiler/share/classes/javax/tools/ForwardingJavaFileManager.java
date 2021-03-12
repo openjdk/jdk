@@ -149,7 +149,7 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
     public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location,
                                                String className,
                                                Kind kind,
-                                               JavaFileObject... originatingFiles) throws IOException {
+                                               FileObject... originatingFiles) throws IOException {
         return fileManager.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles);
     }
 
@@ -188,7 +188,7 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
     public FileObject getFileForOutputForOriginatingFiles(Location location,
                                        String packageName,
                                        String relativeName,
-                                       JavaFileObject... originatingFiles) throws IOException {
+                                       FileObject... originatingFiles) throws IOException {
         return fileManager.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles);
     }
 

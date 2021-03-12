@@ -93,35 +93,41 @@ public class TestOriginatingElements extends TestRunner {
             List<String> testOutput = new ArrayList<>();
             JavaFileManager fm = new ForwardingJavaFileManager<JavaFileManager>(sjfm) {
                 @Override
-                public JavaFileObject getJavaFileForOutputForOriginatingFiles(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, JavaFileObject... originatingFiles) throws IOException {
+                public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location, String className, JavaFileObject.Kind kind, FileObject... originatingFiles) throws IOException {
                     List.of(originatingFiles)
                         .stream()
-                        .map(fo -> fo.getName())
+                        .map(fo -> getInfo(fo))
                         .forEach(testOutput::add);
                     return super.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles);
                 }
                 @Override
-                public FileObject getFileForOutputForOriginatingFiles(JavaFileManager.Location location, String packageName, String relativeName, JavaFileObject... originatingFiles) throws IOException {
+                public FileObject getFileForOutputForOriginatingFiles(Location location, String packageName, String relativeName, FileObject... originatingFiles) throws IOException {
                     List.of(originatingFiles)
                         .stream()
-                        .map(fo -> fo.getName())
+                        .map(fo -> getInfo(fo))
                         .forEach(testOutput::add);
                     return super.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles);
                 }
+                private String getInfo(FileObject fo) {
+                    JavaFileObject jfo = (JavaFileObject) fo; //the test only expects JavaFileObjects here:
+                    String binaryName = inferBinaryName(StandardLocation.SOURCE_PATH, jfo);
+                    return binaryName + "(" + jfo.getKind() + ")";
+                }
             };
             try {
-                List<String> options = List.of("-processor", "TestOriginatingElements$P",
+                List<String> options = List.of("-sourcepath", src.toString(),
+                                               "-processor", "TestOriginatingElements$P",
                                                "-processorpath", System.getProperty("test.classes"),
                                                "-d", classes.toString());
                 ToolProvider.getSystemJavaCompiler()
                             .getTask(null, fm, null, options, null, sjfm.getJavaFileObjects(tb.findJavaFiles(src)))
                             .call();
-                List<String> expectedOriginatingFiles = List.of("testOriginatingElements/src/t/T1.java",
-                                                                "/modules/java.base/java/lang/String.class",
-                                                                "testOriginatingElements/src/t/T2.java",
-                                                                "/modules/java.base/java/lang/CharSequence.class",
-                                                                "testOriginatingElements/src/t/T3.java",
-                                                                "/modules/java.base/java/lang/Exception.class");
+                List<String> expectedOriginatingFiles = List.of("t.T1(SOURCE)",
+                                                                "java.lang.String(CLASS)",
+                                                                "t.T2(SOURCE)",
+                                                                "java.lang.CharSequence(CLASS)",
+                                                                "t.T3(SOURCE)",
+                                                                "java.lang.Exception(CLASS)");
                 if (!expectedOriginatingFiles.equals(testOutput)) {
                     throw new AssertionError("Unexpected originatingElements: " + testOutput);
                 }

@@ -316,7 +316,7 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
-        public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location, String className, Kind kind, JavaFileObject... originatingFiles) throws IOException {
+        public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location, String className, Kind kind, FileObject... originatingFiles) throws IOException {
             try {
                 return wrap(clientJavaFileManager.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles));
             } catch (ClientCodeException e) {
@@ -338,7 +338,7 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
-        public FileObject getFileForOutputForOriginatingFiles(Location location, String packageName, String relativeName, JavaFileObject... originatingFiles) throws IOException {
+        public FileObject getFileForOutputForOriginatingFiles(Location location, String packageName, String relativeName, FileObject... originatingFiles) throws IOException {
             try {
                 return wrap(clientJavaFileManager.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles));
             } catch (ClientCodeException e) {
