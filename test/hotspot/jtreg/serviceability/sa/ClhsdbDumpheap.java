@@ -41,7 +41,7 @@ import jtreg.SkippedException;
  * @summary Test clhsdb dumpheap command
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm ClhsdbDumpheap
+ * @run main/othervm/timeout=240 ClhsdbDumpheap
  */
 
 public class ClhsdbDumpheap {
