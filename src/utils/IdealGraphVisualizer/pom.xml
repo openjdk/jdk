@@ -31,6 +31,7 @@
                           <publicPackage>com.sun.hotspot.igv.layout</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.hierarchicallayout</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.graph</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.filter</publicPackage>
                         </publicPackages>
                     </configuration>
                 </plugin>
@@ -70,6 +71,7 @@
         <module>Filter</module>
         <module>Bytecodes</module>
         <module>ServerCompiler</module>
+        <module>FilterWindow</module>
     </modules>
 
     <properties>
