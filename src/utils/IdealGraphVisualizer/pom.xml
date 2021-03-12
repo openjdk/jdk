@@ -31,7 +31,10 @@
                           <publicPackage>com.sun.hotspot.igv.layout</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.hierarchicallayout</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.graph</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.graph.services</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.filter</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.selectioncoordinator</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.svg</publicPackage>
                         </publicPackages>
                     </configuration>
                 </plugin>
@@ -73,6 +76,8 @@
         <module>ServerCompiler</module>
         <module>FilterWindow</module>
         <module>Graal</module>
+        <module>BatikSVGProxy</module>
+        <module>View</module>
     </modules>
 
     <properties>
