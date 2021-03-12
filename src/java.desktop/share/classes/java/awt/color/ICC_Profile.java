@@ -91,7 +91,19 @@ public class ICC_Profile implements Serializable {
     @Serial
     private static final long serialVersionUID = -3938515861990936766L;
 
+    /**
+     * The implementation specific CMM profile, {@code null} if this
+     * {@code ICC_Profile} is not activated by the {@link #cmmProfile()} method.
+     * This field must not be used directly and only via {@link #cmmProfile()}.
+     */
     private transient volatile Profile cmmProfile;
+
+    /**
+     * Stores some information about {@code ICC_Profile} without causing a
+     * deferred profile to be loaded. Note that we can defer the loading of
+     * standard profiles only. If this field is null, then {@link #cmmProfile}
+     * should be used to access profile information.
+     */
     private transient volatile ProfileDeferralInfo deferralInfo;
 
     /**
@@ -917,10 +929,12 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Activates the deferred standard profiles. Implementation of this method
-     * mimics the old behaviour when the CMMException and IOException were
-     * wrapped by the ProfileDataException, and the ProfileDataException itself
-     * was ignored during activation.
+     * Activates and returns the deferred standard profiles. Implementation of
+     * this method mimics the old behaviour when the {@code CMMException} and
+     * {@code IOException} were wrapped by the {@code ProfileDataException}, and
+     * the {@code ProfileDataException} itself was ignored during activation.
+     *
+     * @return the implementation specific CMM profile, or {@code null}
      */
     private Profile cmmProfile() {
         Profile p = cmmProfile;
@@ -1169,7 +1183,7 @@ public class ICC_Profile implements Serializable {
      * Returns a float array of length 3 containing the X, Y, and Z components
      * encoded in an XYZType tag.
      */
-    float[] getXYZTag(int tagSignature) {
+    final float[] getXYZTag(int tagSignature) {
         byte[] theData = getData(tagSignature);
         float[] theXYZNumber = new float[3]; /* array to return */
 
