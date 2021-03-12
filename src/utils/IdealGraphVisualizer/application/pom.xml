@@ -97,6 +97,11 @@
           <artifactId>Filter</artifactId>
           <version>${project.version}</version>
         </dependency>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>Bytecodes</artifactId>
+          <version>${project.version}</version>
+        </dependency>
         <!-- To use Jelly Tools in your functional tests, add or replace with:
         <dependency>
             <groupId>org.netbeans.api</groupId>
