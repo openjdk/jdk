@@ -20,22 +20,6 @@
                     <configuration>
                         <brandingToken>${brandingToken}</brandingToken>
                         <cluster>${brandingToken}</cluster>
-                        <publicPackages>
-                          <publicPackage>com.sun.hotspot.igv.data</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.data.services</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.data.serialization</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.settings</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.util</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.connection</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.difference</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.layout</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.hierarchicallayout</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.graph</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.graph.services</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.filter</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.selectioncoordinator</publicPackage>
-                          <publicPackage>com.sun.hotspot.igv.svg</publicPackage>
-                        </publicPackages>
                     </configuration>
                 </plugin>
                 <plugin>

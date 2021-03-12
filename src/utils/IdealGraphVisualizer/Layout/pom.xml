@@ -25,6 +25,11 @@
                 <artifactId>nbm-maven-plugin</artifactId>
                 <version>4.3</version>
                 <extensions>true</extensions>
+                <configuration>
+                    <publicPackages>
+                        <publicPackage>com.sun.hotspot.igv.layout</publicPackage>
+                    </publicPackages>
+                </configuration>
             </plugin>
 
             <plugin>
