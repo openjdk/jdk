@@ -102,8 +102,8 @@ public class HeapDumpTest {
     public static void printStackTraces(String file) throws IOException {
         try {
             String output = HprofReader.getStack(file, 0);
-            if (!output.contains("LingeredAppWithExtendedChars.main")) {
-                throw new RuntimeException("'LingeredAppWithExtendedChars.main' missing from stdout/stderr");
+            if (!output.contains("LingeredApp.steadyState")) {
+                throw new RuntimeException("'LingeredApp.steadyState' missing from stdout/stderr");
             }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
