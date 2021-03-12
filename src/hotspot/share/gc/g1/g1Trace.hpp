@@ -36,10 +36,14 @@ class G1NewTracer : public YoungGCTracer {
   G1GCPauseType _pause;
 
 public:
-  G1NewTracer() : YoungGCTracer(G1New), _pause(G1GCPauseType::Invalid) {}
+  G1NewTracer() :
+    YoungGCTracer(G1New),
+    _pause(G1GCPauseType::FullGC) // Initialize to something invalid. For this event, which
+                                  // is about young collections, FullGC is not a valid value.
+  { }
 
   void initialize();
-  void report_yc_pause(G1GCPauseType pause);
+  void report_young_gc_pause(G1GCPauseType pause);
   void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
   void report_evacuation_info(G1EvacuationInfo* info);
   void report_evacuation_failed(EvacuationFailedInfo& ef_info);

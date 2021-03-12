@@ -72,7 +72,8 @@ void G1NewTracer::initialize() {
   JFR_ONLY(register_jfr_type_constants());
 }
 
-void G1NewTracer::report_yc_pause(G1GCPauseType pause) {
+void G1NewTracer::report_young_gc_pause(G1GCPauseType pause) {
+  G1GCPauseTypeHelper::assert_is_young_pause(pause);
   _pause = pause;
 }
 
@@ -126,6 +127,9 @@ void G1NewTracer::report_adaptive_ihop_statistics(size_t threshold,
 }
 
 void G1NewTracer::send_g1_young_gc_event() {
+  // Check that the pause type has been updated to something valid for this event.
+  G1GCPauseTypeHelper::assert_is_young_pause(_pause);
+
   EventG1GarbageCollection e(UNTIMED);
   if (e.should_commit()) {
     e.set_gcId(GCId::current());

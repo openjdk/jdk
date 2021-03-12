@@ -378,7 +378,10 @@ private:
 #define assert_used_and_recalculate_used_equal(g1h) do {} while(0)
 #endif
 
-  const char* young_gc_name() const;
+  static const uint MaxYoungGCNameLength = 128;
+  // Sets given young_gc_name to the canonical young gc pause string. Young_gc_name
+  // must be at least of length MaxYoungGCNameLength.
+  void set_young_gc_name(char* young_gc_name);
 
   // The young region list.
   G1EdenRegions _eden;

@@ -2848,18 +2848,15 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
   }
 }
 
-const char* G1CollectedHeap::young_gc_name() const {
-  if (collector_state()->in_concurrent_start_gc()) {
-    return "Pause Young (Concurrent Start)";
-  } else if (collector_state()->in_young_only_phase()) {
-    if (collector_state()->in_young_gc_before_mixed()) {
-      return "Pause Young (Prepare Mixed)";
-    } else {
-      return "Pause Young (Normal)";
-    }
-  } else {
-    return "Pause Young (Mixed)";
-  }
+void G1CollectedHeap::set_young_gc_name(char* young_gc_name) {
+  G1GCPauseType pause_type =
+    // The strings for all Concurrent Start pauses are the same, so the parameter
+    // does not matter here.
+    collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */);
+  snprintf(young_gc_name,
+           MaxYoungGCNameLength,
+           "Pause Young (%s)",
+           G1GCPauseTypeHelper::to_string(pause_type));
 }
 
 bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
@@ -2942,7 +2939,10 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
     GCTraceCPUTime tcpu;
 
-    GCTraceTime(Info, gc) tm(young_gc_name(), NULL, gc_cause(), true);
+    char young_gc_name[MaxYoungGCNameLength];
+    set_young_gc_name(young_gc_name);
+
+    GCTraceTime(Info, gc) tm(young_gc_name, NULL, gc_cause(), true);
 
     uint active_workers = WorkerPolicy::calc_active_workers(workers()->total_workers(),
                                                             workers()->active_workers(),
@@ -3022,7 +3022,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
         // Need to report the collection pause now since record_collection_pause_end()
         // modifies it to the next state.
-        _gc_tracer_stw->report_yc_pause(collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark));
+        _gc_tracer_stw->report_young_gc_pause(collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark));
 
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;

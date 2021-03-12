@@ -36,8 +36,7 @@ enum class G1GCPauseType : uint {
   Cleanup,
   Remark,
   MixedGC,
-  FullGC,
-  Invalid
+  FullGC
 };
 
 ENUMERATOR_RANGE(G1GCPauseType, G1GCPauseType::YoungGC, G1GCPauseType::FullGC)
@@ -77,8 +76,8 @@ public:
   static const char* to_string(G1GCPauseType type) {
     static const char* pause_strings[] = { "Normal",
                                            "Prepare Mixed",
-                                           "Concurrent Start Mark",
-                                           "Concurrent Start Undo",
+                                           "Concurrent Start", // Do not distinguish between the different
+                                           "Concurrent Start", // Concurrent Start pauses.
                                            "Cleanup",
                                            "Remark",
                                            "Mixed",
