@@ -414,12 +414,26 @@ public class ThreadLocalRandom extends Random {
     }
 
     // Methods required by class AbstractSpliteratorGenerator
+    /**
+     * @hidden
+     */
+    @Override
     public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
         return new RandomIntsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
     }
+
+    /**
+     * @hidden
+     */
+    @Override
     public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
         return new RandomLongsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
     }
+
+    /**
+     * @hidden
+     */
+    @Override
     public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
         return new RandomDoublesSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
     }
@@ -463,7 +477,6 @@ public class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      *
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public double nextDouble(double bound) {
@@ -474,7 +487,6 @@ public class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      *
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public double nextDouble(double origin, double bound) {
@@ -492,7 +504,6 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public float nextFloat(float bound) {
@@ -502,7 +513,6 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public float nextFloat(float origin, float bound) {
@@ -521,7 +531,6 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public int nextInt(int bound) {
@@ -531,7 +540,6 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public int nextInt(int origin, int bound) {
@@ -549,7 +557,6 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public long nextLong(long bound) {
@@ -559,7 +566,6 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote {@inheritDoc}
      */
     @Override
     public long nextLong(long origin, long bound) {
@@ -569,9 +575,8 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public IntStream ints(long streamSize) {
@@ -580,7 +585,9 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     *
+     * @implNote This method is implemented to be equivalent to
+     *           {@code ints(Long.MAX_VALUE)}.
      *
      * @since 1.8
      */
@@ -592,9 +599,8 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
@@ -604,9 +610,11 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.8
+     * @implNote This method is implemented to be equivalent to
+     *           {@code ints(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+     *
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
@@ -616,9 +624,8 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public LongStream longs(long streamSize) {
@@ -628,8 +635,10 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
+     * @implNote This method is implemented to be equivalent to
+     *           {@code longs(Long.MAX_VALUE)}.
+     *
      * @since 1.8
-     * @implNote  {@inheritDoc}
      */
     @Override
     public LongStream longs() {
@@ -639,9 +648,8 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
@@ -651,9 +659,11 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.8
+     * @implNote This method is implemented to be equivalent to
+     *           {@code longs(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+     *
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
@@ -663,9 +673,8 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public DoubleStream doubles(long streamSize) {
@@ -675,8 +684,9 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
+     * @implNote This method is implemented to be equivalent to
+     *           {@code doubles(Long.MAX_VALUE)}.
      * @since 1.8
-     * @implNote  {@inheritDoc}
      */
     @Override
     public DoubleStream doubles() {
@@ -686,9 +696,8 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
@@ -698,9 +707,11 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      *
-     * @since 1.8
+     * @implNote This method is implemented to be equivalent to
+     *           {@code doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+     *
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {

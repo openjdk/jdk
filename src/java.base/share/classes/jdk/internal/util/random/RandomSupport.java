@@ -27,6 +27,7 @@ package jdk.internal.util.random;
 
 import java.lang.annotation.*;
 import java.math.BigInteger;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
@@ -980,7 +981,7 @@ public class RandomSupport {
         }
 
         public boolean tryAdvance(IntConsumer consumer) {
-            if (consumer == null) throw new NullPointerException();
+            Objects.requireNonNull(consumer);
             long i = index, f = fence;
             if (i < f) {
                 consumer.accept(RandomSupport.boundedNextInt(generatingGenerator, origin, bound));
@@ -991,7 +992,7 @@ public class RandomSupport {
         }
 
         public void forEachRemaining(IntConsumer consumer) {
-            if (consumer == null) throw new NullPointerException();
+            Objects.requireNonNull(consumer);
             long i = index, f = fence;
             if (i < f) {
                 index = f;
@@ -1038,7 +1039,7 @@ public class RandomSupport {
         }
 
         public boolean tryAdvance(LongConsumer consumer) {
-            if (consumer == null) throw new NullPointerException();
+            Objects.requireNonNull(consumer);
             long i = index, f = fence;
             if (i < f) {
                 consumer.accept(RandomSupport.boundedNextLong(generatingGenerator, origin, bound));
@@ -1049,7 +1050,7 @@ public class RandomSupport {
         }
 
         public void forEachRemaining(LongConsumer consumer) {
-            if (consumer == null) throw new NullPointerException();
+            Objects.requireNonNull(consumer);
             long i = index, f = fence;
             if (i < f) {
                 index = f;
@@ -1096,7 +1097,7 @@ public class RandomSupport {
         }
 
         public boolean tryAdvance(DoubleConsumer consumer) {
-            if (consumer == null) throw new NullPointerException();
+            Objects.requireNonNull(consumer);
             long i = index, f = fence;
             if (i < f) {
                 consumer.accept(RandomSupport.boundedNextDouble(generatingGenerator, origin, bound));
@@ -1107,7 +1108,7 @@ public class RandomSupport {
         }
 
         public void forEachRemaining(DoubleConsumer consumer) {
-            if (consumer == null) throw new NullPointerException();
+            Objects.requireNonNull(consumer);
             long i = index, f = fence;
             if (i < f) {
                 index = f;
@@ -1448,7 +1449,10 @@ public class RandomSupport {
          * @param fence the (exclusive) upper bound on traversal positions
          * @param origin the (inclusive) lower bound on the (pseudo)random values to be generated
          * @param bound the (exclusive) upper bound on the (pseudo)random values to be generated
+         *
          * @return an instance of {@link Spliterator.OfInt}
+         *
+         * @hidden
          */
         public abstract Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound);
 
@@ -1463,7 +1467,10 @@ public class RandomSupport {
          * @param fence the (exclusive) upper bound on traversal positions
          * @param origin the (inclusive) lower bound on the (pseudo)random values to be generated
          * @param bound the (exclusive) upper bound on the (pseudo)random values to be generated
+         *
          * @return an instance of {@link Spliterator.OfLong}
+         *
+         * @hidden
          */
         public abstract Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound);
 
@@ -1478,7 +1485,10 @@ public class RandomSupport {
          * @param fence the (exclusive) upper bound on traversal positions
          * @param origin the (inclusive) lower bound on the (pseudo)random values to be generated
          * @param bound the (exclusive) upper bound on the (pseudo)random values to be generated
+         *
          * @return an instance of {@link Spliterator.OfDouble}
+         *
+         * @hidden
          */
         public abstract Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound);
 
@@ -1526,7 +1536,7 @@ public class RandomSupport {
          * <p>The (pseudo)random {@code int} values are generated as if the result of
          * calling the method {@link #nextInt()}.
          *
-         * @implNote The implementation of this method is effectively
+         * @implSpec The implementation of this method is effectively
          * equivalent to {@code ints(Long.MAX_VALUE)}.
          *
          * @return a stream of (pseudo)randomly chosen {@code int} values
@@ -1542,7 +1552,7 @@ public class RandomSupport {
          * split from it; each value conforms to the given origin (inclusive)
          * and bound (exclusive).
          *
-         * @implNote <p>The (pseudo)random {@code int} values are generated as
+         * @implSpec <p>The (pseudo)random {@code int} values are generated as
          *           if the result of calling the following method with the
          *           origin and bound:
          *           <pre>{@code
@@ -1583,7 +1593,7 @@ public class RandomSupport {
          * values from this generator and/or one split from it; each value
          * conforms to the given origin (inclusive) and bound (exclusive).
          *
-         * @implNote <p>TThis method is implemented to be equivalent to {@code
+         * @implSpec <p>This method is implemented to be equivalent to {@code
          *           ints(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
          *
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1630,7 +1640,7 @@ public class RandomSupport {
          *
          * @return a stream of (pseudo)random {@code long} values
          *
-         * @implNote This method is implemented to be equivalent to {@code
+         * @implSpec This method is implemented to be equivalent to {@code
          *         longs(Long.MAX_VALUE)}.
          */
         @Override
@@ -1644,7 +1654,7 @@ public class RandomSupport {
          * split from it; each value conforms to the given origin (inclusive)
          * and bound (exclusive).
          *
-         * @implNote <p>The (pseudo)random {@code long} values are generated as
+         * @implSpec <p>The (pseudo)random {@code long} values are generated as
          *           if the result of calling the following method with the
          *           origin and bound:
          *           <pre>{@code
@@ -1692,7 +1702,7 @@ public class RandomSupport {
          * each value conforms to the given origin (inclusive) and bound
          * (exclusive).
          *
-         * @implNote This method is implemented to be equivalent to {@code
+         * @implSpec This method is implemented to be equivalent to {@code
          *           longs(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
          *
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1741,7 +1751,7 @@ public class RandomSupport {
          * <p>The (pseudo)random {@code double} values are generated as if the result
          * of calling the method {@link #nextDouble()}.
          *
-         * @implNote This method is implemented to be equivalent to {@code
+         * @implSpec This method is implemented to be equivalent to {@code
          * doubles(Long.MAX_VALUE)}.
          *
          * @return a stream of (pseudo)random {@code double} values
@@ -1757,7 +1767,7 @@ public class RandomSupport {
          * split from it; each value conforms to the given origin (inclusive)
          * and bound (exclusive).
          *
-         * @implNote <p>The (pseudo)random {@code double} values are generated
+         * @implSpec <p>The (pseudo)random {@code double} values are generated
          *           as if the result of calling the following method with the
          *           origin and bound:
          *           <pre>{@code
@@ -1793,7 +1803,7 @@ public class RandomSupport {
          * each value conforms to the given origin (inclusive) and bound
          * (exclusive).
          *
-         * @implNote This method is implemented to be equivalent to {@code
+         * @implSpec This method is implemented to be equivalent to {@code
          *           doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
          *
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1941,7 +1951,7 @@ public class RandomSupport {
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
-         * @implNote This method is implemented to be equivalent to {@code
+         * @implSpec This method is implemented to be equivalent to {@code
          *         jumps(Long.MAX_VALUE)}.
          */
         @Override
@@ -1978,7 +1988,7 @@ public class RandomSupport {
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
-         * @implNote This method is implemented to be equivalent to {@code
+         * @implSpec This method is implemented to be equivalent to {@code
          *         jumps(Long.MAX_VALUE)}.
          */
         @Override
@@ -2026,7 +2036,7 @@ public class RandomSupport {
          * interface, produced by jumping copies of this generator by different
          * integer multiples of the default leap distance.
          *
-         * @implNote This method is implemented to be equivalent to {@code leaps(Long.MAX_VALUE)}.
+         * @implSpec This method is implemented to be equivalent to {@code leaps(Long.MAX_VALUE)}.
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          */
@@ -2086,7 +2096,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(IntConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(RandomSupport.boundedNextInt(generatingGenerator, origin, bound));
@@ -2097,7 +2107,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(IntConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2133,7 +2143,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(LongConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(RandomSupport.boundedNextLong(generatingGenerator, origin, bound));
@@ -2144,7 +2154,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(LongConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2181,7 +2191,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(DoubleConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(RandomSupport.boundedNextDouble(generatingGenerator, origin, bound));
@@ -2192,7 +2202,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(DoubleConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2237,7 +2247,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(Consumer<? super RandomGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(generatingGenerator.copyAndJump(distance));
@@ -2248,7 +2258,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(Consumer<? super RandomGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2282,7 +2292,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(Consumer<? super JumpableGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(generatingGenerator.copyAndJump(distance));
@@ -2293,7 +2303,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(Consumer<? super JumpableGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2327,7 +2337,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(Consumer<? super ArbitrarilyJumpableGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(generatingGenerator.copyAndJump(distance));
@@ -2338,7 +2348,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(Consumer<? super ArbitrarilyJumpableGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2451,7 +2461,7 @@ public class RandomSupport {
          *
          * @return a stream of {@link SplittableGenerator} objects
          *
-         * @implNote This method is implemented to be equivalent to {@code splits(Long.MAX_VALUE)}.
+         * @implSpec This method is implemented to be equivalent to {@code splits(Long.MAX_VALUE)}.
          */
         @Override
         public Stream<SplittableGenerator> splits() {
@@ -2487,7 +2497,9 @@ public class RandomSupport {
          *
          * @return a stream of {@link SplittableGenerator} objects
          *
-         * @implNote This method is implemented to be equivalent to {@code splits(Long.MAX_VALUE)}.
+         * @throws NullPointerException if source is null
+         *
+         * @implSpec This method is implemented to be equivalent to {@code splits(Long.MAX_VALUE)}.
          */
         @Override
         public Stream<SplittableGenerator> splits(SplittableGenerator source) {
@@ -2504,6 +2516,8 @@ public class RandomSupport {
          *                   of (pseudo)random bits used to initialize the state of the new ones.
          *
          * @return a stream of {@link SplittableGenerator} objects
+         *
+         * @throws NullPointerException if source is null
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
@@ -2540,7 +2554,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(IntConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(RandomSupport.boundedNextInt(generatingGenerator, origin, bound));
@@ -2551,7 +2565,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(IntConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2586,7 +2600,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(LongConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(RandomSupport.boundedNextLong(generatingGenerator, origin, bound));
@@ -2597,7 +2611,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(LongConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2632,7 +2646,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(DoubleConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(RandomSupport.boundedNextDouble(generatingGenerator, origin, bound));
@@ -2643,7 +2657,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(DoubleConsumer consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2682,7 +2696,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(Consumer<? super SplittableGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(constructingGenerator.split(generatingGenerator));
@@ -2693,7 +2707,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(Consumer<? super SplittableGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;
@@ -2849,6 +2863,8 @@ public class RandomSupport {
          *               of this one as a source of (pseudo)random bits used to
          *               initialize the state of the new ones.
          * @return the new {@code SplittableGenerator} instance
+         *
+         * @throws NullPointerException if source is null
          */
         @Override
         public SplittableGenerator split(SplittableGenerator source) {
@@ -2877,6 +2893,8 @@ public class RandomSupport {
          *              {@code RandomGenerator} objects.
          *
          * @return the new {@code AbstractSplittableWithBrineGenerator} instance
+         *
+         * @throws NullPointerException if source is null
          */
         public abstract SplittableGenerator split(SplittableGenerator source, long brine);
 
@@ -2931,7 +2949,7 @@ public class RandomSupport {
             }
 
             public boolean tryAdvance(Consumer<? super SplittableGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     consumer.accept(constructingGenerator.split(generatingGenerator, salt | i));
@@ -2944,7 +2962,7 @@ public class RandomSupport {
             }
 
             public void forEachRemaining(Consumer<? super SplittableGenerator> consumer) {
-                if (consumer == null) throw new NullPointerException();
+                Objects.requireNonNull(consumer);
                 long i = index, f = fence;
                 if (i < f) {
                     index = f;

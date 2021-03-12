@@ -51,10 +51,10 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * methods for selecting random number generator algorithms.
  *
  * A specific {@link RandomGeneratorFactory} can be located by using the
- * {@link RandomGeneratorFactory#factoryOf(String)} method, where the argument string
+ * {@link RandomGeneratorFactory#of(String)} method, where the argument string
  * is the name of the <a href="package-summary.html#algorithms">algorithm</a>
  * required. The method
- * {@link RandomGeneratorFactory#all()} produces a {@link Stream} of all available
+ * {@link RandomGeneratorFactory#all()} produces a non-empty {@link Stream} of all available
  * {@link RandomGeneratorFactory RandomGeneratorFactorys} that can be searched
  * to locate a {@link RandomGeneratorFactory} suitable to the task.
  *
@@ -387,13 +387,13 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Returns a stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
+     * Returns a a non-empty stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
      * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
      * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
      * as deprecated are not included in the result.
      *
-     * @return Stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
+     * @return a non-empty stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
     public static Stream<RandomGeneratorFactory<RandomGenerator>> all() {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();

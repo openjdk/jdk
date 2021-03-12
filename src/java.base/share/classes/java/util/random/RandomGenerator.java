@@ -963,6 +963,8 @@ public interface RandomGenerator {
          * @return an object that implements the {@link RandomGenerator} and
          *         {@link SplittableGenerator} interfaces
          *
+         * @throws NullPointerException if source is null
+         *
          * @since 17
          */
         SplittableGenerator split(SplittableGenerator source);
@@ -1021,6 +1023,8 @@ public interface RandomGenerator {
          *           equivalent to {@link SplittableGenerator#splits(long, SplittableGenerator) splits}
          *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, source).
          *
+         * @throws NullPointerException if source is null
+         *
          * @since 17
          */
         Stream<SplittableGenerator> splits(SplittableGenerator source);
@@ -1039,6 +1043,7 @@ public interface RandomGenerator {
          *
          * @throws IllegalArgumentException if {@code streamSize} is
          *         less than zero
+         * @throws NullPointerException if source is null
          *
          * @since 17
          */

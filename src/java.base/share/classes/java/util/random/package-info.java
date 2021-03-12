@@ -102,28 +102,27 @@
  * {@link RandomGenerator#nextGaussian nextGaussian()} and
  * {@link RandomGenerator#nextExponential nextExponential()} draw floating-point
  * values from nonuniform distributions. The method
- * {@link RandomGenerator#period period()} returns information about the period
- * of the generator instance.
  *
- * <p> For a multi-threaded application, one can repeat the preceding steps to
- * create additional {@linkplain RandomGenerator RandomGenerators}, but often it is preferable
- * to use methods of the one single initially created generator to create others
- * like it. (One reason is that some generator algorithms, if asked to create a
- * new set of generators all at once, can make a special effort to ensure that
- * the new generators are statistically independent.) If the initial generator
- * implements the interface {@link StreamableGenerator}, then the method
- * {@link RandomGenerator#rngs rngs()} can be used to create a stream of
- * generators. If this is a parallel stream, then it is easy to get parallel
- * execution by using the {@link Stream#map map()} method on the stream.
- *
+ * <p> For a multi-threaded application, one can repeat the preceding steps
+ * to create additional {@linkplain RandomGenerator RandomGenerators}, but
+ * often it is preferable to use methods of the one single initially
+ * created generator to create others like it. (One reason is that some
+ * generator algorithms, if asked to create a new set of generators all at
+ * once, can make a special effort to ensure that the new generators are
+ * statistically independent.) If the initial generator implements the
+ * interface {@link RandomGenerator.StreamableGenerator}, then the method
+ * {@link RandomGenerator.StreamableGenerator#rngs rngs()} can be used to
+ * create a stream of generators. If this is a parallel stream, then it is
+ * easy to get parallel execution by using the
+ * {@link java.util.stream.Stream#map map()} method on the stream.
  * <p> For a multi-threaded application that forks new threads dynamically,
  * another approach is to use an initial generator that implements the interface
  * {@link RandomGenerator.SplittableGenerator}, which is then considered to
  * "belong" to the initial thread for its exclusive use; then whenever any
  * thread needs to fork a new thread, it first uses the
- * {@link RandomGenerator#split split()} method of its own generator to create a
- * new generator, which is then passed to the newly created thread for exclusive
- * use by that new thread.
+ * {@link RandomGenerator.SplittableGenerator#split split()} method of its own
+ * generator to create a new generator, which is then passed to the newly
+ * created thread for exclusive use by that new thread.
  *
  *
  * <h2>Choosing a Random Number Generator Algorithm</h2>
@@ -208,14 +207,24 @@
  *
  * <h2><a id="algorithms">Random Number Generator Algorithms Available.</a></h2>
  *
- * @implSpec These algorithms must be found with the current version of Java SE.
- *           An implementation may recognize additional algorithms.
- *           Availability of certain algorithms is subject to change in the future;
- *           new algorithms may be added, older algorithms may be deprecated.
- *           Accordingly, user should code fallback to alternate algorithms or
- *           the default provided by RandomGeneratorFactory.getDefault().
+ * @implNote These algorithms [in the table below] must be found with the
+ *           current version of Java SE. A particular JDK implementation may
+ *           recognize additional algorithms; check the JDK's documentation for
+ *           details. The set of algorithm required by Java SE may be updated
+ *           by changes to the Java SE specification. Over time, new algorithms
+ *           may be added and old algorithms may be removed.
+ *           <p>In addition, as another life-cycle phase, an algorithm may be
+ *           {@linkplain RandomGeneratorFactory#isDeprecated() deprecated}. A
+ *           deprecated algorithm is not recommended for use. If a required
+ *           algorithm is deprecated, it may be removed in a future release.
+ *           Due to advances in random number generator algorithm development
+ *           and analysis, an algorithm may be deprecated during the lifetime
+ *           of a particular Java SE release. Changing the deprecation status
+ *           of an algorithm is <em>not</em> a specification change.
+ *
  *
  * <table style="padding:0px 20px 0px 0px">
+ *  <caption>Available Algorithms</caption>
  *  <thead>
  *  <tr>
  *      <th style="text-align:left">Algorithm</th>
@@ -333,10 +342,10 @@
  * jump function is applied repeatedly and sequentially, to identify widely
  * spaced states that are then doled out, one to each thread, to serve as the
  * initial state for the generator to be used by that thread. This strategy is
- * supported by the interface {@link JumpableGenerator}. Sometimes it is
- * desirable to support two levels of jumping (by long distances and by
- * <i>really</i> long distances); this strategy is supported by the interface
- * {@link RandomGenerator.LeapableGenerator}. There is also an interface
+ * supported by the interface {@link RandomGenerator.JumpableGenerator}.
+ * Sometimes it is desirable to support two levels of jumping (by long distances
+ * and by <i>really</i> long distances); this strategy is supported by the
+ * interface {@link RandomGenerator.LeapableGenerator}. There is also an interface
  * {@link RandomGenerator.ArbitrarilyJumpableGenerator} for algorithms that allow
  * jumping along the state cycle by any user-specified distance. In this package,
  * implementations of these interfaces include
@@ -453,6 +462,7 @@
  * used in this package.
  *
  * <table style="padding:0px 20px 0px 0px">
+ * <caption>Algorithm Properties</caption>
  * <thead>
  *   <tr><th style="text-align:left">Implementation</th>
  *       <th style="text-align:right">Period</th>
@@ -561,6 +571,7 @@
  * used in the LCG.)
  *
  * <table style="padding:0px 20px 0px 0px">
+ * <caption>LXM Multipliers</caption>
  * <thead>
  *   <tr><th style="text-align:left">Implementation</th>
  *       <th style="text-align:right">LCG multiplier {@code m}</th>

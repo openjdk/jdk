@@ -132,7 +132,7 @@ public class Random extends AbstractSpliteratorGenerator
      * The seed is the initial value of the internal state of the pseudorandom
      * number generator which is maintained by method {@link #next}.
      *
-     * @implNote <p>The invocation {@code new Random(seed)} is equivalent to:
+     * @implSpec <p>The invocation {@code new Random(seed)} is equivalent to:
      *           <pre>{@code
      *           Random rnd = new Random();
      *           rnd.setSeed(seed);
@@ -219,7 +219,7 @@ public class Random extends AbstractSpliteratorGenerator
      * byte array.  The number of random bytes produced is equal to
      * the length of the byte array.
      *
-     * @implNote <p>The method {@code nextBytes} is
+     * @implSpec <p>The method {@code nextBytes} is
      *           implemented by class {@code Random} as if by:
      *           <pre>{@code
      *           public void nextBytes(byte[] bytes) {
@@ -249,7 +249,7 @@ public class Random extends AbstractSpliteratorGenerator
      * pseudorandomly generated and returned. All 2<sup>32</sup> possible
      * {@code int} values are produced with (approximately) equal probability.
      *
-     * @implNote <p>The method {@code nextInt} is
+     * @implSpec <p>The method {@code nextInt} is
      *           implemented by class {@code Random} as if by:
      *           <pre>{@code
      *           public int nextInt() {
@@ -273,7 +273,7 @@ public class Random extends AbstractSpliteratorGenerator
      * {@code int} values are produced with (approximately) equal
      * probability.
      *
-     * @implNote <p>The method {@code nextInt(int bound)} is implemented by
+     * @implSpec <p>The method {@code nextInt(int bound)} is implemented by
      *           class {@code Random} as if by:
      *           <pre>{@code
      *           public int nextInt(int bound) {
@@ -342,7 +342,7 @@ public class Random extends AbstractSpliteratorGenerator
      * contract of {@code nextLong} is that one {@code long} value is
      * pseudorandomly generated and returned.
      *
-     * @implNote <p>The method {@code nextLong} is implemented by class {@code Random}
+     * @implSpec <p>The method {@code nextLong} is implemented by class {@code Random}
      *           {@code Random} as if by:
      *           <pre>{@code
      *           public long nextLong() {
@@ -369,7 +369,7 @@ public class Random extends AbstractSpliteratorGenerator
      * values {@code true} and {@code false} are produced with
      * (approximately) equal probability.
      *
-     * @implNote <p>The method {@code nextBoolean} is implemented by class
+     * @implSpec <p>The method {@code nextBoolean} is implemented by class
      *           {@code Random} as if by:
      *           <pre>{@code
      *           public boolean nextBoolean() {
@@ -399,7 +399,7 @@ public class Random extends AbstractSpliteratorGenerator
      * where <i>m</i> is a positive integer less than 2<sup>24</sup>, are
      * produced with (approximately) equal probability.
      *
-     * @implNote <p>The method {@code nextFloat} is implemented by class
+     * @implSpec <p>The method {@code nextFloat} is implemented by class
      *           {@code Random} as if by:
      *           <pre>{@code
      *           public float nextFloat() {
@@ -437,7 +437,7 @@ public class Random extends AbstractSpliteratorGenerator
      * range {@code 0.0d} (inclusive) to {@code 1.0d} (exclusive), is
      * pseudorandomly generated and returned.
      *
-     * @implNote <p>The method {@code nextDouble} is implemented by class
+     * @implSpec <p>The method {@code nextDouble} is implemented by class
      *           {@code Random} as if by:
      *           <pre>{@code
      *           public double nextDouble() {
@@ -481,7 +481,7 @@ public class Random extends AbstractSpliteratorGenerator
      * normal distribution with mean {@code 0.0} and standard deviation
      * {@code 1.0}, is pseudorandomly generated and returned.
      *
-     * @implNote <p>The method {@code nextGaussian} is implemented by class
+     * @implSpec <p>The method {@code nextGaussian} is implemented by class
      *           {@code Random} as if by a threadsafe version of the following:
      *           <pre>{@code
      *           private double nextNextGaussian;
@@ -618,16 +618,25 @@ public class Random extends AbstractSpliteratorGenerator
 
     // Methods required by class AbstractSpliteratorGenerator
 
+    /**
+     * @hidden
+     */
     @Override
     public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
         return new RandomIntsSpliterator(this, index, fence, origin, bound);
     }
 
+    /**
+     * @hidden
+     */
     @Override
     public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
         return new RandomLongsSpliterator(this, index, fence, origin, bound);
     }
 
+    /**
+     * @hidden
+     */
     @Override
     public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
         return new RandomDoublesSpliterator(this, index, fence, origin, bound);

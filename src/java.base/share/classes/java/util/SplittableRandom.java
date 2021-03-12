@@ -271,8 +271,37 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
         return new SplittableRandom(nextLong(), mixGamma(nextSeed()));
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws NullPointerException {@inheritDoc}
+     */
     public SplittableRandom split(SplittableGenerator source) {
         return new SplittableRandom(source.nextLong(), mixGamma(source.nextLong()));
+    }
+
+    /**
+     * @hidden
+     */
+    @Override
+    public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
+        return super.makeIntsSpliterator(index, fence, origin, bound);
+    }
+
+    /**
+     * @hidden
+     */
+    @Override
+    public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
+        return super.makeLongsSpliterator(index, fence, origin, bound);
+    }
+
+    /**
+     * @hidden
+     */
+    @Override
+    public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
+        return super.makeDoublesSpliterator(index, fence, origin, bound);
     }
 
     @Override
@@ -299,4 +328,117 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
         super.nextBytes(bytes);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    @Override
+    public IntStream ints(long streamSize) {
+        return super.ints(streamSize);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IntStream ints() {
+        return super.ints();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    @Override
+    public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
+        return super.ints(streamSize, randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    @Override
+    public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
+        return super.ints(randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    @Override
+    public LongStream longs(long streamSize) {
+        return super.longs(streamSize);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public LongStream longs() {
+        return super.longs();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    @Override
+    public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
+        return super.longs(streamSize, randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    @Override
+    public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
+        return super.longs(randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    @Override
+    public DoubleStream doubles(long streamSize) {
+        return super.doubles(streamSize);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public DoubleStream doubles() {
+        return super.doubles();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    @Override
+    public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
+        return super.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    @Override
+    public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
+        return super.doubles(randomNumberOrigin, randomNumberBound);
+    }
 }
