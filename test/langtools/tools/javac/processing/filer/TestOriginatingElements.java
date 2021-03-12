@@ -115,6 +115,11 @@ public class TestOriginatingElements extends TestRunner {
                 }
             };
             try {
+                try (MemoryFileManager mfm = new MemoryFileManager(sjfm)) {
+                    compiler.getTask(null, mfm, null, null, null, List.of(new ToolBox.JavaSource("package test; public class Generated2 {}")))
+                            .call();
+                    TestOriginatingElementsGeneratedData.generated2 = mfm.getFileBytes(StandardLocation.CLASS_OUTPUT, "test.Generated2");
+                }
                 List<String> options = List.of("-sourcepath", src.toString(),
                                                "-processor", "TestOriginatingElements$P",
                                                "-processorpath", System.getProperty("test.classes"),
@@ -145,13 +150,8 @@ public class TestOriginatingElements extends TestRunner {
             if (round++ == 0) {
                 try {
                     processingEnv.getFiler().createSourceFile("test.Generated1", originatingElements("t.T1", "java.lang.String")).openOutputStream().close();
-                    try (OutputStream out = processingEnv.getFiler().createClassFile("test.Generated2", originatingElements("t.T2", "java.lang.CharSequence")).openOutputStream();
-                         StandardJavaFileManager sjfm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
-                         MemoryFileManager fm = new MemoryFileManager(sjfm)) {
-                        ToolProvider.getSystemJavaCompiler()
-                                    .getTask(null, fm, null, null, null, List.of(new ToolBox.JavaSource("package test; public class Generated2 {}")))
-                                    .call();
-                        out.write(fm.getFileBytes(StandardLocation.CLASS_OUTPUT, "test.Generated2"));
+                    try (OutputStream out = processingEnv.getFiler().createClassFile("test.Generated2", originatingElements("t.T2", "java.lang.CharSequence")).openOutputStream()) {
+                        out.write(TestOriginatingElementsGeneratedData.generated2);
                     }
                     processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "test", "Generated3.txt", originatingElements("t.T3", "java.lang.Exception")).openOutputStream().close();
                 } catch (IOException ex) {
@@ -177,4 +177,7 @@ public class TestOriginatingElements extends TestRunner {
         }
     }
 
+}
+class TestOriginatingElementsGeneratedData {
+    public static byte[] generated2;
 }
