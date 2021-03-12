@@ -90,6 +90,8 @@ public class HtmlIds {
     static final HtmlId PACKAGE_SUMMARY_TABLE = HtmlId.of("package-summary-table");
     static final HtmlId PROPERTY_DETAIL = HtmlId.of("property-detail");
     static final HtmlId PROPERTY_SUMMARY = HtmlId.of("property-summary");
+    static final HtmlId RESET_BUTTON = HtmlId.of("reset-button");
+    static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
     static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
