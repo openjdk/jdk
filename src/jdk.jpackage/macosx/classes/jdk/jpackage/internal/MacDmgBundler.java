@@ -126,7 +126,14 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         data.put("DEPLOY_VOLUME_PATH", volumePath.toString());
         data.put("DEPLOY_APPLICATION_NAME", APP_NAME.fetchFrom(params));
 
-        data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params));
+        // installDir (actual location) needs to be different than installName
+        // (the label on target folder), so we just omit the leading slash.
+        String installDir = getInstallDir(params);
+        int idx = installDir.indexOf("/");
+        String installName = ((idx >= 0) && (idx < installDir.length() - 1)) ?
+            installDir.substring(idx + 1) : installDir;
+        data.put("DEPLOY_INSTALL_LOCATION", installDir);
+        data.put("DEPLOY_INSTALL_NAME", installName);
 
         createResource(DEFAULT_DMG_SETUP_SCRIPT, params)
                 .setCategory(I18N.getString("resource.dmg-setup-script"))
