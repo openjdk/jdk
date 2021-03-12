@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,12 +156,36 @@ traceid JfrTraceId::assign_thread_id() {
   return next_thread_id();
 }
 
-traceid JfrTraceId::load_raw(jclass jc) {
+// A mirror representing a primitive class (e.g. int.class) has no reified Klass*,
+// instead it has an associated TypeArrayKlass* (e.g. int[].class).
+// We can use the TypeArrayKlass* as a proxy for deriving the id of the primitive class.
+// The exception is the void.class, which has neither a Klass* nor a TypeArrayKlass*.
+// It will use a reserved constant.
+static traceid load_primitive(const oop mirror) {
+  assert(java_lang_Class::is_primitive(mirror), "invariant");
+  const Klass* const tak = java_lang_Class::array_klass_acquire(mirror);
+  traceid id;
+  if (tak == NULL) {
+    // The first klass id is reserved for the void.class
+    id = LAST_TYPE_ID + 1;
+  } else {
+    id = JfrTraceId::load_raw(tak) + 1;
+  }
+  JfrTraceIdEpoch::set_changed_tag_state();
+  return id;
+}
+
+traceid JfrTraceId::load(jclass jc, bool raw /* false */) {
   assert(jc != NULL, "invariant");
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "invariant");
-  const oop my_oop = JNIHandles::resolve(jc);
-  assert(my_oop != NULL, "invariant");
-  return load_raw(java_lang_Class::as_Klass(my_oop));
+  const oop mirror = JNIHandles::resolve(jc);
+  assert(mirror != NULL, "invariant");
+  const Klass* const k = java_lang_Class::as_Klass(mirror);
+  return k != NULL ? (raw ? load_raw(k) : load(k)) : load_primitive(mirror);
+}
+
+traceid JfrTraceId::load_raw(jclass jc) {
+  return load(jc, true);
 }
 
 // used by CDS / APPCDS as part of "remove_unshareable_info"

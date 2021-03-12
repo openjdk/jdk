@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdKlassQueue.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrEpochQueue.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -69,32 +67,4 @@ void JfrTraceIdLoadBarrier::enqueue(const Klass* klass) {
 void JfrTraceIdLoadBarrier::do_klasses(klass_callback callback, bool previous_epoch) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   klass_queue().iterate(callback, previous_epoch);
-}
-
-// A mirror representing a primitive class (e.g. int.class) has no reified Klass*,
-// instead it has an associated TypeArrayKlass* (e.g. int[].class).
-// We can use the TypeArrayKlass* as a proxy for deriving the id of the primitive class.
-// The exception is the void.class, which has neither a Klass* nor a TypeArrayKlass*.
-// It will use a reserved constant.
-static traceid load_primitive(const oop mirror) {
-  assert(java_lang_Class::is_primitive(mirror), "invariant");
-  const Klass* const tak = java_lang_Class::array_klass_acquire(mirror);
-  traceid id;
-  if (tak == NULL) {
-    // The first klass id is reserved for the void.class
-    id = LAST_TYPE_ID + 1;
-  } else {
-    id = JfrTraceId::load_raw(tak) + 1;
-  }
-  JfrTraceIdEpoch::set_changed_tag_state();
-  return id;
-}
-
-traceid JfrTraceIdLoadBarrier::load(jclass jc) {
-  assert(jc != NULL, "invariant");
-  assert(JavaThread::current()->thread_state() == _thread_in_vm, "invariant");
-  const oop mirror = JNIHandles::resolve(jc);
-  assert(mirror != NULL, "invariant");
-  const Klass* const k = java_lang_Class::as_Klass(mirror);
-  return k != NULL ? load(k) : load_primitive(mirror);
 }

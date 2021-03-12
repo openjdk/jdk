@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ class JfrTraceId : public AllStatic {
 
   // through load barrier
   static traceid load(const Klass* klass);
-  static traceid load(jclass jc);
+  static traceid load(jclass jc, bool raw = false);
   static traceid load(const Method* method);
   static traceid load(const Klass* klass, const Method* method);
   static traceid load(const ModuleEntry* module);
