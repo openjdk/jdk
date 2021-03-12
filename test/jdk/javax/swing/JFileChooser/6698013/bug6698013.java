@@ -45,13 +45,13 @@ public class bug6698013 extends JApplet {
     public static void main(String[] args) {
         JFileChooser chooser = new JFileChooser(new VirtualFileSystemView());
         chooser.setCurrentDirectory(root);
-        chooser.showOpenDialog(null);
+        chooser.showSaveDialog(null);
     }
 
     public void init() {
         JFileChooser chooser = new JFileChooser(new VirtualFileSystemView());
         chooser.setCurrentDirectory(root);
-        chooser.showOpenDialog(null);
+        chooser.showSaveDialog(null);
     }
 }
 
