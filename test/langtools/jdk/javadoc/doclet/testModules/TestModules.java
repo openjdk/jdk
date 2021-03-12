@@ -1339,7 +1339,7 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("moduleA/testpkgmdlA/TestClassInModuleA.html", true,
                 """
-                    <section class="description">
+                    <section class="class-description" id="class-description">
                     <hr>
                     <div class="type-signature"><span class="modifiers">public class </span><span cl\
                     ass="element-name"><a href="../../src-html/moduleA/testpkgmdlA/TestClassInModule\

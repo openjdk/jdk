@@ -473,11 +473,10 @@ public enum HtmlStyle {
     // generated from documentation comments.
 
     /**
-     * The class of the element used to present the documentation comment for a type or member
-     * element.
+     * The class of the element used to present the documentation comment for a type element.
      * The content of the block tags will be in a nested element with class {@link #notes}.
      */
-    description,
+    classDescription,
 
     /**
      * The class of the element used to present the documentation comment for a module element,
