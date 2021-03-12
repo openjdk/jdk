@@ -68,11 +68,26 @@ public interface Request {
     Headers getRequestHeaders();
 
     /**
-     * Returns a {@code Request} that adds a header to this request.
+     * Returns an identical {@code Request} with an additional header.
      *
-     * <p> The passed name-values mapping is added to the {@link Headers} of this
-     * request. If a header with this name already exists, its value is not
-     * replaced. All other request state remains unchanged.
+     * <p> The returned {@code Request} has the same set of
+     * {@link #getRequestHeaders() headers} as {@code this} request, but with
+     * the addition of the given header. All other request state remains
+     * unchanged.
+     *
+     * <p> If {@code this} request already contains a header with the same name
+     * as the given {@code headerName}, then its value is not replaced.
+     *
+     * @implSpec
+     * The default implementation; first creates a new {@code Headers}, {@code h},
+     * then adds all the request headers from {@code this} request to {@code h},
+     * then adds the given name-values mapping if {@code headerName} is
+     * not present in {@code h}, finally an unmodifiable view, {@code h'}, of
+     * {@code h} is created. Second, a new {@code Request}, {@code r}, is
+     * created. The {@code getRequestMethod} and {@code getRequestURI} methods
+     * of {@code r} simply invoke the equivalently named method of {@code this}
+     * request. The {@code getRequestHeaders} method returns {@code h'}. Lastly,
+     * {@code r} is returned.
      *
      * @param headerName   the header name
      * @param headerValues the list of header values
