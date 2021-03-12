@@ -61,7 +61,7 @@ public class TestMetadata {
         FlightRecorder.register(MyEvent3.class);
         String file = ExecuteHelper.createProfilingRecording().toAbsolutePath().toAbsolutePath().toString();
         testEventFilter(file);
-        testWildcardAndAcronym(file);
+        testWildcard(file);
     }
 
     static void testUnfiltered() throws Throwable {
@@ -136,7 +136,7 @@ public class TestMetadata {
         Asserts.assertEQ(count, 3);
     }
 
-    static void testWildcardAndAcronym(String file) throws Throwable {
+    static void testWildcard(String file) throws Throwable {
         OutputAnalyzer output = ExecuteHelper.jfr("metadata", "--events", "MyEv*", file);
         int count = 0;
         for (String line : output.asLines()) {
