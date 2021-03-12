@@ -234,14 +234,13 @@ public class SimpleFileServerTest {
             var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.DEFAULT));
             assertTrue(iae.getMessage().contains("does not exist"));
         }
-        {   // is not readable
+        {   // not readable
             Path p = Files.createDirectory(CWD.resolve("aDir"));
             p.toFile().setReadable(false);
             assert !Files.isReadable(p);
             try {
-                // TODO: impl does not check if readable!
-                //var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.DEFAULT));
-                //assertTrue(iae.getMessage().contains("not readable"));
+                var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.DEFAULT));
+                assertTrue(iae.getMessage().contains("not readable"));
             } finally {
                 p.toFile().setReadable(true);
             }

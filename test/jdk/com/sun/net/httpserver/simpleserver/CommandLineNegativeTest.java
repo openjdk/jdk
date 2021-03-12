@@ -31,6 +31,7 @@
  */
 
 import jdk.test.lib.util.FileUtils;
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -40,13 +41,14 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class CommandLineNegativeTest {
 
@@ -157,16 +159,18 @@ public class CommandLineNegativeTest {
 
     @Test
     public void testRootNotAbsolute() {
-        simpleserver("-d", "")
+        var root = Path.of("");
+        assertFalse(root.isAbsolute());
+        simpleserver("-d", root.toString())
                 .assertFailure()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
-                                + "Path is not absolute:")
+                                + "Path is not absolute: " + root.toString())
                 );
     }
 
-    static final String TEST_SRC = System.getProperty("test.src", ".");
-    static final Path TEST_DIR = Paths.get(TEST_SRC, "dir");
+    static final Path CWD = Path.of(".").toAbsolutePath().normalize();
+    static final Path TEST_DIR = CWD.resolve("dir");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
 
     @BeforeTest
@@ -179,7 +183,8 @@ public class CommandLineNegativeTest {
 
     @Test
     public void testRootNotADirectory() {
-        String file = TEST_FILE.toString();
+        var file = TEST_FILE.toString();
+        assertFalse(Files.isDirectory(TEST_FILE));
         simpleserver("-d", file)
                 .assertFailure()
                 .resultChecker(r ->
@@ -190,7 +195,8 @@ public class CommandLineNegativeTest {
 
     @Test
     public void testRootDoesNotExist() {
-        Path root = TEST_DIR.resolve("/nonexistant/dir");
+        Path root = TEST_DIR.resolve("notExistant/dir");
+        assertFalse(Files.exists(root));
         simpleserver("-d", root.toString())
                 .assertFailure()
                 .resultChecker(r ->
@@ -200,8 +206,25 @@ public class CommandLineNegativeTest {
     }
 
     @Test
-    public void testRootNotReadable() {
-        // TODO
+    public void testRootNotReadable() throws IOException {
+        Path root = Files.createDirectories(TEST_DIR.resolve("notReadable/dir"));
+        try {
+            root.toFile().setReadable(false);
+            assertFalse(Files.isReadable(root));
+            simpleserver("-d", root.toString())
+                    .assertFailure()
+                    .resultChecker(r ->
+                            assertContains(r.output, "Error: server config failed: "
+                                    + "Path is not readable: " + root.toString()));
+        } finally {
+            root.toFile().setReadable(true);
+        }
+    }
+
+    @AfterTest
+    public void deleteTestDirectory() throws IOException {
+        if (Files.exists(TEST_DIR))
+            FileUtils.deleteFileTreeWithRetry(TEST_DIR);
     }
 
     // --- helper methods ---
@@ -209,9 +232,7 @@ public class CommandLineNegativeTest {
     static void assertContains(String output, String subString) {
         if (output.contains(subString))
             assertTrue(true);
-        else
-            assertTrue(false,"Expected to find [" + subString + "], in output ["
-                             + output + "]");
+        else fail("Expected to find [" + subString + "], in output [" + output + "]");
     }
 
     static Result simpleserver(String... args) {

@@ -60,6 +60,8 @@ public final class FileServerHandler implements HttpHandler {
             throw new IllegalArgumentException("Path not a directory: " + root);
         if (!root.isAbsolute())
             throw new IllegalArgumentException("Path is not absolute: " + root);
+        if (!Files.isReadable(root))
+            throw new IllegalArgumentException("Path is not readable: " + root);
         this.root = root;
         this.mimeTable = mimeTable;
     }
