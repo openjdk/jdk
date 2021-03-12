@@ -31,11 +31,13 @@ import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.Scheduler;
 import java.util.*;
 import org.openide.ErrorManager;
+import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
+@ServiceProvider(service=Scheduler.class)
 public class ServerCompilerScheduler implements Scheduler {
 
     private static class Node {

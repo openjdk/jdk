@@ -30,11 +30,13 @@ import com.sun.hotspot.igv.settings.Settings;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
+@ServiceProvider(service=GraphViewer.class)
 public class GraphViewerImplementation implements GraphViewer {
 
     @Override

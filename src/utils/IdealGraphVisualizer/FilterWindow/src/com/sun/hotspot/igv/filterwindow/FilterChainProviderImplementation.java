@@ -25,11 +25,13 @@ package com.sun.hotspot.igv.filterwindow;
 
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
+import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
+@ServiceProvider(service=FilterChainProvider.class)
 public class FilterChainProviderImplementation implements FilterChainProvider {
 
     @Override

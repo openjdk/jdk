@@ -28,14 +28,18 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import java.util.Set;
+import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
+@ServiceProvider(service=InputGraphProvider.class)
 public class EditorInputGraphProvider implements InputGraphProvider {
 
     private EditorTopComponent editor;
+
+    public EditorInputGraphProvider() {}
 
     public EditorInputGraphProvider(EditorTopComponent editor) {
         this.editor = editor;
