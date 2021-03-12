@@ -43,6 +43,7 @@
 
 import java.io.File;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class HelloDynamicCustomUnload extends DynamicArchiveTestBase {
     private static final String ARCHIVE_NAME = CDSTestUtils.getOutputFileName("top.jsa");

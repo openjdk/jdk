@@ -40,6 +40,7 @@ import java.io.File;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class LambdaForClassInBaseArchive extends DynamicArchiveTestBase {
     static final String classList = CDSTestUtils.getOutputFileName("classlist");

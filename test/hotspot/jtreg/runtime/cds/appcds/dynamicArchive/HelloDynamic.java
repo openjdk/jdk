@@ -34,6 +34,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. HelloDynamic
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class HelloDynamic extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
         runTest(HelloDynamic::testDefaultBase);

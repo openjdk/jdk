@@ -48,6 +48,7 @@ import java.io.File;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class NoClassToArchive extends DynamicArchiveTestBase {
     static final String warningMessage =

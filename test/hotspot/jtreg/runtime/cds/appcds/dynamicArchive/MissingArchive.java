@@ -35,6 +35,8 @@ import java.io.File;
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar MissingArchive
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class MissingArchive extends DynamicArchiveTestBase {
     private static final String TOP  = "top";
     private static final String BASE = "base";

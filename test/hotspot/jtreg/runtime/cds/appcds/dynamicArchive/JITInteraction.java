@@ -34,6 +34,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar JITInteraction
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class JITInteraction extends DynamicArchiveTestBase {
 
     public static void main(String[] args) throws Exception {
