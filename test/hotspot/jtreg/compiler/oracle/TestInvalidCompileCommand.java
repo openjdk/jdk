@@ -23,7 +23,7 @@
 
 /*
  * @test TestInvalidCompileCommand
- * @bug 8263206
+ * @bug 8263206 8263353
  * @summary Regression tests of -XX:CompileCommand
  * @library /test/lib
  * @run driver compiler.oracle.TestInvalidCompileCommand
@@ -40,12 +40,47 @@ public class TestInvalidCompileCommand {
         {
             "-XX:CompileCommand=unknown",
             "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionDouble,3.14",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionInt,3",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionUint,3",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionStr,hello",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,TestOptionList,hello,world",
+            "-version"
         }
     };
 
     private static final String[][] OUTPUTS = {
         {
             "Unrecognized option 'unknown'"
+        },
+        {
+            "Missing type 'double' before option 'TestOptionDouble'"
+        },
+        {
+            "Missing type 'intx' before option 'TestOptionInt'"
+        },
+        {
+            "Missing type 'uintx' before option 'TestOptionUint'"
+        },
+        {
+            "Missing type 'ccstr' before option 'TestOptionStr'"
+        },
+        {
+            "Missing type 'ccstrlist' before option 'TestOptionList'"
         }
     };
 
