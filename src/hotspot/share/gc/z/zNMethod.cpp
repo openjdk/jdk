@@ -73,7 +73,7 @@ void ZNMethod::attach_gc_data(nmethod* nm) {
       continue;
     }
 
-    if (r->raw_oop_value() != NULL) {
+    if (r->oop_value() != NULL) {
       // Non-NULL immediate oop found. NULL oops can safely be
       // ignored since the method will be re-registered if they
       // are later patched to be non-NULL.

@@ -934,9 +934,7 @@ class oop_Relocation : public DataRelocation {
   bool oop_is_immediate()  { return oop_index() == 0; }
 
   oop* oop_addr();                  // addr or &pool[jint_data]
-  oop  raw_oop_value();             // *oop_addr
-  oop  oop_value();
-
+  oop  oop_value();                 // *oop_addr
   // Note:  oop_value transparently converts Universe::non_oop_word to NULL.
 };
 

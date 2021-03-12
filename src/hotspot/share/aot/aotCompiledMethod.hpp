@@ -217,6 +217,8 @@ private:
 
   virtual void clear_inline_caches();
 
+  virtual void print_pcs() {}
+
   virtual address scopes_data_end() const { return _meta->scopes_data_end(); }
 
   virtual oop oop_at(int index) const;
