@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
  * @bug 8210559
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
- * @library /runtime/testlibrary /test/lib
+ * @library /test/lib
  * @library classes
  * @build sun.hotspot.WhiteBox test.Empty
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=debug UnloadTest
  */
 import sun.hotspot.WhiteBox;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
  * Test that verifies that classes are unloaded when they are no longer reachable.
