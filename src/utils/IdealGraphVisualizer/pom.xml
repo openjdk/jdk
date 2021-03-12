@@ -30,6 +30,7 @@
                           <publicPackage>com.sun.hotspot.igv.difference</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.layout</publicPackage>
                           <publicPackage>com.sun.hotspot.igv.hierarchicallayout</publicPackage>
+                          <publicPackage>com.sun.hotspot.igv.graph</publicPackage>
                         </publicPackages>
                     </configuration>
                 </plugin>
@@ -66,6 +67,7 @@
         <module>Graph</module>
         <module>HierarchicalLayout</module>
         <module>ControlFlow</module>
+        <module>Filter</module>
     </modules>
 
     <properties>
