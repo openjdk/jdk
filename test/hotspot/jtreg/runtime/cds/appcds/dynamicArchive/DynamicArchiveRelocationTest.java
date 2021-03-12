@@ -87,18 +87,12 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         String topArchiveName  = getNewArchiveName("top");
 
         String runtimeMsg = "Try to map archive(s) at an alternative address";
-        String runtimeRelocMsg = "runtime archive relocation start";
-        String unmapPrefix = ".*Unmapping region #3 at base 0x.*";
-        String unmapPattern = unmapPrefix + "(Bitmap)";
-        String archiveRelocPattern = ".*ArchiveRelocationMode == 1.*";
-        String unmapRgn1Pattern = ".*Unmapping region #1 at base 0x.*";
-        String unmapRgn0Pattern = ".*Unmapping region #0 at base 0x.*(ReadWrite)";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
 
         // (1) Dump base archive (static)
 
-        OutputAnalyzer out = TestCommon.dumpBaseArchive(baseArchiveName, unlockArg, logArg);
-        out.shouldContain("Relocating archive from");
+        TestCommon.dumpBaseArchive(baseArchiveName, unlockArg, logArg)
+          .shouldContain("Relocating archive from");
 
         // (2) Dump top archive (dynamic)
 
@@ -121,20 +115,6 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                     if (run_reloc) {
                         output.shouldContain(runtimeMsg);
-                        try {
-                            output.shouldContain(runtimeRelocMsg)
-                                  // Check that there are two of the following lines in
-                                  // the output. One for static archive and one for
-                                  // dynamic archive:
-                                  // Unmapping region #3 at base 0x<hex digits> (Bitmap)
-                                  .shouldMatchByLine(unmapPrefix, "Hello World", unmapPattern);
-                        } catch(java.lang.RuntimeException ex) {
-                            // On Windows, sometimes the OS picks the same archive
-                            // base address even with ArchiveRelcationMode=1. In
-                            // this case, runtime relocation won't happen. Checking
-                            // for "Unmapping region #0" messages instead.
-                            output.shouldMatchByLine(archiveRelocPattern, unmapRgn1Pattern, unmapRgn0Pattern);
-                        }
                     }
                 });
     }
