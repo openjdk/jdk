@@ -106,6 +106,8 @@ class HandshakeState {
     return !_queue.is_empty();
   }
 
+  bool operation_pending(HandshakeOperation* op);
+
   // Both _queue and _lock must be checked. If a thread has seen this _handshakee
   // as safe it will execute all possible handshake operations in a loop while
   // holding _lock. We use lock free addition to the queue, which means it is
