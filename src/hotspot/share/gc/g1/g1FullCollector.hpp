@@ -67,6 +67,7 @@ class G1FullCollector : StackObj {
   G1FullGCCompactionPoint   _serial_compaction_point;
   G1IsAliveClosure          _is_alive;
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
+  G1RegionMarkStats*        _live_stats;
 
   static uint calc_active_workers();
 

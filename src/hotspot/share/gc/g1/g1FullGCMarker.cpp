@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/verifyOption.hpp"
@@ -32,7 +33,8 @@
 
 G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
                                uint worker_id,
-                               PreservedMarks* preserved_stack) :
+                               PreservedMarks* preserved_stack,
+                               G1RegionMarkStats* mark_stats) :
     _collector(collector),
     _worker_id(worker_id),
     _bitmap(collector->mark_bitmap()),
@@ -42,7 +44,9 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _mark_closure(worker_id, this, G1CollectedHeap::heap()->ref_processor_stw()),
     _verify_closure(VerifyOption_G1UseFullMarking),
     _stack_closure(this),
-    _cld_closure(mark_closure(), ClassLoaderData::_claim_strong) {
+    _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
+    _mark_region_cache(mark_stats, RegionMarkStatsCacheSize) {
+  _mark_region_cache.initialize();
   _oop_stack.initialize();
   _objarray_stack.initialize();
 }

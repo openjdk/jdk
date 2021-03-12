@@ -30,6 +30,7 @@
 #include "gc/g1/g1FullGCMarkTask.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1FullGCReferenceProcessorExecutor.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "memory/iterator.inline.hpp"
@@ -60,6 +61,8 @@ void G1FullGCMarkTask::work(uint worker_id) {
 
   // Mark stack is populated, now process and drain it.
   marker->complete_marking(collector()->oop_queue_set(), collector()->array_queue_set(), &_terminator);
+  // flush live bytes to regions
+  marker->flush_mark_region_cache();
 
   // This is the point where the entire marking should have completed.
   assert(marker->oop_stack()->is_empty(), "Marking should have completed");

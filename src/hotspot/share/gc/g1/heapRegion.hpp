@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/g1/heapRegionType.hpp"
