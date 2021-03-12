@@ -247,7 +247,7 @@ void G1FullCollector::phase1_mark_live_objects() {
     run_task(&marking_task);
 
     // collect live bytes.
-    uint sum = 0;
+    size_t sum = 0;
     for (uint j = 0; j < _heap->max_regions(); j++) {
       sum += _live_stats[j]._live_words;
     }
