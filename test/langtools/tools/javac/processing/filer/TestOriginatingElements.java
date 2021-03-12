@@ -146,7 +146,7 @@ public class TestOriginatingElements extends TestRunner {
                 try {
                     processingEnv.getFiler().createSourceFile("test.Generated1", originatingElements("t.T1", "java.lang.String")).openOutputStream().close();
                     try (OutputStream out = processingEnv.getFiler().createClassFile("test.Generated2", originatingElements("t.T2", "java.lang.CharSequence")).openOutputStream();
-                         StandardJavaFileManager sjfm = compiler.getStandardFileManager(null, null, null);
+                         StandardJavaFileManager sjfm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
                          MemoryFileManager fm = new MemoryFileManager(sjfm)) {
                         ToolProvider.getSystemJavaCompiler()
                                     .getTask(null, fm, null, null, null, List.of(new ToolBox.JavaSource("package test; public class Generated2 {}")))
