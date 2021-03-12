@@ -82,6 +82,7 @@ public class PStack extends Tool {
            return;
         }
          final boolean cdbgCanDemangle = cdbg.canDemangle();
+         String fillerForAddress = " ".repeat(2 + (2 << VM.getVM().getLogAddressSize())) + "\t";
          for (Iterator<ThreadProxy> itr = l.iterator() ; itr.hasNext();) {
             ThreadProxy th = itr.next();
             try {
@@ -168,6 +169,9 @@ public class PStack extends Tool {
                       if (names != null && names.length != 0) {
                          // print java frame(s)
                          for (int i = 0; i < names.length; i++) {
+                             if (0 < i) {
+                                 out.print(fillerForAddress);
+                             }
                              out.println(names[i]);
                          }
                       }
