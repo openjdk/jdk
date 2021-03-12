@@ -201,7 +201,8 @@ class MutableNUMASpace : public MutableSpace {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkGang* pretouch_gang = NULL);
+                          WorkGang* pretouch_gang = NULL,
+                          PretouchTask* pretouch_task = NULL);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.

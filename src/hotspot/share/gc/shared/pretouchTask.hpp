@@ -30,14 +30,33 @@
 class PretouchTask : public AbstractGangTask {
   char* volatile _cur_addr;
   char* const _start_addr;
-  char* const _end_addr;
+  char* volatile _end_addr;
   size_t _page_size;
   size_t _chunk_size;
+  volatile uint _n_threads;  // Number of threads participating in pretouch.
+
+  enum TaskStatus{ NotReady, Ready, Done};
+  volatile size_t _task_status;
 
 public:
-  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size);
+  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size, size_t n_threads = 0, size_t task_status = Ready);
+
+  void reinitialize(char* start_address, char *end_addr);
+
+  void set_task_status(TaskStatus status) { Atomic::release_store(&_task_status, (size_t)status);  }
+  void set_task_done()                    { Atomic::release_store(&_task_status, (size_t)Done);    }
+  void set_task_ready()                   { set_task_status(Ready);    }
+  void set_task_notready()                { set_task_status(NotReady); }
+  bool is_task_ready()                    { return Atomic::load(&_task_status) == Ready; }
+  bool is_task_done()                     { return Atomic::load(&_task_status) == Done;  }
 
   virtual void work(uint worker_id);
+
+  static void* operator new(size_t size) throw() {
+    return CHeapObj<mtGC>::operator new(size);
+  }
+
+  static void setup_chunk_size_and_page_size(size_t& chunk_size, size_t& page_size);
 
   static size_t chunk_size();
 

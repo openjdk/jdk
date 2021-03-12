@@ -228,6 +228,23 @@ class MutexLocker: public StackObj {
     }
   }
 
+  MutexLocker(Mutex* mutex, bool& lock_acquired, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+    _mutex(mutex) {
+    bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
+    if (_mutex != NULL) {
+      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
+             "Mutexes with rank special or lower should not do safepoint checks");
+      if (!no_safepoint_check) {
+        lock_acquired = _mutex->try_lock();
+      }
+
+      if (!lock_acquired) {
+        _mutex = NULL;
+      }
+    }
+  }
+
+
   ~MutexLocker() {
     if (_mutex != NULL) {
       assert_lock_strong(_mutex);
