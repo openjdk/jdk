@@ -8,22 +8,16 @@
       <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>IdealGraphVisualizer-branding</artifactId>
+  <groupId>com.sun.hotspot.igv</groupId>
+  <artifactId>branding</artifactId>
+  <version>1.0-SNAPSHOT</version>
   <packaging>nbm</packaging>
 
-  <name>IdealGraphVisualizer-branding</name>
+  <name>branding</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.netbeans.api</groupId>
-      <artifactId>org-netbeans-api-annotations-common</artifactId>
-      <version>${netbeans.version}</version>
-    </dependency>
-  </dependencies>
 
   <build>
       <plugins>
