@@ -518,16 +518,16 @@ public class TestNewLanguageFeatures extends JavadocTester {
         checkOutput("pkg/package-summary.html", true,
                 // PACKAGE
                 """
-                    <a href="AnnotationType.html" title="annotation in pkg">@AnnotationType</a>(<a h\
-                    ref="AnnotationType.html#optional()">optional</a>="Package Annotation",
+                    <a href="AnnotationType.html" title="annotation interface in pkg">@AnnotationTyp\
+                    e</a>(<a href="AnnotationType.html#optional()">optional</a>="Package Annotation",
                                     <a href="AnnotationType.html#required()">required</a>=1994)""");
 
         checkOutput("pkg/AnnotationTypeUsage.html", true,
                 // CLASS
                 """
                     <div class="type-signature"><span class="annotations"><a href="AnnotationType.ht\
-                    ml" title="annotation in pkg">@AnnotationType</a>(<a href="AnnotationType.html#o\
-                    ptional()">optional</a>="Class Annotation",
+                    ml" title="annotation interface in pkg">@AnnotationType</a>(<a href="AnnotationT\
+                    ype.html#optional()">optional</a>="Class Annotation",
                                     <a href="AnnotationType.html#required()">required</a>=1994)
                     </span><span class="modifiers">public class </span><span class="element-name type-name-l\
                     abel">AnnotationTypeUsage</span>
@@ -535,23 +535,23 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // FIELD
                 """
                     <div class="member-signature"><span class="annotations"><a href="AnnotationType.\
-                    html" title="annotation in pkg">@AnnotationType</a>(<a href="AnnotationType.html\
-                    #optional()">optional</a>="Field Annotation",
+                    html" title="annotation interface in pkg">@AnnotationType</a>(<a href="Annotatio\
+                    nType.html#optional()">optional</a>="Field Annotation",
                                     <a href="AnnotationType.html#required()">required</a>=1994)
                     </span><span class="modifiers">public</span>&nbsp;<span class="return-type">int<\
                     /span>&nbsp;<span class="element-name">field</span></div>""",
                 // CONSTRUCTOR
                 """
                     <div class="member-signature"><span class="annotations"><a href="AnnotationType.\
-                    html" title="annotation in pkg">@AnnotationType</a>(<a href="AnnotationType.html\
-                    #optional()">optional</a>="Constructor Annotation",
+                    html" title="annotation interface in pkg">@AnnotationType</a>(<a href="Annotatio\
+                    nType.html#optional()">optional</a>="Constructor Annotation",
                                     <a href="AnnotationType.html#required()">required</a>=1994)
                     </span><span class="modifiers">public</span>&nbsp;<span class="element-name">AnnotationTypeUsage</span>()</div>""",
                 // METHOD
                 """
                     <div class="member-signature"><span class="annotations"><a href="AnnotationType.\
-                    html" title="annotation in pkg">@AnnotationType</a>(<a href="AnnotationType.html\
-                    #optional()">optional</a>="Method Annotation",
+                    html" title="annotation interface in pkg">@AnnotationType</a>(<a href="Annotatio\
+                    nType.html#optional()">optional</a>="Method Annotation",
                                     <a href="AnnotationType.html#required()">required</a>=1994)
                     </span><span class="modifiers">public</span>&nbsp;<span class="return-type">void\
                     </span>&nbsp;<span class="element-name">method</span>()</div>""",
@@ -560,18 +560,18 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">void</span>&nbsp;<span class="element-name">methodWithParams</span>&#\
                     8203;<span class="parameters">(<a href="AnnotationType.html" title="annotation i\
-                    n pkg">@AnnotationType</a>(<a href="AnnotationType.html#optional()">optional</a>\
-                    ="Parameter Annotation",<a href="AnnotationType.html#required()">required</a>=19\
-                    94)
+                    nterface in pkg">@AnnotationType</a>(<a href="AnnotationType.html#optional()">op\
+                    tional</a>="Parameter Annotation",<a href="AnnotationType.html#required()">requi\
+                    red</a>=1994)
                      int&nbsp;documented,
                      int&nbsp;undocmented)</span></div>""",
                 // CONSTRUCTOR PARAMS
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="element-name">AnnotationTypeUsage</span>&#8203;<span class="parameters">(<\
-                    a href="AnnotationType.html" title="annotation in pkg">@AnnotationType</a>(<a hr\
-                    ef="AnnotationType.html#optional()">optional</a>="Constructor Param Annotation",\
-                    <a href="AnnotationType.html#required()">required</a>=1994)
+                    a href="AnnotationType.html" title="annotation interface in pkg">@AnnotationType\
+                    </a>(<a href="AnnotationType.html#optional()">optional</a>="Constructor Param An\
+                    notation",<a href="AnnotationType.html#required()">required</a>=1994)
                      int&nbsp;documented,
                      int&nbsp;undocmented)</span></div>""");
 
@@ -581,31 +581,32 @@ public class TestNewLanguageFeatures extends JavadocTester {
         checkOutput("pkg/class-use/AnnotationType.html", true,
                 """
                     <div class="caption"><span>Packages with annotations of type <a href="../Annotat\
-                    ionType.html" title="annotation in pkg">AnnotationType</a></span></div>""",
+                    ionType.html" title="annotation interface in pkg">AnnotationType</a></span></div\
+                    >""",
                 """
                     <div class="caption"><span>Classes in <a href="../package-summary.html">pkg</a>\
-                     with annotations of type <a href="../AnnotationType.html" title="annotation in\
-                     pkg">AnnotationType</a></span></div>""",
+                     with annotations of type <a href="../AnnotationType.html" title="annotation int\
+                    erface in pkg">AnnotationType</a></span></div>""",
                 """
                     <div class="caption"><span>Fields in <a href="../package-summary.html">pkg</a>\
-                     with annotations of type <a href="../AnnotationType.html" title="annotation in\
-                     pkg">AnnotationType</a></span></div>""",
+                     with annotations of type <a href="../AnnotationType.html" title="annotation int\
+                    erface in pkg">AnnotationType</a></span></div>""",
                 """
                     <div class="caption"><span>Methods in <a href="../package-summary.html">pkg</a>\
-                     with annotations of type <a href="../AnnotationType.html" title="annotation in\
-                     pkg">AnnotationType</a></span></div>""",
+                     with annotations of type <a href="../AnnotationType.html" title="annotation int\
+                    erface in pkg">AnnotationType</a></span></div>""",
                 """
                     <div class="caption"><span>Method parameters in <a href="../package-summary.htm\
                     l">pkg</a> with annotations of type <a href="../AnnotationType.html" title="ann\
-                    otation in pkg">AnnotationType</a></span></div>""",
+                    otation interface in pkg">AnnotationType</a></span></div>""",
                 """
                     <div class="caption"><span>Constructors in <a href="../package-summary.html">pk\
                     g</a> with annotations of type <a href="../AnnotationType.html" title="annotati\
-                    on in pkg">AnnotationType</a></span></div>""",
+                    on interface in pkg">AnnotationType</a></span></div>""",
                 """
                     <div class="caption"><span>Constructor parameters in <a href="../package-summar\
                     y.html">pkg</a> with annotations of type <a href="../AnnotationType.html" title\
-                    ="annotation in pkg">AnnotationType</a></span></div>"""
+                    ="annotation interface in pkg">AnnotationType</a></span></div>"""
         );
 
         //==============================================================
@@ -614,30 +615,30 @@ public class TestNewLanguageFeatures extends JavadocTester {
         checkOutput("pkg/AnnotationTypeUsage.html", false,
                 // CLASS
                 """
-                    <a href="AnnotationTypeUndocumented.html" title="annotation in pkg">@AnnotationT\
-                    ypeUndocumented</a>(<a href="AnnotationType.html#optional">optional</a>="Class A\
-                    nnotation",
+                    <a href="AnnotationTypeUndocumented.html" title="annotation interface in pkg">@A\
+                    nnotationTypeUndocumented</a>(<a href="AnnotationType.html#optional">optional</a\
+                    >="Class Annotation",
                                     <a href="AnnotationType.html#required">required</a>=1994)
                     public class <span class="type-name-label">AnnotationTypeUsage</span></dt><dt>extends java.lang.Object</dt>""",
                 // FIELD
                 """
-                    <a href="AnnotationTypeUndocumented.html" title="annotation in pkg">@AnnotationT\
-                    ypeUndocumented</a>(<a href="AnnotationType.html#optional">optional</a>="Field A\
-                    nnotation",
+                    <a href="AnnotationTypeUndocumented.html" title="annotation interface in pkg">@A\
+                    nnotationTypeUndocumented</a>(<a href="AnnotationType.html#optional">optional</a\
+                    >="Field Annotation",
                                     <a href="AnnotationType.html#required">required</a>=1994)
                     public int <span class="member-name-label">field</span>""",
                 // CONSTRUCTOR
                 """
-                    <a href="AnnotationTypeUndocumented.html" title="annotation in pkg">@AnnotationT\
-                    ypeUndocumented</a>(<a href="AnnotationType.html#optional">optional</a>="Constru\
-                    ctor Annotation",
+                    <a href="AnnotationTypeUndocumented.html" title="annotation interface in pkg">@A\
+                    nnotationTypeUndocumented</a>(<a href="AnnotationType.html#optional">optional</a\
+                    >="Constructor Annotation",
                                     <a href="AnnotationType.html#required">required</a>=1994)
                     public <span class="type-name-label">AnnotationTypeUsage</span>()""",
                 // METHOD
                 """
-                    <a href="AnnotationTypeUndocumented.html" title="annotation in pkg">@AnnotationT\
-                    ypeUndocumented</a>(<a href="AnnotationType.html#optional">optional</a>="Method \
-                    Annotation",
+                    <a href="AnnotationTypeUndocumented.html" title="annotation interface in pkg">@A\
+                    nnotationTypeUndocumented</a>(<a href="AnnotationType.html#optional">optional</a\
+                    >="Method Annotation",
                                     <a href="AnnotationType.html#required">required</a>=1994)
                     public void <span class="member-name-label">method</span>()""");
 
@@ -674,9 +675,9 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Annotation Type
                 """
                     <a href="A.html#a()">a</a>=<a href="../pkg/AnnotationType.html" title="annotatio\
-                    n in pkg">@AnnotationType</a>(<a href="../pkg/AnnotationType.html#optional()">op\
-                    tional</a>="foo",<a href="../pkg/AnnotationType.html#required()">required</a>=19\
-                    94),""",
+                    n interface in pkg">@AnnotationType</a>(<a href="../pkg/AnnotationType.html#opti\
+                    onal()">optional</a>="foo",<a href="../pkg/AnnotationType.html#required()">requi\
+                    red</a>=1994),""",
                 // String Array
                 """
                     <a href="A.html#sa()">sa</a>={"up","down"},""",
@@ -688,9 +689,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
         //5020899: Incorrect internal representation of class-valued annotation elements
         checkOutput("pkg1/B.html", true,
                 """
-                    <div class="type-signature"><span class="annotations"><a href="A.html" title="annotation in pkg1">@A</a>""",
+                    <div class="type-signature"><span class="annotations"><a href="A.html" title="an\
+                    notation interface in pkg1">@A</a>""",
                 """
-                    <span class="modifiers">public interface </span><span class="element-name type-name-label">B</span></div>""");
+                    <span class="modifiers">public interface </span><span class="element-name type-n\
+                    ame-label">B</span></div>""");
 
     }
 }

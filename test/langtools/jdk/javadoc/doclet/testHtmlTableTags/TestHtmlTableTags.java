@@ -563,7 +563,7 @@ public class TestHtmlTableTags extends JavadocTester {
                     <div class="block">A sample enum.</div>
                     </div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C3.html" title="annotation in pkg2">C3</a></div>
+                    <div class="col-first even-row-color"><a href="C3.html" title="annotation interface in pkg2">C3</a></div>
                     <div class="col-last even-row-color">
                     <div class="block">Test Annotation class.</div>
                     </div>""");
@@ -718,7 +718,7 @@ public class TestHtmlTableTags extends JavadocTester {
                     <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionType</a></div>
                     <div class="col-last even-row-color"></div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C3.html" title="annotation in pkg2">C3</a></div>
+                    <div class="col-first even-row-color"><a href="C3.html" title="annotation interface in pkg2">C3</a></div>
                     <div class="col-last even-row-color"></div>""");
 
         // Class documentation

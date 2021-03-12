@@ -560,8 +560,9 @@ public class TestModules extends JavadocTester {
                     </div>
                     <hr>
                     <div class="module-signature"><span class="annotations"><a href="testpkgmdlB/Ann\
-                    otationType.html" title="annotation in testpkgmdlB">@AnnotationType</a>(<a href=\
-                    "testpkgmdlB/AnnotationType.html#optional()">optional</a>="Module Annotation",
+                    otationType.html" title="annotation interface in testpkgmdlB">@AnnotationType</a\
+                    >(<a href="testpkgmdlB/AnnotationType.html#optional()">optional</a>="Module Anno\
+                    tation",
                                     <a href="testpkgmdlB/AnnotationType.html#required()">required</a>=2016)
                     </span>module <span class="element-name">moduleB</span></div>
                     <section class="summary">
@@ -1120,9 +1121,9 @@ public class TestModules extends JavadocTester {
                     </div>
                     <hr>
                     <div class="module-signature"><span class="annotations"><a href="testpkgmdlB/Ann\
-                    otationType.html" title="annotation in testpkgmdlB">@AnnotationType</a>(<a href=\
-                    "testpkgmdlB/AnnotationType.html#optional()">option\
-                    al</a>="Module Annotation",
+                    otationType.html" title="annotation interface in testpkgmdlB">@AnnotationType</a\
+                    >(<a href="testpkgmdlB/AnnotationType.html#optional()">optional</a>="Module Anno\
+                    tation",
                                     <a href="testpkgmdlB/AnnotationType.html#required()">required</a>=2016)
                     </span>module <span class="element-name">moduleB</span></div>""");
         checkOutput("moduleB/module-summary.html", false,
