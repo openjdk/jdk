@@ -147,7 +147,7 @@ final class ListHelper implements XScrollbarClient {
     }
 
     void removeAll() {
-        items.removeAll(items);
+        items.clear();
         updateScrollbars();
     }
 
