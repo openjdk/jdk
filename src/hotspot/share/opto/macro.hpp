@@ -116,6 +116,7 @@ private:
   bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
   void stable_array_replacement(AllocateArrayNode* alloc, ArrayCopyNode* ac, GrowableArray<SafePointNode* >& safepoints_done);
   void process_users_of_allocation(CallNode *alloc);
+  Node* get_offset_adr_from_ac(ArrayCopyNode* ac, Node*& src_adr, Node* offset = nullptr);
   void process_users_of_string_allocation(AllocateArrayNode* alloc, ArrayCopyNode* ac);
 
   void eliminate_gc_barrier(Node *p2x);

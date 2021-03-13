@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @summary verify that -XX:+OptimizeTempArray removes String.substring()
+ * @summary verify that -XX:+OptimizeTempArray removes AllocateArray
  * @library /test/lib /
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4) & vm.debug == true
  * @requires !vm.emulatedClient & !vm.graal.enabled
@@ -97,6 +97,7 @@ public class TestOptimizeSubstring {
             oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
                     "-XX:" + (enabled ? "+" : "-") + "OptimizeTempArray",
                     "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation", "-XX:ArrayCopyLoadStoreMaxElem=0",
+                    "-XX:MaxInlineSize=200", // force to inline j.l.String::substring and ava.util.Arrays::copyOfRange
                     "-XX:CompileOnly=" + TestOptimizeSubstring.class.getName() + "::useStartsWith",
                     TestOptimizeSubstring.class.getName(),
                     "runtest");
@@ -118,6 +119,7 @@ public class TestOptimizeSubstring {
             oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
                     "-XX:+OptimizeTempArray", "-XX:-UseOnStackReplacement",
                     "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation", "-XX:ArrayCopyLoadStoreMaxElem=0",
+                    "-XX:MaxInlineSize=200", // force to inline j.l.String::substring and ava.util.Arrays::copyOfRange
                     "-XX:CompileOnly=" + TestOptimizeSubstring.class.getName() + "::useStartsWith_NonTrivial",
                     TestOptimizeSubstring.class.getName(),
                     "nontrivial");
@@ -133,6 +135,7 @@ public class TestOptimizeSubstring {
             oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
                     "-XX:+OptimizeTempArray", "-XX:-UseOnStackReplacement",
                     "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation", "-XX:ArrayCopyLoadStoreMaxElem=0",
+                    "-XX:MaxInlineSize=200", // force to inline j.l.String::substring and ava.util.Arrays::copyOfRange
                     "-XX:CompileOnly=" + TestOptimizeSubstring.class.getName() + "::mayHaveDeoptimization",
                     "-XX:+TraceDeoptimization", "-XX:+PrintDeoptimizationDetails",
                     TestOptimizeSubstring.class.getName(),
@@ -142,12 +145,15 @@ public class TestOptimizeSubstring {
         }
         oa.shouldHaveExitValue(0);
         oa.shouldNotContain(TestOptimizeSubstring.newStringAlloc);
-        oa.shouldContain("ScObj0 java/lang/String={ [hash :0]=#0, [coder :1]=#0, [hashIsZero :2]=#0, [value :3]=#ScObj1 }");
+        // -Xcomp may generate uncommon traps because of 'unloaded'. only check scObj0 if the test has
+        // really restored j.l.String in deoptimization.
+        if (oa.firstMatch("^reassign fields for object of type java/lang/String") != null) {
+            oa.shouldContain("ScObj0 java/lang/String={ [hash :0]=#0, [coder :1]=#0, [hashIsZero :2]=#0, [value :3]=#ScObj1 }");
+        }
     }
 
-
     private static boolean useStartsWith(String s) {
-        String x = s.substring(1);
+        String x = s.substring(1, 4);
         return x.startsWith("a") | x.startsWith("b") | x.startsWith("c");
     }
 

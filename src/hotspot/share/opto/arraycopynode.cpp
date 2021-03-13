@@ -36,7 +36,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), NULL, TypePtr::BOTTOM),
     _kind(None),
@@ -552,7 +551,7 @@ bool ArrayCopyNode::is_string_copy(PhaseGVN* phase) const {
   return false;
 }
 
-Node* ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape))  return this;
 
   if (StressArrayCopyMacroNode && !can_reshape) {

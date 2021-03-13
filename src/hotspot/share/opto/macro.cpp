@@ -1321,6 +1321,18 @@ bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
 //  ArrayCopy: delete because we don't need to copy contents
 //  LoadRange: be replaced with ArrayCopy's Length
 //
+// the helper function to work out the offset based on ac. src_adr is cached.
+Node* PhaseMacroExpand::get_offset_adr_from_ac(ArrayCopyNode* ac, Node*& src_adr, Node* offset) {
+  if (src_adr == nullptr) {
+    Node* src = ac->in(ArrayCopyNode::Src);
+    src_adr = ConvI2X(ac->in(ArrayCopyNode::SrcPos));
+    src_adr = basic_plus_adr(src, src, src_adr);
+  }
+
+  return (offset == nullptr) ? src_adr
+                             : basic_plus_adr(src_adr->in(AddPNode::Base), src_adr, offset);
+}
+
 void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* alloc, ArrayCopyNode* ac) {
   Node* res = alloc->result_cast();
   Node* length = ac->in(ArrayCopyNode::Length);
@@ -1360,32 +1372,29 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
           if (offset_const == arrayOopDesc::length_offset_in_bytes()) {
             assert(n->Opcode() == Op_LoadRange, "res+12 must be the input of a LoadRange");
             _igvn.replace_node(n, length);
-          } else if (n->Opcode() == Op_StrEquals) {
-            assert(offset_const == arrayOopDesc::base_offset_in_bytes(T_BYTE), "offset equals to the base_offset");
-            if (src_adr == nullptr) {
-              src_adr = ConvI2X(ac->in(ArrayCopyNode::SrcPos));
-              src_adr = basic_plus_adr(src->in(1), src, src_adr);
-            }
-            Node* dst_adr = basic_plus_adr(src_adr->in(1), src_adr, offset);
-            if (n->in(2) == use) { // str1
-              _igvn.replace_input_of(n, 2, dst_adr);
-            }
-            if (n->in(3) == use) { // str2
-              _igvn.replace_input_of(n, 3, dst_adr);
-            }
           } else if (n->is_AddP()) {
             // Skip second AddP. This node must be handled by the upper level.
-          } else {
-            assert(n->Opcode() == Op_LoadUB || n->Opcode() == Op_LoadB, "unknow code shape");
-
-            if (src_adr == nullptr) {
-              src_adr = ConvI2X(ac->in(ArrayCopyNode::SrcPos));
-              src_adr = basic_plus_adr(src, src, src_adr);
-            }
-            Node* dst_adr = basic_plus_adr(src_adr->in(AddPNode::Base), src_adr, offset);
+          } else if (n->Opcode() == Op_LoadUB || n->Opcode() == Op_LoadB) {
+            Node* dst_adr = get_offset_adr_from_ac(ac, src_adr, offset);
             _igvn.replace_input_of(n, MemNode::Control, ac->in(TypeFunc::Control));
             _igvn.replace_input_of(n, MemNode::Memory,  ac->in(TypeFunc::Memory));
             _igvn.replace_input_of(n, MemNode::Address, dst_adr);
+          } else {
+#ifndef PRODUCT
+            if (offset_const != arrayOopDesc::base_offset_in_bytes(T_BYTE)) {
+              tty->print_cr("something wrong here in process_users_of_string_allocation!");
+              n->dump(1);
+            }
+#endif
+            assert(offset_const == arrayOopDesc::base_offset_in_bytes(T_BYTE),
+                   "unknow code shape. must use AddP with the fixec offset");
+            // n should be a subclass of StrIntrinsicNode, eg. Op_StrEquals
+            Node* dst_adr = get_offset_adr_from_ac(ac, src_adr, offset);
+            for (uint k = 0; k < n->req(); ++k) {
+              if (n->in(k) == use) {
+                _igvn.replace_input_of(n, k, dst_adr);
+              }
+            }
           }
 
           if (oc2 > use->outcnt()) {
@@ -1396,12 +1405,8 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
 
         if (use->outcnt() > 0) {
           // all uses are second AddP nodes
-          if (src_adr == nullptr) {
-            src_adr = ConvI2X(ac->in(ArrayCopyNode::SrcPos));
-            src_adr = basic_plus_adr(src, src, src_adr);
-          }
           _igvn.replace_input_of(use, AddPNode::Base, src);
-          _igvn.replace_input_of(use, AddPNode::Address, src_adr);
+          _igvn.replace_input_of(use, AddPNode::Address, get_offset_adr_from_ac(ac, src_adr));
         } else {
           _igvn.remove_dead_node(use);
         }
