@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4183202
- * @summary rmid and rmiregistry could allow alternate security manager
+ * @summary rmiregistry could allow alternate security manager
  * @author Laird Dornin
  *
  * @library ../../testlibrary
@@ -32,27 +32,25 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  *          java.base/sun.nio.ch
- * @build TestLibrary RMID RMIDSelectorProvider RegistryVM RMIRegistryRunner
- *        TestSecurityManager
+ * @build TestLibrary RegistryVM RMIRegistryRunner TestSecurityManager
  * @run main/othervm AltSecurityManager
  */
 
 /**
  * Ensure that a user is able to specify alternate security managers to
- * be used in rmiregistry and rmid.  Test specifies a security manager
+ * be used in rmiregistry.  Test specifies a security manager
  * that throws a runtime exception in its checkListen method, this
- * will cause rmiregistry and rmid to exit early because those
+ * will cause rmiregistry to exit early because those
  * utilities will be unable to export any remote objects; test fails
- * if registry and rmid take too long to exit.
+ * if registry takes too long to exit.
  */
 public class AltSecurityManager implements Runnable {
-    // variable to hold registry and rmid children
+    // variable to hold registry child
     static JavaVM vm = null;
 
     // names of utilities
     static String utilityToStart = null;
     static final String REGISTRY_IMPL = "sun.rmi.registry.RegistryImpl";
-    static final String ACTIVATION = "sun.rmi.server.Activation";
 
     // children should exit in at least this time.
     private static final long TIME_OUT =
@@ -64,12 +62,8 @@ public class AltSecurityManager implements Runnable {
                 vm = RegistryVM.createRegistryVMWithRunner(
                         "RMIRegistryRunner",
                         "-Djava.security.manager=TestSecurityManager");
-            } else if (utilityToStart.contains(ACTIVATION)) {
-                vm = RMID.createRMIDOnEphemeralPortWithOptions(
-                        "-Djava.security.manager=TestSecurityManager");
             } else {
-                TestLibrary.bomb("Utility to start must be " + REGISTRY_IMPL +
-                        " or " + ACTIVATION);
+                TestLibrary.bomb("Utility to start must be " + REGISTRY_IMPL);
             }
 
             System.err.println("starting " + utilityToStart);
@@ -93,7 +87,7 @@ public class AltSecurityManager implements Runnable {
     }
 
     /**
-     * Wait to make sure that the registry and rmid exit after
+     * Wait to make sure that the registry exits after
      * their security manager is set.
      */
     public static void ensureExit(String utility) throws Exception {
@@ -131,15 +125,10 @@ public class AltSecurityManager implements Runnable {
             // make sure the registry exits early.
             ensureExit(REGISTRY_IMPL);
 
-            // make sure rmid exits early
-            ensureExit(ACTIVATION);
-
             System.err.println("test passed");
 
         } catch (Exception e) {
             TestLibrary.bomb(e);
-        } finally {
-            RMID.removeLog();
         }
     }
 }

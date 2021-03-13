@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,40 +186,6 @@ public class JavaVM {
         /* output from the exec'ed process may optionally be captured. */
         outPipe = StreamPipe.plugTogether(vm.getInputStream(), this.outputStream);
         errPipe = StreamPipe.plugTogether(vm.getErrorStream(), this.errorStream);
-    }
-
-    public int startAndGetPort() throws IOException {
-        start0();
-
-        int port = -1;
-        if (options.contains("java.nio.channels.spi.SelectorProvider=RMIDSelectorProvider")) {
-            // Obtain the server socket channel's ephemeral port number of the
-            // child rmid process.
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(vm.getInputStream()));
-            String s;
-            while ((s = reader.readLine()) != null) {
-                System.out.println(s);
-                int i = s.indexOf(RMID.EPHEMERAL_MSG);
-                if (i != -1) {
-                    String v = s.substring(RMID.EPHEMERAL_MSG.length());
-                    port = Integer.valueOf(v);
-                    break;
-                }
-            }
-            if (port == -1) {
-                // something failed
-                reader = new BufferedReader(new InputStreamReader(vm.getErrorStream()));
-                while ((s = reader.readLine()) != null)
-                    System.err.println(s);
-            }
-        }
-
-        /* output from the exec'ed process may optionally be captured. */
-        outPipe = StreamPipe.plugTogether(vm.getInputStream(), this.outputStream);
-        errPipe = StreamPipe.plugTogether(vm.getErrorStream(), this.errorStream);
-
-        return port;
     }
 
     public void destroy() {

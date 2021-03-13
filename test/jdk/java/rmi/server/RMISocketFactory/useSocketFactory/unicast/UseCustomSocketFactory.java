@@ -33,7 +33,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID JavaVM Echo EchoImpl EchoImpl_Stub
+ * @build TestLibrary JavaVM Echo EchoImpl EchoImpl_Stub
  * @run main/othervm/policy=security.policy/timeout=120 UseCustomSocketFactory
  */
 
