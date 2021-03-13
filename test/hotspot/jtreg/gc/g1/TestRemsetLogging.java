@@ -32,7 +32,7 @@ package gc.g1;
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @summary Verify output of -Xlog:gc+remset*=trace
  * @run driver gc.g1.TestRemsetLogging
  *

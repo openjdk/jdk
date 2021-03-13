@@ -26,7 +26,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc:+open
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions
  *                   -Xbootclasspath/a:. -XX:+WhiteBoxAPI
  *                   -Xbatch -XX:-TieredCompilation -XX:+AlwaysIncrementalInline

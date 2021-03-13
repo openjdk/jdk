@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  * @modules java.management java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
  *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -Xms200M -Xmx200M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  * -XX:+UnlockExperimentalVMOptions -XX:MaxGCPauseMillis=30000 -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0

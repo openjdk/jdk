@@ -30,7 +30,7 @@
  * @build sun.hotspot.WhiteBox
  * @compile ../test-classes/Hello.java
  * @compile ../test-classes/HelloMore.java
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. RelativePath
  */
 

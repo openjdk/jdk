@@ -34,7 +34,7 @@
  *     test-classes/CustomLoadee3.java
  *     test-classes/SameNameUnrelatedLoaders.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver SameNameInTwoLoadersTest
  */
 

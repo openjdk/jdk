@@ -26,7 +26,7 @@
  * @requires vm.aot
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
- * @run driver ClassFileInstaller ClassFileInstaller
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller ClassFileInstaller
  * @run driver compiler.aot.cli.IncorrectAOTLibraryTest
  * @summary check if incorrect aot library is handled properly
  */

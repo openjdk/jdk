@@ -40,7 +40,7 @@
  * @comment some of the tests from forceEarlyReturn001.tests need WhiteBox
  * @modules java.base/jdk.internal.misc:+open
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  *
  * @comment build classes required for tests from forceEarlyReturn001.tests

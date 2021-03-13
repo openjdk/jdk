@@ -29,7 +29,7 @@
  * @bug 8060592
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
  * @compile test-classes/JvmtiApp.java
  * @run driver JvmtiAddPath

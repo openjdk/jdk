@@ -29,7 +29,7 @@
  * @library /test/lib
  * @library classes
  * @build sun.hotspot.WhiteBox test.Empty
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI KeepAliveClassLoader
  */
 

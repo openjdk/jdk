@@ -32,7 +32,7 @@ import sun.hotspot.WhiteBox;
  * @bug 8219584 8227528
  * @library /testlibrary /test/lib
  * @build TestAbortVMOnSafepointTimeout
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestAbortVMOnSafepointTimeout
  */
 

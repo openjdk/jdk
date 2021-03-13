@@ -34,7 +34,7 @@ import java.nio.file.Paths;
  *
  * @compile MissingClass.java Container.java
  *
- * @run driver ClassFileInstaller -jar classes.jar Container Container$1
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar classes.jar Container Container$1
  *
  * @run main/othervm NonLinking init
  * @run main/othervm NonLinking load

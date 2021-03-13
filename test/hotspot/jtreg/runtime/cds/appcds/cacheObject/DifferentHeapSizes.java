@@ -29,7 +29,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile ../test-classes/Hello.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=160 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DifferentHeapSizes
  */
 

@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
  * @requires vm.debug == true
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstrlist,TestOptionList,_foo,_bar
  *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstr,TestOptionStr,_foo

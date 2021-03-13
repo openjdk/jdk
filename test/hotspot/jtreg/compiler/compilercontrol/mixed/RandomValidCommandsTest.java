@@ -30,7 +30,7 @@
  * @library /test/lib /
  *
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver/timeout=600 compiler.compilercontrol.mixed.RandomValidCommandsTest
  */
 

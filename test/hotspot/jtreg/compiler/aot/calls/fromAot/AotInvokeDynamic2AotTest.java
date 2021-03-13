@@ -30,7 +30,7 @@
  * @build compiler.calls.common.InvokeDynamic
  *        sun.hotspot.WhiteBox
  * @run driver compiler.calls.common.InvokeDynamicPatcher
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver compiler.aot.AotCompiler -libname AotInvokeDynamic2AotTest.so
  *      -class compiler.calls.common.InvokeDynamic
  *      -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.

@@ -31,7 +31,7 @@
  *
  * @build sun.hotspot.WhiteBox
  *        compiler.tiered.LevelTransitionTest
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseCounterDecay
  *                   -XX:-BackgroundCompilation

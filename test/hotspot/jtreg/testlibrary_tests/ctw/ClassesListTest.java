@@ -31,7 +31,7 @@
  *          java.base/jdk.internal.reflect
  *          java.management
  * @build sun.hotspot.WhiteBox Foo Bar
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
  * @run driver ClassesListTest prepare
  * @run driver/timeout=600 ClassesListTest compile classes.lst
  * @run driver ClassesListTest check

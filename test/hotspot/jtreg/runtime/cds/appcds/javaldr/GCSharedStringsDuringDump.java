@@ -30,7 +30,7 @@
  * @requires vm.cds.archived.java.heap
  * @requires vm.jvmti
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver/timeout=480 GCSharedStringsDuringDump
  */
 

@@ -37,7 +37,7 @@
  * @build sun.hotspot.WhiteBox
  * @build ClassFileInstaller
  *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -ea -Xmixed -Xbatch -XX:TieredStopAtLevel=4 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      jdk.jfr.jvm.TestJFRIntrinsic

@@ -28,7 +28,7 @@
  * @requires vm.cds
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @compile ../../test-classes/JvmtiApp.java
  * @run driver/timeout=240 JvmtiAddPath
  */

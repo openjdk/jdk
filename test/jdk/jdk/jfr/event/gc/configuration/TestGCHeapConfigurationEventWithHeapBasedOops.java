@@ -37,7 +37,7 @@ import jdk.test.lib.jfr.EventVerifier;
  * @requires sun.arch.data.model == "64"
  * @library /test/lib /test/jdk
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:+UseCompressedOops -Xmx31g jdk.jfr.event.gc.configuration.TestGCHeapConfigurationEventWithHeapBasedOops
  */
 

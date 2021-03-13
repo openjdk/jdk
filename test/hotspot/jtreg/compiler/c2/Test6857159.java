@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:CompileCommand=compileonly,compiler.c2.Test6857159$ct0::run
  *      compiler.c2.Test6857159

@@ -29,7 +29,7 @@
  *          /test/lib
  * @modules java.base/jdk.internal.misc:+open
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @build nsk.jdi.HiddenClass.events.*
  *

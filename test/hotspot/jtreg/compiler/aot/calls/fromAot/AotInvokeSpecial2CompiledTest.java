@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @build compiler.calls.common.InvokeSpecial
  *        sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver compiler.aot.AotCompiler -libname AotInvokeSpecial2CompiledTest.so
  *      -class compiler.calls.common.InvokeSpecial
  *      -compile compiler.calls.common.InvokeSpecial.caller()V

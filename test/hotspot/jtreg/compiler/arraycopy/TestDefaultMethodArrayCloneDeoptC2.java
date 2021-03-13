@@ -29,7 +29,7 @@
  *
  * @requires vm.flavor == "server" & !vm.emulatedClient
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xcomp -Xbatch -Xbootclasspath/a:.  -XX:-TieredCompilation  -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,*TestDefaultMethodArrayCloneDeoptC2Interface::test
  *                   compiler.arraycopy.TestDefaultMethodArrayCloneDeoptC2

@@ -31,9 +31,9 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build NestApp sun.hotspot.WhiteBox LambdaVerification
- * @run driver ClassFileInstaller -jar nest_app.jar NestApp NestApp$InnerA NestApp$InnerB NestApp$InnerA$InnerInnerA
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar nest_app.jar NestApp NestApp$InnerA NestApp$InnerB NestApp$InnerA$InnerInnerA
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. NestTest
  */
 

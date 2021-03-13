@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.RecompilationTest
  *        sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver compiler.aot.AotCompiler -libname libRecompilationTest1.so
  *     -class compiler.whitebox.SimpleTestCaseHelper
  *     -extraopt -Dgraal.TieredAOT=true -extraopt -Dgraal.ProfileSimpleMethods=true

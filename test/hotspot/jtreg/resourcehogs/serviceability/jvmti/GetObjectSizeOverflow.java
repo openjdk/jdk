@@ -36,7 +36,7 @@
  * @requires vm.jvmti
  * @requires os.maxMemory > 6G
  * @build GetObjectSizeOverflowAgent
- * @run driver ClassFileInstaller GetObjectSizeOverflowAgent
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller GetObjectSizeOverflowAgent
  * @run main GetObjectSizeOverflow
  */
 

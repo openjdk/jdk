@@ -27,7 +27,7 @@
  * @summary Tests logging of shared library loads and unloads.
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main LoadLibraryTest
  */
 

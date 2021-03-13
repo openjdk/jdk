@@ -31,7 +31,7 @@
  *          java.management
  *
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI
  *      compiler.compilercontrol.TestCompilerDirectivesCompatibilityBase

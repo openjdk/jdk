@@ -31,7 +31,7 @@
  * @compile ../../test-classes/java/net/HttpCookie.jasm
  * @compile ../../../javax/annotation/processing/FilerException.jasm
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver DummyClassesInBootClassPath
  */
 

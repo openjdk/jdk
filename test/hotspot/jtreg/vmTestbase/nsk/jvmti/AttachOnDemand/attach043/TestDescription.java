@@ -46,7 +46,7 @@
  *
  * @comment create SimpleAgent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
- * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm SimpleAgent00.jar ${test.src}/../sharedAgents/SimpleAgent00.mf
@@ -54,7 +54,7 @@
  *
  * @comment create attach0031Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach031.attach031Agent00
- * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach031.attach031Agent00
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller nsk.jvmti.AttachOnDemand.attach031.attach031Agent00
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach031Agent00.jar ${test.src}/../attach031/attach031Agent00.mf

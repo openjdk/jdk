@@ -31,7 +31,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @comment build test class and indify classes
  * @build vm.mlvm.indy.stress.gc.lotsOfCallSites.Test

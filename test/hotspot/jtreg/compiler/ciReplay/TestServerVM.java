@@ -29,7 +29,7 @@
  * @requires vm.flightRecorder != true & vm.compMode != "Xint" & vm.debug == true & vm.flavor == "server"
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      compiler.ciReplay.VMBase server
  */

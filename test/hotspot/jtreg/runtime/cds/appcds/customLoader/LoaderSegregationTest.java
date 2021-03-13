@@ -37,7 +37,7 @@
  *          test-classes/OnlyUnregistered.java
  *          ../test-classes/Util.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver LoaderSegregationTest
  */
 

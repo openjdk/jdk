@@ -33,7 +33,7 @@ package gc.whitebox;
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC gc.whitebox.TestConcMarkCycleWB
  * @summary Verifies that ConcurrentMarking-related WB works properly
  */

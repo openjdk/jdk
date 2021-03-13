@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.TestHeapBase
  *        sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver compiler.aot.AotCompiler -libname libTestHeapBase.so
  *     -class compiler.aot.TestHeapBase
  *     -compile compiler.aot.TestHeapBase.test()V

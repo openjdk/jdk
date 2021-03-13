@@ -39,7 +39,7 @@ import sun.hotspot.WhiteBox;
  * @requires sun.arch.data.model == "64"
  * @library /test/lib /test/jdk
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:+UseCompressedOops -Xmx100m -Xms100m -XX:InitialHeapSize=100m -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI jdk.jfr.event.gc.configuration.TestGCHeapConfigurationEventWith32BitOops
  */
 

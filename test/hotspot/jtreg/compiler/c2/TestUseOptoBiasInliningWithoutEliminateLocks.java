@@ -33,7 +33,7 @@
  * @build sun.hotspot.WhiteBox
  * @build ClassFileInstaller
  *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:CompileCommand=compileonly,*.TestUseOptoBiasInliningWithoutEliminateLocks::dontinline_testMethod

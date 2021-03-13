@@ -31,7 +31,7 @@
  * @requires vm.flavor != "minimal" & !vm.graal.enabled
  *
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver compiler.compilercontrol.jcmd.PrintDirectivesTest
  */
 

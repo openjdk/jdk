@@ -28,7 +28,7 @@
  * @library /test/lib /
  *
  * @build compiler.calls.common.InvokeSpecial
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *    -XX:CompileCommand=exclude,compiler.calls.common.InvokeSpecial::caller  compiler.calls.common.InvokeSpecial
  *    -checkCallerCompileLevel 0 -nativeCallee

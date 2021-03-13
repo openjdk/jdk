@@ -26,7 +26,7 @@
  * @test
  * @library /test/lib classes
  * @build test.Empty
- * @run driver ClassFileInstaller test.Empty
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller test.Empty
  * @run main/othervm/timeout=200 FragmentMetaspaceSimple
  */
 

@@ -30,7 +30,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/UnintendedLoaders.java test-classes/CustomLoadee.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver UnintendedLoadersTest
  */
 

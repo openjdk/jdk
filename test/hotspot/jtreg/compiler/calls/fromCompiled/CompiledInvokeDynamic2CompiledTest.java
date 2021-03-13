@@ -30,7 +30,7 @@
  *
  * @build sun.hotspot.WhiteBox
  * @run driver compiler.calls.common.InvokeDynamicPatcher
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *    -Xbatch compiler.calls.common.InvokeDynamic
  *    -compileCaller 1 -checkCallerCompileLevel 1 -compileCallee 1 -checkCalleeCompileLevel 1

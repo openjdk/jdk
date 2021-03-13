@@ -30,7 +30,7 @@
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -Xmixed -XX:-BackgroundCompilation CodelistTest
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -Xint CodelistTest
  * @summary Test of diagnostic command Compiler.codelist

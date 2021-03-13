@@ -30,7 +30,7 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @compile ../../../../../../jdk/java/util/stream/TestDoubleSumAverage.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DoubleSumAverageTest
  */
 

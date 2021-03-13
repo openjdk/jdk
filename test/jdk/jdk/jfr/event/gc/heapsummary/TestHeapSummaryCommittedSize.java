@@ -43,7 +43,7 @@ import sun.hotspot.WhiteBox;
  * @requires vm.gc == "Parallel" | vm.gc == null
  * @library /test/lib /test/jdk
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
                      -XX:-UseFastUnorderedTimeStamps -Xmx16m -XX:+UseParallelGC
                      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

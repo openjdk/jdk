@@ -27,7 +27,7 @@
  * @library / /test/lib /testlibrary
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.cli.jaotc.CompileClassWithDebugTest
- * @run driver ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
  * @run driver compiler.aot.cli.jaotc.CompileClassWithDebugTest
  * @summary check that jaotc can compile a class with a --debug flag
  */

@@ -28,7 +28,7 @@
  *
  * @library /test/lib
  * @build TestSecurityManagerChecks testPkg.Host testPkg.Singleton
- * @run driver ClassFileInstaller testPkg.Host testPkg.Host$Member testPkg.Singleton
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller testPkg.Host testPkg.Host$Member testPkg.Singleton
  * @run main/othervm -Xbootclasspath/a:.  TestSecurityManagerChecks
  */
 

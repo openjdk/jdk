@@ -29,7 +29,7 @@ package gc.g1;
  * @requires vm.gc.G1
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver gc.g1.TestVerifyGCType
  */
 

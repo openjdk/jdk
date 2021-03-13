@@ -29,7 +29,7 @@
  *          removed itself from the main ThreadsList.
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @comment run with a small heap, but we need at least 11M for ZGC with JFR
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx11m -XX:-DisableExplicitGC ThreadObjAccessAtExit
  */

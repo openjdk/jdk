@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/timeout=240 gc.g1.plab.TestPLABPromotion
  */
 package gc.g1.plab;

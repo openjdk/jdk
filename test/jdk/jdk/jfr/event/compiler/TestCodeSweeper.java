@@ -57,7 +57,7 @@ import sun.hotspot.code.CodeBlob;
  * @requires vm.hasJFR
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:-SegmentedCodeCache -XX:+WhiteBoxAPI jdk.jfr.event.compiler.TestCodeSweeper
  */
 

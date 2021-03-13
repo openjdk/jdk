@@ -31,8 +31,8 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build SimpleApp sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar simpleApp.jar SimpleApp MyClass MyInterface
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar simpleApp.jar SimpleApp MyClass MyInterface
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaForClassInBaseArchive
  */
 

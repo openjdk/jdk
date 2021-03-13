@@ -33,6 +33,6 @@
  * @modules jdk.internal.jvmstat
  *
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.internal.jvmstat
  */

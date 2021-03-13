@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @build compiler.calls.common.InvokeVirtual
  *        sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver compiler.aot.AotCompiler -libname AotInvokeVirtual2NativeTest.so
  *      -class compiler.calls.common.InvokeVirtual
  *      -compile compiler.calls.common.InvokeVirtual.caller()V

@@ -27,7 +27,7 @@
  * @library / /test/lib /testlibrary
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.cli.jaotc.ListOptionNotExistingTest
- * @run driver ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
  * @run driver compiler.aot.cli.jaotc.ListOptionNotExistingTest
  * @summary check jaotc can handle situation with missing --compile-commands file
  */

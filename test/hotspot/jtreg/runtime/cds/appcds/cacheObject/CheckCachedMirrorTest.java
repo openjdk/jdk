@@ -31,9 +31,9 @@
  * @build sun.hotspot.WhiteBox
  * @compile CheckCachedMirrorApp.java
  * @compile ../test-classes/Hello.java
- * @run driver ClassFileInstaller -jar app.jar CheckCachedMirrorApp
- * @run driver ClassFileInstaller -jar hello.jar Hello
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar CheckCachedMirrorApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver CheckCachedMirrorTest
  */
 

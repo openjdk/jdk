@@ -32,7 +32,7 @@
  * @compile test-classes/ForNameTest.java
  * @compile test-classes/BootClassPathAppendHelper.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver ClassLoaderTest
  */
 

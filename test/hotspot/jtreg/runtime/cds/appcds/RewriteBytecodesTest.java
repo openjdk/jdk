@@ -30,7 +30,7 @@
  * @library /test/lib
  * @compile test-classes/RewriteBytecodes.java test-classes/Util.java test-classes/Super.java test-classes/Child.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver RewriteBytecodesTest
  */
 

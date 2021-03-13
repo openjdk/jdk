@@ -41,7 +41,7 @@ import java.lang.ref.WeakReference;
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Xms200m -Xmx200m -Xlog:gc

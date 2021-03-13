@@ -30,7 +30,7 @@ package gc.g1;
  * @requires vm.gc.G1
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xlog:gc+heap=debug -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -Xmx64M -Xms64M -Xmn50M -XX:SurvivorRatio=1 gc.g1.TestEdenSurvivorLessThanMax
  */
 

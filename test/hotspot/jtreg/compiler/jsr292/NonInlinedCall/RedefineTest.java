@@ -36,7 +36,7 @@
  * @run driver compiler.jsr292.NonInlinedCall.Agent
  *             agent.jar
  *             compiler.jsr292.NonInlinedCall.RedefineTest
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *                                compiler.jsr292.NonInlinedCall.RedefineTest
  * @run main/bootclasspath/othervm -javaagent:agent.jar
  *                                 -XX:+IgnoreUnrecognizedVMOptions

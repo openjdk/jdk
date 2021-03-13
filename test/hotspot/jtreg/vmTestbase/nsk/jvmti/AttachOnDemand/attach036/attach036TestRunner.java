@@ -39,7 +39,7 @@
  *
  * @comment create attach036Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach036.attach036Agent00
- * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach036.attach036Agent00
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller nsk.jvmti.AttachOnDemand.attach036.attach036Agent00
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach036Agent00.jar ${test.src}/attach036Agent00.mf

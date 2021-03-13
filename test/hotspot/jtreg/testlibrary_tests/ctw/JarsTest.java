@@ -33,7 +33,7 @@
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build sun.hotspot.WhiteBox Foo Bar
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
  * @run driver JarsTest prepare
  * @run driver JarsTest compile foo.jar bar.jar
  * @run driver JarsTest check

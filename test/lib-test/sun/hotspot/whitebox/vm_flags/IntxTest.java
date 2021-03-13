@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xint -XX:-ProfileInterpreter IntxTest
  * @summary testing of WB::set/getIntxVMFlag()
  * @author igor.ignatyev@oracle.com

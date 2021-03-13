@@ -30,10 +30,10 @@
  *          SystemDictionary::check_constraints().
  * @library /test/lib
  * @compile D_ambgs.jasm
- * @run driver ClassFileInstaller test.D_ambgs
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller test.D_ambgs
  * @compile  ../common/PreemptingClassLoader.java
  *           test/D_ambgs.java Test.java test/B.java
- * @run driver ClassFileInstaller test.B
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller test.B
  * @run main/othervm Test
  */
 

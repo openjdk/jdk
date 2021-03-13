@@ -30,7 +30,7 @@
  * @library /test/lib
  * @compile test-classes/HelloExt.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver HelloExtTest
  */
 

@@ -35,7 +35,7 @@
  * @run driver compiler.aot.AotCompiler -libname libSelfChanged.so
  *      -class compiler.aot.fingerprint.Blah
  *
- * @run driver ClassFileInstaller -jar SelfChangedCDS.jar compiler.aot.fingerprint.Blah
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar SelfChangedCDS.jar compiler.aot.fingerprint.Blah
  * @run driver compiler.aot.fingerprint.CDSDumper SelfChangedCDS.jar SelfChangedCDS.classlist SelfChangedCDS.jsa -showversion
  *      compiler.aot.fingerprint.Blah
  *

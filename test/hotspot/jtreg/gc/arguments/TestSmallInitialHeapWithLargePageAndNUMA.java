@@ -34,7 +34,7 @@ package gc.arguments;
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build TestSmallInitialHeapWithLargePageAndNUMA
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UseHugeTLBFS -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestSmallInitialHeapWithLargePageAndNUMA
 */
 

@@ -32,7 +32,7 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @comment generate and compile metaspace.stressHierarchy.common.HumongousClass
  * @run driver metaspace.stressHierarchy.common.GenClassesBuilder
  * @run main/othervm

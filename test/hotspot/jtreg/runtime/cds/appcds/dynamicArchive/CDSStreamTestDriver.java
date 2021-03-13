@@ -31,7 +31,7 @@
  * @compile ../../../../../../jdk/java/util/stream/CustomFJPoolTest.java
  *          test-classes/TestStreamApp.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. CDSStreamTestDriver
  */
 

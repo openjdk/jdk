@@ -32,7 +32,7 @@
  *
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -XX:CompileCommand=exclude,*InternalErrorTest.main -XX:CompileCommand=inline,*.get -XX:CompileCommand=inline,*Unsafe.* -Xbootclasspath/a:.  -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI InternalErrorTest
  */

@@ -29,7 +29,7 @@
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @compile InternStringTest.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver InternSharedString
  */
 

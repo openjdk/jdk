@@ -27,7 +27,7 @@
  * @library / /test/lib /testlibrary
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.cli.jaotc.CompileDirectoryTest
- * @run driver ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
  *                                compiler.aot.cli.jaotc.data.HelloWorldTwo
  * @run driver compiler.aot.cli.jaotc.CompileDirectoryTest
  * @summary check jaotc can compile directory with classes where directory is specified by relative path

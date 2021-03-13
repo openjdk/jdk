@@ -26,7 +26,7 @@
  * @test HandshakeWalkStackTest
  * @library /testlibrary /test/lib
  * @build HandshakeWalkStackTest
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI HandshakeWalkStackTest
  */
 

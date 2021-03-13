@@ -32,7 +32,7 @@
  *        compiler.profiling.spectrapredefineclass_classloaders.Test
  *        compiler.profiling.spectrapredefineclass_classloaders.A
  *        compiler.profiling.spectrapredefineclass_classloaders.B
- * @run driver ClassFileInstaller compiler.profiling.spectrapredefineclass_classloaders.Agent
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.profiling.spectrapredefineclass_classloaders.Agent
  * @run driver compiler.profiling.spectrapredefineclass_classloaders.Launcher
  * @run main/othervm -XX:CompilationMode=high-only -XX:-BackgroundCompilation -XX:CompileThreshold=10000
  *                   -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222

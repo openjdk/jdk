@@ -30,7 +30,7 @@
  * @build compiler.calls.common.InvokeDynamic
  *        sun.hotspot.WhiteBox
  * @run driver compiler.calls.common.InvokeDynamicPatcher
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver compiler.aot.AotCompiler -libname AotInvokeDynamic2CompiledTest.so
  *      -class compiler.calls.common.InvokeDynamic
  *      -compile compiler.calls.common.InvokeDynamic.caller()V

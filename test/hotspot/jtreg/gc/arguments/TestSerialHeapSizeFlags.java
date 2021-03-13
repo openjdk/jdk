@@ -32,7 +32,7 @@ package gc.arguments;
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver gc.arguments.TestSerialHeapSizeFlags
  * @author thomas.schatzl@oracle.com
  */

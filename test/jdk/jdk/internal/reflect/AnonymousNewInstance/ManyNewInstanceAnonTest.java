@@ -30,7 +30,7 @@
  * @library /test/lib
  * @author  Robert Field
  * @compile -XDignore.symbol.file ManyNewInstanceAnonTest.java
- * @run driver ClassFileInstaller ManyNewInstanceAnonTest
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller ManyNewInstanceAnonTest
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all ManyNewInstanceAnonTest
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all -Dsun.reflection.noInflation=true ManyNewInstanceAnonTest
  */
