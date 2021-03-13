@@ -672,7 +672,6 @@ PackNode* PackNode::binary_tree_pack(int lo, int hi) {
   int ct = hi - lo;
   assert(is_power_of_2(ct), "power of 2");
   if (ct == 2) {
-    assert(vect_type() != NULL, "sanity");
     PackNode* pk = PackNode::make(in(lo), 2, vect_type()->element_basic_type());
     pk->add_opd(in(lo+1));
     return pk;
@@ -681,7 +680,6 @@ PackNode* PackNode::binary_tree_pack(int lo, int hi) {
     PackNode* n1 = binary_tree_pack(lo,  mid);
     PackNode* n2 = binary_tree_pack(mid, hi );
 
-    assert(n1->vect_type() != NULL && n2->vect_type() != NULL, "sanity");
     BasicType bt = n1->vect_type()->element_basic_type();
     assert(bt == n2->vect_type()->element_basic_type(), "should be the same");
     switch (bt) {
@@ -1030,7 +1028,6 @@ int VectorCastNode::opcode(BasicType bt) {
 Node* VectorCastNode::Identity(PhaseGVN* phase) {
   if (!in(1)->is_top()) {
     BasicType  in_bt = in(1)->bottom_type()->is_vect()->element_basic_type();
-    assert(vect_type() != NULL, "sanity");
     BasicType out_bt = vect_type()->element_basic_type();
     if (in_bt == out_bt) {
       return in(1); // redundant cast
@@ -1174,7 +1171,6 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
 
 Node* RotateLeftVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int vlen = length();
-  assert(vect_type() != NULL, "sanity");
   BasicType bt = vect_type()->element_basic_type();
   if ((!in(2)->is_Con() && !Matcher::supports_vector_variable_rotates()) ||
        !Matcher::match_rule_supported_vector(Op_RotateLeftV, vlen, bt)) {
@@ -1185,7 +1181,6 @@ Node* RotateLeftVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 Node* RotateRightVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int vlen = length();
-  assert(vect_type() != NULL, "sanity");
   BasicType bt = vect_type()->element_basic_type();
   if ((!in(2)->is_Con() && !Matcher::supports_vector_variable_rotates()) ||
        !Matcher::match_rule_supported_vector(Op_RotateRightV, vlen, bt)) {
