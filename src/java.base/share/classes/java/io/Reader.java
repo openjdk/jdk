@@ -53,7 +53,7 @@ import java.util.Objects;
 
 public abstract class Reader implements Readable, Closeable {
 
-    private static final int WORK_BUFFER_SIZE = 8192;
+    private static final int TRANSFER_BUFFER_SIZE = 8192;
 
     /**
      * Returns a new {@code Reader} that reads no characters. The returned
@@ -149,12 +149,6 @@ public abstract class Reader implements Readable, Closeable {
     protected Object lock;
 
     /**
-     * Work buffer, null until allocated, guarded by #lock,
-     * may grow up to WORK_BUFFER_SIZE.
-     */
-    private char[] workBuffer = null;
-
-    /**
      * Creates a new character-stream reader whose critical sections will
      * synchronize on the reader itself.
      */
@@ -202,24 +196,11 @@ public abstract class Reader implements Readable, Closeable {
             if (nread > 0)
                 target.position(pos + nread);
         } else {
-            int remaining = target.remaining();
-            int bufferSize = Math.min(remaining, WORK_BUFFER_SIZE);
-            nread = 0;
-            synchronized (lock) {
-                if ((workBuffer == null) || (workBuffer.length < bufferSize))
-                    workBuffer = new char[bufferSize];
-                int n;
-                do {
-                    // read to EOF which may read more or less than buffer size
-                    if ((n = read(workBuffer, 0, Math.min(remaining, bufferSize))) > 0) {
-                        target.put(workBuffer, 0, n);
-                        nread += n;
-                        remaining -= n;
-                    }
-                    // if the last call to read returned -1 or the number of bytes
-                    // requested have been read then break
-                } while (n >= 0 && remaining > 0);
-            }
+            int len = target.remaining();
+            char[] cbuf = new char[len];
+            nread = read(cbuf, 0, len);
+            if (nread > 0)
+                target.put(cbuf, 0, nread);
         }
         return nread;
     }
@@ -292,6 +273,12 @@ public abstract class Reader implements Readable, Closeable {
      */
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
+    /** Maximum skip-buffer size */
+    private static final int maxSkipBufferSize = 8192;
+
+    /** Skip buffer, null until allocated */
+    private char[] skipBuffer = null;
+
     /**
      * Skips characters.  This method will block until some characters are
      * available, an I/O error occurs, or the end of the stream is reached.
@@ -306,13 +293,13 @@ public abstract class Reader implements Readable, Closeable {
     public long skip(long n) throws IOException {
         if (n < 0L)
             throw new IllegalArgumentException("skip value is negative");
-        int nn = (int) Math.min(n, WORK_BUFFER_SIZE);
+        int nn = (int) Math.min(n, maxSkipBufferSize);
         synchronized (lock) {
-            if ((workBuffer == null) || (workBuffer.length < nn))
-                workBuffer = new char[nn];
+            if ((skipBuffer == null) || (skipBuffer.length < nn))
+                skipBuffer = new char[nn];
             long r = n;
             while (r > 0) {
-                int nc = read(workBuffer, 0, (int)Math.min(r, nn));
+                int nc = read(skipBuffer, 0, (int)Math.min(r, nn));
                 if (nc == -1)
                     break;
                 r -= nc;
@@ -417,9 +404,9 @@ public abstract class Reader implements Readable, Closeable {
     public long transferTo(Writer out) throws IOException {
         Objects.requireNonNull(out, "out");
         long transferred = 0;
-        char[] buffer = new char[WORK_BUFFER_SIZE];
+        char[] buffer = new char[TRANSFER_BUFFER_SIZE];
         int nRead;
-        while ((nRead = read(buffer, 0, WORK_BUFFER_SIZE)) >= 0) {
+        while ((nRead = read(buffer, 0, TRANSFER_BUFFER_SIZE)) >= 0) {
             out.write(buffer, 0, nRead);
             transferred += nRead;
         }
