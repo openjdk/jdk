@@ -160,7 +160,7 @@ public class CharArrayReader extends Reader {
             int len = Math.min(avail, target.remaining());
             target.put(buf, pos, len);
             pos += len;
-            return avail;
+            return len;
         }
     }
 
