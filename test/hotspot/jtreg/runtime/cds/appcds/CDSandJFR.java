@@ -28,7 +28,7 @@
  * @requires vm.hasJFR & vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes test-classes
  * @build Hello GetFlightRecorder
- * @run driver ClassFileInstaller -jar CDSandJFR.jar Hello GetFlightRecorder GetFlightRecorder$TestEvent GetFlightRecorder$SimpleEvent
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar CDSandJFR.jar Hello GetFlightRecorder GetFlightRecorder$TestEvent GetFlightRecorder$SimpleEvent
  * @run main/othervm/timeout=500 CDSandJFR
  */
 

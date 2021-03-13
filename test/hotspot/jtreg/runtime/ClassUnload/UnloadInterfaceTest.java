@@ -29,7 +29,7 @@
  * @compile test/Interface.java
  * @compile test/ImplementorClass.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=trace UnloadInterfaceTest
  */
 import sun.hotspot.WhiteBox;

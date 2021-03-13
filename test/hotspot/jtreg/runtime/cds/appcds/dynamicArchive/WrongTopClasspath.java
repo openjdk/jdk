@@ -30,9 +30,9 @@ import java.io.File;
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build GenericTestApp sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar GenericTestApp.jar GenericTestApp
- * @run driver ClassFileInstaller -jar WrongJar.jar GenericTestApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar GenericTestApp.jar GenericTestApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WrongJar.jar GenericTestApp
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar WrongTopClasspath
  */
 

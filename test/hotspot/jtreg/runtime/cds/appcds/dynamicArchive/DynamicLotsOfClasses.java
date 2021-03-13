@@ -39,8 +39,8 @@ import jdk.test.lib.cds.CDSTestUtils;
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build LoadClasses
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar loadclasses.jar LoadClasses
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadclasses.jar LoadClasses
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main/othervm/timeout=500 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./whitebox.jar DynamicLotsOfClasses
  */
 

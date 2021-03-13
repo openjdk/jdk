@@ -186,8 +186,8 @@ public class ClassFileInstaller {
      *
      * If you call this API, make sure you build ClassFileInstaller with the following tags:
      *
-     * @library testlibrary
-     * @build ClassFileInstaller
+     * @library /test/lib
+     * @build jdk.test.lib.helpers.ClassFileInstaller
      */
     public static String writeJar(String jarFile, String... classes) throws Exception {
         classes = addInnerClasses(classes, 0);

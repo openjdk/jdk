@@ -30,8 +30,8 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox jdk.test.lib.Utils
  * @compile GCStressApp.java
- * @run driver ClassFileInstaller -jar gcstress.jar GCStressApp jdk.test.lib.Utils
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar gcstress.jar GCStressApp jdk.test.lib.Utils
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver GCStressTest
  */
 

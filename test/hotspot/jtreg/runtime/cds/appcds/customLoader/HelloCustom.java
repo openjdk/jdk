@@ -30,12 +30,12 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/HelloUnload.java test-classes/CustomLoadee.java
  * @build sun.hotspot.WhiteBox jdk.test.lib.classloader.ClassUnloadCommon
- * @run driver ClassFileInstaller -jar hello.jar HelloUnload
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloUnload
  *                 jdk.test.lib.classloader.ClassUnloadCommon
  *                 jdk.test.lib.classloader.ClassUnloadCommon$1
  *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure
- * @run driver ClassFileInstaller -jar hello_custom.jar CustomLoadee
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello_custom.jar CustomLoadee
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver HelloCustom
  */
 

@@ -32,8 +32,8 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build StaticInnerApp sun.hotspot.WhiteBox LambdaVerification
- * @run driver ClassFileInstaller -jar static_inner_app.jar StaticInnerApp HelloStaticInner HelloStaticInner$InnerHello
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar static_inner_app.jar StaticInnerApp HelloStaticInner HelloStaticInner$InnerHello
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. StaticInnerTest
  */
 
