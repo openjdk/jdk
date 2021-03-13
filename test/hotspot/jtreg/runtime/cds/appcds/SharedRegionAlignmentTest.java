@@ -37,6 +37,7 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class SharedRegionAlignmentTest {
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");
