@@ -428,8 +428,7 @@ public class HttpClient extends NetworkClient {
             try {
                 old = serverSocket.getSoTimeout();
                 serverSocket.setSoTimeout(1);
-                BufferedInputStream tmpbuf =
-                        new BufferedInputStream(serverSocket.getInputStream());
+                InputStream tmpbuf = serverSocket.getInputStream();
                 int r = tmpbuf.read();
                 if (r == -1) {
                     logFinest("HttpClient.available(): " +
