@@ -31,7 +31,7 @@
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
-#include "memory/padded.hpp"
+#include "utilities/lockFreeQueue.hpp"
 
 class G1ConcurrentRefineThread;
 class G1DirtyCardQueueSet;
@@ -76,38 +76,8 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     HeadTail(BufferNode* head, BufferNode* tail) : _head(head), _tail(tail) {}
   };
 
-  // A lock-free FIFO of BufferNodes, linked through their next() fields.
-  // This class has a restriction that pop() may return NULL when there are
-  // buffers in the queue if there is a concurrent push/append operation.
-  class Queue {
-    BufferNode* volatile _head;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
-    BufferNode* volatile _tail;
-    DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
-
-    NONCOPYABLE(Queue);
-
+  class Queue: public LockFreeQueue<BufferNode, &BufferNode::next_ptr, true /*rcu_pop*/> {
   public:
-    Queue() : _head(NULL), _tail(NULL) {}
-    DEBUG_ONLY(~Queue();)
-
-    // Return the first buffer in the queue.
-    // Thread-safe, but the result may change immediately.
-    BufferNode* top() const;
-
-    // Thread-safe add the buffer to the end of the queue.
-    void push(BufferNode& node) { append(node, node); }
-
-    // Thread-safe add the buffers from first to last to the end of the queue.
-    void append(BufferNode& first, BufferNode& last);
-
-    // Thread-safe attempt to remove and return the first buffer in the queue.
-    // Returns NULL if the queue is empty, or if a concurrent push/append
-    // interferes.  Uses GlobalCounter critical sections to address the ABA
-    // problem; this works with the buffer allocator's use of GlobalCounter
-    // synchronization.
-    BufferNode* pop();
-
     // Take all the buffers from the queue, leaving the queue empty.
     // Not thread-safe.
     HeadTail take_all();

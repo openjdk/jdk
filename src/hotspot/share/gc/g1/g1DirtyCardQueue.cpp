@@ -45,6 +45,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/globalCounter.inline.hpp"
+#include "utilities/lockFreeQueue.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/ticks.hpp"
@@ -114,107 +115,6 @@ void G1DirtyCardQueueSet::handle_zero_index(G1DirtyCardQueue& queue) {
 void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
   G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
   G1BarrierSet::dirty_card_queue_set().handle_zero_index(queue);
-}
-
-#ifdef ASSERT
-G1DirtyCardQueueSet::Queue::~Queue() {
-  assert(_head == NULL, "precondition");
-  assert(_tail == NULL, "precondition");
-}
-#endif // ASSERT
-
-BufferNode* G1DirtyCardQueueSet::Queue::top() const {
-  return Atomic::load(&_head);
-}
-
-// An append operation atomically exchanges the new tail with the queue tail.
-// It then sets the "next" value of the old tail to the head of the list being
-// appended; it is an invariant that the old tail's "next" value is NULL.
-// But if the old tail is NULL then the queue was empty.  In this case the
-// head of the list being appended is instead stored in the queue head; it is
-// an invariant that the queue head is NULL in this case.
-//
-// This means there is a period between the exchange and the old tail update
-// where the queue sequence is split into two parts, the list from the queue
-// head to the old tail, and the list being appended.  If there are concurrent
-// push/append operations, each may introduce another such segment.  But they
-// all eventually get resolved by their respective updates of their old tail's
-// "next" value.  This also means that pop operations must handle a buffer
-// with a NULL "next" value specially.
-//
-// A push operation is just a degenerate append, where the buffer being pushed
-// is both the head and the tail of the list being appended.
-void G1DirtyCardQueueSet::Queue::append(BufferNode& first, BufferNode& last) {
-  assert(last.next() == NULL, "precondition");
-  BufferNode* old_tail = Atomic::xchg(&_tail, &last);
-  if (old_tail == NULL) {       // Was empty.
-    Atomic::store(&_head, &first);
-  } else {
-    assert(old_tail->next() == NULL, "invariant");
-    old_tail->set_next(&first);
-  }
-}
-
-BufferNode* G1DirtyCardQueueSet::Queue::pop() {
-  Thread* current_thread = Thread::current();
-  while (true) {
-    // Use a critical section per iteration, rather than over the whole
-    // operation.  We're not guaranteed to make progress.  Lingering in one
-    // CS could lead to excessive allocation of buffers, because the CS
-    // blocks return of released buffers to the free list for reuse.
-    GlobalCounter::CriticalSection cs(current_thread);
-
-    BufferNode* result = Atomic::load_acquire(&_head);
-    if (result == NULL) return NULL; // Queue is empty.
-
-    BufferNode* next = Atomic::load_acquire(BufferNode::next_ptr(*result));
-    if (next != NULL) {
-      // The "usual" lock-free pop from the head of a singly linked list.
-      if (result == Atomic::cmpxchg(&_head, result, next)) {
-        // Former head successfully taken; it is not the last.
-        assert(Atomic::load(&_tail) != result, "invariant");
-        assert(result->next() != NULL, "invariant");
-        result->set_next(NULL);
-        return result;
-      }
-      // Lost the race; try again.
-      continue;
-    }
-
-    // next is NULL.  This case is handled differently from the "usual"
-    // lock-free pop from the head of a singly linked list.
-
-    // If _tail == result then result is the only element in the list. We can
-    // remove it from the list by first setting _tail to NULL and then setting
-    // _head to NULL, the order being important.  We set _tail with cmpxchg in
-    // case of a concurrent push/append/pop also changing _tail.  If we win
-    // then we've claimed result.
-    if (Atomic::cmpxchg(&_tail, result, (BufferNode*)NULL) == result) {
-      assert(result->next() == NULL, "invariant");
-      // Now that we've claimed result, also set _head to NULL.  But we must
-      // be careful of a concurrent push/append after we NULLed _tail, since
-      // it may have already performed its list-was-empty update of _head,
-      // which we must not overwrite.
-      Atomic::cmpxchg(&_head, result, (BufferNode*)NULL);
-      return result;
-    }
-
-    // If _head != result then we lost the race to take result; try again.
-    if (result != Atomic::load_acquire(&_head)) {
-      continue;
-    }
-
-    // An in-progress concurrent operation interfered with taking the head
-    // element when it was the only element.  A concurrent pop may have won
-    // the race to clear the tail but not yet cleared the head. Alternatively,
-    // a concurrent push/append may have changed the tail but not yet linked
-    // result->next().  We cannot take result in either case.  We don't just
-    // try again, because we could spin for a long time waiting for that
-    // concurrent operation to finish.  In the first case, returning NULL is
-    // fine; we lost the race for the only element to another thread.  We
-    // also return NULL for the second case, and let the caller cope.
-    return NULL;
-  }
 }
 
 G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::Queue::take_all() {
