@@ -66,9 +66,6 @@ public class TestParams {
         defaultRegistryPolicy =
             testSrc + File.separatorChar + "registry.security.policy";
 
-        defaultGroupPolicy =
-            testSrc + File.separatorChar + "group.security.policy";
-
         defaultSecurityManager = TestLibrary.getProperty(
             "java.security.manager", "java.lang.SecurityManager");
 

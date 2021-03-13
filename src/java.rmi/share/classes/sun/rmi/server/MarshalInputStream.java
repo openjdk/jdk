@@ -101,11 +101,12 @@ public class MarshalInputStream extends ObjectInputStream {
      */
     static {
         try {
-            String system =
-                "sun.rmi.server.Activation$ActivationSystemImpl_Stub";
+// TODO clean this up?
+//            String system =
+//                "sun.rmi.server.Activation$ActivationSystemImpl_Stub";
             String registry = "sun.rmi.registry.RegistryImpl_Stub";
 
-            permittedSunClasses.put(system, Class.forName(system));
+//            permittedSunClasses.put(system, Class.forName(system));
             permittedSunClasses.put(registry, Class.forName(registry));
 
         } catch (ClassNotFoundException e) {
