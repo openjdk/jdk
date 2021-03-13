@@ -33,6 +33,8 @@
 
 package compiler.aot.cli;
 
+import java.nio.file.Paths;
+
 public class IncorrectAOTLibraryTest {
     private static final String OPTION
             = "-XX:AOTLibrary=./" + Paths.get("jdk", "test", "lib", "helpers", "ClassFileInstaller.class").toString();
