@@ -26,7 +26,7 @@
  * @requires vm.aot
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
- * @run driver jdk.test.lib.helpers.ClassFileInstaller ClassFileInstaller
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.lib.helpers.ClassFileInstaller
  * @run driver compiler.aot.cli.IncorrectAOTLibraryTest
  * @summary check if incorrect aot library is handled properly
  */
@@ -35,7 +35,7 @@ package compiler.aot.cli;
 
 public class IncorrectAOTLibraryTest {
     private static final String OPTION
-            = "-XX:AOTLibrary=./ClassFileInstaller.class";
+            = "-XX:AOTLibrary=./" + Paths.get("jdk", "test", "lib", "helpers", "ClassFileInstaller.class").toString();
     private static final String[] EXPECTED_MESSAGES = new String[] {
         "error opening file:"
     };

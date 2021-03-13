@@ -35,7 +35,6 @@
  *          java.management
  *
  * @build sun.hotspot.WhiteBox
- * @build ClassFileInstaller
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *

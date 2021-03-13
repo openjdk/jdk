@@ -31,7 +31,6 @@
  * @library /test/lib /test/hotspot/jtreg
  *
  * @build sun.hotspot.WhiteBox
- * @build ClassFileInstaller
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
