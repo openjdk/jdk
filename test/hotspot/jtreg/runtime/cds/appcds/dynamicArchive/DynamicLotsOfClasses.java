@@ -44,6 +44,8 @@ import jdk.test.lib.cds.CDSTestUtils;
  * @run main/othervm/timeout=500 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./whitebox.jar DynamicLotsOfClasses
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
 
     public static void main(String[] args) throws Exception {

@@ -31,7 +31,7 @@
  * @run main/native NullClassBytesTest
  */
 
-import java.io.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class NullClassBytesTest {
 
@@ -50,7 +50,7 @@ public class NullClassBytesTest {
 
                 // load the class data from the connection
                 if (name.equals("A")) {
-                    byte[] b = getClassData("A");
+                    byte[] b = ClassUnloadCommon.getClassData("A");
                     return defineClass(name, b, 0, b.length);
                 } else if (name.equals("B")) {
                     byte[] b = new byte[0];
@@ -68,14 +68,6 @@ public class NullClassBytesTest {
                     return super.loadClass(name);
                 }
             }
-        }
-
-        byte[] getClassData(String name) {
-           try {
-             return SimpleLoader.class.getClassLoader().getResourceAsStream(name + ".class").readAllBytes();
-           } catch (IOException e) {
-              return null;
-           }
         }
     }
 
