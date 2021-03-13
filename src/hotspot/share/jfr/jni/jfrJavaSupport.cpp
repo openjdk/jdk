@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jni/jfrJavaCall.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
@@ -139,7 +139,7 @@ void JfrJavaSupport::notify_all(jobject object, TRAPS) {
   HandleMark hm(THREAD);
   Handle h_obj(THREAD, resolve_non_null(object));
   assert(h_obj.not_null(), "invariant");
-  ObjectSynchronizer::jni_enter(h_obj, THREAD);
+  ObjectSynchronizer::jni_enter(h_obj, THREAD->as_Java_thread());
   ObjectSynchronizer::notifyall(h_obj, THREAD);
   ObjectSynchronizer::jni_exit(h_obj(), THREAD);
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
@@ -566,23 +566,23 @@ void JfrJavaSupport::set_cause(jthrowable throwable, Thread* t) {
     return;
   }
 
-  if (ex->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+  if (ex->is_a(vmClasses::OutOfMemoryError_klass())) {
     _cause = OUT_OF_MEMORY;
     return;
   }
-  if (ex->is_a(SystemDictionary::StackOverflowError_klass())) {
+  if (ex->is_a(vmClasses::StackOverflowError_klass())) {
     _cause = STACK_OVERFLOW;
     return;
   }
-  if (ex->is_a(SystemDictionary::Error_klass())) {
+  if (ex->is_a(vmClasses::Error_klass())) {
     _cause = VM_ERROR;
     return;
   }
-  if (ex->is_a(SystemDictionary::RuntimeException_klass())) {
+  if (ex->is_a(vmClasses::RuntimeException_klass())) {
     _cause = RUNTIME_EXCEPTION;
     return;
   }
-  if (ex->is_a(SystemDictionary::Exception_klass())) {
+  if (ex->is_a(vmClasses::Exception_klass())) {
     _cause = UNKNOWN;
     return;
   }

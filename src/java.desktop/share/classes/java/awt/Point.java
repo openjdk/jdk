@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt;
 
 import java.awt.geom.Point2D;
 import java.beans.Transient;
+import java.io.Serial;
 
 /**
  * A point representing a location in {@code (x,y)} coordinate space,
@@ -58,9 +59,10 @@ public class Point extends Point2D implements java.io.Serializable {
      */
     public int y;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -5276940640259749850L;
 
     /**

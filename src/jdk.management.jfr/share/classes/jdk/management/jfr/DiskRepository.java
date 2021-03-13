@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -40,19 +41,20 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.Objects;
 
+import jdk.jfr.internal.management.ChunkFilename;
 import jdk.jfr.internal.management.ManagementSupport;
 
 final class DiskRepository implements Closeable {
 
     final static class DiskChunk {
         final Path path;
-        final Instant startTime;
+        final long startTimeNanos;
         Instant endTime;
         long size;
 
         DiskChunk(Path path, long startNanos) {
             this.path = path;
-            this.startTime = ManagementSupport.epochNanosToInstant(startNanos);
+            this.startTimeNanos = startNanos;
         }
     }
 
@@ -80,6 +82,7 @@ final class DiskRepository implements Closeable {
     private final boolean deleteDirectory;
     private final ByteBuffer buffer = ByteBuffer.allocate(256);
     private final Path directory;
+    private final ChunkFilename chunkFilename;
 
     private RandomAccessFile raf;
     private RandomAccessFile previousRAF;
@@ -103,6 +106,7 @@ final class DiskRepository implements Closeable {
     public DiskRepository(Path path, boolean deleteDirectory) throws IOException {
         this.directory = path;
         this.deleteDirectory = deleteDirectory;
+        this.chunkFilename = ChunkFilename.newUnpriviliged(path);
     }
 
     public synchronized void write(byte[] bytes) throws IOException {
@@ -295,8 +299,8 @@ final class DiskRepository implements Closeable {
             previousRAFstate = state;
             currentChunk.size = Files.size(currentChunk.path);
             long durationNanos = buffer.getLong(HEADER_FILE_DURATION);
-            Duration d = Duration.ofNanos(durationNanos);
-            currentChunk.endTime = currentChunk.startTime.plus(d);
+            long endTimeNanos = currentChunk.startTimeNanos + durationNanos;
+            currentChunk.endTime = ManagementSupport.epochNanosToInstant(endTimeNanos);
         }
         raf.seek(position);
     }
@@ -325,44 +329,8 @@ final class DiskRepository implements Closeable {
         int nanoOfSecond = (int) (nanos % 1_000_000_000);
         ZoneOffset z = OffsetDateTime.now().getOffset();
         LocalDateTime d = LocalDateTime.ofEpochSecond(epochSecond, nanoOfSecond, z);
-        String filename = formatDateTime(d);
-        Path p1 = directory.resolve(filename + ".jfr");
-        if (!Files.exists(p1)) {
-            return new DiskChunk(p1, nanos);
-        }
-        for (int i = 1; i < 100; i++) {
-            String s = Integer.toString(i);
-            if (i < 10) {
-                s = "0" + s;
-            }
-            Path p2 = directory.resolve(filename + "_" + s + ".jfr");
-            if (!Files.exists(p2)) {
-                return new DiskChunk(p2, nanos);
-            }
-        }
-        throw new IOException("Could not create chunk for path " + p1);
-    }
-
-    static String formatDateTime(LocalDateTime time) {
-        StringBuilder sb = new StringBuilder(19);
-        sb.append(time.getYear() / 100);
-        appendPadded(sb, time.getYear() % 100, true);
-        appendPadded(sb, time.getMonth().getValue(), true);
-        appendPadded(sb, time.getDayOfMonth(), true);
-        appendPadded(sb, time.getHour(), true);
-        appendPadded(sb, time.getMinute(), true);
-        appendPadded(sb, time.getSecond(), false);
-        return sb.toString();
-    }
-
-    private static void appendPadded(StringBuilder text, int number, boolean separator) {
-        if (number < 10) {
-            text.append('0');
-        }
-        text.append(number);
-        if (separator) {
-            text.append('_');
-        }
+        String filename = chunkFilename.next(d);
+        return new DiskChunk(Paths.get(filename), nanos);
     }
 
     @Override
@@ -423,11 +391,11 @@ final class DiskRepository implements Closeable {
         cleanUpDeadChunk(count + 10);
     }
 
-    public synchronized void onChunkComplete(Instant timestamp) {
+    public synchronized void onChunkComplete(long endTimeNanos) {
         int count = 0;
         while (!activeChunks.isEmpty()) {
             DiskChunk oldestChunk = activeChunks.peek();
-            if (oldestChunk.startTime.isBefore(timestamp)) {
+            if (oldestChunk.startTimeNanos < endTimeNanos) {
                 removeOldestChunk();
                 count++;
             } else {

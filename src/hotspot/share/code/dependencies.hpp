@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ class nmethod;
 class OopRecorder;
 class xmlStream;
 class CompileLog;
+class CompileTask;
 class DepChange;
 class   KlassDepChange;
 class   CallSiteDepChange;
@@ -115,12 +116,6 @@ class Dependencies: public ResourceObj {
     // An abstract class CX has exactly one concrete subtype CC.
     abstract_with_unique_concrete_subtype,
 
-    // The type CX is purely abstract, with no concrete subtype* at all.
-    abstract_with_no_concrete_subtype,
-
-    // The concrete CX is free of concrete proper subtypes.
-    concrete_with_no_concrete_subtype,
-
     // Given a method M1 and a context class CX, the set MM(CX, M1) of
     // "concrete matching methods" in CX of M1 is the set of every
     // concrete M2 for which it is possible to create an invokevirtual
@@ -138,23 +133,6 @@ class Dependencies: public ResourceObj {
     // in a subtype* of CX.  It asserts that MM(CX, M1) is no greater
     // than {M1}.
     unique_concrete_method,       // one unique concrete method under CX
-
-    // An "exclusive" assertion concerns two methods or subtypes, and
-    // declares that there are at most two (or perhaps later N>2)
-    // specific items that jointly satisfy the restriction.
-    // We list all items explicitly rather than just giving their
-    // count, for robustness in the face of complex schema changes.
-
-    // A context class CX (which may be either abstract or concrete)
-    // has two exclusive concrete subtypes* C1, C2 if every concrete
-    // subtype* of CX is either C1 or C2.  Note that if neither C1 or C2
-    // are equal to CX, then CX itself must be abstract.  But it is
-    // also possible (for example) that C1 is CX (a concrete class)
-    // and C2 is a proper subtype of C1.
-    abstract_with_exclusive_concrete_subtypes_2,
-
-    // This dependency asserts that MM(CX, M1) is no greater than {M1,M2}.
-    exclusive_concrete_methods_2,
 
     // This dependency asserts that no instances of class or it's
     // subclasses require finalization registration.
@@ -347,18 +325,13 @@ class Dependencies: public ResourceObj {
 
   void assert_common_1(DepType dept, ciBaseObject* x);
   void assert_common_2(DepType dept, ciBaseObject* x0, ciBaseObject* x1);
-  void assert_common_3(DepType dept, ciKlass* ctxk, ciBaseObject* x1, ciBaseObject* x2);
 
  public:
   // Adding assertions to a new dependency set at compile time:
   void assert_evol_method(ciMethod* m);
   void assert_leaf_type(ciKlass* ctxk);
   void assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, ciKlass* conck);
-  void assert_abstract_with_no_concrete_subtype(ciKlass* ctxk);
-  void assert_concrete_with_no_concrete_subtype(ciKlass* ctxk);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
-  void assert_abstract_with_exclusive_concrete_subtypes(ciKlass* ctxk, ciKlass* k1, ciKlass* k2);
-  void assert_exclusive_concrete_methods(ciKlass* ctxk, ciMethod* m1, ciMethod* m2);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
   void assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle);
 
@@ -425,18 +398,8 @@ class Dependencies: public ResourceObj {
   // Checking old assertions at run-time (in the VM only):
   static Klass* check_evol_method(Method* m);
   static Klass* check_leaf_type(Klass* ctxk);
-  static Klass* check_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck,
-                                                              KlassDepChange* changes = NULL);
-  static Klass* check_abstract_with_no_concrete_subtype(Klass* ctxk,
-                                                          KlassDepChange* changes = NULL);
-  static Klass* check_concrete_with_no_concrete_subtype(Klass* ctxk,
-                                                          KlassDepChange* changes = NULL);
-  static Klass* check_unique_concrete_method(Klass* ctxk, Method* uniqm,
-                                               KlassDepChange* changes = NULL);
-  static Klass* check_abstract_with_exclusive_concrete_subtypes(Klass* ctxk, Klass* k1, Klass* k2,
-                                                                  KlassDepChange* changes = NULL);
-  static Klass* check_exclusive_concrete_methods(Klass* ctxk, Method* m1, Method* m2,
-                                                   KlassDepChange* changes = NULL);
+  static Klass* check_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck, KlassDepChange* changes = NULL);
+  static Klass* check_unique_concrete_method(Klass* ctxk, Method* uniqm, KlassDepChange* changes = NULL);
   static Klass* check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes = NULL);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned Klass* is NULL if the dependency assertion is still
@@ -454,9 +417,8 @@ class Dependencies: public ResourceObj {
   // It is used by DepStream::spot_check_dependency_at.
 
   // Detecting possible new assertions:
-  static Klass*    find_unique_concrete_subtype(Klass* ctxk);
-  static Method*   find_unique_concrete_method(Klass* ctxk, Method* m);
-  static int       find_exclusive_concrete_subtypes(Klass* ctxk, int klen, Klass* k[]);
+  static Klass*  find_unique_concrete_subtype(Klass* ctxk);
+  static Method* find_unique_concrete_method(Klass* ctxk, Method* m);
 
   // Create the encoding which will be stored in an nmethod.
   void encode_content_bytes();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MismatchedBaseArchive
  */
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class MismatchedBaseArchive extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
@@ -72,8 +74,7 @@ public class MismatchedBaseArchive extends DynamicArchiveTestBase {
              "-Xlog:cds+dynamic=debug",
              "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                    output.shouldContain("Buffer-space to target-space delta")
-                           .shouldContain("Written dynamic archive 0x");
+                    output.shouldContain("Written dynamic archive 0x");
                 });
 
         run2(helloBaseArchive, topArchiveName,

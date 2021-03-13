@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -518,6 +518,7 @@ public abstract class Executable extends AccessibleObject
      * construct as defined by
      * <cite>The Java Language Specification</cite>.
      * @jls 13.1 The Form of a Binary
+     * @jvms 4.6 Methods
      */
     public boolean isSynthetic() {
         return Modifier.isSynthetic(getModifiers());
@@ -707,7 +708,9 @@ public abstract class Executable extends AccessibleObject
         Class<?> ownerClass = c.getDeclaringClass();
         TypeVariable<?>[] typeVars = c.getTypeParameters();
 
-        if (ownerClass == null) { // base case
+        // base case, static nested classes, according to JLS 8.1.3, has no
+        // enclosing instance, therefore its owner is not generified.
+        if (ownerClass == null || Modifier.isStatic(c.getModifiers())) {
             if (typeVars.length == 0)
                 return c;
             else

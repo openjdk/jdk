@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,6 @@ import javax.imageio.stream.ImageOutputStream;
  * for paths made of either 9 lines, 4 quads, 2 cubics (random)
  * Note: Use the argument -slow to run more intensive tests (too much time)
  *
- * @run main/othervm/timeout=300 -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine ClipShapeTest -poly
- * @run main/othervm/timeout=300 -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine ClipShapeTest -poly -doDash
- * @run main/othervm/timeout=300 -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine ClipShapeTest -cubic
- * @run main/othervm/timeout=300 -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine ClipShapeTest -cubic -doDash
  * @run main/othervm/timeout=300 -Dsun.java2d.renderer=sun.java2d.marlin.DMarlinRenderingEngine ClipShapeTest -poly
  * @run main/othervm/timeout=300 -Dsun.java2d.renderer=sun.java2d.marlin.DMarlinRenderingEngine ClipShapeTest -poly -doDash
  * @run main/othervm/timeout=300 -Dsun.java2d.renderer=sun.java2d.marlin.DMarlinRenderingEngine ClipShapeTest -cubic
@@ -133,7 +129,6 @@ public final class ClipShapeTest {
     static final File OUTPUT_DIR = new File(".");
 
     static final AtomicBoolean isMarlin = new AtomicBoolean();
-    static final AtomicBoolean isMarlinFloat = new AtomicBoolean();
     static final AtomicBoolean isClipRuntime = new AtomicBoolean();
 
     static {
@@ -150,8 +145,7 @@ public final class ClipShapeTest {
                 if (msg != null) {
                     // last space to avoid matching other settings:
                     if (msg.startsWith("sun.java2d.renderer ")) {
-                        isMarlin.set(msg.contains("MarlinRenderingEngine"));
-                        isMarlinFloat.set(!msg.contains("DMarlinRenderingEngine"));
+                        isMarlin.set(msg.contains("DMarlinRenderingEngine"));
                     }
                     if (msg.startsWith("sun.java2d.renderer.clip.runtime.enable")) {
                         isClipRuntime.set(msg.contains("true"));
@@ -294,10 +288,7 @@ public final class ClipShapeTest {
                 // Define uncertainty for lines:
                 // float variant have higher uncertainty
                 THRESHOLD_DELTA = 2;
-                THRESHOLD_NBPIX = (USE_DASHES) ?
-                    // float variant have higher uncertainty
-                    ((isMarlinFloat.get()) ? 30 : 6) // low for double
-                    : (isMarlinFloat.get()) ? 10 : 0;
+                THRESHOLD_NBPIX = (USE_DASHES) ? 6 : 0;
         }
 
 // Visual inspection (low threshold):

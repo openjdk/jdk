@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 
 #define LAMBDA_PROXY_TAG "@lambda-proxy"
 #define LAMBDA_FORM_TAG  "@lambda-form-invoker"
+
+class Thread;
 
 class ID2KlassTable : public KVHashtable<int, InstanceKlass*, mtInternal> {
 public:
@@ -81,6 +83,7 @@ class ClassListParser : public StackObj {
     _line_buf_size        = _max_allowed_line_len + _line_buf_extra
   };
 
+  static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
   FILE* _file;
@@ -114,13 +117,18 @@ class ClassListParser : public StackObj {
   bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
 
   void resolve_indy(Symbol* class_name_symbol, TRAPS);
+  void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
 public:
   ClassListParser(const char* file);
   ~ClassListParser();
 
+  static bool is_parsing_thread();
   static ClassListParser* instance() {
+    assert(is_parsing_thread(), "call this only in the thread that created ClassListParsing::_instance");
+    assert(_instance != NULL, "must be");
     return _instance;
   }
+
   bool parse_one_line();
   void split_tokens_by_whitespace(int offset);
   int split_at_tag_from_line();

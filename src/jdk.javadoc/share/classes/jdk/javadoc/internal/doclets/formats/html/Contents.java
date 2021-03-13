@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,9 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
@@ -140,7 +138,6 @@ public class Contents {
     public final Content navProperty;
     public final Content navServices;
     public final Content nestedClassSummary;
-    public final Content newPage;
     public final Content noScriptMessage;
     public final Content openModuleLabel;
     public final Content openedTo;
@@ -151,6 +148,10 @@ public class Contents {
     public final Content package_;
     public final Content packagesLabel;
     public final Content parameters;
+    public final Content previewAPI;
+    public final Content previewLabel;
+    public final Content previewMark;
+    public final Content previewPhrase;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
@@ -221,7 +222,7 @@ public class Contents {
         constructorSummaryLabel = getContent("doclet.Constructor_Summary");
         constructors = getContent("doclet.Constructors");
         contentsHeading = getContent("doclet.Contents");
-        defaultPackageLabel = new StringContent(DocletConstants.DEFAULT_PACKAGE_NAME);
+        defaultPackageLabel = getContent("doclet.Unnamed_Package");
         default_ = getContent("doclet.Default");
         deprecatedAPI = getContent("doclet.Deprecated_API");
         deprecatedLabel = getContent("doclet.navDeprecated");
@@ -283,7 +284,6 @@ public class Contents {
         navProperty = getContent("doclet.navProperty");
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
-        newPage = new Comment(resources.getText("doclet.New_Page"));
         noScriptMessage = getContent("doclet.No_Script_Message");
         openedTo = getContent("doclet.OpenedTo");
         openModuleLabel = getContent("doclet.Open_Module");
@@ -294,6 +294,10 @@ public class Contents {
         package_ = getContent("doclet.package");
         packagesLabel = getContent("doclet.Packages");
         parameters = getContent("doclet.Parameters");
+        previewAPI = getContent("doclet.Preview_API");
+        previewLabel = getContent("doclet.Preview_Label");
+        previewMark = getContent("doclet.Preview_Mark");
+        previewPhrase = getContent("doclet.Preview");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
@@ -343,7 +347,7 @@ public class Contents {
      * @return a content tree for the string
      */
     public Content getContent(String key) {
-        return new FixedStringContent(resources.getText(key));
+        return Text.of(resources.getText(key));
     }
 
     /**

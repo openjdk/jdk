@@ -482,9 +482,6 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
                 BasicLogEvent ble = (BasicLogEvent) e;
                 Compilation c = ble.getCompilation();
                 if (c == null) {
-                    if (!(ble instanceof NMethod)) {
-                        throw new InternalError("only nmethods should have a null compilation; here's a " + ble.getClass());
-                    }
                     continue;
                 }
                 String name = c.getMethod().getFullName();

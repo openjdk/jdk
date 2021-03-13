@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1GCTypes.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -63,7 +64,6 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1UncommitRegionTask.hpp"
 #include "gc/g1/g1VMOperations.hpp"
@@ -86,12 +86,14 @@
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -704,7 +706,8 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
     // Fill the memory below the allocated range with dummy object(s),
     // if the region bottom does not match the range start, or if the previous
     // range ended within the same G1 region, and there is a gap.
-    if (start_address != bottom_address) {
+    assert(start_address >= bottom_address, "bottom address should not be greater than start address");
+    if (start_address > bottom_address) {
       size_t fill_size = pointer_delta(start_address, bottom_address);
       G1CollectedHeap::fill_with_objects(bottom_address, fill_size);
       increase_used(fill_size * HeapWordSize);
@@ -1495,8 +1498,8 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 
   os::trace_page_sizes_for_requested_size(description,
                                           size,
-                                          preferred_page_size,
                                           page_size,
+                                          preferred_page_size,
                                           rs.base(),
                                           rs.size());
 
@@ -1792,12 +1795,9 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Discovery is atomic - i.e. not concurrent.
   //     * Reference discovery will not need a barrier.
 
-  bool mt_processing = ParallelRefProcEnabled && (ParallelGCThreads > 1);
-
   // Concurrent Mark ref processor
   _ref_processor_cm =
     new ReferenceProcessor(&_is_subject_to_discovery_cm,
-                           mt_processing,                                  // mt processing
                            ParallelGCThreads,                              // degree of mt processing
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
                            MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
@@ -1808,7 +1808,6 @@ void G1CollectedHeap::ref_processing_init() {
   // STW ref processor
   _ref_processor_stw =
     new ReferenceProcessor(&_is_subject_to_discovery_stw,
-                           mt_processing,                        // mt processing
                            ParallelGCThreads,                    // degree of mt processing
                            (ParallelGCThreads > 1),              // mt discovery
                            ParallelGCThreads,                    // degree of mt discovery
@@ -2841,7 +2840,7 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
   if (expand_bytes > 0) {
     // No need for an ergo logging here,
     // expansion_amount() does this when it returns a value > 0.
-    double expand_ms;
+    double expand_ms = 0.0;
     if (!expand(expand_bytes, _workers, &expand_ms)) {
       // We failed to expand the heap. Cannot do anything about it.
     }
@@ -2927,7 +2926,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   {
     G1EvacuationInfo evacuation_info;
 
-    _gc_tracer_stw->report_yc_type(collector_state()->yc_type());
+    _gc_tracer_stw->report_yc_phase(collector_state()->young_gc_phase());
 
     GCTraceCPUTime tcpu;
 
@@ -2941,7 +2940,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
     G1MonitoringScope ms(g1mm(),
                          false /* full_gc */,
-                         collector_state()->yc_type() == Mixed /* all_memory_pools_affected */);
+                         collector_state()->young_gc_phase() == Mixed /* all_memory_pools_affected */);
 
     G1HeapTransition heap_transition(this);
 
@@ -3712,7 +3711,9 @@ protected:
       p->record_or_add_time_secs(termination_phase, worker_id, cl.term_time());
       p->record_or_add_thread_work_item(termination_phase, worker_id, cl.term_attempts());
     }
-    assert(pss->trim_ticks().seconds() == 0.0, "Unexpected partial trimming during evacuation");
+    assert(pss->trim_ticks().value() == 0,
+           "Unexpected partial trimming during evacuation value " JLONG_FORMAT,
+           pss->trim_ticks().value());
   }
 
   virtual void start_work(uint worker_id) { }

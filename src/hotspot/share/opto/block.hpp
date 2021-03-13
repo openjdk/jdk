@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -620,11 +620,15 @@ class PhaseCFG : public Phase {
   // Debugging print of CFG
   void dump( ) const;           // CFG only
   void _dump_cfg( const Node *end, VectorSet &visited  ) const;
-  void verify() const;
   void dump_headers();
 #else
   bool trace_opto_pipelining() const { return false; }
 #endif
+
+  // Check that block b is in the home loop (or an ancestor) of n, if n is a
+  // memory writer.
+  void verify_memory_writer_placement(const Block* b, const Node* n) const NOT_DEBUG_RETURN;
+  void verify() const NOT_DEBUG_RETURN;
 };
 
 
@@ -719,6 +723,7 @@ class CFGLoop : public CFGElement {
   double trip_count() const { return 1.0 / _exit_prob; }
   virtual bool is_loop()  { return true; }
   int id() { return _id; }
+  int depth() { return _depth; }
 
 #ifndef PRODUCT
   void dump( ) const;

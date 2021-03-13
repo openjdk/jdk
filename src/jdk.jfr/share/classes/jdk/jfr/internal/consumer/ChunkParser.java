@@ -91,9 +91,9 @@ public final class ChunkParser {
             return (mask & flags) != 0;
         }
     }
+    public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
 
     private static final long CONSTANT_POOL_TYPE_ID = 1;
-    private static final String CHUNKHEADER = "jdk.types.ChunkHeader";
     private final RecordingInput input;
     private final ChunkHeader chunkHeader;
     private final TimeConverter timeConverter;
@@ -104,7 +104,6 @@ public final class ChunkParser {
     private LongMap<Parser> parsers;
     private boolean chunkFinished;
 
-    private Runnable flushOperation;
     private ParserConfiguration configuration;
     private volatile boolean closed;
     private MetadataDescriptor previousMetadata;
@@ -194,6 +193,9 @@ public final class ChunkParser {
     RecordedEvent readStreamingEvent() throws IOException {
         long absoluteChunkEnd = chunkHeader.getEnd();
         RecordedEvent event = readEvent();
+        if (event == ChunkParser.FLUSH_MARKER) {
+            return null;
+        }
         if (event != null) {
             return event;
         }
@@ -253,8 +255,9 @@ public final class ChunkParser {
                 // Not accepted by filter
             } else {
                 if (typeId == 1) { // checkpoint event
-                    if (flushOperation != null) {
-                        parseCheckpoint();
+                    if (CheckPointType.FLUSH.is(parseCheckpointType())) {
+                        input.position(pos + size);
+                        return FLUSH_MARKER;
                     }
                 } else {
                     if (typeId != 0) { // Not metadata event
@@ -267,16 +270,11 @@ public final class ChunkParser {
         return null;
     }
 
-    private void parseCheckpoint() throws IOException {
-        // Content has been parsed previously. This
-        // is to trigger flush
+    private byte parseCheckpointType() throws IOException {
         input.readLong(); // timestamp
         input.readLong(); // duration
         input.readLong(); // delta
-        byte typeFlags = input.readByte();
-        if (CheckPointType.FLUSH.is(typeFlags)) {
-            flushOperation.run();
-        }
+        return input.readByte();
     }
 
     private boolean awaitUpdatedHeader(long absoluteChunkEnd, long filterEnd) throws IOException {
@@ -335,10 +333,7 @@ public final class ChunkParser {
                 if (lookup == null) {
                     if (type == null) {
                         throw new IOException(
-                                "Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + lastCP + size + "]");
-                    }
-                    if (type.getName() != CHUNKHEADER) {
-                        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found constant pool(" + id + ") that is never used");
+                                "Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + (lastCP + size) + "]");
                     }
                     ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type.getName());
                     lookup = new ConstantLookup(pool, type);
@@ -370,7 +365,7 @@ public final class ChunkParser {
                         }
                     }
                 } catch (Exception e) {
-                    throw new IOException("Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + lastCP + size + "]",
+                    throw new IOException("Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + (lastCP + size) + "]",
                             e);
                 }
             }
@@ -449,10 +444,6 @@ public final class ChunkParser {
 
     public boolean isChunkFinished() {
         return chunkFinished;
-    }
-
-    public void setFlushOperation(Runnable flushOperation) {
-        this.flushOperation = flushOperation;
     }
 
     public long getChunkDuration() {

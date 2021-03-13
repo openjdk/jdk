@@ -133,7 +133,7 @@ final class ECDHServerKeyExchange {
             } else {
                 useExplicitSigAlgorithm =
                         shc.negotiatedProtocol.useTLS12PlusSpec();
-                Signature signer = null;
+                Signature signer;
                 if (useExplicitSigAlgorithm) {
                     Map.Entry<SignatureScheme, Signature> schemeAndSigner =
                             SignatureScheme.getSignerOfPreferableAlgorithm(
@@ -165,7 +165,7 @@ final class ECDHServerKeyExchange {
                     }
                 }
 
-                byte[] signature = null;
+                byte[] signature;
                 try {
                     updateSignature(signer, shc.clientHelloRandom.randomBytes,
                             shc.serverHelloRandom.randomBytes,
@@ -419,7 +419,7 @@ final class ECDHServerKeyExchange {
 
         private static Signature getSignature(String keyAlgorithm,
                 Key key) throws NoSuchAlgorithmException, InvalidKeyException {
-            Signature signer = null;
+            Signature signer;
             switch (keyAlgorithm) {
                 case "EC":
                     signer = Signature.getInstance(JsseJce.SIGNATURE_ECDSA);

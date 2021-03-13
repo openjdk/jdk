@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,7 @@
  *         newclassXX/redefineclasses021b.java - redefining debuggee's class
  *     This test performs the following cases:
  *      1. newclass01 - adding <public> interface-modifier
- *      2. newclass02 - adding <protected> interface-modifier
- *      3. newclass03 - adding <private> interface-modifier
- *      4. newclass04 - adding <static> interface-modifier
+ *      2. newclass02 - removing <public> interface-modifier
  *     The test checks two different cases for suspended debugee and not
  *     suspended one.
  * COMMENTS:
@@ -57,9 +55,7 @@
  *
  * @comment compile newclassXX to bin/newclassXX
  *          with full debug info
- * @run driver nsk.share.ExtraClassesBuilder
- *      -g:lines,source,vars
- *      newclass01 newclass02 newclass03 newclass04
+ * @run driver nsk.share.ExtraClassesBuilder -g:lines,source,vars newclass01 newclass02
  *
  * @run main/othervm
  *      nsk.jdi.VirtualMachine.redefineClasses.redefineclasses021
@@ -71,4 +67,3 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
-

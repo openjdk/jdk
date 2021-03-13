@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,11 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "atomic_aarch64.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -36,6 +39,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -488,11 +492,10 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
                     rthread, c_rarg1);
-    if (UseSVE > 0 ) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
+    // Reinitialize the ptrue predicate register, in case the external runtime
+    // call clobbers ptrue reg, as we may return to SVE compiled code.
+    __ reinitialize_ptrue();
+
     // we should not really care that lr is no longer the callee
     // address. we saved the value the handler needs in r19 so we can
     // just copy it to r3. however, the C2 handler will push its own
@@ -1339,10 +1342,10 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ verify_oop(temp);
     } else {
-      __ ldrw(r16, Address(a, rscratch2, Address::lsl(exact_log2(size))));
+      __ ldrw(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ decode_heap_oop(temp); // calls verify_oop
     }
-    __ add(rscratch2, rscratch2, size);
+    __ add(rscratch2, rscratch2, 1);
     __ b(loop);
     __ bind(end);
   }
@@ -1360,7 +1363,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
   //   disjoint_int_copy_entry is set to the no-overlap entry point
@@ -1430,7 +1433,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   address generate_conjoint_copy(int size, bool aligned, bool is_oop, address nooverlap_target,
                                  address *entry, const char *name,
@@ -1595,7 +1598,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
   //   disjoint_int_copy_entry is set to the no-overlap entry point
@@ -1619,7 +1622,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   address generate_conjoint_int_copy(bool aligned, address nooverlap_target,
                                      address *entry, const char *name,
@@ -5570,6 +5573,171 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+#ifdef LINUX
+
+  // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
+  //
+  // If LSE is in use, generate LSE versions of all the stubs. The
+  // non-LSE versions are in atomic_aarch64.S.
+
+  // class AtomicStubMark records the entry point of a stub and the
+  // stub pointer which will point to it. The stub pointer is set to
+  // the entry point when ~AtomicStubMark() is called, which must be
+  // after ICache::invalidate_range. This ensures safe publication of
+  // the generated code.
+  class AtomicStubMark {
+    address _entry_point;
+    aarch64_atomic_stub_t *_stub;
+    MacroAssembler *_masm;
+  public:
+    AtomicStubMark(MacroAssembler *masm, aarch64_atomic_stub_t *stub) {
+      _masm = masm;
+      __ align(32);
+      _entry_point = __ pc();
+      _stub = stub;
+    }
+    ~AtomicStubMark() {
+      *_stub = (aarch64_atomic_stub_t)_entry_point;
+    }
+  };
+
+  // NB: For memory_order_conservative we need a trailing membar after
+  // LSE atomic operations but not a leading membar.
+  //
+  // We don't need a leading membar because a clause in the Arm ARM
+  // says:
+  //
+  //   Barrier-ordered-before
+  //
+  //   Barrier instructions order prior Memory effects before subsequent
+  //   Memory effects generated by the same Observer. A read or a write
+  //   RW1 is Barrier-ordered-before a read or a write RW 2 from the same
+  //   Observer if and only if RW1 appears in program order before RW 2
+  //   and [ ... ] at least one of RW 1 and RW 2 is generated by an atomic
+  //   instruction with both Acquire and Release semantics.
+  //
+  // All the atomic instructions {ldaddal, swapal, casal} have Acquire
+  // and Release semantics, therefore we don't need a leading
+  // barrier. However, there is no corresponding Barrier-ordered-after
+  // relationship, therefore we need a trailing membar to prevent a
+  // later store or load from being reordered with the store in an
+  // atomic instruction.
+  //
+  // This was checked by using the herd7 consistency model simulator
+  // (http://diy.inria.fr/) with this test case:
+  //
+  // AArch64 LseCas
+  // { 0:X1=x; 0:X2=y; 1:X1=x; 1:X2=y; }
+  // P0 | P1;
+  // LDR W4, [X2] | MOV W3, #0;
+  // DMB LD       | MOV W4, #1;
+  // LDR W3, [X1] | CASAL W3, W4, [X1];
+  //              | DMB ISH;
+  //              | STR W4, [X2];
+  // exists
+  // (0:X3=0 /\ 0:X4=1)
+  //
+  // If X3 == 0 && X4 == 1, the store to y in P1 has been reordered
+  // with the store to x in P1. Without the DMB in P1 this may happen.
+  //
+  // At the time of writing we don't know of any AArch64 hardware that
+  // reorders stores in this way, but the Reference Manual permits it.
+
+  void gen_cas_entry(Assembler::operand_size size,
+                     atomic_memory_order order) {
+    Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+      exchange_val = c_rarg2;
+    bool acquire, release;
+    switch (order) {
+      case memory_order_relaxed:
+        acquire = false;
+        release = false;
+        break;
+      default:
+        acquire = true;
+        release = true;
+        break;
+    }
+    __ mov(prev, compare_val);
+    __ lse_cas(prev, exchange_val, ptr, size, acquire, release, /*not_pair*/true);
+    if (order == memory_order_conservative) {
+      __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    }
+    if (size == Assembler::xword) {
+      __ mov(r0, prev);
+    } else {
+      __ movw(r0, prev);
+    }
+    __ ret(lr);
+  }
+
+  void gen_ldaddal_entry(Assembler::operand_size size) {
+    Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+    __ ldaddal(size, incr, prev, addr);
+    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    if (size == Assembler::xword) {
+      __ mov(r0, prev);
+    } else {
+      __ movw(r0, prev);
+    }
+    __ ret(lr);
+  }
+
+  void gen_swpal_entry(Assembler::operand_size size) {
+    Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+    __ swpal(size, incr, prev, addr);
+    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    if (size == Assembler::xword) {
+      __ mov(r0, prev);
+    } else {
+      __ movw(r0, prev);
+    }
+    __ ret(lr);
+  }
+
+  void generate_atomic_entry_points() {
+    if (! UseLSE) {
+      return;
+    }
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "atomic entry points");
+    address first_entry = __ pc();
+
+    // All memory_order_conservative
+    AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
+    gen_ldaddal_entry(Assembler::word);
+    AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
+    gen_ldaddal_entry(Assembler::xword);
+
+    AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
+    gen_swpal_entry(Assembler::word);
+    AtomicStubMark mark_xchg_8_impl(_masm, &aarch64_atomic_xchg_8_impl);
+    gen_swpal_entry(Assembler::xword);
+
+    // CAS, memory_order_conservative
+    AtomicStubMark mark_cmpxchg_1(_masm, &aarch64_atomic_cmpxchg_1_impl);
+    gen_cas_entry(MacroAssembler::byte, memory_order_conservative);
+    AtomicStubMark mark_cmpxchg_4(_masm, &aarch64_atomic_cmpxchg_4_impl);
+    gen_cas_entry(MacroAssembler::word, memory_order_conservative);
+    AtomicStubMark mark_cmpxchg_8(_masm, &aarch64_atomic_cmpxchg_8_impl);
+    gen_cas_entry(MacroAssembler::xword, memory_order_conservative);
+
+    // CAS, memory_order_relaxed
+    AtomicStubMark mark_cmpxchg_1_relaxed
+      (_masm, &aarch64_atomic_cmpxchg_1_relaxed_impl);
+    gen_cas_entry(MacroAssembler::byte, memory_order_relaxed);
+    AtomicStubMark mark_cmpxchg_4_relaxed
+      (_masm, &aarch64_atomic_cmpxchg_4_relaxed_impl);
+    gen_cas_entry(MacroAssembler::word, memory_order_relaxed);
+    AtomicStubMark mark_cmpxchg_8_relaxed
+      (_masm, &aarch64_atomic_cmpxchg_8_relaxed_impl);
+    gen_cas_entry(MacroAssembler::xword, memory_order_relaxed);
+
+    ICache::invalidate_range(first_entry, __ pc() - first_entry);
+  }
+#endif // LINUX
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -5653,11 +5821,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ reset_last_Java_frame(true);
 
-    if (UseSVE > 0) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
+    // Reinitialize the ptrue predicate register, in case the external runtime
+    // call clobbers ptrue reg, as we may return to SVE compiled code.
+    __ reinitialize_ptrue();
 
     __ leave();
 
@@ -6684,6 +6850,12 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
+#ifdef LINUX
+
+    generate_atomic_entry_points();
+
+#endif // LINUX
+
     StubRoutines::aarch64::set_completed();
   }
 
@@ -6704,3 +6876,30 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
   }
   StubGenerator g(code, all);
 }
+
+
+#ifdef LINUX
+
+// Define pointers to atomic stubs and initialize them to point to the
+// code in atomic_aarch64.S.
+
+#define DEFAULT_ATOMIC_OP(OPNAME, SIZE, RELAXED)                                \
+  extern "C" uint64_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl \
+    (volatile void *ptr, uint64_t arg1, uint64_t arg2);                 \
+  aarch64_atomic_stub_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _impl \
+    = aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl;
+
+DEFAULT_ATOMIC_OP(fetch_add, 4, )
+DEFAULT_ATOMIC_OP(fetch_add, 8, )
+DEFAULT_ATOMIC_OP(xchg, 4, )
+DEFAULT_ATOMIC_OP(xchg, 8, )
+DEFAULT_ATOMIC_OP(cmpxchg, 1, )
+DEFAULT_ATOMIC_OP(cmpxchg, 4, )
+DEFAULT_ATOMIC_OP(cmpxchg, 8, )
+DEFAULT_ATOMIC_OP(cmpxchg, 1, _relaxed)
+DEFAULT_ATOMIC_OP(cmpxchg, 4, _relaxed)
+DEFAULT_ATOMIC_OP(cmpxchg, 8, _relaxed)
+
+#undef DEFAULT_ATOMIC_OP
+
+#endif // LINUX

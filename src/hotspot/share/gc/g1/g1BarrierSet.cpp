@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,8 +142,10 @@ void G1BarrierSet::on_thread_destroy(Thread* thread) {
 }
 
 void G1BarrierSet::on_thread_attach(Thread* thread) {
-  assert(!G1ThreadLocalData::satb_mark_queue(thread).is_active(), "SATB queue should not be active");
-  assert(G1ThreadLocalData::satb_mark_queue(thread).is_empty(), "SATB queue should be empty");
+  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
+  assert(!queue.is_active(), "SATB queue should not be active");
+  assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
+  assert(queue.index() == 0, "SATB queue index should be zero");
   // Can't assert that the DCQ is empty.  There is early execution on
   // the main thread, before it gets added to the threads list, which
   // is where this is called.  That execution may enqueue dirty cards.
@@ -151,13 +153,20 @@ void G1BarrierSet::on_thread_attach(Thread* thread) {
   // If we are creating the thread during a marking cycle, we should
   // set the active field of the SATB queue to true.  That involves
   // copying the global is_active value to this thread's queue.
-  bool is_satb_active = _satb_mark_queue_set.is_active();
-  G1ThreadLocalData::satb_mark_queue(thread).set_active(is_satb_active);
+  queue.set_active(_satb_mark_queue_set.is_active());
 }
 
 void G1BarrierSet::on_thread_detach(Thread* thread) {
   // Flush any deferred card marks.
   CardTableBarrierSet::on_thread_detach(thread);
-  G1ThreadLocalData::satb_mark_queue(thread).flush();
-  G1ThreadLocalData::dirty_card_queue(thread).on_thread_detach();
+  {
+    SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
+    G1BarrierSet::satb_mark_queue_set().flush_queue(queue);
+  }
+  {
+    G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
+    G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
+    qset.flush_queue(queue);
+    qset.record_detached_refinement_stats(queue.refinement_stats());
+  }
 }

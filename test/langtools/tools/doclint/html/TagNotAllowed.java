@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832
+ * @bug 8004832 8247957
  * @summary Add new doclint package
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint

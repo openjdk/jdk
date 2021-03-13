@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import sun.security.krb5.internal.ktab.KeyTabEntry;
 
 /*
  * @test
- * @bug 6950546
+ * @bug 6950546 8139348
  * @summary "ktab -d name etype" to "ktab -d name [-e etype] [kvno | all | old]"
  * @requires os.family == "windows"
  * @library /test/lib
@@ -49,39 +49,43 @@ public class KtabCheck {
 
         Files.deleteIfExists(Path.of(KEYTAB));
 
+        // This test uses a krb5.conf file (onlythree.conf) in which
+        // only 3 etypes in the default_tkt_enctypes setting are enabled
+        // by default: aes128-cts(17), aes256-cts(18), and aes128-sha2(19).
+
         ktab("-a me mine");
-        check(1,16,1,23,1,17);
+        check(1,17,1,18,1,19);
         ktab("-a me mine -n 0");
-        check(0,16,0,23,0,17);
+        check(0,17,0,18,0,19);
         ktab("-a me mine -n 1 -append");
-        check(0,16,0,23,0,17,1,16,1,23,1,17);
+        check(0,17,0,18,0,19,1,17,1,18,1,19);
         ktab("-a me mine -append");
-        check(0,16,0,23,0,17,1,16,1,23,1,17,2,16,2,23,2,17);
+        check(0,17,0,18,0,19,1,17,1,18,1,19,2,17,2,18,2,19);
         ktab("-a me mine");
-        check(3,16,3,23,3,17);
+        check(3,17,3,18,3,19);
         ktab("-a me mine -n 4 -append");
-        check(3,16,3,23,3,17,4,16,4,23,4,17);
+        check(3,17,3,18,3,19,4,17,4,18,4,19);
         ktab("-a me mine -n 5 -append");
-        check(3,16,3,23,3,17,4,16,4,23,4,17,5,16,5,23,5,17);
+        check(3,17,3,18,3,19,4,17,4,18,4,19,5,17,5,18,5,19);
         ktab("-a me mine -n 6 -append");
-        check(3,16,3,23,3,17,4,16,4,23,4,17,5,16,5,23,5,17,6,16,6,23,6,17);
+        check(3,17,3,18,3,19,4,17,4,18,4,19,5,17,5,18,5,19,6,17,6,18,6,19);
         ktab("-d me 3");
-        check(4,16,4,23,4,17,5,16,5,23,5,17,6,16,6,23,6,17);
-        ktab("-d me -e 16 6");
-        check(4,16,4,23,4,17,5,16,5,23,5,17,6,23,6,17);
+        check(4,17,4,18,4,19,5,17,5,18,5,19,6,17,6,18,6,19);
         ktab("-d me -e 17 6");
-        check(4,16,4,23,4,17,5,16,5,23,5,17,6,23);
-        ktab("-d me -e 16 5");
-        check(4,16,4,23,4,17,5,23,5,17,6,23);
+        check(4,17,4,18,4,19,5,17,5,18,5,19,6,18,6,19);
+        ktab("-d me -e 19 6");
+        check(4,17,4,18,4,19,5,17,5,18,5,19,6,18);
+        ktab("-d me -e 17 5");
+        check(4,17,4,18,4,19,5,18,5,19,6,18);
         ktab("-d me old");
-        check(4,16,5,17,6,23);
+        check(4,17,5,19,6,18);
         try {
             ktab("-d me old");
             throw new Exception("Should fail");
         } catch (Exception e) {
             // no-op
         }
-        check(4,16,5,17,6,23);
+        check(4,17,5,19,6,18);
         ktab("-d me");
         check();
     }

@@ -382,6 +382,9 @@ If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
 setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
 
+If you have Visual Studio installed but `configure` fails to detect it, it may
+be because of [spaces in path](#spaces-in-path).
+
 ### IBM XL C/C++
 
 Please consult the AIX section of the [Supported Build Platforms](
@@ -1466,6 +1469,15 @@ This can be a sign of a Cygwin problem. See the information about solving
 problems in the [Cygwin](#cygwin) section. Rebooting the computer might help
 temporarily.
 
+#### Spaces in Path
+
+On Windows, when configuring, `fixpath.sh` may report that some directory
+names have spaces. Usually, it assumes those directories have
+[short paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
+You can run `fsutil file setshortname` in `cmd` on certain directories, such as
+`Microsoft Visual Studio` or `Windows Kits`, to assign arbitrary short paths so
+`configure` can access them.
+
 ### Getting Help
 
 If none of the suggestions in this document helps you, or if you find what you
@@ -1544,8 +1556,8 @@ update. This might speed up the build, but comes at the risk of an incorrect
 build result. This is only recommended if you know what you're doing.
 
 From time to time, you will also need to modify the command line to `configure`
-due to changes. Use `make print-configure` to show the command line used for
-your current configuration.
+due to changes. Use `make print-configuration` to show the command line used
+for your current configuration.
 
 ### Using Fine-Grained Make Targets
 

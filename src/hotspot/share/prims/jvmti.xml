@@ -686,9 +686,11 @@ Agent_OnUnload_L(JavaVM *vm)</example>
     The library will be unloaded (unless it is statically linked into the
     executable) and this function will be called if some platform specific
     mechanism causes the unload (an unload mechanism is not specified in this document)
-    or the library is (in effect) unloaded by the termination of the VM whether through
-    normal termination or VM failure, including start-up failure.
-    Uncontrolled shutdown is, of course, an exception to this rule.
+    or the library is (in effect) unloaded by the termination of the VM.
+    VM termination includes normal termination and VM failure, including start-up failure,
+    but not, of course, uncontrolled shutdown. An implementation may also
+    choose to not call this function if the <code>Agent_OnAttach</code>/
+    <code>Agent_OnAttach_L</code> function reported an error (returned a non-zero value).
     Note the distinction between this function and the
     <eventlink id="VMDeath">VM Death event</eventlink>: for the VM Death event
     to be sent, the VM must have run at least to the point of initialization and a valid

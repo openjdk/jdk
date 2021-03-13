@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @modules java.base/jdk.internal.misc
- * @library /test/lib ..
+ * @library /test/lib
  * @compile p2/c2.java
  * @compile p4/c4.java
  * @build sun.hotspot.WhiteBox
@@ -39,6 +39,8 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import static jdk.test.lib.Asserts.*;
+
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 // Test that the message in a runtime ClassCastException contains module info.
 public class CCE_module_msg {
@@ -208,23 +210,7 @@ class MyURLClassLoader extends URLClassLoader {
         if (!name.equals("p4.c4")) {
             return super.loadClass(name);
         }
-        byte[] data = getClassData(name);
+        byte[] data = ClassUnloadCommon.getClassData(name);
         return defineClass(name, data, 0, data.length);
-    }
-
-    byte[] getClassData(String name) {
-        try {
-           String TempName = name.replaceAll("\\.", "/");
-           String currentDir = System.getProperty("test.classes");
-           String filename = currentDir + File.separator + TempName + ".class";
-           FileInputStream fis = new FileInputStream(filename);
-           byte[] b = new byte[5000];
-           int cnt = fis.read(b, 0, 5000);
-           byte[] c = new byte[cnt];
-           for (int i=0; i<cnt; i++) c[i] = b[i];
-              return c;
-        } catch (IOException e) {
-           return null;
-        }
     }
 }

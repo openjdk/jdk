@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/instanceOop.hpp"
@@ -40,6 +41,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -2225,7 +2227,10 @@ class StubGenerator: public StubCodeGenerator {
 
     // ======== loop entry is here ========
     __ bind(load_element);
-    __ load_heap_oop(R10_oop, R8_offset, R3_from, R12_tmp, noreg, false, AS_RAW, &store_null);
+    __ load_heap_oop(R10_oop, R8_offset, R3_from,
+                     R11_scratch1, R12_tmp,
+                     MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,
+                     AS_RAW, &store_null);
 
     __ load_klass(R11_klass, R10_oop); // Query the object klass.
 
@@ -2593,7 +2598,7 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
-    Label L_doLast;
+    Label L_doLast, L_error;
 
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
@@ -2623,7 +2628,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ li              (fifteen, 15);
 
-    // load unaligned from[0-15] to vsRet
+    // load unaligned from[0-15] to vRet
     __ lvx             (vRet, from);
     __ lvx             (vTmp1, fifteen, from);
     __ lvsl            (fromPerm, from);
@@ -2738,6 +2743,11 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpwi           (CCR0, keylen, 52);
     __ beq             (CCR0, L_doLast);
 
+#ifdef ASSERT
+    __ cmpwi           (CCR0, keylen, 60);
+    __ bne             (CCR0, L_error);
+#endif
+
     // 12th - 13th rounds
     __ vcipher         (vRet, vRet, vKey1);
     __ vcipher         (vRet, vRet, vKey2);
@@ -2758,29 +2768,30 @@ class StubGenerator: public StubCodeGenerator {
     __ vcipher         (vRet, vRet, vKey1);
     __ vcipherlast     (vRet, vRet, vKey2);
 
+#ifdef VM_LITTLE_ENDIAN
+    // toPerm = 0x0F0E0D0C0B0A09080706050403020100
+    __ lvsl            (toPerm, keypos); // keypos is a multiple of 16
+    __ vxor            (toPerm, toPerm, fSplt);
+
+    // Swap Bytes
+    __ vperm           (vRet, vRet, vRet, toPerm);
+#endif
+
     // store result (unaligned)
-#ifdef VM_LITTLE_ENDIAN
-    __ lvsl            (toPerm, to);
-#else
-    __ lvsr            (toPerm, to);
-#endif
-    __ vspltisb        (vTmp3, -1);
-    __ vspltisb        (vTmp4, 0);
-    __ lvx             (vTmp1, to);
-    __ lvx             (vTmp2, fifteen, to);
-#ifdef VM_LITTLE_ENDIAN
-    __ vperm           (vTmp3, vTmp3, vTmp4, toPerm); // generate select mask
-    __ vxor            (toPerm, toPerm, fSplt);       // swap bytes
-#else
-    __ vperm           (vTmp3, vTmp4, vTmp3, toPerm); // generate select mask
-#endif
-    __ vperm           (vTmp4, vRet, vRet, toPerm);   // rotate data
-    __ vsel            (vTmp2, vTmp4, vTmp2, vTmp3);
-    __ vsel            (vTmp1, vTmp1, vTmp4, vTmp3);
-    __ stvx            (vTmp2, fifteen, to);          // store this one first (may alias)
-    __ stvx            (vTmp1, to);
+    // Note: We can't use a read-modify-write sequence which touches additional Bytes.
+    Register lo = temp, hi = fifteen; // Reuse
+    __ vsldoi          (vTmp1, vRet, vRet, 8);
+    __ mfvrd           (hi, vRet);
+    __ mfvrd           (lo, vTmp1);
+    __ std             (hi, 0 LITTLE_ENDIAN_ONLY(+ 8), to);
+    __ std             (lo, 0 BIG_ENDIAN_ONLY(+ 8), to);
 
     __ blr();
+
+#ifdef ASSERT
+    __ bind(L_error);
+    __ stop("aescrypt_encryptBlock: invalid key length");
+#endif
      return start;
   }
 
@@ -2794,9 +2805,7 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
-    Label L_doLast;
-    Label L_do44;
-    Label L_do52;
+    Label L_doLast, L_do44, L_do52, L_error;
 
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
@@ -2827,7 +2836,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ li              (fifteen, 15);
 
-    // load unaligned from[0-15] to vsRet
+    // load unaligned from[0-15] to vRet
     __ lvx             (vRet, from);
     __ lvx             (vTmp1, fifteen, from);
     __ lvsl            (fromPerm, from);
@@ -2855,6 +2864,11 @@ class StubGenerator: public StubCodeGenerator {
 
     __ cmpwi           (CCR0, keylen, 52);
     __ beq             (CCR0, L_do52);
+
+#ifdef ASSERT
+    __ cmpwi           (CCR0, keylen, 60);
+    __ bne             (CCR0, L_error);
+#endif
 
     // load the 15th round key to vKey1
     __ li              (keypos, 240);
@@ -2892,6 +2906,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ b               (L_doLast);
 
+    __ align(32);
     __ bind            (L_do52);
 
     // load the 13th round key to vKey1
@@ -2918,6 +2933,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ b               (L_doLast);
 
+    __ align(32);
     __ bind            (L_do44);
 
     // load the 11th round key to vKey1
@@ -2995,29 +3011,30 @@ class StubGenerator: public StubCodeGenerator {
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipherlast    (vRet, vRet, vKey5);
 
+#ifdef VM_LITTLE_ENDIAN
+    // toPerm = 0x0F0E0D0C0B0A09080706050403020100
+    __ lvsl            (toPerm, keypos); // keypos is a multiple of 16
+    __ vxor            (toPerm, toPerm, fSplt);
+
+    // Swap Bytes
+    __ vperm           (vRet, vRet, vRet, toPerm);
+#endif
+
     // store result (unaligned)
-#ifdef VM_LITTLE_ENDIAN
-    __ lvsl            (toPerm, to);
-#else
-    __ lvsr            (toPerm, to);
-#endif
-    __ vspltisb        (vTmp3, -1);
-    __ vspltisb        (vTmp4, 0);
-    __ lvx             (vTmp1, to);
-    __ lvx             (vTmp2, fifteen, to);
-#ifdef VM_LITTLE_ENDIAN
-    __ vperm           (vTmp3, vTmp3, vTmp4, toPerm); // generate select mask
-    __ vxor            (toPerm, toPerm, fSplt);       // swap bytes
-#else
-    __ vperm           (vTmp3, vTmp4, vTmp3, toPerm); // generate select mask
-#endif
-    __ vperm           (vTmp4, vRet, vRet, toPerm);   // rotate data
-    __ vsel            (vTmp2, vTmp4, vTmp2, vTmp3);
-    __ vsel            (vTmp1, vTmp1, vTmp4, vTmp3);
-    __ stvx            (vTmp2, fifteen, to);          // store this one first (may alias)
-    __ stvx            (vTmp1, to);
+    // Note: We can't use a read-modify-write sequence which touches additional Bytes.
+    Register lo = temp, hi = fifteen; // Reuse
+    __ vsldoi          (vTmp1, vRet, vRet, 8);
+    __ mfvrd           (hi, vRet);
+    __ mfvrd           (lo, vTmp1);
+    __ std             (hi, 0 LITTLE_ENDIAN_ONLY(+ 8), to);
+    __ std             (lo, 0 BIG_ENDIAN_ONLY(+ 8), to);
 
     __ blr();
+
+#ifdef ASSERT
+    __ bind(L_error);
+    __ stop("aescrypt_decryptBlock: invalid key length");
+#endif
      return start;
   }
 
@@ -3542,6 +3559,54 @@ class StubGenerator: public StubCodeGenerator {
     __ crc32(R3_ARG1, R4_ARG2, R5_ARG3, R2, R6, R7, R8, R9, R10, R11, R12, is_crc32c);
     __ blr();
     return start;
+  }
+
+  address generate_nmethod_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    address stub_address = __ pc();
+
+    int nbytes_save = MacroAssembler::num_volatile_regs * BytesPerWord;
+    __ save_volatile_gprs(R1_SP, -nbytes_save, true);
+
+    // Link register points to instruction in prologue of the guarded nmethod.
+    // As the stub requires one layer of indirection (argument is of type address* and not address),
+    // passing the link register's value directly doesn't work.
+    // Since we have to save the link register on the stack anyway, we calculate the corresponding stack address
+    // and pass that one instead.
+    __ add(R3_ARG1, _abi0(lr), R1_SP);
+
+    __ save_LR_CR(R0);
+    __ push_frame_reg_args(nbytes_save, R0);
+
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
+    __ mr(R0, R3_RET);
+
+    __ pop_frame();
+    __ restore_LR_CR(R3_RET /* used as tmp register */);
+    __ restore_volatile_gprs(R1_SP, -nbytes_save, true);
+
+    __ cmpdi(CCR0, R0, 0);
+
+    // Return to prologue if no deoptimization is required (bnelr)
+    __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintIsTaken);
+
+    // Deoptimization required.
+    // For actually handling the deoptimization, the 'wrong method stub' is invoked.
+    __ load_const_optimized(R0, SharedRuntime::get_handle_wrong_method_stub());
+    __ mtctr(R0);
+
+    // Pop the frame built in the prologue.
+    __ pop_frame();
+
+    // Restore link register.  Required as the 'wrong method stub' needs the caller's frame
+    // to properly deoptimize this method (e.g. by re-resolving the call site for compiled methods).
+    // This method's prologue is aborted.
+    __ restore_LR_CR(R0);
+
+    __ bctr();
+    return stub_address;
   }
 
 #ifdef VM_LITTLE_ENDIAN
@@ -4458,13 +4523,13 @@ class StubGenerator: public StubCodeGenerator {
 
     // CRC32 Intrinsics.
     if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_adr = StubRoutines::generate_crc_constants(REVERSE_CRC32_POLY);
+      StubRoutines::_crc_table_adr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32_POLY);
       StubRoutines::_updateBytesCRC32 = generate_CRC32_updateBytes(false);
     }
 
     // CRC32C Intrinsics.
     if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = StubRoutines::generate_crc_constants(REVERSE_CRC32C_POLY);
+      StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(true);
     }
 
@@ -4489,6 +4554,12 @@ class StubGenerator: public StubCodeGenerator {
 
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop();
+
+    // nmethod entry barriers for concurrent class unloading
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::ppc::_nmethod_entry_barrier            = generate_nmethod_entry_barrier();
+    }
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();

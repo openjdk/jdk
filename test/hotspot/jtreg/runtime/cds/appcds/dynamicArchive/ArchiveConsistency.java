@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import sun.hotspot.WhiteBox;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ArchiveConsistency extends DynamicArchiveTestBase {
     public static WhiteBox wb;
     public static int int_size;        // size of int
-    public static String[] shared_region_name = {"MiscCode", "ReadWrite", "ReadOnly", "BitMap"};
+    public static String[] shared_region_name = {"ReadWrite", "ReadOnly", "BitMap"};
     public static int num_regions = shared_region_name.length;
 
     public static void main(String[] args) throws Exception {
@@ -117,7 +118,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         int baseArchiveCRCOffset = wb.getOffsetForName("DynamicArchiveHeader::_base_region_crc");
         int crc = 0;
         System.out.printf("%-12s%-12s\n", "Space name", "CRC");
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < num_regions; i++) {
             baseArchiveCRCOffset += int_size * i;
             System.out.println("    baseArchiveCRCOffset " + baseArchiveCRCOffset);
             crc = (int)readInt(fc, baseArchiveCRCOffset, int_size );
@@ -139,8 +140,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
              "-Xlog:cds+dynamic=debug",
              "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                    output.shouldContain("Buffer-space to target-space delta")
-                          .shouldContain("Written dynamic archive 0x");
+                    output.shouldContain("Written dynamic archive 0x");
                 });
 
         File jsa = new File(topArchiveName);

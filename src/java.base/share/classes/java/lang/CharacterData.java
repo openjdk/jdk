@@ -54,14 +54,6 @@ abstract class CharacterData {
         return null;
     }
 
-    boolean isOtherLowercase(int ch) {
-        return false;
-    }
-
-    boolean isOtherUppercase(int ch) {
-        return false;
-    }
-
     boolean isOtherAlphabetic(int ch) {
         return false;
     }

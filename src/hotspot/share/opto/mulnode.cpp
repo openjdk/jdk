@@ -201,21 +201,19 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *res = NULL;
   unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
   if (bit1 == abs_con) {           // Found a power of 2?
-    res = new LShiftINode(in(1), phase->intcon(log2_uint(bit1)));
+    res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
-
     // Check for constant with 2 bits set
-    unsigned int bit2 = abs_con-bit1;
-    bit2 = bit2 & (0-bit2);          // Extract 2nd bit
+    unsigned int bit2 = abs_con - bit1;
+    bit2 = bit2 & (0 - bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      Node *n1 = phase->transform( new LShiftINode(in(1), phase->intcon(log2_uint(bit1))));
-      Node *n2 = phase->transform( new LShiftINode(in(1), phase->intcon(log2_uint(bit2))));
+      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit1))));
+      Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit2))));
       res = new AddINode(n2, n1);
-
-    } else if (is_power_of_2(abs_con+1)) {
-      // Sleezy: power-of-2 -1.  Next time be generic.
+    } else if (is_power_of_2(abs_con + 1)) {
+      // Sleezy: power-of-2 - 1.  Next time be generic.
       unsigned int temp = abs_con + 1;
-      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2_uint(temp))));
+      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(temp))));
       res = new SubINode(n1, in(1));
     } else {
       return MulNode::Ideal(phase, can_reshape);
@@ -297,21 +295,21 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *res = NULL;
   julong bit1 = abs_con & (0-abs_con);      // Extract low bit
   if (bit1 == abs_con) {           // Found a power of 2?
-    res = new LShiftLNode(in(1), phase->intcon(log2_long(bit1)));
+    res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
 
     // Check for constant with 2 bits set
     julong bit2 = abs_con-bit1;
     bit2 = bit2 & (0-bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2_long(bit1))));
-      Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2_long(bit2))));
+      Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1))));
+      Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit2))));
       res = new AddLNode(n2, n1);
 
     } else if (is_power_of_2(abs_con+1)) {
       // Sleezy: power-of-2 -1.  Next time be generic.
       julong temp = abs_con + 1;
-      Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2_long(temp))));
+      Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2i_exact(temp))));
       res = new SubLNode(n1, in(1));
     } else {
       return MulNode::Ideal(phase, can_reshape);
@@ -447,9 +445,9 @@ Node* AndINode::Identity(PhaseGVN* phase) {
   if (t2 && t2->is_con()) {
     int con = t2->get_con();
     // Masking off high bits which are always zero is useless.
-    const TypeInt* t1 = phase->type( in(1) )->isa_int();
+    const TypeInt* t1 = phase->type(in(1))->isa_int();
     if (t1 != NULL && t1->_lo >= 0) {
-      jint t1_support = right_n_bits(1 + log2_jint(t1->_hi));
+      jint t1_support = right_n_bits(1 + log2i_graceful(t1->_hi));
       if ((t1_support & con) == t1_support)
         return in1;
     }
@@ -572,7 +570,7 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
     // Masking off high bits which are always zero is useless.
     const TypeLong* t1 = phase->type( in(1) )->isa_long();
     if (t1 != NULL && t1->_lo >= 0) {
-      int bit_count = log2_long(t1->_hi) + 1;
+      int bit_count = log2i_graceful(t1->_hi) + 1;
       jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
       if ((t1_support & con) == t1_support)
         return usr;

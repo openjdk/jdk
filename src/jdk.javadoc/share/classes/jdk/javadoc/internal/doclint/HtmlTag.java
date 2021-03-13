@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,30 +57,30 @@ import static jdk.javadoc.internal.doclint.HtmlTag.Attr.*;
  */
 public enum HtmlTag {
     A(BlockType.INLINE, EndKind.REQUIRED,
-            attrs(AttrKind.ALL, HREF, TARGET, ID),
+            attrs(AttrKind.OK, HREF, TARGET, ID),
             attrs(AttrKind.HTML4, REV, CHARSET, SHAPE, COORDS, NAME)),
 
     ABBR(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
-    ACRONYM(HtmlVersion.HTML4, BlockType.INLINE, EndKind.REQUIRED,
+    ACRONYM(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     ADDRESS(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
-    ARTICLE(HtmlVersion.HTML5, BlockType.BLOCK, EndKind.REQUIRED,
+    ARTICLE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
-    ASIDE(HtmlVersion.HTML5, BlockType.BLOCK, EndKind.REQUIRED,
+    ASIDE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     B(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
-    BDI(HtmlVersion.HTML5, BlockType.INLINE, EndKind.REQUIRED),
+    BDI(BlockType.INLINE, EndKind.REQUIRED),
 
-    BIG(HtmlVersion.HTML4, BlockType.INLINE, EndKind.REQUIRED,
+    BIG(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
     BLOCKQUOTE(BlockType.BLOCK, EndKind.REQUIRED,
@@ -89,13 +89,13 @@ public enum HtmlTag {
     BODY(BlockType.OTHER, EndKind.REQUIRED),
 
     BR(BlockType.INLINE, EndKind.NONE,
-            attrs(AttrKind.USE_CSS, CLEAR)),
+            attrs(AttrKind.HTML4, CLEAR)),
 
     CAPTION(BlockType.TABLE_ITEM, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_INLINE, Flag.EXPECT_CONTENT),
-            attrs(AttrKind.USE_CSS, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
 
-    CENTER(HtmlVersion.HTML4, BlockType.BLOCK, EndKind.REQUIRED,
+    CENTER(ElemKind.HTML4, BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     CITE(BlockType.INLINE, EndKind.REQUIRED,
@@ -120,18 +120,18 @@ public enum HtmlTag {
 
     DEL(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
-            attrs(AttrKind.ALL, Attr.CITE, Attr.DATETIME)),
+            attrs(AttrKind.OK, Attr.CITE, Attr.DATETIME)),
 
     DFN(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     DIV(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
-            attrs(AttrKind.USE_CSS, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
 
     DL(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.USE_CSS, COMPACT)) {
+            attrs(AttrKind.HTML4, COMPACT)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == DT) || (t == DD);
@@ -144,11 +144,11 @@ public enum HtmlTag {
     EM(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.NO_NEST)),
 
-    FONT(HtmlVersion.HTML4, BlockType.INLINE, EndKind.REQUIRED, // tag itself is deprecated
+    FONT(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED, // tag itself is deprecated
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.USE_CSS, SIZE, COLOR, FACE)),
+            attrs(AttrKind.HTML4, SIZE, COLOR, FACE)),
 
-    FOOTER(HtmlVersion.HTML5, BlockType.BLOCK, EndKind.REQUIRED,
+    FOOTER(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)) {
         @Override
         public boolean accepts(HtmlTag t) {
@@ -161,31 +161,31 @@ public enum HtmlTag {
         }
     },
 
-    FIGURE(HtmlVersion.HTML5, BlockType.BLOCK, EndKind.REQUIRED,
+    FIGURE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
-    FIGCAPTION(HtmlVersion.HTML5, BlockType.BLOCK, EndKind.REQUIRED),
+    FIGCAPTION(BlockType.BLOCK, EndKind.REQUIRED),
 
-    FRAME(HtmlVersion.HTML4, BlockType.OTHER, EndKind.NONE),
+    FRAME(ElemKind.HTML4, BlockType.OTHER, EndKind.NONE),
 
-    FRAMESET(HtmlVersion.HTML4, BlockType.OTHER, EndKind.REQUIRED),
+    FRAMESET(ElemKind.HTML4, BlockType.OTHER, EndKind.REQUIRED),
 
     H1(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.USE_CSS, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H2(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.USE_CSS, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H3(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.USE_CSS, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H4(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.USE_CSS, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H5(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.USE_CSS, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H6(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.USE_CSS, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
 
     HEAD(BlockType.OTHER, EndKind.REQUIRED),
 
-    HEADER(HtmlVersion.HTML5, BlockType.BLOCK, EndKind.REQUIRED,
+    HEADER(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)) {
         @Override
         public boolean accepts(HtmlTag t) {
@@ -199,8 +199,7 @@ public enum HtmlTag {
     },
 
     HR(BlockType.BLOCK, EndKind.NONE,
-            attrs(AttrKind.HTML4, WIDTH),
-            attrs(AttrKind.USE_CSS, ALIGN, NOSHADE, SIZE)),
+            attrs(AttrKind.HTML4, WIDTH, ALIGN, NOSHADE, SIZE)),
 
     HTML(BlockType.OTHER, EndKind.REQUIRED),
 
@@ -210,28 +209,26 @@ public enum HtmlTag {
     IFRAME(BlockType.OTHER, EndKind.REQUIRED),
 
     IMG(BlockType.INLINE, EndKind.NONE,
-            attrs(AttrKind.ALL, SRC, ALT, HEIGHT, WIDTH),
-            attrs(AttrKind.HTML5, CROSSORIGIN),
-            attrs(AttrKind.OBSOLETE, NAME),
-            attrs(AttrKind.USE_CSS, ALIGN, HSPACE, VSPACE, BORDER)),
+            attrs(AttrKind.OK, SRC, ALT, HEIGHT, WIDTH, CROSSORIGIN),
+            attrs(AttrKind.HTML4, NAME, ALIGN, HSPACE, VSPACE, BORDER)),
 
     INS(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
-            attrs(AttrKind.ALL, Attr.CITE, Attr.DATETIME)),
+            attrs(AttrKind.OK, Attr.CITE, Attr.DATETIME)),
 
     KBD(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     LI(BlockType.LIST_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
-            attrs(AttrKind.ALL, VALUE),
-            attrs(AttrKind.USE_CSS, TYPE)),
+            attrs(AttrKind.OK, VALUE),
+            attrs(AttrKind.HTML4, TYPE)),
 
     LINK(BlockType.OTHER, EndKind.NONE),
 
-    MAIN(HtmlVersion.HTML5, BlockType.OTHER, EndKind.REQUIRED),
+    MAIN(BlockType.OTHER, EndKind.REQUIRED),
 
-    MARK(HtmlVersion.HTML5, BlockType.INLINE, EndKind.REQUIRED),
+    MARK(BlockType.INLINE, EndKind.REQUIRED),
 
     MENU(BlockType.BLOCK, EndKind.REQUIRED) {
         @Override
@@ -242,18 +239,17 @@ public enum HtmlTag {
 
     META(BlockType.OTHER, EndKind.NONE),
 
-    NAV(HtmlVersion.HTML5, BlockType.BLOCK, EndKind.REQUIRED,
+    NAV(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
-    NOFRAMES(HtmlVersion.HTML4, BlockType.OTHER, EndKind.REQUIRED),
+    NOFRAMES(ElemKind.HTML4, BlockType.OTHER, EndKind.REQUIRED),
 
     NOSCRIPT(BlockType.BLOCK, EndKind.REQUIRED),
 
     OL(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.ALL, START, TYPE),
-            attrs(AttrKind.HTML5, REVERSED),
-            attrs(AttrKind.USE_CSS, COMPACT)) {
+            attrs(AttrKind.OK, START, TYPE, REVERSED),
+            attrs(AttrKind.HTML4, COMPACT)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == LI);
@@ -262,11 +258,11 @@ public enum HtmlTag {
 
     P(BlockType.BLOCK, EndKind.OPTIONAL,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.USE_CSS, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
 
     PRE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.USE_CSS, WIDTH)) {
+            attrs(AttrKind.HTML4, WIDTH)) {
         @Override
         public boolean accepts(HtmlTag t) {
             switch (t) {
@@ -288,9 +284,9 @@ public enum HtmlTag {
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     SCRIPT(BlockType.OTHER, EndKind.REQUIRED,
-            attrs(AttrKind.ALL, SRC)),
+            attrs(AttrKind.OK, SRC)),
 
-    SECTION(HtmlVersion.HTML5, BlockType.BLOCK, EndKind.REQUIRED,
+    SECTION(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     SMALL(BlockType.INLINE, EndKind.REQUIRED,
@@ -299,7 +295,7 @@ public enum HtmlTag {
     SPAN(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
-    STRIKE(HtmlVersion.HTML4, BlockType.INLINE, EndKind.REQUIRED,
+    STRIKE(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
     STRONG(BlockType.INLINE, EndKind.REQUIRED,
@@ -315,9 +311,9 @@ public enum HtmlTag {
 
     TABLE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.ALL, BORDER),
-            attrs(AttrKind.HTML4, SUMMARY, CELLPADDING, CELLSPACING, Attr.FRAME, RULES, WIDTH),
-            attrs(AttrKind.USE_CSS, ALIGN, BGCOLOR)) {
+            attrs(AttrKind.OK, BORDER),
+            attrs(AttrKind.HTML4, SUMMARY, CELLPADDING, CELLSPACING,
+                    Attr.FRAME, RULES, WIDTH, ALIGN, BGCOLOR)) {
         @Override
         public boolean accepts(HtmlTag t) {
             switch (t) {
@@ -334,8 +330,7 @@ public enum HtmlTag {
 
     TBODY(BlockType.TABLE_ITEM, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.ALL, VALIGN),
-            attrs(AttrKind.HTML4, ALIGN, CHAR, CHAROFF)) {
+            attrs(AttrKind.HTML4, ALIGN, VALIGN, CHAR, CHAROFF)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == TR);
@@ -344,16 +339,15 @@ public enum HtmlTag {
 
     TD(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
-            attrs(AttrKind.ALL, COLSPAN, ROWSPAN, HEADERS, VALIGN),
-            attrs(AttrKind.HTML4, AXIS, Attr.ABBR, SCOPE, ALIGN, CHAR, CHAROFF),
-            attrs(AttrKind.USE_CSS, WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
+            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS),
+            attrs(AttrKind.HTML4, AXIS, Attr.ABBR, SCOPE, ALIGN, VALIGN, CHAR, CHAROFF,
+                    WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
 
-    TEMPLATE(HtmlVersion.HTML5, BlockType.BLOCK, EndKind.REQUIRED,
+    TEMPLATE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     TFOOT(BlockType.TABLE_ITEM, EndKind.REQUIRED,
-            attrs(AttrKind.ALL, VALIGN),
-            attrs(AttrKind.HTML4, ALIGN, CHAR, CHAROFF)) {
+            attrs(AttrKind.HTML4, ALIGN, VALIGN, CHAR, CHAROFF)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == TR);
@@ -362,35 +356,30 @@ public enum HtmlTag {
 
     TH(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
-            attrs(AttrKind.ALL, COLSPAN, ROWSPAN, HEADERS, SCOPE, Attr.ABBR,
-                VALIGN),
-            attrs(AttrKind.HTML4, AXIS, ALIGN, CHAR, CHAROFF),
-            attrs(AttrKind.USE_CSS, WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
+            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, Attr.ABBR),
+            attrs(AttrKind.HTML4, WIDTH, BGCOLOR, HEIGHT, NOWRAP, AXIS, ALIGN, CHAR, CHAROFF, VALIGN)),
 
     THEAD(BlockType.TABLE_ITEM, EndKind.REQUIRED,
-            attrs(AttrKind.ALL, VALIGN),
-            attrs(AttrKind.HTML4, ALIGN, CHAR, CHAROFF)) {
+            attrs(AttrKind.HTML4, ALIGN, VALIGN, CHAR, CHAROFF)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == TR);
         }
     },
 
-    TIME(HtmlVersion.HTML5, BlockType.INLINE, EndKind.REQUIRED),
+    TIME(BlockType.INLINE, EndKind.REQUIRED),
 
     TITLE(BlockType.OTHER, EndKind.REQUIRED),
 
     TR(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
-            attrs(AttrKind.ALL, VALIGN),
-            attrs(AttrKind.HTML4, ALIGN, CHAR, CHAROFF),
-            attrs(AttrKind.USE_CSS, BGCOLOR)) {
+            attrs(AttrKind.HTML4, ALIGN, CHAR, CHAROFF, BGCOLOR, VALIGN)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == TH) || (t == TD);
         }
     },
 
-    TT(HtmlVersion.HTML4, BlockType.INLINE, EndKind.REQUIRED,
+    TT(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     U(BlockType.INLINE, EndKind.REQUIRED,
@@ -405,9 +394,19 @@ public enum HtmlTag {
         }
     },
 
-    WBR(HtmlVersion.HTML5, BlockType.INLINE, EndKind.REQUIRED),
+    WBR(BlockType.INLINE, EndKind.REQUIRED),
 
     VAR(BlockType.INLINE, EndKind.REQUIRED);
+
+    /**
+     * Enum representing the supportability of HTML element.
+     */
+    public static enum ElemKind {
+        OK,
+        INVALID,
+        OBSOLETE,
+        HTML4
+    }
 
     /**
      * Enum representing the type of HTML element.
@@ -534,12 +533,10 @@ public enum HtmlTag {
     }
 
     public static enum AttrKind {
-        HTML4,
-        HTML5,
+        OK,
         INVALID,
         OBSOLETE,
-        USE_CSS,
-        ALL
+        HTML4
     }
 
     // This class exists to avoid warnings from using parameterized vararg type
@@ -552,52 +549,52 @@ public enum HtmlTag {
     }
 
 
-    public final HtmlVersion allowedVersion;
+    public final ElemKind elemKind;
     public final BlockType blockType;
     public final EndKind endKind;
     public final Set<Flag> flags;
     private final Map<Attr,AttrKind> attrs;
 
     HtmlTag(BlockType blockType, EndKind endKind, AttrMap... attrMaps) {
-        this(HtmlVersion.ALL, blockType, endKind, Collections.emptySet(), attrMaps);
+        this(ElemKind.OK, blockType, endKind, Collections.emptySet(), attrMaps);
     }
 
-    HtmlTag(HtmlVersion allowedVersion, BlockType blockType, EndKind endKind, AttrMap... attrMaps) {
-        this(allowedVersion, blockType, endKind, Collections.emptySet(), attrMaps);
+    HtmlTag(ElemKind elemKind, BlockType blockType, EndKind endKind, AttrMap... attrMaps) {
+        this(elemKind, blockType, endKind, Collections.emptySet(), attrMaps);
     }
 
     HtmlTag(BlockType blockType, EndKind endKind, Set<Flag> flags, AttrMap... attrMaps) {
-        this(HtmlVersion.ALL, blockType, endKind, flags, attrMaps);
+        this(ElemKind.OK, blockType, endKind, flags, attrMaps);
     }
 
-    HtmlTag(HtmlVersion allowedVersion, BlockType blockType, EndKind endKind, Set<Flag> flags, AttrMap... attrMaps) {
-        this.allowedVersion = allowedVersion;
+    HtmlTag(ElemKind elemKind, BlockType blockType, EndKind endKind, Set<Flag> flags, AttrMap... attrMaps) {
+        this.elemKind = elemKind;
         this.blockType = blockType;
         this.endKind = endKind;
         this.flags = flags;
         this.attrs = new EnumMap<>(Attr.class);
         for (Map<Attr,AttrKind> m: attrMaps)
             this.attrs.putAll(m);
-        attrs.put(Attr.CLASS, AttrKind.ALL);
-        attrs.put(Attr.ID, AttrKind.ALL);
-        attrs.put(Attr.STYLE, AttrKind.ALL);
-        attrs.put(Attr.ROLE, AttrKind.HTML5);
+        attrs.put(Attr.CLASS, AttrKind.OK);
+        attrs.put(Attr.ID, AttrKind.OK);
+        attrs.put(Attr.STYLE, AttrKind.OK);
+        attrs.put(Attr.ROLE, AttrKind.OK);
         // for now, assume that all ARIA attributes are allowed on all tags.
-        attrs.put(Attr.ARIA_ACTIVEDESCENDANT, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_CONTROLS, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_DESCRIBEDBY, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_EXPANDED, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_LABEL, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_LABELLEDBY, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_LEVEL, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_MULTISELECTABLE, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_OWNS, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_POSINSET, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_READONLY, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_REQUIRED, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_SELECTED, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_SETSIZE, AttrKind.HTML5);
-        attrs.put(Attr.ARIA_SORT, AttrKind.HTML5);
+        attrs.put(Attr.ARIA_ACTIVEDESCENDANT, AttrKind.OK);
+        attrs.put(Attr.ARIA_CONTROLS, AttrKind.OK);
+        attrs.put(Attr.ARIA_DESCRIBEDBY, AttrKind.OK);
+        attrs.put(Attr.ARIA_EXPANDED, AttrKind.OK);
+        attrs.put(Attr.ARIA_LABEL, AttrKind.OK);
+        attrs.put(Attr.ARIA_LABELLEDBY, AttrKind.OK);
+        attrs.put(Attr.ARIA_LEVEL, AttrKind.OK);
+        attrs.put(Attr.ARIA_MULTISELECTABLE, AttrKind.OK);
+        attrs.put(Attr.ARIA_OWNS, AttrKind.OK);
+        attrs.put(Attr.ARIA_POSINSET, AttrKind.OK);
+        attrs.put(Attr.ARIA_READONLY, AttrKind.OK);
+        attrs.put(Attr.ARIA_REQUIRED, AttrKind.OK);
+        attrs.put(Attr.ARIA_SELECTED, AttrKind.OK);
+        attrs.put(Attr.ARIA_SETSIZE, AttrKind.OK);
+        attrs.put(Attr.ARIA_SORT, AttrKind.OK);
     }
 
     public boolean accepts(HtmlTag t) {

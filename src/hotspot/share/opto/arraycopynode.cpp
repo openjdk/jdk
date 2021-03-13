@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -182,13 +183,15 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   Node* in_mem = in(TypeFunc::Memory);
 
   const Type* src_type = phase->type(base_src);
-
-  MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
-
   const TypeInstPtr* inst_src = src_type->isa_instptr();
-
   if (inst_src == NULL) {
     return NULL;
+  }
+
+  MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (igvn != NULL) {
+    igvn->_worklist.push(mem);
   }
 
   if (!inst_src->klass_is_exact()) {

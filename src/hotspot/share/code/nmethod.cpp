@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -45,6 +46,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
@@ -62,6 +64,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
@@ -499,7 +502,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   int comp_level,
-  const GrowableArrayView<BufferBlob*>& native_invokers
+  const GrowableArrayView<RuntimeStub*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -724,7 +727,7 @@ nmethod::nmethod(
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   int comp_level,
-  const GrowableArrayView<BufferBlob*>& native_invokers
+  const GrowableArrayView<RuntimeStub*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -933,6 +936,8 @@ void nmethod::maybe_print_nmethod(DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
+  run_nmethod_entry_barrier(); // ensure all embedded OOPs are valid before printing
+
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != NULL) {
     xtty->begin_head("print_nmethod");
@@ -1055,7 +1060,7 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
 }
 
 void nmethod::free_native_invokers() {
-  for (BufferBlob** it = native_invokers_begin(); it < native_invokers_end(); it++) {
+  for (RuntimeStub** it = native_invokers_begin(); it < native_invokers_end(); it++) {
     CodeCache::free(*it);
   }
 }
@@ -2694,13 +2699,13 @@ void nmethod::print_pcs_on(outputStream* st) {
 void nmethod::print_native_invokers() {
   ResourceMark m;       // in case methods get printed via debugger
   tty->print_cr("Native invokers:");
-  for (BufferBlob** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
+  for (RuntimeStub** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
     (*itt)->print_on(tty);
   }
 }
 
 void nmethod::print_handler_table() {
-  ExceptionHandlerTable(this).print();
+  ExceptionHandlerTable(this).print(code_begin());
 }
 
 void nmethod::print_nul_chk_table() {

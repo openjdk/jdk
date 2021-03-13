@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -485,11 +485,10 @@ class VMConnection {
                                                       //   printDirect()
             }
         } catch (IOException ex) {
-            String s = ex.getMessage();
-            if (!s.startsWith("Bad file number")) {
+            if (!ex.getMessage().equalsIgnoreCase("stream closed")) {
                   throw ex;
             }
-            // else we got a Bad file number IOException which just means
+            // else we got a "Stream closed" IOException which just means
             // that the debuggee has gone away.  We'll just treat it the
             // same as if we got an EOF.
         }

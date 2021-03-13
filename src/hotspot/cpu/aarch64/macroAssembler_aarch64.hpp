@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -527,6 +527,33 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
+  // AdvSIMD shift by immediate.
+  // These are "user friendly" variants which allow a shift count of 0.
+#define WRAP(INSN)                                                                \
+  void INSN(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift) {  \
+    if (shift == 0) {                                                             \
+      SIMD_Arrangement arrange = (T & 1) == 0 ? T8B : T16B;                       \
+      Assembler::orr(Vd, arrange, Vn, Vn);                                        \
+    } else {                                                                      \
+      Assembler::INSN(Vd, T, Vn, shift);                                          \
+    }                                                                             \
+  }                                                                               \
+
+  WRAP(shl) WRAP(sshr) WRAP(ushr)
+#undef WRAP
+
+#define WRAP(INSN)                                                                \
+  void INSN(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift) {  \
+    if (shift == 0) {                                                             \
+      Assembler::addv(Vd, T, Vd, Vn);                                             \
+    } else {                                                                      \
+      Assembler::INSN(Vd, T, Vn, shift);                                          \
+    }                                                                             \
+  }                                                                               \
+
+  WRAP(usra) WRAP(ssra)
+#undef WRAP
+
 public:
 
   // Generalized Test Bit And Branch, including a "far" variety which
@@ -967,7 +994,9 @@ public:
 
   void verify_sve_vector_length();
   void reinitialize_ptrue() {
-    sve_ptrue(ptrue, B);
+    if (UseSVE > 0) {
+      sve_ptrue(ptrue, B);
+    }
   }
   void verify_ptrue();
 
@@ -1037,6 +1066,8 @@ public:
 
   void atomic_xchg(Register prev, Register newv, Register addr);
   void atomic_xchgw(Register prev, Register newv, Register addr);
+  void atomic_xchgl(Register prev, Register newv, Register addr);
+  void atomic_xchglw(Register prev, Register newv, Register addr);
   void atomic_xchgal(Register prev, Register newv, Register addr);
   void atomic_xchgalw(Register prev, Register newv, Register addr);
 

@@ -199,6 +199,8 @@ class Field extends AccessibleObject implements Member {
      * be used to decode the modifiers.
      *
      * @see Modifier
+     * @jls 8.3 Field Declarations
+     * @jls 9.3 Field (Constant) Declarations
      */
     public int getModifiers() {
         return modifiers;
@@ -211,6 +213,7 @@ class Field extends AccessibleObject implements Member {
      * @return {@code true} if and only if this field represents an element of
      * an enumerated class.
      * @since 1.5
+     * @jls 8.9.1 Enum Constants
      */
     public boolean isEnumConstant() {
         return (getModifiers() & Modifier.ENUM) != 0;
@@ -279,8 +282,7 @@ class Field extends AccessibleObject implements Member {
      * and type.
      */
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof Field) {
-            Field other = (Field)obj;
+        if (obj instanceof Field other) {
             return (getDeclaringClass() == other.getDeclaringClass())
                 && (getName() == other.getName())
                 && (getType() == other.getType());

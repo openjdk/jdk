@@ -30,8 +30,6 @@
 #import "sun_lwawt_macosx_CTextPipe.h"
 #import "sun_java2d_OSXSurfaceData.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "CoreTextSupport.h"
 #import "QuartzSurfaceData.h"
 #include "AWTStrike.h"
@@ -586,10 +584,13 @@ static inline void doDrawGlyphsPipe_applyFontTransforms
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTextPipe_doDrawString
 (JNIEnv *env, jobject jthis, jobject jsurfacedata, jlong awtStrikePtr, jstring str, jdouble x, jdouble y)
 {
+    if (str == NULL) {
+        return;
+    }
     QuartzSDOps *qsdo = (QuartzSDOps *)SurfaceData_GetOps(env, jsurfacedata);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     jsize len = (*env)->GetStringLength(env, str);
 
@@ -597,7 +598,7 @@ JNF_COCOA_ENTER(env);
     {
         jchar unichars[len];
         (*env)->GetStringRegion(env, str, 0, len, unichars);
-        JNF_CHECK_AND_RETHROW_EXCEPTION(env);
+        CHECK_EXCEPTION();
 
         // Draw the text context
         DrawTextContext(env, qsdo, awtStrike, unichars, len, x, y);
@@ -605,15 +606,19 @@ JNF_COCOA_ENTER(env);
     else
     {
         // Get string to draw and the length
-        const jchar *unichars = JNFGetStringUTF16UniChars(env, str);
+        const jchar *unichars = (*env)->GetStringChars(env, str, NULL);
+        if (unichars == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "Could not get string chars");
+            return;
+        }
 
         // Draw the text context
         DrawTextContext(env, qsdo, awtStrike, unichars, len, x, y);
 
-        JNFReleaseStringUTF16UniChars(env, str, unichars);
+        (*env)->ReleaseStringChars(env, str, unichars);
     }
 
-JNF_COCOA_RENDERER_EXIT(env);
+JNI_COCOA_RENDERER_EXIT(env);
 }
 
 
@@ -628,33 +633,34 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTextPipe_doUnicodes
     QuartzSDOps *qsdo = (QuartzSDOps *)SurfaceData_GetOps(env, jsurfacedata);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     // Setup the text context
     if (length < MAX_STACK_ALLOC_GLYPH_BUFFER_SIZE) // optimized for stack allocation
     {
         jchar copyUnichars[length];
         (*env)->GetCharArrayRegion(env, unicodes, offset, length, copyUnichars);
-        JNF_CHECK_AND_RETHROW_EXCEPTION(env);
+        CHECK_EXCEPTION();
         DrawTextContext(env, qsdo, awtStrike, copyUnichars, length, x, y);
     }
     else
     {
         jchar *copyUnichars = malloc(length * sizeof(jchar));
         if (!copyUnichars) {
-            [JNFException raise:env as:kOutOfMemoryError reason:"Failed to malloc memory to create the glyphs for string drawing"];
+            JNU_ThrowOutOfMemoryError(env, "Failed to malloc memory to create the glyphs for string drawing");
+            return;
         }
 
         @try {
             (*env)->GetCharArrayRegion(env, unicodes, offset, length, copyUnichars);
-            JNF_CHECK_AND_RETHROW_EXCEPTION(env);
+            CHECK_EXCEPTION();
             DrawTextContext(env, qsdo, awtStrike, copyUnichars, length, x, y);
         } @finally {
             free(copyUnichars);
         }
     }
 
-JNF_COCOA_RENDERER_EXIT(env);
+JNI_COCOA_RENDERER_EXIT(env);
 }
 
 /*
@@ -668,11 +674,11 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTextPipe_doOneUnicode
     QuartzSDOps *qsdo = (QuartzSDOps *)SurfaceData_GetOps(env, jsurfacedata);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     DrawTextContext(env, qsdo, awtStrike, &aUnicode, 1, x, y);
 
-JNF_COCOA_RENDERER_EXIT(env);
+JNI_COCOA_RENDERER_EXIT(env);
 }
 
 /*
@@ -686,7 +692,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTextPipe_doDrawGlyphs
     QuartzSDOps *qsdo = (QuartzSDOps *)SurfaceData_GetOps(env, jsurfacedata);
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     qsdo->BeginSurface(env, qsdo, SD_Text);
     if (qsdo->cgRef == NULL)
@@ -704,5 +710,5 @@ JNF_COCOA_ENTER(env);
 
     qsdo->FinishSurface(env, qsdo);
 
-JNF_COCOA_RENDERER_EXIT(env);
+JNI_COCOA_RENDERER_EXIT(env);
 }

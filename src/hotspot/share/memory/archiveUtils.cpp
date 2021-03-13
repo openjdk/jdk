@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,26 +26,27 @@
 #include "classfile/classListParser.hpp"
 #include "classfile/classListWriter.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bootstrapInfo.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;
-address* ArchivePtrMarker::_ptr_base;
-address* ArchivePtrMarker::_ptr_end;
+VirtualSpace* ArchivePtrMarker::_vs;
+
 bool ArchivePtrMarker::_compacted;
 
-void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, address* ptr_base, address* ptr_end) {
+void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
   assert(_ptrmap == NULL, "initialize only once");
-  _ptr_base = ptr_base;
-  _ptr_end = ptr_end;
+  _vs = vs;
   _compacted = false;
   _ptrmap = ptrmap;
 
@@ -64,17 +65,17 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
   assert(_ptrmap != NULL, "not initialized");
   assert(!_compacted, "cannot mark anymore");
 
-  if (_ptr_base <= ptr_loc && ptr_loc < _ptr_end) {
+  if (ptr_base() <= ptr_loc && ptr_loc < ptr_end()) {
     address value = *ptr_loc;
     // We don't want any pointer that points to very bottom of the archive, otherwise when
     // MetaspaceShared::default_base_address()==0, we can't distinguish between a pointer
     // to nothing (NULL) vs a pointer to an objects that happens to be at the very bottom
     // of the archive.
-    assert(value != (address)_ptr_base, "don't point to the bottom of the archive");
+    assert(value != (address)ptr_base(), "don't point to the bottom of the archive");
 
     if (value != NULL) {
       assert(uintx(ptr_loc) % sizeof(intptr_t) == 0, "pointers must be stored in aligned addresses");
-      size_t idx = ptr_loc - _ptr_base;
+      size_t idx = ptr_loc - ptr_base();
       if (_ptrmap->size() <= idx) {
         _ptrmap->resize((idx + 1) * 2);
       }
@@ -89,9 +90,9 @@ void ArchivePtrMarker::clear_pointer(address* ptr_loc) {
   assert(_ptrmap != NULL, "not initialized");
   assert(!_compacted, "cannot clear anymore");
 
-  assert(_ptr_base <= ptr_loc && ptr_loc < _ptr_end, "must be");
+  assert(ptr_base() <= ptr_loc && ptr_loc < ptr_end(), "must be");
   assert(uintx(ptr_loc) % sizeof(intptr_t) == 0, "pointers must be stored in aligned addresses");
-  size_t idx = ptr_loc - _ptr_base;
+  size_t idx = ptr_loc - ptr_base();
   assert(idx < _ptrmap->size(), "cannot clear pointers that have not been marked");
   _ptrmap->clear_bit(idx);
   //tty->print_cr("Clearing pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ " SIZE_FORMAT_W(5), p2i(ptr_loc), p2i(*ptr_loc), idx);
@@ -130,7 +131,7 @@ public:
 
 void ArchivePtrMarker::compact(address relocatable_base, address relocatable_end) {
   assert(!_compacted, "cannot compact again");
-  ArchivePtrBitmapCleaner cleaner(_ptrmap, _ptr_base, relocatable_base, relocatable_end);
+  ArchivePtrBitmapCleaner cleaner(_ptrmap, ptr_base(), relocatable_base, relocatable_end);
   _ptrmap->iterate(&cleaner);
   compact(cleaner.max_non_null_offset());
 }
@@ -145,18 +146,16 @@ char* DumpRegion::expand_top_to(char* newtop) {
   assert(is_allocatable(), "must be initialized and not packed");
   assert(newtop >= _top, "must not grow backwards");
   if (newtop > _end) {
-    MetaspaceShared::report_out_of_space(_name, newtop - _top);
+    ArchiveBuilder::current()->report_out_of_space(_name, newtop - _top);
     ShouldNotReachHere();
   }
 
-  if (_rs == MetaspaceShared::shared_rs()) {
-    uintx delta;
-    if (DynamicDumpSharedSpaces) {
-      delta = DynamicArchive::object_delta_uintx(newtop);
-    } else {
-      delta = MetaspaceShared::object_delta_uintx(newtop);
-    }
-    if (delta > MAX_SHARED_DELTA) {
+  commit_to(newtop);
+  _top = newtop;
+
+  if (_max_delta > 0) {
+    uintx delta = ArchiveBuilder::current()->buffer_to_offset((address)(newtop-1));
+    if (delta > _max_delta) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
@@ -165,10 +164,41 @@ char* DumpRegion::expand_top_to(char* newtop) {
     }
   }
 
-  MetaspaceShared::commit_to(_rs, _vs, newtop);
-  _top = newtop;
   return _top;
 }
+
+void DumpRegion::commit_to(char* newtop) {
+  Arguments::assert_is_dumping_archive();
+  char* base = _rs->base();
+  size_t need_committed_size = newtop - base;
+  size_t has_committed_size = _vs->committed_size();
+  if (need_committed_size < has_committed_size) {
+    return;
+  }
+
+  size_t min_bytes = need_committed_size - has_committed_size;
+  size_t preferred_bytes = 1 * M;
+  size_t uncommitted = _vs->reserved_size() - has_committed_size;
+
+  size_t commit = MAX2(min_bytes, preferred_bytes);
+  commit = MIN2(commit, uncommitted);
+  assert(commit <= uncommitted, "sanity");
+
+  if (!_vs->expand_by(commit, false)) {
+    vm_exit_during_initialization(err_msg("Failed to expand shared space to " SIZE_FORMAT " bytes",
+                                          need_committed_size));
+  }
+
+  const char* which;
+  if (_rs->base() == (char*)MetaspaceShared::symbol_rs_base()) {
+    which = "symbol";
+  } else {
+    which = "shared";
+  }
+  log_debug(cds)("Expanding %s spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(9)  " bytes ending at %p]",
+                 which, commit, _vs->actual_committed_size(), _vs->high());
+}
+
 
 char* DumpRegion::allocate(size_t num_bytes) {
   char* p = (char*)align_up(_top, (size_t)SharedSpaceObjectAlignment);
@@ -192,7 +222,7 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 void DumpRegion::print(size_t total_bytes) const {
   log_debug(cds)("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
-                 p2i(_base + MetaspaceShared::final_delta()));
+                 p2i(ArchiveBuilder::current()->to_requested(_base)));
 }
 
 void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {
@@ -206,8 +236,7 @@ void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t neede
 void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
   _rs = rs;
   _vs = vs;
-  // Start with 0 committed bytes. The memory will be committed as needed by
-  // MetaspaceShared::commit_to().
+  // Start with 0 committed bytes. The memory will be committed as needed.
   if (!_vs->initialize(*_rs, 0)) {
     fatal("Unable to allocate memory for shared space");
   }
@@ -217,7 +246,7 @@ void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
 
 void DumpRegion::pack(DumpRegion* next) {
   assert(!is_packed(), "sanity");
-  _end = (char*)align_up(_top, MetaspaceShared::reserved_space_alignment());
+  _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
   _is_packed = true;
   if (next != NULL) {
     next->_rs = _rs;
@@ -322,7 +351,7 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
 
 void ArchiveUtils::check_for_oom(oop exception) {
   assert(exception != nullptr, "Sanity check");
-  if (exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+  if (exception->is_a(vmClasses::OutOfMemoryError_klass())) {
     vm_direct_exit(-1,
       err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
               SIZE_FORMAT "M", MaxHeapSize/M));

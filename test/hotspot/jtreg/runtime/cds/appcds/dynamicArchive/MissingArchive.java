@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.io.File;
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar MissingArchive
  */
 
+import jdk.test.lib.helpers.ClassFileInstaller;
+
 public class MissingArchive extends DynamicArchiveTestBase {
     private static final String TOP  = "top";
     private static final String BASE = "base";
@@ -65,8 +67,7 @@ public class MissingArchive extends DynamicArchiveTestBase {
                  "-Xlog:cds+dynamic=debug",
                  "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                    output.shouldContain("Buffer-space to target-space delta")
-                           .shouldContain("Written dynamic archive 0x");
+                    output.shouldContain("Written dynamic archive 0x");
                 });
 
         // Use -Xshare:auto so top archive can fail after base archive has succeeded,

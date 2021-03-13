@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,101 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * {@linkplain #equals(Object) equal} as interchangeable and should not
  * use instances for synchronization, or unpredictable behavior may
  * occur. For example, in a future release, synchronization may fail.
+ *
+ * <h2><a id=equivalenceRelation>Floating-point Equality, Equivalence,
+ * and Comparison</a></h2>
+ *
+ * IEEE 754 floating-point values include finite nonzero values,
+ * signed zeros ({@code +0.0} and {@code -0.0}), signed infinities
+ * {@linkplain Double#POSITIVE_INFINITY positive infinity} and
+ * {@linkplain Double#NEGATIVE_INFINITY negative infinity}), and
+ * {@linkplain Double#NaN NaN} (not-a-number).
+ *
+ * <p>An <em>equivalence relation</em> on a set of values is a boolean
+ * relation on pairs of values that is reflexive, symmetric, and
+ * transitive. For more discussion of equivalence relations and object
+ * equality, see the {@link Object#equals Object.equals}
+ * specification. An equivalence relation partitions the values it
+ * operates over into sets called <i>equivalence classes</i>.  All the
+ * members of the equivalence class are equal to each other under the
+ * relation. An equivalence class may contain only a single member. At
+ * least for some purposes, all the members of an equivalence class
+ * are substitutable for each other.  In particular, in a numeric
+ * expression equivalent values can be <em>substituted</em> for one
+ * another without changing the result of the expression, meaning
+ * changing the equivalence class of the result of the expression.
+ *
+ * <p>Notably, the built-in {@code ==} operation on floating-point
+ * values is <em>not</em> an equivalence relation. Despite not
+ * defining an equivalence relation, the semantics of the IEEE 754
+ * {@code ==} operator were deliberately designed to meet other needs
+ * of numerical computation. There are two exceptions where the
+ * properties of an equivalence relation are not satisfied by {@code
+ * ==} on floating-point values:
+ *
+ * <ul>
+ *
+ * <li>If {@code v1} and {@code v2} are both NaN, then {@code v1
+ * == v2} has the value {@code false}. Therefore, for two NaN
+ * arguments the <em>reflexive</em> property of an equivalence
+ * relation is <em>not</em> satisfied by the {@code ==} operator.
+ *
+ * <li>If {@code v1} represents {@code +0.0} while {@code v2}
+ * represents {@code -0.0}, or vice versa, then {@code v1 == v2} has
+ * the value {@code true} even though {@code +0.0} and {@code -0.0}
+ * are distinguishable under various floating-point operations. For
+ * example, {@code 1.0/+0.0} evaluates to positive infinity while
+ * {@code 1.0/-0.0} evaluates to <em>negative</em> infinity and
+ * positive infinity and negative infinity are neither equal to each
+ * other nor equivalent to each other. Thus, while a signed zero input
+ * most commonly determines the sign of a zero result, because of
+ * dividing by zero, {@code +0.0} and {@code -0.0} may not be
+ * substituted for each other in general. The sign of a zero input
+ * also has a non-substitutable effect on the result of some math
+ * library methods.
+ *
+ * </ul>
+ *
+ * <p>For ordered comparisons using the built-in comparison operators
+ * ({@code <}, {@code <=}, etc.), NaN values have another anomalous
+ * situation: a NaN is neither less than, nor greater than, nor equal
+ * to any value, including itself. This means the <i>trichotomy of
+ * comparison</i> does <em>not</em> hold.
+ *
+ * <p>To provide the appropriate semantics for {@code equals} and
+ * {@code compareTo} methods, those methods cannot simply be wrappers
+ * around {@code ==} or ordered comparison operations. Instead, {@link
+ * Double#equals equals} defines NaN arguments to be equal to each
+ * other and defines {@code +0.0} to <em>not</em> be equal to {@code
+ * -0.0}, restoring reflexivity. For comparisons, {@link
+ * Double#compareTo compareTo} defines a total order where {@code
+ * -0.0} is less than {@code +0.0} and where a NaN is equal to itself
+ * and considered greater than positive infinity.
+ *
+ * <p>The operational semantics of {@code equals} and {@code
+ * compareTo} are expressed in terms of {@linkplain #doubleToLongBits
+ * bit-wise converting} the floating-point values to integral values.
+ *
+ * <p>The <em>natural ordering</em> implemented by {@link #compareTo
+ * compareTo} is {@linkplain Comparable consistent with equals}. That
+ * is, two objects are reported as equal by {@code equals} if and only
+ * if {@code compareTo} on those objects returns zero.
+ *
+ * <p>The adjusted behaviors defined for {@code equals} and {@code
+ * compareTo} allow instances of wrapper classes to work properly with
+ * conventional data structures. For example, defining NaN
+ * values to be {@code equals} to one another allows NaN to be used as
+ * an element of a {@link java.util.HashSet HashSet} or as the key of
+ * a {@link java.util.HashMap HashMap}. Similarly, defining {@code
+ * compareTo} as a total ordering, including {@code +0.0}, {@code
+ * -0.0}, and NaN, allows instances of wrapper classes to be used as
+ * elements of a {@link java.util.SortedSet SortedSet} or as keys of a
+ * {@link java.util.SortedMap SortedMap}.
+ *
+ * @jls 4.2.3 Floating-Point Types, Formats, and Values
+ * @jls 4.2.4. Floating-Point Operations
+ * @jls 15.21.1 Numerical Equality Operators == and !=
+ * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
@@ -797,33 +892,18 @@ public final class Double extends Number
      * #doubleToLongBits(double)} returns the identical
      * {@code long} value when applied to each.
      *
-     * <p>Note that in most cases, for two instances of class
-     * {@code Double}, {@code d1} and {@code d2}, the
-     * value of {@code d1.equals(d2)} is {@code true} if and
-     * only if
+     * @apiNote
+     * This method is defined in terms of {@link
+     * #doubleToLongBits(double)} rather than the {@code ==} operator
+     * on {@code double} values since the {@code ==} operator does
+     * <em>not</em> define an equivalence relation and to satisfy the
+     * {@linkplain Object#equals equals contract} an equivalence
+     * relation must be implemented; see <a
+     * href="#equivalenceRelation">this discussion</a> for details of
+     * floating-point equality and equivalence.
      *
-     * <blockquote>
-     *  {@code d1.doubleValue() == d2.doubleValue()}
-     * </blockquote>
-     *
-     * <p>also has the value {@code true}. However, there are two
-     * exceptions:
-     * <ul>
-     * <li>If {@code d1} and {@code d2} both represent
-     *     {@code Double.NaN}, then the {@code equals} method
-     *     returns {@code true}, even though
-     *     {@code Double.NaN==Double.NaN} has the value
-     *     {@code false}.
-     * <li>If {@code d1} represents {@code +0.0} while
-     *     {@code d2} represents {@code -0.0}, or vice versa,
-     *     the {@code equal} test has the value {@code false},
-     *     even though {@code +0.0==-0.0} has the value {@code true}.
-     * </ul>
-     * This definition allows hash tables to operate properly.
-     * @param   obj   the object to compare with.
-     * @return  {@code true} if the objects are the same;
-     *          {@code false} otherwise.
      * @see java.lang.Double#doubleToLongBits(double)
+     * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
         return (obj instanceof Double)
@@ -975,23 +1055,31 @@ public final class Double extends Number
     public static native double longBitsToDouble(long bits);
 
     /**
-     * Compares two {@code Double} objects numerically.  There
-     * are two ways in which comparisons performed by this method
-     * differ from those performed by the Java language numerical
-     * comparison operators ({@code <, <=, ==, >=, >})
-     * when applied to primitive {@code double} values:
-     * <ul><li>
-     *          {@code Double.NaN} is considered by this method
-     *          to be equal to itself and greater than all other
-     *          {@code double} values (including
-     *          {@code Double.POSITIVE_INFINITY}).
-     * <li>
-     *          {@code 0.0d} is considered by this method to be greater
-     *          than {@code -0.0d}.
+     * Compares two {@code Double} objects numerically.
+     *
+     * This method imposes a total order on {@code Double} objects
+     * with two differences compared to the incomplete order defined by
+     * the Java language numerical comparison operators ({@code <, <=,
+     * ==, >=, >}) on {@code double} values.
+     *
+     * <ul><li> A NaN is <em>unordered</em> with respect to other
+     *          values and unequal to itself under the comparison
+     *          operators.  This method chooses to define {@code
+     *          Double.NaN} to be equal to itself and greater than all
+     *          other {@code double} values (including {@code
+     *          Double.POSITIVE_INFINITY}).
+     *
+     *      <li> Positive zero and negative zero compare equal
+     *      numerically, but are distinct and distinguishable values.
+     *      This method chooses to define positive zero ({@code +0.0d}),
+     *      to be greater than negative zero ({@code -0.0d}).
      * </ul>
-     * This ensures that the <i>natural ordering</i> of
-     * {@code Double} objects imposed by this method is <i>consistent
-     * with equals</i>.
+
+     * This ensures that the <i>natural ordering</i> of {@code Double}
+     * objects imposed by this method is <i>consistent with
+     * equals</i>; see <a href="#equivalenceRelation">this
+     * discussion</a> for details of floating-point comparison and
+     * ordering.
      *
      * @param   anotherDouble   the {@code Double} to be compared.
      * @return  the value {@code 0} if {@code anotherDouble} is
@@ -1002,6 +1090,7 @@ public final class Double extends Number
      *          {@code Double} is numerically greater than
      *          {@code anotherDouble}.
      *
+     * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
      * @since   1.2
      */
     public int compareTo(Double anotherDouble) {

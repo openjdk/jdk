@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/resolutionErrors.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -34,7 +36,6 @@
 #include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.hpp"
@@ -46,6 +47,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
 // Implementation of ConstantPoolCacheEntry
@@ -201,7 +203,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
         // or when invokeinterface is used explicitly.
         // In that case, the method has no itable index and must be invoked as a virtual.
         // Set a flag to keep track of this corner case.
-        assert(holder->is_interface() || holder == SystemDictionary::Object_klass(), "unexpected holder class");
+        assert(holder->is_interface() || holder == vmClasses::Object_klass(), "unexpected holder class");
         assert(method->is_public(), "Calling non-public method in Object with invokeinterface");
         change_to_virtual = true;
 
@@ -303,7 +305,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
       assert(invoke_code == Bytecodes::_invokevirtual ||
              (invoke_code == Bytecodes::_invokeinterface &&
               ((method->is_private() ||
-                (method->is_final() && method->method_holder() == SystemDictionary::Object_klass())))),
+                (method->is_final() && method->method_holder() == vmClasses::Object_klass())))),
              "unexpected invocation mode");
       if (invoke_code == Bytecodes::_invokeinterface &&
           (method->is_private() || method->is_final())) {
@@ -372,13 +374,14 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
+  JavaThread* current = JavaThread::current();
+  objArrayHandle resolved_references(current, cpool->resolved_references());
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, Thread::current());
+  ObjectLocker ol(resolved_references, current);
   if (!is_f1_null()) {
     return;
   }
@@ -474,16 +477,17 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS) {
 
   assert(HAS_PENDING_EXCEPTION, "No exception got thrown!");
-  assert(PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass()),
+  assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
          "No LinkageError exception");
 
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
-  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
+  JavaThread* current = THREAD->as_Java_thread();
+  objArrayHandle resolved_references(current, cpool->resolved_references());
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, THREAD);
+  ObjectLocker ol(resolved_references, current);
 
   // if f1 is not null or the indy_resolution_failed flag is set then another
   // thread either succeeded in resolving the method or got a LinkageError

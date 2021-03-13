@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -109,9 +108,11 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 #endif
   ciMethod* callee = kit.callee();
   const int bci    = kit.bci();
-
+#ifdef ASSERT
+  Node* ctrl = kit.control();
+#endif
   // Try to inline the intrinsic.
-  if (callee->check_intrinsic_candidate() &&
+  if ((CheckIntrinsics ? callee->intrinsic_candidate() : true) &&
       kit.try_to_inline(_last_predicate)) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual)"
                                           : "(intrinsic)";
@@ -133,6 +134,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   }
 
   // The intrinsic bailed out
+  assert(ctrl == kit.control(), "Control flow was added although the intrinsic bailed out");
   if (jvms->has_method()) {
     // Not a root compile.
     const char* msg;
@@ -667,9 +669,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
-
-  case vmIntrinsics::_blackhole:
-    return inline_blackhole();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -2202,15 +2201,12 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   Node* receiver = argument(0);  // type: oop
 
   // Build address expression.
-  Node* adr;
   Node* heap_base_oop = top();
-  Node* offset = top();
-  Node* val;
 
   // The base is either a Java object or a value produced by Unsafe.staticFieldBase
   Node* base = argument(1);  // type: oop
   // The offset is a value produced by Unsafe.staticFieldOffset or Unsafe.objectFieldOffset
-  offset = argument(2);  // type: long
+  Node* offset = argument(2);  // type: long
   // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
   // to be plain byte offsets, which are also the same as those accepted
   // by oopDesc::field_addr.
@@ -2218,12 +2214,19 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
          "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
-  adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
+
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
+
+  Node* adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
 
   if (_gvn.type(base)->isa_ptr() == TypePtr::NULL_PTR) {
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
     } else {
+      set_map(old_map);
+      set_sp(old_sp);
       return false; // off-heap oop accesses are not supported
     }
   } else {
@@ -2237,10 +2240,12 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     decorators |= IN_HEAP;
   }
 
-  val = is_store ? argument(4) : NULL;
+  Node* val = is_store ? argument(4) : NULL;
 
   const TypePtr* adr_type = _gvn.type(adr)->isa_ptr();
   if (adr_type == TypePtr::NULL_PTR) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false; // off-heap access with zero address
   }
 
@@ -2250,6 +2255,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
       alias_type->adr_type() == TypeAryPtr::RANGE) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false; // not supported
   }
 
@@ -2268,6 +2275,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     }
     if ((bt == T_OBJECT) != (type == T_OBJECT)) {
       // Don't intrinsify mismatched object accesses
+      set_map(old_map);
+      set_sp(old_sp);
       return false;
     }
     mismatched = (bt != type);
@@ -2275,6 +2284,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
+  old_map->destruct(&_gvn);
   assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   if (mismatched) {
@@ -2509,6 +2519,9 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   assert(Unsafe_field_offset_to_byte_offset(11) == 11, "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
   Node* adr = make_unsafe_address(base, offset, ACCESS_WRITE | ACCESS_READ, type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
@@ -2517,8 +2530,12 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   if (bt != T_ILLEGAL &&
       (is_reference_type(bt) != (type == T_OBJECT))) {
     // Don't intrinsify mismatched object accesses.
+    set_map(old_map);
+    set_sp(old_sp);
     return false;
   }
+
+  old_map->destruct(&_gvn);
 
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.
@@ -3331,7 +3348,13 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
     // ensuing call will throw an exception, or else it
     // will cache the array klass for next time.
     PreserveJVMState pjvms(this);
-    CallJavaNode* slow_call = generate_method_call_static(vmIntrinsics::_newArray);
+    CallJavaNode* slow_call = NULL;
+    if (uninitialized) {
+      // Generate optimized virtual call (holder class 'Unsafe' is final)
+      slow_call = generate_method_call(vmIntrinsics::_allocateUninitializedArray, false, false);
+    } else {
+      slow_call = generate_method_call_static(vmIntrinsics::_newArray);
+    }
     Node* slow_result = set_results_for_java_call(slow_call);
     // this->control() comes from set_results_for_java_call
     result_reg->set_req(_slow_path, control());
@@ -6846,36 +6869,6 @@ bool LibraryCallKit::inline_getObjectSize() {
     }
 
     set_result(result_reg, result_val);
-  }
-
-  return true;
-}
-
-//------------------------------- inline_blackhole --------------------------------------
-//
-// Make sure all arguments to this node are alive.
-// This matches methods that were requested to be blackholed through compile commands.
-//
-bool LibraryCallKit::inline_blackhole() {
-  // To preserve the semantics of Java call, we need to null-check the receiver,
-  // if present. Shortcut if receiver is unconditionally null.
-  Node* receiver = NULL;
-  bool has_receiver = !callee()->is_static();
-  if (has_receiver) {
-    receiver = null_check_receiver();
-    if (stopped()) {
-      return true;
-    }
-  }
-
-  // Bind call arguments as blackhole arguments to keep them alive
-  Node* bh = insert_mem_bar(Op_Blackhole);
-  if (has_receiver) {
-    bh->add_req(receiver);
-  }
-  uint nargs = callee()->arg_size();
-  for (uint i = has_receiver ? 1 : 0; i < nargs; i++) {
-    bh->add_req(argument(i));
   }
 
   return true;

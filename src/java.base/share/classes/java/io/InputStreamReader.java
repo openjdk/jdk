@@ -167,20 +167,11 @@ public class InputStreamReader extends Reader {
     }
 
     /**
-     * Reads characters into a portion of an array.
-     *
-     * @param      cbuf     Destination buffer
-     * @param      offset   Offset at which to start storing characters
-     * @param      length   Maximum number of characters to read
-     *
-     * @return     The number of characters read, or -1 if the end of the
-     *             stream has been reached
-     *
-     * @throws     IOException  If an I/O error occurs
-     * @throws     IndexOutOfBoundsException {@inheritDoc}
+     * {@inheritDoc}
+     * @throws     IndexOutOfBoundsException  {@inheritDoc}
      */
-    public int read(char cbuf[], int offset, int length) throws IOException {
-        return sd.read(cbuf, offset, length);
+    public int read(char[] cbuf, int off, int len) throws IOException {
+        return sd.read(cbuf, off, len);
     }
 
     /**
