@@ -29,8 +29,8 @@
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
  * @compile CheckArchivedModuleApp.java
- * @run driver ClassFileInstaller -jar app.jar CheckArchivedModuleApp
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar CheckArchivedModuleApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver ArchivedModuleComboTest
  */
 

@@ -29,8 +29,8 @@
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
  * @compile CheckIntegerCacheApp.java
- * @run driver ClassFileInstaller -jar boxCache.jar CheckIntegerCacheApp
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boxCache.jar CheckIntegerCacheApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver ArchivedIntegerCacheTest
  */
 

@@ -28,7 +28,7 @@
  * @library /test/lib
  * @requires vm.cds
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main/othervm/native ReplaceCriticalClasses
  */
 

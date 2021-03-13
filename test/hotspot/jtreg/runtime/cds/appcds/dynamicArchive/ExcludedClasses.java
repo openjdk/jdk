@@ -30,12 +30,12 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build ExcludedClassesApp
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar ExcludedClasses.jar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar ExcludedClasses.jar
  *             ExcludedClassesApp
  *             ExcludedClassesApp$NotLinkedSuper
  *             ExcludedClassesApp$NotLinkedChild
  *             ExcludedClassesApp$NotLinkedInterface
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ExcludedClasses
  */
 

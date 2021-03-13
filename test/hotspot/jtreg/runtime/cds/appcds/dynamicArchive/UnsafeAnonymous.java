@@ -32,12 +32,12 @@
  * @compile test-classes/UnsafeAnonymousApp.java
  *          ../../../../../../lib/jdk/test/lib/compiler/InMemoryJavaCompiler.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar unsafe.jar UnsafeAnonymousApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar unsafe.jar UnsafeAnonymousApp
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper$1
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$MemoryJavaFileObject
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. UnsafeAnonymous
  */
 
