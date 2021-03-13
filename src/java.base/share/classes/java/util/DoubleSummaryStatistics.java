@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ import java.util.stream.DoubleStream;
 public class DoubleSummaryStatistics implements DoubleConsumer {
     private long count;
     private double sum;
-    private double sumCompensation; // Low order bits of sum
+    private double sumCompensation; // Negative low order bits of sum
     private double simpleSum; // Used to compute right sum for non-finite inputs
     private double min = Double.POSITIVE_INFINITY;
     private double max = Double.NEGATIVE_INFINITY;
@@ -156,7 +156,7 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
         count += other.count;
         simpleSum += other.simpleSum;
         sumWithCompensation(other.sum);
-        sumWithCompensation(other.sumCompensation);
+        sumWithCompensation(-other.sumCompensation);
         min = Math.min(min, other.min);
         max = Math.max(max, other.max);
     }
@@ -241,7 +241,7 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      */
     public final double getSum() {
         // Better error bounds to add both terms as the final sum
-        double tmp =  sum + sumCompensation;
+        double tmp = sum - sumCompensation;
         if (Double.isNaN(tmp) && Double.isInfinite(simpleSum))
             // If the compensated sum is spuriously NaN from
             // accumulating one or more same-signed infinite values,

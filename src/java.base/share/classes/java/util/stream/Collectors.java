@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -722,7 +722,7 @@ public final class Collectors {
         /*
          * In the arrays allocated for the collect operation, index 0
          * holds the high-order bits of the running sum, index 1 holds
-         * the low-order bits of the sum computed via compensated
+         * the (negative) low-order bits of the sum computed via compensated
          * summation, and index 2 holds the simple sum used to compute
          * the proper result if the stream contains infinite values of
          * the same sign.
@@ -734,7 +734,7 @@ public final class Collectors {
                             a[2] += val;},
                 (a, b) -> { sumWithCompensation(a, b[0]);
                             a[2] += b[2];
-                            return sumWithCompensation(a, b[1]); },
+                            return sumWithCompensation(a, -b[1]); },
                 a -> computeFinalSum(a),
                 CH_NOID);
     }
@@ -743,9 +743,9 @@ public final class Collectors {
      * Incorporate a new double value using Kahan summation /
      * compensation summation.
      *
-     * High-order bits of the sum are in intermediateSum[0], low-order
-     * bits of the sum are in intermediateSum[1], any additional
-     * elements are application-specific.
+     * High-order bits of the sum are in intermediateSum[0],
+     * negative low-order bits of the sum are in intermediateSum[1],
+     * any additional elements are application-specific.
      *
      * @param intermediateSum the high-order and low-order words of the intermediate sum
      * @param value the name value to be included in the running sum
@@ -766,7 +766,7 @@ public final class Collectors {
      */
     static double computeFinalSum(double[] summands) {
         // Better error bounds to add both terms as the final sum
-        double tmp = summands[0] + summands[1];
+        double tmp = summands[0] - summands[1];
         double simpleSum = summands[summands.length - 1];
         if (Double.isNaN(tmp) && Double.isInfinite(simpleSum))
             return simpleSum;
@@ -840,13 +840,13 @@ public final class Collectors {
         /*
          * In the arrays allocated for the collect operation, index 0
          * holds the high-order bits of the running sum, index 1 holds
-         * the low-order bits of the sum computed via compensated
+         * the (negative) low-order bits of the sum computed via compensated
          * summation, and index 2 holds the number of values seen.
          */
         return new CollectorImpl<>(
                 () -> new double[4],
-                (a, t) -> { double val = mapper.applyAsDouble(t); sumWithCompensation(a, val); a[2]++; a[3]+= val;},
-                (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, b[1]); a[2] += b[2]; a[3] += b[3]; return a; },
+                (a, t) -> { double val = mapper.applyAsDouble(t); sumWithCompensation(a, val); a[2]++; a[3] += val; },
+                (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, -b[1]); a[2] += b[2]; a[3] += b[3]; return a; },
                 a -> (a[2] == 0) ? 0.0d : (computeFinalSum(a) / a[2]),
                 CH_NOID);
     }

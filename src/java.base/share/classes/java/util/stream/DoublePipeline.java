@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,10 +442,10 @@ abstract class DoublePipeline<E_IN>
         /*
          * In the arrays allocated for the collect operation, index 0
          * holds the high-order bits of the running sum, index 1 holds
-         * the low-order bits of the sum computed via compensated
-         * summation, and index 2 holds the simple sum used to compute
-         * the proper result if the stream contains infinite values of
-         * the same sign.
+         * the (negative) low-order bits of the sum computed via
+         * compensated summation, and index 2 holds the simple sum used
+         * to compute the proper result if the stream contains infinite
+         * values of the same sign.
          */
         double[] summation = collect(() -> new double[3],
                                (ll, d) -> {
@@ -454,7 +454,7 @@ abstract class DoublePipeline<E_IN>
                                },
                                (ll, rr) -> {
                                    Collectors.sumWithCompensation(ll, rr[0]);
-                                   Collectors.sumWithCompensation(ll, rr[1]);
+                                   Collectors.sumWithCompensation(ll, -rr[1]);
                                    ll[2] += rr[2];
                                });
 
@@ -485,9 +485,9 @@ abstract class DoublePipeline<E_IN>
         /*
          * In the arrays allocated for the collect operation, index 0
          * holds the high-order bits of the running sum, index 1 holds
-         * the low-order bits of the sum computed via compensated
-         * summation, index 2 holds the number of values seen, index 3
-         * holds the simple sum.
+         * the (negative) low-order bits of the sum computed via
+         * compensated summation, index 2 holds the number of values
+         * seen, index 3 holds the simple sum.
          */
         double[] avg = collect(() -> new double[4],
                                (ll, d) -> {
@@ -497,7 +497,7 @@ abstract class DoublePipeline<E_IN>
                                },
                                (ll, rr) -> {
                                    Collectors.sumWithCompensation(ll, rr[0]);
-                                   Collectors.sumWithCompensation(ll, rr[1]);
+                                   Collectors.sumWithCompensation(ll, -rr[1]);
                                    ll[2] += rr[2];
                                    ll[3] += rr[3];
                                });
