@@ -38,7 +38,6 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @bug 8226530
  * @summary ZIP File System tests that leverage DirectoryStream
- * @modules java.base
  * @compile Zip64SizeTest.java
  * @run testng Zip64SizeTest
  */

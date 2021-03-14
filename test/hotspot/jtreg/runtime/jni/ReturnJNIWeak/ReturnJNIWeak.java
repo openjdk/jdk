@@ -25,7 +25,6 @@
  * @bug 8166188
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @summary Test return of JNI weak global refs from native calls.
- * @modules java.base
  * @run main/othervm/native -Xint ReturnJNIWeak
  * @run main/othervm/native -Xcomp ReturnJNIWeak
  */

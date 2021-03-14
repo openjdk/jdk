@@ -28,7 +28,6 @@ package gc.g1;
  * @summary Test that issuing a periodic collection while the GC locker is
  * held does not crash the VM.
  * @requires vm.gc.G1
- * @modules java.base
  * @run main/othervm/native
  *    -Xbootclasspath/a:.
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

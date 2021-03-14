@@ -25,7 +25,6 @@
  * @test
  * @bug 8166188
  * @summary Test call of native function with JNI weak global ref.
- * @modules java.base
  * @run main/othervm/native CallWithJNIWeak
  */
 

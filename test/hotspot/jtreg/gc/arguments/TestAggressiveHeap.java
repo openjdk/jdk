@@ -30,7 +30,7 @@ package gc.arguments;
  * @summary Test argument processing for -XX:+AggressiveHeap.
  * @library /test/lib
  * @library /
- * @modules java.base java.management
+ * @modules java.management
  * @run driver gc.arguments.TestAggressiveHeap
  */
 
