@@ -53,10 +53,8 @@ public class JmodFile implements AutoCloseable {
     public static void checkMagic(Path file) throws IOException {
         try (InputStream in = Files.newInputStream(file)) {
             // validate the header
-            byte[] magic = in.readNBytes(4);
-            if (magic.length != 4) {
-                throw new IOException("Header expected to be of length 4, but was " + magic.length);
-            }
+            byte[] magic = new byte[4];
+            in.read(magic);
             if (magic[0] != JMOD_MAGIC_NUMBER[0] ||
                 magic[1] != JMOD_MAGIC_NUMBER[1]) {
                 throw new IOException("Invalid JMOD file: " + file.toString());
