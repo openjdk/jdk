@@ -28,7 +28,7 @@ package gc;
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @modules java.base
- * @run main jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
