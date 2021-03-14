@@ -386,8 +386,12 @@ private:
 
 public:
 
-  VM_PopulateDumpSharedSpace() : VM_GC_Operation(0, /* total collections, ignored */
-                                                 GCCause::_archive_time_gc)
+  VM_PopulateDumpSharedSpace() :
+    VM_GC_Operation(0 /* total collections, ignored */, GCCause::_archive_time_gc),
+    _closed_archive_heap_regions(NULL),
+    _open_archive_heap_regions(NULL),
+    _closed_archive_heap_oopmaps(NULL),
+    _open_archive_heap_oopmaps(NULL)
   { }
 
   bool skip_operation() const { return false; }
