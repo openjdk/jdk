@@ -28,30 +28,30 @@
 @implementation NavigableStaticTextAccessibility
 - (NSRect)accessibilityFrameForRange:(NSRange)range
 {
-    NSLog(@"in accessibilityFrameForRange");
+    NSLog(@"in NavigableStaticTextAccessibility accessibilityFrameForRange");
     NSRect rect = [self accessibilityBoundsForRangeAttribute:range];
-    NSLog(@"Frame for range %@ is %@", NSStringFromRange(range), NSStringFromRect(rect));
+    //NSLog(@"Frame for range %@ is %@", NSStringFromRange(range), NSStringFromRect(rect));
     return rect;
 }
 - (int)accessibilityLineForIndex:(int)index
 {
-    NSLog(@"in accessibilityLineForIndex");
+    NSLog(@"in NavigableStaticTextAccessibility accessibilityLineForIndex");
     int line = [self accessibilityLineForIndexAttribute:index];
-    NSLog(@"Line number for index %d is: %d", index, line);
+    //NSLog(@"Line number for index %d is: %d", index, line);
     return line;
 }
 - (NSRange)accessibilityRangeForLine:(int)line
 {
-    NSLog(@"in accessibilityRangeForLine");
+    NSLog(@"in NavigableStaticTextAccessibility accessibilityRangeForLine");
     NSRange range = [self accessibilityRangeForLineAttribute:line];
-    NSLog(@"Range for line %d is %@", line, NSStringFromRange(range));
+    //NSLog(@"Range for line %d is %@", line, NSStringFromRange(range));
     return range;
 }
 - (nullable NSString *)accessibilityStringForRange:(NSRange)range
 {
-    NSLog(@"in accessibilityStringForRange");
+    NSLog(@"in NavigableStaticTextAccessibility accessibilityStringForRange");
     NSString * str = [self accessibilityStringForRangeAttribute:range];
-    NSLog(@"String  for range %@ is %@", NSStringFromRange(range), str);
+    //NSLog(@"String  for range %@ is %@", NSStringFromRange(range), str);
     return str;
 }
 
