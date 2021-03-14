@@ -316,21 +316,61 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws NullPointerException {@inheritDoc}
-     *
-     * implNote {@inheritDoc}
-     *
+     * @implNote {@inheritDoc}
      * @since 10
      */
     @Override
-    public  void nextBytes(byte[] bytes) {
+    public void nextBytes(byte[] bytes) {
         super.nextBytes(bytes);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * @implSpec {@inheritDoc}
+     * @since 17
+     */
+    @Override
+    public Stream<SplittableGenerator> splits() {
+        return super.splits();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implSpec {@inheritDoc}
+     * @since 17
+     */
+    @Override
+    public Stream<SplittableGenerator> splits(long streamSize) {
+        return super.splits(streamSize, this);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     * @implSpec {@inheritDoc}
+     * @since 17
+     */
+    @Override
+    public Stream<SplittableGenerator> splits(SplittableGenerator source) {
+        return super.splits(Long.MAX_VALUE, source);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implSpec {@inheritDoc}
+     * @since 17
+     */
+    @Override
+    public Stream<SplittableGenerator> splits(long streamSize, SplittableGenerator source) {
+        return super.splits(streamSize, source);
+    }
+
+    /**
+     * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
@@ -348,7 +388,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
@@ -358,7 +397,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
@@ -368,7 +406,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
@@ -386,7 +423,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
@@ -396,7 +432,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
@@ -406,7 +441,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
@@ -424,7 +458,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
@@ -434,7 +467,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override

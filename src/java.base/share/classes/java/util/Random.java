@@ -644,10 +644,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @implSpec  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public IntStream ints(long streamSize) {
@@ -656,9 +655,8 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
+     * @implSpec  {@inheritDoc}
      * @since 1.8
-     * @implNote  {@inheritDoc}
      */
     @Override
     public IntStream ints() {
@@ -667,10 +665,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @implSpec  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
@@ -679,10 +676,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @implSpec  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
@@ -691,10 +687,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @implSpec  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public LongStream longs(long streamSize) {
@@ -703,9 +698,8 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
+     * @implSpec {@inheritDoc}
      * @since 1.8
-     * @implNote  {@inheritDoc}
      */
     @Override
     public LongStream longs() {
@@ -714,10 +708,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @implSpec {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
@@ -726,10 +719,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @implSpec  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
@@ -738,10 +730,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @implSpec  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public DoubleStream doubles(long streamSize) {
@@ -750,9 +741,8 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
+     * @implSpec  {@inheritDoc}
      * @since 1.8
-     * @implNote  {@inheritDoc}
      */
     @Override
     public DoubleStream doubles() {
@@ -761,10 +751,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @implSpec  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
@@ -773,10 +762,9 @@ public class Random extends AbstractSpliteratorGenerator
 
     /**
      * {@inheritDoc}
-     *
-     * @since 1.8
      * @throws IllegalArgumentException {@inheritDoc}
-     * @implNote  {@inheritDoc}
+     * @implSpec  {@inheritDoc}
+     * @since 1.8
      */
     @Override
     public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {

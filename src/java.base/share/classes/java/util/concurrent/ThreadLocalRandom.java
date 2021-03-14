@@ -469,61 +469,6 @@ public class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      */
     @Override
-    public double nextDouble() {
-        return super.nextDouble();
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @throws IllegalArgumentException {@inheritDoc}
-     */
-    @Override
-    public double nextDouble(double bound) {
-        return super.nextDouble(bound);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @throws IllegalArgumentException {@inheritDoc}
-     */
-    @Override
-    public double nextDouble(double origin, double bound) {
-        return super.nextDouble(origin, bound);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public float nextFloat() {
-        return super.nextFloat();
-    }
-
-    /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     */
-    @Override
-    public float nextFloat(float bound) {
-        return super.nextFloat(bound);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     */
-    @Override
-    public float nextFloat(float origin, float bound) {
-        return super.nextFloat(origin, bound);
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public int nextInt() {
         return mix32(nextSeed());
     }
@@ -574,7 +519,61 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
+     * @since 17
+     */
+    public float nextFloat() {
+        return super.nextFloat();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     * @since 17
+     */
+    public float nextFloat(float bound) {
+         return super.nextFloat(bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     * @since 17
+     */
+    public float nextFloat(float origin, float bound) {
+        return super.nextFloat(origin, bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 17
+     */
+    public double nextDouble() {
+        return super.nextDouble();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     * @since 17
+     */
+    public double nextDouble(double bound) {
+        return super.nextDouble(bound);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @implNote {@inheritDoc}
+     * @since 17
+     */
+    public double nextDouble(double origin, double bound) {
+        return super.nextDouble(origin, bound);
+    }
+    /**
+     * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
@@ -585,10 +584,8 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @implNote This method is implemented to be equivalent to
      *           {@code ints(Long.MAX_VALUE)}.
-     *
      * @since 1.8
      */
     @Override
@@ -598,7 +595,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
@@ -609,10 +605,8 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @implNote This method is implemented to be equivalent to
      *           {@code ints(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
@@ -623,7 +617,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
@@ -634,10 +627,8 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @implNote This method is implemented to be equivalent to
      *           {@code longs(Long.MAX_VALUE)}.
-     *
      * @since 1.8
      */
     @Override
@@ -647,7 +638,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
@@ -658,10 +648,8 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @implNote This method is implemented to be equivalent to
      *           {@code longs(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
@@ -672,7 +660,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
@@ -683,7 +670,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @implNote This method is implemented to be equivalent to
      *           {@code doubles(Long.MAX_VALUE)}.
      * @since 1.8
@@ -695,7 +681,6 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
@@ -706,10 +691,8 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     *
      * @implNote This method is implemented to be equivalent to
      *           {@code doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
-     *
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */

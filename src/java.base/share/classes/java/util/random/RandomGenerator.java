@@ -116,8 +116,6 @@ public interface RandomGenerator {
      *
      * @throws NullPointerException if name is null
      * @throws IllegalArgumentException if the named algorithm is not found
-     *
-     * @since 17
      */
     static RandomGenerator of(String name) {
         Objects.requireNonNull(name);
@@ -134,12 +132,27 @@ public interface RandomGenerator {
      * guarantee that this method will return the same algorithm over time.
      *
      * @return a {@link RandomGenerator}
-     *
-     * @since 17
      */
     static RandomGenerator getDefault() {
         return of("L32X64MixRandom");
     }
+
+    /**
+     * Return true if the implementation of RandomGenerator (algorithm) has been
+     * marked for deprecation.
+     *
+     * @implNote Random number generator algorithms evolve over time; new
+     *           algorithms will be introduced and old algorithms will
+     *           lose standing. If an older algorithm is deemed unsuitable
+     *           for continued use, it will be marked as deprecated to indicate
+     *           that it may be removed at some point in the future.
+     *
+     * @return true if the implementation of RandomGenerator (algorithm) has been
+     *         marked for deprecation
+     */
+     default boolean isDeprecated() {
+        return this.getClass().isAnnotationPresent(Deprecated.class);
+     }
 
     /**
      * Returns an effectively unlimited stream of (pseudo)randomly chosen
@@ -152,8 +165,6 @@ public interface RandomGenerator {
      *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
      *           The default implementation produces a sequential stream
      *           that repeatedly calls {@link RandomGenerator#nextDouble nextDouble}().
-     *
-     * @since 17
      */
     default DoubleStream doubles() {
         return DoubleStream.generate(this::nextDouble).sequential();
@@ -179,8 +190,6 @@ public interface RandomGenerator {
      *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
      *           The default implementation produces a sequential stream that repeatedly
      *           calls {@link RandomGenerator#nextDouble(double, double) nextDouble}(randomNumberOrigin, randomNumberBound).
-     *
-     * @since 17
      */
     default DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -201,8 +210,6 @@ public interface RandomGenerator {
      *
      * @implNote The default implementation produces a sequential stream
      *           that repeatedly calls {@link RandomGenerator#nextDouble nextDouble()}.
-     *
-     * @since 17
      */
     default DoubleStream doubles(long streamSize) {
         RandomSupport.checkStreamSize(streamSize);
@@ -230,8 +237,6 @@ public interface RandomGenerator {
      *
      * @implNote The default implementation produces a sequential stream that repeatedly
      *           calls {@link RandomGenerator#nextDouble(double, double)  nextDouble}(randomNumberOrigin, randomNumberBound).
-     *
-     * @since 17
      */
     default DoubleStream doubles(long streamSize, double randomNumberOrigin,
                 double randomNumberBound) {
@@ -252,8 +257,6 @@ public interface RandomGenerator {
      *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
      *           The default implementation produces a sequential stream
      *           that repeatedly calls {@link RandomGenerator#nextInt() nextInt}().
-     *
-     * @since 17
      */
     default IntStream ints() {
         return IntStream.generate(this::nextInt).sequential();
@@ -278,8 +281,6 @@ public interface RandomGenerator {
      *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
      *           The default implementation produces a sequential stream that repeatedly
      *           calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
-     *
-     * @since 17
      */
     default IntStream ints(int randomNumberOrigin, int randomNumberBound) {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -300,8 +301,6 @@ public interface RandomGenerator {
      *
      * @implNote The default implementation produces a sequential stream
      *           that repeatedly calls {@link RandomGenerator#nextInt() nextInt}().
-     *
-     * @since 17
      */
     default IntStream ints(long streamSize) {
         RandomSupport.checkStreamSize(streamSize);
@@ -327,8 +326,6 @@ public interface RandomGenerator {
      *
      * @implNote The default implementation produces a sequential stream that repeatedly
      *           calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
-     *
-     * @since 17
      */
     default IntStream ints(long streamSize, int randomNumberOrigin,
               int randomNumberBound) {
@@ -349,8 +346,6 @@ public interface RandomGenerator {
      *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
      *           The default implementation produces a sequential stream
      *           that repeatedly calls {@link RandomGenerator#nextLong() nextLong}().
-     *
-     * @since 17
      */
     default LongStream longs() {
         return LongStream.generate(this::nextLong).sequential();
@@ -375,8 +370,6 @@ public interface RandomGenerator {
      *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
      *           The default implementation produces a sequential stream that repeatedly
      *           calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
-     *
-     * @since 17
      */
     default LongStream longs(long randomNumberOrigin, long randomNumberBound) {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -397,8 +390,6 @@ public interface RandomGenerator {
      *
      * @implNote The default implementation produces a sequential stream
      * that repeatedly calls {@link RandomGenerator#nextLong() nextLong}().
-     *
-     * @since 17
      */
     default LongStream longs(long streamSize) {
         RandomSupport.checkStreamSize(streamSize);
@@ -424,8 +415,6 @@ public interface RandomGenerator {
      *
      * @implNote The default implementation produces a sequential stream that repeatedly
      *            calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
-     *
-     * @since 17
      */
     default LongStream longs(long streamSize, long randomNumberOrigin,
                 long randomNumberBound) {
@@ -445,8 +434,6 @@ public interface RandomGenerator {
      * low-order bits.
      *
      * @return a (pseudo)randomly chosen {@code boolean} value
-     *
-     * @since 17
      */
     default boolean nextBoolean() {
         return nextInt() < 0;
@@ -474,8 +461,6 @@ public interface RandomGenerator {
      *
      * @param  bytes the byte array to fill with pseudorandom bytes
      * @throws NullPointerException if bytes is null
-     *
-     * @since 17
      */
     default void nextBytes(byte[] bytes) {
         int i = 0;
@@ -498,8 +483,6 @@ public interface RandomGenerator {
      * {@link RandomGenerator#nextInt() nextInt}().
      *
      * @return a pseudorandom {@code float} value between zero (inclusive) and one (exclusive)
-     *
-     * @since 17
      */
     default float nextFloat() {
         return (nextInt() >>> 8) * 0x1.0p-24f;
@@ -521,8 +504,6 @@ public interface RandomGenerator {
      * @implNote The default implementation simply calls
      *           {@link RandomSupport#checkBound checkBound}(bound) and then
      *           {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
-     *
-     * @since 17
      */
     default float nextFloat(float bound) {
         RandomSupport.checkBound(bound);
@@ -547,8 +528,6 @@ public interface RandomGenerator {
      * @implNote The default implementation simply calls
      *           {@link RandomSupport#checkBound checkBound}(bound) and then
      *           {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
-     *
-     * @since 17
      */
     default float nextFloat(float origin, float bound) {
         RandomSupport.checkRange(origin, bound);
@@ -565,8 +544,6 @@ public interface RandomGenerator {
      *
      * @return a pseudorandom {@code double} value between zero (inclusive)
      *         and one (exclusive)
-     *
-     * @since 17
      */
     default double nextDouble() {
         return (nextLong() >>> 11) * 0x1.0p-53;
@@ -588,8 +565,6 @@ public interface RandomGenerator {
      * @implNote The default implementation simply calls
      *           {@link RandomSupport#checkBound checkBound}(bound) and then
      *           {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
-     *
-     * @since 17
      */
     default double nextDouble(double bound) {
         RandomSupport.checkBound(bound);
@@ -614,8 +589,6 @@ public interface RandomGenerator {
      * @implNote The default implementation simply calls
      *           {@link RandomSupport#checkBound checkBound}(bound) and then
      *           {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
-     *
-     * @since 17
      */
     default double nextDouble(double origin, double bound) {
         RandomSupport.checkRange(origin, bound);
@@ -630,8 +603,6 @@ public interface RandomGenerator {
      * {@link RandomGenerator#nextLong nextLong}().
      *
      * @return a (pseudo)randomly chosen {@code int} value
-     *
-     * @since 17
      */
     default int nextInt() {
         return (int)(nextLong() >>> 32);
@@ -651,8 +622,6 @@ public interface RandomGenerator {
      * @implNote The default implementation simply calls
      *           {@link RandomSupport#checkBound checkBound}(bound) and then
      *           {@link RandomSupport#boundedNextInt boundedNextInt}(this, bound).
-     *
-     * @since 17
      */
     default int nextInt(int bound) {
         RandomSupport.checkBound(bound);
@@ -676,8 +645,6 @@ public interface RandomGenerator {
      * @implNote The default implementation simply calls
      *           {@link RandomSupport#checkBound(long) checkBound}(bound) and then
      *           {@link RandomSupport#boundedNextInt(RandomGenerator, int) boundedNextInt}(this, bound).
-     *
-     * @since 17
      */
     default int nextInt(int origin, int bound) {
         RandomSupport.checkRange(origin, bound);
@@ -706,8 +673,6 @@ public interface RandomGenerator {
      * @implNote The default implementation simply calls
      *           {@link RandomSupport#checkBound checkBound}(bound) and then
      *           {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
-     *
-     * @since 17
      */
     default long nextLong(long bound) {
         RandomSupport.checkBound(bound);
@@ -731,8 +696,6 @@ public interface RandomGenerator {
      * @implNote The default implementation simply calls
      *           {@link RandomSupport#checkBound checkBound}(bound) and then
      *           {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
-     *
-     * @since 17
      */
     default long nextLong(long origin, long bound) {
         RandomSupport.checkRange(origin, bound);
@@ -746,8 +709,6 @@ public interface RandomGenerator {
      *
      * @return a {@code double} value (pseudo)randomly chosen from a
      *         Gaussian distribution
-     *
-     * @since 17
      */
     default double nextGaussian() {
         // See Knuth, TAOCP, Vol. 2, 3rd edition, Section 3.4.1 Algorithm C.
@@ -767,8 +728,6 @@ public interface RandomGenerator {
      *         specified Gaussian distribution
      *
      * @throws IllegalArgumentException if {@code stddev} is negative
-     *
-     * @since 17
      */
     default double nextGaussian(double mean, double stddev) {
         if (stddev < 0.0) throw new IllegalArgumentException("standard deviation must be non-negative");
@@ -782,8 +741,6 @@ public interface RandomGenerator {
      *
      * @return a nonnegative {@code double} value (pseudo)randomly chosen from an
      *         exponential distribution
-     *
-     * @since 17
      */
     default double nextExponential() {
         return RandomSupport.computeNextExponential(this);
@@ -815,8 +772,6 @@ public interface RandomGenerator {
      * cryptographically secure. Consider instead using {@link SecureRandom} to
      * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
-     *
-     * @since   17
      */
     interface StreamableGenerator extends RandomGenerator {
 
@@ -831,8 +786,6 @@ public interface RandomGenerator {
          *
          * @throws NullPointerException if name is null
          * @throws IllegalArgumentException if the named algorithm is not found
-         *
-         * @since 17
          */
         static StreamableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -852,8 +805,6 @@ public interface RandomGenerator {
          * @implNote It is permitted to implement this method in a manner
          *           equivalent to {@link StreamableGenerator#rngs(long) rngs}
          *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
-         *
-         * @since 17
          */
         Stream<RandomGenerator> rngs();
 
@@ -873,8 +824,6 @@ public interface RandomGenerator {
          *
          * @implNote The default implementation calls {@link StreamableGenerator#rngs() rngs}() and
          *           then limits its length to {@code streamSize}.
-         *
-         * @since 17
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
             RandomSupport.checkStreamSize(streamSize);
@@ -907,8 +856,6 @@ public interface RandomGenerator {
      * cryptographically secure. Consider instead using {@link SecureRandom} to
      * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
-     *
-     * @since   17
      */
     interface SplittableGenerator extends StreamableGenerator {
 
@@ -927,8 +874,6 @@ public interface RandomGenerator {
          *
          * @throws NullPointerException if name is null
          * @throws IllegalArgumentException if the named algorithm is not found
-         *
-         * @since 17
          */
         static SplittableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -946,8 +891,6 @@ public interface RandomGenerator {
          *
          * @return a new object that implements the {@link RandomGenerator} and
          *         {@link SplittableGenerator} interfaces
-         *
-         * @since 17
          */
         SplittableGenerator split();
 
@@ -964,8 +907,6 @@ public interface RandomGenerator {
          *         {@link SplittableGenerator} interfaces
          *
          * @throws NullPointerException if source is null
-         *
-         * @since 17
          */
         SplittableGenerator split(SplittableGenerator source);
 
@@ -982,8 +923,6 @@ public interface RandomGenerator {
          * ({@link Long#MAX_VALUE Long.MAX_VALUE}).
          *
          * @return a stream of {@link SplittableGenerator} objects
-         *
-         * @since 17
          */
         default Stream<SplittableGenerator> splits() {
             return this.splits(this);
@@ -1003,8 +942,6 @@ public interface RandomGenerator {
          *
          * @throws IllegalArgumentException if {@code streamSize} is
          *         less than zero
-         *
-         * @since 17
          */
         Stream<SplittableGenerator> splits(long streamSize);
 
@@ -1024,8 +961,6 @@ public interface RandomGenerator {
          *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, source).
          *
          * @throws NullPointerException if source is null
-         *
-         * @since 17
          */
         Stream<SplittableGenerator> splits(SplittableGenerator source);
 
@@ -1044,8 +979,6 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code streamSize} is
          *         less than zero
          * @throws NullPointerException if source is null
-         *
-         * @since 17
          */
         Stream<SplittableGenerator> splits(long streamSize, SplittableGenerator source);
 
@@ -1058,8 +991,6 @@ public interface RandomGenerator {
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
          * @implNote The default implementation calls {@link SplittableGenerator#splits() splits}().
-         *
-         * @since 17
          */
         default Stream<RandomGenerator> rngs() {
             return this.splits().map(x -> x);
@@ -1079,8 +1010,6 @@ public interface RandomGenerator {
          *         less than zero
          *
          * @implNote The default implementation calls {@link SplittableGenerator#splits(long) splits}(streamSize).
-         *
-         * @since 17
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
             return this.splits(streamSize).map(x -> x);
@@ -1125,8 +1054,6 @@ public interface RandomGenerator {
      * cryptographically secure. Consider instead using {@link SecureRandom} to
      * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
-     *
-     * @since   17
      */
     interface JumpableGenerator extends StreamableGenerator {
 
@@ -1141,8 +1068,6 @@ public interface RandomGenerator {
          *
          * @throws NullPointerException if name is null
          * @throws IllegalArgumentException if the named algorithm is not found
-         *
-         * @since 17
          */
         static JumpableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -1156,8 +1081,6 @@ public interface RandomGenerator {
          * subjected to the same series of operations).
          *
          * @return a new object that is a copy of this generator
-         *
-         * @since 17
          */
         JumpableGenerator copy();
 
@@ -1165,8 +1088,6 @@ public interface RandomGenerator {
          * Alter the state of this pseudorandom number generator so as to jump
          * forward a large, fixed distance (typically 2<sup>64</sup> or more)
          * within its state cycle.
-         *
-         * @since 17
          */
         void jump();
 
@@ -1176,8 +1097,6 @@ public interface RandomGenerator {
          * the state cycle of this generator object.
          *
          * @return the default jump distance (as a {@code double} value)
-         *
-         * @since 17
          */
         double jumpDistance();
 
@@ -1194,8 +1113,6 @@ public interface RandomGenerator {
          *           The default implementation produces a sequential stream that  repeatedly
          *           calls {@link JumpableGenerator#copy copy}() and {@link JumpableGenerator#jump jump}()
          *           on this generator, and the copies become the generators produced by the stream.
-         *
-         * @since 17
          */
         default Stream<RandomGenerator> jumps() {
             return Stream.generate(this::copyAndJump).sequential();
@@ -1215,8 +1132,6 @@ public interface RandomGenerator {
          * @implNote The default implementation produces a sequential stream that  repeatedly
          *           calls {@link JumpableGenerator#copy copy}() and {@link JumpableGenerator#jump jump}()
          *           on this generator, and the copies become the generators produced by the stream.
-         *
-         * @since 17
          */
         default Stream<RandomGenerator> jumps(long streamSize) {
             return jumps().limit(streamSize);
@@ -1231,8 +1146,6 @@ public interface RandomGenerator {
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
          * @implNote The default implementation calls {@link JumpableGenerator#jump jump}().
-         *
-         * @since 17
          */
         default Stream<RandomGenerator> rngs() {
             return this.jumps();
@@ -1251,8 +1164,6 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          *
          * @implNote The default implementation calls {@link JumpableGenerator#jumps(long) jumps}(streamSize).
-         *
-         * @since 17
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
             return this.jumps(streamSize);
@@ -1263,8 +1174,6 @@ public interface RandomGenerator {
          * copy.
          *
          * @return a copy of this generator object before the jump occurred
-         *
-         * @since 17
          */
         default RandomGenerator copyAndJump() {
             RandomGenerator result = copy();
@@ -1316,8 +1225,6 @@ public interface RandomGenerator {
      * cryptographically secure. Consider instead using {@link SecureRandom} to
      * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
-     *
-     * @since   17
      */
     interface LeapableGenerator extends JumpableGenerator {
 
@@ -1332,8 +1239,6 @@ public interface RandomGenerator {
          *
          * @throws NullPointerException if name is null
          * @throws IllegalArgumentException if the named algorithm is not found
-         *
-         * @since 17
          */
         static LeapableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -1347,8 +1252,6 @@ public interface RandomGenerator {
          * subjected to the same series of operations).
          *
          * @return a new object that is a copy of this generator
-         *
-         * @since 17
          */
         LeapableGenerator copy();
 
@@ -1356,8 +1259,6 @@ public interface RandomGenerator {
          * Alter the state of this pseudorandom number generator so as to leap
          * forward a large, fixed distance (typically 2<sup>96</sup> or more)
          * within its state cycle.
-         *
-         * @since 17
          */
         void leap();
 
@@ -1367,8 +1268,6 @@ public interface RandomGenerator {
          * the state cycle of this generator object.
          *
          * @return the default leap distance (as a {@code double} value)
-         *
-         * @since 17
          */
         double leapDistance();
 
@@ -1385,8 +1284,6 @@ public interface RandomGenerator {
          *           The default implementation produces a sequential stream that  repeatedly
          *           calls {@link LeapableGenerator#copy() copy}() and {@link LeapableGenerator#leap() leap}()
          *           on this generator, and the copies become the generators produced by the stream.
-         *
-         * @since 17
          */
         default Stream<JumpableGenerator> leaps() {
             return Stream.generate(this::copyAndLeap).sequential();
@@ -1406,8 +1303,6 @@ public interface RandomGenerator {
          * @implNote The default implementation produces a sequential stream that  repeatedly
          *           calls {@link LeapableGenerator#copy() copy}() and {@link LeapableGenerator#leap() leap}()
          *           on this generator, and the copies become the generators produced by the stream.
-         *
-         * @since 17
          */
         default Stream<JumpableGenerator> leaps(long streamSize) {
             return leaps().limit(streamSize);
@@ -1418,8 +1313,6 @@ public interface RandomGenerator {
          * copy.
          *
          * @return a copy of this generator object before the leap occurred
-         *
-         * @since 17
          */
         default JumpableGenerator copyAndLeap() {
             JumpableGenerator result = copy();
@@ -1468,8 +1361,6 @@ public interface RandomGenerator {
      * typically not cryptographically secure. Consider instead using
      * {@link SecureRandom} to get a cryptographically secure pseudo-random
      * number generator for use by security-sensitive applications.
-     *
-     * @since   17
      */
     interface ArbitrarilyJumpableGenerator extends LeapableGenerator {
 
@@ -1484,8 +1375,6 @@ public interface RandomGenerator {
          *
          * @throws NullPointerException if name is null
          * @throws IllegalArgumentException if the named algorithm is not found
-         *
-         * @since 17
          */
         static ArbitrarilyJumpableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -1499,8 +1388,6 @@ public interface RandomGenerator {
          * subjected to the same series of operations).
          *
          * @return a new object that is a copy of this generator
-         *
-         * @since 17
          */
         ArbitrarilyJumpableGenerator copy();
 
@@ -1515,8 +1402,6 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code logDistance} is
          *                                  2<sup>{@code logDistance}</sup> is
          *                                  greater than the period of this generator
-         *
-         * @since 17
          */
         void jumpPowerOfTwo(int logDistance);
 
@@ -1529,8 +1414,6 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code distance} is not greater than
          *                                  or equal to 0.0, or is greater than the
          *                                  period of this generator
-         *
-         * @since 17
          */
         void jump(double distance);
 
@@ -1539,8 +1422,6 @@ public interface RandomGenerator {
          * forward a large, fixed distance (typically 2<sup>64</sup> or more)
          * within its state cycle. The distance used is that returned by method
          * {@link ArbitrarilyJumpableGenerator#jumpDistance() jumpDistance}().
-         *
-         * @since 17
          */
         default void jump() { jump(jumpDistance()); }
 
@@ -1562,8 +1443,6 @@ public interface RandomGenerator {
          * @implNote This method is implemented to be equivalent to
          *           {@link ArbitrarilyJumpableGenerator#jumps(long) jumps}
          *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
-         *
-         * @since 17
          */
         default Stream<ArbitrarilyJumpableGenerator> jumps(double distance) {
             return Stream.generate(() -> copyAndJump(distance)).sequential();
@@ -1585,8 +1464,6 @@ public interface RandomGenerator {
          *                                  {@code distance} is not greater than
          *                                  or equal to 0.0, or is greater than the
          *                                  period of this generator
-         *
-         * @since 17
          */
         default Stream<ArbitrarilyJumpableGenerator> jumps(long streamSize, double distance) {
             return jumps(distance).limit(streamSize);
@@ -1598,8 +1475,6 @@ public interface RandomGenerator {
          * more) within its state cycle. The distance used is that returned by
          * method
          * {@link ArbitrarilyJumpableGenerator#leapDistance() leapDistance}().
-         *
-         * @since 17
          */
         default void leap() { jump(leapDistance()); }
 
@@ -1614,8 +1489,6 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code distance} is not greater than
          *                                  or equal to 0.0, or is greater than the
          *                                  period of this generator
-         *
-         * @since 17
          */
         default ArbitrarilyJumpableGenerator copyAndJump(double distance) {
             ArbitrarilyJumpableGenerator result = copy();
