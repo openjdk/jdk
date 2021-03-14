@@ -196,7 +196,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
   {
     bool is_locked = false;
     while(true) {
-      MutexLocker x(ExpandHeap_lock, is_locked);
+      is_locked = ExpandHeap_lock->try_lock();
       // Avoid "expand storms" by rechecking available space after obtaining
       // the lock, because another thread may have already made sufficient
       // space available.  If insufficient space available, that will remain
@@ -216,6 +216,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
         }
 
         assert (pretouch()->is_task_done(), "Task should be done at this point");
+        ExpandHeap_lock->unlock();
         break;
 
       } else {

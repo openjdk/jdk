@@ -39,7 +39,7 @@ class PretouchTask : public AbstractGangTask {
   volatile size_t _task_status;
 
 public:
-  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size, size_t n_threads = 0, size_t task_status = Ready);
+  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size, uint n_threads = 0, size_t task_status = Ready);
 
   void reinitialize(char* start_address, char *end_addr);
 

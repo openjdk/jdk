@@ -35,7 +35,7 @@ PretouchTask::PretouchTask(const char* task_name,
                            char* end_address,
                            size_t page_size,
                            size_t chunk_size,
-                           size_t n_threads,
+                           uint n_threads,
                            size_t task_status) :
     AbstractGangTask(task_name),
     _cur_addr(start_address),
