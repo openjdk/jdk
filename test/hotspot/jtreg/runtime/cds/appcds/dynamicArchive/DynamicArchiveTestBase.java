@@ -154,7 +154,7 @@ class DynamicArchiveTestBase {
         String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
         if (!(new File(wbJar)).exists()) {
             throw new RuntimeException("Test error: your test must have " +
-                                       "'@run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox'");
+                                       "'@run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox'");
         }
         return wbJar;
     }

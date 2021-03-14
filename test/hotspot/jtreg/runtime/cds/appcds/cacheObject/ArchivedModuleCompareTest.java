@@ -28,7 +28,7 @@
  * @requires vm.cds.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile PrintSystemModulesApp.java
- * @run driver ClassFileInstaller -jar app.jar PrintSystemModulesApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar PrintSystemModulesApp
  * @run driver ArchivedModuleCompareTest
  */
 

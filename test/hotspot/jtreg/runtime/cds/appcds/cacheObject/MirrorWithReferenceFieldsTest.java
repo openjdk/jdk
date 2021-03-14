@@ -29,8 +29,8 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
  * @compile MirrorWithReferenceFieldsApp.java
- * @run driver ClassFileInstaller -jar app.jar MirrorWithReferenceFieldsApp
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar MirrorWithReferenceFieldsApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver MirrorWithReferenceFieldsTest
  */
 

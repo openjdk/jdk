@@ -28,7 +28,7 @@
  * @requires vm.cds.archived.java.heap
  * @library /test/lib
  * @build SharedStringsWb sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run driver SharedStrings
  */
 

@@ -28,8 +28,8 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build CondyHello
  * @build sun.hotspot.WhiteBox CondyHelloTest CondyHelloApp
- * @run driver ClassFileInstaller -jar condy_hello.jar CondyHello CondyHelloApp
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar condy_hello.jar CondyHello CondyHelloApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver CondyHelloTest
  */
 

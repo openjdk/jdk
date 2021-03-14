@@ -29,7 +29,7 @@
  * @requires vm.cds & vm.graal.enabled & vm.compMode == "Xmixed"
  * @library /test/lib
  * @build UseAppCDS_Test
- * @run driver ClassFileInstaller -jar test.jar UseAppCDS_Test
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar test.jar UseAppCDS_Test
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *      -XX:+TieredCompilation -XX:+UseJVMCICompiler -Djvmci.Compiler=graal
  *      GraalWithLimitedMetaspace

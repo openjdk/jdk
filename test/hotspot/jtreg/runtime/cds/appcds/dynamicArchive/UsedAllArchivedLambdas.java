@@ -29,9 +29,9 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build UsedAllArchivedLambdasApp sun.hotspot.WhiteBox LambdaVerification
- * @run driver ClassFileInstaller -jar used_all_lambda.jar UsedAllArchivedLambdasApp LambdaVerification
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar used_all_lambda.jar UsedAllArchivedLambdasApp LambdaVerification
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. UsedAllArchivedLambdas
  */
 

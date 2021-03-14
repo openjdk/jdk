@@ -31,7 +31,7 @@
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @compile p2/c2.java MyDiffClassLoader.java
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI DictionaryDependsTest
  */
 import sun.hotspot.WhiteBox;

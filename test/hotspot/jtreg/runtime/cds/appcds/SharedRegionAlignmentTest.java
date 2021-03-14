@@ -32,7 +32,7 @@
  * @bug 8236847
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
- * @run driver ClassFileInstaller -jar hello.jar Hello
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
  * @run driver SharedRegionAlignmentTest
  */
 

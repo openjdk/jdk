@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.vm.annotation
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build FieldLayoutApp
- * @run driver ClassFileInstaller -jar field_layout.jar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar field_layout.jar
  *     FieldLayoutApp
  *     FieldLayoutApp$TestObject
  *     FieldLayoutApp$Base1
