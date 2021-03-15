@@ -271,7 +271,7 @@ public abstract class FileChannel
      *          specified, or the array contains an attribute that cannot be set
      *          atomically when creating the file
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          and the file is being opened for writing
      *          <i>(optional specific exception)</i>
@@ -325,7 +325,7 @@ public abstract class FileChannel
      *          support creating file channels, or an unsupported open option is
      *          specified
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          and the file is being opened for writing
      *          <i>(optional specific exception)</i>

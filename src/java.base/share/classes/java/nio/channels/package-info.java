@@ -352,7 +352,10 @@
  *
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in any class or interface in this package will cause a {@link
- * java.lang.NullPointerException NullPointerException} to be thrown.
+ * java.lang.NullPointerException NullPointerException} to be thrown.  In some
+ * cases methods which are specified to throw an {@code IOException} may throw
+ * a more precise <a href="../file/package-summary.html#optspecex">optional
+ * specific exception</a>.
  *
  * @since 1.4
  * @author Mark Reinhold

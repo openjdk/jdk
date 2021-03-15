@@ -209,7 +209,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      * @throws  IOException
@@ -353,7 +353,7 @@ public final class Files {
      *          if an unsupported open option is specified or the array contains
      *          attributes that cannot be set atomically when creating the file
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          and the file is being opened for writing <i>(optional specific
      *          exception)</i>
@@ -400,7 +400,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported open option is specified
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          and the file is being opened for writing <i>(optional specific
      *          exception)</i>
@@ -643,7 +643,7 @@ public final class Files {
      *          if the array contains an attribute that cannot be set atomically
      *          when creating the file
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists
+     *          If a file of that name already exists
      *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs or the parent directory does not exist
@@ -2986,7 +2986,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      * @throws  SecurityException
@@ -3035,7 +3035,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      * @throws  SecurityException
@@ -3489,7 +3489,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      * @throws  SecurityException
@@ -3557,7 +3557,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      * @throws  SecurityException
