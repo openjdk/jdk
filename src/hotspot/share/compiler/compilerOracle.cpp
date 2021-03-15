@@ -781,7 +781,14 @@ void CompilerOracle::parse_from_line(char* line) {
           print_parse_error(error_buf, original.get());
           return;
         }
-        register_command(typed_matcher, option, true);
+        if (option2type(option) == OptionType::Bool) {
+          register_command(typed_matcher, option, true);
+        } else {
+          jio_snprintf(error_buf, sizeof(error_buf), "  Missing type '%s' before option '%s'",
+                       optiontype2name(option2type(option)), option2name(option));
+          print_parse_error(error_buf, original.get());
+          return;
+        }
       }
       assert(typed_matcher != NULL, "sanity");
       assert(*error_buf == '\0', "No error here");

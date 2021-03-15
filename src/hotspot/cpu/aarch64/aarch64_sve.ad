@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ operand vmemA_immLOffset4()
   interface(CONST_INTER);
 %}
 
-
 operand vmemA_indOffI4(iRegP reg, vmemA_immIOffset4 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -88,7 +87,6 @@ source_hpp %{
 %}
 
 source %{
-
   static inline BasicType vector_element_basic_type(const MachNode* n) {
     const TypeVect* vt = n->bottom_type()->is_vect();
     return vt->element_basic_type();
@@ -210,14 +208,11 @@ source %{
         return true;
     }
   }
-
 %}
 
 definitions %{
   int_def SVE_COST             (200, 200);
 %}
-
-
 
 
 // All SVE instructions
@@ -252,7 +247,6 @@ instruct storeV(vReg src, vmemA mem) %{
   %}
   ins_pipe(pipe_slow);
 %}
-
 
 // vector abs
 
@@ -1120,7 +1114,6 @@ instruct replicateL(vReg dst, iRegL src) %{
   ins_pipe(pipe_slow);
 %}
 
-
 instruct replicateB_imm8(vReg dst, immI8 con) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 16);
   match(Set dst (ReplicateB con));
@@ -1164,7 +1157,6 @@ instruct replicateL_imm8(vReg dst, immL8_shift8 con) %{
   %}
   ins_pipe(pipe_slow);
 %}
-
 
 instruct replicateF(vReg dst, vRegF src) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 4);
@@ -1708,4 +1700,3 @@ instruct vsubD(vReg dst, vReg src1, vReg src2) %{
   %}
   ins_pipe(pipe_slow);
 %}
-
