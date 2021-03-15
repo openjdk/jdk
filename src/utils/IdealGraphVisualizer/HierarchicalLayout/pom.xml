@@ -31,7 +31,7 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
+                <version>${nbmmvnplugin.version}</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publicPackages>
@@ -44,7 +44,7 @@
                 <!-- NetBeans 6.9+ requires JDK 6, starting NetBeans 7.4 source 1.7 is required   -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>${mvncompilerplugin.version}</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -54,7 +54,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>${mvnjarplugin.version}</version>
                 <configuration>
                     <!-- to have the jar plugin pickup the nbm generated manifest -->
                     <archive>
