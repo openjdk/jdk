@@ -30,7 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox
- * @run main T8198317
+ * @run main TestContextLoggingOutput
  */
 
 import java.io.StringWriter;
@@ -44,23 +44,20 @@ import javax.tools.ToolProvider;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.util.Log;
-
 import toolbox.ToolBox;
 import toolbox.TestRunner;
 import static toolbox.ToolBox.lineSeparator;
 
-public class T8198317 extends TestRunner{
+public class TestContextLoggingOutput extends TestRunner {
     ToolBox tb;
 
-    public T8198317() {
+    public TestContextLoggingOutput() {
         super(System.err);
         tb = new ToolBox();
     }
 
     public static void main(String[] args) throws Exception {
-        T8198317 t = new T8198317();
+        TestContextLoggingOutput t = new TestContextLoggingOutput();
         t.runTests();
     }
 
