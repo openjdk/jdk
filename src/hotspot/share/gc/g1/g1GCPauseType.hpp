@@ -81,8 +81,7 @@ public:
                                            "Cleanup",
                                            "Remark",
                                            "Mixed",
-                                           "Full",
-                                           "Invalid"};
+                                           "Full" };
     return pause_strings[static_cast<uint>(type)];
   }
 };
