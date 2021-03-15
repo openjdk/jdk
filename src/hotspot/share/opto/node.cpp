@@ -619,7 +619,7 @@ void Node::destruct(PhaseValues* phase) {
   int node_size = size_of();
 
   // Free the output edge array
-  if (out_array != NULL && out_edge_size > 0) {
+  if (out_edge_size > 0) {
     compile->node_arena()->Afree(out_array, out_edge_size);
   }
 
