@@ -2382,7 +2382,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
     }
     {
       // Call getCause() which doesn't necessarily return the _cause field.
-      EXCEPTION_MARK;
+      ExceptionMark em(THREAD);
       JavaValue cause(T_OBJECT);
       JavaCalls::call_virtual(&cause,
                               throwable,

@@ -2132,10 +2132,10 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* obj, Ba
   SharedRuntime::monitor_enter_helper(obj, lock, thread);
 JRT_END
 
-void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread) {
-  assert(JavaThread::current() == thread, "invariant");
+void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current) {
+  assert(JavaThread::current() == current, "invariant");
   // Exit must be non-blocking, and therefore no exceptions can be thrown.
-  EXCEPTION_MARK;
+  ExceptionMark em(current);
   // The object could become unlocked through a JNI call, which we have no other checks for.
   // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
   if (obj->is_unlocked()) {
@@ -2144,7 +2144,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     }
     return;
   }
-  ObjectSynchronizer::exit(obj, lock, thread);
+  ObjectSynchronizer::exit(obj, lock, current);
 }
 
 // Handles the uncommon cases of monitor unlocking in compiled code
