@@ -35,6 +35,7 @@
 import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.FileAlreadyExistsException;
