@@ -386,8 +386,8 @@ public abstract class MappedByteBuffer
      * returned buffer, or writing bytes to the storage device by invoking
      * {@code force()} on the returned buffer, will only act on the sub-range
      * of this buffer that the returned buffer represents, namely
-     * {@code [position()+index,position()+index+length]}, where {@code index}
-     * and {@code length} are assumed to satisfy the preconditions.
+     * {@code [index,length]}, where {@code index} and {@code length} are
+     * assumed to satisfy the preconditions.
      */
     @Override
     public abstract MappedByteBuffer slice(int index, int length);
