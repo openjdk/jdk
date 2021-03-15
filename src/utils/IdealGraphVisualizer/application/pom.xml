@@ -30,12 +30,11 @@
             <artifactId>branding</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- NbModuleSuite functional in RELEASE70 or later: -->
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-modules-nbjunit</artifactId>
             <version>${netbeans.version}</version>
-            <scope>test</scope> <!-- beyond platform cluster, this often needs to be dropped down to compile/runtime, some other modules in IDE clusters depend on it -->
+            <scope>test</scope>
         </dependency>
         <dependency>
           <groupId>${project.groupId}</groupId>
@@ -127,14 +126,6 @@
           <artifactId>View</artifactId>
           <version>${project.version}</version>
         </dependency>
-        <!-- To use Jelly Tools in your functional tests, add or replace with:
-        <dependency>
-            <groupId>org.netbeans.api</groupId>
-            <artifactId>org-netbeans-modules-jellytools-platform</artifactId>
-            <version>${netbeans.version}</version>
-            <scope>test</scope>
-        </dependency>
-        -->
     </dependencies>
 
     <build>

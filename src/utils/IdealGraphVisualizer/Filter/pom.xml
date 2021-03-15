@@ -91,7 +91,6 @@
             </plugin>
 
             <plugin>
-                <!-- NetBeans 6.9+ requires JDK 6, starting NetBeans 7.4 source 1.7 is required   -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${mvncompilerplugin.version}</version>
