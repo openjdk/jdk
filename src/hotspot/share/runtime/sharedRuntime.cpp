@@ -2136,7 +2136,6 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   assert(JavaThread::current() == current, "invariant");
   // Exit must be non-blocking, and therefore no exceptions can be thrown.
   ExceptionMark em(current);
-  Thread* THREAD = current; // For exception macros.
   // The object could become unlocked through a JNI call, which we have no other checks for.
   // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
   if (obj->is_unlocked()) {
