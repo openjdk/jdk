@@ -64,8 +64,6 @@ public abstract class DynamicConstantDesc<T>
     private final String constantName;
     private final ClassDesc constantType;
 
-    private static Map<MethodHandleDesc, Function<DynamicConstantDesc<?>, ConstantDesc>> canonicalMap;
-
     /**
      * Creates a nominal descriptor for a dynamic constant.
      *
@@ -274,25 +272,7 @@ public abstract class DynamicConstantDesc<T>
     }
 
     private ConstantDesc tryCanonicalize() {
-        var canonDescs = canonicalMap;
-        if (canonDescs == null) {
-            canonDescs = Map.ofEntries(
-                    Map.entry(ConstantDescs.BSM_PRIMITIVE_CLASS, DynamicConstantDesc::canonicalizePrimitiveClass),
-                    Map.entry(ConstantDescs.BSM_ENUM_CONSTANT, DynamicConstantDesc::canonicalizeEnum),
-                    Map.entry(ConstantDescs.BSM_NULL_CONSTANT, DynamicConstantDesc::canonicalizeNull),
-                    Map.entry(ConstantDescs.BSM_VARHANDLE_STATIC_FIELD, DynamicConstantDesc::canonicalizeStaticFieldVarHandle),
-                    Map.entry(ConstantDescs.BSM_VARHANDLE_FIELD, DynamicConstantDesc::canonicalizeFieldVarHandle),
-                    Map.entry(ConstantDescs.BSM_VARHANDLE_ARRAY, DynamicConstantDesc::canonicalizeArrayVarHandle));
-            synchronized (DynamicConstantDesc.class) {
-                if (canonicalMap == null) {
-                    canonicalMap = canonDescs;
-                } else {
-                    canonDescs = canonicalMap;
-                }
-            }
-        }
-
-        Function<DynamicConstantDesc<?>, ConstantDesc> f = canonDescs.get(bootstrapMethod);
+        Function<DynamicConstantDesc<?>, ConstantDesc> f = CanonicalMapHolder.CANONICAL_MAP.get(bootstrapMethod);
         if (f != null) {
             try {
                 return f.apply(this);
@@ -404,5 +384,16 @@ public abstract class DynamicConstantDesc<T>
         AnonymousDynamicConstantDesc(DirectMethodHandleDesc bootstrapMethod, String constantName, ClassDesc constantType, ConstantDesc... bootstrapArgs) {
             super(bootstrapMethod, constantName, constantType, bootstrapArgs);
         }
+    }
+
+    private static final class CanonicalMapHolder {
+        static final Map<MethodHandleDesc, Function<DynamicConstantDesc<?>, ConstantDesc>> CANONICAL_MAP =
+                Map.ofEntries(
+                    Map.entry(ConstantDescs.BSM_PRIMITIVE_CLASS, DynamicConstantDesc::canonicalizePrimitiveClass),
+                    Map.entry(ConstantDescs.BSM_ENUM_CONSTANT, DynamicConstantDesc::canonicalizeEnum),
+                    Map.entry(ConstantDescs.BSM_NULL_CONSTANT, DynamicConstantDesc::canonicalizeNull),
+                    Map.entry(ConstantDescs.BSM_VARHANDLE_STATIC_FIELD, DynamicConstantDesc::canonicalizeStaticFieldVarHandle),
+                    Map.entry(ConstantDescs.BSM_VARHANDLE_FIELD, DynamicConstantDesc::canonicalizeFieldVarHandle),
+                    Map.entry(ConstantDescs.BSM_VARHANDLE_ARRAY, DynamicConstantDesc::canonicalizeArrayVarHandle));
     }
 }
