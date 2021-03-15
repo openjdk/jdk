@@ -170,6 +170,9 @@ const char * os::Linux::_libc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
+void* os::Linux::_mallinfo_fun_ptr = NULL;
+void* os::Linux::_mallinfo2_fun_ptr = NULL;
+
 static jlong initial_time_count=0;
 
 static int clock_tics_per_sec = 100;
@@ -2229,29 +2232,27 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // Print glibc outstanding allocations.
   // (note: there is no implementation of mallinfo for muslc)
 #ifdef __GLIBC__
-  void* mallinfo_ptr = NULL;
   size_t total_allocated = 0;
+  bool called_mallinfo = false;
   bool might_have_wrapped = false;
 #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
-  mallinfo_ptr = dlsym(RTLD_DEFAULT, "mallinfo2");
-  if (mallinfo_ptr != NULL) {
-    struct mallinfo2 mi = CAST_TO_FN_PTR(struct mallinfo2 (*)(void), mallinfo_ptr)();
+  if (_mallinfo2_fun_ptr != NULL) {
+    called_mallinfo = true;
+    struct mallinfo2 mi = CAST_TO_FN_PTR(struct mallinfo2 (*)(void), _mallinfo2_fun_ptr)();
     total_allocated = mi.uordblks;
   }
 #endif // __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
-  if (mallinfo_ptr == NULL) {
-    mallinfo_ptr = dlsym(RTLD_DEFAULT, "mallinfo");
-    if (mallinfo_ptr != NULL) {
-      // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
-      // So values may have wrapped around. Still useful enough to see how much glibc thinks
-      // we allocated.
-      struct mallinfo mi = CAST_TO_FN_PTR(struct mallinfo (*)(void), mallinfo_ptr)();
-      total_allocated = (size_t)(unsigned)mi.uordblks;
-      // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-      might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
-    }
+  if (!called_mallinfo && _mallinfo_fun_ptr != NULL) {
+    called_mallinfo = true;
+    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
+    // So values may have wrapped around. Still useful enough to see how much glibc thinks
+    // we allocated.
+    struct mallinfo mi = CAST_TO_FN_PTR(struct mallinfo (*)(void), _mallinfo_fun_ptr)();
+    total_allocated = (size_t)(unsigned)mi.uordblks;
+    // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
+    might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
   }
-  if (mallinfo_ptr != NULL) {
+  if (called_mallinfo) {
     st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K%s",
                  total_allocated / K,
                  might_have_wrapped ? " (may have wrapped)" : "");
@@ -4419,6 +4420,9 @@ void os::init(void) {
   _page_sizes.add(Linux::page_size());
 
   Linux::initialize_system_info();
+
+  Linux::_mallinfo_fun_ptr = dlsym(RTLD_DEFAULT, "mallinfo");
+  Linux::_mallinfo2_fun_ptr = dlsym(RTLD_DEFAULT, "mallinfo2");
 
   os::Linux::CPUPerfTicks pticks;
   bool res = os::Linux::get_tick_information(&pticks, -1);

@@ -253,6 +253,9 @@ class Linux {
   };
   static NumaAllocationPolicy _current_numa_policy;
 
+  static void* _mallinfo_fun_ptr;
+  static void* _mallinfo2_fun_ptr;
+
  public:
   static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
   static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen);
