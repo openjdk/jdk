@@ -198,7 +198,7 @@ public class JLinkNegativeTest {
                     .output(imageFile)
                     .addMods("not_zip")
                     .modulePath(helper.defaultModulePath())
-                    .call().assertFailure("Header expected to be of length 4, but was 0");
+                    .call().assertFailure("Error: java.io.IOException: Invalid JMOD file");
         } finally {
             deleteDirectory(jmod);
         }
