@@ -2235,7 +2235,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
 #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
   mallinfo_ptr = dlsym(RTLD_DEFAULT, "mallinfo2");
   if (mallinfo_ptr != NULL) {
-    struct mallinfo2 mi = reinterpret_cast<struct mallinfo2 (*)(void)>(mallinfo_ptr)();
+    struct mallinfo2 mi = CAST_TO_FN_PTR(struct mallinfo2 (*)(void), mallinfo_ptr)();
     total_allocated = mi.uordblks;
   }
 #endif // __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
@@ -2245,7 +2245,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
       // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
       // So values may have wrapped around. Still useful enough to see how much glibc thinks
       // we allocated.
-      struct mallinfo mi = reinterpret_cast<struct mallinfo (*)(void)>(mallinfo_ptr)();
+      struct mallinfo mi = CAST_TO_FN_PTR(struct mallinfo (*)(void), mallinfo_ptr)();
       total_allocated = (size_t)(unsigned)mi.uordblks;
       // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
       might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
