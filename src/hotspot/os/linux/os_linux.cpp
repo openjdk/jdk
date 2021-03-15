@@ -4001,14 +4001,6 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
   size_t large_page_size = os::page_size_for_region_aligned(bytes, 1);
 
   LogTarget(Info, pagesize) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Large page size returned from os::page_size_for_region_aligned: %ld, for bytes: %ld", large_page_size, bytes);
-    ls.print("\n");
-    ls.print("Page size returned from (size_t)os::vm_page_size(): %ld", (size_t)os::vm_page_size());
-    ls.print("\n");
-    os::print_memory_info(&ls);
-  }
 
   assert(large_page_size > (size_t)os::vm_page_size(), "large page size: %ld not larger than small page size: %ld", large_page_size, (size_t)os::vm_page_size());
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
@@ -4045,16 +4037,8 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
                                                          bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size = os::page_size_for_region_aligned(bytes, 1);
+  size_t large_page_size = os::page_size_for_region_unaligned(bytes, 1);
   LogTarget(Info, pagesize) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Large page size returned from os::page_size_for_region_aligned: %ld, for bytes: %ld", large_page_size, bytes);
-    ls.print("\n");
-    ls.print("Page size returned from (size_t)os::vm_page_size(): %ld", (size_t)os::vm_page_size());
-    ls.print("\n");
-    os::print_memory_info(&ls);
-  }
 
   assert(large_page_size > (size_t)os::vm_page_size(), "large page size: %ld not larger than small page size: %ld", large_page_size, (size_t)os::vm_page_size());
   assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
