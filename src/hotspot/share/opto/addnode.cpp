@@ -145,8 +145,8 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // The Add of the flattened expression
       Node *x1 = add1->in(1);
       Node *x2 = phase->makecon(add1->as_Add()->add_ring(t2, t12));
-      set_req_X(2,x2,phase);
-      set_req_X(1,x1,phase);
+      set_req_X(2, x2, phase);
+      set_req_X(1, x1, phase);
       progress = this;            // Made progress
       add1 = in(1);
       add1_op = add1->Opcode();
@@ -636,8 +636,8 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         address = phase->transform(new AddPNode(in(Base),addp->in(Address),in(Offset)));
         offset  = addp->in(Offset);
       }
-      set_req_X(Address,address,phase);
-      set_req_X(Offset,offset,phase);
+      set_req_X(Address, address, phase);
+      set_req_X(Offset, offset, phase);
       return this;
     }
   }
