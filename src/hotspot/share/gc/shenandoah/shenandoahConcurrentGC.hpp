@@ -98,7 +98,6 @@ private:
   void op_class_unloading();
   void op_strong_roots();
   void op_cleanup_early();
-  void op_rendezvous_roots();
   void op_evacuate();
   void op_init_updaterefs();
   void op_updaterefs();

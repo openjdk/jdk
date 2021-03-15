@@ -1545,11 +1545,6 @@ public:
   bool is_thread_safe() { return true; }
 };
 
-void ShenandoahHeap::rendezvous_threads() {
-  ShenandoahRendezvousClosure cl;
-  Handshake::execute(&cl);
-}
-
 void ShenandoahHeap::recycle_trash() {
   free_set()->recycle_trash();
 }
@@ -1718,34 +1713,6 @@ void ShenandoahHeap::set_concurrent_strong_root_in_progress(bool in_progress) {
 
 void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool cond) {
   set_gc_state_mask(WEAK_ROOTS, cond);
-}
-
-class ShenandoahDisableWeakRootsClosure : public HandshakeClosure {
-public:
-  inline ShenandoahDisableWeakRootsClosure() : HandshakeClosure("ShenandoahDisableWeakRoots") {}
-  inline void do_thread(Thread* thread) {
-    char gc_state = ShenandoahThreadLocalData::gc_state(thread);
-    gc_state &= ~((char)ShenandoahHeap::WEAK_ROOTS);
-    ShenandoahThreadLocalData::set_gc_state(thread, gc_state);
-  }
-};
-
-void ShenandoahHeap::disable_concurrent_weak_root_in_progress_concurrently() {
-
-  // We need a rendezvous here to avoid the following race:
-  // 1. Java thread reads referent, sees non-null but unreachable oop
-  // 2. GC thread clears the referent
-  // 3. GC thread turns off conc-ref-processing (we are here!)
-  // 4. Java thread sees conc-ref-processing is off, publishes the dead oop
-  rendezvous_threads();
-
-  // We need to turn off global flag before propagating the change to thread, otherwise new
-  // threads might pick-up the old state but miss the update.
-  _gc_state.set_cond(WEAK_ROOTS, false);
-
-  // Propagate flag-change to threads.
-  ShenandoahDisableWeakRootsClosure cl;
-  Handshake::execute(&cl);
 }
 
 GCTracer* ShenandoahHeap::tracer() {

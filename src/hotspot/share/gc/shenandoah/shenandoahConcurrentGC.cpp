@@ -223,7 +223,6 @@ void ShenandoahConcurrentGC::vmop_entry_final_roots() {
   VMThread::execute(&op);
 }
 
-
 void ShenandoahConcurrentGC::entry_init_mark() {
   const char* msg = init_mark_event_message();
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::init_mark);
@@ -904,10 +903,6 @@ void ShenandoahConcurrentGC::op_strong_roots() {
 
 void ShenandoahConcurrentGC::op_cleanup_early() {
   ShenandoahHeap::heap()->free_set()->recycle_trash();
-}
-
-void ShenandoahConcurrentGC::op_rendezvous_roots() {
-  ShenandoahHeap::heap()->disable_concurrent_weak_root_in_progress_concurrently();
 }
 
 void ShenandoahConcurrentGC::op_evacuate() {

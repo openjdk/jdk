@@ -301,7 +301,6 @@ public:
   void set_has_forwarded_objects(bool cond);
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
-  void disable_concurrent_weak_root_in_progress_concurrently();
 
   inline bool is_stable() const;
   inline bool is_idle() const;
@@ -371,7 +370,6 @@ private:
   void update_heap_region_states(bool concurrent);
   void rebuild_free_set(bool concurrent);
 
-  void rendezvous_threads();
   void recycle_trash();
 
 public:
