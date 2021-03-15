@@ -135,7 +135,7 @@ public:
   }
 
 private:
-  size_t get_dead_space() {
+  size_t dead_space() {
     return (_max_deadspace_words - _allowed_deadspace_words) * HeapWordSize;
   }
 
@@ -223,7 +223,7 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
   cp->space->set_compaction_top(compact_top);
 
   // Update the live size estimate using the known dead space size.
-  space->update_live_estimate(dead_spacer.get_dead_space());
+  space->update_live_estimate(dead_spacer.dead_space());
 }
 
 template <class SpaceType>
