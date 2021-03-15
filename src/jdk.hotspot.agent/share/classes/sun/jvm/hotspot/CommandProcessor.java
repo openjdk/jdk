@@ -114,8 +114,9 @@ public class CommandProcessor {
     public abstract static class DebuggerInterface {
         public abstract HotSpotAgent getAgent();
         public abstract boolean isAttached();
-        public abstract void attach(String pid);
+        public abstract void attach(int pid);
         public abstract void attach(String java, String core);
+        public abstract void attach(String debugServerName);
         public abstract void detach();
         public abstract void reattach();
     }
@@ -382,12 +383,19 @@ public class CommandProcessor {
                 postAttach();
             }
         },
-        new Command("attach", "attach pid | exec core", true) {
+        new Command("attach", "attach pid | exec core | remote_server", true) {
             public void doit(Tokens t) {
                 int tokens = t.countTokens();
                 if (tokens == 1) {
                     preAttach();
-                    debugger.attach(t.nextToken());
+                    String arg = t.nextToken();
+                    try {
+                        // Attempt to attach as a PID
+                        debugger.attach(Integer.parseInt(arg));
+                    } catch (NumberFormatException e) {
+                        // Attempt to connect to remote debug server
+                        debugger.attach(arg);
+                    }
                     postAttach();
                 } else if (tokens == 2) {
                     preAttach();
@@ -1735,13 +1743,13 @@ public class CommandProcessor {
                     if (metadata instanceof InstanceKlass) {
                         ik = (InstanceKlass) metadata;
                     } else {
-                        System.out.println("Specified address is not an InstanceKlass");
+                        out.println("Specified address is not an InstanceKlass");
                         return;
                     }
                 } else {
                     ik = SystemDictionaryHelper.findInstanceKlass(classname);
                     if (ik == null) {
-                        System.out.println("class not found: " + classname);
+                        out.println("class not found: " + classname);
                         return;
                     }
                 }
@@ -1853,9 +1861,9 @@ public class CommandProcessor {
                 String classname = t.nextToken();
                 InstanceKlass ik = SystemDictionaryHelper.findInstanceKlass(classname);
                 if (ik == null) {
-                    System.out.println("class not found: " + classname);
+                    out.println("class not found: " + classname);
                 } else {
-                    System.out.println(ik.getName().asString() + " @" + ik.getAddress());
+                    out.println(ik.getName().asString() + " @" + ik.getAddress());
                 }
             }
         },
@@ -1868,7 +1876,7 @@ public class CommandProcessor {
                 ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
                 cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                         public void visit(Klass k) {
-                            System.out.println(k.getName().asString() + " @" + k.getAddress());
+                            out.println(k.getName().asString() + " @" + k.getAddress());
                         }
                     }
                 );

@@ -865,16 +865,13 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
                         false,    // is_strong_hidden
                         true);    // can_access_vm_annotations
 
-  Klass* anonk = SystemDictionary::parse_stream(no_class_name,
-                                                host_loader,
-                                                &st,
-                                                cl_info,
-                                                CHECK_NULL);
-  if (anonk == NULL) {
-    return NULL;
-  }
-
-  return InstanceKlass::cast(anonk);
+  InstanceKlass* anonk = SystemDictionary::parse_stream(no_class_name,
+                                                        host_loader,
+                                                        &st,
+                                                        cl_info,
+                                                        CHECK_NULL);
+  assert(anonk != NULL, "no klass created");
+  return anonk;
 }
 
 UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass0(JNIEnv *env, jobject unsafe, jclass host_class, jbyteArray data, jobjectArray cp_patches_jh)) {

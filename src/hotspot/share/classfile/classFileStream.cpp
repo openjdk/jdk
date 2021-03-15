@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,9 @@ ClassFileStream::ClassFileStream(const u1* buffer,
   _current(buffer),
   _source(source),
   _need_verify(verify_stream),
-  _from_boot_loader_modules_image(from_boot_loader_modules_image) {}
+  _from_boot_loader_modules_image(from_boot_loader_modules_image) {
+    assert(buffer != NULL, "caller should throw NPE");
+}
 
 const u1* ClassFileStream::clone_buffer() const {
   u1* const new_buffer_start = NEW_RESOURCE_ARRAY(u1, length());

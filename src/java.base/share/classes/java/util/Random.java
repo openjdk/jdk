@@ -1179,6 +1179,10 @@ public class Random implements java.io.Serializable {
     /**
      * Reconstitute the {@code Random} instance from a stream (that is,
      * deserialize it).
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
@@ -1199,6 +1203,9 @@ public class Random implements java.io.Serializable {
 
     /**
      * Save the {@code Random} instance to a stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private synchronized void writeObject(ObjectOutputStream s)

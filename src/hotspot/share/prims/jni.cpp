@@ -289,7 +289,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
                                                    &st,
                                                    CHECK_NULL);
 
-  if (log_is_enabled(Debug, class, resolve) && k != NULL) {
+  if (log_is_enabled(Debug, class, resolve)) {
     trace_class_resolution(k);
   }
 
@@ -2713,7 +2713,7 @@ JNI_ENTRY(jint, jni_MonitorEnter(JNIEnv *env, jobject jobj))
   }
 
   Handle obj(thread, JNIHandles::resolve_non_null(jobj));
-  ObjectSynchronizer::jni_enter(obj, CHECK_(JNI_ERR));
+  ObjectSynchronizer::jni_enter(obj, thread);
   ret = JNI_OK;
   return ret;
 JNI_END

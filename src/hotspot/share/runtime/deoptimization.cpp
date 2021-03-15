@@ -179,7 +179,7 @@ JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(
 JRT_END
 
 #if COMPILER2_OR_JVMCI
-static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMethod* compiled_method,
+static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMethod* compiled_method,
                                   frame& deoptee, RegisterMap& map, GrowableArray<compiledVFrame*>* chunk,
                                   bool& deoptimized_objects) {
   bool realloc_failures = false;
@@ -243,8 +243,8 @@ static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMet
   return realloc_failures;
 }
 
-static void eliminate_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures,
-                            frame& deoptee, int exec_mode, bool& deoptimized_objects) {
+static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures,
+                                     frame& deoptee, int exec_mode, bool& deoptimized_objects) {
   JavaThread* deoptee_thread = chunk->at(0)->thread();
   assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee.id()), "must relock just once");
   assert(thread == Thread::current(), "should be");
@@ -304,8 +304,9 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
   bool const jvmci_enabled = JVMCI_ONLY(UseJVMCICompiler) NOT_JVMCI(false);
 
   // Reallocate the non-escaping objects and restore their fields.
-  if (jvmci_enabled COMPILER2_PRESENT(|| (DoEscapeAnalysis && EliminateAllocations))) {
-    realloc_failures = eliminate_allocations(thread, Unpack_none, cm, deoptee, map, chunk, deoptimized_objects);
+  if (jvmci_enabled COMPILER2_PRESENT(|| (DoEscapeAnalysis && EliminateAllocations)
+                                      || EliminateAutoBox || EnableVectorAggressiveReboxing)) {
+    realloc_failures = rematerialize_objects(thread, Unpack_none, cm, deoptee, map, chunk, deoptimized_objects);
   }
 
   // Revoke biases of objects with eliminated locks in the given frame.
@@ -316,7 +317,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
 
   // Now relock objects if synchronization on them was eliminated.
   if (jvmci_enabled COMPILER2_PRESENT(|| ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks))) {
-    eliminate_locks(thread, chunk, realloc_failures, deoptee, Unpack_none, deoptimized_objects);
+    restore_eliminated_locks(thread, chunk, realloc_failures, deoptee, Unpack_none, deoptimized_objects);
   }
   return deoptimized_objects;
 }
@@ -369,17 +370,14 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   bool realloc_failures = false;
 
 #if COMPILER2_OR_JVMCI
-#if INCLUDE_JVMCI
-  bool jvmci_enabled = true;
-#else
-  bool jvmci_enabled = false;
-#endif
+  bool const jvmci_enabled = JVMCI_ONLY(EnableJVMCI) NOT_JVMCI(false);
 
   // Reallocate the non-escaping objects and restore their fields. Then
   // relock objects if synchronization on them was eliminated.
-  if (jvmci_enabled COMPILER2_PRESENT( || (DoEscapeAnalysis && EliminateAllocations) )) {
+  if (jvmci_enabled COMPILER2_PRESENT( || (DoEscapeAnalysis && EliminateAllocations)
+                                       || EliminateAutoBox || EnableVectorAggressiveReboxing )) {
     bool unused;
-    realloc_failures = eliminate_allocations(thread, exec_mode, cm, deoptee, map, chunk, unused);
+    realloc_failures = rematerialize_objects(thread, exec_mode, cm, deoptee, map, chunk, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
@@ -397,7 +395,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if ((jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) ))
       && !EscapeBarrier::objs_are_deoptimized(thread, deoptee.id())) {
     bool unused;
-    eliminate_locks(thread, chunk, realloc_failures, deoptee, exec_mode, unused);
+    restore_eliminated_locks(thread, chunk, realloc_failures, deoptee, exec_mode, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
@@ -1407,7 +1405,21 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
 #endif // INCLUDE_JVMCI || INCLUDE_AOT
 #ifdef COMPILER2
     if (EnableVectorSupport && VectorSupport::is_vector(k)) {
-      continue; // skip field reassignment for vectors
+      assert(sv->field_size() == 1, "%s not a vector", k->name()->as_C_string());
+      ScopeValue* payload = sv->field_at(0);
+      if (payload->is_location() &&
+          payload->as_LocationValue()->location().type() == Location::vector) {
+        if (PrintDeoptimizationDetails) {
+          tty->print_cr("skip field reassignment for this vector - it should be assigned already");
+          if (Verbose) {
+            Handle obj = sv->value();
+            k->oop_print_on(obj(), tty);
+          }
+        }
+        continue; // Such vector's value was already restored in VectorSupport::allocate_vector().
+      }
+      // Else fall-through to do assignment for scalar-replaced boxed vector representation
+      // which could be restored after vector object allocation.
     }
 #endif
     if (k->is_instance_klass()) {
@@ -1821,7 +1833,7 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
   // So this whole "class index" feature should probably be removed.
 
   if (constant_pool->tag_at(index).is_unresolved_klass()) {
-    Klass* tk = constant_pool->klass_at_ignore_error(index, THREAD);
+    Klass* tk = constant_pool->klass_at(index, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // Exception happened during classloading. We ignore the exception here, since it
       // is going to be rethrown since the current activation is going to be deoptimized and

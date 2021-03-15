@@ -1687,23 +1687,30 @@ WB_END
 
 WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jboolean is_open,
                                 jstring version, jstring location, jobjectArray packages))
-  Modules::define_module(module, is_open, version, location, packages, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::define_module(h_module, is_open, version, location, packages, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExports(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
-  Modules::add_module_exports_qualified(from_module, package, to_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_to_module (THREAD, JNIHandles::resolve(to_module));
+  Modules::add_module_exports_qualified(h_from_module, package, h_to_module, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAllUnnamed(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports_to_all_unnamed(module, package, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports_to_all_unnamed(h_module, package, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAll(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports(module, package, NULL, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports(h_module, package, Handle(), CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jobject source_module))
-  Modules::add_reads_module(from_module, source_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_source_module (THREAD, JNIHandles::resolve(source_module));
+  Modules::add_reads_module(h_from_module, h_source_module, CHECK);
 WB_END
 
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
