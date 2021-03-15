@@ -617,7 +617,7 @@ public:
   // use MachConstantBase, it gets modified during matching. So when cloning
   // the node the JVMState must be cloned. Default is not to clone.
   virtual void clone_jvms(Compile* C) {
-    if (C->needs_clone_jvms() && jvms() != NULL) {
+    if ((jvms() != NULL) && C->needs_clone_jvms()) {
       set_jvms(jvms()->clone_deep(C));
       jvms()->set_map_deep(this);
     }
@@ -737,8 +737,8 @@ public:
   }
   // Late inlining modifies the JVMState, so we need to clone it
   // when the call node is cloned (because it is macro node).
-  virtual void  clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && is_boxing_method()) {
+  virtual void clone_jvms(Compile* C) {
+    if ((jvms() != NULL) && (is_boxing_method() || C->needs_clone_jvms())) {
       set_jvms(jvms()->clone_deep(C));
       jvms()->set_map_deep(this);
     }
@@ -767,7 +767,7 @@ public:
   // Late inlining modifies the JVMState, so we need to clone it
   // when the call node is cloned.
   virtual void clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && IncrementalInlineVirtual) {
+    if ((jvms() != NULL) && (IncrementalInlineVirtual || C->needs_clone_jvms())) {
       set_jvms(jvms()->clone_deep(C));
       jvms()->set_map_deep(this);
     }
@@ -923,7 +923,7 @@ public:
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
                Node *size, Node *klass_node, Node *initial_test);
   // Expansion modifies the JVMState, so we need to clone it
-  virtual void  clone_jvms(Compile* C) {
+  virtual void clone_jvms(Compile* C) {
     if (jvms() != NULL) {
       set_jvms(jvms()->clone_deep(C));
       jvms()->set_map_deep(this);
@@ -1142,7 +1142,7 @@ public:
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   // Expansion modifies the JVMState, so we need to clone it
-  virtual void  clone_jvms(Compile* C) {
+  virtual void clone_jvms(Compile* C) {
     if (jvms() != NULL) {
       set_jvms(jvms()->clone_deep(C));
       jvms()->set_map_deep(this);
