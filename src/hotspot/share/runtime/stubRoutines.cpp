@@ -515,8 +515,8 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
   name = #xxx_arraycopy; \
   return StubRoutines::xxx_arraycopy(); }
 
-#define RETURN_STUB_PARM(xxx_arraycopy, parm) {           \
-  name = #xxx_arraycopy; \
+#define RETURN_STUB_PARM(xxx_arraycopy, parm) { \
+  name = parm ? #xxx_arraycopy "_uninit": #xxx_arraycopy; \
   return StubRoutines::xxx_arraycopy(parm); }
 
   switch (t) {

@@ -661,10 +661,13 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     MergeMemNode* local_mem = MergeMemNode::make(mem);
     transform_later(local_mem);
 
+    // A tightly coupled arraycopy of reference types might touch uninitialized memory
+    // which will make cardbarriers fail.
+    bool may_be_uninitialized = dest_uninitialized || (ac->is_alloc_tightly_coupled() && !ReduceInitialCardMarks && is_reference_type(basic_elem_type));
     is_partial_array_copy = generate_unchecked_arraycopy(&local_ctrl, &local_mem,
                                                          adr_type, copy_type, disjoint_bases,
                                                          src, src_offset, dest, dest_offset,
-                                                         ConvI2X(copy_length), dest_uninitialized);
+                                                         ConvI2X(copy_length), may_be_uninitialized);
 
     // Present the results of the fast call.
     result_region->init_req(fast_path, local_ctrl);
