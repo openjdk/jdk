@@ -576,6 +576,8 @@ CXXFILT:=@CXXFILT@
 
 LIPO:=@LIPO@
 INSTALL_NAME_TOOL:=@INSTALL_NAME_TOOL@
+METAL := @METAL@
+METALLIB := @METALLIB@
 
 # Options to linker to specify a mapfile.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
