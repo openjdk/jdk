@@ -386,7 +386,7 @@ public abstract class MappedByteBuffer
      * returned buffer, or writing bytes to the storage device by invoking
      * {@code force()} on the returned buffer, will only act on the sub-range
      * of this buffer that the returned buffer represents, namely
-     * {@code [index,length]}, where {@code index} and {@code length} are
+     * {@code [index,index+length)}, where {@code index} and {@code length} are
      * assumed to satisfy the preconditions.
      */
     @Override
