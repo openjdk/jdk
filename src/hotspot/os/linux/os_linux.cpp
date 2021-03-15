@@ -2387,7 +2387,7 @@ void os::print_memory_info(outputStream* st) {
             ((jlong)si.freeswap * si.mem_unit) >> 10);
   st->cr();
 
-  st->print("%dk default large page", os::large_page_size()>>10);
+  st->print(UINT64_FORMAT "k default large page", os::large_page_size()>>10);
   st->cr();
   st->print("Page Sizes: ");
   _page_sizes.print_on(st);
@@ -4002,7 +4002,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
 
   LogTarget(Info, pagesize) lt;
 
-  assert(large_page_size > (size_t)os::vm_page_size(), "large page size: %d not larger than small page size: %d", large_page_size, (size_t)os::vm_page_size());
+  assert(large_page_size > (size_t)os::vm_page_size(), "large page size: " UINT64_FORMAT " not larger than small page size: " UINT64_FORMAT, large_page_size, (size_t)os::vm_page_size());
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(bytes, large_page_size), "Unaligned size");
   assert(is_aligned(req_addr, large_page_size), "Unaligned address");
@@ -4040,7 +4040,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
   size_t large_page_size = os::page_size_for_region_unaligned(bytes, 1);
   LogTarget(Info, pagesize) lt;
 
-  assert(large_page_size > (size_t)os::vm_page_size(), "large page size: %d not larger than small page size: %d", large_page_size, (size_t)os::vm_page_size());
+  assert(large_page_size > (size_t)os::vm_page_size(), "large page size: " UINT64_FORMAT " not larger than small page size: " UINT64_FORMAT, large_page_size, (size_t)os::vm_page_size());
   assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
 
   assert(is_aligned(req_addr, alignment), "Must be");
