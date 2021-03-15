@@ -49,9 +49,10 @@ public:
 class G1YCTypeConstant : public JfrSerializer {
 public:
   void serialize(JfrCheckpointWriter& writer) {
-    static const u4 nof_entries = static_cast<u4>(EnumRange<G1GCPauseType>{}.size());
+    constexpr EnumRange<G1GCPauseType> types{};
+    static const u4 nof_entries = static_cast<u4>(types.size());
     writer.write_count(nof_entries);
-    for (auto index : EnumRange<G1GCPauseType>{}) {
+    for (auto index : types) {
       writer.write_key(static_cast<uint>(index));
       writer.write(G1GCPauseTypeHelper::to_string(index));
     }
