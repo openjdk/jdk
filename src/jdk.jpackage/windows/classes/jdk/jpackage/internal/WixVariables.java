@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,27 +21,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jpackage.internal;
 
-package sun.jvm.hotspot.gc.shared;
+import java.util.HashMap;
+import java.util.Map;
 
-//These definitions should be kept in sync with the definitions in the HotSpot
-//code.
+final class WixVariables {
 
-public enum G1YCType {
-  Normal ("Normal"),
-  ConcurrentStart ("Concurrent Start"),
-  DuringMark ("During Mark"),
-  Mixed ("Mixed"),
-  G1YCTypeEndSentinel ("Unknown");
+    void defineWixVariable(String variableName) {
+        setWixVariable(variableName, "yes");
+    }
 
-  private final String value;
+    void setWixVariable(String variableName, String variableValue) {
+        values.put(variableName, variableValue);
+    }
 
-  G1YCType(String val) {
-    this.value = val;
-  }
-  public String value() {
-    return value;
-  }
+    Map<String, String> getValues() {
+        return values;
+    }
+
+    private final Map<String, String> values = new HashMap<>();
 }

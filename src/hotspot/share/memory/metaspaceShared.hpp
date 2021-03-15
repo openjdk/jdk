@@ -139,7 +139,9 @@ public:
   static bool linking_required(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS
-  static size_t reserved_space_alignment();
+  // Alignment for the 3 core CDS regions (MC/RW/RO) only.
+  // (Heap region alignments are decided by GC).
+  static size_t core_region_alignment();
   static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
 #endif
 

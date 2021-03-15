@@ -330,6 +330,11 @@ public class Arguments {
             setOptionValue("win-shortcut", true);
         }),
 
+        WIN_SHORTCUT_PROMPT ("win-shortcut-prompt",
+                OptionCategories.PLATFORM_WIN, () -> {
+            setOptionValue("win-shortcut-prompt", true);
+        }),
+
         WIN_PER_USER_INSTALLATION ("win-per-user-install",
                 OptionCategories.PLATFORM_WIN, () -> {
             setOptionValue("win-per-user-install", false);

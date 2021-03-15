@@ -1157,7 +1157,7 @@ class Compile : public Phase {
                               Node* ctrl = NULL);
 
   // Convert integer value to a narrowed long type dependent on ctrl (for example, a range check)
-  static Node* constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl);
+  static Node* constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl, bool carry_dependency = false);
 
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
