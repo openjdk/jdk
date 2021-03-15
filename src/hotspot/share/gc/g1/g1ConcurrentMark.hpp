@@ -72,7 +72,7 @@ public:
 
   oop obj() const {
     assert(!is_array_slice(), "Trying to read array slice " PTR_FORMAT " as oop", p2i(_holder));
-    return (oop)_holder;
+    return cast_to_oop(_holder);
   }
 
   HeapWord* slice() const {

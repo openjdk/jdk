@@ -549,7 +549,7 @@ static void decipher(jlong v, bool ignoreZero) {
       return;
     }
     if (Universe::heap()->is_in(p)) {
-      oop obj = oop(p);
+      oop obj = cast_to_oop(p);
       obj->print_value_on(tty);
       return;
     }

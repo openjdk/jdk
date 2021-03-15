@@ -197,7 +197,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
     // Create Java array for holding resolved strings, methodHandles,
     // methodTypes, invokedynamic and invokehandle appendix objects, etc.
     objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
-    Handle refs_handle (THREAD, (oop)stom);  // must handleize.
+    Handle refs_handle (THREAD, stom);  // must handleize.
     set_resolved_references(loader_data->add_handle(refs_handle));
   }
 }
@@ -382,7 +382,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       int map_length = resolved_reference_length();
       if (map_length > 0) {
         objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
-        Handle refs_handle(THREAD, (oop)stom);  // must handleize.
+        Handle refs_handle(THREAD, stom);  // must handleize.
         set_resolved_references(loader_data->add_handle(refs_handle));
       }
     }

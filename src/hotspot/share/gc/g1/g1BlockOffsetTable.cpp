@@ -227,7 +227,7 @@ HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord
   while (next_boundary < addr) {
     while (n <= next_boundary) {
       q = n;
-      oop obj = oop(q);
+      oop obj = cast_to_oop(q);
       if (obj->klass_or_null_acquire() == NULL) return q;
       n += block_size(q);
     }

@@ -486,10 +486,10 @@ class Dependencies: public ResourceObj {
     bool is_oop() const                { return _is_oop; }
     bool is_metadata() const           { return !_is_oop; }
     bool is_klass() const              { return is_metadata() && metadata_value()->is_klass(); }
-    bool is_method() const              { return is_metadata() && metadata_value()->is_method(); }
+    bool is_method() const             { return is_metadata() && metadata_value()->is_method(); }
 
-    oop oop_value() const              { assert(_is_oop && _valid, "must be"); return (oop) _value; }
-    Metadata* metadata_value() const { assert(!_is_oop && _valid, "must be"); return (Metadata*) _value; }
+    oop oop_value() const              { assert(_is_oop && _valid, "must be"); return cast_to_oop(_value); }
+    Metadata* metadata_value() const   { assert(!_is_oop && _valid, "must be"); return (Metadata*) _value; }
   };
 
   static void print_dependency(DepType dept,

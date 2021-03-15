@@ -549,7 +549,7 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t beg_ofs = region_offset(addr);
   _region_data[beg_region].add_live_obj(RegionSize - beg_ofs);
 
-  Klass* klass = ((oop)addr)->klass();
+  Klass* klass = cast_to_oop(addr)->klass();
   // Middle regions--completely spanned by this object.
   for (size_t region = beg_region + 1; region < end_region; ++region) {
     _region_data[region].set_partial_obj_size(RegionSize);
@@ -824,13 +824,13 @@ HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionMan
     const size_t block_offset = addr_to_block_ptr(addr)->offset();
 
     const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
-    const size_t live = bitmap->live_words_in_range(cm, search_start, oop(addr));
+    const size_t live = bitmap->live_words_in_range(cm, search_start, cast_to_oop(addr));
     result += block_offset + live;
   } else {
     guarantee(trueInDebug, "Only in debug build");
 
     const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
-    const size_t live = bitmap->live_words_in_range(cm, region_align_down(addr), oop(addr));
+    const size_t live = bitmap->live_words_in_range(cm, region_align_down(addr), cast_to_oop(addr));
     result += region_ptr->partial_obj_size() + live;
   }
 
@@ -2689,7 +2689,7 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
 
 inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
   _start_array->allocate_block(addr);
-  compaction_manager()->update_contents(oop(addr));
+  compaction_manager()->update_contents(cast_to_oop(addr));
 }
 
 // Update interior oops in the ranges of regions [beg_region, end_region).
@@ -2792,8 +2792,8 @@ void PSParallelCompact::update_deferred_objects(ParCompactionManager* cm,
       if (start_array != NULL) {
         start_array->allocate_block(addr);
       }
-      cm->update_contents(oop(addr));
-      assert(oopDesc::is_oop_or_null(oop(addr)), "Expected an oop or NULL at " PTR_FORMAT, p2i(oop(addr)));
+      cm->update_contents(cast_to_oop(addr));
+      assert(oopDesc::is_oop_or_null(cast_to_oop(addr)), "Expected an oop or NULL at " PTR_FORMAT, p2i(cast_to_oop(addr)));
     }
   }
 }
@@ -3313,7 +3313,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
     Copy::aligned_conjoint_words(source(), copy_destination(), words);
   }
 
-  oop moved_oop = (oop) copy_destination();
+  oop moved_oop = cast_to_oop(copy_destination());
   compaction_manager()->update_contents(moved_oop);
   assert(oopDesc::is_oop_or_null(moved_oop), "Expected an oop or NULL at " PTR_FORMAT, p2i(moved_oop));
 
@@ -3371,7 +3371,7 @@ FillClosure::do_addr(HeapWord* addr, size_t size) {
   HeapWord* const end = addr + size;
   do {
     _start_array->allocate_block(addr);
-    addr += oop(addr)->size();
+    addr += cast_to_oop(addr)->size();
   } while (addr < end);
   return ParMarkBitMap::incomplete;
 }
