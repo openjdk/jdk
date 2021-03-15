@@ -73,12 +73,7 @@ ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment,
                              bool special, bool executable) : _fd_for_heap(-1) {
   assert((size % os::vm_allocation_granularity()) == 0,
          "size not allocation aligned");
-  _base = base;
-  _size = size;
-  _alignment = alignment;
-  _noaccess_prefix = 0;
-  _special = special;
-  _executable = executable;
+  initialize_members(base, size, alignment, special, executable);
 }
 
 // Helper method
@@ -140,6 +135,26 @@ static bool failed_to_reserve_as_requested(char* base, char* requested_address,
   return true;
 }
 
+void ReservedSpace::clear_members() {
+  _base = NULL;
+  _size = 0;
+  _alignment = 0;
+  _special = false;
+  _executable = false;
+  _noaccess_prefix = 0;
+}
+
+void ReservedSpace::initialize_members(char* base, size_t size, size_t alignment,
+                                       bool special, bool executable) {
+  _base = base;
+  _size = size;
+  _alignment = alignment;
+  _special = special;
+  _executable = executable;
+  _noaccess_prefix = 0;
+}
+
+
 void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
                                char* requested_address,
                                bool executable) {
@@ -151,17 +166,13 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   assert(alignment == 0 || is_power_of_2((intptr_t)alignment),
          "not a power of 2");
 
-  alignment = MAX2(alignment, (size_t)os::vm_page_size());
+  clear_members();
 
-  _base = NULL;
-  _size = 0;
-  _special = false;
-  _executable = executable;
-  _alignment = 0;
-  _noaccess_prefix = 0;
   if (size == 0) {
     return;
   }
+
+  alignment = MAX2(alignment, (size_t)os::vm_page_size());
 
   // If OS doesn't support demand paging for large page memory, we need
   // to use reserve_memory_special() to reserve and pin the entire region.
@@ -193,9 +204,10 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
              "Large pages returned a non-aligned address, base: "
              PTR_FORMAT " alignment: " SIZE_FORMAT_HEX,
              p2i(base), alignment);
-      _special = true;
     } else {
-      // failed; try to reserve regular memory below
+      // failed; try to reserve regular memory below. Reservation
+      // should not be marked as special.
+      special = false;
       if (UseLargePages && (!FLAG_IS_DEFAULT(UseLargePages) ||
                             !FLAG_IS_DEFAULT(LargePageSizeInBytes))) {
         log_debug(gc, heap, coops)("Reserve regular memory without large pages");
@@ -213,13 +225,13 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
     // important.  If available space is not detected, return NULL.
 
     if (requested_address != 0) {
-      base = attempt_map_or_reserve_memory_at(requested_address, size, _fd_for_heap, _executable);
+      base = attempt_map_or_reserve_memory_at(requested_address, size, _fd_for_heap, executable);
       if (failed_to_reserve_as_requested(base, requested_address, size, false, _fd_for_heap != -1)) {
         // OS ignored requested address. Try different address.
         base = NULL;
       }
     } else {
-      base = map_or_reserve_memory(size, _fd_for_heap, _executable);
+      base = map_or_reserve_memory(size, _fd_for_heap, executable);
     }
 
     if (base == NULL) return;
@@ -231,7 +243,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
 
       // Make sure that size is aligned
       size = align_up(size, alignment);
-      base = map_or_reserve_memory_aligned(size, alignment, _fd_for_heap, _executable);
+      base = map_or_reserve_memory_aligned(size, alignment, _fd_for_heap, executable);
 
       if (requested_address != 0 &&
           failed_to_reserve_as_requested(base, requested_address, size, false, _fd_for_heap != -1)) {
@@ -243,14 +255,13 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
       }
     }
   }
-  // Done
-  _base = base;
-  _size = size;
-  _alignment = alignment;
-  // If heap is reserved with a backing file, the entire space has been committed. So set the _special flag to true
+  // If heap is reserved with a backing file, the entire space has been committed. So set the special flag to true
   if (_fd_for_heap != -1) {
-    _special = true;
+    special = true;
   }
+
+  // Done
+  initialize_members(base, size, alignment, special, executable);
 }
 
 ReservedSpace ReservedSpace::first_part(size_t partition_size, size_t alignment) {
@@ -315,12 +326,7 @@ void ReservedSpace::release() {
     } else{
       os::release_memory(real_base, real_size);
     }
-    _base = NULL;
-    _size = 0;
-    _noaccess_prefix = 0;
-    _alignment = 0;
-    _special = false;
-    _executable = false;
+    clear_members();
   }
 }
 
@@ -399,12 +405,13 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
              "Large pages returned a non-aligned address, base: "
              PTR_FORMAT " alignment: " SIZE_FORMAT_HEX,
              p2i(base), alignment);
-      _special = true;
     }
   }
 
   if (base == NULL) {
-    // Failed; try to reserve regular memory below
+    // Failed; try to reserve regular memory below. Reservation
+    // should not be marked as special.
+    special = false;
     if (UseLargePages && (!FLAG_IS_DEFAULT(UseLargePages) ||
                           !FLAG_IS_DEFAULT(LargePageSizeInBytes))) {
       log_debug(gc, heap, coops)("Reserve regular memory without large pages");
@@ -422,18 +429,16 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
   }
   if (base == NULL) { return; }
 
-  // Done
-  _base = base;
-  _size = size;
-  _alignment = alignment;
-
-  // If heap is reserved with a backing file, the entire space has been committed. So set the _special flag to true
+  // If heap is reserved with a backing file, the entire space has been committed. So set the special flag to true
   if (_fd_for_heap != -1) {
-    _special = true;
+    special = true;
   }
 
+  // Done
+  initialize_members(base, size, alignment, special, false);
+
   // Check alignment constraints
-  if ((((size_t)base) & (alignment - 1)) != 0) {
+  if (!is_aligned(base, alignment)) {
     // Base not aligned, retry.
     release();
   }
