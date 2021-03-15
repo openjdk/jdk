@@ -67,9 +67,10 @@ public class HttpHandlerTest {
 
     @Test
     public void testAdaptRequest() throws Exception {
-        var handler = ((HttpHandler) exchange ->  request = exchange )
-                .adaptRequest(r -> r.with("Foo", List.of("Bar")));
-        handler.handle(new TestHttpExchange(new Headers()));
+        var handler = ((HttpHandler) exchange ->  request = exchange );
+        var adaptedHandler = HttpHandler
+                .adaptRequest(handler, r -> r.with("Foo", List.of("Bar")));
+        adaptedHandler.handle(new TestHttpExchange(new Headers()));
         assertEquals(request.getRequestHeaders().size(), 1);
         assertEquals(request.getRequestHeaders().getFirst("Foo"), "Bar");
     }
@@ -88,10 +89,12 @@ public class HttpHandlerTest {
                 System.out.println("Server received: " + headers);
                 exchange.sendResponseHeaders(400, -1);
             }
-        }).adaptRequest(r -> r.with("X-Bar", List.of("barValue")));
+        });
+        var adaptedHandler = HttpHandler
+                .adaptRequest(handler, r -> r.with("X-Bar", List.of("barValue")));
 
         var ss = HttpServer.create(WILDCARD_ADDR, 0);
-        ss.createContext("/", handler);
+        ss.createContext("/", adaptedHandler);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -107,11 +110,11 @@ public class HttpHandlerTest {
     @Test
     public void testNull() {
         final var handler = new TestHttpHandler();
-        assertThrows(NPE, () -> handler.handleOrElse(null, null));
-        assertThrows(NPE, () -> handler.handleOrElse(p -> true, null));
-        assertThrows(NPE, () -> handler.handleOrElse(null,  new TestHttpHandler()));
+        assertThrows(NPE, () -> HttpHandler.complement(handler, null, null));
+        assertThrows(NPE, () -> HttpHandler.complement(handler, p -> true, null));
+        assertThrows(NPE, () -> HttpHandler.complement(handler, null,  new TestHttpHandler()));
 
-        assertThrows(NPE, () -> handler.adaptRequest(null));
+        assertThrows(NPE, () -> HttpHandler.adaptRequest(handler, null));
     }
 
     static class TestHttpHandler implements HttpHandler {

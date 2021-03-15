@@ -37,22 +37,22 @@ import sun.net.httpserver.DelegatingHttpExchange;
  * HTTP exchange is handled by one of these handlers.
  *
  * <P> The functionality of a handler can be extended or enhanced through
- * the use of {@link #handleOrElse(Predicate,HttpHandler) handleOrElse}
- * and {@link #adaptRequest(UnaryOperator) adaptRequest}, which allows to
- * complement and adapt a given handler, respectively.
+ * the use of {@link #adaptRequest(HttpHandler, UnaryOperator) adaptRequest} and
+ * {@link #complement(HttpHandler, Predicate, HttpHandler) complement}, which
+ * allows to adapt and complement a given handler, respectively.
  *
- * <p> Example of a complementing and adapting handler:
- * <pre>{@code var handler = new SomeHandler()
- *       .handleOrElse(r -> r.getRequestMethod().equals("PUT"), new SomePutHandler())
- *       .adaptRequest(r -> r.with("X-Foo", List.of("Bar")));
+ * <p> Example of an adapted and complemented handler:
+ * <pre>{@code var h = HttpHandler
+ *       .complement(new SomeHandler(), r -> r.getRequestMethod().equals("PUT"), new SomePutHandler());
+ *   var handler = HttpHandler.adaptRequest(h, r -> r.with("X-Foo", List.of("Bar")));
  * }</pre>
  *
  * The above {@code handler} adds the "X-Foo" request header to all incoming
- * requests before handling of the exchange is delegated to the next handler,
- * the <i>handleOrElse</i> handler. The <i>handleOrElse</i> handler offers an
- * if-else like construct; if the request method is "PUT" then handling of the
- * exchange is delegated to the {@code SomePutHandler}, otherwise handling of
- * the exchange is delegated to {@code SomeHandler}.
+ * requests before handling of the exchange is passed to the next handler,
+ * the <i>complemented</i> handler. The <i>complemented</i> handler makes
+ * exchange handling conditional; handling of the exchange is passed to the
+ * {@code SomeHandler} unless the request method is "PUT", in which case
+ * handling of the exchange is passed to the {@code SomePutHandler}.
  *
  * @since 1.6
  */
@@ -69,84 +69,31 @@ public interface HttpHandler {
      */
     public abstract void handle (HttpExchange exchange) throws IOException;
 
-    /**
-     * Complements this handler with a conditional other handler.
-     *
-     * <p> This method creates a <i>handleOrElse</i> handler; an if-else like
-     * construct. Handling of exchanges who's request matches the {@code
-     * otherHandlerTest} predicate are delegated to {@code otherHandler}. All
-     * remaining exchanges are handled by {@code this} handler.
-     *
-     * <p> Example of a nested complementing handler:
-     * <pre>{@code    Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
-     *   Predicate<Request> WANTS_DIGEST =  r -> r.getRequestHeaders().containsKey("Want-Digest");
-     *
-     *   var h1 = new SomeHandler();
-     *   var h2 = h1.handleOrElse(IS_GET, new SomeGetHandler());
-     *   var h3 = h2.handleOrElse(WANTS_DIGEST.and(IS_GET), new SomeDigestHandler());
-     * }</pre>
-     * The {@code h3} handleOrElse handler delegates handling of the exchange to
-     * {@code SomeDigestHandler} if the "Want-Digest" request header is present
-     * and the request method is {@code GET}, otherwise it delegates handling of
-     * the exchange to the {@code h2} handler. The {@code h2} handleOrElse
-     * handler, in turn, delegates handling of the exchange to {@code
-     * SomeGetHandler} if the request method is {@code GET}, otherwise it
-     * delegates handling of the exchange to the {@code h1} handler. The {@code
-     * h1} handler handles all exchanges that are not previously delegated to
-     * either {@code SomeGetHandler} or {@code SomeDigestHandler}.
-     *
-     * @implSpec
-     * The default implementation returns a handler that when invoked behaves
-     * as if:
-     * <pre>{@code    if (otherHandlerTest.test(exchange))
-     *       otherHandler.handle(exchange);
-     *   else
-     *       this.handle(exchange);
-     * }</pre>
-     *
-     * @param otherHandlerTest a request predicate
-     * @param otherHandler a fallback handler
-     * @return a handler
-     * @throws IOException          if an I/O error occurs
-     * @throws NullPointerException if any argument is null
-     * @since 17
-     */
-    default HttpHandler handleOrElse(Predicate<Request> otherHandlerTest,
-                                     HttpHandler otherHandler)
-        throws IOException
-    {
-        Objects.requireNonNull(otherHandlerTest);
-        Objects.requireNonNull(otherHandler);
-        return exchange -> {
-            if (otherHandlerTest.test(exchange))
-                otherHandler.handle(exchange);
-            else
-                this.handle(exchange);
-        };
-    }
 
     /**
      * Returns a handler that inspects, and possibly adapts, the request state
-     * before delegating handling of the exchange. The {@code Request} returned
-     * by the operator will be the effective request state of the exchange when
-     * handled.
+     * before the exchange is handled by the given handler. The {@code Request}
+     * returned by the operator will be the effective request state of the
+     * exchange when handled.
      *
      * @implSpec
      * The default implementation returns a handler that when invoked; first
      * invokes the {@code requestOperator} with the given exchange, {@code ex},
      * in order to retrieve the <i>adapted request state</i>. Second, the
-     * {@code handle} method of {@code this} handler is invoked passing an
+     * {@code handle} method of the {@code handler} is invoked passing an
      * exchange equivalent to {@code ex} with the <i>adapted request state</i>
      * set as the effective request state.
      *
+     * @param handler a handler
      * @param requestOperator the request operator
      * @return a handler
      * @throws IOException          if an I/O error occurs
      * @throws NullPointerException if the argument is null
      * @since 17
      */
-    default HttpHandler adaptRequest(UnaryOperator<Request> requestOperator)
-        throws IOException
+    static HttpHandler adaptRequest(HttpHandler handler,
+                                    UnaryOperator<Request> requestOperator)
+            throws IOException
     {
         Objects.requireNonNull(requestOperator);
         return exchange -> {
@@ -161,7 +108,65 @@ public interface HttpHandler {
                 @Override
                 public Headers getRequestHeaders() { return request.getRequestHeaders(); }
             };
-            this.handle(newExchange);
+            handler.handle(newExchange);
+        };
+    }
+
+    /**
+     * Complements a handler with a conditional other handler.
+     *
+     * <p> This method creates a <i>complemented</i> handler; exchanges are
+     * handled by the given {@code handler} unless their request matches the
+     * {@code otherHandlerTest} predicate, in which case they are handled by the
+     * {@code otherHandler}.
+     *
+     * <p> Example of a nested complemented handler:
+     * <pre>{@code    Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
+     *   Predicate<Request> WANTS_DIGEST =  r -> r.getRequestHeaders().containsKey("Want-Digest");
+     *
+     *   var h1 = new SomeHandler();
+     *   var h2 = HttpHandler.complement(h1, IS_GET, new SomeGetHandler());
+     *   var h3 = HttpHandler.complement(h2, WANTS_DIGEST.and(IS_GET), new SomeDigestHandler());
+     * }</pre>
+     * The {@code h3} complemented handler passes handling of the exchange to
+     * the {@code h2} handler unless the "Want-Digest" request header is present
+     * and the request method is {@code GET}, in which case it passes handling of
+     * the exchange to {@code SomeDigestHandler}. The {@code h2} complemented
+     * handler, in turn, passes handling of the exchange to the {@code h1}
+     * handler unless the request method is {@code GET}, in which case it passes
+     * passes handling of the exchange to the {@code SomeGetHandler}. The {@code
+     * h1} handler handles all exchanges that are not previously passed to
+     * either {@code SomeGetHandler} or {@code SomeDigestHandler}.
+     *
+     * @implSpec
+     * The default implementation returns a handler that when invoked behaves
+     * as if:
+     * <pre>{@code    if (otherHandlerTest.test(exchange))
+     *       otherHandler.handle(exchange);
+     *   else
+     *       handler.handle(exchange);
+     * }</pre>
+     *
+     * @param handler a handler
+     * @param otherHandlerTest a request predicate
+     * @param otherHandler a conditional handler
+     * @return a handler
+     * @throws IOException          if an I/O error occurs
+     * @throws NullPointerException if any argument is null
+     * @since 17
+     */
+    static HttpHandler complement(HttpHandler handler,
+                                   Predicate<Request> otherHandlerTest,
+                                   HttpHandler otherHandler)
+        throws IOException
+    {
+        Objects.requireNonNull(otherHandlerTest);
+        Objects.requireNonNull(otherHandler);
+        return exchange -> {
+            if (otherHandlerTest.test(exchange))
+                otherHandler.handle(exchange);
+            else
+                handler.handle(exchange);
         };
     }
 }
