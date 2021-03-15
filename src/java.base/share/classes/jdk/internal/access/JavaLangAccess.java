@@ -373,10 +373,4 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
-
-    boolean isLatin1(String str);
-
-    String newString(byte[] bytes, boolean isLatin1);
-
-    void getBytes(String source, byte[] dst, int dstBegin, boolean allLatin1);
 }

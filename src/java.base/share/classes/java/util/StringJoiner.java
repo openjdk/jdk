@@ -24,9 +24,6 @@
  */
 package java.util;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
-
 /**
  * {@code StringJoiner} is used to construct a sequence of characters separated
  * by a delimiter and optionally starting with a supplied prefix
@@ -66,8 +63,6 @@ import jdk.internal.access.SharedSecrets;
  * @since  1.8
 */
 public final class StringJoiner {
-    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-
     private final String prefix;
     private final String delimiter;
     private final String suffix;
@@ -175,26 +170,15 @@ public final class StringJoiner {
             }
             return prefix + suffix;
         }
-        return toString(elts, size, addLen);
-    }
-
-    private String toString(String[] elts, int size, int addLen) {
         final String delimiter = this.delimiter;
-        var prefix = this.prefix;
-        var suffix = this.suffix;
-        var allLatin1 = isLatin1(delimiter) && isLatin1(prefix) && isLatin1(suffix) && isLatin1(elts);
-        var totalLength = allLatin1 ? len + addLen : (len + addLen) * 2;
-        var bytes = new byte[totalLength];
-        int k = getBytes(prefix, bytes, 0, allLatin1);
+        StringBuilder sb = new StringBuilder(len + addLen).append(prefix);
         if (size > 0) {
-            k += getBytes(elts[0], bytes, k, allLatin1);
+            sb.append(elts[0]);
             for (int i = 1; i < size; i++) {
-                k += getBytes(delimiter, bytes, k, allLatin1);
-                k += getBytes(elts[i], bytes, k, allLatin1);
+                sb.append(delimiter).append(elts[i]);
             }
         }
-        getBytes(suffix, bytes, k, allLatin1);
-        return jla.newString(bytes, allLatin1);
+        return sb.append(suffix).toString();
     }
 
     /**
@@ -258,18 +242,14 @@ public final class StringJoiner {
 
     private void compactElts() {
         if (size > 1) {
-            var elts = this.elts;
-            var allLatin1 = isLatin1(elts);
-            var len = allLatin1 ? this.len : this.len * 2;
-            var bytes = new byte[len];
-            int i = 1, k = getBytes(elts[0], bytes, 0, allLatin1);
+            StringBuilder sb = new StringBuilder(len).append(elts[0]);
+            int i = 1;
             do {
-                k += getBytes(delimiter, bytes, k, allLatin1);
-                k += getBytes(elts[i], bytes, k, allLatin1);
+                sb.append(delimiter).append(elts[i]);
                 elts[i] = null;
             } while (++i < size);
             size = 1;
-            elts[0] = jla.newString(bytes, allLatin1);
+            elts[0] = sb.toString();
         }
     }
 
@@ -286,23 +266,5 @@ public final class StringJoiner {
     public int length() {
         return (size == 0 && emptyValue != null) ? emptyValue.length() :
             len + prefix.length() + suffix.length();
-    }
-
-    private static int getBytes(String s, byte[] bytes, int start, boolean allLatin1) {
-        jla.getBytes(s, bytes, start, allLatin1);
-        return s.length();
-    }
-
-    private static boolean isLatin1(String str) {
-        return jla.isLatin1(str);
-    }
-
-    private static boolean isLatin1(String[] elements) {
-        for (String element : elements) {
-            if (!isLatin1(String.valueOf(element))) {
-                return false;
-            }
-        }
-        return true;
     }
 }
