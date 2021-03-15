@@ -184,8 +184,9 @@ protected:
 
   // Fast delete in area.  Common case is: NOP (except for storage reclaimed)
   bool Afree(void *ptr, size_t size) {
+    assert(ptr != NULL, "Sanity");
 #ifdef ASSERT
-    if (ZapResourceArea && ptr != NULL) {
+    if (ZapResourceArea) {
       memset(ptr, badResourceValue, size); // zap freed memory
     }
     if (UseMallocOnly) return true;
