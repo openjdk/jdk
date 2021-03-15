@@ -65,7 +65,7 @@
     </modules>
 
     <properties>
-        <netbeans.version>RELEASE90</netbeans.version>
+        <netbeans.version>RELEASE100</netbeans.version>
         <swinglayouts.version>1.0.2</swinglayouts.version>
         <nbmmvnplugin.version>4.3</nbmmvnplugin.version>
         <mvncompilerplugin.version>3.8.1</mvncompilerplugin.version>
