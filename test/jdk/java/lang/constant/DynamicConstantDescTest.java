@@ -23,8 +23,10 @@
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
-import java.lang.constant.ConstantDescs;
+import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
@@ -124,7 +126,7 @@ public class DynamicConstantDescTest {
                 latch.countDown();
                 // wait for the other task to let us know they are ready to trigger their work too
                 latch.await();
-                ConstantDesc desc = DynamicConstantDesc.ofCanonical(ConstantDescs.BSM_ENUM_CONSTANT,
+                ConstantDesc desc = DynamicConstantDesc.ofCanonical(boostrapMethodForEnumConstant(),
                         "A", ClassDesc.of("DynamicConstantDescTest").nested("MyEnum"),
                         new ConstantDesc[0]);
                 if (desc == null) {
@@ -138,6 +140,17 @@ public class DynamicConstantDescTest {
                 throw new RuntimeException(e);
             }
         }
+
+        private static DirectMethodHandleDesc boostrapMethodForEnumConstant() {
+            ClassDesc[] args = {ClassDesc.of("java.lang.invoke.MethodHandles").nested("Lookup"),
+                    ClassDesc.of("java.lang.String"),
+                    ClassDesc.of("java.lang.Class")};
+            return MethodHandleDesc.ofMethod(java.lang.constant.DirectMethodHandleDesc.Kind.STATIC,
+                    ClassDesc.of("java.lang.invoke.ConstantBootstraps"),
+                    "enumConstant", MethodTypeDesc.of(ClassDesc.of("java.lang.Enum"), new ClassDesc[0])
+                            .insertParameterTypes(0, args));
+        }
+
     }
 
 }
