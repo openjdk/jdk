@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.provider.certpath;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.CertificateEncodingException;
@@ -184,7 +185,7 @@ public class X509CertPath extends CertPath {
         }
 
         try {
-            DerInputStream dis = new DerInputStream(is.readAllBytes());
+            DerInputStream dis = new DerInputStream(readAllBytes(is));
             DerValue[] seq = dis.getSequence(3);
             if (seq.length == 0) {
                 return Collections.<X509Certificate>emptyList();
@@ -224,7 +225,12 @@ public class X509CertPath extends CertPath {
         }
 
         try {
-            PKCS7 pkcs7 = new PKCS7(is.readAllBytes());
+            if (is.markSupported() == false) {
+                // Copy the entire input stream into an InputStream that does
+                // support mark
+                is = new ByteArrayInputStream(readAllBytes(is));
+            }
+            PKCS7 pkcs7 = new PKCS7(is);
 
             X509Certificate[] certArray = pkcs7.getCertificates();
             // certs are optional in PKCS #7
@@ -243,6 +249,22 @@ public class X509CertPath extends CertPath {
         // and the methods in the Sun JDK 1.4 implementation of ArrayList that
         // allow read-only access are thread-safe.
         return Collections.unmodifiableList(certList);
+    }
+
+    /*
+     * Reads the entire contents of an InputStream into a byte array.
+     *
+     * @param is the InputStream to read from
+     * @return the bytes read from the InputStream
+     */
+    private static byte[] readAllBytes(InputStream is) throws IOException {
+        byte[] buffer = new byte[8192];
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
+        int n;
+        while ((n = is.read(buffer)) != -1) {
+            baos.write(buffer, 0, n);
+        }
+        return baos.toByteArray();
     }
 
     /**
