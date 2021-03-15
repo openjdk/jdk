@@ -6660,8 +6660,7 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
 
         case lir_rtcall:
         case lir_static_call:
-        case lir_optvirtual_call:
-        case lir_virtual_call:    inc_counter(counter_call); break;
+        case lir_optvirtual_call: inc_counter(counter_call); break;
 
         case lir_move: {
           inc_counter(counter_move);

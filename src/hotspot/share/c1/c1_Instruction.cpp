@@ -323,12 +323,11 @@ void BlockBegin::state_values_do(ValueVisitor* f) {
 
 
 Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values* args,
-               int vtable_index, ciMethod* target, ValueStack* state_before)
+               ciMethod* target, ValueStack* state_before)
   : StateSplit(result_type, state_before)
   , _code(code)
   , _recv(recv)
   , _args(args)
-  , _vtable_index(vtable_index)
   , _target(target)
 {
   set_flag(TargetIsLoadedFlag,   target->is_loaded());

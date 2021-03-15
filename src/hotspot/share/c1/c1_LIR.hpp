@@ -961,7 +961,6 @@ enum LIR_Code {
       , lir_static_call
       , lir_optvirtual_call
       , lir_icvirtual_call
-      , lir_virtual_call
       , lir_dynamic_call
   , end_opJavaCall
   , begin_opArrayCopy
@@ -1203,11 +1202,6 @@ class LIR_OpJavaCall: public LIR_OpCall {
   bool is_method_handle_invoke() const {
     return method()->is_compiled_lambda_form() ||   // Java-generated lambda form
            method()->is_method_handle_intrinsic();  // JVM-generated MH intrinsic
-  }
-
-  intptr_t vtable_offset() const {
-    assert(_code == lir_virtual_call, "only have vtable for real vcall");
-    return (intptr_t) addr();
   }
 
   virtual void emit_code(LIR_Assembler* masm);
@@ -2053,10 +2047,6 @@ class LIR_List: public CompilationResourceObj {
   void call_icvirtual(ciMethod* method, LIR_Opr receiver, LIR_Opr result,
                       address dest, LIR_OprList* arguments, CodeEmitInfo* info) {
     append(new LIR_OpJavaCall(lir_icvirtual_call, method, receiver, result, dest, arguments, info));
-  }
-  void call_virtual(ciMethod* method, LIR_Opr receiver, LIR_Opr result,
-                    intptr_t vtable_offset, LIR_OprList* arguments, CodeEmitInfo* info) {
-    append(new LIR_OpJavaCall(lir_virtual_call, method, receiver, result, vtable_offset, arguments, info));
   }
   void call_dynamic(ciMethod* method, LIR_Opr receiver, LIR_Opr result,
                     address dest, LIR_OprList* arguments, CodeEmitInfo* info) {
