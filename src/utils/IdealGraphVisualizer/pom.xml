@@ -66,6 +66,7 @@
 
     <properties>
         <netbeans.version>RELEASE90</netbeans.version>
+        <swinglayouts.version>1.0.2</swinglayouts.version>
         <brandingToken>idealgraphvisualizer</brandingToken>
     </properties>
 </project>

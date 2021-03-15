@@ -44,11 +44,10 @@
             <artifactId>org-netbeans-api-visual</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
-        <!-- TODO: check that we use the right version of this dependency.-->
         <dependency>
-            <groupId>org.swinglabs</groupId>
+            <groupId>net.java.dev.swing-layout</groupId>
             <artifactId>swing-layout</artifactId>
-            <version>1.0.3</version>
+            <version>${swinglayouts.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
