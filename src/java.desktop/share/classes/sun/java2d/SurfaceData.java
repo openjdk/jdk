@@ -53,6 +53,7 @@ import sun.java2d.loops.FontInfo;
 import sun.java2d.loops.DrawGlyphList;
 import sun.java2d.loops.DrawGlyphListAA;
 import sun.java2d.loops.DrawGlyphListLCD;
+import sun.java2d.loops.DrawGlyphListColor;
 import sun.java2d.pipe.LoopPipe;
 import sun.java2d.pipe.ShapeDrawPipe;
 import sun.java2d.pipe.ParallelogramPipe;
@@ -892,6 +893,8 @@ public abstract class SurfaceData
         loops.drawGlyphListLoop = DrawGlyphList.locate(src, comp, dst);
         loops.drawGlyphListAALoop = DrawGlyphListAA.locate(src, comp, dst);
         loops.drawGlyphListLCDLoop = DrawGlyphListLCD.locate(src, comp, dst);
+        loops.drawGlyphListColorLoop =
+                DrawGlyphListColor.locate(src, comp, dst);
         /*
         System.out.println("drawLine: "+loops.drawLineLoop);
         System.out.println("fillRect: "+loops.fillRectLoop);

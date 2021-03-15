@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2021 JetBrains s.r.o.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,49 @@
  * questions.
  */
 
-#import <Cocoa/Cocoa.h>
-#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
+package sun.font;
 
-#define MAX_STACK_ALLOC_GLYPH_BUFFER_SIZE 256
+import sun.java2d.SurfaceData;
 
-@interface AWTFont : NSObject {
-@public
-    NSFont    *fFont;
-    CGFontRef  fNativeCGFont;
-    BOOL       fIsFakeItalic;
+import java.awt.GraphicsConfiguration;
+import java.awt.Rectangle;
+import java.awt.image.Raster;
+
+/**
+ * SurfaceData view for a color glyph from glyph cache
+ */
+class ColorGlyphSurfaceData extends SurfaceData {
+    ColorGlyphSurfaceData() {
+        super(State.UNTRACKABLE);
+        initOps();
+    }
+
+    private native void initOps();
+
+    native void setCurrentGlyph(long imgPtr);
+
+    @Override
+    public SurfaceData getReplacement() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public GraphicsConfiguration getDeviceConfiguration() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Raster getRaster(int x, int y, int w, int h) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Rectangle getBounds() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object getDestination() {
+        throw new UnsupportedOperationException();
+    }
 }
-
-+ (AWTFont *) awtFontForName:(NSString *)name
-    style:(int)style isFakeItalic:(BOOL)isFakeItalic;
-
-+ (NSFont *) nsFontForJavaFont:(jobject)javaFont env:(JNIEnv *)env;
-
-@end
-
-bool IsEmojiFont(CTFontRef font);
