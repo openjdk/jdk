@@ -1,180 +1,180 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * copyright (c) 2005, 2021, oracle and/or its affiliates. all rights reserved.
+ * do not alter or remove copyright notices or this file header.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * this code is free software; you can redistribute it and/or modify it
+ * under the terms of the gnu general public license version 2 only, as
+ * published by the free software foundation.
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
+ * this code is distributed in the hope that it will be useful, but without
+ * any warranty; without even the implied warranty of merchantability or
+ * fitness for a particular purpose.  see the gnu general public license
+ * version 2 for more details (a copy is included in the license file that
  * accompanied this code).
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * you should have received a copy of the gnu general public license version
+ * 2 along with this work; if not, write to the free software foundation,
+ * inc., 51 franklin st, fifth floor, boston, ma 02110-1301 usa.
  *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * please contact oracle, 500 oracle parkway, redwood shores, ca 94065 usa
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  *
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/javaClasses.inline.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
-#include "gc/parallel/parallelArguments.hpp"
-#include "gc/parallel/parallelScavengeHeap.inline.hpp"
-#include "gc/parallel/parMarkBitMap.inline.hpp"
-#include "gc/parallel/psAdaptiveSizePolicy.hpp"
-#include "gc/parallel/psCompactionManager.inline.hpp"
-#include "gc/parallel/psOldGen.hpp"
-#include "gc/parallel/psParallelCompact.inline.hpp"
-#include "gc/parallel/psPromotionManager.inline.hpp"
-#include "gc/parallel/psRootType.hpp"
-#include "gc/parallel/psScavenge.hpp"
-#include "gc/parallel/psYoungGen.hpp"
-#include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/gcId.hpp"
-#include "gc/shared/gcLocker.hpp"
-#include "gc/shared/gcTimer.hpp"
-#include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/isGCActiveMark.hpp"
-#include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSet.inline.hpp"
-#include "gc/shared/oopStorageSetParState.inline.hpp"
-#include "gc/shared/referencePolicy.hpp"
-#include "gc/shared/referenceProcessor.hpp"
-#include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
-#include "gc/shared/taskTerminator.hpp"
-#include "gc/shared/weakProcessor.inline.hpp"
-#include "gc/shared/workerPolicy.hpp"
+#include "aot/aotloader.hpp"
+#include "classfile/classloaderdatagraph.hpp"
+#include "classfile/javaclasses.inline.hpp"
+#include "classfile/stringtable.hpp"
+#include "classfile/symboltable.hpp"
+#include "classfile/systemdictionary.hpp"
+#include "code/codecache.hpp"
+#include "gc/parallel/parallelarguments.hpp"
+#include "gc/parallel/parallelscavengeheap.inline.hpp"
+#include "gc/parallel/parmarkbitmap.inline.hpp"
+#include "gc/parallel/psadaptivesizepolicy.hpp"
+#include "gc/parallel/pscompactionmanager.inline.hpp"
+#include "gc/parallel/psoldgen.hpp"
+#include "gc/parallel/psparallelcompact.inline.hpp"
+#include "gc/parallel/pspromotionmanager.inline.hpp"
+#include "gc/parallel/psroottype.hpp"
+#include "gc/parallel/psscavenge.hpp"
+#include "gc/parallel/psyounggen.hpp"
+#include "gc/shared/gccause.hpp"
+#include "gc/shared/gcheapsummary.hpp"
+#include "gc/shared/gcid.hpp"
+#include "gc/shared/gclocker.hpp"
+#include "gc/shared/gctimer.hpp"
+#include "gc/shared/gctrace.hpp"
+#include "gc/shared/gctracetime.inline.hpp"
+#include "gc/shared/isgcactivemark.hpp"
+#include "gc/shared/oopstorage.inline.hpp"
+#include "gc/shared/oopstorageset.inline.hpp"
+#include "gc/shared/oopstoragesetparstate.inline.hpp"
+#include "gc/shared/referencepolicy.hpp"
+#include "gc/shared/referenceprocessor.hpp"
+#include "gc/shared/referenceprocessorphasetimes.hpp"
+#include "gc/shared/spacedecorator.inline.hpp"
+#include "gc/shared/taskterminator.hpp"
+#include "gc/shared/weakprocessor.inline.hpp"
+#include "gc/shared/workerpolicy.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
-#include "memory/metaspaceUtils.hpp"
-#include "memory/resourceArea.hpp"
+#include "memory/metaspaceutils.hpp"
+#include "memory/resourcearea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/instanceClassLoaderKlass.inline.hpp"
-#include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceMirrorKlass.inline.hpp"
-#include "oops/methodData.hpp"
-#include "oops/objArrayKlass.inline.hpp"
+#include "oops/instanceclassloaderklass.inline.hpp"
+#include "oops/instanceklass.inline.hpp"
+#include "oops/instancemirrorklass.inline.hpp"
+#include "oops/methoddata.hpp"
+#include "oops/objarrayklass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/vmThread.hpp"
-#include "services/memTracker.hpp"
-#include "services/memoryService.hpp"
+#include "runtime/vmthread.hpp"
+#include "services/memtracker.hpp"
+#include "services/memoryservice.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
-#include "utilities/formatBuffer.hpp"
+#include "utilities/formatbuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_JVMCI
+#if include_jvmci
 #include "jvmci/jvmci.hpp"
 #endif
 
 #include <math.h>
 
-// All sizes are in HeapWords.
-const size_t ParallelCompactData::Log2RegionSize  = 16; // 64K words
-const size_t ParallelCompactData::RegionSize      = (size_t)1 << Log2RegionSize;
-const size_t ParallelCompactData::RegionSizeBytes =
-  RegionSize << LogHeapWordSize;
-const size_t ParallelCompactData::RegionSizeOffsetMask = RegionSize - 1;
-const size_t ParallelCompactData::RegionAddrOffsetMask = RegionSizeBytes - 1;
-const size_t ParallelCompactData::RegionAddrMask       = ~RegionAddrOffsetMask;
+// all sizes are in heapwords.
+const size_t parallelcompactdata::log2regionsize  = 16; // 64k words
+const size_t parallelcompactdata::regionsize      = (size_t)1 << log2regionsize;
+const size_t parallelcompactdata::regionsizebytes =
+  regionsize << logheapwordsize;
+const size_t parallelcompactdata::regionsizeoffsetmask = regionsize - 1;
+const size_t parallelcompactdata::regionaddroffsetmask = regionsizebytes - 1;
+const size_t parallelcompactdata::regionaddrmask       = ~regionaddroffsetmask;
 
-const size_t ParallelCompactData::Log2BlockSize   = 7; // 128 words
-const size_t ParallelCompactData::BlockSize       = (size_t)1 << Log2BlockSize;
-const size_t ParallelCompactData::BlockSizeBytes  =
-  BlockSize << LogHeapWordSize;
-const size_t ParallelCompactData::BlockSizeOffsetMask = BlockSize - 1;
-const size_t ParallelCompactData::BlockAddrOffsetMask = BlockSizeBytes - 1;
-const size_t ParallelCompactData::BlockAddrMask       = ~BlockAddrOffsetMask;
+const size_t parallelcompactdata::log2blocksize   = 7; // 128 words
+const size_t parallelcompactdata::blocksize       = (size_t)1 << log2blocksize;
+const size_t parallelcompactdata::blocksizebytes  =
+  blocksize << logheapwordsize;
+const size_t parallelcompactdata::blocksizeoffsetmask = blocksize - 1;
+const size_t parallelcompactdata::blockaddroffsetmask = blocksizebytes - 1;
+const size_t parallelcompactdata::blockaddrmask       = ~blockaddroffsetmask;
 
-const size_t ParallelCompactData::BlocksPerRegion = RegionSize / BlockSize;
-const size_t ParallelCompactData::Log2BlocksPerRegion =
-  Log2RegionSize - Log2BlockSize;
+const size_t parallelcompactdata::blocksperregion = regionsize / blocksize;
+const size_t parallelcompactdata::log2blocksperregion =
+  log2regionsize - log2blocksize;
 
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_shift = 27;
+const parallelcompactdata::regiondata::region_sz_t
+parallelcompactdata::regiondata::dc_shift = 27;
 
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_mask = ~0U << dc_shift;
+const parallelcompactdata::regiondata::region_sz_t
+parallelcompactdata::regiondata::dc_mask = ~0u << dc_shift;
 
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_one = 0x1U << dc_shift;
+const parallelcompactdata::regiondata::region_sz_t
+parallelcompactdata::regiondata::dc_one = 0x1u << dc_shift;
 
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::los_mask = ~dc_mask;
+const parallelcompactdata::regiondata::region_sz_t
+parallelcompactdata::regiondata::los_mask = ~dc_mask;
 
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_claimed = 0x8U << dc_shift;
+const parallelcompactdata::regiondata::region_sz_t
+parallelcompactdata::regiondata::dc_claimed = 0x8u << dc_shift;
 
-const ParallelCompactData::RegionData::region_sz_t
-ParallelCompactData::RegionData::dc_completed = 0xcU << dc_shift;
+const parallelcompactdata::regiondata::region_sz_t
+parallelcompactdata::regiondata::dc_completed = 0xcu << dc_shift;
 
-SpaceInfo PSParallelCompact::_space_info[PSParallelCompact::last_space_id];
+spaceinfo psparallelcompact::_space_info[psparallelcompact::last_space_id];
 
-SpanSubjectToDiscoveryClosure PSParallelCompact::_span_based_discoverer;
-ReferenceProcessor* PSParallelCompact::_ref_processor = NULL;
+spansubjecttodiscoveryclosure psparallelcompact::_span_based_discoverer;
+referenceprocessor* psparallelcompact::_ref_processor = null;
 
-double PSParallelCompact::_dwl_mean;
-double PSParallelCompact::_dwl_std_dev;
-double PSParallelCompact::_dwl_first_term;
-double PSParallelCompact::_dwl_adjustment;
-#ifdef  ASSERT
-bool   PSParallelCompact::_dwl_initialized = false;
-#endif  // #ifdef ASSERT
+double psparallelcompact::_dwl_mean;
+double psparallelcompact::_dwl_std_dev;
+double psparallelcompact::_dwl_first_term;
+double psparallelcompact::_dwl_adjustment;
+#ifdef  assert
+bool   psparallelcompact::_dwl_initialized = false;
+#endif  // #ifdef assert
 
-void SplitInfo::record(size_t src_region_idx, size_t partial_obj_size,
-                       HeapWord* destination)
+void splitinfo::record(size_t src_region_idx, size_t partial_obj_size,
+                       heapword* destination)
 {
   assert(src_region_idx != 0, "invalid src_region_idx");
   assert(partial_obj_size != 0, "invalid partial_obj_size argument");
-  assert(destination != NULL, "invalid destination argument");
+  assert(destination != null, "invalid destination argument");
 
   _src_region_idx = src_region_idx;
   _partial_obj_size = partial_obj_size;
   _destination = destination;
 
-  // These fields may not be updated below, so make sure they're clear.
-  assert(_dest_region_addr == NULL, "should have been cleared");
-  assert(_first_src_addr == NULL, "should have been cleared");
+  // these fields may not be updated below, so make sure they're clear.
+  assert(_dest_region_addr == null, "should have been cleared");
+  assert(_first_src_addr == null, "should have been cleared");
 
-  // Determine the number of destination regions for the partial object.
-  HeapWord* const last_word = destination + partial_obj_size - 1;
-  const ParallelCompactData& sd = PSParallelCompact::summary_data();
-  HeapWord* const beg_region_addr = sd.region_align_down(destination);
-  HeapWord* const end_region_addr = sd.region_align_down(last_word);
+  // determine the number of destination regions for the partial object.
+  heapword* const last_word = destination + partial_obj_size - 1;
+  const parallelcompactdata& sd = psparallelcompact::summary_data();
+  heapword* const beg_region_addr = sd.region_align_down(destination);
+  heapword* const end_region_addr = sd.region_align_down(last_word);
 
   if (beg_region_addr == end_region_addr) {
-    // One destination region.
+    // one destination region.
     _destination_count = 1;
     if (end_region_addr == destination) {
-      // The destination falls on a region boundary, thus the first word of the
+      // the destination falls on a region boundary, thus the first word of the
       // partial object will be the first word copied to the destination region.
       _dest_region_addr = end_region_addr;
       _first_src_addr = sd.region_to_addr(src_region_idx);
     }
   } else {
-    // Two destination regions.  When copied, the partial object will cross a
+    // two destination regions.  when copied, the partial object will cross a
     // destination region boundary, so a word somewhere within the partial
     // object will be the first word copied to the second destination region.
     _destination_count = 2;
@@ -185,55 +185,55 @@ void SplitInfo::record(size_t src_region_idx, size_t partial_obj_size,
   }
 }
 
-void SplitInfo::clear()
+void splitinfo::clear()
 {
   _src_region_idx = 0;
   _partial_obj_size = 0;
-  _destination = NULL;
+  _destination = null;
   _destination_count = 0;
-  _dest_region_addr = NULL;
-  _first_src_addr = NULL;
+  _dest_region_addr = null;
+  _first_src_addr = null;
   assert(!is_valid(), "sanity");
 }
 
-#ifdef  ASSERT
-void SplitInfo::verify_clear()
+#ifdef  assert
+void splitinfo::verify_clear()
 {
   assert(_src_region_idx == 0, "not clear");
   assert(_partial_obj_size == 0, "not clear");
-  assert(_destination == NULL, "not clear");
+  assert(_destination == null, "not clear");
   assert(_destination_count == 0, "not clear");
-  assert(_dest_region_addr == NULL, "not clear");
-  assert(_first_src_addr == NULL, "not clear");
+  assert(_dest_region_addr == null, "not clear");
+  assert(_first_src_addr == null, "not clear");
 }
-#endif  // #ifdef ASSERT
+#endif  // #ifdef assert
 
 
-void PSParallelCompact::print_on_error(outputStream* st) {
+void psparallelcompact::print_on_error(outputstream* st) {
   _mark_bitmap.print_on_error(st);
 }
 
-#ifndef PRODUCT
-const char* PSParallelCompact::space_names[] = {
+#ifndef product
+const char* psparallelcompact::space_names[] = {
   "old ", "eden", "from", "to  "
 };
 
-void PSParallelCompact::print_region_ranges() {
-  if (!log_develop_is_enabled(Trace, gc, compaction)) {
+void psparallelcompact::print_region_ranges() {
+  if (!log_develop_is_enabled(trace, gc, compaction)) {
     return;
   }
-  Log(gc, compaction) log;
-  ResourceMark rm;
-  LogStream ls(log.trace());
-  Universe::print_on(&ls);
+  log(gc, compaction) log;
+  resourcemark rm;
+  logstream ls(log.trace());
+  universe::print_on(&ls);
   log.trace("space  bottom     top        end        new_top");
   log.trace("------ ---------- ---------- ---------- ----------");
 
   for (unsigned int id = 0; id < last_space_id; ++id) {
-    const MutableSpace* space = _space_info[id].space();
+    const mutablespace* space = _space_info[id].space();
     log.trace("%u %s "
-              SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) " "
-              SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) " ",
+              size_format_w(10) " " size_format_w(10) " "
+              size_format_w(10) " " size_format_w(10) " ",
               id, space_names[id],
               summary_data().addr_to_region_idx(space->bottom()),
               summary_data().addr_to_region_idx(space->top()),
@@ -243,38 +243,38 @@ void PSParallelCompact::print_region_ranges() {
 }
 
 void
-print_generic_summary_region(size_t i, const ParallelCompactData::RegionData* c)
+print_generic_summary_region(size_t i, const parallelcompactdata::regiondata* c)
 {
-#define REGION_IDX_FORMAT        SIZE_FORMAT_W(7)
-#define REGION_DATA_FORMAT       SIZE_FORMAT_W(5)
+#define region_idx_format        size_format_w(7)
+#define region_data_format       size_format_w(5)
 
-  ParallelCompactData& sd = PSParallelCompact::summary_data();
+  parallelcompactdata& sd = psparallelcompact::summary_data();
   size_t dci = c->destination() ? sd.addr_to_region_idx(c->destination()) : 0;
   log_develop_trace(gc, compaction)(
-      REGION_IDX_FORMAT " " PTR_FORMAT " "
-      REGION_IDX_FORMAT " " PTR_FORMAT " "
-      REGION_DATA_FORMAT " " REGION_DATA_FORMAT " "
-      REGION_DATA_FORMAT " " REGION_IDX_FORMAT " %d",
+      region_idx_format " " ptr_format " "
+      region_idx_format " " ptr_format " "
+      region_data_format " " region_data_format " "
+      region_data_format " " region_idx_format " %d",
       i, p2i(c->data_location()), dci, p2i(c->destination()),
       c->partial_obj_size(), c->live_obj_size(),
       c->data_size(), c->source_region(), c->destination_count());
 
-#undef  REGION_IDX_FORMAT
-#undef  REGION_DATA_FORMAT
+#undef  region_idx_format
+#undef  region_data_format
 }
 
 void
-print_generic_summary_data(ParallelCompactData& summary_data,
-                           HeapWord* const beg_addr,
-                           HeapWord* const end_addr)
+print_generic_summary_data(parallelcompactdata& summary_data,
+                           heapword* const beg_addr,
+                           heapword* const end_addr)
 {
   size_t total_words = 0;
   size_t i = summary_data.addr_to_region_idx(beg_addr);
   const size_t last = summary_data.addr_to_region_idx(end_addr);
-  HeapWord* pdest = 0;
+  heapword* pdest = 0;
 
   while (i < last) {
-    ParallelCompactData::RegionData* c = summary_data.region(i);
+    parallelcompactdata::regiondata* c = summary_data.region(i);
     if (c->data_size() != 0 || c->destination() != pdest) {
       print_generic_summary_region(i, c);
       total_words += c->data_size();
@@ -283,53 +283,53 @@ print_generic_summary_data(ParallelCompactData& summary_data,
     ++i;
   }
 
-  log_develop_trace(gc, compaction)("summary_data_bytes=" SIZE_FORMAT, total_words * HeapWordSize);
+  log_develop_trace(gc, compaction)("summary_data_bytes=" size_format, total_words * heapwordsize);
 }
 
 void
-PSParallelCompact::print_generic_summary_data(ParallelCompactData& summary_data,
-                                              HeapWord* const beg_addr,
-                                              HeapWord* const end_addr) {
+psparallelcompact::print_generic_summary_data(parallelcompactdata& summary_data,
+                                              heapword* const beg_addr,
+                                              heapword* const end_addr) {
   ::print_generic_summary_data(summary_data,beg_addr, end_addr);
 }
 
 void
-print_generic_summary_data(ParallelCompactData& summary_data,
-                           SpaceInfo* space_info)
+print_generic_summary_data(parallelcompactdata& summary_data,
+                           spaceinfo* space_info)
 {
-  if (!log_develop_is_enabled(Trace, gc, compaction)) {
+  if (!log_develop_is_enabled(trace, gc, compaction)) {
     return;
   }
 
-  for (unsigned int id = 0; id < PSParallelCompact::last_space_id; ++id) {
-    const MutableSpace* space = space_info[id].space();
+  for (unsigned int id = 0; id < psparallelcompact::last_space_id; ++id) {
+    const mutablespace* space = space_info[id].space();
     print_generic_summary_data(summary_data, space->bottom(),
-                               MAX2(space->top(), space_info[id].new_top()));
+                               max2(space->top(), space_info[id].new_top()));
   }
 }
 
 void
-print_initial_summary_data(ParallelCompactData& summary_data,
-                           const MutableSpace* space) {
+print_initial_summary_data(parallelcompactdata& summary_data,
+                           const mutablespace* space) {
   if (space->top() == space->bottom()) {
     return;
   }
 
-  const size_t region_size = ParallelCompactData::RegionSize;
-  typedef ParallelCompactData::RegionData RegionData;
-  HeapWord* const top_aligned_up = summary_data.region_align_up(space->top());
+  const size_t region_size = parallelcompactdata::regionsize;
+  typedef parallelcompactdata::regiondata regiondata;
+  heapword* const top_aligned_up = summary_data.region_align_up(space->top());
   const size_t end_region = summary_data.addr_to_region_idx(top_aligned_up);
-  const RegionData* c = summary_data.region(end_region - 1);
-  HeapWord* end_addr = c->destination() + c->data_size();
+  const regiondata* c = summary_data.region(end_region - 1);
+  heapword* end_addr = c->destination() + c->data_size();
   const size_t live_in_space = pointer_delta(end_addr, space->bottom());
 
-  // Print (and count) the full regions at the beginning of the space.
+  // print (and count) the full regions at the beginning of the space.
   size_t full_region_count = 0;
   size_t i = summary_data.addr_to_region_idx(space->bottom());
   while (i < end_region && summary_data.region(i)->data_size() == region_size) {
-    ParallelCompactData::RegionData* c = summary_data.region(i);
+    parallelcompactdata::regiondata* c = summary_data.region(i);
     log_develop_trace(gc, compaction)(
-        SIZE_FORMAT_W(5) " " PTR_FORMAT " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " %d",
+        size_format_w(5) " " ptr_format " " size_format_w(5) " " size_format_w(5) " " size_format_w(5) " " size_format_w(5) " %d",
         i, p2i(c->destination()),
         c->partial_obj_size(), c->live_obj_size(),
         c->data_size(), c->source_region(), c->destination_count());
@@ -344,12 +344,12 @@ print_initial_summary_data(ParallelCompactData& summary_data,
   size_t max_dead_to_right = 0;
   size_t max_live_to_right = 0;
 
-  // Print the 'reclaimed ratio' for regions while there is something live in
-  // the region or to the right of it.  The remaining regions are empty (and
+  // print the 'reclaimed ratio' for regions while there is something live in
+  // the region or to the right of it.  the remaining regions are empty (and
   // uninteresting), and computing the ratio will result in division by 0.
   while (i < end_region && live_to_right > 0) {
     c = summary_data.region(i);
-    HeapWord* const region_addr = summary_data.region_to_addr(i);
+    heapword* const region_addr = summary_data.region_to_addr(i);
     const size_t used_to_right = pointer_delta(space->top(), region_addr);
     const size_t dead_to_right = used_to_right - live_to_right;
     const double reclaimed_ratio = double(dead_to_right) / live_to_right;
@@ -361,10 +361,10 @@ print_initial_summary_data(ParallelCompactData& summary_data,
             max_live_to_right = live_to_right;
     }
 
-    ParallelCompactData::RegionData* c = summary_data.region(i);
+    parallelcompactdata::regiondata* c = summary_data.region(i);
     log_develop_trace(gc, compaction)(
-        SIZE_FORMAT_W(5) " " PTR_FORMAT " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " %d"
-        "%12.10f " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10),
+        size_format_w(5) " " ptr_format " " size_format_w(5) " " size_format_w(5) " " size_format_w(5) " " size_format_w(5) " %d"
+        "%12.10f " size_format_w(10) " " size_format_w(10),
         i, p2i(c->destination()),
         c->partial_obj_size(), c->live_obj_size(),
         c->data_size(), c->source_region(), c->destination_count(),
@@ -375,239 +375,239 @@ print_initial_summary_data(ParallelCompactData& summary_data,
     ++i;
   }
 
-  // Any remaining regions are empty.  Print one more if there is one.
+  // any remaining regions are empty.  print one more if there is one.
   if (i < end_region) {
-    ParallelCompactData::RegionData* c = summary_data.region(i);
+    parallelcompactdata::regiondata* c = summary_data.region(i);
     log_develop_trace(gc, compaction)(
-        SIZE_FORMAT_W(5) " " PTR_FORMAT " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " %d",
+        size_format_w(5) " " ptr_format " " size_format_w(5) " " size_format_w(5) " " size_format_w(5) " " size_format_w(5) " %d",
          i, p2i(c->destination()),
          c->partial_obj_size(), c->live_obj_size(),
          c->data_size(), c->source_region(), c->destination_count());
   }
 
-  log_develop_trace(gc, compaction)("max:  " SIZE_FORMAT_W(4) " d2r=" SIZE_FORMAT_W(10) " l2r=" SIZE_FORMAT_W(10) " max_ratio=%14.12f",
+  log_develop_trace(gc, compaction)("max:  " size_format_w(4) " d2r=" size_format_w(10) " l2r=" size_format_w(10) " max_ratio=%14.12f",
                                     max_reclaimed_ratio_region, max_dead_to_right, max_live_to_right, max_reclaimed_ratio);
 }
 
 void
-print_initial_summary_data(ParallelCompactData& summary_data,
-                           SpaceInfo* space_info) {
-  if (!log_develop_is_enabled(Trace, gc, compaction)) {
+print_initial_summary_data(parallelcompactdata& summary_data,
+                           spaceinfo* space_info) {
+  if (!log_develop_is_enabled(trace, gc, compaction)) {
     return;
   }
 
-  unsigned int id = PSParallelCompact::old_space_id;
-  const MutableSpace* space;
+  unsigned int id = psparallelcompact::old_space_id;
+  const mutablespace* space;
   do {
     space = space_info[id].space();
     print_initial_summary_data(summary_data, space);
-  } while (++id < PSParallelCompact::eden_space_id);
+  } while (++id < psparallelcompact::eden_space_id);
 
   do {
     space = space_info[id].space();
     print_generic_summary_data(summary_data, space->bottom(), space->top());
-  } while (++id < PSParallelCompact::last_space_id);
+  } while (++id < psparallelcompact::last_space_id);
 }
-#endif  // #ifndef PRODUCT
+#endif  // #ifndef product
 
-#ifdef  ASSERT
+#ifdef  assert
 size_t add_obj_count;
 size_t add_obj_size;
 size_t mark_bitmap_count;
 size_t mark_bitmap_size;
-#endif  // #ifdef ASSERT
+#endif  // #ifdef assert
 
-ParallelCompactData::ParallelCompactData() :
-  _region_start(NULL),
-  DEBUG_ONLY(_region_end(NULL) COMMA)
-  _region_vspace(NULL),
+parallelcompactdata::parallelcompactdata() :
+  _region_start(null),
+  debug_only(_region_end(null) comma)
+  _region_vspace(null),
   _reserved_byte_size(0),
-  _region_data(NULL),
+  _region_data(null),
   _region_count(0),
-  _block_vspace(NULL),
-  _block_data(NULL),
+  _block_vspace(null),
+  _block_data(null),
   _block_count(0) {}
 
-bool ParallelCompactData::initialize(MemRegion covered_region)
+bool parallelcompactdata::initialize(memregion covered_region)
 {
   _region_start = covered_region.start();
   const size_t region_size = covered_region.word_size();
-  DEBUG_ONLY(_region_end = _region_start + region_size;)
+  debug_only(_region_end = _region_start + region_size;)
 
   assert(region_align_down(_region_start) == _region_start,
          "region start not aligned");
-  assert((region_size & RegionSizeOffsetMask) == 0,
-         "region size not a multiple of RegionSize");
+  assert((region_size & regionsizeoffsetmask) == 0,
+         "region size not a multiple of regionsize");
 
   bool result = initialize_region_data(region_size) && initialize_block_data();
   return result;
 }
 
-PSVirtualSpace*
-ParallelCompactData::create_vspace(size_t count, size_t element_size)
+psvirtualspace*
+parallelcompactdata::create_vspace(size_t count, size_t element_size)
 {
   const size_t raw_bytes = count * element_size;
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
+  _reserved_byte_size = align_up(raw_bytes, max2(page_sz, granularity));
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
-    MAX2(page_sz, granularity);
-  ReservedSpace rs(_reserved_byte_size, rs_align, rs_align > 0);
-  os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, page_sz, rs.base(),
+    max2(page_sz, granularity);
+  reservedspace rs(_reserved_byte_size, rs_align, rs_align > 0);
+  os::trace_page_sizes("parallel compact data", raw_bytes, raw_bytes, page_sz, rs.base(),
                        rs.size());
 
-  MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
+  memtracker::record_virtual_memory_type((address)rs.base(), mtgc);
 
-  PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
+  psvirtualspace* vspace = new psvirtualspace(rs, page_sz);
   if (vspace != 0) {
     if (vspace->expand_by(_reserved_byte_size)) {
       return vspace;
     }
     delete vspace;
-    // Release memory reserved in the space.
+    // release memory reserved in the space.
     rs.release();
   }
 
   return 0;
 }
 
-bool ParallelCompactData::initialize_region_data(size_t region_size)
+bool parallelcompactdata::initialize_region_data(size_t region_size)
 {
-  const size_t count = (region_size + RegionSizeOffsetMask) >> Log2RegionSize;
-  _region_vspace = create_vspace(count, sizeof(RegionData));
+  const size_t count = (region_size + regionsizeoffsetmask) >> log2regionsize;
+  _region_vspace = create_vspace(count, sizeof(regiondata));
   if (_region_vspace != 0) {
-    _region_data = (RegionData*)_region_vspace->reserved_low_addr();
+    _region_data = (regiondata*)_region_vspace->reserved_low_addr();
     _region_count = count;
     return true;
   }
   return false;
 }
 
-bool ParallelCompactData::initialize_block_data()
+bool parallelcompactdata::initialize_block_data()
 {
   assert(_region_count != 0, "region data must be initialized first");
-  const size_t count = _region_count << Log2BlocksPerRegion;
-  _block_vspace = create_vspace(count, sizeof(BlockData));
+  const size_t count = _region_count << log2blocksperregion;
+  _block_vspace = create_vspace(count, sizeof(blockdata));
   if (_block_vspace != 0) {
-    _block_data = (BlockData*)_block_vspace->reserved_low_addr();
+    _block_data = (blockdata*)_block_vspace->reserved_low_addr();
     _block_count = count;
     return true;
   }
   return false;
 }
 
-void ParallelCompactData::clear()
+void parallelcompactdata::clear()
 {
   memset(_region_data, 0, _region_vspace->committed_size());
   memset(_block_data, 0, _block_vspace->committed_size());
 }
 
-void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
+void parallelcompactdata::clear_range(size_t beg_region, size_t end_region) {
   assert(beg_region <= _region_count, "beg_region out of range");
   assert(end_region <= _region_count, "end_region out of range");
-  assert(RegionSize % BlockSize == 0, "RegionSize not a multiple of BlockSize");
+  assert(regionsize % blocksize == 0, "regionsize not a multiple of blocksize");
 
   const size_t region_cnt = end_region - beg_region;
-  memset(_region_data + beg_region, 0, region_cnt * sizeof(RegionData));
+  memset(_region_data + beg_region, 0, region_cnt * sizeof(regiondata));
 
-  const size_t beg_block = beg_region * BlocksPerRegion;
-  const size_t block_cnt = region_cnt * BlocksPerRegion;
-  memset(_block_data + beg_block, 0, block_cnt * sizeof(BlockData));
+  const size_t beg_block = beg_region * blocksperregion;
+  const size_t block_cnt = region_cnt * blocksperregion;
+  memset(_block_data + beg_block, 0, block_cnt * sizeof(blockdata));
 }
 
-HeapWord* ParallelCompactData::partial_obj_end(size_t region_idx) const
+heapword* parallelcompactdata::partial_obj_end(size_t region_idx) const
 {
-  const RegionData* cur_cp = region(region_idx);
-  const RegionData* const end_cp = region(region_count() - 1);
+  const regiondata* cur_cp = region(region_idx);
+  const regiondata* const end_cp = region(region_count() - 1);
 
-  HeapWord* result = region_to_addr(region_idx);
+  heapword* result = region_to_addr(region_idx);
   if (cur_cp < end_cp) {
     do {
       result += cur_cp->partial_obj_size();
-    } while (cur_cp->partial_obj_size() == RegionSize && ++cur_cp < end_cp);
+    } while (cur_cp->partial_obj_size() == regionsize && ++cur_cp < end_cp);
   }
   return result;
 }
 
-void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
+void parallelcompactdata::add_obj(heapword* addr, size_t len)
 {
   const size_t obj_ofs = pointer_delta(addr, _region_start);
-  const size_t beg_region = obj_ofs >> Log2RegionSize;
-  const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
+  const size_t beg_region = obj_ofs >> log2regionsize;
+  const size_t end_region = (obj_ofs + len - 1) >> log2regionsize;
 
-  DEBUG_ONLY(Atomic::inc(&add_obj_count);)
-  DEBUG_ONLY(Atomic::add(&add_obj_size, len);)
+  debug_only(atomic::inc(&add_obj_count);)
+  debug_only(atomic::add(&add_obj_size, len);)
 
   if (beg_region == end_region) {
-    // All in one region.
+    // all in one region.
     _region_data[beg_region].add_live_obj(len);
     return;
   }
 
-  // First region.
+  // first region.
   const size_t beg_ofs = region_offset(addr);
-  _region_data[beg_region].add_live_obj(RegionSize - beg_ofs);
+  _region_data[beg_region].add_live_obj(regionsize - beg_ofs);
 
-  Klass* klass = ((oop)addr)->klass();
-  // Middle regions--completely spanned by this object.
+  klass* klass = ((oop)addr)->klass();
+  // middle regions--completely spanned by this object.
   for (size_t region = beg_region + 1; region < end_region; ++region) {
-    _region_data[region].set_partial_obj_size(RegionSize);
+    _region_data[region].set_partial_obj_size(regionsize);
     _region_data[region].set_partial_obj_addr(addr);
   }
 
-  // Last region.
+  // last region.
   const size_t end_ofs = region_offset(addr + len - 1);
   _region_data[end_region].set_partial_obj_size(end_ofs + 1);
   _region_data[end_region].set_partial_obj_addr(addr);
 }
 
 void
-ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
+parallelcompactdata::summarize_dense_prefix(heapword* beg, heapword* end)
 {
-  assert(region_offset(beg) == 0, "not RegionSize aligned");
-  assert(region_offset(end) == 0, "not RegionSize aligned");
+  assert(region_offset(beg) == 0, "not regionsize aligned");
+  assert(region_offset(end) == 0, "not regionsize aligned");
 
   size_t cur_region = addr_to_region_idx(beg);
   const size_t end_region = addr_to_region_idx(end);
-  HeapWord* addr = beg;
+  heapword* addr = beg;
   while (cur_region < end_region) {
     _region_data[cur_region].set_destination(addr);
     _region_data[cur_region].set_destination_count(0);
     _region_data[cur_region].set_source_region(cur_region);
     _region_data[cur_region].set_data_location(addr);
 
-    // Update live_obj_size so the region appears completely full.
-    size_t live_size = RegionSize - _region_data[cur_region].partial_obj_size();
+    // update live_obj_size so the region appears completely full.
+    size_t live_size = regionsize - _region_data[cur_region].partial_obj_size();
     _region_data[cur_region].set_live_obj_size(live_size);
 
     ++cur_region;
-    addr += RegionSize;
+    addr += regionsize;
   }
 }
 
-// Find the point at which a space can be split and, if necessary, record the
+// find the point at which a space can be split and, if necessary, record the
 // split point.
 //
-// If the current src region (which overflowed the destination space) doesn't
+// if the current src region (which overflowed the destination space) doesn't
 // have a partial object, the split point is at the beginning of the current src
 // region (an "easy" split, no extra bookkeeping required).
 //
-// If the current src region has a partial object, the split point is in the
-// region where that partial object starts (call it the split_region).  If
+// if the current src region has a partial object, the split point is in the
+// region where that partial object starts (call it the split_region).  if
 // split_region has a partial object, then the split point is just after that
 // partial object (a "hard" split where we have to record the split data and
-// zero the partial_obj_size field).  With a "hard" split, we know that the
+// zero the partial_obj_size field).  with a "hard" split, we know that the
 // partial_obj ends within split_region because the partial object that caused
-// the overflow starts in split_region.  If split_region doesn't have a partial
+// the overflow starts in split_region.  if split_region doesn't have a partial
 // obj, then the split is at the beginning of split_region (another "easy"
 // split).
-HeapWord*
-ParallelCompactData::summarize_split_space(size_t src_region,
-                                           SplitInfo& split_info,
-                                           HeapWord* destination,
-                                           HeapWord* target_end,
-                                           HeapWord** target_next)
+heapword*
+parallelcompactdata::summarize_split_space(size_t src_region,
+                                           splitinfo& split_info,
+                                           heapword* destination,
+                                           heapword* target_end,
+                                           heapword** target_next)
 {
   assert(destination <= target_end, "sanity");
   assert(destination + _region_data[src_region].data_size() > target_end,
@@ -615,26 +615,26 @@ ParallelCompactData::summarize_split_space(size_t src_region,
   assert(is_region_aligned(target_end), "sanity");
 
   size_t split_region = src_region;
-  HeapWord* split_destination = destination;
+  heapword* split_destination = destination;
   size_t partial_obj_size = _region_data[src_region].partial_obj_size();
 
   if (destination + partial_obj_size > target_end) {
-    // The split point is just after the partial object (if any) in the
+    // the split point is just after the partial object (if any) in the
     // src_region that contains the start of the object that overflowed the
     // destination space.
     //
-    // Find the start of the "overflow" object and set split_region to the
+    // find the start of the "overflow" object and set split_region to the
     // region containing it.
-    HeapWord* const overflow_obj = _region_data[src_region].partial_obj_addr();
+    heapword* const overflow_obj = _region_data[src_region].partial_obj_addr();
     split_region = addr_to_region_idx(overflow_obj);
 
-    // Clear the source_region field of all destination regions whose first word
+    // clear the source_region field of all destination regions whose first word
     // came from data after the split point (a non-null source_region field
     // implies a region must be filled).
     //
-    // An alternative to the simple loop below:  clear during post_compact(),
+    // an alternative to the simple loop below:  clear during post_compact(),
     // which uses memcpy instead of individual stores, and is easy to
-    // parallelize.  (The downside is that it clears the entire RegionData
+    // parallelize.  (the downside is that it clears the entire regiondata
     // object as opposed to just one field.)
     //
     // post_compact() would have to clear the summary data up to the highest
@@ -642,47 +642,47 @@ ParallelCompactData::summarize_split_space(size_t src_region,
     //
     //         max(top, max(new_top, clear_top))
     //
-    // where clear_top is a new field in SpaceInfo.  Would have to set clear_top
+    // where clear_top is a new field in spaceinfo.  would have to set clear_top
     // to target_end.
-    const RegionData* const sr = region(split_region);
+    const regiondata* const sr = region(split_region);
     const size_t beg_idx =
       addr_to_region_idx(region_align_up(sr->destination() +
                                          sr->partial_obj_size()));
     const size_t end_idx = addr_to_region_idx(target_end);
 
-    log_develop_trace(gc, compaction)("split:  clearing source_region field in [" SIZE_FORMAT ", " SIZE_FORMAT ")", beg_idx, end_idx);
+    log_develop_trace(gc, compaction)("split:  clearing source_region field in [" size_format ", " size_format ")", beg_idx, end_idx);
     for (size_t idx = beg_idx; idx < end_idx; ++idx) {
       _region_data[idx].set_source_region(0);
     }
 
-    // Set split_destination and partial_obj_size to reflect the split region.
+    // set split_destination and partial_obj_size to reflect the split region.
     split_destination = sr->destination();
     partial_obj_size = sr->partial_obj_size();
   }
 
-  // The split is recorded only if a partial object extends onto the region.
+  // the split is recorded only if a partial object extends onto the region.
   if (partial_obj_size != 0) {
     _region_data[split_region].set_partial_obj_size(0);
     split_info.record(split_region, partial_obj_size, split_destination);
   }
 
-  // Setup the continuation addresses.
+  // setup the continuation addresses.
   *target_next = split_destination + partial_obj_size;
-  HeapWord* const source_next = region_to_addr(split_region) + partial_obj_size;
+  heapword* const source_next = region_to_addr(split_region) + partial_obj_size;
 
-  if (log_develop_is_enabled(Trace, gc, compaction)) {
+  if (log_develop_is_enabled(trace, gc, compaction)) {
     const char * split_type = partial_obj_size == 0 ? "easy" : "hard";
-    log_develop_trace(gc, compaction)("%s split:  src=" PTR_FORMAT " src_c=" SIZE_FORMAT " pos=" SIZE_FORMAT,
+    log_develop_trace(gc, compaction)("%s split:  src=" ptr_format " src_c=" size_format " pos=" size_format,
                                       split_type, p2i(source_next), split_region, partial_obj_size);
-    log_develop_trace(gc, compaction)("%s split:  dst=" PTR_FORMAT " dst_c=" SIZE_FORMAT " tn=" PTR_FORMAT,
+    log_develop_trace(gc, compaction)("%s split:  dst=" ptr_format " dst_c=" size_format " tn=" ptr_format,
                                       split_type, p2i(split_destination),
                                       addr_to_region_idx(split_destination),
                                       p2i(*target_next));
 
     if (partial_obj_size != 0) {
-      HeapWord* const po_beg = split_info.destination();
-      HeapWord* const po_end = po_beg + split_info.partial_obj_size();
-      log_develop_trace(gc, compaction)("%s split:  po_beg=" PTR_FORMAT " " SIZE_FORMAT " po_end=" PTR_FORMAT " " SIZE_FORMAT,
+      heapword* const po_beg = split_info.destination();
+      heapword* const po_end = po_beg + split_info.partial_obj_size();
+      log_develop_trace(gc, compaction)("%s split:  po_beg=" ptr_format " " size_format " po_end=" ptr_format " " size_format,
                                         split_type,
                                         p2i(po_beg), addr_to_region_idx(po_beg),
                                         p2i(po_end), addr_to_region_idx(po_end));
@@ -692,53 +692,53 @@ ParallelCompactData::summarize_split_space(size_t src_region,
   return source_next;
 }
 
-bool ParallelCompactData::summarize(SplitInfo& split_info,
-                                    HeapWord* source_beg, HeapWord* source_end,
-                                    HeapWord** source_next,
-                                    HeapWord* target_beg, HeapWord* target_end,
-                                    HeapWord** target_next)
+bool parallelcompactdata::summarize(splitinfo& split_info,
+                                    heapword* source_beg, heapword* source_end,
+                                    heapword** source_next,
+                                    heapword* target_beg, heapword* target_end,
+                                    heapword** target_next)
 {
-  HeapWord* const source_next_val = source_next == NULL ? NULL : *source_next;
+  heapword* const source_next_val = source_next == null ? null : *source_next;
   log_develop_trace(gc, compaction)(
-      "sb=" PTR_FORMAT " se=" PTR_FORMAT " sn=" PTR_FORMAT
-      "tb=" PTR_FORMAT " te=" PTR_FORMAT " tn=" PTR_FORMAT,
+      "sb=" ptr_format " se=" ptr_format " sn=" ptr_format
+      "tb=" ptr_format " te=" ptr_format " tn=" ptr_format,
       p2i(source_beg), p2i(source_end), p2i(source_next_val),
       p2i(target_beg), p2i(target_end), p2i(*target_next));
 
   size_t cur_region = addr_to_region_idx(source_beg);
   const size_t end_region = addr_to_region_idx(region_align_up(source_end));
 
-  HeapWord *dest_addr = target_beg;
+  heapword *dest_addr = target_beg;
   while (cur_region < end_region) {
-    // The destination must be set even if the region has no data.
+    // the destination must be set even if the region has no data.
     _region_data[cur_region].set_destination(dest_addr);
 
     size_t words = _region_data[cur_region].data_size();
     if (words > 0) {
-      // If cur_region does not fit entirely into the target space, find a point
+      // if cur_region does not fit entirely into the target space, find a point
       // at which the source space can be 'split' so that part is copied to the
       // target space and the rest is copied elsewhere.
       if (dest_addr + words > target_end) {
-        assert(source_next != NULL, "source_next is NULL when splitting");
+        assert(source_next != null, "source_next is null when splitting");
         *source_next = summarize_split_space(cur_region, split_info, dest_addr,
                                              target_end, target_next);
         return false;
       }
 
-      // Compute the destination_count for cur_region, and if necessary, update
-      // source_region for a destination region.  The source_region field is
+      // compute the destination_count for cur_region, and if necessary, update
+      // source_region for a destination region.  the source_region field is
       // updated if cur_region is the first (left-most) region to be copied to a
       // destination region.
       //
-      // The destination_count calculation is a bit subtle.  A region that has
+      // the destination_count calculation is a bit subtle.  a region that has
       // data that compacts into itself does not count itself as a destination.
-      // This maintains the invariant that a zero count means the region is
+      // this maintains the invariant that a zero count means the region is
       // available and can be claimed and then filled.
       uint destination_count = 0;
       if (split_info.is_split(cur_region)) {
-        // The current region has been split:  the partial object will be copied
+        // the current region has been split:  the partial object will be copied
         // to one destination space and the remaining data will be copied to
-        // another destination space.  Adjust the initial destination_count and,
+        // another destination space.  adjust the initial destination_count and,
         // if necessary, set the source_region field if the partial object will
         // cross a destination region boundary.
         destination_count = split_info.destination_count();
@@ -748,22 +748,22 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
         }
       }
 
-      HeapWord* const last_addr = dest_addr + words - 1;
+      heapword* const last_addr = dest_addr + words - 1;
       const size_t dest_region_1 = addr_to_region_idx(dest_addr);
       const size_t dest_region_2 = addr_to_region_idx(last_addr);
 
-      // Initially assume that the destination regions will be the same and
-      // adjust the value below if necessary.  Under this assumption, if
+      // initially assume that the destination regions will be the same and
+      // adjust the value below if necessary.  under this assumption, if
       // cur_region == dest_region_2, then cur_region will be compacted
       // completely into itself.
       destination_count += cur_region == dest_region_2 ? 0 : 1;
       if (dest_region_1 != dest_region_2) {
-        // Destination regions differ; adjust destination_count.
+        // destination regions differ; adjust destination_count.
         destination_count += 1;
-        // Data from cur_region will be copied to the start of dest_region_2.
+        // data from cur_region will be copied to the start of dest_region_2.
         _region_data[dest_region_2].set_source_region(cur_region);
       } else if (region_offset(dest_addr) == 0) {
-        // Data from cur_region will be copied to the start of the destination
+        // data from cur_region will be copied to the start of the destination
         // region.
         _region_data[dest_region_1].set_source_region(cur_region);
       }
@@ -780,33 +780,34 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
   return true;
 }
 
-HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionManager* cm, bool use_block_table) const {
-  assert(addr != NULL, "Should detect NULL oop earlier");
-  assert(ParallelScavengeHeap::heap()->is_in(addr), "not in heap");
-  assert(PSParallelCompact::mark_bitmap()->is_marked(addr), "not marked");
+heapword* parallelcompactdata::calc_new_pointer(heapword* addr, parcompactionmanager* cm, bool use_block_table) const {
+  assert(addr != null, "should detect null oop earlier");
+  assert(parallelscavengeheap::heap()->is_in(addr), "not in heap");
+  assert(psparallelcompact::mark_bitmap()->is_marked(addr), "not marked");
 
-  // Region covering the object.
-  RegionData* const region_ptr = addr_to_region_ptr(addr);
-  HeapWord* result = region_ptr->destination();
+  // region covering the object.
+  regiondata* const region_ptr = addr_to_region_ptr(addr);
+  heapword* result = region_ptr->destination();
 
-  // If the entire Region is live, the new location is region->destination + the
-  // offset of the object within in the Region.
+  // if the entire region is live, the new location is region->destination + the
+  // offset of the object within in the region.
 
-  // Run some performance tests to determine if this special case pays off.  It
-  // is worth it for pointers into the dense prefix.  If the optimization to
+  // run some performance tests to determine if this special case pays off.  it
+  // is worth it for pointers into the dense prefix.  if the optimization to
   // avoid pointer updates in regions that only point to the dense prefix is
   // ever implemented, this should be revisited.
-  if (region_ptr->data_size() == RegionSize) {
+  if (region_ptr->data_size() == regionsize) {
     result += region_offset(addr);
     return result;
   }
 
-  // Otherwise, the new location is region->destination + #live words to left
-  // of addr in this region. Calculating #live words naively means walking the
-  // mark bitmap from the start of this region. Block table can be used to
+  // otherwise, the new location is region->destination + #live words to left
+  // of addr in this region. calculating #live words naively means walking the
+  // mark bitmap from the start of this region. block table can be used to
   // speed up this process, but it would incur some side-effect. In debug-only
-  // code, we prefer the side-effect free version so that no side-effect will
-  // not leak into release code.
+  // code (such as asserts), we prefer the slower but side-effect free version,
+  // to avoid side effects that would not occur for release code and could
+  // potentially affect future calculations.
   if (use_block_table) {
     // #live words = block offset + #live words in the Block that are
     // (a) to the left of addr and (b) due to objects that start in the Block.
