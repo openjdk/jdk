@@ -805,8 +805,9 @@ HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionMan
   // of addr in this region. Calculating #live words naively means walking the
   // mark bitmap from the start of this region. Block table can be used to
   // speed up this process, but it would incur some side-effect. In debug-only
-  // code, we prefer the side-effect free version so that no side-effect will
-  // not leak into release code.
+  // code (such as asserts), we prefer the slower but side-effect free version,
+  // to avoid side effects that would not occur for release code and could
+  // potentially affect future calculations.
   if (use_block_table) {
     // #live words = block offset + #live words in the Block that are
     // (a) to the left of addr and (b) due to objects that start in the Block.
