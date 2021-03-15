@@ -66,7 +66,7 @@ public class ObjectHistogram implements HeapVisitor {
     Iterator<ObjectHistogramElement> iterator = list.listIterator();
     int num=0;
     int totalCount=0;
-    int totalSize=0;
+    long totalSize=0;
     while (iterator.hasNext()) {
       ObjectHistogramElement el = iterator.next();
       num++;
