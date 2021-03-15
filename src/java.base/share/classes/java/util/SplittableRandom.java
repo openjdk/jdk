@@ -273,8 +273,8 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /**
      * {@inheritDoc}
-     *
      * @throws NullPointerException {@inheritDoc}
+     * @since 17
      */
     public SplittableRandom split(SplittableGenerator source) {
         return new SplittableRandom(source.nextLong(), mixGamma(source.nextLong()));
