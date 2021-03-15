@@ -51,7 +51,8 @@ public class ByteArrayImageSource extends InputStreamImageSource {
     }
 
     protected ImageDecoder getDecoder() {
-        InputStream is = new ByteArrayInputStream(imagedata, imageoffset, imagelength);
+        InputStream is = new ByteArrayInputStream(imagedata, imageoffset,
+                imagelength);
         return getDecoder(is);
     }
 }
