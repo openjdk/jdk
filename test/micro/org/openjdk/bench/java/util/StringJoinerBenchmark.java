@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Trivial String concatenation benchmark.
+ * Trivial benchmark for String joining with {@link java.util.StringJoiner}.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -53,13 +53,13 @@ public class StringJoinerBenchmark {
     @State(Scope.Thread)
     public static class Data {
 
-        @Param({"latin", "cyrillic", "mixed"})
+        @Param({"latin", "cyrillic"})
         private String mode;
 
-        @Param({"8", "32", "64"})
+        @Param({"8", "32"})
         private int length;
 
-        @Param({"5", "10", "100"})
+        @Param({"5", "10"})
         private int count;
 
         private String[] stringArray;
@@ -91,7 +91,6 @@ public class StringJoinerBenchmark {
 
             String alphabet;
             switch (mode) {
-                case "mixed" -> alphabet = index % 2 == 0 ? cyrillic : latin;
                 case "latin" -> alphabet = latin;
                 case "cyrillic" -> alphabet = cyrillic;
                 default -> throw new RuntimeException("Illegal mode " + mode);
