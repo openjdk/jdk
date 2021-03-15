@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  * @requires vm.jvmti
  * @requires os.maxMemory > 6G
  * @build GetObjectSizeOverflowAgent
- * @run driver ClassFileInstaller GetObjectSizeOverflowAgent
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller GetObjectSizeOverflowAgent
  * @run main GetObjectSizeOverflow
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+package jdk.test.lib.helpers;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -60,12 +62,12 @@ import java.util.zip.ZipOutputStream;
  * You can use ClassFileInstaller to ensure that WhiteBox is available in the current
  * directory of your test:
  *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * Or, you can use the -jar option to store the class in the specified JAR file. If a relative
  * path name is given, the JAR file would be relative to the current directory of
  *
- * @run driver ClassFileInstaller -jar myjar.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar myjar.jar sun.hotspot.WhiteBox
  */
 public class ClassFileInstaller {
     /**
@@ -81,7 +83,7 @@ public class ClassFileInstaller {
     public static void main(String... args) throws Exception {
         if (args.length > 1 && args[0].equals("-jar")) {
             if (args.length < 2) {
-                throw new RuntimeException("Usage: ClassFileInstaller <options> <classes>\n" +
+                throw new RuntimeException("Usage: jdk.test.lib.helpers.ClassFileInstaller <options> <classes>\n" +
                                            "where possible options include:\n" +
                                            "  -jar <path>             Write to the JAR file <path>");
             }
@@ -127,13 +129,13 @@ public class ClassFileInstaller {
     }
 
     public static class Manifest {
-        private InputStream in;
+        private final InputStream in;
 
         private Manifest(InputStream in) {
             this.in = in;
         }
 
-        static Manifest fromSourceFile(String fileName) throws Exception {
+        public static Manifest fromSourceFile(String fileName) throws Exception {
             String pathName = System.getProperty("test.src") + File.separator + fileName;
             return new Manifest(new FileInputStream(pathName));
         }
@@ -144,7 +146,7 @@ public class ClassFileInstaller {
         //  ClassFileInstaller.writeJar("redefineagent.jar",
         //    ClassFileInstaller.Manifest.fromString(manifest),
         //    "RedefineClassHelper");
-        static Manifest fromString(String manifest) throws Exception {
+        public static Manifest fromString(String manifest) throws Exception {
             return new Manifest(new ByteArrayInputStream(manifest.getBytes()));
         }
 
@@ -184,8 +186,8 @@ public class ClassFileInstaller {
      *
      * If you call this API, make sure you build ClassFileInstaller with the following tags:
      *
-     * @library testlibrary
-     * @build ClassFileInstaller
+     * @library /test/lib
+     * @build jdk.test.lib.helpers.ClassFileInstaller
      */
     public static String writeJar(String jarFile, String... classes) throws Exception {
         classes = addInnerClasses(classes, 0);
