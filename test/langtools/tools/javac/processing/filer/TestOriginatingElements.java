@@ -51,6 +51,8 @@ import javax.tools.ToolProvider;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Base64;
+import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
@@ -115,15 +117,18 @@ public class TestOriginatingElements extends TestRunner {
                 }
             };
             try {
+                String generatedData;
                 try (MemoryFileManager mfm = new MemoryFileManager(sjfm)) {
                     compiler.getTask(null, mfm, null, null, null, List.of(new ToolBox.JavaSource("package test; public class Generated2 {}")))
                             .call();
-                    TestOriginatingElementsGeneratedData.generated2 = mfm.getFileBytes(StandardLocation.CLASS_OUTPUT, "test.Generated2");
+                    generatedData =
+                            Base64.getEncoder().encodeToString(mfm.getFileBytes(StandardLocation.CLASS_OUTPUT, "test.Generated2"));
                 }
                 List<String> options = List.of("-sourcepath", src.toString(),
                                                "-processor", "TestOriginatingElements$P",
                                                "-processorpath", System.getProperty("test.classes"),
-                                               "-d", classes.toString());
+                                               "-d", classes.toString(),
+                                               "-AgeneratedData=" + generatedData);
                 ToolProvider.getSystemJavaCompiler()
                             .getTask(null, fm, null, options, null, sjfm.getJavaFileObjects(tb.findJavaFiles(src)))
                             .call();
@@ -143,6 +148,7 @@ public class TestOriginatingElements extends TestRunner {
     }
 
     @SupportedAnnotationTypes("*")
+    @SupportedOptions("generatedData")
     public static class P extends AbstractProcessor {
         int round;
         @Override
@@ -151,7 +157,7 @@ public class TestOriginatingElements extends TestRunner {
                 try {
                     processingEnv.getFiler().createSourceFile("test.Generated1", originatingElements("t.T1", "java.lang.String")).openOutputStream().close();
                     try (OutputStream out = processingEnv.getFiler().createClassFile("test.Generated2", originatingElements("t.T2", "java.lang.CharSequence")).openOutputStream()) {
-                        out.write(TestOriginatingElementsGeneratedData.generated2);
+                        out.write(Base64.getDecoder().decode(processingEnv.getOptions().get("generatedData")));
                     }
                     processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "test", "Generated3.txt", originatingElements("t.T3", "java.lang.Exception")).openOutputStream().close();
                 } catch (IOException ex) {
@@ -177,7 +183,4 @@ public class TestOriginatingElements extends TestRunner {
         }
     }
 
-}
-class TestOriginatingElementsGeneratedData {
-    public static byte[] generated2;
 }
