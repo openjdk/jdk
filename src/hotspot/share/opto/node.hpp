@@ -455,7 +455,7 @@ protected:
     return -1;
   }
   int replace_edge(Node* old, Node* neww, PhaseGVN* gvn = NULL);
-  int replace_edges_in_range(Node* old, Node* neww, int start, int end, PhaseGVN* gv);
+  int replace_edges_in_range(Node* old, Node* neww, int start, int end, PhaseGVN* gvn);
   // NULL out all inputs to eliminate incoming Def-Use edges.
   void disconnect_inputs(Compile* C);
 
