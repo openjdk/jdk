@@ -72,12 +72,6 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
       return false;
     }
 
-    if (MetaspaceShared::is_in_trampoline_frame(addr)) {
-      // In the middle of a trampoline call. Bail out for safety.
-      // This happens rarely so shouldn't affect profiling.
-      return false;
-    }
-
     frame ret_frame(ret_sp, ret_fp, addr);
     if (!ret_frame.safe_for_sender(jt)) {
 #if COMPILER2_OR_JVMCI
