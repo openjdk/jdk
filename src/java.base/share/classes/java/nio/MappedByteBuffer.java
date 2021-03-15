@@ -370,13 +370,11 @@ public abstract class MappedByteBuffer
     /**
      * {@inheritDoc}
      *
-     * @apiNote
-     * Reading bytes into physical memory by invoking {@code load()} on the
+     * <p> Reading bytes into physical memory by invoking {@code load()} on the
      * returned buffer, or writing bytes to the storage device by invoking
      * {@code force()} on the returned buffer, will only act on the sub-range
      * of this buffer that the returned buffer represents, namely
-     * {@code [position(),limit()]}.  A similar consideration applies also to
-     * {@code alignedSlice()} with of course differing position and length.
+     * {@code [position(),limit()]}.
      */
     @Override
     public abstract MappedByteBuffer slice();
@@ -384,8 +382,7 @@ public abstract class MappedByteBuffer
     /**
      * {@inheritDoc}
      *
-     * @apiNote
-     * Reading bytes into physical memory by invoking {@code load()} on the
+     * <p> Reading bytes into physical memory by invoking {@code load()} on the
      * returned buffer, or writing bytes to the storage device by invoking
      * {@code force()} on the returned buffer, will only act on the sub-range
      * of this buffer that the returned buffer represents, namely
