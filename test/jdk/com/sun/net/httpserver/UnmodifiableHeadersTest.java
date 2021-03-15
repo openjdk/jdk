@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8251496
- * @summary Tests that the Headers map is in fact immutable
+ * @summary Test that UnmodifiableHeaders are in fact immutable
  * @modules jdk.httpserver/sun.net.httpserver:+open
  * @run testng/othervm UnmodifiableHeadersTest
  */
@@ -33,6 +33,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import sun.net.httpserver.UnmodifiableHeaders;
 
@@ -49,7 +50,7 @@ import static org.testng.Assert.assertThrows;
 public class UnmodifiableHeadersTest {
 
     @Test
-    public void test() {
+    public static void testUnmodifiableHeaders() {
         var headers = new Headers();
         headers.add("Foo", "Bar");
         HttpExchange exchange = new TestHttpExchange(headers);
@@ -71,6 +72,7 @@ public class UnmodifiableHeadersTest {
         assertThrows(UOP, () -> headers.putIfAbsent("h", List.of()));
         assertThrows(UOP, () -> headers.remove("i"));
         assertThrows(UOP, () -> headers.replace("j", List.of("k")));
+        assertThrows(UOP, () -> headers.replace("j", List.of("k"), List.of("k")));
         assertThrows(UOP, () -> headers.replaceAll((k, v) -> List.of()));
         assertThrows(UOP, () -> headers.set("l", "m"));
         assertThrows(UOP, headers::clear);
@@ -93,6 +95,7 @@ public class UnmodifiableHeadersTest {
         TestHttpExchange(Headers headers) {
             this.headers = new UnmodifiableHeaders(headers);
         }
+
         @Override
         public Headers getRequestHeaders() {
             return headers;

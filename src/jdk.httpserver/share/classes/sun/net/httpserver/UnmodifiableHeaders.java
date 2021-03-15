@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,15 @@
 package sun.net.httpserver;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import com.sun.net.httpserver.*;
 
-class UnmodifiableHeaders extends Headers {
+public class UnmodifiableHeaders extends Headers {
 
-        Headers map;
+        Map<String, List<String>> map;
 
-        UnmodifiableHeaders(Headers map) {
-            this.map = map;
+        public UnmodifiableHeaders(Headers map) {
+            this.map = Collections.unmodifiableMap(map);
         }
 
         public int size() {return map.size();}
@@ -53,9 +54,10 @@ class UnmodifiableHeaders extends Headers {
         }
 
         public String getFirst (String key) {
-            return map.getFirst(key);
+            final var headers = new Headers();
+            map.forEach((k, v) -> headers.add(k, v.get(0)));
+            return headers.getFirst(key);
         }
-
 
         public List<String> put(String key, List<String> value) {
             return map.put (key, value);
@@ -82,7 +84,7 @@ class UnmodifiableHeaders extends Headers {
         }
 
         public Set<String> keySet() {
-            return Collections.unmodifiableSet (map.keySet());
+            return Collections.unmodifiableSet(map.keySet());
         }
 
         public Collection<List<String>> values() {
@@ -92,7 +94,19 @@ class UnmodifiableHeaders extends Headers {
         /* TODO check that contents of set are not modifable : security */
 
         public Set<Map.Entry<String, List<String>>> entrySet() {
-            return Collections.unmodifiableSet (map.entrySet());
+            return Collections.unmodifiableSet(map.entrySet());
+        }
+
+        public List<String> replace(String key, List<String> value) {
+            throw new UnsupportedOperationException("unsupported operation");
+        }
+
+        public boolean replace(String key, List<String> oldValue, List<String> newValue) {
+            throw new UnsupportedOperationException ("unsupported operation");
+        }
+
+        public void replaceAll(BiFunction<? super String, ? super List<String>, ? extends List<String>> function) {
+            throw new UnsupportedOperationException ("unsupported operation");
         }
 
         public boolean equals(Object o) {return map.equals(o);}
