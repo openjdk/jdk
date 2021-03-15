@@ -91,3 +91,9 @@ void VM_Version::get_os_cpu_info() {
   _model = family;
   _cpu = CPU_APPLE;
 }
+
+void VM_Version::get_compatible_board(char *buf, int buflen) {
+  assert(buf != NULL, "invalid argument");
+  assert(buflen >= 1, "invalid argument");
+  *buf = '\0';
+}
