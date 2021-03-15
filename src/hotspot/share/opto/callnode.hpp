@@ -616,8 +616,9 @@ public:
   // For macro nodes, the JVMState gets modified during expansion. If calls
   // use MachConstantBase, it gets modified during matching. So when cloning
   // the node the JVMState must be cloned. Default is not to clone.
-  virtual void clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && C->needs_clone_jvms()) {
+  virtual bool needs_clone_jvms(Compile* C) { return C->needs_clone_jvms(); }
+  void clone_jvms(Compile* C) {
+    if ((jvms() != NULL) && needs_clone_jvms(C)) {
       set_jvms(jvms()->clone_deep(C));
       jvms()->set_map_deep(this);
     }
@@ -737,11 +738,8 @@ public:
   }
   // Late inlining modifies the JVMState, so we need to clone it
   // when the call node is cloned (because it is macro node).
-  virtual void clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && (is_boxing_method() || C->needs_clone_jvms())) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
+  virtual bool needs_clone_jvms(Compile* C) {
+    return is_boxing_method() || CallNode::needs_clone_jvms(C);
   }
 
   virtual int         Opcode() const;
@@ -766,11 +764,8 @@ public:
 
   // Late inlining modifies the JVMState, so we need to clone it
   // when the call node is cloned.
-  virtual void clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && (IncrementalInlineVirtual || C->needs_clone_jvms())) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
+  virtual bool needs_clone_jvms(Compile* C) {
+    return IncrementalInlineVirtual || CallNode::needs_clone_jvms(C);
   }
 
   int _vtable_index;
@@ -923,12 +918,7 @@ public:
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
                Node *size, Node *klass_node, Node *initial_test);
   // Expansion modifies the JVMState, so we need to clone it
-  virtual void clone_jvms(Compile* C) {
-    if (jvms() != NULL) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
-  }
+  virtual bool needs_clone_jvms(Compile* C) { return true; }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual bool        guaranteed_safepoint()  { return false; }
@@ -1142,12 +1132,7 @@ public:
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   // Expansion modifies the JVMState, so we need to clone it
-  virtual void clone_jvms(Compile* C) {
-    if (jvms() != NULL) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
-  }
+  virtual bool needs_clone_jvms(Compile* C) { return true; }
 
   bool is_nested_lock_region(); // Is this Lock nested?
   bool is_nested_lock_region(Compile * c); // Why isn't this Lock nested?
