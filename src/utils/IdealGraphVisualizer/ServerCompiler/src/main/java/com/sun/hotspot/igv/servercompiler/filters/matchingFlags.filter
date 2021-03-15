@@ -1,3 +1,0 @@
-colorize("is_dontcare", "false", white);
-colorize("is_shared", "true", green);
-colorize("is_dontcare", "true", red);
