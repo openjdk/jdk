@@ -33,22 +33,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-    <artifactId>IdealGraphVisualizer-parent</artifactId>
-    <groupId>com.sun.hotspot.igv</groupId>
-    <version>1.0-SNAPSHOT</version>
-  </parent>
-
+        <artifactId>IdealGraphVisualizer-parent</artifactId>
+        <groupId>com.sun.hotspot.igv</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
     <groupId>com.sun.hotspot.igv</groupId>
     <artifactId>Bytecodes</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>nbm</packaging>
-
     <name>Bytecodes</name>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
@@ -65,7 +61,6 @@
             <artifactId>Util</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- TODO: check that we use the right version of this dependency.-->
         <dependency>
             <groupId>net.java.dev.swing-layout</groupId>
             <artifactId>swing-layout</artifactId>
@@ -102,7 +97,6 @@
             <version>${netbeans.version}</version>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -111,7 +105,6 @@
                 <version>${nbmmvnplugin.version}</version>
                 <extensions>true</extensions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -121,7 +114,6 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

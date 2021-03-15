@@ -30,25 +30,20 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.sun.hotspot.igv</groupId>
         <artifactId>IdealGraphVisualizer-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-
     <artifactId>IdealGraphVisualizer-app</artifactId>
     <packaging>nbm-application</packaging>
-
     <name>IdealGraphVisualizer-app</name>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <all.clusters>${project.build.directory}/${brandingToken}</all.clusters>
     </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.netbeans.cluster</groupId>
@@ -68,97 +63,96 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Data</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Data</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Settings</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Settings</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Util</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Util</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Layout</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Layout</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Difference</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Difference</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>NetworkConnection</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>NetworkConnection</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Coordinator</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Coordinator</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>SelectionCoordinator</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>SelectionCoordinator</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Graph</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Graph</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>HierarchicalLayout</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>HierarchicalLayout</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>ControlFlow</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ControlFlow</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Filter</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Filter</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Bytecodes</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Bytecodes</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>ServerCompiler</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ServerCompiler</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>FilterWindow</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>FilterWindow</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>Graal</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Graal</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>BatikSVGProxy</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>BatikSVGProxy</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>View</artifactId>
-          <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>View</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -179,7 +173,6 @@
             </plugin>
         </plugins>
     </build>
-
     <profiles>
         <profile>
             <id>deployment</id>
