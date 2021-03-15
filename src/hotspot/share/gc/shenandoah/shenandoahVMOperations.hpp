@@ -130,14 +130,14 @@ public:
   virtual void doit();
 };
 
-class VM_ShenandoahDisableWeakRoots: public VM_ShenandoahOperation {
+class VM_ShenandoahFinalRoots: public VM_ShenandoahOperation {
   ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahDisableWeakRoots(ShenandoahConcurrentGC* gc) :
+  VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc) :
     VM_ShenandoahOperation(),
     _gc(gc) {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahDisableWeakRoots; }
-  const char* name()             const { return "Shenandoah Disable Weak Roots"; }
+  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalRoots; }
+  const char* name()             const { return "Shenandoah Final Roots"; }
   virtual void doit();
 };
 

@@ -88,7 +88,7 @@
   template(ShenandoahFinalMarkStartEvac)          \
   template(ShenandoahInitUpdateRefs)              \
   template(ShenandoahFinalUpdateRefs)             \
-  template(ShenandoahDisableWeakRoots)            \
+  template(ShenandoahFinalRoots)                  \
   template(ShenandoahDegeneratedGC)               \
   template(Exit)                                  \
   template(LinuxDllLoad)                          \

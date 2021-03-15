@@ -76,7 +76,7 @@ void VM_ShenandoahFinalUpdateRefs::doit() {
   _gc->entry_final_updaterefs();
 }
 
-void VM_ShenandoahDisableWeakRoots::doit() {
+void VM_ShenandoahFinalRoots::doit() {
   ShenandoahGCPauseMark mark(_gc_id, SvcGCMarker::CONCURRENT);
-  _gc->entry_disable_weakroots();
+  _gc->entry_final_roots();
 }

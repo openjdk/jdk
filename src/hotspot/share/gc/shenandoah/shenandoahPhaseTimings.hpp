@@ -98,8 +98,8 @@ class outputStream;
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
   f(conc_evac,                                      "Concurrent Evacuation")           \
                                                                                        \
-  f(disable_weakroots_gross,                        "Disable Weak Roots (G)")          \
-  f(disable_weakroots,                              "Disable Weak Roots (N)")          \
+  f(final_roots_gross,                              "Pause Final Roots (G)")           \
+  f(final_roots,                                    "Pause Final Roots (N)")           \
                                                                                        \
   f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
   f(init_update_refs,                               "Pause Init  Update Refs (N)")     \

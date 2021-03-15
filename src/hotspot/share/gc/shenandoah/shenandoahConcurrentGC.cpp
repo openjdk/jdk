@@ -166,7 +166,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
   } else {
-    vmop_entry_disable_weakroots();
+    vmop_entry_final_roots();
   }
 
   return true;
@@ -212,14 +212,14 @@ void ShenandoahConcurrentGC::vmop_entry_final_updaterefs() {
   VMThread::execute(&op);
 }
 
-void ShenandoahConcurrentGC::vmop_entry_disable_weakroots() {
+void ShenandoahConcurrentGC::vmop_entry_final_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
-  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::disable_weakroots_gross);
+  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_roots_gross);
 
   // This phase does not use workers, no need for setup
   heap->try_inject_alloc_failure();
-  VM_ShenandoahDisableWeakRoots op(this);
+  VM_ShenandoahFinalRoots op(this);
   VMThread::execute(&op);
 }
 
@@ -269,12 +269,12 @@ void ShenandoahConcurrentGC::entry_final_updaterefs() {
   op_final_updaterefs();
 }
 
-void ShenandoahConcurrentGC::entry_disable_weakroots() {
-  static const char* msg = "Pause Disable Weak Roots";
-  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::disable_weakroots);
+void ShenandoahConcurrentGC::entry_final_roots() {
+  static const char* msg = "Pause Final Roots";
+  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
   EventMark em("%s", msg);
 
-  op_disable_weakroots();
+  op_final_roots();
 }
 
 void ShenandoahConcurrentGC::entry_reset() {
@@ -989,7 +989,7 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   heap->rebuild_free_set(true /*concurrent*/);
 }
 
-void ShenandoahConcurrentGC::op_disable_weakroots() {
+void ShenandoahConcurrentGC::op_final_roots() {
   ShenandoahHeap::heap()->set_concurrent_weak_root_in_progress(false);
 }
 
