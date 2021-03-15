@@ -450,19 +450,25 @@ else
      HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
    endif
 
+   # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
+   # when building libharfbuzz
+   ifeq ($(call isTargetOs, aix), true)
+     LIBHARFBUZZ_CFLAGS += -qdebug=necan
+   endif
+
    ifeq ($(call isTargetOs, macosx), false)
      LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-coretext.cc
    endif
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
    LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
-    HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
-    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
+   HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
+   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
         maybe-uninitialized class-memaccess
-    HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
+   HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         undef missing-field-initializers range-loop-analysis
-    HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138
+   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138
 
    LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 
