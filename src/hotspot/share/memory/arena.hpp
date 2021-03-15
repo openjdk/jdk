@@ -186,9 +186,7 @@ protected:
   bool Afree(void *ptr, size_t size) {
     assert(ptr != NULL, "Sanity");
 #ifdef ASSERT
-    if (ZapResourceArea) {
-      memset(ptr, badResourceValue, size); // zap freed memory
-    }
+    if (ZapResourceArea) memset(ptr, badResourceValue, size); // zap freed memory
     if (UseMallocOnly) return true;
 #endif
     if (((char*)ptr) + size == _hwm) {
