@@ -148,7 +148,7 @@ final class DottedVersion implements Comparable<String> {
         if (components.isEmpty()) {
             components.add(BigInteger.ZERO);
         }
-        return components.stream().toList().toArray(BigInteger[]::new);
+        return components.toArray(BigInteger[]::new);
     }
 
     @Override

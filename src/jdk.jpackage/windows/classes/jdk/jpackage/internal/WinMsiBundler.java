@@ -195,9 +195,9 @@ public class WinMsiBundler  extends AbstractBundler {
         wixFragments = Stream.of(
                 Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
                 Map.entry("ui.wxf", new WixUiFragmentBuilder())
-        ).map(e -> {
+        ).<WixFragmentBuilder>map(e -> {
             e.getValue().setOutputFileName(e.getKey());
-            return (WixFragmentBuilder) e.getValue();
+            return e.getValue();
         }).toList();
     }
 
