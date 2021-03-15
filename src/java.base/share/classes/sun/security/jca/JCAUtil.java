@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.jca;
 
 import java.lang.ref.*;
-
+import java.util.Arrays;
 import java.security.*;
 
 /**
@@ -55,8 +55,21 @@ public final class JCAUtil {
     }
 
     // cached SecureRandom instance
-    private static class CachedSecureRandomHolder {
-        public static SecureRandom instance = new SecureRandom();
+    private static final class CachedSecureRandomHolder {
+        private static Provider[] cachedConfig = Security.getProviders();
+        private static SecureRandom instance = new SecureRandom();
+        public static SecureRandom instance(boolean checkConfig) {
+            synchronized (CachedSecureRandomHolder.class) {
+                if (checkConfig) {
+                    Provider[] currConfig = Security.getProviders();
+                    if (!Arrays.equals(cachedConfig, currConfig)) {
+                        instance = new SecureRandom();
+                        cachedConfig = currConfig;
+                    }
+                }
+            }
+            return instance;
+        }
     }
 
     /**
@@ -66,7 +79,15 @@ public final class JCAUtil {
      * implementation, which is fairly inefficient.
      */
     public static SecureRandom getSecureRandom() {
-        return CachedSecureRandomHolder.instance;
+        return CachedSecureRandomHolder.instance(false);
     }
 
+    /**
+     * Get the default SecureRandom instance. This method is the
+     * optimized version of "new SecureRandom()" which re-uses the default
+     * SecureRandom impl if the provider table is the same.
+     */
+    public static SecureRandom getDefSecureRandom() {
+        return CachedSecureRandomHolder.instance(true);
+    }
 }
