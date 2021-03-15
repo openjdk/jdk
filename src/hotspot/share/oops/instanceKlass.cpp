@@ -807,7 +807,7 @@ void InstanceKlass::eager_initialize_impl() {
   EXCEPTION_MARK;
   HandleMark hm(THREAD);
   Handle h_init_lock(THREAD, init_lock());
-  ObjectLocker ol(h_init_lock, THREAD);
+  ObjectLocker ol(h_init_lock, THREAD->as_Java_thread());
 
   // abort if someone beat us to the initialization
   if (!is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -943,7 +943,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   {
     HandleMark hm(THREAD);
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, THREAD);
+    ObjectLocker ol(h_init_lock, jt);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -1068,7 +1068,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 1
   {
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, THREAD);
+    ObjectLocker ol(h_init_lock, jt);
 
     // Step 2
     // If we were to use wait() instead of waitInterruptibly() then
@@ -1211,7 +1211,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS) {
   Handle h_init_lock(THREAD, init_lock());
   if (h_init_lock() != NULL) {
-    ObjectLocker ol(h_init_lock, THREAD);
+    ObjectLocker ol(h_init_lock, THREAD->as_Java_thread());
     set_init_thread(NULL); // reset _init_thread before changing _init_state
     set_init_state(state);
     fence_and_clear_init_lock();
@@ -2857,9 +2857,10 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
     check_prohibited_package(name(), loader_data, CHECK);
   }
 
-  if (is_shared() && _package_entry == pkg_entry) {
-    if (MetaspaceShared::use_full_module_graph()) {
+  if (is_shared() && _package_entry != NULL) {
+    if (MetaspaceShared::use_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
+      assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
       return;
     } else {
       _package_entry = NULL;
