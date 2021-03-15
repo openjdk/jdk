@@ -22,27 +22,27 @@
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>NetworkConnection</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Data</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Difference</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Settings</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Util</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>

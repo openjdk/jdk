@@ -22,52 +22,52 @@
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Data</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Difference</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Filter</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Graph</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>HierarchicalLayout</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Layout</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>SelectionCoordinator</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>BatikSVGProxy</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Settings</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Util</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>

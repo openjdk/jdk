@@ -22,22 +22,22 @@
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Data</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Filter</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Layout</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.hotspot.igv</groupId>
             <artifactId>Graph</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
