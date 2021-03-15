@@ -87,6 +87,8 @@ class Linux {
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
   static bool shm_hugetlbfs_sanity_check(bool warn, size_t page_size);
 
+  static int hugetlbfs_page_size_flag(size_t page_size);
+
   static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec);
   static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, char* req_addr, bool exec);
   static char* reserve_memory_special_huge_tlbfs_only(size_t bytes, char* req_addr, bool exec);

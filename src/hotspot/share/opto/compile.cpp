@@ -4161,10 +4161,10 @@ Node* Compile::conv_I2X_index(PhaseGVN* phase, Node* idx, const TypeInt* sizetyp
 }
 
 // Convert integer value to a narrowed long type dependent on ctrl (for example, a range check)
-Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl) {
+Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl, bool carry_dependency) {
   if (ctrl != NULL) {
     // Express control dependency by a CastII node with a narrow type.
-    value = new CastIINode(value, itype, false, true /* range check dependency */);
+    value = new CastIINode(value, itype, carry_dependency, true /* range check dependency */);
     // Make the CastII node dependent on the control input to prevent the narrowed ConvI2L
     // node from floating above the range check during loop optimizations. Otherwise, the
     // ConvI2L node may be eliminated independently of the range check, causing the data path
@@ -4790,6 +4790,30 @@ void Compile::igv_print_method_to_network(const char* phase_name) {
 }
 #endif
 
-void Compile::add_native_invoker(BufferBlob* stub) {
+void Compile::add_native_invoker(RuntimeStub* stub) {
   _native_invokers.append(stub);
 }
+
+Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
+  if (type != NULL && phase->type(value)->higher_equal(type)) {
+    return value;
+  }
+  Node* result = NULL;
+  if (bt == T_BYTE) {
+    result = phase->transform(new LShiftINode(value, phase->intcon(24)));
+    result = new RShiftINode(result, phase->intcon(24));
+  } else if (bt == T_BOOLEAN) {
+    result = new AndINode(value, phase->intcon(0xFF));
+  } else if (bt == T_CHAR) {
+    result = new AndINode(value,phase->intcon(0xFFFF));
+  } else {
+    assert(bt == T_SHORT, "unexpected narrow type");
+    result = phase->transform(new LShiftINode(value, phase->intcon(16)));
+    result = new RShiftINode(result, phase->intcon(16));
+  }
+  if (transform_res) {
+    result = phase->transform(result);
+  }
+  return result;
+}
+

@@ -23,6 +23,8 @@
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
@@ -38,6 +41,9 @@ import org.junit.Test;
 import jdk.internal.platform.CgroupInfo;
 import jdk.internal.platform.CgroupSubsystemFactory;
 import jdk.internal.platform.CgroupSubsystemFactory.CgroupTypeResult;
+import jdk.internal.platform.CgroupV1MetricsImpl;
+import jdk.internal.platform.cgroupv1.CgroupV1Subsystem;
+import jdk.internal.platform.Metrics;
 import jdk.test.lib.Utils;
 import jdk.test.lib.util.FileUtils;
 
@@ -47,6 +53,7 @@ import jdk.test.lib.util.FileUtils;
  * @key cgroups
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.platform
+ *          java.base/jdk.internal.platform.cgroupv1
  * @library /test/lib
  * @run junit/othervm TestCgroupSubsystemFactory
  */
@@ -67,6 +74,9 @@ public class TestCgroupSubsystemFactory {
     private Path cgroupv1SelfCgroup;
     private Path cgroupv2SelfCgroup;
     private Path cgroupv1SelfCgroupJoinCtrl;
+    private Path cgroupv1CgroupsOnlyCPUCtrl;
+    private Path cgroupv1SelfCgroupsOnlyCPUCtrl;
+    private Path cgroupv1MountInfoCgroupsOnlyCPUCtrl;
     private String mntInfoEmpty = "";
     private String cgroupsNonZeroJoinControllers =
             "#subsys_name hierarchy num_cgroups enabled\n" +
@@ -83,6 +93,12 @@ public class TestCgroupSubsystemFactory {
             "hugetlb\t4\t153\t1\n" +
             "pids\t5\t95\t1\n" +
             "rdma\t8\t1\t1\n";
+    private String cgroupsNonZeroCpuControllerOnly =
+            "#subsys_name hierarchy num_cgroups enabled\n" +
+            "cpu\t4\t153\t1\n" +
+            "cpuacct\t4\t153\t1\n";
+    private String selfCgroupNonZeroCpuControllerOnly =
+            "4:cpu,cpuacct:/user.slice/user-1000.slice/session-3.scope\n";
     private String selfCgroupNonZeroJoinControllers =
             "9:cpuset:/\n" +
             "8:perf_event:/\n" +
@@ -119,6 +135,9 @@ public class TestCgroupSubsystemFactory {
             "42 30 0:38 / /sys/fs/cgroup/cpuset rw,nosuid,nodev,noexec,relatime shared:14 - cgroup none rw,seclabel,cpuset\n" +
             "43 30 0:39 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:15 - cgroup none rw,seclabel,blkio\n" +
             "44 30 0:40 / /sys/fs/cgroup/freezer rw,nosuid,nodev,noexec,relatime shared:16 - cgroup none rw,seclabel,freezer\n";
+    private String mntInfoCpuOnly =
+            "30 23 0:26 / /sys/fs/cgroup ro,nosuid,nodev,noexec shared:4 - tmpfs tmpfs ro,seclabel,mode=755\n" +
+            "40 30 0:36 / /sys/fs/cgroup/cpu,cpuacct rw,nosuid,nodev,noexec,relatime shared:12 - cgroup none rw,seclabel,cpu,cpuacct\n";
     private String mntInfoCgroupv1JoinControllers =
             "31 22 0:26 / /sys/fs/cgroup ro,nosuid,nodev,noexec shared:9 - tmpfs tmpfs ro,mode=755\n" +
             "32 31 0:27 / /sys/fs/cgroup/unified rw,nosuid,nodev,noexec,relatime shared:10 - cgroup2 cgroup2 rw,nsdelegate\n" +
@@ -210,6 +229,15 @@ public class TestCgroupSubsystemFactory {
 
             cgroupv1SelfCgroupJoinCtrl = Paths.get(existingDirectory.toString(), "self_cgroup_cgv1_join_controllers");
             Files.writeString(cgroupv1SelfCgroupJoinCtrl, selfCgroupNonZeroJoinControllers);
+
+            cgroupv1CgroupsOnlyCPUCtrl = Paths.get(existingDirectory.toString(), "cgroups_cpu_only_controller");
+            Files.writeString(cgroupv1CgroupsOnlyCPUCtrl, cgroupsNonZeroCpuControllerOnly);
+
+            cgroupv1SelfCgroupsOnlyCPUCtrl = Paths.get(existingDirectory.toString(), "self_cgroup_cpu_only_controller");
+            Files.writeString(cgroupv1SelfCgroupsOnlyCPUCtrl, selfCgroupNonZeroCpuControllerOnly);
+
+            cgroupv1MountInfoCgroupsOnlyCPUCtrl = Paths.get(existingDirectory.toString(), "self_mountinfo_cpu_only_controller");
+            Files.writeString(cgroupv1MountInfoCgroupsOnlyCPUCtrl, mntInfoCpuOnly);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -222,6 +250,34 @@ public class TestCgroupSubsystemFactory {
         } catch (IOException e) {
             System.err.println("Teardown failed. " + e.getMessage());
         }
+    }
+
+    @Test
+    public void testCgroupv1CpuControllerOnly() throws IOException {
+        String cgroups = cgroupv1CgroupsOnlyCPUCtrl.toString();
+        String mountInfo = cgroupv1MountInfoCgroupsOnlyCPUCtrl.toString();
+        String selfCgroup = cgroupv1SelfCgroupsOnlyCPUCtrl.toString();
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
+
+        assertTrue("Expected non-empty cgroup result", result.isPresent());
+        CgroupTypeResult res = result.get();
+        assertFalse("Expected cgroup v1", res.isCgroupV2());
+        Map<String, CgroupInfo> infos = res.getInfos();
+        assertNull("Memory controller expected null", infos.get("memory"));
+        assertNotNull("Cpu controller expected non-null", infos.get("cpu"));
+
+        // cgroup v1 tests only as this isn't possible with unified hierarchy
+        // where all controllers have the same mount point
+        CgroupV1Subsystem subsystem = CgroupV1Subsystem.getInstance(infos);
+        // This throws NPEs prior JDK-8257746
+        long val = subsystem.getMemoryAndSwapLimit();
+        assertEquals("expected unlimited, and no NPE", -1, val);
+        val = subsystem.getMemoryAndSwapFailCount();
+        assertEquals("expected unlimited, and no NPE", -1, val);
+        val = subsystem.getMemoryAndSwapMaxUsage();
+        assertEquals("expected unlimited, and no NPE", -1, val);
+        val = subsystem.getMemoryAndSwapUsage();
+        assertEquals("expected unlimited, and no NPE", -1, val);
     }
 
     @Test
