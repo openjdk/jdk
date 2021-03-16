@@ -154,10 +154,13 @@ public final class Parameter implements AnnotatedElement {
     }
 
     /**
-     * Get the modifier flags for this the parameter represented by
-     * this {@code Parameter} object.
+     * {@return the Java language {@linkplain Modifier modifiers} for
+     * the parameter represented by this object}
      *
-     * @return The modifier flags for this parameter.
+     * @jls 8.4.1 Formal Parameters
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      */
     public int getModifiers() {
         return modifiers;

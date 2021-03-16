@@ -201,8 +201,8 @@ public abstract class Executable extends AccessibleObject
     public abstract String getName();
 
     /**
-     * Returns the Java language {@linkplain Modifier modifiers} for
-     * the executable represented by this object.
+     * {@return the Java language {@linkplain Modifier modifiers} for
+     * the executable represented by this object}
      */
     public abstract int getModifiers();
 
@@ -257,13 +257,20 @@ public abstract class Executable extends AccessibleObject
     }
 
     /**
-     * Returns an array of {@code Type} objects that represent the formal
-     * parameter types, in declaration order, of the executable represented by
-     * this object. Returns an array of length 0 if the
-     * underlying executable takes no parameters.
-     * Note that the constructors of some inner classes
-     * may have an implicitly declared parameter in addition to
-     * explicitly declared ones.
+     * Returns an array of {@code Type} objects that represent the
+     * formal parameter types, in declaration order, of the executable
+     * represented by this object. Returns an array of length 0 if the
+     * underlying executable takes no parameters.  Note that the
+     * constructors of some inner classes may have an implicitly
+     * declared parameter in addition to explicitly declared ones.
+     * Also note that as a <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">modeling
+     * artifact</a>, the number of returned parameters can differ
+     * depending on whether or not generic information is present. If
+     * generic information is present, only parameters explicitly
+     * present in the source will be returned; if generic information
+     * is not present, implicit and synthetic parameters may be
+     * returned as well.
      *
      * <p>If a formal parameter type is a parameterized type,
      * the {@code Type} object returned for it must accurately reflect
@@ -347,7 +354,7 @@ public abstract class Executable extends AccessibleObject
      *
      * <p>The parameters of the underlying executable do not necessarily
      * have unique names, or names that are legal identifiers in the
-     * Java programming language (JLS 3.8).
+     * Java programming language (JLS {@jls 3.8}).
      *
      * @throws MalformedParametersException if the class file contains
      * a MethodParameters attribute that is improperly formatted.
@@ -672,7 +679,7 @@ public abstract class Executable extends AccessibleObject
      * by this {@code Executable} object.
      *
      * The receiver type of a method/constructor is available only if the
-     * method/constructor has a receiver parameter (JLS 8.4.1). If this {@code
+     * method/constructor has a receiver parameter (JLS {@jls 8.4.1}). If this {@code
      * Executable} object <em>represents an instance method or represents a
      * constructor of an inner member class</em>, and the
      * method/constructor <em>either</em> has no receiver parameter or has a

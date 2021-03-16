@@ -1267,6 +1267,9 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      * @since 1.1
      * @jls 8.1.1 Class Modifiers
      * @jls 9.1.1. Interface Modifiers
