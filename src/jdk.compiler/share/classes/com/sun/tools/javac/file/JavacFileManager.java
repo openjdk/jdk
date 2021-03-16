@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1106,7 +1106,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
           PathAndContainer that = (PathAndContainer) o;
           return path.equals(that.path)
               && container.equals(that.container)
-              && index == this.index;
+              && index == that.index;
         }
 
         @Override
