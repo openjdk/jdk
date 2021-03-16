@@ -3176,11 +3176,11 @@ operand immL_32bits()
   interface(CONST_INTER);
 %}
 
-// Int Immediate: power of 2, positive
-operand immI_bitmask()
+// Int Immediate: 2^n-1, postive
+operand immI_Pow2M1()
 %{
   predicate((n->get_int() != 0)
-            && ((n->get_int() & 0xc0000000) == 0)
+            && (n->get_int() > 0)
             && is_power_of_2(n->get_int() + 1));
   match(ConI);
 
@@ -9167,15 +9167,14 @@ instruct andI2L_rReg_imm65535(rRegL dst, rRegI src, immI_65535 mask)
 %}
 
 // Can skip int2long conversions after AND with small bitmask
-instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src, immI_bitmask mask, rRegI tmp, rFlagsReg cr)
+instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src,  immI_Pow2M1 mask, rRegI tmp, rFlagsReg cr)
 %{
   predicate(VM_Version::supports_bmi2());
   ins_cost(125);
   effect(TEMP tmp, KILL cr);
   match(Set dst (ConvI2L (AndI src mask)));
-  format %{ "bzhiq $dst, $src, $mask \t# using $tmp as TEMP, int & immI_bitmask -> long" %}
+  format %{ "bzhiq $dst, $src, $mask \t# using $tmp as TEMP, int &  immI_Pow2M1 -> long" %}
   ins_encode %{
-    assert(VM_Version::supports_bmi2(), "required");
     __ movl($tmp$$Register, exact_log2($mask$$constant + 1));
     __ bzhiq($dst$$Register, $src$$Register, $tmp$$Register);
   %}
