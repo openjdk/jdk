@@ -59,7 +59,7 @@ dnl
 // ------------------------------ Load/store/reinterpret -----------------------
 define(`VLoadStore', `
 // ifelse(load, $3, Load, Store) Vector ($6 bits)
-instruct $3V$4`'(vec$5 $7, ifelse($4, 2, memory, vmem$4) mem)
+instruct $3V$4`'(vec$5 $7, vmem$4 mem)
 %{
   predicate($8`n->as_'ifelse(load, $3, Load, Store)Vector()->memory_size() == $4);
   match(Set ifelse(load, $3, dst (LoadVector mem), mem (StoreVector mem src)));

@@ -31,7 +31,7 @@
 // ------------------------------ Load/store/reinterpret -----------------------
 
 // Load Vector (16 bits)
-instruct loadV2(vecD dst, memory mem)
+instruct loadV2(vecD dst, vmem2 mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 2);
   match(Set dst (LoadVector mem));
@@ -42,7 +42,7 @@ instruct loadV2(vecD dst, memory mem)
 %}
 
 // Store Vector (16 bits)
-instruct storeV2(vecD src, memory mem)
+instruct storeV2(vecD src, vmem2 mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 2);
   match(Set mem (StoreVector mem src));
