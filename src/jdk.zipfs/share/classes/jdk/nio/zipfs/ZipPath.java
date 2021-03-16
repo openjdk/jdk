@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -967,11 +967,7 @@ final class ZipPath implements Path {
             try (InputStream is = zfs.newInputStream(getResolvedPath());
                  OutputStream os = target.newOutputStream())
             {
-                byte[] buf = new byte[8192];
-                int n;
-                while ((n = is.read(buf)) != -1) {
-                    os.write(buf, 0, n);
-                }
+                is.transferTo(os);
             }
         }
         if (copyAttrs) {
