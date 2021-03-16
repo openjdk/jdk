@@ -391,8 +391,7 @@ public:
     _closed_archive_heap_regions(NULL),
     _open_archive_heap_regions(NULL),
     _closed_archive_heap_oopmaps(NULL),
-    _open_archive_heap_oopmaps(NULL)
-  { }
+    _open_archive_heap_oopmaps(NULL) {}
 
   bool skip_operation() const { return false; }
 
