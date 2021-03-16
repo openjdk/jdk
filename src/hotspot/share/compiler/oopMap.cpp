@@ -193,23 +193,24 @@ void OopMapSet::add_gc_map(int pc_offset, OopMap *map ) {
   add(map);
 }
 
-static void add_derived_oop(oop* base, oop* derived, OopClosure* oop_fn) {
+static void add_derived_oop(oop* base, intptr_t* derived, OopClosure* oop_fn) {
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::add(derived, base);
 #endif // COMPILER2_OR_JVMCI
 }
 
-static void ignore_derived_oop(oop* base, oop* derived, OopClosure* oop_fn) {
+static void ignore_derived_oop(oop* base, intptr_t* derived, OopClosure* oop_fn) {
 }
 
-static void process_derived_oop(oop* base, oop* derived, OopClosure* oop_fn) {
+static void process_derived_oop(oop* base, intptr_t* derived, OopClosure* oop_fn) {
   // All derived pointers must be processed before the base pointer of any derived pointer is processed.
   // Otherwise, if two derived pointers use the same base, the second derived pointer will get an obscured
   // offset, if the base pointer is processed in the first derived pointer.
-  uintptr_t offset = cast_from_oop<uintptr_t>(*derived) - cast_from_oop<uintptr_t>(*base);
-  *derived = *base;
-  oop_fn->do_oop(derived);
-  *derived = cast_to_oop(cast_from_oop<uintptr_t>(*derived) + offset);
+  intptr_t base_value = cast_from_oop<intptr_t>(*base);
+  intptr_t offset = *derived - base_value ;
+  *derived = base_value;
+  oop_fn->do_oop((oop*)derived);
+  *derived = *derived + offset;
 }
 
 
@@ -257,7 +258,7 @@ void OopMapSet::oops_do(const frame *fr, const RegisterMap* reg_map, OopClosure*
 
 
 void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
-                       OopClosure* oop_fn, void derived_oop_fn(oop*, oop*, OopClosure*),
+                       OopClosure* oop_fn, void derived_oop_fn(oop*, intptr_t*, OopClosure*),
                        OopClosure* value_fn) {
   CodeBlob* cb = fr->cb();
   assert(cb != NULL, "no codeblob");
@@ -284,10 +285,9 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
       }
 #endif
 #endif // !COMPILER2
-      oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
-      guarantee(loc != NULL, "missing saved register");
-      oop *derived_loc = loc;
-      oop *base_loc    = fr->oopmapreg_to_location(omv.content_reg(), reg_map);
+      intptr_t* derived_loc = (intptr_t*)fr->oopmapreg_to_location(omv.reg(),reg_map);
+      guarantee(derived_loc != NULL, "missing saved register");
+      oop *base_loc = fr->oopmapreg_to_oop_location(omv.content_reg(), reg_map);
       // Ignore NULL oops and decoded NULL narrow oops which
       // equal to CompressedOops::base() when a narrow oop
       // implicit null check is used in compiled code.
@@ -303,7 +303,7 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
     // We want coop and oop oop_types
     for (OopMapStream oms(map); !oms.is_done(); oms.next()) {
       OopMapValue omv = oms.current();
-      oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
+      oop* loc = fr->oopmapreg_to_oop_location(omv.reg(),reg_map);
       // It should be an error if no location can be found for a
       // register mentioned as contained an oop of some kind.  Maybe
       // this was allowed previously because value_value items might
@@ -366,7 +366,7 @@ void OopMapSet::update_register_map(const frame *fr, RegisterMap *reg_map) {
     OopMapValue omv = oms.current();
     if (omv.type() == OopMapValue::callee_saved_value) {
       VMReg reg = omv.content_reg();
-      oop* loc = fr->oopmapreg_to_location(omv.reg(), reg_map);
+      oop* loc = fr->oopmapreg_to_oop_location(omv.reg(), reg_map);
       reg_map->set_location(reg, (address) loc);
       DEBUG_ONLY(nof_callee++;)
     }
@@ -657,17 +657,17 @@ ImmutableOopMapSet* ImmutableOopMapSet::build_from(const OopMapSet* oopmap_set) 
 #if COMPILER2_OR_JVMCI
 
 class DerivedPointerTable::Entry : public CHeapObj<mtCompiler> {
-  oop* _location;   // Location of derived pointer, also pointing to base
-  intptr_t _offset; // Offset from base pointer
+  intptr_t* _location; // Location of derived pointer, also pointing to base
+  intptr_t  _offset;   // Offset from base pointer
   Entry* volatile _next;
 
   static Entry* volatile* next_ptr(Entry& entry) { return &entry._next; }
 
 public:
-  Entry(oop* location, intptr_t offset) :
+  Entry(intptr_t* location, intptr_t offset) :
     _location(location), _offset(offset), _next(NULL) {}
 
-  oop* location() const { return _location; }
+  intptr_t* location() const { return _location; }
   intptr_t offset() const { return _offset; }
   Entry* next() const { return _next; }
 
@@ -695,18 +695,13 @@ void DerivedPointerTable::clear() {
   _active = true;
 }
 
-// Returns value of location as an int
-inline intptr_t value_of_loc(oop *pointer) {
-  return cast_from_oop<intptr_t>((*pointer));
-}
-
-void DerivedPointerTable::add(oop *derived_loc, oop *base_loc) {
+void DerivedPointerTable::add(intptr_t* derived_loc, oop *base_loc) {
   assert(Universe::heap()->is_in_or_null(*base_loc), "not an oop");
-  assert(derived_loc != base_loc, "Base and derived in same location");
-  assert(*derived_loc != (void*)base_loc, "location already added");
+  assert(derived_loc != (void*)base_loc, "Base and derived in same location");
+  assert((void*)*derived_loc != (void*)base_loc, "location already added");
   assert(Entry::_list != NULL, "list must exist");
   assert(is_active(), "table must be active here");
-  intptr_t offset = value_of_loc(derived_loc) - value_of_loc(base_loc);
+  intptr_t offset = *derived_loc - cast_from_oop<intptr_t>(*base_loc);
   // This assert is invalid because derived pointers can be
   // arbitrarily far away from their base.
   // assert(offset >= -1000000, "wrong derived pointer info");
@@ -716,11 +711,11 @@ void DerivedPointerTable::add(oop *derived_loc, oop *base_loc) {
       "Add derived pointer@" INTPTR_FORMAT
       " - Derived: " INTPTR_FORMAT
       " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: " INTX_FORMAT ")",
-      p2i(derived_loc), p2i(*derived_loc), p2i(*base_loc), p2i(base_loc), offset
+      p2i(derived_loc), *derived_loc, p2i(*base_loc), p2i(base_loc), offset
     );
   }
   // Set derived oop location to point to base.
-  *derived_loc = cast_to_oop(base_loc);
+  *derived_loc = intptr_t(base_loc);
   Entry* entry = new Entry(derived_loc, offset);
   Entry::_list->push(*entry);
 }
@@ -731,19 +726,20 @@ void DerivedPointerTable::update_pointers() {
   while (entries != NULL) {
     Entry* entry = entries;
     entries = entry->next();
-    oop* derived_loc = entry->location();
+    intptr_t* derived_loc = entry->location();
     intptr_t offset  = entry->offset();
     // The derived oop was setup to point to location of base
     oop base = **(oop**)derived_loc;
     assert(Universe::heap()->is_in_or_null(base), "must be an oop");
 
-    *derived_loc = cast_to_oop(cast_from_oop<address>(base) + offset);
-    assert(value_of_loc(derived_loc) - value_of_loc(&base) == offset, "sanity check");
+    intptr_t base_val = cast_from_oop<intptr_t>(base);
+    *derived_loc = base_val + offset;
+    assert(*derived_loc - base_val == offset, "sanity check");
 
     if (TraceDerivedPointers) {
       tty->print_cr("Updating derived pointer@" INTPTR_FORMAT
                     " - Derived: " INTPTR_FORMAT "  Base: " INTPTR_FORMAT " (Offset: " INTX_FORMAT ")",
-          p2i(derived_loc), p2i(*derived_loc), p2i(base), offset);
+          p2i(derived_loc), *derived_loc, p2i(base), offset);
     }
 
     // Delete entry
