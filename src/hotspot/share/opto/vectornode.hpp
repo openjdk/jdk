@@ -161,8 +161,11 @@ public:
 //------------------------------ReductionNode------------------------------------
 // Perform reduction of a vector
 class ReductionNode : public Node {
+ private:
+  const Type* _bottom_type;
  public:
-  ReductionNode(Node *ctrl, Node* in1, Node* in2) : Node(ctrl, in1, in2) {}
+  ReductionNode(Node *ctrl, Node* in1, Node* in2) : Node(ctrl, in1, in2),
+               _bottom_type(Type::get_const_basic_type(in1->bottom_type()->basic_type())) {}
 
   static ReductionNode* make(int opc, Node *ctrl, Node* in1, Node* in2, BasicType bt);
   static int  opcode(int opc, BasicType bt);
@@ -170,13 +173,15 @@ class ReductionNode : public Node {
   static Node* make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt);
 
   virtual const Type* bottom_type() const {
-    BasicType vbt = in(1)->bottom_type()->basic_type();
-    return Type::get_const_basic_type(vbt);
+    return _bottom_type;
   }
 
   virtual uint ideal_reg() const {
     return bottom_type()->ideal_reg();
   }
+
+  // Needed for proper cloning.
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------AddReductionVINode--------------------------------------
@@ -739,14 +744,16 @@ class LoadVectorGatherNode : public LoadVectorNode {
 //------------------------------StoreVectorNode--------------------------------
 // Store Vector to memory
 class StoreVectorNode : public StoreNode {
+ private:
+  const TypeVect* _vect_type;
  public:
   StoreVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val)
-    : StoreNode(c, mem, adr, at, val, MemNode::unordered) {
+    : StoreNode(c, mem, adr, at, val, MemNode::unordered), _vect_type(val->bottom_type()->is_vect()) {
     init_class_id(Class_StoreVector);
     set_mismatched_access();
   }
 
-  const TypeVect* vect_type() const { return in(MemNode::ValueIn)->bottom_type()->is_vect(); }
+  const TypeVect* vect_type() const { return _vect_type; }
   uint length() const { return vect_type()->length(); } // Vector length
 
   virtual int Opcode() const;
@@ -760,6 +767,9 @@ class StoreVectorNode : public StoreNode {
                                uint vlen);
 
   uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
+
+  // Needed for proper cloning.
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------StoreVectorScatterNode------------------------------
