@@ -628,14 +628,11 @@ public final class HijrahDate
         if (this == obj) {
             return true;
         }
-        if (obj instanceof HijrahDate) {
-            HijrahDate otherDate = (HijrahDate) obj;
-            return prolepticYear == otherDate.prolepticYear
+        return (obj instanceof HijrahDate otherDate)
+                && prolepticYear == otherDate.prolepticYear
                 && this.monthOfYear == otherDate.monthOfYear
                 && this.dayOfMonth == otherDate.dayOfMonth
                 && getChronology().equals(otherDate.getChronology());
-        }
-        return false;
     }
 
     /**

@@ -697,11 +697,8 @@ public final class JapaneseDate
         if (this == obj) {
             return true;
         }
-        if (obj instanceof JapaneseDate) {
-            JapaneseDate otherDate = (JapaneseDate) obj;
-            return this.isoDate.equals(otherDate.isoDate);
-        }
-        return false;
+        return (obj instanceof JapaneseDate otherDate)
+            && this.isoDate.equals(otherDate.isoDate);
     }
 
     /**

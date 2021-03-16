@@ -373,10 +373,10 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
         Objects.requireNonNull(endExclusive, "endExclusive");
         @SuppressWarnings("unchecked")
         ChronoLocalDateTime<D> end = (ChronoLocalDateTime<D>) getChronology().localDateTime(endExclusive);
-        if (unit instanceof ChronoUnit) {
+        if (unit instanceof ChronoUnit u) {
             if (unit.isTimeBased()) {
                 long amount = end.getLong(EPOCH_DAY) - date.getLong(EPOCH_DAY);
-                switch ((ChronoUnit) unit) {
+                switch (u) {
                     case NANOS: amount = Math.multiplyExact(amount, NANOS_PER_DAY); break;
                     case MICROS: amount = Math.multiplyExact(amount, MICROS_PER_DAY); break;
                     case MILLIS: amount = Math.multiplyExact(amount, MILLIS_PER_DAY); break;

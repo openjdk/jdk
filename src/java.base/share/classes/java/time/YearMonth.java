@@ -485,8 +485,8 @@ public final class YearMonth
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField f) {
+            switch (f) {
                 case MONTH_OF_YEAR: return month;
                 case PROLEPTIC_MONTH: return getProlepticMonth();
                 case YEAR_OF_ERA: return (year < 1 ? 1 - year : year);
@@ -805,8 +805,8 @@ public final class YearMonth
      */
     @Override
     public YearMonth plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
+        if (unit instanceof ChronoUnit u) {
+            switch (u) {
                 case MONTHS: return plusMonths(amountToAdd);
                 case YEARS: return plusYears(amountToAdd);
                 case DECADES: return plusYears(Math.multiplyExact(amountToAdd, 10));
@@ -1046,9 +1046,9 @@ public final class YearMonth
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         YearMonth end = YearMonth.from(endExclusive);
-        if (unit instanceof ChronoUnit) {
+        if (unit instanceof ChronoUnit u) {
             long monthsUntil = end.getProlepticMonth() - getProlepticMonth();  // no overflow
-            switch ((ChronoUnit) unit) {
+            switch (u) {
                 case MONTHS: return monthsUntil;
                 case YEARS: return monthsUntil / 12;
                 case DECADES: return monthsUntil / 120;
@@ -1168,11 +1168,9 @@ public final class YearMonth
         if (this == obj) {
             return true;
         }
-        if (obj instanceof YearMonth) {
-            YearMonth other = (YearMonth) obj;
-            return year == other.year && month == other.month;
-        }
-        return false;
+        return (obj instanceof YearMonth other)
+                && year == other.year
+                && month == other.month;
     }
 
     /**

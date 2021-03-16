@@ -377,8 +377,8 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     public long until(Temporal endExclusive, TemporalUnit unit) {
         Objects.requireNonNull(endExclusive, "endExclusive");
         ChronoLocalDate end = getChronology().date(endExclusive);
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
+        if (unit instanceof ChronoUnit u) {
+            switch (u) {
                 case DAYS: return daysUntil(end);
                 case WEEKS: return daysUntil(end) / 7;
                 case MONTHS: return monthsUntil(end);

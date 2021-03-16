@@ -1300,12 +1300,9 @@ public final class Instant
         if (this == otherInstant) {
             return true;
         }
-        if (otherInstant instanceof Instant) {
-            Instant other = (Instant) otherInstant;
-            return this.seconds == other.seconds &&
-                   this.nanos == other.nanos;
-        }
-        return false;
+        return (otherInstant instanceof Instant other)
+                && this.seconds == other.seconds
+                && this.nanos == other.nanos;
     }
 
     /**

@@ -1940,7 +1940,7 @@ public final class LocalDate
         // need to handle case where there is a gap from 11:30 to 00:30
         // standard ZDT factory would result in 01:00 rather than 00:30
         LocalDateTime ldt = atTime(LocalTime.MIDNIGHT);
-        if (zone instanceof ZoneOffset == false) {
+        if (!(zone instanceof ZoneOffset)) {
             ZoneRules rules = zone.getRules();
             ZoneOffsetTransition trans = rules.getTransition(ldt);
             if (trans != null && trans.isGap()) {
