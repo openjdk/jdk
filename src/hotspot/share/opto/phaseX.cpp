@@ -840,21 +840,21 @@ Node *PhaseGVN::transform_no_reclaim(Node *n) {
   NOT_PRODUCT( set_transforms(); )
 
   // Apply the Ideal call in a loop until it no longer applies
-  Node *k = n;
-  Node *i = apply_ideal(k, /*can_reshape=*/false);
+  Node* k = n;
+  Node* i = apply_ideal(k, /*can_reshape=*/false);
   NOT_PRODUCT(uint loop_count = 1;)
   while (i != NULL) {
     assert(i->_idx >= k->_idx, "Idealize should return new nodes, use Identity to return old nodes" );
     k = i;
-    NOT_PRODUCT(loop_count++;)
 #ifdef ASSERT
     if (loop_count >= K * C->live_nodes()) {
       dump_infinite_loop_info(i, "PhaseGVN::transform_no_reclaim");
     }
 #endif
     i = apply_ideal(k, /*can_reshape=*/false);
+    NOT_PRODUCT(loop_count++;)
   }
-  NOT_PRODUCT(if(loop_count != 0) { set_progress(); })
+  NOT_PRODUCT(if (loop_count != 0) { set_progress(); })
 
   // If brand new node, make space in type array.
   ensure_type_or_null(k);
@@ -863,7 +863,7 @@ Node *PhaseGVN::transform_no_reclaim(Node *n) {
   // for this Node, and 'Value' is non-local (and therefore expensive) I'll
   // cache Value.  Later requests for the local phase->type of this Node can
   // use the cached Value instead of suffering with 'bottom_type'.
-  const Type *t = k->Value(this); // Get runtime Value set
+  const Type* t = k->Value(this); // Get runtime Value set
   assert(t != NULL, "value sanity");
   if (type_or_null(k) != t) {
 #ifndef PRODUCT
@@ -1187,7 +1187,7 @@ void PhaseIterGVN::optimize() {
       return;
     }
     Node* n  = _worklist.pop();
-    if (++loop_count >= K * C->live_nodes()) {
+    if (loop_count >= K * C->live_nodes()) {
       DEBUG_ONLY(dump_infinite_loop_info(n, "PhaseIterGVN::optimize");)
       C->record_method_not_compilable("infinite loop in PhaseIterGVN::optimize");
       return;
@@ -1197,13 +1197,11 @@ void PhaseIterGVN::optimize() {
       NOT_PRODUCT(const Type* oldtype = type_or_null(n));
       // Do the transformation
       Node* nn = transform_old(n);
-      if (C->failing()) {
-        return;
-      }
       NOT_PRODUCT(trace_PhaseIterGVN(n, nn, oldtype);)
     } else if (!n->is_top()) {
       remove_dead_node(n);
     }
+    loop_count++;
   }
   NOT_PRODUCT(verify_PhaseIterGVN();)
 }
