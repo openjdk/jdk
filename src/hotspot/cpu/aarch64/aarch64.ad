@@ -2441,6 +2441,9 @@ const bool Matcher::has_predicated_vectors(void) {
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
+TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+  return new TypeVectMask(elemTy, length);
+}
 
 bool Matcher::supports_vector_variable_shifts(void) {
   return true;

@@ -1893,9 +1893,11 @@ const bool Matcher::has_predicated_vectors(void) {
 
   return ret_value;
 }
-
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_OPMASK_REG_mask;
+}
+TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+  return new TypeVectMask(TypeInt::BOOL, length);
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {

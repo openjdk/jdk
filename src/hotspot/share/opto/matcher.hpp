@@ -320,6 +320,7 @@ public:
   // Some microarchitectures have mask registers used on vectors
   static const bool has_predicated_vectors(void);
   static const RegMask* predicate_reg_mask(void);
+  static TypeVect* predicate_reg_type(const Type* elemTy, int length);
 
   // Some uarchs have different sized float register resources
   static const int float_pressure(int default_pressure_threshold);

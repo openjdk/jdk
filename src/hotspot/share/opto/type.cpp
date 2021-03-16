@@ -662,7 +662,7 @@ void Type::Initialize_shared(Compile* current) {
   _zero_type[T_CONFLICT]= NULL;
 
 #if defined(X86)
-  TypeVect::VMASK = (TypeVect*)(new TypeVectMask(get_const_basic_type(T_BOOLEAN), MaxVectorSize))->hashcons();
+  TypeVect::VMASK = TypeVect::makemask(T_BOOLEAN, MaxVectorSize);
   mreg2type[Op_RegVMask] = TypeVect::VMASK;
 #endif
 
@@ -2414,7 +2414,7 @@ const TypeVect* TypeVect::make(const Type *elem, uint length) {
 
 const TypeVect *TypeVect::makemask(const BasicType elem_bt, uint length) {
   if (Matcher::has_predicated_vectors()) {
-    return (TypeVect*)(new TypeVectMask(get_const_basic_type(T_BOOLEAN), MaxVectorSize))->hashcons();
+    return (TypeVect*)(Matcher::predicate_reg_type(get_const_basic_type(elem_bt), length))->hashcons();
   } else {
     return make(get_const_basic_type(elem_bt), length);
   }
