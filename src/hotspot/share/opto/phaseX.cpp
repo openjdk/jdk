@@ -847,7 +847,7 @@ Node *PhaseGVN::transform_no_reclaim(Node *n) {
     assert(i->_idx >= k->_idx, "Idealize should return new nodes, use Identity to return old nodes" );
     k = i;
 #ifdef ASSERT
-    if (loop_count >= K * C->live_nodes()) {
+    if (loop_count >= K + C->live_nodes()) {
       dump_infinite_loop_info(i, "PhaseGVN::transform_no_reclaim");
     }
 #endif
@@ -1258,7 +1258,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   DEBUG_ONLY(uint loop_count = 1;)
   while (i != NULL) {
 #ifdef ASSERT
-    if (loop_count >= K * C->live_nodes()) {
+    if (loop_count >= K + C->live_nodes()) {
       dump_infinite_loop_info(i, "PhaseIterGVN::transform_old");
     }
 #endif
