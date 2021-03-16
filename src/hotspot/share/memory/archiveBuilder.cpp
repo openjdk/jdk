@@ -327,19 +327,19 @@ size_t ArchiveBuilder::estimate_archive_size() {
   total += _estimated_hashtable_bytes;
 
   // allow fragmentation at the end of each dump region
-  total += _total_dump_regions * reserve_alignment();
+  total += _total_dump_regions * MetaspaceShared::core_region_alignment();
 
   log_info(cds)("_estimated_hashtable_bytes = " SIZE_FORMAT " + " SIZE_FORMAT " = " SIZE_FORMAT,
                 symbol_table_est, dictionary_est, _estimated_hashtable_bytes);
   log_info(cds)("_estimated_metaspaceobj_bytes = " SIZE_FORMAT, _estimated_metaspaceobj_bytes);
   log_info(cds)("total estimate bytes = " SIZE_FORMAT, total);
 
-  return align_up(total, reserve_alignment());
+  return align_up(total, MetaspaceShared::core_region_alignment());
 }
 
 address ArchiveBuilder::reserve_buffer() {
   size_t buffer_size = estimate_archive_size();
-  ReservedSpace rs(buffer_size);
+  ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), false);
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
     vm_direct_exit(0);
@@ -377,7 +377,7 @@ address ArchiveBuilder::reserve_buffer() {
 
     // At run time, we will mmap the dynamic archive at my_archive_requested_bottom
     _requested_static_archive_top = _requested_static_archive_bottom + static_archive_size;
-    my_archive_requested_bottom = align_up(_requested_static_archive_top, MetaspaceShared::reserved_space_alignment());
+    my_archive_requested_bottom = align_up(_requested_static_archive_top, MetaspaceShared::core_region_alignment());
 
     _requested_dynamic_archive_bottom = my_archive_requested_bottom;
   }
