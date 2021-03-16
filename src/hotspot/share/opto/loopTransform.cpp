@@ -1199,7 +1199,7 @@ Node* PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop) 
   for (DUIterator_Fast imax, i = incr->fast_outs(imax); i < imax; i++) {
     Node* n = incr->fast_out(i);
     if (n->is_Phi() && n->in(0) == loop) {
-      int nrep = n->replace_edge(incr, castii);
+      int nrep = n->replace_edge(incr, castii, &_igvn);
       return castii;
     }
   }
