@@ -4698,10 +4698,14 @@ void Compile::print_method(CompilerPhaseType cpt, const char *name, int level) {
   C->_latest_stage_start_counter.stamp();
 }
 
-void Compile::print_method(CompilerPhaseType cpt, int level) {
+void Compile::print_method(CompilerPhaseType cpt, int level, int idx) {
   char output[1024];
 #ifndef PRODUCT
-  jio_snprintf(output, sizeof(output), "%s", CompilerPhaseTypeHelper::to_string(cpt));
+  if (idx != 0) {
+    jio_snprintf(output, sizeof(output), "%s:%d", CompilerPhaseTypeHelper::to_string(cpt), idx);
+  } else {
+    jio_snprintf(output, sizeof(output), "%s", CompilerPhaseTypeHelper::to_string(cpt));
+  }
 #endif
   print_method(cpt, output, level);
 }
