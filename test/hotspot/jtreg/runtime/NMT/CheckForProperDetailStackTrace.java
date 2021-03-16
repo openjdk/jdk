@@ -107,6 +107,8 @@ public class CheckForProperDetailStackTrace {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=detail",
             "-XX:+PrintNMTStatistics",
+            "-Xshare:off",
+            "-Xlog:class+load",
             "-p", MODS_DIR.toString(),
             "-m", "jdk.test/test.Main");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
