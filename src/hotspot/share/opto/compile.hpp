@@ -643,8 +643,8 @@ class Compile : public Phase {
 #endif
   }
 
-  void print_method(CompilerPhaseType cpt, const char *name, int level = 1, int idx = 0);
-  void print_method(CompilerPhaseType cpt, int level = 1, int idx = 0);
+  void print_method(CompilerPhaseType cpt, const char *name, int level = 1);
+  void print_method(CompilerPhaseType cpt, int level = 1);
   void print_method(CompilerPhaseType cpt, Node* n, int level = 3);
 
 #ifndef PRODUCT
