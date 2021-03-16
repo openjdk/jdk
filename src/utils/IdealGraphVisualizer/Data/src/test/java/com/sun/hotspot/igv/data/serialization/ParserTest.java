@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import static org.junit.Assert.fail;
 import org.junit.*;
 import org.openide.util.Exceptions;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  *
@@ -74,7 +73,7 @@ public class ParserTest {
                 Parser parser = new Parser(Channels.newChannel(in));
                 final GraphDocument parsedDocument = parser.parse();
                 Util.assertGraphDocumentEquals(document, parsedDocument);
-            } catch (SAXException ex) {
+            } catch (IOException ex) {
                 fail(ex.toString());
             }
         } catch (UnsupportedEncodingException ex) {

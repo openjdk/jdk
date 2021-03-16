@@ -95,6 +95,7 @@
         <nbmmvnplugin.version>4.3</nbmmvnplugin.version>
         <mvncompilerplugin.version>3.8.1</mvncompilerplugin.version>
         <mvnjarplugin.version>3.1.2</mvnjarplugin.version>
+        <junit.version>4.13.2</junit.version>
         <brandingToken>idealgraphvisualizer</brandingToken>
     </properties>
 </project>
