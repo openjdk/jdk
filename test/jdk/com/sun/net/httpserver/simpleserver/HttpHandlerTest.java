@@ -110,9 +110,9 @@ public class HttpHandlerTest {
     @Test
     public void testNull() {
         final var handler = new TestHttpHandler();
-        assertThrows(NPE, () -> HttpHandler.complement(handler, null, null));
-        assertThrows(NPE, () -> HttpHandler.complement(handler, p -> true, null));
-        assertThrows(NPE, () -> HttpHandler.complement(handler, null,  new TestHttpHandler()));
+        assertThrows(NPE, () -> HttpHandler.newComposedHandler(handler, null, null));
+        assertThrows(NPE, () -> HttpHandler.newComposedHandler(handler, p -> true, null));
+        assertThrows(NPE, () -> HttpHandler.newComposedHandler(handler, null,  new TestHttpHandler()));
 
         assertThrows(NPE, () -> HttpHandler.adaptRequest(handler, null));
     }

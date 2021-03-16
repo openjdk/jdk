@@ -69,9 +69,8 @@ public final class FileServerHandler implements HttpHandler {
     public static HttpHandler create(Path root, Function<String, String> mimeTable)
         throws IOException
     {
-        return HttpHandler.complement(new FileServerHandler(root, mimeTable),
-                        r -> !SUPPORTED_METHODS.contains(r.getRequestMethod()),
-                              FileServerHandler::handleNotAllowed);
+        return HttpHandler.newComposedHandler(new FileServerHandler(root, mimeTable),
+                r -> !SUPPORTED_METHODS.contains(r.getRequestMethod()), FileServerHandler::handleNotAllowed);
     }
 
     static void handleNotAllowed(HttpExchange exchange) throws IOException {
