@@ -169,7 +169,7 @@ public abstract class XMLInputFactory {
   /**
    * Creates a new instance of the factory. This method uses the
    * <a href="../../../module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
-   * to determine the {@code XMLEventFactory} implementation class to load.
+   * to determine the {@code XMLInputFactory} implementation class to load.
    * <p>
    * Once an application has obtained a reference to a {@code XMLInputFactory}, it
    * can use the factory to configure and obtain stream instances.
