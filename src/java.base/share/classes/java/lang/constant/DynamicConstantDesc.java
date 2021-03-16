@@ -128,6 +128,8 @@ public abstract class DynamicConstantDesc<T>
      * format
      * @jvms 4.2.2 Unqualified Names
      */
+    // Do not call this method from the static initialization of java.lang.constant.ConstantDescs
+    // since that can lead to potential deadlock during multi-threaded concurrent execution
     public static<T> ConstantDesc ofCanonical(DirectMethodHandleDesc bootstrapMethod,
                                               String constantName,
                                               ClassDesc constantType,
