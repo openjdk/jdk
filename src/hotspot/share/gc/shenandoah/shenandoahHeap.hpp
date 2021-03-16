@@ -148,7 +148,7 @@ public:
   ShenandoahHeap(ShenandoahCollectorPolicy* policy);
   jint initialize();
   void post_initialize();
-  void initialize_gc_mode();
+  void initialize_mode();
   void initialize_heuristics();
 
   void initialize_serviceability();

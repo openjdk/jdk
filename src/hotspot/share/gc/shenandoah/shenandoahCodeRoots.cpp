@@ -179,10 +179,9 @@ public:
 };
 
 void ShenandoahCodeRoots::disarm_nmethods() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahNMethodBarrier) {
     ShenandoahDisarmNMethodsTask task;
-    heap->workers()->run_task(&task);
+    ShenandoahHeap::heap()->workers()->run_task(&task);
   }
 }
 

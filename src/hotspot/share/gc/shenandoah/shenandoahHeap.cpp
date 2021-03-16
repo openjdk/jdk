@@ -402,7 +402,7 @@ jint ShenandoahHeap::initialize() {
   return JNI_OK;
 }
 
-void ShenandoahHeap::initialize_gc_mode() {
+void ShenandoahHeap::initialize_mode() {
   if (ShenandoahGCMode != NULL) {
     if (strcmp(ShenandoahGCMode, "satb") == 0) {
       _gc_mode = new ShenandoahSATBMode();
@@ -489,7 +489,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _collection_set(NULL)
 {
   // Initialize GC mode early, so we can adjust barrier support
-  initialize_gc_mode();
+  initialize_mode();
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this));
 
   _max_workers = MAX2(_max_workers, 1U);
