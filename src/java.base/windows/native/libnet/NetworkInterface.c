@@ -641,8 +641,10 @@ jobject createNetworkInterface
                   return NULL;
               }
               (*env)->SetObjectField(env, ibObj, ni_ibbroadcastID, ia2Obj);
+              (*env)->DeleteLocalRef(env, ia2Obj);
               (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
               (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+              (*env)->DeleteLocalRef(env, ibObj);
             }
         } else /* AF_INET6 */ {
             int scope;
@@ -667,14 +669,13 @@ jobject createNetworkInterface
                 (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
                 (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
                 (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+                (*env)->DeleteLocalRef(env, ibObj);
             }
         }
         (*env)->SetObjectArrayElement(env, addrArr, addr_index, iaObj);
+        (*env)->DeleteLocalRef(env, iaObj);
         addrs = addrs->next;
         addr_index++;
-        (*env)->DeleteLocalRef(env, iaObj);
-        (*env)->DeleteLocalRef(env, ibObj);
-        (*env)->DeleteLocalRef(env, ia2Obj);
     }
     (*env)->SetObjectField(env, netifObj, ni_addrsID, addrArr);
     (*env)->SetObjectField(env, netifObj, ni_bindsID, bindsArr);
