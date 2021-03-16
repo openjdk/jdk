@@ -145,9 +145,7 @@ public final class Parameter implements AnnotatedElement {
     }
 
     /**
-     * Return the {@code Executable} which declares this parameter.
-     *
-     * @return The {@code Executable} declaring this parameter.
+     * {@return the {@code Executable} declaring this parameter}
      */
     public Executable getDeclaringExecutable() {
         return executable;

@@ -259,7 +259,7 @@ public abstract class Executable extends AccessibleObject
     /**
      * Returns an array of {@code Type} objects that represent the
      * formal parameter types, in declaration order, of the executable
-     * represented by this object. Returns an array of length 0 if the
+     * represented by this object. An array of length 0 is returned if the
      * underlying executable takes no parameters.  Note that the
      * constructors of some inner classes may have an implicitly
      * declared parameter in addition to explicitly declared ones.
@@ -347,9 +347,9 @@ public abstract class Executable extends AccessibleObject
     }
 
     /**
-     * Returns an array of {@code Parameter} objects that represent
+     * {@return an array of {@code Parameter} objects representing
      * all the parameters to the underlying executable represented by
-     * this object.  Returns an array of length 0 if the executable
+     * this object} An array of length 0 is returned if the executable
      * has no parameters.
      *
      * <p>The parameters of the underlying executable do not necessarily
@@ -358,8 +358,6 @@ public abstract class Executable extends AccessibleObject
      *
      * @throws MalformedParametersException if the class file contains
      * a MethodParameters attribute that is improperly formatted.
-     * @return an array of {@code Parameter} objects representing all
-     * the parameters to the executable this object represents.
      */
     public Parameter[] getParameters() {
         // TODO: This may eventually need to be guarded by security
@@ -499,19 +497,14 @@ public abstract class Executable extends AccessibleObject
     }
 
     /**
-     * Returns a string describing this {@code Executable}, including
-     * any type parameters.
-     * @return a string describing this {@code Executable}, including
-     * any type parameters
+     * {@return a string describing this {@code Executable}, including
+     * any type parameters}
      */
     public abstract String toGenericString();
 
     /**
-     * Returns {@code true} if this executable was declared to take a
-     * variable number of arguments; returns {@code false} otherwise.
-     *
-     * @return {@code true} if an only if this executable was declared
-     * to take a variable number of arguments.
+     * {@return {@code true} if this executable was declared to take a
+     * variable number of arguments; returns {@code false} otherwise}
      */
     public boolean isVarArgs()  {
         return (getModifiers() & Modifier.VARARGS) != 0;

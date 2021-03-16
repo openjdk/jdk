@@ -76,13 +76,13 @@
  * modifiers present in the {@code class} file representation may
  * differ from the modifiers on the originating element in the source
  * language, including {@link Modifier#FINAL final} on a {@linkplain
- * Parameter#getModifiers() parameter} and and {@code protected},
+ * Parameter#getModifiers() parameter} and {@code protected},
  * {@code private}, and {@code static} on {@linkplain
  * java.lang.Class#getModifiers() classes and interfaces}.
  *
  * <p>Besides differences in structural representation between the
  * source language and the JVM representation, core reflection also
- * exposed runtime specific information. For example, the {@linkplain
+ * exposes runtime specific information. For example, the {@linkplain
  * java.lang.Class#getClassLoader() class loaders} and {@linkplain
  * java.lang.Class#getProtectionDomain() protection domains} of a
  * {@code Class} are runtime concepts without a direct analogue in
