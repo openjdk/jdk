@@ -11411,7 +11411,7 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 // =======================================================================
 // fast clearing of an array
 instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(!((ClearArrayNode*)n)->is_large() && !n->in(2)->bottom_type()->is_int()->is_con());
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX <= 2 || !VM_Version::supports_avx512vlbw() || !n->in(2)->bottom_type()->is_long()->is_con()));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11520,7 +11520,7 @@ instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Unive
 
 instruct rep_stos_im(immI cnt, eRegP base, regD tmp, rRegI zero, Universe dummy, eFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() && n->in(2)->bottom_type()->is_int()->is_con());
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX > 2 && VM_Version::supports_avx512vlbw() && n->in(2)->bottom_type()->is_long()->is_con()));
   match(Set dummy (ClearArray cnt base));
   effect(TEMP tmp, TEMP zero, KILL cr);
   format %{ "clear_mem_imm $base , $cnt  \n\t" %}
