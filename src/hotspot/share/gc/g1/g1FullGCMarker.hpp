@@ -65,9 +65,6 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
 
 
   G1RegionMarkStatsCache _mark_region_cache;
-  // Number of entries in the per-task stats entry. This seems enough to have a very
-  // low cache miss rate.
-  static const uint RegionMarkStatsCacheSize = 1024;
 
   inline bool is_empty();
   inline bool pop_object(oop& obj);
@@ -80,8 +77,10 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   inline void follow_array(objArrayOop array);
   inline void follow_array_chunk(objArrayOop array, int index);
 public:
-  G1FullGCMarker(G1FullCollector* collector, uint worker_id,
-                 PreservedMarks* preserved_stack, G1RegionMarkStats* mark_stats);
+  G1FullGCMarker(G1FullCollector* collector,
+                 uint worker_id,
+                 PreservedMarks* preserved_stack,
+                 G1RegionMarkStats* mark_stats);
   ~G1FullGCMarker();
 
   // Stack getters

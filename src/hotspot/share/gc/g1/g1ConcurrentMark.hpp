@@ -617,10 +617,6 @@ private:
     init_hash_seed                = 17
   };
 
-  // Number of entries in the per-task stats entry. This seems enough to have a very
-  // low cache miss rate.
-  static const uint RegionMarkStatsCacheSize = 1024;
-
   G1CMObjArrayProcessor       _objArray_processor;
 
   uint                        _worker_id;

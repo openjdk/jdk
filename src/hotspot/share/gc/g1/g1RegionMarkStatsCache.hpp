@@ -69,8 +69,8 @@ private:
     uint _region_idx;
     G1RegionMarkStats _stats;
 
-    void clear() {
-      _region_idx = 0;
+    void clear(uint idx = 0) {
+      _region_idx = idx;
       _stats.clear();
     }
 
@@ -98,11 +98,13 @@ private:
 
   G1RegionMarkStatsCacheEntry* find_for_add(uint region_idx);
 public:
+  // Number of entries in the per-task stats entry. This seems enough to have a very
+  // low cache miss rate.
+  static const uint RegionMarkStatsCacheSize = 1024;
+
   G1RegionMarkStatsCache(G1RegionMarkStats* target, uint num_cache_entries);
 
   ~G1RegionMarkStatsCache();
-
-  void initialize();
 
   void add_live_words(uint region_idx, size_t live_words) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
