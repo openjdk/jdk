@@ -443,16 +443,12 @@ public class HotSpotAgent {
             db.getJShortType().getSize());
         }
 
-        if (!isServer) {
-            // Do not initialize the VM on the server (unnecessary, since it's
-            // instantiated on the client)
-            try {
-                VM.initialize(db, debugger);
-            } catch (DebuggerException e) {
-                throw (e);
-            } catch (Exception e) {
-                throw new DebuggerException(e);
-            }
+        try {
+            VM.initialize(db, debugger);
+        } catch (DebuggerException e) {
+            throw (e);
+        } catch (Exception e) {
+            throw new DebuggerException(e);
         }
     }
 
