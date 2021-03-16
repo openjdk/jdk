@@ -24,18 +24,10 @@
 /*
  * @test
  * @bug 8251496
- * @summary Test that UnmodifiableHeaders are in fact immutable
+ * @summary Test that UnmodifiableHeaders is in fact immutable
  * @modules jdk.httpserver/sun.net.httpserver:+open
  * @run testng/othervm UnmodifiableHeadersTest
  */
-
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpPrincipal;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import sun.net.httpserver.UnmodifiableHeaders;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -44,7 +36,12 @@ import java.net.URI;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
-
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpPrincipal;
+import org.testng.annotations.Test;
+import sun.net.httpserver.UnmodifiableHeaders;
 import static org.testng.Assert.assertThrows;
 
 public class UnmodifiableHeadersTest {

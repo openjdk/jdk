@@ -31,7 +31,7 @@ import com.sun.net.httpserver.*;
 
 public class UnmodifiableHeaders extends Headers {
 
-        Map<String, List<String>> map;
+        private Map<String, List<String>> map;
 
         public UnmodifiableHeaders(Headers map) {
             this.map = Collections.unmodifiableMap(map);
@@ -53,7 +53,7 @@ public class UnmodifiableHeaders extends Headers {
             return map.get(key);
         }
 
-        public String getFirst (String key) {
+        public String getFirst(String key) {
             final var headers = new Headers();
             map.forEach((k, v) -> headers.add(k, v.get(0)));
             return headers.getFirst(key);
