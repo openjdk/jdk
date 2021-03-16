@@ -566,14 +566,8 @@ public class Parser implements GraphParser {
     private XMLReader createReader() throws SAXException {
         try {
             SAXParserFactory pfactory = SAXParserFactory.newInstance();
-            pfactory.setValidating(true);
+            pfactory.setValidating(false);
             pfactory.setNamespaceAware(true);
-
-            // Enable schema validation
-            SchemaFactory sfactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-            InputStream stream = Parser.class.getResourceAsStream("graphdocument.xsd");
-            pfactory.setSchema(sfactory.newSchema(new Source[]{new StreamSource(stream)}));
-
             return pfactory.newSAXParser().getXMLReader();
         } catch (ParserConfigurationException ex) {
             throw new SAXException(ex);
