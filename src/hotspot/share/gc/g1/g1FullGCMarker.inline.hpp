@@ -31,6 +31,7 @@
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupQueue.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
