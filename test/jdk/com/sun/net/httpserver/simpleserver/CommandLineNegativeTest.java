@@ -23,18 +23,12 @@
 
 /*
  * @test
- * @summary Negative tests for simpleserver tool
+ * @summary Negative tests for the simpleserver tool
  * @library /test/lib
  * @modules jdk.httpserver
  * @build jdk.test.lib.util.FileUtils
  * @run testng CommandLineNegativeTest
  */
-
-import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,7 +38,11 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
-
+import jdk.test.lib.util.FileUtils;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -174,7 +172,7 @@ public class CommandLineNegativeTest {
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
 
     @BeforeTest
-    public void makeTestDirectory() throws IOException {
+    public void makeTestDirectoryAndFile() throws IOException {
         if (Files.exists(TEST_DIR))
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         Files.createDirectories(TEST_DIR);
@@ -195,7 +193,7 @@ public class CommandLineNegativeTest {
 
     @Test
     public void testRootDoesNotExist() {
-        Path root = TEST_DIR.resolve("notExistant/dir");
+        Path root = TEST_DIR.resolve("not/existant/dir");
         assertFalse(Files.exists(root));
         simpleserver("-d", root.toString())
                 .assertFailure()
@@ -207,7 +205,7 @@ public class CommandLineNegativeTest {
 
     @Test
     public void testRootNotReadable() throws IOException {
-        Path root = Files.createDirectories(TEST_DIR.resolve("notReadable/dir"));
+        Path root = Files.createDirectories(TEST_DIR.resolve("not/readable/dir"));
         try {
             root.toFile().setReadable(false);
             assertFalse(Files.isReadable(root));
