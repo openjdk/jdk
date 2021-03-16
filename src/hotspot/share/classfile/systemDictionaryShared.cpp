@@ -2241,12 +2241,14 @@ public:
   SharedLambdaDictionaryPrinter(outputStream* st) : _st(st), _index(0) {}
 
   void do_value(const RunTimeLambdaProxyClassInfo* record) {
-    ResourceMark rm;
-    _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
-    Klass* k = record->proxy_klass_head()->next_link();
-    while (k != NULL) {
-      _st->print_cr("%4d:  %s", (_index++), k->external_name());
-      k = k->next_link();
+    if (record->proxy_klass_head()->lambda_proxy_is_available()) {
+      ResourceMark rm;
+      _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
+      Klass* k = record->proxy_klass_head()->next_link();
+      while (k != NULL) {
+        _st->print_cr("%4d:  %s", (_index++), k->external_name());
+        k = k->next_link();
+      }
     }
   }
 };
