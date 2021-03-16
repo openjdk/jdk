@@ -584,8 +584,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         long originalLengthInBytes = originalArrayLength * typeSize;
         long currentRecordLength = 0;
 
-        // There is an U4 slot contains the data size written in the dump file.
-        // Need to trunicate the array length if the size exceed the MAX_U4_VALUE.
+        // There is an U4 slot that contains the data size written in the dump file.
+        // Need to truncate the array length if the size exceeds the MAX_U4_VALUE.
         if (!useSegmentedHeapDump) {
             // now get the current position to calculate length
             long dumpEnd = fos.getChannel().position();
