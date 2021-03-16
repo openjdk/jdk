@@ -306,14 +306,9 @@ public class GenerateCharacter {
 
     static long[] buildMap(UnicodeSpec[] data, SpecialCaseMap[] specialMaps, PropList propList)
     {
-        long[] result;
-        if (bLatin1) {
-            result = new long[256];
-        } else {
-            result = new long[1<<16];
-        }
-        int k=0;
-        int codePoint = plane<<16;
+        long[] result = new long[bLatin1 ? 256 : 1 << 16];
+        int k = 0;
+        int codePoint = plane << 16;
         UnicodeSpec nonCharSpec = new UnicodeSpec();
         for (int j = 0; j < data.length && k < result.length; j++) {
             if (data[j].codePoint == codePoint) {
@@ -637,7 +632,7 @@ public class GenerateCharacter {
 OUTER:  for (int i = 0; i < n; i += m) {
             // For every block of size m in the original map...
     MIDDLE: for (int j = 0; j < ptr; j += m) {
-            // Find out whether there is already a block just like it in the buffer.
+                // Find out whether there is already a block just like it in the buffer.
                 for (int k = 0; k < m; k++) {
                     if (buffer[j+k] != map[i+k])
                         continue MIDDLE;
@@ -649,17 +644,16 @@ OUTER:  for (int i = 0; i < n; i += m) {
             } // end MIDDLE
             // There is no block just like it already, so add it to
             // the buffer and put its index into the new map.
-            if (m >= 0) System.arraycopy(map, i, buffer, ptr, m);
+            if (m > 0) System.arraycopy(map, i, buffer, ptr, m);
             newmap[i >> size] = (ptr >> size);
             ptr += m;
         } // end OUTER
         // Now we know how long the compressed table should be,
         // so create a new array and copy data from the temporary buffer.
         long[] newdata = new long[ptr];
-        if (ptr >= 0) System.arraycopy(buffer, 0, newdata, 0, ptr);
+        if (ptr > 0) System.arraycopy(buffer, 0, newdata, 0, ptr);
         // Return the new map and the new data table.
-        long[][] result = { newmap, newdata };
-        return result;
+        return new long[][]{ newmap, newdata };
     }
 
     /**
@@ -706,7 +700,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
                 int depth = 0;
                 while ((pos = line.indexOf(commandMarker, pos)) >= 0) {
                     int newpos = pos + marklen;
-                    char ch = 'x';
+                    char ch;
                     SCAN: while (newpos < line.length() &&
                             (Character.isJavaIdentifierStart(ch = line.charAt(newpos))
                             || ch == '(' || (ch == ')' && depth > 0))) {
@@ -804,8 +798,6 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (x.equals("valueDigit")) return "0x" + hex8(valueDigit);
         if (x.equals("valueStrangeNumeric")) return "0x" + hex8(valueStrangeNumeric);
         if (x.equals("valueJavaSupradecimal")) return "0x" + hex8(valueJavaSupradecimal);
-        if (x.equals("valueDigit")) return "0x" + hex8(valueDigit);
-        if (x.equals("valueStrangeNumeric")) return "0x" + hex8(valueStrangeNumeric);
         if (x.equals("maskType")) return "0x" + hex(maskType);
         if (x.equals("shiftBidi")) return Long.toString(shiftBidi);
         if (x.equals("maskBidi")) return "0x" + hex(maskBidi);
@@ -1178,7 +1170,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
                 result.append("] = new ").append(atype).append("[").append(table.length).append("];\n  ");
                 result.append("static final String ").append(name).append("_DATA =\n");
             }
-            StringBuffer theString = new StringBuffer();
+            StringBuilder theString = new StringBuilder();
             int entriesInCharSoFar = 0;
             char ch = '\u0000';
             int charsPerEntry = -entriesPerChar;
@@ -1583,9 +1575,9 @@ OUTER:  for (int i = 0; i < n; i += m) {
     */
 
     static void processArgs(String[] args) {
-        StringBuffer desc = new StringBuffer("java GenerateCharacter");
+        StringBuilder desc = new StringBuilder("java GenerateCharacter");
         for (String arg : args) {
-            desc.append(" " + arg);
+            desc.append(" ").append(arg);
         }
         for (int j = 0; j < args.length; j++) {
             if (args[j].equals("-verbose") || args[j].equals("-v"))
@@ -1742,13 +1734,13 @@ OUTER:  for (int i = 0; i < n; i += m) {
 
     private static void searchBins(long[] map, int binsOccupied) throws Exception {
         int bitsFree = 16;
-        for (int i=0; i<binsOccupied; ++i) bitsFree -= sizes[i];
+        for (int i = 0; i < binsOccupied; ++i) bitsFree -= sizes[i];
         if (binsOccupied == (bins-1)) {
             sizes[binsOccupied] = bitsFree;
             generateForSizes(map);
         }
         else {
-            for (int i=1; i<bitsFree; ++i) { // Don't allow bins of 0 except for last one
+            for (int i = 1; i < bitsFree; ++i) { // Don't allow bins of 0 except for last one
                 sizes[binsOccupied] = i;
                 searchBins(map, binsOccupied+1);
             }
@@ -1774,15 +1766,15 @@ OUTER:  for (int i = 0; i < n; i += m) {
             if (verbose && bins==0)
                 System.err.println("Building map " + (j+1) + " of bit width " + sizes[j]);
             long[][] temp = buildTable(tables[j], sizes[j]);
-            tables[j-1] = temp[0];
+            tables[j - 1] = temp[0];
             tables[j] = temp[1];
         }
         preshifted = new boolean[sizes.length];
         zeroextend = new int[sizes.length];
         bytes = new int[sizes.length];
         for (int j = 0; j < sizes.length - 1; j++) {
-            int len = tables[j+1].length;
-            int size = sizes[j+1];
+            int len = tables[j + 1].length;
+            int size = sizes[j + 1];
             if (len > 0x100 && (len >> size) <= 0x100) {
                 len >>= size;
                 preshifted[j] = false;
@@ -1818,7 +1810,9 @@ OUTER:  for (int i = 0; i < n; i += m) {
                 if (ch == '<' || ch == '>') ++j;
             }
             System.out.print("(");
-            for (int size : sizes) System.out.print(" " + size);
+            for (int size : sizes) {
+                System.out.print(" " + size);
+            }
             System.out.println(" ) " + totalBytes + " " + accessComplexity + " " + access);
             return;
         }
