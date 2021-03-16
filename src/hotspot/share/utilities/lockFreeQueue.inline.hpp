@@ -29,45 +29,101 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/lockFreeQueue.hpp"
+#include "logging/log.hpp"
 
-template<bool enable> class LockFreeQueueCriticalSection: public StackObj {
-  Thread* _thread;
-  GlobalCounter::CSContext _context;
-public:
-  inline LockFreeQueueCriticalSection(Thread* thread) {
-    if (enable) {
-      _thread = thread;
-      _context = GlobalCounter::critical_section_begin(thread);
-    }
-  }
-  inline ~LockFreeQueueCriticalSection() {
-    if (enable) {
-      GlobalCounter::critical_section_end(_thread, _context);
-    }
-  }
-};
+template<typename T, T* volatile* (*next_ptr)(T&)>
+T* LockFreeQueue<T, next_ptr>::next(const T& node) {
+  return Atomic::load(next_ptr(const_cast<T&>(node)));
+}
 
-template<typename T, T* volatile* (*next_ptr)(T&), bool rcu_pop>
-T* LockFreeQueue<T, next_ptr, rcu_pop>::pop() {
-  Thread* current_thread = Thread::current();
+template<typename T, T* volatile* (*next_ptr)(T&)>
+void LockFreeQueue<T, next_ptr>::set_next(T& node, T* new_next) {
+    Atomic::store(next_ptr(node), new_next);
+}
+
+template<typename T, T* volatile* (*next_ptr)(T&)>
+LockFreeQueue<T, next_ptr>::LockFreeQueue() : _head(NULL), _tail(NULL) {}
+
+#ifdef ASSERT
+template<typename T, T* volatile* (*next_ptr)(T&)>
+LockFreeQueue<T, next_ptr>::~LockFreeQueue() {
+  assert(_head == NULL, "precondition");
+  assert(_tail == NULL, "precondition");
+}
+#endif
+
+template<typename T, T* volatile* (*next_ptr)(T&)>
+T* LockFreeQueue<T, next_ptr>::top() const {
+  return Atomic::load(&_head);
+}
+
+template<typename T, T* volatile* (*next_ptr)(T&)>
+size_t LockFreeQueue<T, next_ptr>::length() const {
+  size_t result = 0;
+  for (const T* current = top(); current != NULL; current = next(*current)) {
+    ++result;
+  }
+  return result;
+}
+
+// An append operation atomically exchanges the new tail with the queue tail.
+// It then sets the "next" value of the old tail to the head of the list being
+// appended; it is an invariant that the old tail's "next" value is NULL.
+// But if the old tail is NULL then the queue was empty.  In this case the
+// head of the list being appended is instead stored in the queue head; it is
+// an invariant that the queue head is NULL in this case.
+//
+// This means there is a period between the exchange and the old tail update
+// where the queue sequence is split into two parts, the list from the queue
+// head to the old tail, and the list being appended.  If there are concurrent
+// push/append operations, each may introduce another such segment.  But they
+// all eventually get resolved by their respective updates of their old tail's
+// "next" value.  This also means that pop operations must handle an object
+// with a NULL "next" value specially.
+//
+// A push operation is just a degenerate append, where the object being pushed
+// is both the head and the tail of the list being appended.
+template<typename T, T* volatile* (*next_ptr)(T&)>
+void LockFreeQueue<T, next_ptr>::append(T& first, T& last) {
+  assert(next(last) == NULL, "precondition");
+  T* old_tail = Atomic::xchg(&_tail, &last);
+  if (old_tail == NULL) {       // Was empty.
+    Atomic::store(&_head, &first);
+  } else {
+    assert(next(*old_tail) == NULL, "invariant");
+    set_next(*old_tail, &first);
+  }
+}
+
+template<typename T, T* volatile* (*next_ptr)(T&)>
+template<bool use_rcu>
+T* LockFreeQueue<T, next_ptr>::pop() {
   while (true) {
     // Use a critical section per iteration, rather than over the whole
-    // operation.  We're not guaranteed to make progress.  Lingering in one
-    // CS could lead to excessive allocation of objects, because the CS
-    // may block return of released objects to a free list for reuse.
-    LockFreeQueueCriticalSection<rcu_pop> cs(current_thread);
+    // operation. We're not guaranteed to make progress. Lingering in one
+    // CS could defer the write-side operation of RCU synchronization
+    // too long, leading to unwanted effect. E.g., if the write-side
+    // returns released objects to a free list for reuse, it could cause
+    // excessive allocations.
+    GlobalCounter::ConditionalCriticalSection<use_rcu> cs(use_rcu ?
+                                                          Thread::current():
+                                                          NULL);
 
+    // We only need memory_order_consume. Upgrade it to "load_acquire"
+    // as the memory_order_consume API is not ready for use yet.
     T* result = Atomic::load_acquire(&_head);
     if (result == NULL) return NULL; // Queue is empty.
 
-    T* next = Atomic::load_acquire(next_ptr(*result));
-    if (next != NULL) {
+    // This relaxed load is always followed by a cmpxchg(), thus it
+    // is OK as the reader-side of the release-acquire ordering.
+    T* next_node = Atomic::load(next_ptr(*result));
+    if (next_node != NULL) {
       // The "usual" lock-free pop from the head of a singly linked list.
-      if (result == Atomic::cmpxchg(&_head, result, next)) {
+      if (result == Atomic::cmpxchg(&_head, result, next_node)) {
         // Former head successfully taken; it is not the last.
         assert(Atomic::load(&_tail) != result, "invariant");
-        assert(get_next(*result) != NULL, "invariant");
-        *next_ptr(*result) = NULL;
+        assert(next(*result) != NULL, "invariant");
+        set_next(*result, NULL);
         return result;
       }
       // Lost the race; try again.
@@ -83,7 +139,7 @@ T* LockFreeQueue<T, next_ptr, rcu_pop>::pop() {
     // case of a concurrent push/append/pop also changing _tail.  If we win
     // then we've claimed result.
     if (Atomic::cmpxchg(&_tail, result, (T*)NULL) == result) {
-      assert(get_next(*result) == NULL, "invariant");
+      assert(next(*result) == NULL, "invariant");
       // Now that we've claimed result, also set _head to NULL.  But we must
       // be careful of a concurrent push/append after we NULLed _tail, since
       // it may have already performed its list-was-empty update of _head,
@@ -108,6 +164,14 @@ T* LockFreeQueue<T, next_ptr, rcu_pop>::pop() {
     // also return NULL for the second case, and let the caller cope.
     return NULL;
   }
+}
+
+template<typename T, T* volatile* (*next_ptr)(T&)>
+Pair<T*, T*> LockFreeQueue<T, next_ptr>::take_all() {
+  Pair<T*, T*> result(Atomic::load(&_head), Atomic::load(&_tail));
+  Atomic::store(&_head, (T*)NULL);
+  Atomic::store(&_tail, (T*)NULL);
+  return result;
 }
 
 #endif // SHARE_UTILITIES_LOCKFREEQUEUE_INLINE_HPP

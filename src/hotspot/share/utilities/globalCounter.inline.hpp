@@ -53,10 +53,9 @@ GlobalCounter::critical_section_end(Thread *thread, CSContext context) {
 }
 
 class GlobalCounter::CriticalSection {
- private:
   Thread* _thread;
   CSContext _context;
- public:
+public:
   inline CriticalSection(Thread* thread) :
     _thread(thread),
     _context(GlobalCounter::critical_section_begin(_thread))
@@ -64,6 +63,23 @@ class GlobalCounter::CriticalSection {
 
   inline  ~CriticalSection() {
     GlobalCounter::critical_section_end(_thread, _context);
+  }
+};
+
+template<bool enable> class GlobalCounter::ConditionalCriticalSection {
+  Thread* _thread;
+  CSContext _context;
+public:
+  inline ConditionalCriticalSection(Thread* thread) {
+    if (enable) {
+      _thread = thread;
+      _context = GlobalCounter::critical_section_begin(thread);
+    }
+  }
+  inline ~ConditionalCriticalSection() {
+    if (enable) {
+      GlobalCounter::critical_section_end(_thread, _context);
+    }
   }
 };
 

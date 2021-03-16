@@ -31,6 +31,7 @@
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
+#include "memory/padded.hpp"
 #include "utilities/lockFreeQueue.hpp"
 
 class G1ConcurrentRefineThread;
@@ -76,11 +77,14 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     HeadTail(BufferNode* head, BufferNode* tail) : _head(head), _tail(tail) {}
   };
 
-  class Queue: public LockFreeQueue<BufferNode, &BufferNode::next_ptr, true /*rcu_pop*/> {
+  class CompletedQueue: public LockFreeQueue<BufferNode, &BufferNode::next_ptr> {
   public:
-    // Take all the buffers from the queue, leaving the queue empty.
-    // Not thread-safe.
-    HeadTail take_all();
+    BufferNode* pop() {
+      // Use GlobalCounter critical section to avoid ABA problem.
+      // The release of a BufferNode to its allocator's free list uses
+      // GlobalCounter::write_synchronize() to coordinate with the pop().
+      return LockFreeQueue<BufferNode, &BufferNode::next_ptr>::pop<true /*use_rcu*/>();
+    }
   };
 
   // Concurrent refinement may stop processing in the middle of a buffer if
@@ -170,7 +174,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   volatile size_t _num_cards;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
-  Queue _completed;           // Has inner padding, including trailer.
+  CompletedQueue _completed;  // Has inner padding, including trailer.
   // Buffers for which refinement is temporarily paused.
   PausedBuffers _paused;      // Has inner padding, including trailer.
 

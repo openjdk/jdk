@@ -47,6 +47,7 @@
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/lockFreeQueue.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/pair.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/ticks.hpp"
 
@@ -115,14 +116,6 @@ void G1DirtyCardQueueSet::handle_zero_index(G1DirtyCardQueue& queue) {
 void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
   G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
   G1BarrierSet::dirty_card_queue_set().handle_zero_index(queue);
-}
-
-G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::Queue::take_all() {
-  assert_at_safepoint();
-  HeadTail result(Atomic::load(&_head), Atomic::load(&_tail));
-  Atomic::store(&_head, (BufferNode*)NULL);
-  Atomic::store(&_tail, (BufferNode*)NULL);
-  return result;
 }
 
 void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
@@ -325,10 +318,10 @@ void G1DirtyCardQueueSet::merge_bufferlists(G1RedirtyCardsQueueSet* src) {
 G1BufferNodeList G1DirtyCardQueueSet::take_all_completed_buffers() {
   enqueue_all_paused_buffers();
   verify_num_cards();
-  HeadTail buffers = _completed.take_all();
+  Pair<BufferNode*, BufferNode*> pair = _completed.take_all();
   size_t num_cards = Atomic::load(&_num_cards);
   Atomic::store(&_num_cards, size_t(0));
-  return G1BufferNodeList(buffers._head, buffers._tail, num_cards);
+  return G1BufferNodeList(pair.first, pair.second, num_cards);
 }
 
 class G1RefineBufferedCards : public StackObj {

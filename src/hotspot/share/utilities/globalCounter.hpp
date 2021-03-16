@@ -85,6 +85,9 @@ class GlobalCounter : public AllStatic {
 
   // A scoped object for a read-side critical-section.
   class CriticalSection;
+
+  // Similar to CriticalSection, but only enabled if "enable" is true.
+  template<bool enable> class ConditionalCriticalSection;
 };
 
 #endif // SHARE_UTILITIES_GLOBALCOUNTER_HPP

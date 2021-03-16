@@ -26,8 +26,8 @@
 #define SHARE_UTILITIES_LOCKFREEQUEUE_HPP
 
 #include "memory/padded.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/pair.hpp"
 
 // The LockFreeQueue template provides a lock-free FIFO. Its structure
 // and usage is similar to LockFreeStack. It has inner paddings, and
@@ -41,78 +41,60 @@
 // \tparam next_ptr is a function pointer.  Applying this function to
 // an object of type T must return a pointer to the list entry member
 // of the object associated with the LockFreeQueue type.
-//
-// \tparam rcu_pop true if use GlobalCounter critical section in pop().
-template<typename T, T* volatile* (*next_ptr)(T&), bool rcu_pop>
+template<typename T, T* volatile* (*next_ptr)(T&)>
 class LockFreeQueue {
-  NONCOPYABLE(LockFreeQueue);
-
-protected:
   T* volatile _head;
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(T*));
   T* volatile _tail;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(T*));
 
+  NONCOPYABLE(LockFreeQueue);
+
+  // Return the entry following node in the list used by the
+  // specialized LockFreeQueue class.
+  static T* next(const T& node);
+
+  // Set the entry following node to new_next in the list used by the
+  // specialized LockFreeQueue class. Not thread-safe, as it cannot
+  // concurrently run with push or pop operations that modify this
+  // node.
+  static void set_next(T& node, T* new_next);
+
 public:
-  LockFreeQueue() : _head(NULL), _tail(NULL) {}
-#ifdef ASSERT
-  ~LockFreeQueue() {
-    assert(_head == NULL, "precondition");
-    assert(_tail == NULL, "precondition");
-  }
-#endif // ASSERT
+  LockFreeQueue();
+  DEBUG_ONLY(~LockFreeQueue();)
 
   // Return the first object in the queue.
   // Thread-safe, but the result may change immediately.
-  T* top() const {
-    return Atomic::load(&_head);
-  }
+  T* top() const;
+
+  // Return true if the queue is empty.
+  bool empty() const { return top() == NULL; }
+
+  // Return the number of objects in the queue.
+  // Not thread-safe. There must be no concurrent modification
+  // while the length is being determined.
+  size_t length() const;
 
   // Thread-safe add the object to the end of the queue.
   void push(T& node) { append(node, node); }
 
   // Thread-safe add the objects from first to last to the end of the queue.
-  // An append operation atomically exchanges the new tail with the queue tail.
-  // It then sets the "next" value of the old tail to the head of the list being
-  // appended; it is an invariant that the old tail's "next" value is NULL.
-  // But if the old tail is NULL then the queue was empty.  In this case the
-  // head of the list being appended is instead stored in the queue head; it is
-  // an invariant that the queue head is NULL in this case.
-  //
-  // This means there is a period between the exchange and the old tail update
-  // where the queue sequence is split into two parts, the list from the queue
-  // head to the old tail, and the list being appended.  If there are concurrent
-  // push/append operations, each may introduce another such segment.  But they
-  // all eventually get resolved by their respective updates of their old tail's
-  // "next" value.  This also means that pop operations must handle an object
-  // with a NULL "next" value specially.
-  //
-  // A push operation is just a degenerate append, where the object being pushed
-  // is both the head and the tail of the list being appended.
-  void append(T& first, T& last) {
-    assert(get_next(last) == NULL, "precondition");
-    T* old_tail = Atomic::xchg(&_tail, &last);
-    if (old_tail == NULL) {       // Was empty.
-      Atomic::store(&_head, &first);
-    } else {
-      assert(get_next(*old_tail) == NULL, "invariant");
-      Atomic::store(next_ptr(*old_tail), &first);
-    }
-  }
+  void append(T& first, T& last);
 
   // Thread-safe attempt to remove and return the first object in the queue.
   // Returns NULL if the queue is empty, or if a concurrent push/append
   // interferes.
-  // If rcu_pop is true, it applies GlobalCounter critical sections to
+  // If use_rcu is true, it applies GlobalCounter critical sections to
   // address the ABA problem. This requires the object's
   // allocator use GlobalCounter synchronization to defer reusing object.
-  T* pop();
+  template<bool use_rcu> T* pop();
 
-  // Return the entry following value in the list used by the
-  // specialized LockFreeQueue class.
-  static T* get_next(const T& value) {
-    return Atomic::load(next_ptr(const_cast<T&>(value)));
-  }
+  // Take all the objects from the queue, leaving the queue empty.
+  // Not thread-safe. It should only be used when there is no concurrent
+  // push/append/pop operation.
+  // Returns a pair of <head, tail> pointers to the current queue.
+  Pair<T*, T*> take_all();
 };
 
 #endif // SHARE_UTILITIES_LOCKFREEQUEUE_HPP
