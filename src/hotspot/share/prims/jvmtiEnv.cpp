@@ -984,7 +984,7 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
       continue;
     }
     if (java_thread->is_suspended()) {
-      results[i] = JVMTI_ERROR_THREAD_SUSPENDED;  // indicate successful suspend
+      results[i] = JVMTI_ERROR_THREAD_SUSPENDED; 
       continue;
     }
     if (java_thread == current) {

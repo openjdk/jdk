@@ -608,7 +608,7 @@ void HandshakeState::unlock() {
 // on, we must check for a pending external suspend request and honor it
 // in order to not surprise the thread that made the suspend request.
 void HandshakeState::thread_exit() {
-  assert(JavaThread::current() == _handshakee, "Must be");
+  guarantee(JavaThread::current() == _handshakee, "Must be");
   while (true) {
     {
       MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);

@@ -259,9 +259,9 @@ Mutex::~Mutex() {
   assert_owner(NULL);
 }
 
-// Only Threads_lock, Heap_lock and Util_lock may be safepoint_check_sometimes.
+// Only Threads_lock and Heap_lock may be safepoint_check_sometimes.
 bool is_sometimes_ok(const char* name) {
-  return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0 || strcmp(name, "Util_lock") == 0);
+  return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0);
 }
 
 Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,

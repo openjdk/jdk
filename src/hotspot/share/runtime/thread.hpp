@@ -1092,8 +1092,8 @@ class JavaThread: public Thread {
     return l_terminated != _not_terminated && l_terminated != _thread_exiting;
   }
   bool is_terminated() const;
-  void set_exiting() { _terminated = _thread_exiting; }
-  void set_vm_exited() { _terminated = _vm_exited; };
+  void set_exiting();
+  void set_vm_exited();
   // special for Threads::remove() which is static:
   void set_terminated();
   void block_if_vm_exited();

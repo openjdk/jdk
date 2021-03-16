@@ -1773,6 +1773,8 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
   this->interrupt();
 }
 
+// This is the closure that prevents a suspended JavaThread from
+// escaping the suspend request.
 class ThreadSuspensionHandshake : public AsyncHandshakeClosure {
  public:
   ThreadSuspensionHandshake() : AsyncHandshakeClosure("ThreadSuspension") {}
@@ -1782,6 +1784,7 @@ class ThreadSuspensionHandshake : public AsyncHandshakeClosure {
   }
 };
 
+// This is the closure that synchronously honors the suspend request.
 class SuspendThreadHandshake : public HandshakeClosure {
   bool _did_suspend;
 public:
@@ -1796,7 +1799,7 @@ public:
     assert(java_lang_Thread::thread(target->threadObj()) != NULL, "BAD");
     if (target->is_suspend_requested()) {
       if (target->is_suspended()) {
-        // Target suspended
+        // Target is already suspended.
         log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(target));
         return;
       } else {
@@ -1831,7 +1834,7 @@ public:
 bool JavaThread::java_suspend() {
   ThreadsListHandle tlh;
   if (!tlh.includes(this)) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on threadslist, no suspension", p2i(this));
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, no suspension", p2i(this));
     return false;
   }
   SuspendThreadHandshake st;
@@ -1842,7 +1845,7 @@ bool JavaThread::java_suspend() {
 bool JavaThread::java_resume() {
   ThreadsListHandle tlh;
   if (!tlh.includes(this)) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on threadslist, nothing to resume", p2i(this));
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, nothing to resume", p2i(this));
     return false;
   }
   return this->handshake_state()->resume();

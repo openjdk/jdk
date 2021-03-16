@@ -402,6 +402,8 @@ bool ObjectMonitor::enter(JavaThread* current) {
     }
 
     OSThreadContendState osts(current->osthread());
+  
+    assert(current->thread_state() == _thread_in_vm, "invariant");
 
     current->frame_anchor()->make_walkable(current);
     OrderAccess::storestore();
@@ -956,6 +958,9 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
 
     {
       OSThreadContendState osts(current->osthread());
+
+      assert(current->thread_state() == _thread_in_vm, "invariant");
+
       current->frame_anchor()->make_walkable(current);
       OrderAccess::storestore();
       current->set_thread_state(_thread_blocked);
@@ -1522,6 +1527,9 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   { // State transition wrappers
     OSThread* osthread = current->osthread();
     OSThreadWaitState osts(osthread, true);
+
+    assert(current->thread_state() == _thread_in_vm, "invariant");
+
     {
       current->frame_anchor()->make_walkable(current);
       OrderAccess::storestore();
