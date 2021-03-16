@@ -44,7 +44,7 @@
  * access arrays.
  *
  * <h2><a id="LanguageJvmModel">Java programming language and JVM modeling in core reflection</a></h2>
- * 
+ *
  * The components of core reflection, which include types in this
  * package as well as {@link java.lang.Class Class}, {@link
  * java.lang.Package Package}, and {@link java.lang.Module Module},
@@ -54,7 +54,7 @@
  * output that can be run on a JVM, primarily {@code class}
  * files. Compilers for source languages other than Java can and do
  * target the JVM as well.
- * 
+ *
  * <p>The translation process, including from Java language sources,
  * to executable output for the JVM is not a one-to-one
  * mapping. Structures present in the source language may have no
