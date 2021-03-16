@@ -936,11 +936,12 @@ OUTER:  for (int i = 0; i < n; i += m) {
         StringBuffer result = new StringBuffer();
         // liu : Add a comment showing the source of this table
         if (debug) {
-            result.append(commentStart + " The following tables and code generated using:" +
-                    commentEnd + "\n  ");
-            result.append(commentStart + ' ' + commandLineDescription + commentEnd + "\n  ");
+            result.append(commentStart).append(" The following tables and code generated using:")
+                    .append(commentEnd).append("\n  ")
+                    .append(commentStart).append(' ')
+                    .append(commandLineDescription).append(commentEnd).append("\n  ");
         }
-        if (plane == 0 && bLatin1 == false) {
+        if (plane == 0 && !bLatin1) {
             genCaseMapTableDeclaration(result);
             genCaseMapTable(initializers, specialCaseMaps);
         }
@@ -996,23 +997,8 @@ OUTER:  for (int i = 0; i < n; i += m) {
         return totalBytes;
     }
 
-    static void appendEscapedStringFragment(StringBuffer result,
-                                            char[] line,
-                                            int length,
-                                            boolean lastFragment) {
-        result.append("    \"");
-        for (int k=0; k<length; ++k) {
-            result.append("\\u");
-            result.append(hex4(line[k]));
-        }
-        result.append("\"");
-        result.append(lastFragment ? ";" : "+");
-        result.append("\n");
-    }
-
     static String SMALL_INITIALIZER =
         "        { // THIS CODE WAS AUTOMATICALLY CREATED BY GenerateCharacter:\n"+
-        // "            $$name = new $$type[$$size];\n"+
         "            int len = $$name_DATA.length();\n"+
         "            int j=0;\n"+
         "            for (int i=0; i<len; ++i) {\n"+
@@ -1028,14 +1014,12 @@ OUTER:  for (int i = 0; i < n; i += m) {
     static String SAME_SIZE_INITIALIZER =
         "        { // THIS CODE WAS AUTOMATICALLY CREATED BY GenerateCharacter:\n"+
         "            assert ($$name_DATA.length() == $$size);\n"+
-        // "            $$name = new $$type[$$size];\n"+
         "            for (int i=0; i<$$size; ++i)\n"+
         "                $$name[i] = ($$type)$$name_DATA.charAt(i);\n"+
         "        }\n";
 
     static String BIG_INITIALIZER =
         "        { // THIS CODE WAS AUTOMATICALLY CREATED BY GenerateCharacter:\n"+
-        // "            $$name = new $$type[$$size];\n"+
         "            int len = $$name_DATA.length();\n"+
         "            int j=0;\n"+
         "            int charsInEntry=0;\n"+
@@ -1077,21 +1061,24 @@ OUTER:  for (int i = 0; i < n; i += m) {
         int pos = 0;
         while ((pos = template.indexOf(commandMarker, pos)) >= 0) {
             int newpos = pos + marklen;
-            char ch = 'x';
+            char ch;
             while (newpos < template.length() &&
                    Character.isJavaIdentifierStart(ch = template.charAt(newpos)) &&
                    ch != '_') // Don't allow this in token names
                 ++newpos;
             String token = template.substring(pos+marklen, newpos);
-            String replacement = "ERROR";
-
-            if (token.equals("name")) replacement = name;
-            else if (token.equals("type")) replacement = type;
-            else if (token.equals("bits")) replacement = ""+bits;
-            else if (token.equals("size")) replacement = ""+size;
-            else if (token.equals("entriesPerChar")) replacement = ""+entriesPerChar;
-            else if (token.equals("charsPerEntry")) replacement = ""+(-entriesPerChar);
-            else FAIL("Unrecognized token: " + token);
+            String replacement = switch (token) {
+                case "name" -> name;
+                case "type" -> type;
+                case "bits" -> "" + bits;
+                case "size" -> "" + size;
+                case "entriesPerChar" -> "" + entriesPerChar;
+                case "charsPerEntry" -> "" + (-entriesPerChar);
+                default -> {
+                    FAIL("Unrecognized token: " + token);
+                    yield "ERROR";
+                }
+            };
 
             template = template.substring(0, pos) + replacement + template.substring(newpos);
             pos += replacement.length();
@@ -1188,27 +1175,26 @@ OUTER:  for (int i = 0; i < n; i += m) {
             if (noConversion) {
                 result.append("] = (\n");
             } else {
-                result.append("] = new ").append(atype).append("["+table.length+"];\n  ");
+                result.append("] = new ").append(atype).append("[").append(table.length).append("];\n  ");
                 result.append("static final String ").append(name).append("_DATA =\n");
             }
             StringBuffer theString = new StringBuffer();
             int entriesInCharSoFar = 0;
             char ch = '\u0000';
             int charsPerEntry = -entriesPerChar;
-            for (int j=0; j<table.length; ++j) {
-                //long entry = table[j] >> extract;
+            for (long l : table) {
                 long entry;
                 if ("A".equals(name))
-                    entry = (table[j] & 0xffffffffL) >> extract;
+                    entry = (l & 0xffffffffL) >> extract;
                 else
-                    entry = (table[j] >> extract);
+                    entry = (l >> extract);
                 if (shiftEntries) entry <<= shift;
                 if (entry >= (1L << bits)) {
                     FAIL("Entry too big");
                 }
                 if (entriesPerChar > 0) {
                     // Pack multiple entries into a character
-                    ch = (char)(((int)ch >> bits) | (entry << (entriesPerChar-1)*bits));
+                    ch = (char) (((int) ch >> bits) | (entry << (entriesPerChar - 1) * bits));
                     ++entriesInCharSoFar;
                     if (entriesInCharSoFar == entriesPerChar) {
                         // Character is full
@@ -1216,11 +1202,10 @@ OUTER:  for (int i = 0; i < n; i += m) {
                         entriesInCharSoFar = 0;
                         ch = '\u0000';
                     }
-                }
-                else {
+                } else {
                     // Use multiple characters per entry
-                    for (int k=0; k<charsPerEntry; ++k) {
-                        ch = (char)(entry >> ((charsPerEntry-1)*16));
+                    for (int k = 0; k < charsPerEntry; ++k) {
+                        ch = (char) (entry >> ((charsPerEntry - 1) * 16));
                         entry <<= 16;
                         theString.append(ch);
                     }
@@ -1232,7 +1217,6 @@ OUTER:  for (int i = 0; i < n; i += m) {
                     ++entriesInCharSoFar;
                 }
                 theString.append(ch);
-                entriesInCharSoFar = 0;
             }
             result.append(Utility.formatForSource(theString.toString(), "    "));
             if (noConversion) {
@@ -1339,27 +1323,25 @@ OUTER:  for (int i = 0; i < n; i += m) {
     }
 
     static void genCaseMapTableDeclaration(StringBuffer result) {
-        String myTab = "    ";
-        result.append(myTab + "static final char[][][] charMap;\n");
+        result.append("    static final char[][][] charMap;\n");
     }
 
     static void genCaseMapTable(StringBuffer result, SpecialCaseMap[] specialCaseMaps){
         String myTab = "    ";
         int ch;
         char[] map;
-        result.append(myTab + "charMap = new char[][][] {\n");
-        for (int x = 0; x < specialCaseMaps.length; x++) {
-            ch = specialCaseMaps[x].getCharSource();
-            map = specialCaseMaps[x].getUpperCaseMap();
-            result.append(myTab + myTab);
-            result.append("{ ");
-            result.append("{'\\u" +hex4(ch)+ "'}, {");
-            for (int y = 0; y < map.length; y++) {
-                result.append("'\\u" +hex4(map[y])+ "', ");
+        result.append(myTab).append("charMap = new char[][][] {\n");
+        for (SpecialCaseMap specialCaseMap : specialCaseMaps) {
+            ch = specialCaseMap.getCharSource();
+            map = specialCaseMap.getUpperCaseMap();
+            result.append(myTab).append(myTab).append("{ ");
+            result.append("{'\\u").append(hex4(ch)).append("'}, {");
+            for (char c : map) {
+                result.append("'\\u").append(hex4(c)).append("', ");
             }
             result.append("} },\n");
         }
-        result.append(myTab + "};\n");
+        result.append(myTab).append("};\n");
 
     }
 
@@ -1376,126 +1358,49 @@ OUTER:  for (int i = 0; i < n; i += m) {
 
     static void propertiesComments(StringBuffer result, long val) {
         result.append("   ");
-        switch ((int)(val & maskType)) {
-            case UnicodeSpec.CONTROL:
-                result.append("Cc");
-                break;
-            case UnicodeSpec.FORMAT:
-                result.append("Cf");
-                break;
-            case UnicodeSpec.PRIVATE_USE:
-                result.append("Co");
-                break;
-            case UnicodeSpec.SURROGATE:
-                result.append("Cs");
-                break;
-            case UnicodeSpec.LOWERCASE_LETTER:
-                result.append("Ll");
-                break;
-            case UnicodeSpec.MODIFIER_LETTER:
-                result.append("Lm");
-                break;
-            case UnicodeSpec.OTHER_LETTER:
-                result.append("Lo");
-                break;
-            case UnicodeSpec.TITLECASE_LETTER:
-                result.append("Lt");
-                break;
-            case UnicodeSpec.UPPERCASE_LETTER:
-                result.append("Lu");
-                break;
-            case UnicodeSpec.COMBINING_SPACING_MARK:
-                result.append("Mc");
-                break;
-            case UnicodeSpec.ENCLOSING_MARK:
-                result.append("Me");
-                break;
-            case UnicodeSpec.NON_SPACING_MARK:
-                result.append("Mn");
-                break;
-            case UnicodeSpec.DECIMAL_DIGIT_NUMBER:
-                result.append("Nd");
-                break;
-            case UnicodeSpec.LETTER_NUMBER:
-                result.append("Nl");
-                break;
-            case UnicodeSpec.OTHER_NUMBER:
-                result.append("No");
-                break;
-            case UnicodeSpec.CONNECTOR_PUNCTUATION:
-                result.append("Pc");
-                break;
-            case UnicodeSpec.DASH_PUNCTUATION:
-                result.append("Pd");
-                break;
-            case UnicodeSpec.END_PUNCTUATION:
-                result.append("Pe");
-                break;
-            case UnicodeSpec.OTHER_PUNCTUATION:
-                result.append("Po");
-                break;
-            case UnicodeSpec.START_PUNCTUATION:
-                result.append("Ps");
-                break;
-            case UnicodeSpec.CURRENCY_SYMBOL:
-                result.append("Sc");
-                break;
-            case UnicodeSpec.MODIFIER_SYMBOL:
-                result.append("Sk");
-                break;
-            case UnicodeSpec.MATH_SYMBOL:
-                result.append("Sm");
-                break;
-            case UnicodeSpec.OTHER_SYMBOL:
-                result.append("So");
-                break;
-            case UnicodeSpec.LINE_SEPARATOR:
-                result.append("Zl"); break;
-            case UnicodeSpec.PARAGRAPH_SEPARATOR:
-                result.append("Zp");
-                break;
-            case UnicodeSpec.SPACE_SEPARATOR:
-                result.append("Zs");
-                break;
-            case UnicodeSpec.UNASSIGNED:
-                result.append("unassigned");
-                break;
+        switch ((int) (val & maskType)) {
+            case UnicodeSpec.CONTROL -> result.append("Cc");
+            case UnicodeSpec.FORMAT -> result.append("Cf");
+            case UnicodeSpec.PRIVATE_USE -> result.append("Co");
+            case UnicodeSpec.SURROGATE -> result.append("Cs");
+            case UnicodeSpec.LOWERCASE_LETTER -> result.append("Ll");
+            case UnicodeSpec.MODIFIER_LETTER -> result.append("Lm");
+            case UnicodeSpec.OTHER_LETTER -> result.append("Lo");
+            case UnicodeSpec.TITLECASE_LETTER -> result.append("Lt");
+            case UnicodeSpec.UPPERCASE_LETTER -> result.append("Lu");
+            case UnicodeSpec.COMBINING_SPACING_MARK -> result.append("Mc");
+            case UnicodeSpec.ENCLOSING_MARK -> result.append("Me");
+            case UnicodeSpec.NON_SPACING_MARK -> result.append("Mn");
+            case UnicodeSpec.DECIMAL_DIGIT_NUMBER -> result.append("Nd");
+            case UnicodeSpec.LETTER_NUMBER -> result.append("Nl");
+            case UnicodeSpec.OTHER_NUMBER -> result.append("No");
+            case UnicodeSpec.CONNECTOR_PUNCTUATION -> result.append("Pc");
+            case UnicodeSpec.DASH_PUNCTUATION -> result.append("Pd");
+            case UnicodeSpec.END_PUNCTUATION -> result.append("Pe");
+            case UnicodeSpec.OTHER_PUNCTUATION -> result.append("Po");
+            case UnicodeSpec.START_PUNCTUATION -> result.append("Ps");
+            case UnicodeSpec.CURRENCY_SYMBOL -> result.append("Sc");
+            case UnicodeSpec.MODIFIER_SYMBOL -> result.append("Sk");
+            case UnicodeSpec.MATH_SYMBOL -> result.append("Sm");
+            case UnicodeSpec.OTHER_SYMBOL -> result.append("So");
+            case UnicodeSpec.LINE_SEPARATOR -> result.append("Zl");
+            case UnicodeSpec.PARAGRAPH_SEPARATOR -> result.append("Zp");
+            case UnicodeSpec.SPACE_SEPARATOR -> result.append("Zs");
+            case UnicodeSpec.UNASSIGNED -> result.append("unassigned");
         }
 
-        switch ((int)((val & maskBidi) >> shiftBidi)) {
-            case UnicodeSpec.DIRECTIONALITY_LEFT_TO_RIGHT:
-                result.append(", L");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_RIGHT_TO_LEFT:
-                result.append(", R");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER:
-                result.append(", EN");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR:
-                result.append(", ES");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR:
-                result.append(", ET");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_ARABIC_NUMBER:
-                result.append(", AN");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR:
-                result.append(", CS");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_PARAGRAPH_SEPARATOR:
-                result.append(", B");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_SEGMENT_SEPARATOR:
-                result.append(", S");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_WHITESPACE:
-                result.append(", WS");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_OTHER_NEUTRALS:
-                result.append(", ON");
-                break;
+        switch ((int) ((val & maskBidi) >> shiftBidi)) {
+            case UnicodeSpec.DIRECTIONALITY_LEFT_TO_RIGHT -> result.append(", L");
+            case UnicodeSpec.DIRECTIONALITY_RIGHT_TO_LEFT -> result.append(", R");
+            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER -> result.append(", EN");
+            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR -> result.append(", ES");
+            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR -> result.append(", ET");
+            case UnicodeSpec.DIRECTIONALITY_ARABIC_NUMBER -> result.append(", AN");
+            case UnicodeSpec.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR -> result.append(", CS");
+            case UnicodeSpec.DIRECTIONALITY_PARAGRAPH_SEPARATOR -> result.append(", B");
+            case UnicodeSpec.DIRECTIONALITY_SEGMENT_SEPARATOR -> result.append(", S");
+            case UnicodeSpec.DIRECTIONALITY_WHITESPACE -> result.append(", WS");
+            case UnicodeSpec.DIRECTIONALITY_OTHER_NEUTRALS -> result.append(", ON");
         }
         if ((val & maskUpperCase) != 0) {
             result.append(", hasUpper (subtract ");
@@ -1592,10 +1497,9 @@ OUTER:  for (int i = 0; i < n; i += m) {
             String bitshift = (bits == 1) ? "(" + var + "&0x1F)" :
                 (bits == 2) ? "((" + var + "&0xF)<<1)" :
                 (bits == 4) ? "((" + var + "&7)<<2)" : null;
-            String extracted = ((k < sizes.length - 1) || (bits >= 8)) ? adjusted :
+            access = ((k < sizes.length - 1) || (bits >= 8)) ? adjusted :
                 "((" + adjusted + ">>" + bitshift + ")&" +
                 (bits == 4 ? "0xF" : "" + ((1 << bits) - 1)) + ")";
-            access = extracted;
         }
         return access;
     }
