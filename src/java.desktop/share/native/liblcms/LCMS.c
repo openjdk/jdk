@@ -31,67 +31,8 @@
 #include "Trace.h"
 #include "Disposer.h"
 #include <lcms2.h>
+#include <lcms2_plugin.h>
 #include "jlong.h"
-
-
-#define ALIGNLONG(x) (((x)+3) & ~(3))         // Aligns to DWORD boundary
-
-#ifdef USE_BIG_ENDIAN
-#define AdjustEndianess32(a)
-#define AdjustEndianess64(a, b)
-#else
-
-static
-void AdjustEndianess32(cmsUInt8Number *pByte)
-{
-    cmsUInt8Number temp1;
-    cmsUInt8Number temp2;
-
-    temp1 = *pByte++;
-    temp2 = *pByte++;
-    *(pByte-1) = *pByte;
-    *pByte++ = temp2;
-    *(pByte-3) = *pByte;
-    *pByte = temp1;
-}
-
-static
-void AdjustEndianess64(cmsUInt64Number* Result, cmsUInt64Number* QWord)
-{
-    cmsUInt8Number* pIn  = (cmsUInt8Number*) QWord;
-    cmsUInt8Number* pOut = (cmsUInt8Number*) Result;
-
-    pOut[7] = pIn[0];
-    pOut[6] = pIn[1];
-    pOut[5] = pIn[2];
-    pOut[4] = pIn[3];
-    pOut[3] = pIn[4];
-    pOut[2] = pIn[5];
-    pOut[1] = pIn[6];
-    pOut[0] = pIn[7];
-}
-#endif
-
-// Transports to properly encoded values - note that icc profiles does use
-// big endian notation.
-
-static
-cmsInt32Number TransportValue32(cmsInt32Number Value)
-{
-    cmsInt32Number Temp = Value;
-
-    AdjustEndianess32((cmsUInt8Number*) &Temp);
-    return Temp;
-}
-
-static
-cmsUInt64Number TransportValue64(cmsUInt64Number Value)
-{
-    cmsUInt64Number Temp = Value;
-
-    AdjustEndianess64(&Temp, &Value);
-    return Temp;
-}
 
 #define SigMake(a,b,c,d) \
                     ( ( ((int) ((unsigned char) (a))) << 24) | \
@@ -785,16 +726,18 @@ static cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
   memcpy(&pfHeader, pBuffer, sizeof(cmsICCHeader));
 
   // now set header fields, which we can access using the lcms2 public API
-    cmsSetHeaderFlags(pf, TransportValue32(pfHeader.flags));
-    cmsSetHeaderManufacturer(pf, TransportValue32(pfHeader.manufacturer));
-    cmsSetHeaderModel(pf, TransportValue32(pfHeader.model));
-    cmsSetHeaderAttributes(pf, TransportValue64(pfHeader.attributes));
+    cmsSetHeaderFlags(pf, _cmsAdjustEndianess32(pfHeader.flags));
+    cmsSetHeaderManufacturer(pf, _cmsAdjustEndianess32(pfHeader.manufacturer));
+    cmsSetHeaderModel(pf, _cmsAdjustEndianess32(pfHeader.model));
+    cmsUInt64Number attributes;
+    _cmsAdjustEndianess64(&attributes, &pfHeader.attributes);
+    cmsSetHeaderAttributes(pf, attributes);
     cmsSetHeaderProfileID(pf, (cmsUInt8Number*)&(pfHeader.profileID));
-    cmsSetHeaderRenderingIntent(pf, TransportValue32(pfHeader.renderingIntent));
-    cmsSetPCS(pf, TransportValue32(pfHeader.pcs));
-    cmsSetColorSpace(pf, TransportValue32(pfHeader.colorSpace));
-    cmsSetDeviceClass(pf, TransportValue32(pfHeader.deviceClass));
-    cmsSetEncodedICCversion(pf, TransportValue32(pfHeader.version));
+    cmsSetHeaderRenderingIntent(pf, _cmsAdjustEndianess32(pfHeader.renderingIntent));
+    cmsSetPCS(pf, _cmsAdjustEndianess32(pfHeader.pcs));
+    cmsSetColorSpace(pf, _cmsAdjustEndianess32(pfHeader.colorSpace));
+    cmsSetDeviceClass(pf, _cmsAdjustEndianess32(pfHeader.deviceClass));
+    cmsSetEncodedICCversion(pf, _cmsAdjustEndianess32(pfHeader.version));
 
   return TRUE;
 }
