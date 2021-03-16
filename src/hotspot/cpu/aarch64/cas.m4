@@ -1,4 +1,4 @@
-dnl Copyright (c) 2016, Red Hat Inc. All rights reserved.
+dnl Copyright (c) 2016, 2021, Red Hat Inc. All rights reserved.
 dnl DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 dnl
 dnl This code is free software; you can redistribute it and/or modify it
@@ -38,17 +38,19 @@ dnl
 
 define(`CAS_INSN',
 `
-instruct compareAndExchange$1$5(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
+instruct compareAndExchange$1$6(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
+  ifelse($1$6,PAcq,'predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));`,
+         $1,P,'predicate(n->as_LoadStore()->barrier_data() == 0);`,
+         $6,Acq,'predicate(needs_acquiring_load_exclusive(n));`)
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
-  ifelse($5,Acq,'  predicate(needs_acquiring_load_exclusive(n));
-  ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
+  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
   effect(TEMP_DEF res, KILL cr);
   format %{
-    "cmpxchg $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchg$5`'ifelse($6,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::$4, /*acquire*/ ifelse($5,Acq,true,false), /*release*/ true,
+               Assembler::$4, /*acquire*/ ifelse($6,Acq,true,false), /*release*/ true,
                /*weak*/ false, $res$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -56,50 +58,48 @@ instruct compareAndExchange$1$5(iReg$2NoSp res, indirect mem, iReg$2 oldval, iRe
 define(`CAS_INSN4',
 `
 instruct compareAndExchange$1$7(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
+  ifelse($7,Acq,'predicate(needs_acquiring_load_exclusive(n));`)
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
-  ifelse($7,Acq,'  predicate(needs_acquiring_load_exclusive(n));
-  ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
+  ifelse($7,Acq,'ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
   effect(TEMP_DEF res, KILL cr);
   format %{
-    "cmpxchg $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchg$5`'ifelse($7,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
   %}
   ins_encode %{
-    __ $5(rscratch2, $oldval$$Register);
-    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
-               Assembler::$4, /*acquire*/ ifelse($5,Acq,true,false), /*release*/ true,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::$4, /*acquire*/ ifelse($7,Acq,true,false), /*release*/ true,
                /*weak*/ false, $res$$Register);
     __ $6($res$$Register, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-CAS_INSN4(B,I,byte,byte,uxtbw,sxtbw)
-CAS_INSN4(S,I,short,halfword,uxthw,sxthw)
-CAS_INSN(I,I,int,word)
+CAS_INSN4(B,I,byte,byte,b,sxtbw)
+CAS_INSN4(S,I,short,halfword,s,sxthw)
+CAS_INSN(I,I,int,word,w)
 CAS_INSN(L,L,long,xword)
-CAS_INSN(N,N,narrow oop,word)
+CAS_INSN(N,N,narrow oop,word,w)
 CAS_INSN(P,P,ptr,xword)
 dnl
-dnl CAS_INSN4(B,I,byte,byte,uxtbw,sxtbw,Acq)
-dnl CAS_INSN4(S,I,short,halfword,uxthw,sxthw,Acq)
-dnl CAS_INSN(I,I,int,word,Acq)
-dnl CAS_INSN(L,L,long,xword,Acq)
-dnl CAS_INSN(N,N,narrow oop,word,Acq)
-dnl CAS_INSN(P,P,ptr,xword,Acq)
+CAS_INSN4(B,I,byte,byte,b,sxtbw,Acq)
+CAS_INSN4(S,I,short,halfword,s,sxthw,Acq)
+CAS_INSN(I,I,int,word,w,Acq)
+CAS_INSN(L,L,long,xword,,Acq)
+CAS_INSN(N,N,narrow oop,word,w,Acq)
+CAS_INSN(P,P,ptr,xword,,Acq)
 dnl
 define(`CAS_INSN2',
 `
 instruct weakCompareAndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
+  ifelse($6,Acq,'  predicate(needs_acquiring_load_exclusive(n));`)
   match(Set res (WeakCompareAndSwap$1 mem (Binary oldval newval)));
-  ifelse($6,Acq,'  predicate(needs_acquiring_load_exclusive(n));
-  ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
+  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
   effect(KILL cr);
   format %{
-    "cmpxchg $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchg$5`'ifelse($6,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ uxt$5(rscratch2, $oldval$$Register);
-    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::$4, /*acquire*/ ifelse($6,Acq,true,false), /*release*/ true,
                /*weak*/ true, noreg);
     __ csetw($res$$Register, Assembler::EQ);
@@ -108,35 +108,37 @@ instruct weakCompareAndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg
 %}')dnl
 define(`CAS_INSN3',
 `
-instruct weakCompareAndSwap$1$5(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
+instruct weakCompareAndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
+  ifelse($1$6,PAcq,'predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));`,
+         $1,P,'predicate(n->as_LoadStore()->barrier_data() == 0);`,
+         $6,Acq,'predicate(needs_acquiring_load_exclusive(n));`)
   match(Set res (WeakCompareAndSwap$1 mem (Binary oldval newval)));
-  ifelse($5,Acq,'  predicate(needs_acquiring_load_exclusive(n));
-  ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
+  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'  ins_cost(2 * VOLATILE_REF_COST);`)
   effect(KILL cr);
   format %{
-    "cmpxchg $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchg$5`'ifelse($6,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3, weak) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::$4, /*acquire*/ ifelse($5,Acq,true,false), /*release*/ true,
+               Assembler::$4, /*acquire*/ ifelse($6,Acq,true,false), /*release*/ true,
                /*weak*/ true, noreg);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-CAS_INSN2(B,I,byte,byte,bw)
-CAS_INSN2(S,I,short,halfword,hw)
-CAS_INSN3(I,I,int,word)
+CAS_INSN2(B,I,byte,byte,b)
+CAS_INSN2(S,I,short,halfword,s)
+CAS_INSN3(I,I,int,word,w)
 CAS_INSN3(L,L,long,xword)
-CAS_INSN3(N,N,narrow oop,word)
+CAS_INSN3(N,N,narrow oop,word,w)
 CAS_INSN3(P,P,ptr,xword)
-dnl CAS_INSN2(B,I,byte,byte,bw,Acq)
-dnl CAS_INSN2(S,I,short,halfword,hw,Acq)
-dnl CAS_INSN3(I,I,int,word,Acq)
-dnl CAS_INSN3(L,L,long,xword,Acq)
-dnl CAS_INSN3(N,N,narrow oop,word,Acq)
-dnl CAS_INSN3(P,P,ptr,xword,Acq)
+CAS_INSN2(B,I,byte,byte,b,Acq)
+CAS_INSN2(S,I,short,halfword,s,Acq)
+CAS_INSN3(I,I,int,word,w,Acq)
+CAS_INSN3(L,L,long,xword,,Acq)
+CAS_INSN3(N,N,narrow oop,word,w,Acq)
+CAS_INSN3(P,P,ptr,xword,,Acq)
 dnl
 
 // END This section of the file is automatically generated. Do not edit --------------
