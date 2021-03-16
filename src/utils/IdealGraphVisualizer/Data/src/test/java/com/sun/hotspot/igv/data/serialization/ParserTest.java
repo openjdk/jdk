@@ -71,6 +71,7 @@ public class ParserTest {
             InputStream in = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));
             try {
                 Parser parser = new Parser(Channels.newChannel(in));
+                parser.setInvokeLater(false);
                 final GraphDocument parsedDocument = parser.parse();
                 Util.assertGraphDocumentEquals(document, parsedDocument);
             } catch (IOException ex) {
@@ -119,16 +120,16 @@ public class ParserTest {
         graph.addNode(new InputNode(3));
         test(doc);
 
-        graph.addEdge(new InputEdge((char)0, (char)0, 0, 1));
+        graph.addEdge(new InputEdge((char)0, (char)0, 0, 1, "", ""));
         test(doc);
 
-        graph.addEdge(new InputEdge((char)1, (char)1, 0, 1));
+        graph.addEdge(new InputEdge((char)1, (char)1, 0, 1, "", ""));
         test(doc);
 
-        graph.addEdge(new InputEdge((char)0, (char)0, 1, 2));
+        graph.addEdge(new InputEdge((char)0, (char)0, 1, 2, "", ""));
         test(doc);
 
-        graph.addEdge(new InputEdge((char)0, (char)0, 2, 3));
+        graph.addEdge(new InputEdge((char)0, (char)0, 2, 3, "", ""));
         test(doc);
 
         group1.setMethod(new InputMethod(group1, "testMethod", "tM", 1));
@@ -171,8 +172,8 @@ public class ParserTest {
 
         InputNode n1 = new InputNode(0);
         InputNode n2 = new InputNode(1);
-        InputEdge e1 = new InputEdge((char)0, 0, 1);
-        InputEdge e2 = new InputEdge((char)1, 0, 1);
+        InputEdge e1 = new InputEdge((char)0, (char)0, 0, 1, "", "");
+        InputEdge e2 = new InputEdge((char)0, (char)1, 0, 1, "", "");
         graph.addNode(n1);
         graph.addNode(n2);
         graph.addEdge(e1);
@@ -194,8 +195,8 @@ public class ParserTest {
 
         InputNode n1 = new InputNode(0);
         InputNode n2 = new InputNode(1);
-        InputEdge e1 = new InputEdge((char)0, 0, 0);
-        InputEdge e2 = new InputEdge((char)1, 1, 1);
+        InputEdge e1 = new InputEdge((char)0, (char)0, 0, 0, "", "");
+        InputEdge e2 = new InputEdge((char)0, (char)1, 1, 1, "", "");
         graph.addNode(n1);
         graph.addNode(n2);
         graph.addEdge(e1);
@@ -206,7 +207,7 @@ public class ParserTest {
         graph2.addNode(n1);
         InputNode n3 = new InputNode(2);
         graph2.addNode(n3);
-        InputEdge e3 = new InputEdge((char)0, 0, 2);
+        InputEdge e3 = new InputEdge((char)0, (char)0, 0, 2, "", "");
         graph2.addEdge(e3);
 
         test(document);

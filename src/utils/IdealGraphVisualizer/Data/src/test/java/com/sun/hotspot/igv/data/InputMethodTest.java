@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,8 @@ public class InputMethodTest {
 
         assertThat(m.getBytecodes().get(0).getName(), is("iload_0"));
         assertThat(m.getBytecodes().get(1).getName(), is("iconst_1"));
-        assertThat(m.getBytecodes().get(2).getName(), is("if_icmpne 7"));
+        assertThat(m.getBytecodes().get(2).getName(), is("if_icmpne"));
+        assertThat(m.getBytecodes().get(2).getOperands(), is("7"));
         assertThat(m.getBytecodes().get(6).getName(), is("ireturn"));
 
         assertThat(m.getBytecodes().get(2).getInlined(), nullValue());

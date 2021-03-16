@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@ public class Parser implements GraphParser {
     private GraphDocument graphDocument;
     private final ParseMonitor monitor;
     private final ReadableByteChannel channel;
+    private boolean invokeLater = true;
 
     private int lookupID(String i) {
         try {
@@ -145,12 +146,17 @@ public class Parser implements GraphParser {
 
             final Folder parent = getParentObject();
             if (groupCallback == null || parent instanceof Group) {
-                SwingUtilities.invokeLater(new Runnable(){
-                    @Override
-                    public void run() {
-                        parent.addElement(group);
-                    }
-                });
+                Runnable addToParent = new Runnable(){
+                        @Override
+                        public void run() {
+                            parent.addElement(group);
+                        }
+                    };
+                if (invokeLater) {
+                    SwingUtilities.invokeLater(addToParent);
+                } else {
+                    addToParent.run();
+                }
             }
 
             return group;
@@ -280,14 +286,17 @@ public class Parser implements GraphParser {
             }
             blockConnections.clear();
 
-            SwingUtilities.invokeLater(new Runnable(){
-
-                @Override
-                public void run() {
-                    // Add to group
-                    parent.addElement(graph);
-                }
-            });
+            Runnable addToParent = new Runnable(){
+                    @Override
+                    public void run() {
+                        parent.addElement(graph);
+                    }
+                };
+            if (invokeLater) {
+                SwingUtilities.invokeLater(addToParent);
+            } else {
+                addToParent.run();
+            }
         }
     };
     // <nodes>
@@ -448,12 +457,17 @@ public class Parser implements GraphParser {
         public void end(String text) throws SAXException {
             if (groupCallback != null && getParentObject().getParent() instanceof GraphDocument) {
                 final Group group = getParentObject();
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        groupCallback.started(group);
-                    }
-                });
+                Runnable addStarted = (new Runnable() {
+                        @Override
+                        public void run() {
+                            groupCallback.started(group);
+                        }
+                    });
+                if (invokeLater) {
+                    SwingUtilities.invokeLater(addStarted);
+                } else {
+                    addStarted.run();
+                }
             }
         }
     };
@@ -541,6 +555,12 @@ public class Parser implements GraphParser {
             monitor.setState("Finished parsing");
         }
         return graphDocument;
+    }
+
+    // Whether the parser is allowed to defer connecting the parsed elements.
+    // Setting to false is useful for synchronization in unit tests.
+    public void setInvokeLater(boolean invokeLater) {
+        this.invokeLater = invokeLater;
     }
 
     private XMLReader createReader() throws SAXException {

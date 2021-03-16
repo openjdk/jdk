@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,11 @@ public class InputGraphTest {
     private static final InputNode N3 = new InputNode(3);
     private static final InputNode N4 = new InputNode(4);
     private static final InputNode N5 = new InputNode(5);
-    private static final InputEdge E12 = new InputEdge((char)0, 1, 2);
-    private static final InputEdge E13 = new InputEdge((char)0, 1, 3);
-    private static final InputEdge E24 = new InputEdge((char)0, 2, 4);
-    private static final InputEdge E34 = new InputEdge((char)0, 3, 4);
-    private static final InputEdge E54 = new InputEdge((char)0, 5, 4);
+    private static final InputEdge E12 = new InputEdge((char)0, (char)0, 1, 2, "", "");
+    private static final InputEdge E13 = new InputEdge((char)0, (char)0, 1, 3, "", "");
+    private static final InputEdge E24 = new InputEdge((char)0, (char)0, 2, 4, "", "");
+    private static final InputEdge E34 = new InputEdge((char)0, (char)0, 3, 4, "", "");
+    private static final InputEdge E54 = new InputEdge((char)0, (char)0, 5, 4, "", "");
 
     public InputGraphTest() {
     }
@@ -112,7 +112,7 @@ public class InputGraphTest {
         parentB.addElement(b);
 
         InputGraph c = new InputGraph("graph");
-        parentB.addElement(b);
+        parentB.addElement(c);
 
         Util.assertGraphEquals(a, b);
         Util.assertGraphEquals(b, c);
