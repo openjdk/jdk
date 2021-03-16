@@ -1598,10 +1598,13 @@ class LambdaForm {
          *  Return 0 if the name is not used.
          */
         int useCount(Name n) {
-            if (arguments == null)  return 0;
             int count = 0;
-            for (int i = arguments.length; --i >= 0; ) {
-                if (arguments[i] == n)  ++count;
+            if (arguments != null) {
+                for (Object argument : arguments) {
+                    if (argument == n) {
+                        count++;
+                    }
+                }
             }
             return count;
         }
@@ -1649,15 +1652,10 @@ class LambdaForm {
 
     /** Return the number of times n is used as an argument or return value. */
     int useCount(Name n) {
-        int nmax = names.length;
-        int end = lastUseIndex(n);
-        if (end < 0)  return 0;
-        int count = 0;
-        if (end == nmax) { count++; end--; }
-        int beg = n.index() + 1;
-        if (beg < arity)  beg = arity;
-        for (int i = beg; i <= end; i++) {
-            count += names[i].useCount(n);
+        int count = (result == n.index) ? 1 : 0;
+        int i = Math.max(n.index + 1, arity);
+        while (i < names.length) {
+            count += names[i++].useCount(n);
         }
         return count;
     }
