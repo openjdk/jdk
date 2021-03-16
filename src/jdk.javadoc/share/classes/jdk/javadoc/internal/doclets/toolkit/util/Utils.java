@@ -767,14 +767,20 @@ public class Utils {
             }
 
             @Override
-            public StringBuilder visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
+            public StringBuilder visitPrimitive(PrimitiveType t, Void p) {
+                sb.append(t.getKind().toString().toLowerCase(Locale.ROOT));
+                return sb;
+            }
+
+            @Override
+            public StringBuilder visitTypeVariable(TypeVariable t, Void p) {
                 Element e = t.asElement();
                 sb.append(qualifiedName ? getFullyQualifiedName(e, false) : getSimpleName(e));
                 return sb;
             }
 
             @Override
-            public StringBuilder visitWildcard(javax.lang.model.type.WildcardType t, Void p) {
+            public StringBuilder visitWildcard(WildcardType t, Void p) {
                 sb.append("?");
                 TypeMirror upperBound = t.getExtendsBound();
                 if (upperBound != null) {

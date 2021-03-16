@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
         if ((result != 0) || (GetLastError() != ERROR_LOCK_VIOLATION))
             break;
         retry++;
-    } while (retry < 3);
+    } while (retry < 5);
 
     /**
      * FlushViewOfFile only initiates the writing of dirty pages to disk

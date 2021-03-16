@@ -370,4 +370,8 @@ public class IndexWriter extends HtmlDocletWriter {
                 .collect(Collectors.toList());
         contentTree.add(contents.join(getVerticalSeparator(), pageLinks));
     }
+
+    private Content getVerticalSeparator() {
+        return HtmlTree.SPAN(HtmlStyle.verticalSeparator, Text.of("|"));
+    }
 }

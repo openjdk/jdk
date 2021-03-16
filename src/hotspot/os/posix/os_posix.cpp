@@ -22,7 +22,11 @@
  *
  */
 
+
 #include "jvm.h"
+#ifdef LINUX
+#include "classfile/classLoader.hpp"
+#endif
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -33,10 +37,12 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/perfMemory.hpp"
 #include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -51,10 +57,16 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/types.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <utmpx.h>
+
+#ifdef __APPLE__
+  #include <crt_externs.h>
+#endif
 
 #define ROOT_UID 0
 
@@ -1763,5 +1775,126 @@ int os::PlatformMonitor::wait(jlong millis) {
     assert_status(status == 0 MACOS_ONLY(|| status == ETIMEDOUT),
                   status, "cond_wait");
     return OS_OK;
+  }
+}
+
+// Darwin has no "environ" in a dynamic library.
+#ifdef __APPLE__
+  #define environ (*_NSGetEnviron())
+#else
+  extern char** environ;
+#endif
+
+char** os::get_environ() { return environ; }
+
+// Run the specified command in a separate process. Return its exit value,
+// or -1 on failure (e.g. can't fork a new process).
+// Notes: -Unlike system(), this function can be called from signal handler. It
+//         doesn't block SIGINT et al.
+//        -this function is unsafe to use in non-error situations, mainly
+//         because the child process will inherit all parent descriptors.
+int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
+  const char * argv[4] = {"sh", "-c", cmd, NULL};
+
+  pid_t pid ;
+
+  char** env = os::get_environ();
+
+  // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
+  // Otherwise leave it up to the caller.
+  AIX_ONLY(prefer_vfork = true;)
+  pid = prefer_vfork ? ::vfork() : ::fork();
+
+  if (pid < 0) {
+    // fork failed
+    return -1;
+
+  } else if (pid == 0) {
+    // child process
+
+    ::execve("/bin/sh", (char* const*)argv, env);
+
+    // execve failed
+    ::_exit(-1);
+
+  } else  {
+    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
+    // care about the actual exit code, for now.
+
+    int status;
+
+    // Wait for the child process to exit.  This returns immediately if
+    // the child has already exited. */
+    while (::waitpid(pid, &status, 0) < 0) {
+      switch (errno) {
+      case ECHILD: return 0;
+      case EINTR: break;
+      default: return -1;
+      }
+    }
+
+    if (WIFEXITED(status)) {
+      // The child exited normally; get its exit code.
+      return WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+      // The child exited because of a signal
+      // The best value to return is 0x80 + signal number,
+      // because that is what all Unix shells do, and because
+      // it allows callers to distinguish between process exit and
+      // process death by signal.
+      return 0x80 + WTERMSIG(status);
+    } else {
+      // Unknown exit code; pass it through
+      return status;
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// runtime exit support
+
+// Note: os::shutdown() might be called very early during initialization, or
+// called from signal handler. Before adding something to os::shutdown(), make
+// sure it is async-safe and can handle partially initialized VM.
+void os::shutdown() {
+
+  // allow PerfMemory to attempt cleanup of any persistent resources
+  perfMemory_exit();
+
+  // needs to remove object in file system
+  AttachListener::abort();
+
+  // flush buffered output, finish log files
+  ostream_abort();
+
+  // Check for abort hook
+  abort_hook_t abort_hook = Arguments::abort_hook();
+  if (abort_hook != NULL) {
+    abort_hook();
+  }
+
+}
+
+// Note: os::abort() might be called very early during initialization, or
+// called from signal handler. Before adding something to os::abort(), make
+// sure it is async-safe and can handle partially initialized VM.
+void os::abort(bool dump_core, void* siginfo, const void* context) {
+  os::shutdown();
+  if (dump_core) {
+    LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
+    ::abort(); // dump core
+  }
+  ::exit(1);
+}
+
+// Die immediately, no exit hook, no abort hook, no cleanup.
+// Dump a core file, if possible, for debugging.
+void os::die() {
+  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
+    // For TimeoutInErrorHandlingTest.java, we just kill the VM
+    // and don't take the time to generate a core file.
+    os::signal_raise(SIGKILL);
+  } else {
+    ::abort();
   }
 }

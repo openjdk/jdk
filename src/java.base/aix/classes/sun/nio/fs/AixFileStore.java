@@ -88,9 +88,8 @@ class AixFileStore
         throw new IOException("Mount point not found");
     }
 
-    // returns true if extended attributes enabled on file system where given
-    // file resides, returns false if disabled or unable to determine.
-    private boolean isExtendedAttributesEnabled(UnixPath path) {
+    @Override
+    protected boolean isExtendedAttributesEnabled(UnixPath path) {
         return false;
     }
 
