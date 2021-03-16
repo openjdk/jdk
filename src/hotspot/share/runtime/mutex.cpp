@@ -84,12 +84,12 @@ void Mutex::lock_contended(Thread* self) {
     // Is it a JavaThread participating in the safepoint protocol.
     if (is_active_Java_thread) {
       assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
-      { ThreadBlockInVMWithDeadlockCheck tbivmdc(self->as_Java_thread(), &in_flight_mutex);
-        in_flight_mutex = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
+      { ThreadBlockInVM tbivmdc(self->as_Java_thread(), &in_flight_mutex);
+        in_flight_mutex = this;  // save for ~ThreadBlockInVM
         _lock.lock();
       }
       if (in_flight_mutex != NULL) {
-        // Not unlocked by ~ThreadBlockInVMWithDeadlockCheck
+        // Not unlocked by ~ThreadBlockInVM
         break;
       }
     } else {
@@ -236,15 +236,15 @@ bool Monitor::wait(int64_t timeout) {
   Mutex* in_flight_mutex = NULL;
 
   {
-    ThreadBlockInVMWithDeadlockCheck tbivmdc(self, &in_flight_mutex);
+    ThreadBlockInVM tbivmdc(self, &in_flight_mutex);
     OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
 
     wait_status = _lock.wait(timeout);
-    in_flight_mutex = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
+    in_flight_mutex = this;  // save for ~ThreadBlockInVM
   }
 
   if (in_flight_mutex != NULL) {
-    // Not unlocked by ~ThreadBlockInVMWithDeadlockCheck
+    // Not unlocked by ~ThreadBlockInVM
     assert_owner(NULL);
     // Conceptually reestablish ownership of the lock.
     set_owner(self);

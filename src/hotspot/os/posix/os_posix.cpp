@@ -1871,13 +1871,17 @@ void os::shutdown() {
 // Note: os::abort() might be called very early during initialization, or
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
+// Also note we can abort while other threads continue to run, so we can
+// easily trigger secondary faults in those threads. To reduce the likelihood
+// of that we use _exit rather than exit, so that no atexit hooks get run.
+// But note that os::shutdown() could also trigger secondary faults.
 void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
     LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
     ::abort(); // dump core
   }
-  ::exit(1);
+  ::_exit(1);
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
