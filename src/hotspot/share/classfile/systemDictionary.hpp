@@ -345,7 +345,7 @@ private:
   // waiting; relocks lockObject with correct recursion count
   // after waiting, but before reentering SystemDictionary_lock
   // to preserve lock order semantics.
-  static void double_lock_wait(Thread* thread, Handle lockObject);
+  static void double_lock_wait(JavaThread* thread, Handle lockObject);
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
   static InstanceKlass* find_or_define_helper(Symbol* class_name,
                                               Handle class_loader,

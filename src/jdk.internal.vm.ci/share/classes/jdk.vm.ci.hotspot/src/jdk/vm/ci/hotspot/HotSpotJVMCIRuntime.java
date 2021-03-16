@@ -920,7 +920,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             Unsafe unsafe = UnsafeAccess.UNSAFE;
             long buffer = unsafe.allocateMemory(length);
             try {
-                unsafe.copyMemory(bytes, vm.ARRAY_BYTE_BASE_OFFSET, null, buffer, length);
+                unsafe.copyMemory(bytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, buffer, length);
                 vm.writeDebugOutput(buffer, length, flush);
             } finally {
                 unsafe.freeMemory(buffer);

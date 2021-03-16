@@ -123,7 +123,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         REVERSE {
             @Override
             public int compare(Path f1, Path f2) {
-                return -f1.getFileName().compareTo(f2.getFileName());
+                return f2.getFileName().compareTo(f1.getFileName());
             }
         }
     }

@@ -892,7 +892,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
     // to the allocated object with "sobj"
     int start = jvms->debug_start();
     int end   = jvms->debug_end();
-    sfpt->replace_edges_in_range(res, sobj, start, end);
+    sfpt->replace_edges_in_range(res, sobj, start, end, &_igvn);
     _igvn._worklist.push(sfpt);
     safepoints_done.append_if_missing(sfpt); // keep it for rollback
   }
@@ -967,12 +967,12 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
 
           // Set control to top. IGVN will remove the remaining projections
           ac->set_req(0, top());
-          ac->replace_edge(res, top());
+          ac->replace_edge(res, top(), &_igvn);
 
           // Disconnect src right away: it can help find new
           // opportunities for allocation elimination
           Node* src = ac->in(ArrayCopyNode::Src);
-          ac->replace_edge(src, top());
+          ac->replace_edge(src, top(), &_igvn);
           // src can be top at this point if src and dest of the
           // arraycopy were the same
           if (src->outcnt() == 0 && !src->is_top()) {
