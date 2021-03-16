@@ -525,6 +525,7 @@ bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_inde
 }
 
 void ClassListParser::resolve_indy(Thread* current, Symbol* class_name_symbol) {
+  ExceptionMark em(current);
   Thread* THREAD = current; // For exception macros.
   ClassListParser::resolve_indy_impl(class_name_symbol, THREAD);
   if (HAS_PENDING_EXCEPTION) {

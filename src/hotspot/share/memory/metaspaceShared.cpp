@@ -260,6 +260,7 @@ void MetaspaceShared::read_extra_data(Thread* current, const char* filename) {
       _extra_symbols->append(SymbolTable::new_permanent_symbol(utf8_buffer));
     } else{
       assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
+      ExceptionMark em(current);
       Thread* THREAD = current; // For exception macros.
       oop str = StringTable::intern(utf8_buffer, THREAD);
 
@@ -726,6 +727,7 @@ int MetaspaceShared::parse_classlist(const char* classlist_path, TRAPS) {
 
 // Returns true if the class's status has changed.
 bool MetaspaceShared::try_link_class(Thread* current, InstanceKlass* ik) {
+  ExceptionMark em(current);
   Thread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
   if (ik->is_loaded() && !ik->is_linked() &&
