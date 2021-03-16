@@ -91,10 +91,12 @@ void ShenandoahRegulatorThread::regulate_interleaved_cycles() {
   assert(_global_heuristics != NULL, "Need global heuristics.");
 
   while (!should_terminate()) {
-    if (start_global_cycle()) {
-      log_info(gc)("Heuristics request for global collection accepted.");
-    } else if (start_young_cycle()) {
-      log_info(gc)("Heuristics request for young collection accepted.");
+    if (_control_thread->gc_mode() == ShenandoahControlThread::none) {
+      if (start_global_cycle()) {
+        log_info(gc)("Heuristics request for global collection accepted.");
+      } else if (start_young_cycle()) {
+        log_info(gc)("Heuristics request for young collection accepted.");
+      }
     }
 
     regulator_sleep();
@@ -105,8 +107,10 @@ void ShenandoahRegulatorThread::regulate_heap() {
   assert(_global_heuristics != NULL, "Need global heuristics.");
 
   while (!should_terminate()) {
-    if (start_global_cycle()) {
-      log_info(gc)("Heuristics request for global collection accepted.");
+    if (_control_thread->gc_mode() == ShenandoahControlThread::none) {
+      if (start_global_cycle()) {
+        log_info(gc)("Heuristics request for global collection accepted.");
+      }
     }
 
     regulator_sleep();

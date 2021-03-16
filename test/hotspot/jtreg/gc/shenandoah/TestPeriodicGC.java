@@ -46,10 +46,10 @@ public class TestPeriodicGC {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        if (periodic && !output.getOutput().contains("Trigger: Time since last GC")) {
+        if (periodic && !output.getOutput().contains("Trigger (GLOBAL): Time since last GC")) {
             throw new AssertionError(msg + ": Should have periodic GC in logs");
         }
-        if (!periodic && output.getOutput().contains("Trigger: Time since last GC")) {
+        if (!periodic && output.getOutput().contains("Trigger (GLOBAL): Time since last GC")) {
             throw new AssertionError(msg + ": Should not have periodic GC in logs");
         }
     }
