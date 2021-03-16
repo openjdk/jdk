@@ -2387,7 +2387,9 @@ void os::print_memory_info(outputStream* st) {
             ((jlong)si.freeswap * si.mem_unit) >> 10);
   st->cr();
 
-  st->print(SIZE_FORMAT "k default large page", os::large_page_size()>>10);
+  st->print(SIZE_FORMAT "k large page", os::large_page_size()>>10);
+  st->cr();
+  st->print(SIZE_FORMAT "k default large page", os::Linux::default_large_page_size()>>10);
   st->cr();
   st->print("Page Sizes: ");
   _page_sizes.print_on(st);
@@ -3756,9 +3758,6 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
 }
 
 void os::large_page_init() {
-  size_t default_large_page_size = scan_default_large_page_size();
-  os::Linux::_default_large_page_size = default_large_page_size;
-
   // 1) Handle the case where we do not want to use huge pages and hence
   //    there is no need to scan the OS for related info
   if (!UseLargePages &&
@@ -3779,6 +3778,8 @@ void os::large_page_init() {
   }
 
   // 2) Scan OS info
+  size_t default_large_page_size = scan_default_large_page_size();
+  os::Linux::_default_large_page_size = default_large_page_size;
   if (default_large_page_size == 0) {
     // No large pages configured, return.
     UseTransparentHugePages = false;
@@ -3794,6 +3795,7 @@ void os::large_page_init() {
   // re-add the default page size to the list of page sizes to be sure.
   all_large_pages.add(default_large_page_size);
 
+  // Populate large page sizes to _page_sizes
   for (size_t page_size = all_large_pages.largest(); page_size != 0;
          page_size = all_large_pages.next_smaller(page_size)) {
     _page_sizes.add(page_size);
@@ -3804,9 +3806,6 @@ void os::large_page_init() {
     LogStream ls(lt);
     ls.print("Available page sizes: ");
     _page_sizes.print_on(&ls);
-    ls.print("\n");
-    ls.print("Available large page sizes: ");
-    all_large_pages.print_on(&ls);
   }
 
   // Handle LargePageSizeInBytes
