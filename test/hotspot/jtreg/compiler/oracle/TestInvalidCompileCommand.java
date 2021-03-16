@@ -42,23 +42,19 @@ public class TestInvalidCompileCommand {
             "-version"
         },
         {
-            "-XX:CompileCommand=option,Test::test,TestOptionDouble,3.14",
+            "-XX:CompileCommand=option,Test::test,CompileThresholdScaling,3.14",
             "-version"
         },
         {
-            "-XX:CompileCommand=option,Test::test,TestOptionInt,3",
+            "-XX:CompileCommand=option,Test::test,RepeatCompilation,3",
             "-version"
         },
         {
-            "-XX:CompileCommand=option,Test::test,TestOptionUint,3",
+            "-XX:CompileCommand=option,Test::test,VectorizeDebug,3",
             "-version"
         },
         {
-            "-XX:CompileCommand=option,Test::test,TestOptionStr,hello",
-            "-version"
-        },
-        {
-            "-XX:CompileCommand=option,Test::test,TestOptionList,hello,world",
+            "-XX:CompileCommand=option,Test::test,ControlIntrinsic,-_maxD,-_minD",
             "-version"
         }
     };
@@ -68,19 +64,16 @@ public class TestInvalidCompileCommand {
             "Unrecognized option 'unknown'"
         },
         {
-            "Missing type 'double' before option 'TestOptionDouble'"
+            "Missing type 'double' before option 'CompileThresholdScaling'"
         },
         {
-            "Missing type 'intx' before option 'TestOptionInt'"
+            "Missing type 'intx' before option 'RepeatCompilation'"
         },
         {
-            "Missing type 'uintx' before option 'TestOptionUint'"
+            "Missing type 'uintx' before option 'VectorizeDebug'"
         },
         {
-            "Missing type 'ccstr' before option 'TestOptionStr'"
-        },
-        {
-            "Missing type 'ccstrlist' before option 'TestOptionList'"
+            "Missing type 'ccstrlist' before option 'ControlIntrinsic'"
         }
     };
 

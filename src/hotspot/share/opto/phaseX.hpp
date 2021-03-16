@@ -525,7 +525,7 @@ public:
   // Replace ith edge of "n" with "in"
   void replace_input_of(Node* n, int i, Node* in) {
     rehash_node_delayed(n);
-    n->set_req(i, in);
+    n->set_req_X(i, in, this);
   }
 
   // Delete ith edge of "n"

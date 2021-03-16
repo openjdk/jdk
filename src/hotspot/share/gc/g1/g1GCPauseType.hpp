@@ -22,21 +22,13 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1GCTYPES_HPP
-#define SHARE_GC_G1_G1GCTYPES_HPP
+#ifndef SHARE_GC_G1_G1GCPAUSETYPES_HPP
+#define SHARE_GC_G1_G1GCPAUSETYPES_HPP
 
 #include "utilities/debug.hpp"
+#include "utilities/enumIterator.hpp"
 
-// Enumarate the phases in which the collection cycle can be.
-enum G1GCYoungPhase {
-  Normal,
-  ConcurrentStart,
-  DuringMarkOrRebuild,
-  Mixed,
-  G1GCYoungPhaseEndSentinel
-};
-
-enum G1GCPauseType {
+enum class G1GCPauseType : uint {
   YoungGC,
   LastYoungGC,
   ConcurrentStartMarkGC,
@@ -44,51 +36,54 @@ enum G1GCPauseType {
   Cleanup,
   Remark,
   MixedGC,
-  FullGC,
-  G1GCPauseTypeEndSentinel
+  FullGC
 };
 
-class G1GCTypeHelper {
- public:
+ENUMERATOR_RANGE(G1GCPauseType, G1GCPauseType::YoungGC, G1GCPauseType::FullGC)
+
+class G1GCPauseTypeHelper {
+public:
 
   static void assert_is_young_pause(G1GCPauseType type) {
-    assert(type != FullGC, "must be");
-    assert(type != Remark, "must be");
-    assert(type != Cleanup, "must be");
+    assert(type != G1GCPauseType::FullGC, "must be");
+    assert(type != G1GCPauseType::Remark, "must be");
+    assert(type != G1GCPauseType::Cleanup, "must be");
   }
 
   static bool is_young_only_pause(G1GCPauseType type) {
     assert_is_young_pause(type);
-    return type == ConcurrentStartUndoGC ||
-           type == ConcurrentStartMarkGC ||
-           type == LastYoungGC ||
-           type == YoungGC;
+    return type == G1GCPauseType::ConcurrentStartUndoGC ||
+           type == G1GCPauseType::ConcurrentStartMarkGC ||
+           type == G1GCPauseType::LastYoungGC ||
+           type == G1GCPauseType::YoungGC;
   }
 
   static bool is_mixed_pause(G1GCPauseType type) {
     assert_is_young_pause(type);
-    return type == MixedGC;
+    return type == G1GCPauseType::MixedGC;
   }
 
   static bool is_last_young_pause(G1GCPauseType type) {
     assert_is_young_pause(type);
-    return type == LastYoungGC;
+    return type == G1GCPauseType::LastYoungGC;
   }
 
   static bool is_concurrent_start_pause(G1GCPauseType type) {
     assert_is_young_pause(type);
-    return type == ConcurrentStartMarkGC || type == ConcurrentStartUndoGC;
+    return type == G1GCPauseType::ConcurrentStartMarkGC || type == G1GCPauseType::ConcurrentStartUndoGC;
   }
 
-  static const char* to_string(G1GCYoungPhase type) {
-    switch(type) {
-      case Normal: return "Normal";
-      case ConcurrentStart: return "Concurrent Start";
-      case DuringMarkOrRebuild: return "During Mark";
-      case Mixed: return "Mixed";
-      default: ShouldNotReachHere(); return NULL;
-    }
+  static const char* to_string(G1GCPauseType type) {
+    static const char* pause_strings[] = { "Normal",
+                                           "Prepare Mixed",
+                                           "Concurrent Start", // Do not distinguish between the different
+                                           "Concurrent Start", // Concurrent Start pauses.
+                                           "Cleanup",
+                                           "Remark",
+                                           "Mixed",
+                                           "Full" };
+    return pause_strings[static_cast<uint>(type)];
   }
 };
 
-#endif // SHARE_GC_G1_G1GCTYPES_HPP
+#endif // SHARE_GC_G1_G1GCPAUSETYPES_HPP
