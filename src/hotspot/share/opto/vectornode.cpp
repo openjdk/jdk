@@ -1281,10 +1281,8 @@ const TypeFunc* VectorBoxNode::vec_box_type(const TypeInstPtr* box_type) {
 Node* ShiftVNode::Identity(PhaseGVN* phase) {
   Node* in2 = in(2);
   // Shift by ZERO does nothing
-  if (is_vshift_cnt(in2)) {
-    if (phase->find_int_type(in2->in(1)) == TypeInt::ZERO) {
-      return in(1);
-    }
+  if (is_vshift_cnt(in2) && phase->find_int_type(in2->in(1)) == TypeInt::ZERO) {
+    return in(1);
   }
   return this;
 }
