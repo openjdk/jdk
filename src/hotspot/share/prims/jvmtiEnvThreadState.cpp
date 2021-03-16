@@ -260,7 +260,7 @@ class GetCurrentLocationClosure : public HandshakeClosure {
     RegisterMap rm(jt, false);
     // There can be a race condition between a handshake
     // and the target thread exiting from Java execution.
-    // We must recheck the last Java frame still exists.
+    // We must recheck that the last Java frame still exists.
     if (!jt->is_exiting() && jt->has_last_Java_frame()) {
       javaVFrame* vf = jt->last_java_vframe(&rm);
       if (vf != NULL) {
