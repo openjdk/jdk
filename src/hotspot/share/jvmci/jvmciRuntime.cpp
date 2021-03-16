@@ -990,7 +990,7 @@ JVMCIObject JVMCIRuntime::create_jvmci_primitive_type(BasicType type, JVMCI_TRAP
     args.push_int(type2char(type));
     JavaCalls::call_static(&result, HotSpotJVMCI::HotSpotResolvedPrimitiveType::klass(), vmSymbols::fromMetaspace_name(), vmSymbols::primitive_fromMetaspace_signature(), &args, CHECK_(JVMCIObject()));
 
-    return JVMCIENV->wrap(JNIHandles::make_local((oop)result.get_jobject()));
+    return JVMCIENV->wrap(JNIHandles::make_local(result.get_oop()));
   } else {
     JNIAccessMark jni(JVMCIENV);
     jobject result = jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotResolvedPrimitiveType::clazz(),
