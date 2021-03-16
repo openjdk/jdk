@@ -33,8 +33,8 @@
  * or method in any class or interface in this package will cause a {@link
  * java.lang.NullPointerException NullPointerException} to be thrown.  In some
  * cases methods which are specified to throw an {@code IOException} may throw
- * a more precise <a href="../file/package-summary.html#optspecex">optional
- * specific exception</a>.
+ * a more specific <i><a href="../package-summary.html#optspecex">optional
+ * specific exception</a></i>.
  *
  * @since 1.7
  */
