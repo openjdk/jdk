@@ -662,7 +662,7 @@ void Type::Initialize_shared(Compile* current) {
   _zero_type[T_CONFLICT]= NULL;
 
 #if defined(X86)
-  TypeVect::VMASK = TypeVect::makemask(T_BOOLEAN, MaxVectorSize);
+  TypeVect::VMASK = (TypeVect*)(Matcher::predicate_reg_type(TypeInt::BOOL, MaxVectorSize))->hashcons();
   mreg2type[Op_RegVMask] = TypeVect::VMASK;
 #endif
 
