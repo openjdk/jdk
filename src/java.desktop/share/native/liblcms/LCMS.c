@@ -726,18 +726,18 @@ static cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
   memcpy(&pfHeader, pBuffer, sizeof(cmsICCHeader));
 
   // now set header fields, which we can access using the lcms2 public API
-    cmsSetHeaderFlags(pf, _cmsAdjustEndianess32(pfHeader.flags));
-    cmsSetHeaderManufacturer(pf, _cmsAdjustEndianess32(pfHeader.manufacturer));
-    cmsSetHeaderModel(pf, _cmsAdjustEndianess32(pfHeader.model));
-    cmsUInt64Number attributes;
-    _cmsAdjustEndianess64(&attributes, &pfHeader.attributes);
-    cmsSetHeaderAttributes(pf, attributes);
-    cmsSetHeaderProfileID(pf, (cmsUInt8Number*)&(pfHeader.profileID));
-    cmsSetHeaderRenderingIntent(pf, _cmsAdjustEndianess32(pfHeader.renderingIntent));
-    cmsSetPCS(pf, _cmsAdjustEndianess32(pfHeader.pcs));
-    cmsSetColorSpace(pf, _cmsAdjustEndianess32(pfHeader.colorSpace));
-    cmsSetDeviceClass(pf, _cmsAdjustEndianess32(pfHeader.deviceClass));
-    cmsSetEncodedICCversion(pf, _cmsAdjustEndianess32(pfHeader.version));
+  cmsSetHeaderFlags(pf, _cmsAdjustEndianess32(pfHeader.flags));
+  cmsSetHeaderManufacturer(pf, _cmsAdjustEndianess32(pfHeader.manufacturer));
+  cmsSetHeaderModel(pf, _cmsAdjustEndianess32(pfHeader.model));
+  cmsUInt64Number attributes;
+  _cmsAdjustEndianess64(&attributes, &pfHeader.attributes);
+  cmsSetHeaderAttributes(pf, attributes);
+  cmsSetHeaderProfileID(pf, (cmsUInt8Number*)&(pfHeader.profileID));
+  cmsSetHeaderRenderingIntent(pf, _cmsAdjustEndianess32(pfHeader.renderingIntent));
+  cmsSetPCS(pf, _cmsAdjustEndianess32(pfHeader.pcs));
+  cmsSetColorSpace(pf, _cmsAdjustEndianess32(pfHeader.colorSpace));
+  cmsSetDeviceClass(pf, _cmsAdjustEndianess32(pfHeader.deviceClass));
+  cmsSetEncodedICCversion(pf, _cmsAdjustEndianess32(pfHeader.version));
 
   return TRUE;
 }
