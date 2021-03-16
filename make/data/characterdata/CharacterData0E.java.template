@@ -212,11 +212,11 @@ class CharacterData0E extends CharacterData {
     }
 
     boolean isLowerCase(int ch) {
-        return (getProperties(ch) & $$maskOtherLowercase) != 0;
+        return (getPropertiesEx(ch) & $$maskOtherLowercase) != 0;
     }
 
     boolean isUpperCase(int ch) {
-        return (getProperties(ch) & $$maskOtherUppercase) != 0;
+        return (getPropertiesEx(ch) & $$maskOtherUppercase) != 0;
     }
 
     boolean isWhitespace(int ch) {
