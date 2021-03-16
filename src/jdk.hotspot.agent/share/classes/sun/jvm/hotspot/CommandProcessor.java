@@ -1136,7 +1136,7 @@ public class CommandProcessor {
         },
         new Command("pmap", "pmap", false) {
             public void doit(Tokens t) {
-                PMap pmap = new PMap();
+                PMap pmap = new PMap(debugger.getAgent());
                 pmap.run(out, debugger.getAgent().getDebugger());
             }
         },
@@ -1146,7 +1146,7 @@ public class CommandProcessor {
                 if (t.countTokens() > 0 && t.nextToken().equals("-v")) {
                     verbose = true;
                 }
-                PStack pstack = new PStack(verbose, true);
+                PStack pstack = new PStack(verbose, true, debugger.getAgent());
                 pstack.run(out, debugger.getAgent().getDebugger());
             }
         },
