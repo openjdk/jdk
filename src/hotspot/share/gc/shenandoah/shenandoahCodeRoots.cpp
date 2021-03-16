@@ -180,7 +180,7 @@ public:
 
 void ShenandoahCodeRoots::disarm_nmethods() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  if (heap->mode()->is_concurrent_mode()) {
+  if (ShenandoahNMethodBarrier) {
     ShenandoahDisarmNMethodsTask task;
     heap->workers()->run_task(&task);
   }

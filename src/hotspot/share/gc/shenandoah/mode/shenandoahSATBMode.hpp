@@ -36,7 +36,6 @@ public:
   virtual const char* name()     { return "Snapshot-At-The-Beginning (SATB)"; }
   virtual bool is_diagnostic()   { return false; }
   virtual bool is_experimental() { return false; }
-  virtual bool is_concurrent_mode() const { return true; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHSATBMODE_HPP

@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -45,7 +44,7 @@ ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             heap->mode()->is_concurrent_mode() ? new ShenandoahBarrierSetNMethod(heap) : NULL,
+             ShenandoahNMethodBarrier ? new ShenandoahBarrierSetNMethod(heap) : NULL,
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
@@ -102,7 +101,7 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     ShenandoahThreadLocalData::initialize_gclab(thread);
     ShenandoahThreadLocalData::set_disarmed_value(thread, ShenandoahCodeRoots::disarmed_value());
 
-    if (_heap->mode()->is_concurrent_mode()) {
+    if (ShenandoahStackWatermarkBarrier) {
       JavaThread* const jt = thread->as_Java_thread();
       StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
       StackWatermarkSet::add_watermark(jt, watermark);
@@ -120,7 +119,7 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
     }
 
     // SATB protocol requires to keep alive reacheable oops from roots at the beginning of GC
-    if (_heap->mode()->is_concurrent_mode()) {
+    if (ShenandoahStackWatermarkBarrier) {
       if (_heap->is_concurrent_mark_in_progress()) {
         ShenandoahKeepAliveClosure oops;
         StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);
