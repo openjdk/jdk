@@ -104,8 +104,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         const Type *tcon01 = ((MulNode*)mul1)->mul_ring(t2,t12);
         if( tcon01->singleton() ) {
           // The Mul of the flattened expression
-          set_req(1, mul1->in(1));
-          set_req(2, phase->makecon( tcon01 ));
+          set_req_X(1, mul1->in(1), phase);
+          set_req_X(2, phase->makecon(tcon01), phase);
           t2 = tcon01;
           progress = this;      // Made progress
         }
@@ -955,11 +955,11 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // that is the job of 'Identity' calls and Identity calls only work on
       // direct inputs ('ld' is an extra Node removed from 'this').  The
       // combined optimization requires Identity only return direct inputs.
-      set_req(1, ld);
-      set_req(2, phase->intcon(0));
+      set_req_X(1, ld, phase);
+      set_req_X(2, phase->intcon(0), phase);
       return this;
     }
-    else if( can_reshape &&
+    else if (can_reshape &&
              ld->Opcode() == Op_LoadUS &&
              ld->outcnt() == 1 && ld->unique_out() == shl)
       // Replace zero-extension-load with sign-extension-load
@@ -971,10 +971,10 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       (t3 = phase->type(shl->in(2))->isa_int()) &&
       t3->is_con(24) ) {
     Node *ld = shl->in(1);
-    if( ld->Opcode() == Op_LoadB ) {
+    if (ld->Opcode() == Op_LoadB) {
       // Sign extension is just useless here
-      set_req(1, ld);
-      set_req(2, phase->intcon(0));
+      set_req_X(1, ld, phase);
+      set_req_X(2, phase->intcon(0), phase);
       return this;
     }
   }

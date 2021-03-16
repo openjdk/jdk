@@ -708,8 +708,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code byt
     info.offset(),
     state,
     info.access_flags().is_final(),
-    info.access_flags().is_volatile(),
-    pool->pool_holder()
+    info.access_flags().is_volatile()
   );
 }
 

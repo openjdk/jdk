@@ -1066,7 +1066,7 @@ void ShenandoahBarrierC2Support::fix_ctrl(Node* barrier, Node* region, const Mem
           is_dominator_same_ctrl(old_c, barrier, u, phase) ||
           ShenandoahBarrierSetC2::is_shenandoah_state_load(u)) {
         phase->igvn().rehash_node_delayed(u);
-        int nb = u->replace_edge(ctrl, region);
+        int nb = u->replace_edge(ctrl, region, &phase->igvn());
         if (u->is_CFG()) {
           if (phase->idom(u) == ctrl) {
             phase->set_idom(u, region, phase->dom_depth(region));
@@ -1248,7 +1248,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
             stack.push(u, 0);
             assert(!cloned.test_set(u->_idx), "only one clone");
             Node* u_clone = u->clone();
-            int nb = u_clone->replace_edge(n, n_clone);
+            int nb = u_clone->replace_edge(n, n_clone, &phase->igvn());
             assert(nb > 0, "should have replaced some uses");
             phase->register_new_node(u_clone, projs.catchall_catchproj);
             clones.push(u_clone);
@@ -1270,7 +1270,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
             } else {
               if (phase->is_dominator(projs.catchall_catchproj, c)) {
                 phase->igvn().rehash_node_delayed(u);
-                int nb = u->replace_edge(n, n_clone);
+                int nb = u->replace_edge(n, n_clone, &phase->igvn());
                 assert(nb > 0, "should have replaced some uses");
                 replaced = true;
               } else if (!phase->is_dominator(projs.fallthrough_catchproj, c)) {
@@ -1288,7 +1288,8 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
                   Node* nn_clone = clones.at(clones.size()-3);
                   assert(nn->Opcode() == nn_clone->Opcode(), "mismatch");
 
-                  int nb = cmp_clone->replace_edge(nn, create_phis_on_call_return(ctrl, c, nn, nn_clone, projs, phase));
+                  int nb = cmp_clone->replace_edge(nn, create_phis_on_call_return(ctrl, c, nn, nn_clone, projs, phase),
+                                                   &phase->igvn());
                   assert(nb > 0, "should have replaced some uses");
 
                   phase->register_new_node(bol_clone, u->in(0));
@@ -1298,7 +1299,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
                 } else {
                   phase->igvn().rehash_node_delayed(u);
-                  int nb = u->replace_edge(n, create_phis_on_call_return(ctrl, c, n, n_clone, projs, phase));
+                  int nb = u->replace_edge(n, create_phis_on_call_return(ctrl, c, n, n_clone, projs, phase), &phase->igvn());
                   assert(nb > 0, "should have replaced some uses");
                 }
                 replaced = true;

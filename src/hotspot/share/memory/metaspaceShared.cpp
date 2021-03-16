@@ -386,9 +386,12 @@ private:
 
 public:
 
-  VM_PopulateDumpSharedSpace() : VM_GC_Operation(0, /* total collections, ignored */
-                                                 GCCause::_archive_time_gc)
-  { }
+  VM_PopulateDumpSharedSpace() :
+    VM_GC_Operation(0 /* total collections, ignored */, GCCause::_archive_time_gc),
+    _closed_archive_heap_regions(NULL),
+    _open_archive_heap_regions(NULL),
+    _closed_archive_heap_oopmaps(NULL),
+    _open_archive_heap_oopmaps(NULL) {}
 
   bool skip_operation() const { return false; }
 
@@ -432,8 +435,6 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   MetaspaceShared::serialize(&wc);
 
   // Write the bitmaps for patching the archive heap regions
-  _closed_archive_heap_oopmaps = NULL;
-  _open_archive_heap_oopmaps = NULL;
   dump_archive_heap_oopmaps();
 
   return start;
@@ -479,8 +480,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.relocate_metaspaceobj_embedded_pointers();
 
   // Dump supported java heap objects
-  _closed_archive_heap_regions = NULL;
-  _open_archive_heap_regions = NULL;
   dump_java_heap_objects(builder.klasses());
 
   builder.relocate_roots();
@@ -708,10 +707,15 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
     }
     Klass* klass = parser.load_current_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      if (klass == NULL &&
-          (PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_ClassNotFoundException())) {
-        // print a warning only when the pending exception is class not found
-        log_warning(cds)("Preload Warning: Cannot find %s", parser.current_class_name());
+      if (klass == NULL) {
+        Symbol* exception_klass_name = PENDING_EXCEPTION->klass()->name();
+        if (exception_klass_name == vmSymbols::java_lang_ClassNotFoundException() ||
+            exception_klass_name == vmSymbols::java_lang_UnsupportedClassVersionError()) {
+          // print a warning only when the class is not found or has a version that's too old.
+          // Todo: the CDS test cases expect "Cannot find" in the log, but we should consider
+          // distinguishing the different failure modes.
+          log_warning(cds)("Preload Warning: Cannot find %s", parser.current_class_name());
+        }
       }
       CLEAR_PENDING_EXCEPTION;
     }

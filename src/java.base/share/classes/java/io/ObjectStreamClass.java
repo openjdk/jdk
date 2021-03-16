@@ -830,7 +830,7 @@ public class ObjectStreamClass implements Serializable {
             char tcode = (char) in.readByte();
             String fname = in.readUTF();
             String signature = ((tcode == 'L') || (tcode == '[')) ?
-                in.readTypeString() : new String(new char[] { tcode });
+                in.readTypeString() : String.valueOf(tcode);
             try {
                 fields[i] = new ObjectStreamField(fname, signature, false);
             } catch (RuntimeException e) {
