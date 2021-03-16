@@ -130,7 +130,7 @@
             <file name="ServerManagerAction3.shadow_hidden"/>
             <file name="VariablesCustomizerAction.shadow_hidden"/>
             <file name="org-netbeans-modules-autoupdate-ui-actions-PluginManagerAction.shadow_hidden"/>
-            <file name="org-netbeans-modules-favorites-templates-TemplatesAction.shadow_hidden"/>
+            <file name="org-netbeans-modules-templates-actions-TemplatesAction.shadow_hidden"/>
             <file name="org-netbeans-modules-options-OptionsWindowAction-separatorBefore.instance_hidden"/>
             <file name="org-netbeans-modules-xml-catalog-CatalogAction.shadow_hidden"/>
             <file name="org-openide-actions-ToolsAction.shadow_hidden"/>
