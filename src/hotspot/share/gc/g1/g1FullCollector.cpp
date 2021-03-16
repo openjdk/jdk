@@ -296,8 +296,6 @@ void G1FullCollector::phase4_do_compaction() {
   if (serial_compaction_point()->has_regions()) {
     task.serial_compaction();
   }
-  // Heap has just been collected and compacted making 'used' == 'live' at this moment
-  _heap->set_live(_heap->used());
 }
 
 void G1FullCollector::restore_marks() {

@@ -2608,6 +2608,9 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   // Print NUMA statistics.
   _numa->print_statistics();
 
+  // Update the live size estimate
+  set_live(used());
+
   _collection_pause_end = Ticks::now();
 }
 
