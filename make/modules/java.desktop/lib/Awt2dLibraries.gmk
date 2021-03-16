@@ -453,7 +453,7 @@ else
    # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
    # when building libharfbuzz
    ifeq ($(call isTargetOs, aix), true)
-     LIBHARFBUZZ_CFLAGS += -qdebug=necan
+     HARFBUZZ_CFLAGS += -qdebug=necan
    endif
 
    ifeq ($(call isTargetOs, macosx), false)
