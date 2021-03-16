@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,13 +493,11 @@ class CharacterData01 extends CharacterData {
     }
 
     boolean isLowerCase(int ch) {
-        return (getProperties(ch) & $$maskType) == Character.LOWERCASE_LETTER
-            || (getPropertiesEx(ch) & $$maskOtherLowercase) != 0;
+        return (getProperties(ch) & $$maskOtherLowercase) != 0;
     }
 
     boolean isUpperCase(int ch) {
-        return (getProperties(ch) & $$maskType) == Character.UPPERCASE_LETTER
-            || (getPropertiesEx(ch) & $$maskOtherUppercase) != 0;
+        return (getProperties(ch) & $$maskOtherUppercase) != 0;
     }
 
     boolean isWhitespace(int ch) {
