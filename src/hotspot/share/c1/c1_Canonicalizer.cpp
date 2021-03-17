@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,10 +242,16 @@ void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
     // with same value Otherwise a Constant is live over multiple
     // blocks without being registered in a state array.
     Constant* length;
+    NewMultiArray* nma;
     if (na->length() != NULL &&
         (length = na->length()->as_Constant()) != NULL) {
       assert(length->type()->as_IntConstant() != NULL, "array length must be integer");
       set_constant(length->type()->as_IntConstant()->value());
+    } else if ((nma = x->array()->as_NewMultiArray()) != NULL) {
+      if ((length = nma->dims()->at(0)->as_Constant()) != NULL) {
+        assert(length->type()->as_IntConstant() != NULL, "array length must be integer");
+        set_constant(length->type()->as_IntConstant()->value());
+      }
     }
 
   } else if ((ct = x->array()->as_Constant()) != NULL) {
