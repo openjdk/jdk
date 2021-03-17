@@ -47,6 +47,7 @@ serviceability/sa/ClhsdbPrintStatics.java                     8220624   generic-
 serviceability/sa/ClhsdbPstack.java#id0                       8220624   generic-all
 serviceability/sa/ClhsdbPstack.java#id1                       8220624   generic-all
 serviceability/sa/ClhsdbSource.java                           8220624   generic-all
+serviceability/sa/ClhsdbSymbol.java                           8220624   generic-all
 serviceability/sa/ClhsdbThread.java                           8220624   generic-all
 serviceability/sa/ClhsdbWhere.java                            8220624   generic-all
 serviceability/sa/DeadlockDetectionTest.java                  8220624   generic-all
@@ -61,4 +62,3 @@ serviceability/sa/TestJmapCore.java                           8220624   generic-
 serviceability/sa/TestJmapCoreMetaspace.java                  8220624   generic-all
 serviceability/sa/TestSysProps.java                           8220624   generic-all
 serviceability/sa/sadebugd/DebugdConnectTest.java             8220624   generic-all
-serviceability/sa/ClhsdbSymbol.java                           8263730   generic-all
