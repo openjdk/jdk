@@ -61,24 +61,24 @@
  * representation in the output and structures <em>not</em> present in
  * the source language may be present in the output. The latter are
  * called <i>synthetic</i> structures. Synthetic structures can
- * include {@linkplain Class#isSynthetic() types}, {@linkplain
- * Method#isSynthetic() methods}, {@linkplain Field#isSynthetic()
- * fields}, and {@linkplain Parameter#isSynthetic() parameters}. One
- * particular kind of synthetic method is a {@linkplain
- * Method#isBridge() bridge method}. It is possible a synthetic
- * structure may not be marked as such. In particular, not all {@code
- * class} file versions support marking a parameter as synthetic. A
- * source language compiler generally has multiple ways to translate a
- * source program into a {@code class} file representation. The
- * translation may also depend on the version of the {@code class}
- * file format being targeted as different {@code class} file versions
- * have different capabilities and features. In some cases the
- * modifiers present in the {@code class} file representation may
- * differ from the modifiers on the originating element in the source
- * language, including {@link Modifier#FINAL final} on a {@linkplain
- * Parameter#getModifiers() parameter} and {@code protected},
- * {@code private}, and {@code static} on {@linkplain
- * java.lang.Class#getModifiers() classes and interfaces}.
+ * include {@linkplain Method#isSynthetic() methods}, {@linkplain
+ * Field#isSynthetic() fields}, {@linkplain Parameter#isSynthetic()
+ * parameters}, {@linkplain Class#isSynthetic() classes and
+ * interfaces}. One particular kind of synthetic method is a
+ * {@linkplain Method#isBridge() bridge method}. It is possible a
+ * synthetic structure may not be marked as such. In particular, not
+ * all {@code class} file versions support marking a parameter as
+ * synthetic. A source language compiler generally has multiple ways
+ * to translate a source program into a {@code class} file
+ * representation. The translation may also depend on the version of
+ * the {@code class} file format being targeted as different {@code
+ * class} file versions have different capabilities and features. In
+ * some cases the modifiers present in the {@code class} file
+ * representation may differ from the modifiers on the originating
+ * element in the source language, including {@link Modifier#FINAL
+ * final} on a {@linkplain Parameter#getModifiers() parameter} and
+ * {@code protected}, {@code private}, and {@code static} on
+ * {@linkplain java.lang.Class#getModifiers() classes and interfaces}.
  *
  * <p>Besides differences in structural representation between the
  * source language and the JVM representation, core reflection also
