@@ -322,10 +322,14 @@ class MethodType
     }
 
     /**
-     * Sole factory method to find or create an interned method type.
+     * Sole factory method to find or create an interned method type. Will perform
+     * input validation on behalf of factory methods
+     *
      * @param rtype desired return type
      * @param ptypes desired parameter types
      * @param trusted whether the ptypes can be used without cloning
+     * @throws NullPointerException if {@code rtype} or {@code ptypes} or any element of {@code ptypes} is null
+     * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
      * @return the unique method type of the desired structure
      */
     /*trusted*/

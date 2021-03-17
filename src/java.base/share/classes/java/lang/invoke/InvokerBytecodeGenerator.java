@@ -84,8 +84,8 @@ class InvokerBytecodeGenerator {
     static final String INVOKER_SUPER_NAME = OBJ;
 
     /** Name of new class */
+    private final String name;
     private final String className;
-    private final String prefixedClassName;
 
     private final LambdaForm lambdaForm;
     private final String     invokerName;
@@ -118,17 +118,17 @@ class InvokerBytecodeGenerator {
 
     /** Main constructor; other constructors delegate to this one. */
     private InvokerBytecodeGenerator(LambdaForm lambdaForm, int localsMapSize,
-                                     String className, String invokerName, MethodType invokerType) {
+                                     String name, String invokerName, MethodType invokerType) {
         int p = invokerName.indexOf('.');
         if (p > -1) {
-            className = invokerName.substring(0, p);
+            name = invokerName.substring(0, p);
             invokerName = invokerName.substring(p + 1);
         }
         if (DUMP_CLASS_FILES) {
-            className = makeDumpableClassName(className);
+            name = makeDumpableClassName(name);
         }
-        this.className  = className;
-        this.prefixedClassName = CLASS_PREFIX + className;
+        this.name = name;
+        this.className = CLASS_PREFIX + name;
         this.lambdaForm = lambdaForm;
         this.invokerName = invokerName;
         this.invokerType = invokerType;
@@ -137,9 +137,9 @@ class InvokerBytecodeGenerator {
     }
 
     /** For generating LambdaForm interpreter entry points. */
-    private InvokerBytecodeGenerator(String className, String invokerName, MethodType invokerType) {
+    private InvokerBytecodeGenerator(String name, String invokerName, MethodType invokerType) {
         this(null, invokerType.parameterCount(),
-             className, invokerName, invokerType);
+             name, invokerName, invokerType);
         MethodType mt = invokerType.erase();
         // Create an array to map name indexes to locals indexes.
         localsMap[0] = 0; // localsMap has at least one element
@@ -151,15 +151,15 @@ class InvokerBytecodeGenerator {
     }
 
     /** For generating customized code for a single LambdaForm. */
-    private InvokerBytecodeGenerator(String className, LambdaForm form, MethodType invokerType) {
-        this(className, form.lambdaName(), form, invokerType);
+    private InvokerBytecodeGenerator(String name, LambdaForm form, MethodType invokerType) {
+        this(name, form.lambdaName(), form, invokerType);
     }
 
     /** For generating customized code for a single LambdaForm. */
-    InvokerBytecodeGenerator(String className, String invokerName,
+    InvokerBytecodeGenerator(String name, String invokerName,
             LambdaForm form, MethodType invokerType) {
         this(form, form.names.length,
-             className, invokerName, invokerType);
+             name, invokerName, invokerType);
         // Create an array to map name indexes to locals indexes.
         Name[] names = form.names;
         for (int i = 0, index = 0; i < localsMap.length; i++) {
@@ -197,7 +197,7 @@ class InvokerBytecodeGenerator {
 
     private void maybeDump(final byte[] classFile) {
         if (DUMP_CLASS_FILES) {
-            maybeDump(prefixedClassName, classFile);
+            maybeDump(className, classFile);
         }
     }
 
@@ -316,7 +316,7 @@ class InvokerBytecodeGenerator {
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
-        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(prefixedClassName, classFile)
+        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile)
                                       .defineClass(true, classDataValues());
         return resolveInvokerMember(invokerClass, invokerName, invokerType);
     }
@@ -341,8 +341,8 @@ class InvokerBytecodeGenerator {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
         setClassWriter(cw);
         cw.visit(Opcodes.V1_8, NOT_ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
-                prefixedClassName, null, INVOKER_SUPER_NAME, null);
-        cw.visitSource(SOURCE_PREFIX + className, null);
+                className, null, INVOKER_SUPER_NAME, null);
+        cw.visitSource(SOURCE_PREFIX + name, null);
         return cw;
     }
 
@@ -357,10 +357,6 @@ class InvokerBytecodeGenerator {
     private void methodEpilogue() {
         mv.visitMaxs(0, 0);
         mv.visitEnd();
-    }
-
-    private void clinit() {
-        clinit(cw, prefixedClassName, classData);
     }
 
     /*
@@ -645,7 +641,7 @@ class InvokerBytecodeGenerator {
             String sig = getInternalName(cls);
             mv.visitTypeInsn(Opcodes.CHECKCAST, sig);
         } else {
-            mv.visitFieldInsn(Opcodes.GETSTATIC, prefixedClassName, classData(cls), "Ljava/lang/Class;");
+            mv.visitFieldInsn(Opcodes.GETSTATIC, className, classData(cls), "Ljava/lang/Class;");
             mv.visitInsn(Opcodes.SWAP);
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, CLS, "cast", LL_SIG, false);
             if (Object[].class.isAssignableFrom(cls))
@@ -799,7 +795,7 @@ class InvokerBytecodeGenerator {
     private byte[] generateCustomizedCodeBytes() {
         classFilePrologue();
         addMethod();
-        clinit();
+        clinit(cw, className, classData);
         bogusMethod(lambdaForm);
 
         final byte[] classFile = toByteArray();
@@ -834,7 +830,7 @@ class InvokerBytecodeGenerator {
             // receiver MethodHandle (at slot #0) with an embedded constant and use it instead.
             // It enables more efficient code generation in some situations, since embedded constants
             // are compile-time constants for JIT compiler.
-            mv.visitFieldInsn(Opcodes.GETSTATIC, prefixedClassName, classData(lambdaForm.customized), MH_SIG);
+            mv.visitFieldInsn(Opcodes.GETSTATIC, className, classData(lambdaForm.customized), MH_SIG);
             mv.visitTypeInsn(Opcodes.CHECKCAST, MH);
             assert(checkActualReceiver()); // expects MethodHandle on top of the stack
             mv.visitVarInsn(Opcodes.ASTORE, localsMap[0]);
@@ -967,7 +963,7 @@ class InvokerBytecodeGenerator {
             // push receiver
             MethodHandle target = name.function.resolvedHandle();
             assert(target != null) : name.exprString();
-            mv.visitFieldInsn(Opcodes.GETSTATIC, prefixedClassName, classData(target), MH_SIG);
+            mv.visitFieldInsn(Opcodes.GETSTATIC, className, classData(target), MH_SIG);
             emitReferenceCast(MethodHandle.class, target);
         } else {
             // load receiver
@@ -1130,7 +1126,7 @@ class InvokerBytecodeGenerator {
             }
             assert(java.lang.reflect.Array.getLength(emptyArray) == 0);
             assert(emptyArray.getClass() == rtype);  // exact typing
-            mv.visitFieldInsn(Opcodes.GETSTATIC, prefixedClassName, classData(emptyArray), "Ljava/lang/Object;");
+            mv.visitFieldInsn(Opcodes.GETSTATIC, className, classData(emptyArray), "Ljava/lang/Object;");
             emitReferenceCast(rtype, emptyArray);
             return;
         }
@@ -1695,7 +1691,7 @@ class InvokerBytecodeGenerator {
             if (Wrapper.isWrapperType(arg.getClass()) && bptype != L_TYPE) {
                 emitConst(arg);
             } else {
-                mv.visitFieldInsn(Opcodes.GETSTATIC, prefixedClassName, classData(arg), "Ljava/lang/Object;");
+                mv.visitFieldInsn(Opcodes.GETSTATIC, className, classData(arg), "Ljava/lang/Object;");
                 emitImplicitConversion(L_TYPE, ptype, arg);
             }
         }
@@ -1887,7 +1883,7 @@ class InvokerBytecodeGenerator {
         emitReturnInsn(basicType(rtype));
 
         methodEpilogue();
-        clinit();
+        clinit(cw, className, classData);
         bogusMethod(invokerType);
 
         final byte[] classFile = cw.toByteArray();
@@ -1956,7 +1952,7 @@ class InvokerBytecodeGenerator {
         emitReturnInsn(L_TYPE);  // NOTE: NamedFunction invokers always return a reference value.
 
         methodEpilogue();
-        clinit();
+        clinit(cw, className, classData);
         bogusMethod(dstType);
 
         final byte[] classFile = cw.toByteArray();
