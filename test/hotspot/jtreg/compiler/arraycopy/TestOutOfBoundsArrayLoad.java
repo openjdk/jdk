@@ -24,6 +24,7 @@
 
 /**
  * @test
+ * @requires vm.gc.Serial
  * @bug 8262295
  * @library /test/lib /
  * @summary Out of bounds array load on clone source crashes GC which
