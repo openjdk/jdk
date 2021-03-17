@@ -43,6 +43,7 @@
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceTracer.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
@@ -606,9 +607,8 @@ void Metaspace::ergo_initialize() {
   //  to commit for the Metaspace.
   //  It is just a number; a limit we compare against before committing. It
   //  does not have to be aligned to anything.
-  //  It gets used as compare value in class CommitLimiter.
-  //  It is set to max_uintx in globals.hpp by default, so by default it does
-  //  not limit anything.
+  //  It gets used as compare value before attempting to increase the metaspace
+  //  commit charge. It defaults to max_uintx (unlimited).
   //
   // CompressedClassSpaceSize is the size, in bytes, of the address range we
   //  pre-reserve for the compressed class space (if we use class space).
@@ -625,8 +625,7 @@ void Metaspace::ergo_initialize() {
   // We still adjust CompressedClassSpaceSize to reasonable limits, mainly to
   //  save on reserved space, and to make ergnonomics less confusing.
 
-  // (aligned just for cleanliness:)
-  MaxMetaspaceSize = MAX2(align_down(MaxMetaspaceSize, commit_alignment()), commit_alignment());
+  MaxMetaspaceSize = MAX2(MaxMetaspaceSize, commit_alignment());
 
   if (UseCompressedClassPointers) {
     // Let CCS size not be larger than 80% of MaxMetaspaceSize. Note that is

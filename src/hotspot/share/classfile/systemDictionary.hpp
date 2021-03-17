@@ -139,15 +139,14 @@ class SystemDictionary : AllStatic {
                                             TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
-  static Klass* find(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static InstanceKlass* find_instance_klass(Symbol* class_name, Handle class_loader, Handle protection_domain);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
   // If not found NULL is returned.
   static Klass* find_instance_or_array_klass(Symbol* class_name,
                                              Handle class_loader,
-                                             Handle protection_domain,
-                                             TRAPS);
+                                             Handle protection_domain);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
@@ -172,7 +171,7 @@ class SystemDictionary : AllStatic {
   // to local linkage and access checks.
   static Klass* find_constrained_instance_or_array_klass(Symbol* class_name,
                                                            Handle class_loader,
-                                                           TRAPS);
+                                                           Thread* THREAD);
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
@@ -278,10 +277,10 @@ public:
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
   static void add_resolution_error(const constantPoolHandle& pool, int which, Symbol* error,
-                                   Symbol* message);
+                                   Symbol* message, Symbol* cause = NULL, Symbol* cause_msg = NULL);
   static void delete_resolution_error(ConstantPool* pool);
   static Symbol* find_resolution_error(const constantPoolHandle& pool, int which,
-                                       Symbol** message);
+                                       Symbol** message, Symbol** cause, Symbol** cause_msg);
 
 
   // Record a nest host resolution/validation error
@@ -346,7 +345,7 @@ private:
   // waiting; relocks lockObject with correct recursion count
   // after waiting, but before reentering SystemDictionary_lock
   // to preserve lock order semantics.
-  static void double_lock_wait(Thread* thread, Handle lockObject);
+  static void double_lock_wait(JavaThread* thread, Handle lockObject);
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
   static InstanceKlass* find_or_define_helper(Symbol* class_name,
                                               Handle class_loader,
@@ -387,7 +386,7 @@ protected:
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                PackageEntry* pkg_entry,
                                                TRAPS);
-  static Handle compute_loader_lock_object(Handle class_loader);
+  static Handle get_loader_lock_or_null(Handle class_loader);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);

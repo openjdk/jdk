@@ -360,17 +360,20 @@ public final class Utils {
             // which are incompatible with native Windows routines.
             // So on Windows test only addresses with numeric scope.
             // On other platforms test both symbolic and numeric scopes.
-            conf.ip6Addresses().forEach(addr6 -> {
-                try {
-                    result.add(Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
-                } catch (UnknownHostException e) {
-                    // cannot happen!
-                    throw new RuntimeException("Unexpected", e);
-                }
-                if (!Platform.isWindows()) {
-                    result.add(addr6);
-                }
-            });
+            conf.ip6Addresses()
+                    // test only IPv6 loopback and link-local addresses (JDK-8224775)
+                    .filter(addr -> addr.isLinkLocalAddress() || addr.isLoopbackAddress())
+                    .forEach(addr6 -> {
+                        try {
+                            result.add(Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
+                        } catch (UnknownHostException e) {
+                            // cannot happen!
+                            throw new RuntimeException("Unexpected", e);
+                        }
+                        if (!Platform.isWindows()) {
+                            result.add(addr6);
+                        }
+                    });
         } catch (IOException e) {
             // cannot happen!
             throw new RuntimeException("Unexpected", e);

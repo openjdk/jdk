@@ -543,7 +543,7 @@ void PhaseIdealLoop::long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_
     }
 #endif
     _igvn.rehash_node_delayed(u);
-    int nb = u->replace_edge(iv_to_replace, iv_replacement);
+    int nb = u->replace_edge(iv_to_replace, iv_replacement, &_igvn);
     i -= nb;
   }
 }
@@ -1170,7 +1170,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
         set_subtree_ctrl(m, false);
       }
       _igvn.rehash_node_delayed(u);
-      int nb = u->replace_edge(n, m);
+      int nb = u->replace_edge(n, m, &_igvn);
       --i, imax -= nb;
     }
   }
@@ -5301,7 +5301,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_HasNegatives:
       pinned = false;
     }
-    if (n->is_CMove()) {
+    if (n->is_CMove() || n->is_ConstraintCast()) {
       pinned = false;
     }
     if( pinned ) {

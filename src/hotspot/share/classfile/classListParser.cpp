@@ -43,6 +43,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -50,11 +51,10 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
+volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
 ClassListParser::ClassListParser(const char* file) {
-  assert(_instance == NULL, "must be singleton");
-  _instance = this;
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
@@ -73,12 +73,22 @@ ClassListParser::ClassListParser(const char* file) {
   _line_no = 0;
   _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
   _indy_items = new (ResourceObj::C_HEAP, mtClass) GrowableArray<const char*>(9, mtClass);
+
+  // _instance should only be accessed by the thread that created _instance.
+  assert(_instance == NULL, "must be singleton");
+  _instance = this;
+  Atomic::store(&_parsing_thread, Thread::current());
+}
+
+bool ClassListParser::is_parsing_thread() {
+  return Atomic::load(&_parsing_thread) == Thread::current();
 }
 
 ClassListParser::~ClassListParser() {
   if (_file) {
     fclose(_file);
   }
+  Atomic::store(&_parsing_thread, (Thread*)NULL);
   _instance = NULL;
 }
 
@@ -569,34 +579,15 @@ Klass* ClassListParser::load_current_class(TRAPS) {
                               vmSymbols::loadClass_name(),
                               vmSymbols::string_class_signature(),
                               ext_class_name,
-                              THREAD); // <-- failure is handled below
+                              CHECK_NULL);
     } else {
       // array classes are not supported in class list.
       THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
     }
     assert(result.get_type() == T_OBJECT, "just checking");
-    oop obj = (oop) result.get_jobject();
-    if (!HAS_PENDING_EXCEPTION && (obj != NULL)) {
-      klass = java_lang_Class::as_Klass(obj);
-    } else { // load classes in bootclasspath/a
-      if (HAS_PENDING_EXCEPTION) {
-        ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
-        CLEAR_PENDING_EXCEPTION;
-      }
-
-      if (non_array) {
-        Klass* k = SystemDictionary::resolve_or_null(class_name_symbol, CHECK_NULL);
-        if (k != NULL) {
-          klass = k;
-        } else {
-          if (!HAS_PENDING_EXCEPTION) {
-            THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
-          } else {
-            ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
-          }
-        }
-      }
-    }
+    oop obj = result.get_oop();
+    assert(obj != NULL, "jdk.internal.loader.BuiltinClassLoader::loadClass never returns null");
+    klass = java_lang_Class::as_Klass(obj);
   } else {
     // If "source:" tag is specified, all super class and super interfaces must be specified in the
     // class list file.

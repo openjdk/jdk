@@ -95,7 +95,7 @@ static Handle getGcInfoBuilder(GCMemoryManager *gcManager,TRAPS) {
                           vmSymbols::getGcInfoBuilder_signature(),
                           &args,
                           CHECK_NH);
-  return Handle(THREAD,(oop)result.get_jobject());
+  return Handle(THREAD, result.get_oop());
 }
 
 static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TRAPS) {

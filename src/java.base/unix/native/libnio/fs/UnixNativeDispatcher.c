@@ -41,6 +41,10 @@
 #endif
 #include <sys/time.h>
 
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
+#include <sys/xattr.h>
+#endif
+
 /* For POSIX-compliant getpwuid_r */
 #include <pwd.h>
 #include <grp.h>
@@ -1240,4 +1244,84 @@ Java_sun_nio_fs_UnixNativeDispatcher_getgrnam0(JNIEnv* env, jclass this,
     } while (retry);
 
     return gid;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
+    jint fd, jlong nameAddress, jlong valueAddress, jint valueLen)
+{
+    size_t res = -1;
+    const char* name = jlong_to_ptr(nameAddress);
+    void* value = jlong_to_ptr(valueAddress);
+
+#ifdef __linux__
+    res = fgetxattr(fd, name, value, valueLen);
+#elif _ALLBSD_SOURCE
+    res = fgetxattr(fd, name, value, valueLen, 0, 0);
+#else
+    throwUnixException(env, ENOTSUP);
+#endif
+
+    if (res == (size_t)-1)
+        throwUnixException(env, errno);
+    return (jint)res;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
+    jint fd, jlong nameAddress, jlong valueAddress, jint valueLen)
+{
+    int res = -1;
+    const char* name = jlong_to_ptr(nameAddress);
+    void* value = jlong_to_ptr(valueAddress);
+
+#ifdef __linux__
+    res = fsetxattr(fd, name, value, valueLen, 0);
+#elif _ALLBSD_SOURCE
+    res = fsetxattr(fd, name, value, valueLen, 0, 0);
+#else
+    throwUnixException(env, ENOTSUP);
+#endif
+
+    if (res == -1)
+        throwUnixException(env, errno);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
+    jint fd, jlong nameAddress)
+{
+    int res = -1;
+    const char* name = jlong_to_ptr(nameAddress);
+
+#ifdef __linux__
+    res = fremovexattr(fd, name);
+#elif _ALLBSD_SOURCE
+    res = fremovexattr(fd, name, 0);
+#else
+    throwUnixException(env, ENOTSUP);
+#endif
+
+    if (res == -1)
+        throwUnixException(env, errno);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
+    jint fd, jlong listAddress, jint size)
+{
+    size_t res = -1;
+    char* list = jlong_to_ptr(listAddress);
+
+#ifdef __linux__
+    res = flistxattr(fd, list, (size_t)size);
+#elif _ALLBSD_SOURCE
+    res = flistxattr(fd, list, (size_t)size, 0);
+#else
+    throwUnixException(env, ENOTSUP);
+#endif
+
+    if (res == (size_t)-1)
+        throwUnixException(env, errno);
+    return (jint)res;
 }

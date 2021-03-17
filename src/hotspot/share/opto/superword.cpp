@@ -2316,18 +2316,13 @@ Node* SuperWord::pick_mem_state(Node_List* pk) {
       assert(current->is_Mem() && in_bb(current), "unexpected memory");
       assert(current != first_mem, "corrupted memory graph");
       if (!independent(current, ld)) {
-#ifdef ASSERT
-        // Added assertion code since no case has been observed that should pick the first memory state.
-        // Remove the assertion code whenever we find a (valid) case that really needs the first memory state.
-        pk->dump();
-        first_mem->dump();
-        last_mem->dump();
-        current->dump();
-        ld->dump();
-        ld->in(MemNode::Memory)->dump();
-        assert(false, "never observed that first memory should be picked");
-#endif
-        return first_mem; // A later store depends on this load, pick memory state of first load
+        // A later store depends on this load, pick the memory state of the first load. This can happen, for example,
+        // if a load pack has interleaving stores that are part of a store pack which, however, is removed at the pack
+        // filtering stage. This leaves us with only a load pack for which we cannot take the memory state of the
+        // last load as the remaining unvectorized stores could interfere since they have a dependency to the loads.
+        // Some stores could be executed before the load vector resulting in a wrong result. We need to take the
+        // memory state of the first load to prevent this.
+        return first_mem;
       }
     }
   }

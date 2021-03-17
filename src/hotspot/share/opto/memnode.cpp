@@ -336,7 +336,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
       Node* u = ctl->fast_out(i);
       if (u != ctl) {
         igvn->rehash_node_delayed(u);
-        int nb = u->replace_edge(ctl, phase->C->top());
+        int nb = u->replace_edge(ctl, phase->C->top(), igvn);
         --i, imax -= nb;
       }
     }
@@ -2079,12 +2079,14 @@ uint LoadNode::match_edge(uint idx) const {
 //  with the value stored truncated to a byte.  If no truncation is
 //  needed, the replacement is done in LoadNode::Identity().
 //
-Node *LoadBNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* LoadBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
-  if( value && !phase->type(value)->higher_equal( _type ) ) {
-    Node *result = phase->transform( new LShiftINode(value, phase->intcon(24)) );
-    return new RShiftINode(result, phase->intcon(24));
+  if (value != NULL) {
+    Node* narrow = Compile::narrow_value(T_BYTE, value, _type, phase, false);
+    if (narrow != value) {
+      return narrow;
+    }
   }
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
@@ -2114,8 +2116,12 @@ const Type* LoadBNode::Value(PhaseGVN* phase) const {
 Node* LoadUBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem, phase);
-  if (value && !phase->type(value)->higher_equal(_type))
-    return new AndINode(value, phase->intcon(0xFF));
+  if (value != NULL) {
+    Node* narrow = Compile::narrow_value(T_BOOLEAN, value, _type, phase, false);
+    if (narrow != value) {
+      return narrow;
+    }
+  }
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
 }
@@ -2141,11 +2147,15 @@ const Type* LoadUBNode::Value(PhaseGVN* phase) const {
 //  with the value stored truncated to a char.  If no truncation is
 //  needed, the replacement is done in LoadNode::Identity().
 //
-Node *LoadUSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* LoadUSNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
-  if( value && !phase->type(value)->higher_equal( _type ) )
-    return new AndINode(value,phase->intcon(0xFFFF));
+  if (value != NULL) {
+    Node* narrow = Compile::narrow_value(T_CHAR, value, _type, phase, false);
+    if (narrow != value) {
+      return narrow;
+    }
+  }
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
 }
@@ -2171,12 +2181,14 @@ const Type* LoadUSNode::Value(PhaseGVN* phase) const {
 //  with the value stored truncated to a short.  If no truncation is
 //  needed, the replacement is done in LoadNode::Identity().
 //
-Node *LoadSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* LoadSNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
-  if( value && !phase->type(value)->higher_equal( _type ) ) {
-    Node *result = phase->transform( new LShiftINode(value, phase->intcon(16)) );
-    return new RShiftINode(result, phase->intcon(16));
+  if (value != NULL) {
+    Node* narrow = Compile::narrow_value(T_SHORT, value, _type, phase, false);
+    if (narrow != value) {
+      return narrow;
+    }
   }
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
@@ -2638,13 +2650,9 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (phase->is_IterGVN()) {
           phase->is_IterGVN()->rehash_node_delayed(use);
         }
-        if (can_reshape) {
-          use->set_req_X(MemNode::Memory, st->in(MemNode::Memory), phase->is_IterGVN());
-        } else {
-          // It's OK to do this in the parser, since DU info is always accurate,
-          // and the parser always refers to nodes via SafePointNode maps.
-          use->set_req(MemNode::Memory, st->in(MemNode::Memory));
-        }
+        // It's OK to do this in the parser, since DU info is always accurate,
+        // and the parser always refers to nodes via SafePointNode maps.
+        use->set_req_X(MemNode::Memory, st->in(MemNode::Memory), phase);
         return this;
       }
       st = st->in(MemNode::Memory);
@@ -2789,7 +2797,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
   if( val->Opcode() == Op_AndI ) {
     const TypeInt *t = phase->type( val->in(2) )->isa_int();
     if( t && t->is_con() && (t->get_con() & mask) == mask ) {
-      set_req(MemNode::ValueIn, val->in(1));
+      set_req_X(MemNode::ValueIn, val->in(1), phase);
       return this;
     }
   }
@@ -2811,7 +2819,7 @@ Node *StoreNode::Ideal_sign_extended_input(PhaseGVN *phase, int num_bits) {
       if( shl->Opcode() == Op_LShiftI ) {
         const TypeInt *t2 = phase->type( shl->in(2) )->isa_int();
         if( t2 && t2->is_con() && (t2->get_con() == t->get_con()) ) {
-          set_req(MemNode::ValueIn, shl->in(1));
+          set_req_X(MemNode::ValueIn, shl->in(1), phase);
           return this;
         }
       }
@@ -2922,7 +2930,7 @@ Node *StoreCMNode::Ideal(PhaseGVN *phase, bool can_reshape){
   Node* my_store = in(MemNode::OopStore);
   if (my_store->is_MergeMem()) {
     Node* mem = my_store->as_MergeMem()->memory_at(oop_alias_idx());
-    set_req(MemNode::OopStore, mem);
+    set_req_X(MemNode::OopStore, mem, phase);
     return this;
   }
 
@@ -4722,13 +4730,13 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Warning:  Do not combine this "if" with the previous "if"
       // A memory slice might have be be rewritten even if it is semantically
       // unchanged, if the base_memory value has changed.
-      set_req(i, new_in);
+      set_req_X(i, new_in, phase);
       progress = this;          // Report progress
     }
   }
 
   if (new_base != old_base) {
-    set_req(Compile::AliasIdxBot, new_base);
+    set_req_X(Compile::AliasIdxBot, new_base, phase);
     // Don't use set_base_memory(new_base), because we need to update du.
     assert(base_memory() == new_base, "");
     progress = this;

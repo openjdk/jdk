@@ -99,7 +99,7 @@ JAVADOC_TAGS := \
 REFERENCE_TAGS := $(JAVADOC_TAGS)
 
 # Which doclint checks to ignore
-JAVADOC_DISABLED_DOCLINT := accessibility html missing syntax reference
+JAVADOC_DISABLED_DOCLINT := missing
 
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
@@ -261,6 +261,7 @@ endef
 #   SHORT_NAME - The short name of this documentation collection
 #   LONG_NAME - The long name of this documentation collection
 #   TARGET_DIR - Where to store the output
+#   OTHER_VERSIONS - URL for other page listing versions
 #
 SetupApiDocsGeneration = $(NamedParamsMacroTemplate)
 define SetupApiDocsGenerationBody
@@ -297,10 +298,16 @@ define SetupApiDocsGenerationBody
   # Ignore the doclint warnings in the W3C DOM package
   $1_OPTIONS += -Xdoclint/package:-org.w3c.*
 
+  ifneq ($$($1_OTHER_VERSIONS), )
+    $1_LINKED_SHORT_NAME = <a href="$$($1_OTHER_VERSIONS)">$$($1_SHORT_NAME)</a>
+  else
+    $1_LINKED_SHORT_NAME = $$($1_SHORT_NAME)
+  endif
+
   $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
       Specification
   $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME))$$(DRAFT_MARKER_TITLE)
-  $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_SHORT_NAME)</strong> \
+  $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_LINKED_SHORT_NAME)</strong> \
       $$(DRAFT_MARKER_STR)</div>
 
   $1_OPTIONS += -doctitle '$$($1_DOC_TITLE)'
@@ -438,6 +445,7 @@ $(eval $(call SetupApiDocsGeneration, JDK_API, \
     SHORT_NAME := $(JDK_SHORT_NAME), \
     LONG_NAME := $(JDK_LONG_NAME), \
     TARGET_DIR := $(DOCS_OUTPUTDIR)/api, \
+    OTHER_VERSIONS := $(OTHER_JDK_VERSIONS_URL), \
 ))
 
 # Targets generated are returned in JDK_API_JAVADOC_TARGETS and

@@ -187,6 +187,7 @@ JAVA_TARGETS := $(addsuffix -java, $(JAVA_MODULES))
 define DeclareCompileJavaRecipe
   $1-java:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
+	$(patsubst %,-I%/modules/$1,$(PHASE_MAKEDIRS)) \
 	    -f CompileJavaModules.gmk MODULE=$1)
 endef
 

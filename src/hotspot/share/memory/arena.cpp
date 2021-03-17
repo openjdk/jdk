@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
@@ -311,7 +310,9 @@ void Arena::destruct_contents() {
   // reset size before chop to avoid a rare racing condition
   // that can have total arena memory exceed total chunk memory
   set_size_in_bytes(0);
-  _first->chop();
+  if (_first != NULL) {
+    _first->chop();
+  }
   reset();
 }
 
