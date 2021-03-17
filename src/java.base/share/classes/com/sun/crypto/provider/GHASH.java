@@ -35,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.ProviderException;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.ch.DirectBuffer;
 
@@ -127,9 +128,6 @@ final class GHASH implements Cloneable {
     // buffer for storing hash
     private final long[] state;
 
-    // variables for save/restore calls
-    private long stateSave0, stateSave1;
-
     /**
      * Initializes the cipher in the specified mode with the given key
      * and iv.
@@ -153,32 +151,6 @@ final class GHASH implements Cloneable {
     private GHASH(GHASH g) {
         state = g.state.clone();
         subkeyHtbl = g.subkeyHtbl.clone();
-    }
-
-    /**
-     * Resets the GHASH object to its original state, i.e. blank w/
-     * the same subkey H. Used after digest() is called and to re-use
-     * this object for different data w/ the same H.
-     */
-    void reset() {
-        state[0] = 0;
-        state[1] = 0;
-    }
-
-    /**
-     * Save the current snapshot of this GHASH object.
-     */
-    void save() {
-        stateSave0 = state[0];
-        stateSave1 = state[1];
-    }
-
-    /**
-     * Restores this object using the saved snapshot.
-     */
-    void restore() {
-        state[0] = stateSave0;
-        state[1] = stateSave1;
     }
 
     @Override
@@ -222,6 +194,10 @@ final class GHASH implements Cloneable {
             return 0;
         }
 
+        processBlocksDirect(((DirectBuffer)src).address(), src.position(),
+            inLen / AES_BLOCK_SIZE, state, subkeyHtbl );
+        src.position(src.position() + inLen);
+        /*
         int processed = inLen;
         byte[] in = new byte[Math.min(MAX_LEN, inLen)];
         while (processed > MAX_LEN ) {
@@ -231,6 +207,7 @@ final class GHASH implements Cloneable {
         }
         src.get(in, 0, processed);
         update(in, 0, processed);
+         */
         return inLen;
     }
 
@@ -244,7 +221,13 @@ final class GHASH implements Cloneable {
             return;
         }
 
-        int processed = update(src, inLen);
+        // XXX fix blocks undercount
+        int processed = inLen - (inLen % AES_BLOCK_SIZE);
+        processBlocksDirect(((DirectBuffer)src).address(), src.position(),
+            processed / AES_BLOCK_SIZE, state, subkeyHtbl);
+        src.position(src.position() + processed);
+
+//        int processed = update(src, inLen);
         if (inLen == processed) {
             return;
         }
@@ -305,12 +288,42 @@ final class GHASH implements Cloneable {
             offset += AES_BLOCK_SIZE;
         }
     }
+    private static final Unsafe unsafe = Unsafe.getUnsafe();
+
+    private static void processBlockDirect(long address, int offset, long[] st,
+        long[] subH) {
+       // int firstHalf = unsafe.getInt(address);
+        //int secondHalf = unsafe.getInt(address + 8 );
+
+        //XXX  This handles little endian, need to handle big
+        Long l = unsafe.getLong(address + offset);
+        l = Long.reverseBytes(l);
+        st[0] ^= l;
+        l = unsafe.getLong(address + offset + 8);
+        l = Long.reverseBytes(l);
+        st[1] ^= l;
+        blockMult(st, subH);
+
+    }
+
+    @IntrinsicCandidate
+    private static void processBlocksDirect(long address, int offset, int blocks, long[] st,
+        long[] subH) {
+
+        while (blocks > 0) {
+            processBlockDirect(address, offset, st, subH);
+            offset += 16;
+            blocks--;
+        }
+    }
 
     byte[] digest() {
         byte[] result = new byte[AES_BLOCK_SIZE];
         asLongView.set(result, 0, state[0]);
         asLongView.set(result, 8, state[1]);
-        reset();
+        // Reset state
+        state[0] = 0;
+        state[1] = 0;
         return result;
     }
 }

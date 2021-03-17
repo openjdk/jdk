@@ -6924,8 +6924,9 @@ address generate_avx_ghash_processBlocks() {
         StubRoutines::x86::_ghash_shuffmask_addr = ghash_shufflemask_addr();
         StubRoutines::x86::_ghash_poly_addr = ghash_polynomial_addr();
         StubRoutines::_ghash_processBlocks = generate_avx_ghash_processBlocks();
+        StubRoutines::_ghash_processBlocksBB = generate_avx_ghash_processBlocks();
       } else {
-        StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+        StubRoutines::_ghash_processBlocksBB = generate_ghash_processBlocks();
       }
     }
 
