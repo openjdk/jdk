@@ -2179,7 +2179,7 @@ public class Basic {
 
                 thread.start();
                 latch.await();
-                Thread.sleep(10);
+                Thread.sleep(100L);     // Wait for child initialization to settle
 
                 if (s instanceof BufferedInputStream) {
                     // Wait until after the s.read occurs in "thread" by
