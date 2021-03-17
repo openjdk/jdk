@@ -1545,11 +1545,6 @@ public:
   bool is_thread_safe() { return true; }
 };
 
-void ShenandoahHeap::rendezvous_threads() {
-  ShenandoahRendezvousClosure cl;
-  Handshake::execute(&cl);
-}
-
 void ShenandoahHeap::recycle_trash() {
   free_set()->recycle_trash();
 }
@@ -1655,7 +1650,6 @@ void ShenandoahHeap::prepare_regions_and_collection_set(bool concurrent) {
 
 void ShenandoahHeap::do_class_unloading() {
   _unloader.unload();
-  set_concurrent_weak_root_in_progress(false);
 }
 
 void ShenandoahHeap::stw_weak_refs(bool full_gc) {
@@ -1696,11 +1690,8 @@ void ShenandoahHeap::set_gc_state_mask(uint mask, bool value) {
 }
 
 void ShenandoahHeap::set_concurrent_mark_in_progress(bool in_progress) {
-  if (has_forwarded_objects()) {
-    set_gc_state_mask(MARKING | UPDATEREFS, in_progress);
-  } else {
-    set_gc_state_mask(MARKING, in_progress);
-  }
+  assert(!has_forwarded_objects(), "Not expected before/after mark phase");
+  set_gc_state_mask(MARKING, in_progress);
   ShenandoahBarrierSet::satb_mark_queue_set().set_active_all_threads(in_progress, !in_progress);
 }
 
@@ -1717,12 +1708,8 @@ void ShenandoahHeap::set_concurrent_strong_root_in_progress(bool in_progress) {
   }
 }
 
-void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool in_progress) {
-  if (in_progress) {
-    _concurrent_weak_root_in_progress.set();
-  } else {
-    _concurrent_weak_root_in_progress.unset();
-  }
+void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool cond) {
+  set_gc_state_mask(WEAK_ROOTS, cond);
 }
 
 GCTracer* ShenandoahHeap::tracer() {

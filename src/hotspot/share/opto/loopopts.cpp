@@ -924,7 +924,7 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
             Node* hook = new Node(1);
             hook->init_req(0, n_ctrl); // Add an input to prevent hook from being dead
             _igvn.rehash_node_delayed(phi);
-            int count = phi->replace_edge(n, hook);
+            int count = phi->replace_edge(n, hook, &_igvn);
             assert(count > 0, "inconsistent phi");
 
             // Compute latest point this store can go

@@ -1054,33 +1054,18 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
         if (common<Predicate>(method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
           next_level = CompLevel_full_optimization;
         } else if (!CompilationModeFlag::disable_intermediate() && Predicate::apply(i, b, cur_level, method)) {
-#if INCLUDE_JVMCI
-          if (EnableJVMCI && UseJVMCICompiler) {
-            // Since JVMCI takes a while to warm up, its queue inevitably backs up during
-            // early VM execution. As of 2014-06-13, JVMCI's inliner assumes that the root
-            // compilation method and all potential inlinees have mature profiles (which
-            // includes type profiling). If it sees immature profiles, JVMCI's inliner
-            // can perform pathologically bad (e.g., causing OutOfMemoryErrors due to
-            // exploring/inlining too many graphs). Since a rewrite of the inliner is
-            // in progress, we simply disable the dialing back heuristic for now and will
-            // revisit this decision once the new inliner is completed.
+          // C1-generated fully profiled code is about 30% slower than the limited profile
+          // code that has only invocation and backedge counters. The observation is that
+          // if C2 queue is large enough we can spend too much time in the fully profiled code
+          // while waiting for C2 to pick the method from the queue. To alleviate this problem
+          // we introduce a feedback on the C2 queue size. If the C2 queue is sufficiently long
+          // we choose to compile a limited profiled version and then recompile with full profiling
+          // when the load on C2 goes down.
+          if (!disable_feedback && CompileBroker::queue_size(CompLevel_full_optimization) >
+              Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
+            next_level = CompLevel_limited_profile;
+          } else {
             next_level = CompLevel_full_profile;
-          } else
-#endif
-          {
-            // C1-generated fully profiled code is about 30% slower than the limited profile
-            // code that has only invocation and backedge counters. The observation is that
-            // if C2 queue is large enough we can spend too much time in the fully profiled code
-            // while waiting for C2 to pick the method from the queue. To alleviate this problem
-            // we introduce a feedback on the C2 queue size. If the C2 queue is sufficiently long
-            // we choose to compile a limited profiled version and then recompile with full profiling
-            // when the load on C2 goes down.
-            if (!disable_feedback && CompileBroker::queue_size(CompLevel_full_optimization) >
-                Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
-              next_level = CompLevel_limited_profile;
-            } else {
-              next_level = CompLevel_full_profile;
-            }
           }
         }
         break;

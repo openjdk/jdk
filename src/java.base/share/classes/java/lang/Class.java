@@ -1268,6 +1268,8 @@ public final class Class<T> implements java.io.Serializable,
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
      * @since 1.1
+     * @jls 8.1.1 Class Modifiers
+     * @jls 9.1.1. Interface Modifiers
      */
     @IntrinsicCandidate
     public native int getModifiers();
@@ -1725,6 +1727,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return {@code true} if and only if this class is an anonymous class.
      * @since 1.5
+     * @jls 15.9.5 Anonymous Class Declarations
      */
     public boolean isAnonymousClass() {
         return !isArray() && isLocalOrAnonymousClass() &&
@@ -1737,6 +1740,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return {@code true} if and only if this class is a local class.
      * @since 1.5
+     * @jls 14.3 Local Class Declarations
      */
     public boolean isLocalClass() {
         return isLocalOrAnonymousClass() &&
@@ -1749,6 +1753,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return {@code true} if and only if this class is a member class.
      * @since 1.5
+     * @jls 8.5 Member Type Declarations
      */
     public boolean isMemberClass() {
         return !isLocalOrAnonymousClass() && getDeclaringClass0() != null;
@@ -2273,6 +2278,7 @@ public final class Class<T> implements java.io.Serializable,
      *         </ul>
      *
      * @since 1.1
+     * @jls 8.5 Member Type Declarations
      */
     @CallerSensitive
     public Class<?>[] getDeclaredClasses() throws SecurityException {
@@ -2485,6 +2491,7 @@ public final class Class<T> implements java.io.Serializable,
      *          </ul>
      *
      * @since 1.1
+     * @jls 8.8 Constructor Declarations
      */
     @CallerSensitive
     public Constructor<?>[] getDeclaredConstructors() throws SecurityException {
@@ -3741,6 +3748,7 @@ public final class Class<T> implements java.io.Serializable,
      *     declared, or null if this {@code Class} object does not
      *     represent an enum class
      * @since 1.5
+     * @jls 8.9.1 Enum Constants
      */
     public T[] getEnumConstants() {
         T[] values = getEnumConstantsShared();

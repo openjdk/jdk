@@ -261,33 +261,14 @@ private:
   void clear_collection_set_candidates();
   // Sets up marking if proper conditions are met.
   void maybe_start_marking();
-
-  // The kind of STW pause.
-  enum PauseKind : uint {
-    FullGC,
-    YoungOnlyGC,
-    MixedGC,
-    LastYoungGC,
-    ConcurrentStartMarkGC,
-    ConcurrentStartUndoGC,
-    Cleanup,
-    Remark
-  };
-
-  static bool is_young_only_pause(PauseKind kind);
-  static bool is_mixed_pause(PauseKind kind);
-  static bool is_last_young_pause(PauseKind kind);
-  static bool is_concurrent_start_pause(PauseKind kind);
-  // Calculate PauseKind from internal state.
-  PauseKind young_gc_pause_kind(bool concurrent_operation_is_full_mark) const;
   // Manage time-to-mixed tracking.
-  void update_time_to_mixed_tracking(PauseKind pause, double start, double end);
+  void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(PauseKind kind, double start, double end);
+  void record_pause(G1GCPauseType gc_type, double start, double end);
 
   bool should_update_gc_stats();
 
-  void update_gc_pause_time_ratios(PauseKind kind, double start_sec, double end_sec);
+  void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
