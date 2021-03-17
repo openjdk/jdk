@@ -271,8 +271,15 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
-  stream = e->open_stream(file_name, CHECK_NULL);
+  {
+    PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
+                               THREAD->as_Java_thread()->get_thread_stat()->perf_timers_addr(),
+                               PerfClassTraceTime::CLASS_LOAD);
+    stream = e->open_stream(file_name, CHECK_NULL);
+  }
+
   if (stream == NULL) {
+    // open_stream could return NULL even when no exception has be thrown (JDK-8263632).
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
     return NULL;
   }
