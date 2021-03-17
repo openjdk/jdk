@@ -38,7 +38,6 @@ import jdk.test.lib.jfr.Events;
  * @test
  * @key jfr
  * @requires vm.hasJFR & vm.gc.Z
- * @requires vm.gc == "null"
  * @summary Test leak profiler with ZGC
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
