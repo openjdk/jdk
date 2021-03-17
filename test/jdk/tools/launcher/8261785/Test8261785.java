@@ -60,7 +60,7 @@ public class Test8261785 {
             .filter(f -> f.endsWith(".class"))
             .map(f -> f.substring(0, f.length() - 6))
             .toArray(String[]::new);
-        assertEquals(clz.length, 7);
+        assertEquals(clz.length, 8);
         for (String f: clz) {
             System.out.println("Running class " + f);
             var result = TestHelper.doExec(TestHelper.javaCmd, "-cp", ".", f);
