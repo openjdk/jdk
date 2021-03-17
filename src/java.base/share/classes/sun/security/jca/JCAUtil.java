@@ -26,7 +26,6 @@
 package sun.security.jca;
 
 import java.lang.ref.*;
-import java.util.Arrays;
 import java.security.*;
 
 /**
@@ -82,14 +81,16 @@ public final class JCAUtil {
      * SecureRandom impl if the provider table is the same.
      */
     public static SecureRandom getDefSecureRandom() {
-        if (def == null) {
+        SecureRandom result = def;
+        if (result == null) {
             synchronized (JCAUtil.class) {
-                if (def == null) {
-                    def = new SecureRandom();
+                result = def;
+                if (result == null) {
+                    def = result = new SecureRandom();
                 }
             }
         }
-        return def;
+        return result;
 
     }
 }
