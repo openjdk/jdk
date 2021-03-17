@@ -495,9 +495,7 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
         cii->add_ref_kind(pool->method_handle_ref_kind_at(arg));
         int callee_index = pool->method_handle_klass_index_at(arg);
         Klass* callee = pool->klass_at(callee_index, CHECK);
-        if (callee != NULL) {
-          cii->add_item(callee->name()->as_C_string());
-        }
+        cii->add_item(callee->name()->as_C_string());
         cii->add_item(pool->method_handle_name_ref_at(arg)->as_C_string());
         cii->add_item(pool->method_handle_signature_ref_at(arg)->as_C_string());
       } else {
