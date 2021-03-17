@@ -65,7 +65,7 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   CLDToOopClosure      _cld_closure;
 
 
-  G1RegionMarkStatsCache _mark_region_cache;
+  G1RegionMarkStatsCache _mark_stats_cache;
 
   inline bool is_empty();
   inline bool pop_object(oop& obj);
@@ -104,7 +104,8 @@ public:
   G1MarkAndPushClosure* mark_closure()  { return &_mark_closure; }
   G1FollowStackClosure* stack_closure() { return &_stack_closure; }
 
-  void flush_mark_region_cache();
+  // Flush live bytes to regions
+  void flush_mark_stats_cache();
 };
 
 #endif // SHARE_GC_G1_G1FULLGCMARKER_HPP

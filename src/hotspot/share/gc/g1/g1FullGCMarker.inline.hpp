@@ -68,7 +68,7 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
 
   // Collect live words.
   uint hr_index = G1CollectedHeap::heap()->addr_to_region(cast_from_oop<HeapWord*>(obj));
-  _mark_region_cache.add_live_words(hr_index, (size_t)obj->size());
+  _mark_stats_cache.add_live_words(hr_index, (size_t)obj->size());
 
   return true;
 }

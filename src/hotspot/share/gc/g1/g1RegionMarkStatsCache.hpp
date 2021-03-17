@@ -73,10 +73,6 @@ private:
       _region_idx = idx;
       _stats.clear();
     }
-
-    bool is_clear() const {
-      return _region_idx == 0 && _stats.is_clear();
-    }
   };
 
   // The actual cache and its number of entries.
@@ -98,8 +94,8 @@ private:
 
   G1RegionMarkStatsCacheEntry* find_for_add(uint region_idx);
 public:
-  // Number of entries in the per-task stats entry. This seems enough to have a very
-  // low cache miss rate.
+  // Number of entries in the per-task stats entry. This value seems enough
+  // to have a very low cache miss rate.
   static const uint RegionMarkStatsCacheSize = 1024;
 
   G1RegionMarkStatsCache(G1RegionMarkStats* target, uint num_cache_entries);
@@ -122,7 +118,8 @@ public:
   // Evict all remaining statistics, returning cache hits and misses.
   Pair<size_t, size_t> evict_all();
 
-  // Reset all cache entries to their default values.
+  // Reset liveness of all cache entries to their default values,
+  // initialize _region_idx to avoid initial cache miss.
   void reset();
 
   size_t hits() const { return _cache_hits; }

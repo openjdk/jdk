@@ -52,8 +52,6 @@ Pair<size_t, size_t> G1RegionMarkStatsCache::evict_all() {
   return Pair<size_t,size_t>(_cache_hits, _cache_misses);
 }
 
-// Reset liveness of all cache entries to their default values,
-// initialize _region_idx to avoid initial cache miss.
 void G1RegionMarkStatsCache::reset() {
   _cache_hits = 0;
   _cache_misses = 0;

@@ -44,8 +44,8 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _verify_closure(VerifyOption_G1UseFullMarking),
     _stack_closure(this),
     _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
-    _mark_region_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {
-  _mark_region_cache.reset();
+    _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {
+  _mark_stats_cache.reset();
   _oop_stack.initialize();
   _objarray_stack.initialize();
 }
@@ -71,6 +71,6 @@ void G1FullGCMarker::complete_marking(OopQueueSet* oop_stacks,
   } while (!is_empty() || !terminator->offer_termination());
 }
 
-void G1FullGCMarker::flush_mark_region_cache() {
-  _mark_region_cache.evict_all();
+void G1FullGCMarker::flush_mark_stats_cache() {
+  _mark_stats_cache.evict_all();
 }
