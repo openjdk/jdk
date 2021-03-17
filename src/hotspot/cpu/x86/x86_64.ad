@@ -3179,8 +3179,7 @@ operand immL_32bits()
 // Int Immediate: 2^n-1, postive
 operand immI_Pow2M1()
 %{
-  predicate((n->get_int() != 0)
-            && (n->get_int() > 0)
+  predicate((n->get_int() > 0)
             && is_power_of_2(n->get_int() + 1));
   match(ConI);
 
