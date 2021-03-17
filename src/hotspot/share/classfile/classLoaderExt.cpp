@@ -281,11 +281,12 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;
   ClassLoadInfo cl_info(protection_domain);
-  return KlassFactory::create_from_stream(stream,
-                                          name,
-                                          loader_data,
-                                          cl_info,
-                                          THREAD);
+  InstanceKlass* k = KlassFactory::create_from_stream(stream,
+                                                      name,
+                                                      loader_data,
+                                                      cl_info,
+                                                      CHECK_NULL);
+  return k;
 }
 
 struct CachedClassPathEntry {
