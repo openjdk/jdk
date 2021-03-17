@@ -75,7 +75,7 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   case Bytecodes::_instanceof     : {
     u2 cpi_old = s_old->get_index_u2();
     u2 cpi_new = s_new->get_index_u2();
-    if ((old_cp->klass_at_noresolve(cpi_old) != new_cp->klass_at_noresolve(cpi_new)))
+    if (old_cp->klass_at_noresolve(cpi_old) != new_cp->klass_at_noresolve(cpi_new))
         return false;
     if (c_old == Bytecodes::_multianewarray &&
         *(jbyte*)(s_old->bcp() + 3) != *(jbyte*)(s_new->bcp() + 3))
