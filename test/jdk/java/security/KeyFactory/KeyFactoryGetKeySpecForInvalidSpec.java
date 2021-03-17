@@ -69,13 +69,13 @@ public class KeyFactoryGetKeySpecForInvalidSpec {
     }
 
     public static void main(String[] args) throws Exception {
-        KeyPairGenerator kg = KeyPairGenerator.getInstance("RSA");
+        KeyPairGenerator kg = KeyPairGenerator.getInstance("RSA", "SunRsaSign");
         kg.initialize(2048);
         KeyPair pair = kg.generateKeyPair();
 
         KeyFactory factory = KeyFactory.getInstance("RSA");
 
-        // === Case 1: private key is RSAPrivateCrtKey, expected spec is RSAPrivateKeySpec
+        // === Case 1: private key is RSAPrivateCrtKey, keySpec is RSAPrivateKeySpec
         // === Expected: return RSAPrivateCrtKeySpec
         // Since RSAPrivateCrtKeySpec inherits from RSAPrivateKeySpec, we'd expect this next line to return an instance of RSAPrivateKeySpec
         // (because the private key has CRT parts).
@@ -84,14 +84,14 @@ public class KeyFactoryGetKeySpecForInvalidSpec {
             throw new Exception("Spec should be an instance of RSAPrivateCrtKeySpec");
         }
 
-        // === Case 2: private key is RSAPrivateCrtKey, expected spec is RSAPrivateCrtKeySpec
+        // === Case 2: private key is RSAPrivateCrtKey, keySpec is RSAPrivateCrtKeySpec
         // === Expected: return RSAPrivateCrtKeySpec
         spec = factory.getKeySpec(pair.getPrivate(), RSAPrivateCrtKeySpec.class);
         if (!(spec instanceof RSAPrivateCrtKeySpec)) {
             throw new Exception("Spec should be an instance of RSAPrivateCrtKeySpec");
         }
 
-        // === Case 3: private key is RSAPrivateKey, expected spec is RSAPrivateKeySpec
+        // === Case 3: private key is RSAPrivateKey, keySpec is RSAPrivateKeySpec
         // === Expected: return RSAPrivateKeySpec not RSAPrivateCrtKeySpec
         RSAPrivateKey notCrtKey = privateCrtToPrivate((RSAPrivateCrtKey)pair.getPrivate());
         // InvalidKeySpecException should not be thrown
@@ -99,8 +99,11 @@ public class KeyFactoryGetKeySpecForInvalidSpec {
         if (notCrtSpec instanceof RSAPrivateCrtKeySpec) {
             throw new Exception("Spec should be an instance of RSAPrivateKeySpec not RSAPrivateCrtKeySpec");
         }
+        if (!(notCrtSpec instanceof RSAPrivateKeySpec)) {
+            throw new Exception("Spec should be an instance of RSAPrivateKeySpec");
+        }
 
-        // === Case 4: private key is RSAPrivateKey, expected spec is RSAPrivateCrtKeySpec
+        // === Case 4: private key is RSAPrivateKey, keySpec is RSAPrivateCrtKeySpec
         // === Expected: throw InvalidKeySpecException
         try {
             factory.getKeySpec(notCrtKey, RSAPrivateCrtKeySpec.class);
