@@ -29,7 +29,7 @@
  *          java.management
  *
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/bootclasspath/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+AbortVMOnCompilationFailure
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI2Instructions
  *      compiler.intrinsics.bmi.verifycode.BzhiTestI2L
