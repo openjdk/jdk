@@ -55,22 +55,11 @@ public final class JCAUtil {
     }
 
     // cached SecureRandom instance
-    private static final class CachedSecureRandomHolder {
-        private static Provider[] cachedConfig = Security.getProviders();
-        private static SecureRandom instance = new SecureRandom();
-        public static SecureRandom instance(boolean checkConfig) {
-            synchronized (CachedSecureRandomHolder.class) {
-                if (checkConfig) {
-                    Provider[] currConfig = Security.getProviders();
-                    if (!Arrays.equals(cachedConfig, currConfig)) {
-                        instance = new SecureRandom();
-                        cachedConfig = currConfig;
-                    }
-                }
-            }
-            return instance;
-        }
+    private static class CachedSecureRandomHolder {
+        public static SecureRandom instance = new SecureRandom();
     }
+
+    private static volatile SecureRandom def = null;
 
     /**
      * Get a SecureRandom instance. This method should be used by JDK
@@ -79,7 +68,12 @@ public final class JCAUtil {
      * implementation, which is fairly inefficient.
      */
     public static SecureRandom getSecureRandom() {
-        return CachedSecureRandomHolder.instance(false);
+        return CachedSecureRandomHolder.instance;
+    }
+
+    // called by sun.security.jca.Providers class when provider list is changed
+    static void clearDefSecureRandom() {
+        def = null;
     }
 
     /**
@@ -88,6 +82,14 @@ public final class JCAUtil {
      * SecureRandom impl if the provider table is the same.
      */
     public static SecureRandom getDefSecureRandom() {
-        return CachedSecureRandomHolder.instance(true);
+        if (def == null) {
+            synchronized (JCAUtil.class) {
+                if (def == null) {
+                    def = new SecureRandom();
+                }
+            }
+        }
+        return def;
+
     }
 }
