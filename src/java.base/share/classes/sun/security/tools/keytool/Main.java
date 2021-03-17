@@ -40,7 +40,6 @@ import java.security.cert.URICertStoreParameters;
 
 import java.security.interfaces.ECKey;
 import java.security.interfaces.EdECKey;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
@@ -4580,10 +4579,10 @@ public final class Main {
                             data = new byte[value.length() / 2 + 1];
                             int pos = 0;
                             for (char c: value.toCharArray()) {
-                                if (!hexFmt.isHexDigit(c)) {
+                                if (!HexFormat.isHexDigit(c)) {
                                     continue;
                                 }
-                                int hex = hexFmt.fromHexDigit(c);
+                                int hex = HexFormat.fromHexDigit(c);
                                 if (pos % 2 == 0) {
                                     data[pos/2] = (byte)(hex << 4);
                                 } else {

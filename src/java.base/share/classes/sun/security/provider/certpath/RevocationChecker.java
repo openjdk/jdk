@@ -819,7 +819,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         char[] chars = value.toCharArray();
         StringBuilder hexNumber = new StringBuilder();
         for (int i = 0; i < chars.length; i++) {
-            if (hex.isHexDigit(chars[i])) {
+            if (HexFormat.isHexDigit(chars[i])) {
                 hexNumber.append(chars[i]);
             }
         }
