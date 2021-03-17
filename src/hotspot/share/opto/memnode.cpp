@@ -528,8 +528,13 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
 }
 
 
-// Find an arraycopy that must have set (can_see_stored_value=true) or
-// could have set (can_see_stored_value=false) the value for this load
+// Find an arraycopy ac that produces the memory state represented by parameter mem.
+// Return ac if
+// (a) can_see_stored_value=true  and ac must have set the value for this load or if
+// (b) can_see_stored_value=false and ac could have set the value for this load or if
+// (c) can_see_stored_value=false and ac cannot have set the value for this load.
+// In (c) also change the parameter mem to the memory input of ac.
+// Otherwise return NULL.
 Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const {
   ArrayCopyNode* ac = find_array_copy_clone(phase, ld_alloc, mem);
   if (ac != NULL) {
@@ -554,6 +559,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
           }
           if (!can_see_stored_value) {
             mem = ac->in(TypeFunc::Memory);
+            return ac;
           }
         }
       }
