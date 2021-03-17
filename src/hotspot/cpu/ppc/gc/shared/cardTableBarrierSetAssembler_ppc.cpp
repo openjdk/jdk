@@ -49,8 +49,6 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 
   Label Lskip_loop, Lstore_loop;
 
-  if (ct->scanned_concurrently()) { __ membar(Assembler::StoreStore); }
-
   __ sldi_(count, count, LogBytesPerHeapOop);
   __ beq(CCR0, Lskip_loop); // zero length
   __ addi(count, count, -BytesPerHeapOop);
@@ -74,13 +72,10 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 void CardTableBarrierSetAssembler::card_table_write(MacroAssembler* masm,
                                                     CardTable::CardValue* byte_map_base,
                                                     Register tmp, Register obj) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
   assert_different_registers(obj, tmp, R0);
   __ load_const_optimized(tmp, (address)byte_map_base, R0);
   __ srdi(obj, obj, CardTable::card_shift);
   __ li(R0, CardTable::dirty_card_val());
-  if (ct->scanned_concurrently()) { __ membar(Assembler::StoreStore); }
   __ stbx(R0, tmp, obj);
 }
 

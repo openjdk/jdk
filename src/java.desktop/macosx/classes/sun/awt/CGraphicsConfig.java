@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.ColorModel;
 
 import sun.java2d.SurfaceData;
-import sun.java2d.opengl.CGLLayer;
 import sun.lwawt.LWGraphicsConfig;
+import sun.lwawt.macosx.CFRetainedResource;
 
 public abstract class CGraphicsConfig extends GraphicsConfiguration
         implements LWGraphicsConfig {
@@ -80,7 +80,7 @@ public abstract class CGraphicsConfig extends GraphicsConfiguration
      * Creates a new SurfaceData that will be associated with the given
      * CGLLayer.
      */
-    public abstract SurfaceData createSurfaceData(CGLLayer layer);
+    public abstract SurfaceData createSurfaceData(CFRetainedResource layer);
 
     @Override
     public final boolean isTranslucencyCapable() {

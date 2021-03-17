@@ -349,6 +349,8 @@ BUILD_MANPAGES := @BUILD_MANPAGES@
 
 BUILD_CDS_ARCHIVE := @BUILD_CDS_ARCHIVE@
 
+ENABLE_COMPATIBLE_CDS_ALIGNMENT := @ENABLE_COMPATIBLE_CDS_ALIGNMENT@
+
 ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := @ALLOW_ABSOLUTE_PATHS_IN_OUTPUT@
 
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
@@ -574,6 +576,8 @@ CXXFILT:=@CXXFILT@
 
 LIPO:=@LIPO@
 INSTALL_NAME_TOOL:=@INSTALL_NAME_TOOL@
+METAL := @METAL@
+METALLIB := @METALLIB@
 
 # Options to linker to specify a mapfile.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)

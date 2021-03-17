@@ -48,7 +48,7 @@
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -124,10 +124,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
   // Degenerated GC may carry concurrent root flags when upgrading to
   // full GC. We need to reset it before mutators resume.
-  if (ClassUnloading) {
-    heap->set_concurrent_strong_root_in_progress(false);
-    heap->set_concurrent_weak_root_in_progress(false);
-  }
+  heap->set_concurrent_strong_root_in_progress(false);
+  heap->set_concurrent_weak_root_in_progress(false);
 
   heap->set_full_gc_in_progress(true);
 
@@ -179,15 +177,14 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
     rp->abandon_partial_discovery();
 
-    // f. Set back forwarded objects bit back, in case some steps above dropped it.
-    heap->set_has_forwarded_objects(has_forwarded_objects);
-
-    // g. Sync pinned region status from the CP marks
+    // f. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     // The rest of prologue:
     BiasedLocking::preserve_marks();
     _preserved_marks->init(heap->workers()->active_workers());
+
+    assert(heap->has_forwarded_objects() == has_forwarded_objects, "This should not change");
   }
 
   if (UseTLAB) {

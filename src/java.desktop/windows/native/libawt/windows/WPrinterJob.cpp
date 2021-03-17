@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,12 +133,25 @@ static jobjectArray getPrinterNames(JNIEnv *env, DWORD flags) {
     jobjectArray nameArray;
 
     try {
-        ::EnumPrinters(flags,
-                       NULL, 4, NULL, 0, &cbNeeded, &cReturned);
-        pPrinterEnum = new BYTE[cbNeeded];
-        ::EnumPrinters(flags,
-                       NULL, 4, pPrinterEnum, cbNeeded, &cbNeeded,
-                       &cReturned);
+        ::EnumPrinters(flags, NULL, 4, NULL,
+                       0, &cbNeeded, &cReturned);
+
+        BOOL bResult;
+        int nCount = 0;
+        do {
+            if (pPrinterEnum != NULL) {
+                delete [] pPrinterEnum;
+            }
+            pPrinterEnum = new BYTE[cbNeeded];
+
+            bResult = ::EnumPrinters(flags, NULL, 4, pPrinterEnum,
+                                     cbNeeded, &cbNeeded, &cReturned);
+        } while (!bResult && ++nCount < 5);
+
+        if (!bResult) {
+            // No printers in case of error
+            cReturned = 0;
+        }
 
         if (cReturned > 0) {
             nameArray = env->NewObjectArray(cReturned, clazz, NULL);

@@ -46,7 +46,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -165,7 +165,7 @@ public class IndexWriter extends HtmlDocletWriter {
      * @param contentTree the tree to which to add the items
      */
     protected void addHeading(char ch, Content contentTree) {
-        Content headContent = new StringContent(String.valueOf(ch));
+        Content headContent = Text.of(String.valueOf(ch));
         HtmlTree heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, HtmlStyle.title, headContent)
                 .setId(HtmlIds.forIndexChar(ch));
         contentTree.add(heading);
@@ -197,12 +197,12 @@ public class IndexWriter extends HtmlDocletWriter {
         String label = item.getLabel();
         switch (element.getKind()) {
             case MODULE:
-                dt = HtmlTree.DT(getModuleLink((ModuleElement) element, new StringContent(label)));
+                dt = HtmlTree.DT(getModuleLink((ModuleElement) element, Text.of(label)));
                 dt.add(" - ").add(contents.module_).add(" " + label);
                 break;
 
             case PACKAGE:
-                dt = HtmlTree.DT(getPackageLink((PackageElement) element, new StringContent(label)));
+                dt = HtmlTree.DT(getPackageLink((PackageElement) element, Text.of(label)));
                 if (configuration.showModules) {
                     item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
                 }
@@ -214,8 +214,8 @@ public class IndexWriter extends HtmlDocletWriter {
             case RECORD:
             case ANNOTATION_TYPE:
             case INTERFACE:
-                dt = HtmlTree.DT(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.INDEX, (TypeElement) element).strong(true)));
+                dt = HtmlTree.DT(getLink(new HtmlLinkInfo(configuration,
+                        HtmlLinkInfo.Kind.INDEX, (TypeElement) element).style(HtmlStyle.typeNameLink)));
                 dt.add(" - ");
                 addClassInfo((TypeElement) element, dt);
                 break;
@@ -225,9 +225,8 @@ public class IndexWriter extends HtmlDocletWriter {
             case FIELD:
             case ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
-                dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                        getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element,
-                                new StringContent(label), false)));
+                dt = HtmlTree.DT(getDocLink(HtmlLinkInfo.Kind.INDEX, containingType, element,
+                                label, HtmlStyle.memberNameLink));
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
                 break;
@@ -255,7 +254,7 @@ public class IndexWriter extends HtmlDocletWriter {
         contentTree.add(contents.getContent("doclet.in",
                 utils.getTypeElementKindName(te, false),
                 getPackageLink(utils.containingPackage(te),
-                    utils.getPackageName(utils.containingPackage(te)))
+                    getLocalizedPackageName(utils.containingPackage(te)))
                 ));
     }
 
@@ -268,8 +267,8 @@ public class IndexWriter extends HtmlDocletWriter {
     protected void addTagDescription(IndexItem item, Content dlTree) {
         String itemPath = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
         itemPath += item.getUrl();
-        HtmlTree labelLink = HtmlTree.A(itemPath, new StringContent(item.getLabel()));
-        Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.searchTagLink, labelLink));
+        HtmlTree labelLink = HtmlTree.A(itemPath, Text.of(item.getLabel()));
+        Content dt = HtmlTree.DT(labelLink.setStyle(HtmlStyle.searchTagLink));
         dt.add(" - ");
         dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
         dlTree.add(dt);
@@ -339,8 +338,8 @@ public class IndexWriter extends HtmlDocletWriter {
             default -> throw new IllegalArgumentException(member.getKind().toString());
         };
         contentTree.add(contents.getContent(resource, kindName)).add(" ");
-        addPreQualifiedClassLink(LinkInfoImpl.Kind.INDEX, enclosing,
-                false, contentTree);
+        addPreQualifiedClassLink(HtmlLinkInfo.Kind.INDEX, enclosing,
+                null, contentTree);
     }
 
     /**
@@ -353,7 +352,7 @@ public class IndexWriter extends HtmlDocletWriter {
         ListIterator<Character> iter = allFirstCharacters.listIterator();
         while (iter.hasNext()) {
             char ch = iter.next();
-            Content label = new StringContent(Character.toString(ch));
+            Content label = Text.of(Character.toString(ch));
             Content link = splitIndex
                     ? links.createLink(DocPaths.indexN(iter.nextIndex()), label)
                     : links.createLink(HtmlIds.forIndexChar(ch), label);
@@ -370,5 +369,9 @@ public class IndexWriter extends HtmlDocletWriter {
                         contents.getNonBreakString(i.getLabel())))
                 .collect(Collectors.toList());
         contentTree.add(contents.join(getVerticalSeparator(), pageLinks));
+    }
+
+    private Content getVerticalSeparator() {
+        return HtmlTree.SPAN(HtmlStyle.verticalSeparator, Text.of("|"));
     }
 }

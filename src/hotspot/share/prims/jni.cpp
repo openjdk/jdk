@@ -29,7 +29,6 @@
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -289,7 +288,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
                                                    &st,
                                                    CHECK_NULL);
 
-  if (log_is_enabled(Debug, class, resolve) && k != NULL) {
+  if (log_is_enabled(Debug, class, resolve)) {
     trace_class_resolution(k);
   }
 
@@ -332,7 +331,7 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
       // When invoked from JNI_OnLoad, NativeLibraries::getFromClass returns
       // a non-NULL Class object.  When invoked from JNI_OnUnload,
       // it will return NULL to indicate no context.
-      oop mirror = (oop) result.get_jobject();
+      oop mirror = result.get_oop();
       if (mirror != NULL) {
         Klass* fromClass = java_lang_Class::as_Klass(mirror);
         loader = Handle(THREAD, fromClass->class_loader());
@@ -886,7 +885,7 @@ static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, 
 
   // Convert result
   if (is_reference_type(result->get_type())) {
-    result->set_jobject(JNIHandles::make_local(THREAD, (oop) result->get_jobject()));
+    result->set_jobject(JNIHandles::make_local(THREAD, result->get_oop()));
   }
 }
 
@@ -948,7 +947,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
 
   // Convert result
   if (is_reference_type(result->get_type())) {
-    result->set_jobject(JNIHandles::make_local(THREAD, (oop) result->get_jobject()));
+    result->set_jobject(JNIHandles::make_local(THREAD, result->get_oop()));
   }
 }
 
@@ -2713,7 +2712,7 @@ JNI_ENTRY(jint, jni_MonitorEnter(JNIEnv *env, jobject jobj))
   }
 
   Handle obj(thread, JNIHandles::resolve_non_null(jobj));
-  ObjectSynchronizer::jni_enter(obj, CHECK_(JNI_ERR));
+  ObjectSynchronizer::jni_enter(obj, thread);
   ret = JNI_OK;
   return ret;
 JNI_END

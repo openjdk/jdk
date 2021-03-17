@@ -73,6 +73,7 @@
 
 #include "classfile/systemDictionary.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
@@ -620,12 +621,11 @@ void ShenandoahHeap::post_initialize() {
 }
 
 size_t ShenandoahHeap::used() const {
-  return Atomic::load_acquire(&_used);
+  return Atomic::load(&_used);
 }
 
 size_t ShenandoahHeap::committed() const {
-  OrderAccess::acquire();
-  return _committed;
+  return Atomic::load(&_committed);
 }
 
 void ShenandoahHeap::increase_committed(size_t bytes) {
@@ -639,20 +639,20 @@ void ShenandoahHeap::decrease_committed(size_t bytes) {
 }
 
 void ShenandoahHeap::increase_used(size_t bytes) {
-  Atomic::add(&_used, bytes);
+  Atomic::add(&_used, bytes, memory_order_relaxed);
 }
 
 void ShenandoahHeap::set_used(size_t bytes) {
-  Atomic::release_store_fence(&_used, bytes);
+  Atomic::store(&_used, bytes);
 }
 
 void ShenandoahHeap::decrease_used(size_t bytes) {
   assert(used() >= bytes, "never decrease heap size by more than we've left");
-  Atomic::sub(&_used, bytes);
+  Atomic::sub(&_used, bytes, memory_order_relaxed);
 }
 
 void ShenandoahHeap::increase_allocated(size_t bytes) {
-  Atomic::add(&_bytes_allocated_since_gc_start, bytes);
+  Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
 }
 
 void ShenandoahHeap::notify_mutator_alloc_words(size_t words, bool waste) {
@@ -1498,8 +1498,8 @@ public:
     size_t stride = ShenandoahParallelRegionStride;
 
     size_t max = _heap->num_regions();
-    while (_index < max) {
-      size_t cur = Atomic::fetch_and_add(&_index, stride);
+    while (Atomic::load(&_index) < max) {
+      size_t cur = Atomic::fetch_and_add(&_index, stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;
@@ -1544,11 +1544,6 @@ public:
 
   bool is_thread_safe() { return true; }
 };
-
-void ShenandoahHeap::rendezvous_threads() {
-  ShenandoahRendezvousClosure cl;
-  Handshake::execute(&cl);
-}
 
 void ShenandoahHeap::recycle_trash() {
   free_set()->recycle_trash();
@@ -1655,7 +1650,6 @@ void ShenandoahHeap::prepare_regions_and_collection_set(bool concurrent) {
 
 void ShenandoahHeap::do_class_unloading() {
   _unloader.unload();
-  set_concurrent_weak_root_in_progress(false);
 }
 
 void ShenandoahHeap::stw_weak_refs(bool full_gc) {
@@ -1696,11 +1690,8 @@ void ShenandoahHeap::set_gc_state_mask(uint mask, bool value) {
 }
 
 void ShenandoahHeap::set_concurrent_mark_in_progress(bool in_progress) {
-  if (has_forwarded_objects()) {
-    set_gc_state_mask(MARKING | UPDATEREFS, in_progress);
-  } else {
-    set_gc_state_mask(MARKING, in_progress);
-  }
+  assert(!has_forwarded_objects(), "Not expected before/after mark phase");
+  set_gc_state_mask(MARKING, in_progress);
   ShenandoahBarrierSet::satb_mark_queue_set().set_active_all_threads(in_progress, !in_progress);
 }
 
@@ -1717,12 +1708,8 @@ void ShenandoahHeap::set_concurrent_strong_root_in_progress(bool in_progress) {
   }
 }
 
-void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool in_progress) {
-  if (in_progress) {
-    _concurrent_weak_root_in_progress.set();
-  } else {
-    _concurrent_weak_root_in_progress.unset();
-  }
+void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool cond) {
+  set_gc_state_mask(WEAK_ROOTS, cond);
 }
 
 GCTracer* ShenandoahHeap::tracer() {
@@ -1883,11 +1870,11 @@ address ShenandoahHeap::gc_state_addr() {
 }
 
 size_t ShenandoahHeap::bytes_allocated_since_gc_start() {
-  return Atomic::load_acquire(&_bytes_allocated_since_gc_start);
+  return Atomic::load(&_bytes_allocated_since_gc_start);
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-  Atomic::release_store_fence(&_bytes_allocated_since_gc_start, (size_t)0);
+  Atomic::store(&_bytes_allocated_since_gc_start, (size_t)0);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {

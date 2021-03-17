@@ -96,8 +96,10 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     protected void generatePackageTreeFile() throws DocFileIOException {
         HtmlTree body = getPackageTreeHeader();
         Content mainContent = new ContentBuilder();
-        Content headContent = contents.getContent("doclet.Hierarchy_For_Package",
-                utils.getPackageName(packageElement));
+        Content headContent = packageElement.isUnnamed()
+                ? contents.getContent("doclet.Hierarchy_For_Unnamed_Package")
+                : contents.getContent("doclet.Hierarchy_For_Package",
+                getLocalizedPackageName(packageElement));
         Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);

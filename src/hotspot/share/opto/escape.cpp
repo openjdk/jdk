@@ -2769,7 +2769,7 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
       Node* m = find_inst_mem(n, general_idx, orig_phis);
       assert(orig_uniq == C->unique(), "no new nodes");
       igvn->hash_delete(use);
-      imax -= use->replace_edge(n, m);
+      imax -= use->replace_edge(n, m, igvn);
       igvn->hash_insert(use);
       record_for_optimizer(use);
       --i;

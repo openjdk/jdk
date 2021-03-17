@@ -252,7 +252,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
 
     <T extends KeySpec> T implGetPublicKeySpec(P11Key key, Class<T> keySpec,
             Session[] session) throws PKCS11Exception, InvalidKeySpecException {
-        if (RSAPublicKeySpec.class.isAssignableFrom(keySpec)) {
+        if (keySpec.isAssignableFrom(RSAPublicKeySpec.class)) {
             session[0] = token.getObjSession();
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
                 new CK_ATTRIBUTE(CKA_MODULUS),
@@ -277,7 +277,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
 
     <T extends KeySpec> T implGetPrivateKeySpec(P11Key key, Class<T> keySpec,
             Session[] session) throws PKCS11Exception, InvalidKeySpecException {
-        if (RSAPrivateCrtKeySpec.class.isAssignableFrom(keySpec)) {
+        if (keySpec.isAssignableFrom(RSAPrivateCrtKeySpec.class)) {
             session[0] = token.getObjSession();
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
                 new CK_ATTRIBUTE(CKA_MODULUS),
@@ -307,7 +307,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 attributes[7].getBigInteger()
             );
             return keySpec.cast(spec);
-        } else if (RSAPrivateKeySpec.class.isAssignableFrom(keySpec)) {
+        } else if (keySpec.isAssignableFrom(RSAPrivateKeySpec.class)) {
             session[0] = token.getObjSession();
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
                 new CK_ATTRIBUTE(CKA_MODULUS),

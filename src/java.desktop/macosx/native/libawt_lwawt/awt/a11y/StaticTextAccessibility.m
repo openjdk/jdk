@@ -27,7 +27,7 @@
 
 @implementation StaticTextAccessibility
 
-- (nullable NSString *)accessibilityAttributedString:(NSRange)range
+- (nullable NSString *)accessibilityAttributedStringForRange:(NSRange)range
 {
     return [self accessibilityStringForRangeAttribute:range];
 }

@@ -31,7 +31,6 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
 #include "memory/filemap.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -206,10 +205,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
   InstanceKlass* result = parser.create_instance_klass(old_stream != stream, *cl_inst_info, CHECK_NULL);
-
-  if (result == NULL) {
-    return NULL;
-  }
+  assert(result != NULL, "result cannot be null with no pending exception");
 
   if (cached_class_file != NULL) {
     // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
