@@ -30,6 +30,7 @@
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"

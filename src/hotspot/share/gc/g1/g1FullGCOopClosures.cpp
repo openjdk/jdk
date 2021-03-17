@@ -27,7 +27,6 @@
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
-#include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"

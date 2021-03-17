@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1FULLGCMARKER_HPP
 
 #include "gc/g1/g1FullGCOopClosures.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -103,9 +104,7 @@ public:
   G1MarkAndPushClosure* mark_closure()  { return &_mark_closure; }
   G1FollowStackClosure* stack_closure() { return &_stack_closure; }
 
-  void flush_mark_region_cache() {
-    _mark_region_cache.evict_all();
-  }
+  void flush_mark_region_cache();
 };
 
 #endif // SHARE_GC_G1_G1FULLGCMARKER_HPP

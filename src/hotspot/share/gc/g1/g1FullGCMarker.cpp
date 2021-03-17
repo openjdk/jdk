@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
-#include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/verifyOption.hpp"
@@ -70,4 +69,8 @@ void G1FullGCMarker::complete_marking(OopQueueSet* oop_stacks,
       }
     }
   } while (!is_empty() || !terminator->offer_termination());
+}
+
+void G1FullGCMarker::flush_mark_region_cache() {
+  _mark_region_cache.evict_all();
 }

@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
