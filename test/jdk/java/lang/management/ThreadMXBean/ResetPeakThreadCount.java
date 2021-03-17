@@ -190,7 +190,7 @@ public class ResetPeakThreadCount {
     }
 
 
-    // The MyThread thread lives as long as correspondent its live value is true
+    // The MyThread thread lives as long as correspondent its live value is true.
     private static class MyThread extends Thread {
         volatile boolean live;
 
