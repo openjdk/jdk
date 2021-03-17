@@ -665,7 +665,10 @@ static void *thread_native_entry(Thread *thread) {
   // processors with hyperthreading technology.
   static int counter = 0;
   int pid = os::current_process_id();
+PRAGMA_DIAG_PUSH
+PRAGMA_UNUSED_RESULT_IGNORED
   alloca(((pid ^ counter++) & 7) * 128);
+PRAGMA_DIAG_POP
 
   thread->initialize_thread_current();
 
