@@ -480,9 +480,7 @@ public:
   HeapWord* partial_obj_end(size_t region_idx) const;
 
   // Return the location of the object after compaction.
-  HeapWord* calc_new_pointer(HeapWord* addr,
-                             ParCompactionManager* cm,
-                             bool use_block_table = true) const;
+  HeapWord* calc_new_pointer(HeapWord* addr, ParCompactionManager* cm) const;
 
   HeapWord* calc_new_pointer(oop p, ParCompactionManager* cm) const {
     return calc_new_pointer(cast_from_oop<HeapWord*>(p), cm);
