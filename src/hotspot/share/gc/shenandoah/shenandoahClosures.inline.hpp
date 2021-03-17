@@ -233,13 +233,6 @@ void ShenandoahCodeBlobAndDisarmClosure::do_code_blob(CodeBlob* cb) {
   }
 }
 
-ShenandoahRendezvousClosure::ShenandoahRendezvousClosure() :
-  HandshakeClosure("ShenandoahRendezvous") {
-}
-
-void ShenandoahRendezvousClosure::do_thread(Thread* thread) {
-}
-
 #ifdef ASSERT
 template <class T>
 void ShenandoahAssertNotForwardedClosure::do_oop_work(T* p) {

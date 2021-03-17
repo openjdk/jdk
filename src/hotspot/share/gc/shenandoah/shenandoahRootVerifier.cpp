@@ -46,13 +46,11 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _gc_state(_heap->gc_state()),
   _concurrent_weak_root_in_progress(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress()) {
   _heap->_gc_state.clear();
-  _heap->set_concurrent_weak_root_in_progress(false);
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
   _heap->_gc_state.set(_gc_state);
   assert(_heap->gc_state() == _gc_state, "Should be restored");
-  _heap->set_concurrent_weak_root_in_progress(_concurrent_weak_root_in_progress);
 }
 
 void ShenandoahRootVerifier::roots_do(OopClosure* oops) {

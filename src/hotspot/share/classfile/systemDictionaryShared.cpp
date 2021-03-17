@@ -757,7 +757,7 @@ Handle SystemDictionaryShared::get_shared_jar_url(int shared_path_index, TRAPS) 
                            vmSymbols::toFileURL_signature(),
                            path_string, CHECK_(url_h));
 
-    atomic_set_shared_jar_url(shared_path_index, (oop)result.get_jobject());
+    atomic_set_shared_jar_url(shared_path_index, result.get_oop());
   }
 
   url_h = Handle(THREAD, shared_jar_url(shared_path_index));
@@ -819,7 +819,7 @@ Handle SystemDictionaryShared::get_protection_domain_from_classloader(Handle cla
                           vmSymbols::getProtectionDomain_name(),
                           vmSymbols::getProtectionDomain_signature(),
                           cs, CHECK_NH);
-  return Handle(THREAD, (oop)obj_result.get_jobject());
+  return Handle(THREAD, obj_result.get_oop());
 }
 
 // Returns the ProtectionDomain associated with the JAR file identified by the url.
@@ -862,7 +862,7 @@ Handle SystemDictionaryShared::get_shared_protection_domain(Handle class_loader,
         JavaCalls::call_static(&result, classLoaders_klass, vmSymbols::toFileURL_name(),
                                vmSymbols::toFileURL_signature(),
                                location_string, CHECK_NH);
-        url = Handle(THREAD, (oop)result.get_jobject());
+        url = Handle(THREAD, result.get_oop());
       }
 
       Handle pd = get_protection_domain_from_classloader(class_loader, url,
@@ -2241,12 +2241,14 @@ public:
   SharedLambdaDictionaryPrinter(outputStream* st) : _st(st), _index(0) {}
 
   void do_value(const RunTimeLambdaProxyClassInfo* record) {
-    ResourceMark rm;
-    _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
-    Klass* k = record->proxy_klass_head()->next_link();
-    while (k != NULL) {
-      _st->print_cr("%4d:  %s", (_index++), k->external_name());
-      k = k->next_link();
+    if (record->proxy_klass_head()->lambda_proxy_is_available()) {
+      ResourceMark rm;
+      _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
+      Klass* k = record->proxy_klass_head()->next_link();
+      while (k != NULL) {
+        _st->print_cr("%4d:  %s", (_index++), k->external_name());
+        k = k->next_link();
+      }
     }
   }
 };

@@ -706,13 +706,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   add_call_info(code_offset(), op->info());
 }
 
-
-/* vtable_call is not enabled for ppc platform */
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere(); // ic_call is used instead.
-}
-
-
 void LIR_Assembler::explicit_null_check(Register addr, CodeEmitInfo* info) {
   ImplicitNullCheckStub* stub = new ImplicitNullCheckStub(code_offset(), info);
   __ null_check(addr, stub->entry());
