@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class GenerateCharacter {
     entries are short rather than byte).
     */
 
-    /* The character properties are currently encoded into A (32 bits)and B (16 bits)
+    /* The character properties are currently encoded into A (32 bits) and B (8 bits)
        two parts.
 
     A: the low 32 bits are defined  in the following manner:
@@ -157,9 +157,7 @@ public class GenerateCharacter {
     1 bit Other_Lowercase property
     1 bit Other_Uppercase property
     1 bit Other_Alphabetic property
-    1 bit Other_Math property
     1 bit Ideographic property
-    1 bit Noncharacter codepoint property
     1 bit ID_Start property
     1 bit ID_Continue property
     */
@@ -175,7 +173,6 @@ public class GenerateCharacter {
         shiftNumericType    = 10,       maskNumericType     =       0x0C00,
         shiftIdentifierInfo = 12,       maskIdentifierInfo  =       0x7000,
                                         maskUnicodePart     =       0x1000,
-        shiftCaseInfo       = 15,       maskCaseInfo        =      0x38000,
                                         maskLowerCase       =      0x20000,
                                         maskUpperCase       =      0x10000,
                                         maskTitleCase       =      0x08000,
@@ -186,24 +183,20 @@ public class GenerateCharacter {
                                         maskDigit               =   0x001F,
                                         // case offset are 9 bits
                                         maskCase                =   0x01FF,
-        shiftBidi           = 27,       maskBidi              = 0x78000000,
-        shiftMirrored       = 31,       //maskMirrored          = 0x80000000,
-        shiftPlane          = 16,       maskPlane = 0xFF0000;
+        shiftBidi           = 27,       maskBidi              = 0x78000000;
 
     // maskMirrored needs to be long, if up 16-bit
     private static final long maskMirrored          = 0x80000000L;
 
-    // bit masks identify the 16-bit property field described above, in B
+    // bit masks identify the 8-bit property field described above, in B
     // table
     private static final long
-        maskOtherLowercase  = 0x100000000L,
-        maskOtherUppercase  = 0x200000000L,
-        maskOtherAlphabetic = 0x400000000L,
-        maskOtherMath       = 0x800000000L,
-        maskIdeographic     = 0x1000000000L,
-        maskNoncharacterCP  = 0x2000000000L,
-        maskIDStart         = 0x4000000000L,
-        maskIDContinue      = 0x8000000000L;
+        maskOtherLowercase  = 0x0100000000L,
+        maskOtherUppercase  = 0x0200000000L,
+        maskOtherAlphabetic = 0x0400000000L,
+        maskIdeographic     = 0x0800000000L,
+        maskIDStart         = 0x1000000000L,
+        maskIDContinue      = 0x2000000000L;
 
     // Can compare masked values with these to determine
     // numeric or lexical types.
@@ -313,14 +306,9 @@ public class GenerateCharacter {
 
     static long[] buildMap(UnicodeSpec[] data, SpecialCaseMap[] specialMaps, PropList propList)
     {
-        long[] result;
-        if (bLatin1 == true) {
-            result = new long[256];
-        } else {
-            result = new long[1<<16];
-        }
-        int k=0;
-        int codePoint = plane<<16;
+        long[] result = new long[bLatin1 ? 256 : 1 << 16];
+        int k = 0;
+        int codePoint = plane << 16;
         UnicodeSpec nonCharSpec = new UnicodeSpec();
         for (int j = 0; j < data.length && k < result.length; j++) {
             if (data[j].codePoint == codePoint) {
@@ -370,8 +358,6 @@ public class GenerateCharacter {
         addExProp(result, propList, "Other_Uppercase", maskOtherUppercase);
         addExProp(result, propList, "Other_Alphabetic", maskOtherAlphabetic);
         addExProp(result, propList, "Ideographic", maskIdeographic);
-        //addExProp(result, propList, "Other_Math", maskOtherMath);
-        //addExProp(result, propList, "Noncharacter_CodePoint", maskNoncharacterCP);
         addExProp(result, propList, "ID_Start", maskIDStart);
         addExProp(result, propList, "ID_Continue", maskIDContinue);
 
@@ -390,8 +376,8 @@ public class GenerateCharacter {
     static boolean isInvalidJavaWhiteSpace(int c) {
         int[] exceptions = {0x00A0, 0x2007, 0x202F, 0xFEFF};
         boolean retValue = false;
-        for(int x=0;x<exceptions.length;x++) {
-            if(c == exceptions[x]) {
+        for (int exception : exceptions) {
+            if (c == exception) {
                 retValue = true;
                 break;
             }
@@ -420,6 +406,15 @@ public class GenerateCharacter {
         long resultA = 0;
         // record the general category
         resultA |= us.generalCategory;
+
+        // extract and record the uppercase letter / lowercase letter property into the
+        // maskOtherUppercase/-Lowercase bit so that Character.isLower|UpperCase
+        // can use a one-step lookup (this property includes
+        if (resultA == Character.UPPERCASE_LETTER) {
+            resultA |= maskOtherUppercase;
+        } else if (resultA == Character.LOWERCASE_LETTER) {
+            resultA |= maskOtherLowercase;
+        }
 
         // record the numeric properties
         NUMERIC: {
@@ -637,7 +632,7 @@ public class GenerateCharacter {
 OUTER:  for (int i = 0; i < n; i += m) {
             // For every block of size m in the original map...
     MIDDLE: for (int j = 0; j < ptr; j += m) {
-            // Find out whether there is already a block just like it in the buffer.
+                // Find out whether there is already a block just like it in the buffer.
                 for (int k = 0; k < m; k++) {
                     if (buffer[j+k] != map[i+k])
                         continue MIDDLE;
@@ -649,21 +644,16 @@ OUTER:  for (int i = 0; i < n; i += m) {
             } // end MIDDLE
             // There is no block just like it already, so add it to
             // the buffer and put its index into the new map.
-            for (int k = 0; k < m; k++) {
-                buffer[ptr+k] = map[i+k];
-            }
+            if (m > 0) System.arraycopy(map, i, buffer, ptr, m);
             newmap[i >> size] = (ptr >> size);
             ptr += m;
         } // end OUTER
         // Now we know how long the compressed table should be,
         // so create a new array and copy data from the temporary buffer.
         long[] newdata = new long[ptr];
-        for (int j = 0; j < ptr; j++) {
-            newdata[j] = buffer[j];
-        }
+        if (ptr > 0) System.arraycopy(buffer, 0, newdata, 0, ptr);
         // Return the new map and the new data table.
-        long[][] result = { newmap, newdata };
-        return result;
+        return new long[][]{ newmap, newdata };
     }
 
     /**
@@ -695,7 +685,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
 
     static void generateCharacterClass(String theTemplateFileName,
                                        String theOutputFileName)
-        throws FileNotFoundException, IOException {
+        throws IOException {
         BufferedReader in = new BufferedReader(new FileReader(theTemplateFileName));
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(theOutputFileName)));
         out.println(commentStart +
@@ -710,7 +700,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
                 int depth = 0;
                 while ((pos = line.indexOf(commandMarker, pos)) >= 0) {
                     int newpos = pos + marklen;
-                    char ch = 'x';
+                    char ch;
                     SCAN: while (newpos < line.length() &&
                             (Character.isJavaIdentifierStart(ch = line.charAt(newpos))
                             || ch == '(' || (ch == ')' && depth > 0))) {
@@ -765,18 +755,15 @@ OUTER:  for (int i = 0; i < n; i += m) {
     static String replaceCommand(String x) {
         if (x.equals("Tables")) return genTables();
         if (x.equals("Initializers")) return genInitializers();
-        if (x.length() >= 9 && x.substring(0, 7).equals("Lookup(") &&
-                x.substring(x.length()-1).equals(")") )
+        if (x.length() >= 9 && x.startsWith("Lookup(") && x.endsWith(")") )
             return genAccess("A", x.substring(7, x.length()-1), (identifiers ? 2 : 32));
-        if (x.length() >= 11 && x.substring(0, 9).equals("LookupEx(") &&
-                x.substring(x.length()-1).equals(")") )
+        if (x.length() >= 11 && x.startsWith("LookupEx(") && x.endsWith(")") )
             return genAccess("B", x.substring(9, x.length()-1), 16);
         if (x.equals("shiftType")) return Long.toString(shiftType);
         if (x.equals("shiftIdentifierInfo")) return Long.toString(shiftIdentifierInfo);
         if (x.equals("maskIdentifierInfo")) return "0x" + hex8(maskIdentifierInfo);
         if (x.equals("maskUnicodePart")) return "0x" + hex8(maskUnicodePart);
         if (x.equals("shiftCaseOffset")) return Long.toString(shiftCaseOffset);
-        if (x.equals("shiftCaseInfo")) return Long.toString(shiftCaseInfo);
         if (x.equals("shiftCaseOffsetSign")) return Long.toString(shiftCaseOffsetSign);
         if (x.equals("maskCase")) return "0x" + hex8(maskCase);
         if (x.equals("maskCaseOffset")) return "0x" + hex8(maskCaseOffset);
@@ -811,8 +798,6 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (x.equals("valueDigit")) return "0x" + hex8(valueDigit);
         if (x.equals("valueStrangeNumeric")) return "0x" + hex8(valueStrangeNumeric);
         if (x.equals("valueJavaSupradecimal")) return "0x" + hex8(valueJavaSupradecimal);
-        if (x.equals("valueDigit")) return "0x" + hex8(valueDigit);
-        if (x.equals("valueStrangeNumeric")) return "0x" + hex8(valueStrangeNumeric);
         if (x.equals("maskType")) return "0x" + hex(maskType);
         if (x.equals("shiftBidi")) return Long.toString(shiftBidi);
         if (x.equals("maskBidi")) return "0x" + hex(maskBidi);
@@ -943,11 +928,12 @@ OUTER:  for (int i = 0; i < n; i += m) {
         StringBuffer result = new StringBuffer();
         // liu : Add a comment showing the source of this table
         if (debug) {
-            result.append(commentStart + " The following tables and code generated using:" +
-                    commentEnd + "\n  ");
-            result.append(commentStart + ' ' + commandLineDescription + commentEnd + "\n  ");
+            result.append(commentStart).append(" The following tables and code generated using:")
+                    .append(commentEnd).append("\n  ")
+                    .append(commentStart).append(' ')
+                    .append(commandLineDescription).append(commentEnd).append("\n  ");
         }
-        if (plane == 0 && bLatin1 == false) {
+        if (plane == 0 && !bLatin1) {
             genCaseMapTableDeclaration(result);
             genCaseMapTable(initializers, specialCaseMaps);
         }
@@ -966,7 +952,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
 
         // If we ever need more than 32 bits to represent the character properties,
         // then a table "B" may be needed as well.
-        genTable(result, "B", tables[n - 1], 32, 16, sizes[n - 1], false, 0, true, true, false);
+        genTable(result, "B", tables[n - 1], 32, 8, sizes[n - 1], false, 0, true, true, false);
 
         totalBytes += ((((tables[n - 1].length * (identifiers ? 2 : 32)) + 31) >> 5) << 2);
         result.append(commentStart);
@@ -1003,23 +989,8 @@ OUTER:  for (int i = 0; i < n; i += m) {
         return totalBytes;
     }
 
-    static void appendEscapedStringFragment(StringBuffer result,
-                                            char[] line,
-                                            int length,
-                                            boolean lastFragment) {
-        result.append("    \"");
-        for (int k=0; k<length; ++k) {
-            result.append("\\u");
-            result.append(hex4(line[k]));
-        }
-        result.append("\"");
-        result.append(lastFragment ? ";" : "+");
-        result.append("\n");
-    }
-
     static String SMALL_INITIALIZER =
         "        { // THIS CODE WAS AUTOMATICALLY CREATED BY GenerateCharacter:\n"+
-        // "            $$name = new $$type[$$size];\n"+
         "            int len = $$name_DATA.length();\n"+
         "            int j=0;\n"+
         "            for (int i=0; i<len; ++i) {\n"+
@@ -1035,14 +1006,12 @@ OUTER:  for (int i = 0; i < n; i += m) {
     static String SAME_SIZE_INITIALIZER =
         "        { // THIS CODE WAS AUTOMATICALLY CREATED BY GenerateCharacter:\n"+
         "            assert ($$name_DATA.length() == $$size);\n"+
-        // "            $$name = new $$type[$$size];\n"+
         "            for (int i=0; i<$$size; ++i)\n"+
         "                $$name[i] = ($$type)$$name_DATA.charAt(i);\n"+
         "        }\n";
 
     static String BIG_INITIALIZER =
         "        { // THIS CODE WAS AUTOMATICALLY CREATED BY GenerateCharacter:\n"+
-        // "            $$name = new $$type[$$size];\n"+
         "            int len = $$name_DATA.length();\n"+
         "            int j=0;\n"+
         "            int charsInEntry=0;\n"+
@@ -1084,21 +1053,24 @@ OUTER:  for (int i = 0; i < n; i += m) {
         int pos = 0;
         while ((pos = template.indexOf(commandMarker, pos)) >= 0) {
             int newpos = pos + marklen;
-            char ch = 'x';
+            char ch;
             while (newpos < template.length() &&
                    Character.isJavaIdentifierStart(ch = template.charAt(newpos)) &&
                    ch != '_') // Don't allow this in token names
                 ++newpos;
             String token = template.substring(pos+marklen, newpos);
-            String replacement = "ERROR";
-
-            if (token.equals("name")) replacement = name;
-            else if (token.equals("type")) replacement = type;
-            else if (token.equals("bits")) replacement = ""+bits;
-            else if (token.equals("size")) replacement = ""+size;
-            else if (token.equals("entriesPerChar")) replacement = ""+entriesPerChar;
-            else if (token.equals("charsPerEntry")) replacement = ""+(-entriesPerChar);
-            else FAIL("Unrecognized token: " + token);
+            String replacement = switch (token) {
+                case "name" -> name;
+                case "type" -> type;
+                case "bits" -> "" + bits;
+                case "size" -> "" + size;
+                case "entriesPerChar" -> "" + entriesPerChar;
+                case "charsPerEntry" -> "" + (-entriesPerChar);
+                default -> {
+                    FAIL("Unrecognized token: " + token);
+                    yield "ERROR";
+                }
+            };
 
             template = template.substring(0, pos) + replacement + template.substring(newpos);
             pos += replacement.length();
@@ -1178,7 +1150,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
         result.append(" The ").append(name).append(" table has ").append(table.length);
         result.append(" entries for a total of ");
         int sizeOfTable = ((table.length * bits + 31) >> 5) << 2;
-        if (bits == 8 && useCharForByte) {
+        if (bits == 8 && tableAsString && useCharForByte) {
             sizeOfTable *= 2;
         }
         result.append(sizeOfTable);
@@ -1195,28 +1167,26 @@ OUTER:  for (int i = 0; i < n; i += m) {
             if (noConversion) {
                 result.append("] = (\n");
             } else {
-                result.append("] = new ").append(atype).append("["+table.length+"];\n  ");
+                result.append("] = new ").append(atype).append("[").append(table.length).append("];\n  ");
                 result.append("static final String ").append(name).append("_DATA =\n");
             }
-            int CHARS_PER_LINE = 8;
-            StringBuffer theString = new StringBuffer();
+            StringBuilder theString = new StringBuilder();
             int entriesInCharSoFar = 0;
             char ch = '\u0000';
             int charsPerEntry = -entriesPerChar;
-            for (int j=0; j<table.length; ++j) {
-                //long entry = table[j] >> extract;
+            for (long l : table) {
                 long entry;
                 if ("A".equals(name))
-                    entry = (table[j] & 0xffffffffL) >> extract;
+                    entry = (l & 0xffffffffL) >> extract;
                 else
-                    entry = (table[j] >> extract);
+                    entry = (l >> extract);
                 if (shiftEntries) entry <<= shift;
                 if (entry >= (1L << bits)) {
                     FAIL("Entry too big");
                 }
                 if (entriesPerChar > 0) {
                     // Pack multiple entries into a character
-                    ch = (char)(((int)ch >> bits) | (entry << (entriesPerChar-1)*bits));
+                    ch = (char) (((int) ch >> bits) | (entry << (entriesPerChar - 1) * bits));
                     ++entriesInCharSoFar;
                     if (entriesInCharSoFar == entriesPerChar) {
                         // Character is full
@@ -1224,11 +1194,10 @@ OUTER:  for (int i = 0; i < n; i += m) {
                         entriesInCharSoFar = 0;
                         ch = '\u0000';
                     }
-                }
-                else {
+                } else {
                     // Use multiple characters per entry
-                    for (int k=0; k<charsPerEntry; ++k) {
-                        ch = (char)(entry >> ((charsPerEntry-1)*16));
+                    for (int k = 0; k < charsPerEntry; ++k) {
+                        ch = (char) (entry >> ((charsPerEntry - 1) * 16));
                         entry <<= 16;
                         theString.append(ch);
                     }
@@ -1240,7 +1209,6 @@ OUTER:  for (int i = 0; i < n; i += m) {
                     ++entriesInCharSoFar;
                 }
                 theString.append(ch);
-                entriesInCharSoFar = 0;
             }
             result.append(Utility.formatForSource(theString.toString(), "    "));
             if (noConversion) {
@@ -1337,7 +1305,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
                         result.append("0x").append(hex4((j & ~commentMask) << (16 - size)));
                     else
                         result.append(dec3((j & ~commentMask) >> commentShift));
-                    if (properties) propertiesComments(result, val);
+                    if (properties) propertiesComments(result, val << extract);
                     result.append(commentEnd);
                 }
                 } // end PRINT
@@ -1347,27 +1315,25 @@ OUTER:  for (int i = 0; i < n; i += m) {
     }
 
     static void genCaseMapTableDeclaration(StringBuffer result) {
-        String myTab = "    ";
-        result.append(myTab + "static final char[][][] charMap;\n");
+        result.append("    static final char[][][] charMap;\n");
     }
 
     static void genCaseMapTable(StringBuffer result, SpecialCaseMap[] specialCaseMaps){
         String myTab = "    ";
         int ch;
         char[] map;
-        result.append(myTab + "charMap = new char[][][] {\n");
-        for (int x = 0; x < specialCaseMaps.length; x++) {
-            ch = specialCaseMaps[x].getCharSource();
-            map = specialCaseMaps[x].getUpperCaseMap();
-            result.append(myTab + myTab);
-            result.append("{ ");
-            result.append("{\'\\u"+hex4(ch)+"\'}, {");
-            for (int y = 0; y < map.length; y++) {
-                result.append("\'\\u"+hex4(map[y])+"\', ");
+        result.append(myTab).append("charMap = new char[][][] {\n");
+        for (SpecialCaseMap specialCaseMap : specialCaseMaps) {
+            ch = specialCaseMap.getCharSource();
+            map = specialCaseMap.getUpperCaseMap();
+            result.append(myTab).append(myTab).append("{ ");
+            result.append("{'\\u").append(hex4(ch)).append("'}, {");
+            for (char c : map) {
+                result.append("'\\u").append(hex4(c)).append("', ");
             }
             result.append("} },\n");
         }
-        result.append(myTab + "};\n");
+        result.append(myTab).append("};\n");
 
     }
 
@@ -1384,126 +1350,49 @@ OUTER:  for (int i = 0; i < n; i += m) {
 
     static void propertiesComments(StringBuffer result, long val) {
         result.append("   ");
-        switch ((int)(val & maskType)) {
-            case UnicodeSpec.CONTROL:
-                result.append("Cc");
-                break;
-            case UnicodeSpec.FORMAT:
-                result.append("Cf");
-                break;
-            case UnicodeSpec.PRIVATE_USE:
-                result.append("Co");
-                break;
-            case UnicodeSpec.SURROGATE:
-                result.append("Cs");
-                break;
-            case UnicodeSpec.LOWERCASE_LETTER:
-                result.append("Ll");
-                break;
-            case UnicodeSpec.MODIFIER_LETTER:
-                result.append("Lm");
-                break;
-            case UnicodeSpec.OTHER_LETTER:
-                result.append("Lo");
-                break;
-            case UnicodeSpec.TITLECASE_LETTER:
-                result.append("Lt");
-                break;
-            case UnicodeSpec.UPPERCASE_LETTER:
-                result.append("Lu");
-                break;
-            case UnicodeSpec.COMBINING_SPACING_MARK:
-                result.append("Mc");
-                break;
-            case UnicodeSpec.ENCLOSING_MARK:
-                result.append("Me");
-                break;
-            case UnicodeSpec.NON_SPACING_MARK:
-                result.append("Mn");
-                break;
-            case UnicodeSpec.DECIMAL_DIGIT_NUMBER:
-                result.append("Nd");
-                break;
-            case UnicodeSpec.LETTER_NUMBER:
-                result.append("Nl");
-                break;
-            case UnicodeSpec.OTHER_NUMBER:
-                result.append("No");
-                break;
-            case UnicodeSpec.CONNECTOR_PUNCTUATION:
-                result.append("Pc");
-                break;
-            case UnicodeSpec.DASH_PUNCTUATION:
-                result.append("Pd");
-                break;
-            case UnicodeSpec.END_PUNCTUATION:
-                result.append("Pe");
-                break;
-            case UnicodeSpec.OTHER_PUNCTUATION:
-                result.append("Po");
-                break;
-            case UnicodeSpec.START_PUNCTUATION:
-                result.append("Ps");
-                break;
-            case UnicodeSpec.CURRENCY_SYMBOL:
-                result.append("Sc");
-                break;
-            case UnicodeSpec.MODIFIER_SYMBOL:
-                result.append("Sk");
-                break;
-            case UnicodeSpec.MATH_SYMBOL:
-                result.append("Sm");
-                break;
-            case UnicodeSpec.OTHER_SYMBOL:
-                result.append("So");
-                break;
-            case UnicodeSpec.LINE_SEPARATOR:
-                result.append("Zl"); break;
-            case UnicodeSpec.PARAGRAPH_SEPARATOR:
-                result.append("Zp");
-                break;
-            case UnicodeSpec.SPACE_SEPARATOR:
-                result.append("Zs");
-                break;
-            case UnicodeSpec.UNASSIGNED:
-                result.append("unassigned");
-                break;
+        switch ((int) (val & maskType)) {
+            case UnicodeSpec.CONTROL -> result.append("Cc");
+            case UnicodeSpec.FORMAT -> result.append("Cf");
+            case UnicodeSpec.PRIVATE_USE -> result.append("Co");
+            case UnicodeSpec.SURROGATE -> result.append("Cs");
+            case UnicodeSpec.LOWERCASE_LETTER -> result.append("Ll");
+            case UnicodeSpec.MODIFIER_LETTER -> result.append("Lm");
+            case UnicodeSpec.OTHER_LETTER -> result.append("Lo");
+            case UnicodeSpec.TITLECASE_LETTER -> result.append("Lt");
+            case UnicodeSpec.UPPERCASE_LETTER -> result.append("Lu");
+            case UnicodeSpec.COMBINING_SPACING_MARK -> result.append("Mc");
+            case UnicodeSpec.ENCLOSING_MARK -> result.append("Me");
+            case UnicodeSpec.NON_SPACING_MARK -> result.append("Mn");
+            case UnicodeSpec.DECIMAL_DIGIT_NUMBER -> result.append("Nd");
+            case UnicodeSpec.LETTER_NUMBER -> result.append("Nl");
+            case UnicodeSpec.OTHER_NUMBER -> result.append("No");
+            case UnicodeSpec.CONNECTOR_PUNCTUATION -> result.append("Pc");
+            case UnicodeSpec.DASH_PUNCTUATION -> result.append("Pd");
+            case UnicodeSpec.END_PUNCTUATION -> result.append("Pe");
+            case UnicodeSpec.OTHER_PUNCTUATION -> result.append("Po");
+            case UnicodeSpec.START_PUNCTUATION -> result.append("Ps");
+            case UnicodeSpec.CURRENCY_SYMBOL -> result.append("Sc");
+            case UnicodeSpec.MODIFIER_SYMBOL -> result.append("Sk");
+            case UnicodeSpec.MATH_SYMBOL -> result.append("Sm");
+            case UnicodeSpec.OTHER_SYMBOL -> result.append("So");
+            case UnicodeSpec.LINE_SEPARATOR -> result.append("Zl");
+            case UnicodeSpec.PARAGRAPH_SEPARATOR -> result.append("Zp");
+            case UnicodeSpec.SPACE_SEPARATOR -> result.append("Zs");
+            case UnicodeSpec.UNASSIGNED -> result.append("unassigned");
         }
 
-        switch ((int)((val & maskBidi) >> shiftBidi)) {
-            case UnicodeSpec.DIRECTIONALITY_LEFT_TO_RIGHT:
-                result.append(", L");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_RIGHT_TO_LEFT:
-                result.append(", R");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER:
-                result.append(", EN");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR:
-                result.append(", ES");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR:
-                result.append(", ET");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_ARABIC_NUMBER:
-                result.append(", AN");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR:
-                result.append(", CS");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_PARAGRAPH_SEPARATOR:
-                result.append(", B");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_SEGMENT_SEPARATOR:
-                result.append(", S");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_WHITESPACE:
-                result.append(", WS");
-                break;
-            case UnicodeSpec.DIRECTIONALITY_OTHER_NEUTRALS:
-                result.append(", ON");
-                break;
+        switch ((int) ((val & maskBidi) >> shiftBidi)) {
+            case UnicodeSpec.DIRECTIONALITY_LEFT_TO_RIGHT -> result.append(", L");
+            case UnicodeSpec.DIRECTIONALITY_RIGHT_TO_LEFT -> result.append(", R");
+            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER -> result.append(", EN");
+            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR -> result.append(", ES");
+            case UnicodeSpec.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR -> result.append(", ET");
+            case UnicodeSpec.DIRECTIONALITY_ARABIC_NUMBER -> result.append(", AN");
+            case UnicodeSpec.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR -> result.append(", CS");
+            case UnicodeSpec.DIRECTIONALITY_PARAGRAPH_SEPARATOR -> result.append(", B");
+            case UnicodeSpec.DIRECTIONALITY_SEGMENT_SEPARATOR -> result.append(", S");
+            case UnicodeSpec.DIRECTIONALITY_WHITESPACE -> result.append(", WS");
+            case UnicodeSpec.DIRECTIONALITY_OTHER_NEUTRALS -> result.append(", ON");
         }
         if ((val & maskUpperCase) != 0) {
             result.append(", hasUpper (subtract ");
@@ -1600,10 +1489,9 @@ OUTER:  for (int i = 0; i < n; i += m) {
             String bitshift = (bits == 1) ? "(" + var + "&0x1F)" :
                 (bits == 2) ? "((" + var + "&0xF)<<1)" :
                 (bits == 4) ? "((" + var + "&7)<<2)" : null;
-            String extracted = ((k < sizes.length - 1) || (bits >= 8)) ? adjusted :
+            access = ((k < sizes.length - 1) || (bits >= 8)) ? adjusted :
                 "((" + adjusted + ">>" + bitshift + ")&" +
                 (bits == 4 ? "0xF" : "" + ((1 << bits) - 1)) + ")";
-            access = extracted;
         }
         return access;
     }
@@ -1687,9 +1575,9 @@ OUTER:  for (int i = 0; i < n; i += m) {
     */
 
     static void processArgs(String[] args) {
-        StringBuffer desc = new StringBuffer("java GenerateCharacter");
-        for (int j=0; j<args.length; ++j) {
-            desc.append(" " + args[j]);
+        StringBuilder desc = new StringBuilder("java GenerateCharacter");
+        for (String arg : args) {
+            desc.append(" ").append(arg);
         }
         for (int j = 0; j < args.length; j++) {
             if (args[j].equals("-verbose") || args[j].equals("-v"))
@@ -1846,13 +1734,13 @@ OUTER:  for (int i = 0; i < n; i += m) {
 
     private static void searchBins(long[] map, int binsOccupied) throws Exception {
         int bitsFree = 16;
-        for (int i=0; i<binsOccupied; ++i) bitsFree -= sizes[i];
+        for (int i = 0; i < binsOccupied; ++i) bitsFree -= sizes[i];
         if (binsOccupied == (bins-1)) {
             sizes[binsOccupied] = bitsFree;
             generateForSizes(map);
         }
         else {
-            for (int i=1; i<bitsFree; ++i) { // Don't allow bins of 0 except for last one
+            for (int i = 1; i < bitsFree; ++i) { // Don't allow bins of 0 except for last one
                 sizes[binsOccupied] = i;
                 searchBins(map, binsOccupied+1);
             }
@@ -1878,15 +1766,15 @@ OUTER:  for (int i = 0; i < n; i += m) {
             if (verbose && bins==0)
                 System.err.println("Building map " + (j+1) + " of bit width " + sizes[j]);
             long[][] temp = buildTable(tables[j], sizes[j]);
-            tables[j-1] = temp[0];
+            tables[j - 1] = temp[0];
             tables[j] = temp[1];
         }
         preshifted = new boolean[sizes.length];
         zeroextend = new int[sizes.length];
         bytes = new int[sizes.length];
         for (int j = 0; j < sizes.length - 1; j++) {
-            int len = tables[j+1].length;
-            int size = sizes[j+1];
+            int len = tables[j + 1].length;
+            int size = sizes[j + 1];
             if (len > 0x100 && (len >> size) <= 0x100) {
                 len >>= size;
                 preshifted[j] = false;
@@ -1922,7 +1810,9 @@ OUTER:  for (int i = 0; i < n; i += m) {
                 if (ch == '<' || ch == '>') ++j;
             }
             System.out.print("(");
-            for (int j=0; j<sizes.length; ++j) System.out.print(" " + sizes[j]);
+            for (int size : sizes) {
+                System.out.print(" " + size);
+            }
             System.out.println(" ) " + totalBytes + " " + accessComplexity + " " + access);
             return;
         }
