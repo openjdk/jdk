@@ -42,7 +42,7 @@ class VectorSupport : AllStatic {
   static Handle allocate_vector_payload(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ScopeValue* payload, TRAPS);
   static Handle allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, Location location, TRAPS);
 
-  static void init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr, Location location);
+  static void init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr);
 
   static BasicType klass2bt(InstanceKlass* ik);
   static jint klass2length(InstanceKlass* ik);

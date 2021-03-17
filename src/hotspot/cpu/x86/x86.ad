@@ -1422,6 +1422,7 @@ const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
+  const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
   switch (opcode) {
     case Op_AbsVL:
     case Op_StoreVectorScatter:
@@ -1582,13 +1583,9 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorMaskGen:
     case Op_LoadVectorMasked:
     case Op_StoreVectorMasked:
-#ifdef _LP64
-      if (UseAVX < 3 || !VM_Version::supports_bmi2()) {
+      if (!is_LP64  || UseAVX < 3 || !VM_Version::supports_bmi2()) {
         return false;
       }
-#else
-      return false;
-#endif
       break;
 #ifndef _LP64
     case Op_AddReductionVF:
@@ -1893,9 +1890,11 @@ const bool Matcher::has_predicated_vectors(void) {
 
   return ret_value;
 }
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_OPMASK_REG_mask;
 }
+
 TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return new TypeVectMask(TypeInt::BOOL, length);
 }

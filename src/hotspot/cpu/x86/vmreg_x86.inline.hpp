@@ -43,7 +43,7 @@ inline VMReg XMMRegisterImpl::as_VMReg() {
 }
 
 inline VMReg KRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_xmm);
+  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_xmm);
 }
 
 #endif // CPU_X86_VMREG_X86_INLINE_HPP

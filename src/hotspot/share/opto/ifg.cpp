@@ -409,8 +409,8 @@ uint PhaseChaitin::count_int_pressure(IndexSet* liveout) {
     LRG& lrg = lrgs(lidx);
     if (lrg.mask_is_nonempty_and_up() &&
         !lrg.is_float_or_vector() &&
-        ( lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
-          lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegVMask]))) {
+        (lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
+         lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegVMask]))) {
       cnt += lrg.reg_pressure();
     }
     lidx = elements.next();

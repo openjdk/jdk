@@ -661,10 +661,8 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= NULL;
 
-#if defined(X86)
-  TypeVect::VMASK = (TypeVect*)(Matcher::predicate_reg_type(TypeInt::BOOL, MaxVectorSize))->hashcons();
+  TypeVect::VMASK = (TypeVect*)(new TypeVectMask(TypeInt::BOOL, MaxVectorSize))->hashcons();
   mreg2type[Op_RegVMask] = TypeVect::VMASK;
-#endif
 
   if (Matcher::supports_scalable_vector()) {
     TypeVect::VECTA = TypeVect::make(T_BYTE, Matcher::scalable_vector_reg_size(T_BYTE));

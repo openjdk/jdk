@@ -261,8 +261,14 @@ source %{
 // fast versions of NegF/NegD and AbsF/AbsD.
 
 void reg_mask_init() {
-  if(Matcher::has_predicated_vectors()) {
+  if (Matcher::has_predicated_vectors()) {
     const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k0->as_VMReg()));
+    const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k0->as_VMReg()->next()));
+    // Post-loop multi-versioning expects mask to be present in K1 register, till the time
+    // its fixed, RA should not be allocting K1 register, this shall prevent any accidental
+    // curruption of value held in K1 register.
+    const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()));
+    const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()->next()));
   }
 }
 

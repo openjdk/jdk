@@ -989,11 +989,7 @@ void Matcher::init_spill_mask( Node *ret ) {
   idealreg2regmask[Op_VecY] = regmask_for_ideal_register(Op_VecY, ret);
   idealreg2regmask[Op_VecZ] = regmask_for_ideal_register(Op_VecZ, ret);
   idealreg2regmask[Op_VecZ] = regmask_for_ideal_register(Op_VecZ, ret);
-  if (Matcher::has_predicated_vectors()) {
-    idealreg2regmask[Op_RegVMask] = regmask_for_ideal_register(Op_RegVMask, ret);
-  } else {
-    idealreg2regmask[Op_RegVMask] = idealreg2regmask[Op_RegI];
-  }
+  idealreg2regmask[Op_RegVMask] = regmask_for_ideal_register(Op_RegVMask, ret);
 }
 
 #ifdef ASSERT
@@ -2588,9 +2584,7 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
     case Op_VecX: // fall-through
     case Op_VecY: // fall-through
     case Op_VecZ: spill = new LoadVectorNode(NULL, mem, fp, atp, t->is_vect()); break;
-    case Op_RegVMask: {
-       return Matcher::predicate_reg_mask();
-    } break;
+    case Op_RegVMask: return Matcher::predicate_reg_mask();
 
     default: ShouldNotReachHere();
   }

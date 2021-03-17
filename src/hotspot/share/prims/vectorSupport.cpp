@@ -86,7 +86,7 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
   return vlen;
 }
 
-void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr, Location loc) {
+void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr) {
   if (is_mask) {
     // Masks require special handling: when boxed they are packed and stored in boolean
     // arrays, but in scalarized form they have the same size as corresponding vectors.
@@ -139,13 +139,13 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
       int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
 
       address elem_addr = reg_map->location(vreg, vslot) + off; // assumes little endian element order
-      init_payload_element(arr, is_mask, elem_bt, i, elem_addr, location);
+      init_payload_element(arr, is_mask, elem_bt, i, elem_addr);
     }
   } else {
     // Value was directly saved on the stack.
     address base_addr = ((address)fr->unextended_sp()) + location.stack_offset();
     for (int i = 0; i < num_elem; i++) {
-      init_payload_element(arr, is_mask, elem_bt, i, base_addr + i * elem_size, location);
+      init_payload_element(arr, is_mask, elem_bt, i, base_addr + i * elem_size);
     }
   }
   return Handle(THREAD, arr);

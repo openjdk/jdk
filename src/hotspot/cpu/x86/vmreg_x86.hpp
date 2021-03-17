@@ -82,7 +82,7 @@ inline XMMRegister as_XMMRegister() {
 inline KRegister as_KRegister() {
   assert(is_KRegister(), "must be");
   // Yuk
-  return ::as_KRegister((value() - ConcreteRegisterImpl::max_xmm));
+  return ::as_KRegister((value() - ConcreteRegisterImpl::max_xmm) >> 1);
 }
 
 inline   bool is_concrete() {

@@ -2159,9 +2159,11 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
+
 TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
