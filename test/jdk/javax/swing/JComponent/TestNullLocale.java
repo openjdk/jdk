@@ -35,10 +35,8 @@ public class TestNullLocale {
     public static void main(String[] args) {
         Locale defaultLocale = JComponent.getDefaultLocale();
         JComponent.setDefaultLocale(Locale.GERMAN);
-        System.out.println(JComponent.getDefaultLocale());
         JComponent.setDefaultLocale(null);
         Locale currentLocale = JComponent.getDefaultLocale();
-        System.out.println(currentLocale);
         if (defaultLocale != currentLocale) {
             System.out.println("currentLocale " + currentLocale);
             System.out.println("defaultLocale " + defaultLocale);
