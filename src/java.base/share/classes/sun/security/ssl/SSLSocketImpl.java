@@ -1469,13 +1469,7 @@ public final class SSLSocketImpl
             }
 
             try {
-                Plaintext plainText;
-                socketLock.lock();
-                try {
-                    plainText = decode(buffer);
-                } finally {
-                    socketLock.unlock();
-                }
+                Plaintext plainText = decode(buffer);
                 if (plainText.contentType == ContentType.APPLICATION_DATA.id &&
                         buffer.position() > 0) {
                     return buffer;
