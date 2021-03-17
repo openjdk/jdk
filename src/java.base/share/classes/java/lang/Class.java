@@ -779,10 +779,9 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Returns {@code true} if and only if this class has the synthetic modifier
-     * bit set.
+     *{@return {@code true} if and only if this class has the synthetic modifier
+     * bit set}
      *
-     * @return {@code true} if and only if this class has the synthetic modifier bit set
      * @jls 13.1 The Form of a Binary
      * @jvms 4.1 The {@code ClassFile} Structure
      * @since 1.5
@@ -1620,12 +1619,15 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Returns the simple name of the underlying class as given in the
-     * source code. Returns an empty string if the underlying class is
-     * anonymous.
+     * source code. An empty string is returned if the underlying class is
+     * {@linkplain #isAnonymousClass() anonymous}.
+     * A {@linkplain #isSynthetic() synthetic class}, one not present
+     * in source code, can have a non-empty name including special
+     * characters, such as "{@code $}".
      *
-     * <p>The simple name of an array is the simple name of the
+     * <p>The simple name of an {@linkplain isArray() array class} is the simple name of the
      * component type with "[]" appended.  In particular the simple
-     * name of an array whose component type is anonymous is "[]".
+     * name of an array class whose component type is anonymous is "[]".
      *
      * @return the simple name of the underlying class
      * @since 1.5
