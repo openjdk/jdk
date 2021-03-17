@@ -147,33 +147,29 @@ final class BootstrapMethodInvoker {
                     result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, argv);
                 } else {
                     maybeReBoxElements(argv);
-                    if (argv.length > 6) {
-                        result = invokeWithManyArguments(bootstrapMethod, caller, name, type, argv);
+                    if (type instanceof Class<?> c) {
+                        result = switch (argv.length) {
+                            case 0 -> bootstrapMethod.invoke(caller, name, c);
+                            case 1 -> bootstrapMethod.invoke(caller, name, c, argv[0]);
+                            case 2 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1]);
+                            case 3 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1], argv[2]);
+                            case 4 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1], argv[2], argv[3]);
+                            case 5 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1], argv[2], argv[3], argv[4]);
+                            case 6 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+                            default -> invokeWithManyArguments(bootstrapMethod, caller, name, type, argv);
+                        };
                     } else {
-                        if (type instanceof Class<?> c) {
-                            result = switch (argv.length) {
-                                case 0 -> bootstrapMethod.invoke(caller, name, c);
-                                case 1 -> bootstrapMethod.invoke(caller, name, c, argv[0]);
-                                case 2 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1]);
-                                case 3 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1], argv[2]);
-                                case 4 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1], argv[2], argv[3]);
-                                case 5 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1], argv[2], argv[3], argv[4]);
-                                case 6 -> bootstrapMethod.invoke(caller, name, c, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
-                                default -> throw new IllegalStateException("Unexpected value: " + argv.length);
-                            };
-                        } else {
-                            MethodType mt = (MethodType) type;
-                            result = switch (argv.length) {
-                                case 0 -> bootstrapMethod.invoke(caller, name, mt);
-                                case 1 -> bootstrapMethod.invoke(caller, name, mt, argv[0]);
-                                case 2 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1]);
-                                case 3 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1], argv[2]);
-                                case 4 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1], argv[2], argv[3]);
-                                case 5 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1], argv[2], argv[3], argv[4]);
-                                case 6 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
-                                default -> throw new IllegalStateException("Unexpected value: " + argv.length);
-                            };
-                        }
+                        MethodType mt = (MethodType) type;
+                        result = switch (argv.length) {
+                            case 0 -> bootstrapMethod.invoke(caller, name, mt);
+                            case 1 -> bootstrapMethod.invoke(caller, name, mt, argv[0]);
+                            case 2 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1]);
+                            case 3 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1], argv[2]);
+                            case 4 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1], argv[2], argv[3]);
+                            case 5 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1], argv[2], argv[3], argv[4]);
+                            case 6 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+                            default -> invokeWithManyArguments(bootstrapMethod, caller, name, type, argv);
+                        };
                     }
                 }
             }
