@@ -1012,16 +1012,19 @@ private:
   void vaesdeclast(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void andw(Register dst, Register src);
+  void andb(Address dst, Register src);
 
   void andl(Address  dst, int32_t imm32);
   void andl(Register dst, int32_t imm32);
   void andl(Register dst, Address src);
   void andl(Register dst, Register src);
+  void andl(Address dst, Register src);
 
   void andq(Address  dst, int32_t imm32);
   void andq(Register dst, int32_t imm32);
   void andq(Register dst, Address src);
   void andq(Register dst, Register src);
+  void andq(Address dst, Register src);
 
   // BMI instructions
   void andnl(Register dst, Register src1, Register src2);
@@ -1081,6 +1084,7 @@ private:
 
   void cmpl(Address dst, int32_t imm32);
 
+  void cmp(Register dst, int32_t imm32);
   void cmpl(Register dst, int32_t imm32);
   void cmpl(Register dst, Register src);
   void cmpl(Register dst, Address src);
@@ -1104,6 +1108,7 @@ private:
   void cmpxchgl(Register reg, Address adr);
 
   void cmpxchgq(Register reg, Address adr);
+  void cmpxchgw(Register reg, Address adr);
 
   // Ordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void comisd(XMMRegister dst, Address src);
@@ -1363,12 +1368,15 @@ private:
   void imull(Register src);
   void imull(Register dst, Register src);
   void imull(Register dst, Register src, int value);
+  void imull(Register dst, Address src, int value);
   void imull(Register dst, Address src);
 
 #ifdef _LP64
   void imulq(Register dst, Register src);
   void imulq(Register dst, Register src, int value);
+  void imulq(Register dst, Address src, int value);
   void imulq(Register dst, Address src);
+  void imulq(Register dst);
 #endif
 
   // jcc is the generic conditional branch generator to run-
@@ -1424,6 +1432,7 @@ private:
   void lfence();
 
   void lock();
+  void size_prefix();
 
   void lzcntl(Register dst, Register src);
 
@@ -1447,6 +1456,7 @@ private:
   // Moves
 
   void mov64(Register dst, int64_t imm64);
+  void mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format);
 
   void movb(Address dst, Register src);
   void movb(Address dst, int imm8);
@@ -1544,6 +1554,8 @@ private:
   void movq(Register dst, Register src);
   void movq(Register dst, Address src);
   void movq(Address  dst, Register src);
+  void movq(Address  dst, int32_t imm32);
+  void movq(Register  dst, int32_t imm32);
 
   // These dummies prevent using movq from converting a zero (like NULL) into Register
   // by giving the compiler two choices it can't resolve
@@ -1622,9 +1634,11 @@ private:
   void mulss(XMMRegister dst, XMMRegister src);
 
   void negl(Register dst);
+  void negl(Address dst);
 
 #ifdef _LP64
   void negq(Register dst);
+  void negq(Address dst);
 #endif
 
   void nop(int i = 1);
@@ -1647,8 +1661,10 @@ private:
   void orl(Address dst, Register src);
 
   void orb(Address dst, int imm8);
+  void orb(Address dst, Register src);
 
   void orq(Address dst, int32_t imm32);
+  void orq(Address dst, Register src);
   void orq(Register dst, int32_t imm32);
   void orq(Register dst, Address src);
   void orq(Register dst, Register src);
@@ -1803,6 +1819,7 @@ private:
 
 #ifdef _LP64
   void popq(Address dst);
+  void popq(Register dst);
 #endif
 
   void popcntl(Register dst, Address src);
@@ -1947,6 +1964,10 @@ private:
 
   void setb(Condition cc, Register dst);
 
+  void sete(Register dst);
+  void setl(Register dst);
+  void setne(Register dst);
+
   void palignr(XMMRegister dst, XMMRegister src, int imm8);
   void vpalignr(XMMRegister dst, XMMRegister src1, XMMRegister src2, int imm8, int vector_len);
   void evalignq(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
@@ -2032,6 +2053,7 @@ private:
   void testl(Register dst, Register src);
   void testl(Register dst, Address src);
 
+  void testq(Address dst, int32_t imm32);
   void testq(Register dst, int32_t imm32);
   void testq(Register dst, Register src);
   void testq(Register dst, Address src);
@@ -2071,14 +2093,20 @@ private:
   void xgetbv();
 
   void xorl(Register dst, int32_t imm32);
+  void xorl(Address dst, int32_t imm32);
   void xorl(Register dst, Address src);
   void xorl(Register dst, Register src);
+  void xorl(Address dst, Register src);
 
+  void xorb(Address dst, Register src);
   void xorb(Register dst, Address src);
   void xorw(Register dst, Register src);
 
   void xorq(Register dst, Address src);
+  void xorq(Address dst, int32_t imm32);
   void xorq(Register dst, Register src);
+  void xorq(Register dst, int32_t imm32);
+  void xorq(Address dst, Register src);
 
   void set_byte_if_not_zero(Register dst); // sets reg to 1 if not zero, otherwise 0
 
