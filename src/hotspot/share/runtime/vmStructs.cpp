@@ -768,7 +768,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* JavaThread (NOTE: incomplete) */                                                                                                \
   /*********************************/                                                                                                \
                                                                                                                                      \
-  nonstatic_field(JavaThread,                  _suspended,                                    bool)                                  \
+  volatile_nonstatic_field(JavaThread,         _suspended,                                    bool)                                  \
                                                                                                                                      \
                                                                                                                                      \
   /************/                                                                                                                     \

@@ -1122,8 +1122,8 @@ class JavaThread: public Thread {
 
   // Suspend/resume support for JavaThread
  private:
-  bool _suspended;
-  bool _suspend_requested;
+  volatile bool _suspended;
+  volatile bool _suspend_requested;
 
  public:
   bool java_suspend(); // higher-level suspension logic called by the public APIs
