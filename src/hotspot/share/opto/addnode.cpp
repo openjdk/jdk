@@ -145,14 +145,8 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // The Add of the flattened expression
       Node *x1 = add1->in(1);
       Node *x2 = phase->makecon(add1->as_Add()->add_ring(t2, t12));
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      if (igvn) {
-        set_req_X(2,x2,igvn);
-        set_req_X(1,x1,igvn);
-      } else {
-        set_req(2,x2);
-        set_req(1,x1);
-      }
+      set_req_X(2, x2, phase);
+      set_req_X(1, x1, phase);
       progress = this;            // Made progress
       add1 = in(1);
       add1_op = add1->Opcode();
@@ -169,8 +163,8 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       add2 = add1->clone();
       add2->set_req(2, in(2));
       add2 = phase->transform(add2);
-      set_req(1, add2);
-      set_req(2, a12);
+      set_req_X(1, add2, phase);
+      set_req_X(2, a12, phase);
       progress = this;
       add2 = a12;
     }
@@ -642,14 +636,8 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         address = phase->transform(new AddPNode(in(Base),addp->in(Address),in(Offset)));
         offset  = addp->in(Offset);
       }
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      if( igvn ) {
-        set_req_X(Address,address,igvn);
-        set_req_X(Offset,offset,igvn);
-      } else {
-        set_req(Address,address);
-        set_req(Offset,offset);
-      }
+      set_req_X(Address, address, phase);
+      set_req_X(Offset, offset, phase);
       return this;
     }
   }
@@ -913,6 +901,22 @@ const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 //=============================================================================
+
+const Type* XorINode::Value(PhaseGVN* phase) const {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+  // x ^ x ==> 0
+  if (in1->eqv_uncast(in2)) {
+    return add_id();
+  }
+  return AddNode::Value(phase);
+}
+
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
 // the logical operations the ring's ADD is really a logical OR function.
@@ -948,6 +952,20 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeLong::make( r0->get_con() ^ r1->get_con() );
 }
 
+const Type* XorLNode::Value(PhaseGVN* phase) const {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+  // x ^ x ==> 0
+  if (in1->eqv_uncast(in2)) {
+    return add_id();
+  }
+  return AddNode::Value(phase);
+}
 
 Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();
@@ -1093,8 +1111,8 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert( l != l->in(1), "dead loop in MinINode::Ideal" );
     r = phase->transform(new MinINode(l->in(2),r));
     l = l->in(1);
-    set_req(1, l);
-    set_req(2, r);
+    set_req_X(1, l, phase);
+    set_req_X(2, r, phase);
     return this;
   }
 

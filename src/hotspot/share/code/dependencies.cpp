@@ -1342,7 +1342,7 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
       return NULL; // no implementors
     } else if (nof_impls == 1) { // unique implementor
       assert(context_type != context_type->implementor(), "not unique");
-      context_type = InstanceKlass::cast(context_type->implementor());
+      context_type = context_type->implementor();
     } else { // nof_impls >= 2
       // Avoid this case: *I.m > { A.m, C }; B.m > C
       // Here, I.m has 2 concrete implementations, but m appears unique

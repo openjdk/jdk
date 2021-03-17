@@ -536,10 +536,6 @@ jobs:
           echo "cross_flags=
           --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}
           --with-sysroot=${HOME}/sysroot-${{ matrix.debian-arch }}/
-          --with-toolchain-path=${HOME}/sysroot-${{ matrix.debian-arch }}/
-          --with-freetype-lib=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/
-          --with-freetype-include=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/include/freetype2/
-          --x-libraries=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/
           " >> $GITHUB_ENV
         if: matrix.debian-arch != ''
 

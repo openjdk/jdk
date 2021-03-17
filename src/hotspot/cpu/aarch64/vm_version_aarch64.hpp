@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -130,6 +130,8 @@ public:
 
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
+
+  static void get_compatible_board(char *buf, int buflen);
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP
