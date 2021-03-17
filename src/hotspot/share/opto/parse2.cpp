@@ -863,10 +863,16 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 
   // Clean the 32-bit int into a real 64-bit offset.
   // Otherwise, the jint value 0 might turn into an offset of 0x0800000000.
-  const TypeInt* ikeytype = TypeInt::make(0, num_cases, Type::WidenMin);
   // Make I2L conversion control dependent to prevent it from
   // floating above the range check during loop optimizations.
-  key_val = C->conv_I2X_index(&_gvn, key_val, ikeytype, control());
+  // Do not use a narrow int type here to prevent the data path from dying
+  // while the control path is not removed. This can happen if the type of key_val
+  // is later known to be out of bounds of [0, num_cases] and therefore a narrow cast
+  // would be replaced by TOP while C2 is not able to fold the corresponding range checks.
+  // Set _carry_dependency for the cast to avoid being removed by IGVN.
+#ifdef _LP64
+  key_val = C->constrained_convI2L(&_gvn, key_val, TypeInt::INT, control(), true /* carry_dependency */);
+#endif
 
   // Shift the value by wordsize so we have an index into the table, rather
   // than a switch value
@@ -2586,19 +2592,18 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_i2b:
     // Sign extend
     a = pop();
-    a = _gvn.transform( new LShiftINode(a,_gvn.intcon(24)) );
-    a = _gvn.transform( new RShiftINode(a,_gvn.intcon(24)) );
-    push( a );
+    a = Compile::narrow_value(T_BYTE, a, NULL, &_gvn, true);
+    push(a);
     break;
   case Bytecodes::_i2s:
     a = pop();
-    a = _gvn.transform( new LShiftINode(a,_gvn.intcon(16)) );
-    a = _gvn.transform( new RShiftINode(a,_gvn.intcon(16)) );
-    push( a );
+    a = Compile::narrow_value(T_SHORT, a, NULL, &_gvn, true);
+    push(a);
     break;
   case Bytecodes::_i2c:
     a = pop();
-    push( _gvn.transform( new AndINode(a,_gvn.intcon(0xFFFF)) ) );
+    a = Compile::narrow_value(T_CHAR, a, NULL, &_gvn, true);
+    push(a);
     break;
 
   case Bytecodes::_i2f:

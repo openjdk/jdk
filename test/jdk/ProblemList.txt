@@ -234,7 +234,6 @@ java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/TranslucentChoice.java 8221901 linux-all
 java/awt/Window/MultiWindowApp/ChildAlwaysOnTopTest.java 8222323 windows-all
 java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/Shaped.java  8222328 windows-all,linux-all,macosx-all
@@ -673,6 +672,9 @@ sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8209398 generic-all
 
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java  8243543 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java   8263059 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java 8248899 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
@@ -817,8 +819,6 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 javax/script/Test7.java                                         8239361 generic-all
 
-jdk/dynalink/TypeConverterFactoryMemoryLeakTest.java            8261483 generic-all
-
 ############################################################################
 
 # jdk_jfr
@@ -854,7 +854,6 @@ java/awt/dnd/DnDFileGroupDescriptor/DnDFileGroupDescriptor.html 8080185 macosx-a
 javax/swing/JTabbedPane/4666224/bug4666224.html 8144124  macosx-all
 java/awt/event/MouseEvent/AltGraphModifierTest/AltGraphModifierTest.java 8162380 generic-all
 java/awt/Window/TranslucentJAppletTest/TranslucentJAppletTest.java 8163086 macosx-all
-java/awt/image/multiresolution/MultiResolutionIcon/IconTest.java 8250804 macosx-all,linux-all
 java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-all,linux-all
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java 8185429 macosx-all

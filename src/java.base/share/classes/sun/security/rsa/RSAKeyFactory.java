@@ -389,13 +389,13 @@ public class RSAKeyFactory extends KeyFactorySpi {
         }
         if (key instanceof RSAPublicKey) {
             RSAPublicKey rsaKey = (RSAPublicKey)key;
-            if (RSA_PUB_KEYSPEC_CLS.isAssignableFrom(keySpec)) {
+            if (keySpec.isAssignableFrom(RSA_PUB_KEYSPEC_CLS)) {
                 return keySpec.cast(new RSAPublicKeySpec(
                     rsaKey.getModulus(),
                     rsaKey.getPublicExponent(),
                     rsaKey.getParams()
                 ));
-            } else if (X509_KEYSPEC_CLS.isAssignableFrom(keySpec)) {
+            } else if (keySpec.isAssignableFrom(X509_KEYSPEC_CLS)) {
                 return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
             } else {
                 throw new InvalidKeySpecException
@@ -403,9 +403,9 @@ public class RSAKeyFactory extends KeyFactorySpi {
                         + "X509EncodedKeySpec for RSA public keys");
             }
         } else if (key instanceof RSAPrivateKey) {
-            if (PKCS8_KEYSPEC_CLS.isAssignableFrom(keySpec)) {
+            if (keySpec.isAssignableFrom(PKCS8_KEYSPEC_CLS)) {
                 return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
-            } else if (RSA_PRIVCRT_KEYSPEC_CLS.isAssignableFrom(keySpec)) {
+            } else if (keySpec.isAssignableFrom(RSA_PRIVCRT_KEYSPEC_CLS)) {
                 if (key instanceof RSAPrivateCrtKey) {
                     RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey)key;
                     return keySpec.cast(new RSAPrivateCrtKeySpec(
@@ -423,7 +423,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
                     throw new InvalidKeySpecException
                     ("RSAPrivateCrtKeySpec can only be used with CRT keys");
                 }
-            } else if (RSA_PRIV_KEYSPEC_CLS.isAssignableFrom(keySpec)) {
+            } else if (keySpec.isAssignableFrom(RSA_PRIV_KEYSPEC_CLS)) {
                 RSAPrivateKey rsaKey = (RSAPrivateKey)key;
                 return keySpec.cast(new RSAPrivateKeySpec(
                     rsaKey.getModulus(),
