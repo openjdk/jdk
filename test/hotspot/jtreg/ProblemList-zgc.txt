@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,3 +61,4 @@ serviceability/sa/TestJmapCore.java                           8220624   generic-
 serviceability/sa/TestJmapCoreMetaspace.java                  8220624   generic-all
 serviceability/sa/TestSysProps.java                           8220624   generic-all
 serviceability/sa/sadebugd/DebugdConnectTest.java             8220624   generic-all
+serviceability/sa/ClhsdbSymbol.java                           8263730   generic-all

@@ -626,7 +626,7 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
                             CHECK_NULL);
 
     assert(result.get_type() == T_OBJECT, "just checking");
-    oop obj = (oop) result.get_jobject();
+    oop obj = result.get_oop();
     assert(obj != NULL, "jdk.internal.loader.BuiltinClassLoader::loadClass never returns null");
     klass = java_lang_Class::as_Klass(obj);
   } else {

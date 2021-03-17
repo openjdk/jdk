@@ -388,9 +388,12 @@ private:
 
 public:
 
-  VM_PopulateDumpSharedSpace() : VM_GC_Operation(0, /* total collections, ignored */
-                                                 GCCause::_archive_time_gc)
-  { }
+  VM_PopulateDumpSharedSpace() :
+    VM_GC_Operation(0 /* total collections, ignored */, GCCause::_archive_time_gc),
+    _closed_archive_heap_regions(NULL),
+    _open_archive_heap_regions(NULL),
+    _closed_archive_heap_oopmaps(NULL),
+    _open_archive_heap_oopmaps(NULL) {}
 
   bool skip_operation() const { return false; }
 
@@ -434,8 +437,6 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   MetaspaceShared::serialize(&wc);
 
   // Write the bitmaps for patching the archive heap regions
-  _closed_archive_heap_oopmaps = NULL;
-  _open_archive_heap_oopmaps = NULL;
   dump_archive_heap_oopmaps();
 
   return start;
@@ -479,8 +480,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.relocate_metaspaceobj_embedded_pointers();
 
   // Dump supported java heap objects
-  _closed_archive_heap_regions = NULL;
-  _open_archive_heap_regions = NULL;
   dump_java_heap_objects(builder.klasses());
 
   builder.relocate_roots();
