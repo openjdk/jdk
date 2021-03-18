@@ -850,21 +850,9 @@ public interface List<E> extends ReversibleCollection<E> {
      * to the underlying collection. Depending upon the implementation's
      * concurrent modification policy, changes to the underlying collection
      * may be visible in this reversed view.
-     * @return a reversed-order view of this List
+     * @return a reverse-ordered view of this List
      */
-    default ReversibleCollection<E> reversedCollection() {
-        return this.reversedList();
-    }
-
-    /**
-     * Returns a reversed-order view of this List. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying collection. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying collection
-     * may be visible in this reversed view.
-     * @return a reversed-order view of this List
-     */
-    default List<E> reversedList() {
+    default List<E> reversed() {
         return ReverseOrderListView.of(this);
     }
 

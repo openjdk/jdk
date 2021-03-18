@@ -879,7 +879,7 @@ public class IdentityLinkedList<E>
         return a;
     }
 
-    public ReversibleCollection<E> reversedCollection() {
-        return reversedList();
+    public List<E> reversed() {
+        return super.reversed();
     }
 }

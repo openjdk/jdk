@@ -42,7 +42,7 @@ public interface ReversibleCollection<E> extends Collection<E> {
      * may be visible in this reversed view.
      * @return a reversed-order view of this collection
      */
-    ReversibleCollection<E> reversedCollection();
+    ReversibleCollection<E> reversed();
 
     /**
      * Adds an element at the front of this collection (optional operation).

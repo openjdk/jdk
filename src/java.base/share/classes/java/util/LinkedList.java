@@ -1177,8 +1177,8 @@ public class LinkedList<E>
         return new LLSpliterator<>(this, -1, 0);
     }
 
-    public ReversibleCollection<E> reversedCollection() {
-        return reversedList();
+    public List<E> reversed() {
+        return super.reversed();
     }
 
     /** A customized variant of Spliterators.IteratorSpliterator */

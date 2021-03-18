@@ -320,16 +320,4 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * @throws IllegalArgumentException {@inheritDoc}
      */
     SortedSet<E> tailSet(E fromElement);
-
-    /**
-     * Returns a reversed-order view of this collection. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying collection. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying collection
-     * may be visible in this reversed view.
-     * @return a reversed-order view
-     */
-    default ReversibleCollection<E> reversedCollection() {
-        return this.descendingSet();
-    }
 }

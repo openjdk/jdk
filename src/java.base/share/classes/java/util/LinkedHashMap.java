@@ -220,14 +220,25 @@ public class LinkedHashMap<K,V>
     // internal utilities
 
     // link at the end of list
-    private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
-        LinkedHashMap.Entry<K,V> last = tail;
-        tail = p;
-        if (last == null)
+    private void linkNodeAtEnd(LinkedHashMap.Entry<K,V> p) {
+        if (putMode == PUT_FIRST) {
+            LinkedHashMap.Entry<K,V> first = head;
             head = p;
-        else {
-            p.before = last;
-            last.after = p;
+            if (first == null)
+                tail = p;
+            else {
+                p.after = first;
+                first.before = p;
+            }
+        } else {
+            LinkedHashMap.Entry<K,V> last = tail;
+            tail = p;
+            if (last == null)
+                head = p;
+            else {
+                p.before = last;
+                last.after = p;
+            }
         }
     }
 
@@ -256,7 +267,7 @@ public class LinkedHashMap<K,V>
     Node<K,V> newNode(int hash, K key, V value, Node<K,V> e) {
         LinkedHashMap.Entry<K,V> p =
             new LinkedHashMap.Entry<>(hash, key, value, e);
-        linkNodeLast(p);
+        linkNodeAtEnd(p);
         return p;
     }
 
@@ -270,7 +281,7 @@ public class LinkedHashMap<K,V>
 
     TreeNode<K,V> newTreeNode(int hash, K key, V value, Node<K,V> next) {
         TreeNode<K,V> p = new TreeNode<>(hash, key, value, next);
-        linkNodeLast(p);
+        linkNodeAtEnd(p);
         return p;
     }
 
@@ -303,9 +314,17 @@ public class LinkedHashMap<K,V>
         }
     }
 
-    void afterNodeAccess(Node<K,V> e) { // move node to last
+    static final int PUT_NORM = 0;
+    static final int PUT_FIRST = 1;
+    static final int PUT_LAST = 2;
+    int putMode = PUT_NORM;
+
+    // Called after update, but not after insertion
+    void afterNodeAccess(Node<K,V> e) {
         LinkedHashMap.Entry<K,V> last;
-        if (accessOrder && (last = tail) != e) {
+        LinkedHashMap.Entry<K,V> first;
+        if ((putMode == PUT_LAST || (putMode == PUT_NORM && accessOrder)) && (last = tail) != e) {
+            // move node to last
             LinkedHashMap.Entry<K,V> p =
                 (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
             p.after = null;
@@ -325,6 +344,57 @@ public class LinkedHashMap<K,V>
             }
             tail = p;
             ++modCount;
+        } else if (putMode == PUT_FIRST && (first = head) != e) {
+            // move node to first
+            LinkedHashMap.Entry<K,V> p =
+                (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
+            p.before = null;
+            if (a == null)
+                tail = b;
+            else
+                a.before = b;
+            if (b != null)
+                b.after = a;
+            else
+                first = a;
+            if (first == null)
+                tail = p;
+            else {
+                p.after = first;
+                first.before = p;
+            }
+            head = p;
+            ++modCount;
+        }
+    }
+
+    /**
+     * Inserts this mapping into the map if not already present.
+     * Moves the mapping to be the first in iteration order.
+     * @param k the key
+     * @param v the value
+     */
+    public void putFirst(K k, V v) {
+        try {
+            putMode = PUT_FIRST;
+            this.put(k, v);
+        } finally {
+            putMode = PUT_NORM;
+        }
+    }
+
+    /**
+     * Inserts this mapping into the map if not already present.
+     * Moves the mapping to be the last in iteration order.
+     * @param k the key
+     * @param v the value
+     */
+    public void putLast(K k, V v) {
+        try {
+            putMode = PUT_LAST;
+            this.put(k, v);
+        } finally {
+            putMode = PUT_NORM;
         }
     }
 
@@ -528,21 +598,13 @@ public class LinkedHashMap<K,V>
      *
      * @return a set view of the keys contained in this map
      */
-    public Set<K> keySet() {
-        Set<K> ks = keySet;
+    public ReversibleSet<K> keySet() {
+        ReversibleSet<K> ks = (ReversibleSet<K>) keySet;
         if (ks == null) {
             ks = new LinkedKeySet(false);
             keySet = ks;
         }
         return ks;
-    }
-
-    /**
-     * Returns a {@link ReversibleCollection} view of the keys contained in this map.
-     * @return a ReversibleCollection view of the keys contained in this map
-     */
-    public ReversibleCollection<K> keySetR() {
-        return (ReversibleCollection<K>) keySet(); // TODO
     }
 
     static <K1,V1> Node<K1,V1> nsee(Node<K1,V1> node) {
@@ -582,7 +644,7 @@ public class LinkedHashMap<K,V>
         return a;
     }
 
-    final class LinkedKeySet extends AbstractSet<K> implements ReversibleCollection<K> {
+    final class LinkedKeySet extends AbstractSet<K> implements ReversibleSet<K> {
         final boolean reversed;
         LinkedKeySet(boolean reversed)          { this.reversed = reversed; }
         public final int size()                 { return size; }
@@ -636,11 +698,11 @@ public class LinkedHashMap<K,V>
             removeNode(node.hash, node.key, null, false, false);
             return node.key;
         }
-        public ReversibleCollection<K> reversedCollection() {
+        public ReversibleSet<K> reversed() {
             if (reversed) {
-                return LinkedHashMap.this.keySetR();
+                return LinkedHashMap.this.keySet();
             } else {
-                return (ReversibleCollection<K>) new LinkedKeySet(true);
+                return new LinkedKeySet(true);
             }
         }
     }
@@ -663,21 +725,13 @@ public class LinkedHashMap<K,V>
      *
      * @return a view of the values contained in this map
      */
-    public Collection<V> values() {
-        return valuesR();
-    }
-
-    /**
-     * Returns an {@link ReversibleCollection} view of the values contained in this map.
-     * @return an ReversibleCollection view of the values contained in this map
-     */
-    public ReversibleCollection<V> valuesR() {
-        Collection<V> vs = values;
+    public ReversibleCollection<V> values() {
+        ReversibleCollection<V> vs = (ReversibleCollection<V>) values;
         if (vs == null) {
             vs = new LinkedValues(false);
             values = vs;
         }
-        return (ReversibleCollection<V>) vs; // TODO
+        return vs;
     }
 
     final class LinkedValues extends AbstractCollection<V> implements ReversibleCollection<V> {
@@ -730,9 +784,9 @@ public class LinkedHashMap<K,V>
             removeNode(node.hash, node.key, null, false, false);
             return node.value;
         }
-        public ReversibleCollection<V> reversedCollection() {
+        public ReversibleCollection<V> reversed() {
             if (reversed) {
-                return LinkedHashMap.this.valuesR();
+                return LinkedHashMap.this.values();
             } else {
                 return new LinkedValues(true);
             }
@@ -758,26 +812,16 @@ public class LinkedHashMap<K,V>
      *
      * @return a set view of the mappings contained in this map
      */
-    public Set<Map.Entry<K,V>> entrySet() {
-        Set<Map.Entry<K,V>> es;
-        return (es = entrySet) == null ? (entrySet = new LinkedEntrySet(false)) : es;
-    }
-
-    /**
-     * Returns an {@link ReversibleCollection} view of the mappings contained in this map.
-     * @return an ReversibleCollection view of the mappings contained in this map
-     */
-    public ReversibleCollection<Map.Entry<K,V>> entrySetR() {
-        Set<Map.Entry<K,V>> es = entrySet;
+    public ReversibleSet<Map.Entry<K,V>> entrySet() {
+        ReversibleSet<Map.Entry<K,V>> es = (ReversibleSet<Map.Entry<K,V>>) entrySet;
         if (es == null) {
-            es = new LinkedEntrySet(false);
-            entrySet = es;
+            entrySet = es = new LinkedEntrySet(false);
         }
-        return (ReversibleCollection<Map.Entry<K,V>>) es;
+        return es;
     }
 
     final class LinkedEntrySet extends AbstractSet<Map.Entry<K,V>>
-        implements ReversibleCollection<Map.Entry<K,V>> {
+        implements ReversibleSet<Map.Entry<K,V>> {
         final boolean reversed;
         LinkedEntrySet(boolean reversed)        { this.reversed = reversed; }
         public final int size()                 { return size; }
@@ -841,9 +885,9 @@ public class LinkedHashMap<K,V>
             removeNode(node.hash, node.key, null, false, false);
             return node;
         }
-        public ReversibleCollection<Map.Entry<K,V>> reversedCollection() {
+        public ReversibleSet<Map.Entry<K,V>> reversed() {
             if (reversed) {
-                return LinkedHashMap.this.entrySetR();
+                return LinkedHashMap.this.entrySet();
             } else {
                 return new LinkedEntrySet(true);
             }

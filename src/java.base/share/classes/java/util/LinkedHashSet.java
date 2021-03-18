@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ package java.util;
 
 public class LinkedHashSet<E>
     extends HashSet<E>
-    implements ReversibleCollection<E>, Cloneable, java.io.Serializable {
+    implements ReversibleSet<E>, Cloneable, java.io.Serializable {
 
     @java.io.Serial
     private static final long serialVersionUID = -2851667679971038690L;
@@ -204,14 +204,18 @@ public class LinkedHashSet<E>
      *
      * @throws UnsupportedOperationException always
      */
-    public void addFirst(E e) { throw new UnsupportedOperationException(); }
+    public void addFirst(E e) {
+        map().putFirst(e, PRESENT);
+    }
 
     /**
      * Not supported.
      *
      * @throws UnsupportedOperationException always
      */
-    public void addLast(E e) { throw new UnsupportedOperationException(); }
+    public void addLast(E e) {
+        map().putLast(e, PRESENT);
+    }
 
     /**
      * Gets the element at the front of this collection.
@@ -219,7 +223,7 @@ public class LinkedHashSet<E>
      * @throws NoSuchElementException if this collection is empty
      */
     public E getFirst() {
-        return map().keySetR().getFirst();
+        return map().keySet().getFirst();
     }
 
     /**
@@ -228,7 +232,7 @@ public class LinkedHashSet<E>
      * @throws NoSuchElementException if this collection is empty
      */
     public E getLast() {
-        return map().keySetR().getLast();
+        return map().keySet().getLast();
     }
 
     /**
@@ -237,7 +241,7 @@ public class LinkedHashSet<E>
      * @throws NoSuchElementException if this collection is empty
      */
     public E removeFirst() {
-        return map().keySetR().removeFirst();
+        return map().keySet().removeFirst();
     }
 
     /**
@@ -246,7 +250,7 @@ public class LinkedHashSet<E>
      * @throws NoSuchElementException if this collection is empty
      */
     public E removeLast() {
-        return map().keySetR().removeLast();
+        return map().keySet().removeLast();
     }
 
     /**
@@ -257,18 +261,17 @@ public class LinkedHashSet<E>
      * may be visible in this reversed view.
      * @return a reversed-order view
      */
-    public ReversibleCollection<E> reversedCollection() {
-        class ReverseLinkedHashSetView extends AbstractSet<E> implements ReversibleCollection<E> {
-            public int size()               { return LinkedHashSet.this.size(); }
-            public Iterator<E> iterator()   { return map().keySetR().reversedCollection().iterator(); }
-            public void addFirst(E e)       { throw new UnsupportedOperationException(); }
-            public void addLast(E e)        { throw new UnsupportedOperationException(); }
-            public E getFirst()             { return LinkedHashSet.this.getLast(); }
-            public E getLast()              { return LinkedHashSet.this.getFirst(); }
-            public E removeFirst()          { return LinkedHashSet.this.removeLast(); }
-            public E removeLast()           { return LinkedHashSet.this.removeFirst(); }
-            public ReversibleCollection<E>
-                reversedCollection()        { return LinkedHashSet.this; }
+    public ReversibleSet<E> reversed() {
+        class ReverseLinkedHashSetView extends AbstractSet<E> implements ReversibleSet<E> {
+            public int size()                  { return LinkedHashSet.this.size(); }
+            public Iterator<E> iterator()      { return map().keySet().reversed().iterator(); }
+            public void addFirst(E e)          { LinkedHashSet.this.addLast(e); }
+            public void addLast(E e)           { LinkedHashSet.this.addFirst(e); }
+            public E getFirst()                { return LinkedHashSet.this.getLast(); }
+            public E getLast()                 { return LinkedHashSet.this.getFirst(); }
+            public E removeFirst()             { return LinkedHashSet.this.removeLast(); }
+            public E removeLast()              { return LinkedHashSet.this.removeFirst(); }
+            public ReversibleSet<E> reversed() { return LinkedHashSet.this; }
         }
 
         return new ReverseLinkedHashSetView();
