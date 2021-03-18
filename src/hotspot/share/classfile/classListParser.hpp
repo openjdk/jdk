@@ -180,6 +180,6 @@ public:
   InstanceKlass* lookup_super_for_current_class(Symbol* super_name);
   InstanceKlass* lookup_interface_for_current_class(Symbol* interface_name);
 
-  static void populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS);
+  static void populate_cds_indy_info(Thread* current, const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii);
 };
 #endif // SHARE_CLASSFILE_CLASSLISTPARSER_HPP

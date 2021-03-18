@@ -330,16 +330,16 @@ void ReadClosure::do_region(u_char* start, size_t size) {
 
 fileStream* ClassListWriter::_classlist_file = NULL;
 
-void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
+void ArchiveUtils::log_to_classlist(Thread* current, BootstrapInfo* bootstrap_specifier) {
   if (ClassListWriter::is_enabled()) {
     if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
-      ResourceMark rm(THREAD);
+      ResourceMark rm(current);
       const constantPoolHandle& pool = bootstrap_specifier->pool();
       int pool_index = bootstrap_specifier->bss_index();
       ClassListWriter w;
       w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
       CDSIndyInfo cii;
-      ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, THREAD);
+      ClassListParser::populate_cds_indy_info(current, pool, pool_index, &cii);
       GrowableArray<const char*>* indy_items = cii.items();
       for (int i = 0; i < indy_items->length(); i++) {
         w.stream()->print(" %s", indy_items->at(i));

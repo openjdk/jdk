@@ -65,10 +65,10 @@ public:
   ClassPathEntry() : _next(NULL) {}
   // Attempt to locate file_name through this class path entry.
   // Returns a class file parsing stream if successfull.
-  virtual ClassFileStream* open_stream(const char* name, TRAPS) = 0;
+  virtual ClassFileStream* open_stream(const char* name) = 0;
   // Open the stream for a specific class loader
-  virtual ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS) {
-    return open_stream(name, THREAD);
+  virtual ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data) {
+    return open_stream(name);
   }
 };
 
@@ -81,7 +81,7 @@ class ClassPathDirEntry: public ClassPathEntry {
     _dir = copy_path(dir);
   }
   virtual ~ClassPathDirEntry() {}
-  ClassFileStream* open_stream(const char* name, TRAPS);
+  ClassFileStream* open_stream(const char* name);
 };
 
 // Type definitions for zip file and zip file entry
@@ -108,8 +108,8 @@ class ClassPathZipEntry: public ClassPathEntry {
   const char* name() const { return _zip_name; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append, bool from_class_path_attr);
   virtual ~ClassPathZipEntry();
-  u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
-  ClassFileStream* open_stream(const char* name, TRAPS);
+  u1* open_entry(const char* name, jint* filesize, bool nul_terminate);
+  ClassFileStream* open_stream(const char* name);
   void contents_do(void f(const char* name, void* context), void* context);
 };
 
@@ -128,8 +128,8 @@ public:
   void close_jimage();
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   virtual ~ClassPathImageEntry();
-  ClassFileStream* open_stream(const char* name, TRAPS);
-  ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS);
+  ClassFileStream* open_stream(const char* name);
+  ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data);
 };
 
 // ModuleClassPathList contains a linked list of ClassPathEntry's
@@ -365,7 +365,7 @@ class ClassLoader: AllStatic {
   static int num_module_path_entries();
   static void  exit_with_path_failure(const char* error, const char* message);
   static char* skip_uri_protocol(char* source);
-  static void  record_result(InstanceKlass* ik, const ClassFileStream* stream, TRAPS);
+  static void  record_result(Thread* current, InstanceKlass* ik, const ClassFileStream* stream);
 #endif
 
   static char* lookup_vm_options();

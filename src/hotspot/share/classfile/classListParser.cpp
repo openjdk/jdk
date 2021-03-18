@@ -411,7 +411,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
             _interfaces->length(), k->local_interfaces()->length());
     }
 
-    bool added = SystemDictionaryShared::add_unregistered_class(k, CHECK_NULL);
+    bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
     if (!added) {
       // We allow only a single unregistered class for each unique name.
       error("Duplicated class %s", _class_name);
@@ -425,7 +425,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   return k;
 }
 
-void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS) {
+void ClassListParser::populate_cds_indy_info(Thread* current, const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii) {
   // Caller needs to allocate ResourceMark.
   int type_index = pool->bootstrap_name_and_type_ref_index_at(cp_index);
   int name_index = pool->name_ref_index_at(type_index);
@@ -442,7 +442,7 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
       } else if (tag == JVM_CONSTANT_MethodHandle) {
         cii->add_ref_kind(pool->method_handle_ref_kind_at(arg));
         int callee_index = pool->method_handle_klass_index_at(arg);
-        Klass* callee = pool->klass_at(callee_index, THREAD);
+        Klass* callee = pool->klass_at(callee_index, current);
         if (callee != NULL) {
           cii->add_item(callee->name()->as_C_string());
         }
@@ -458,7 +458,7 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
 bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS) {
   ResourceMark rm(THREAD);
   CDSIndyInfo cii;
-  populate_cds_indy_info(pool, cp_index, &cii, THREAD);
+  populate_cds_indy_info(THREAD, pool, cp_index, &cii);
   GrowableArray<const char*>* items = cii.items();
   int indy_info_offset = 1;
   if (_indy_items->length() - indy_info_offset != items->length()) {

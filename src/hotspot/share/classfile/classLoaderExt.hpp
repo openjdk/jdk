@@ -57,7 +57,7 @@ private:
   static bool _has_app_classes;
   static bool _has_platform_classes;
 
-  static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, bool clean_text, TRAPS);
+  static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, bool clean_text);
   static ClassPathEntry* find_classpath_entry_from_cache(const char* path, TRAPS);
 
 public:
@@ -69,16 +69,16 @@ public:
   static void setup_search_paths(TRAPS);
   static void setup_module_paths(TRAPS);
 
-  static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, TRAPS) {
+  static char* read_manifest(ClassPathEntry* entry, jint *manifest_size) {
     // Remove all the new-line continuations (which wrap long lines at 72 characters, see
     // http://docs.oracle.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Manifest), so
     // that the manifest is easier to parse.
-    return read_manifest(entry, manifest_size, true, THREAD);
+    return read_manifest(entry, manifest_size, true);
   }
-  static char* read_raw_manifest(ClassPathEntry* entry, jint *manifest_size, TRAPS) {
+  static char* read_raw_manifest(ClassPathEntry* entry, jint *manifest_size) {
     // Do not remove new-line continuations, so we can easily pass it as an argument to
     // java.util.jar.Manifest.getManifest() at run-time.
-    return read_manifest(entry, manifest_size, false, THREAD);
+    return read_manifest(entry, manifest_size, false);
   }
 
   static jshort app_class_paths_start_index() { return _app_class_paths_start_index; }
@@ -108,7 +108,7 @@ public:
   }
 
   static void record_result(const s2 classpath_index,
-                            InstanceKlass* result, TRAPS);
+                            InstanceKlass* result);
   static InstanceKlass* load_class(Symbol* h_name, const char* path, TRAPS);
   static void set_has_app_classes() {
     _has_app_classes = true;

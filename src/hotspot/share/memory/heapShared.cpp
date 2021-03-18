@@ -747,7 +747,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
   if (record != NULL) {
     if (record->is_full_module_graph() && !MetaspaceShared::use_full_module_graph()) {
       if (log_is_enabled(Info, cds, heap)) {
-        ResourceMark rm;
+        ResourceMark rm(THREAD);
         log_info(cds, heap)("subgraph %s cannot be used because full module graph is disabled",
                             k->external_name());
       }
@@ -756,7 +756,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
 
     if (record->has_non_early_klasses() && JvmtiExport::should_post_class_file_load_hook()) {
       if (log_is_enabled(Info, cds, heap)) {
-        ResourceMark rm;
+        ResourceMark rm(THREAD);
         log_info(cds, heap)("subgraph %s cannot be used because JVMTI ClassFileLoadHook is enabled",
                             k->external_name());
       }
