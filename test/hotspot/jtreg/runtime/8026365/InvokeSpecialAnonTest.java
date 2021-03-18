@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file InvokeSpecialAnonTest.java
- * @run driver ClassFileInstaller InvokeSpecialAnonTest AnonTester
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller InvokeSpecialAnonTest AnonTester
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all InvokeSpecialAnonTest
  */
 import jdk.internal.org.objectweb.asm.*;

@@ -222,8 +222,9 @@ private:
   static KlassSubGraphInfo* init_subgraph_info(Klass *k, bool is_full_module_graph);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
 
+  static void init_subgraph_entry_fields(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
-                                         int num, Thread* THREAD);
+                                         int num, TRAPS);
 
   // Used by decode_from_archive
   static address _narrow_oop_base;
@@ -399,8 +400,7 @@ private:
   static void patch_archived_heap_embedded_pointers(MemRegion mem, address  oopmap,
                                                     size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
-  static void init_for_dumping(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_subgraph_entry_fields(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_subgraph_info_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 };
