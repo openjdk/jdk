@@ -216,7 +216,7 @@ final class MethodTypeForm {
     }
 
     static MethodTypeForm findForm(MethodType mt) {
-        MethodType erased = canonicalize(mt, ERASE, ERASE);
+        MethodType erased = canonicalize(mt, ERASE);
         if (erased == null) {
             // It is already erased.  Make a new MethodTypeForm.
             return new MethodTypeForm(mt);
@@ -237,11 +237,11 @@ final class MethodTypeForm {
      * If any types change, intern the new type, and return it.
      * Otherwise return null.
      */
-    public static MethodType canonicalize(MethodType mt, int howRet, int howArgs) {
+    public static MethodType canonicalize(MethodType mt, int how) {
         Class<?>[] ptypes = mt.ptypes();
-        Class<?>[] ptypesCanonical = canonicalizeAll(ptypes, howArgs);
+        Class<?>[] ptypesCanonical = canonicalizeAll(ptypes, how);
         Class<?> rtype = mt.returnType();
-        Class<?> rtypeCanonical = canonicalize(rtype, howRet);
+        Class<?> rtypeCanonical = canonicalize(rtype, how);
         if (ptypesCanonical == null && rtypeCanonical == null) {
             // It is already canonical.
             return null;
@@ -256,13 +256,12 @@ final class MethodTypeForm {
      *  Return null if the type is already canonicalized.
      */
     static Class<?> canonicalize(Class<?> t, int how) {
-        Class<?> ct;
         if (t == Object.class) {
             // no change, ever
         } else if (!t.isPrimitive()) {
             switch (how) {
                 case UNWRAP:
-                    ct = Wrapper.asPrimitiveType(t);
+                    Class<?> ct = Wrapper.asPrimitiveType(t);
                     if (ct != t)  return ct;
                     break;
                 case ERASE:

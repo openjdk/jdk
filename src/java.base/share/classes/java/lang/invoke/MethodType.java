@@ -742,7 +742,7 @@ class MethodType
         MethodType wt = (MethodType)pt.wrapAlt;
         if (wt == null) {
             // fill in lazily
-            wt = MethodTypeForm.canonicalize(pt, MethodTypeForm.WRAP, MethodTypeForm.WRAP);
+            wt = MethodTypeForm.canonicalize(pt, MethodTypeForm.WRAP);
             assert(wt != null);
             pt.wrapAlt = wt;
         }
@@ -754,7 +754,7 @@ class MethodType
         MethodType uwt = (MethodType)wt.wrapAlt;
         if (uwt == null) {
             // fill in lazily
-            uwt = MethodTypeForm.canonicalize(wt, MethodTypeForm.UNWRAP, MethodTypeForm.UNWRAP);
+            uwt = MethodTypeForm.canonicalize(wt, MethodTypeForm.UNWRAP);
             if (uwt == null)
                 uwt = wt;    // type has no wrappers or prims at all
             wt.wrapAlt = uwt;
