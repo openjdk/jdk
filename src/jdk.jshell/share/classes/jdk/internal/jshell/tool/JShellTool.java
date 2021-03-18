@@ -1589,7 +1589,7 @@ public class JShellTool implements MessageHandler {
                                 ? Stream.of(String.valueOf(k.id()) + " ", ((DeclarationSnippet) k).name() + " ")
                                 : Stream.of(String.valueOf(k.id()) + " "))
                         .filter(k -> k.startsWith(argPrefix))
-                        .map(p -> (Suggestion) new ArgSuggestion(p))
+                        .<Suggestion>map(ArgSuggestion::new)
                         .toList();
         };
     }
@@ -1920,14 +1920,14 @@ public class JShellTool implements MessageHandler {
         String prefix = space != (-1) ? stripped.substring(0, space) : stripped;
         List<String> result = new ArrayList<>();
 
-        List<Entry<String, String>> toShow;
+        List<? extends Entry<String, String>> toShow;
 
         if (SET_SUB.matcher(stripped).matches()) {
             String setSubcommand = stripped.replaceFirst("/?set ([^ ]*)($| .*)", "$1");
             toShow =
                 Arrays.stream(SET_SUBCOMMANDS)
                        .filter(s -> s.startsWith(setSubcommand))
-                        .map(s -> (Entry<String,String>) new SimpleEntry<>("/set " + s, "help.set." + s))
+                        .map(s -> new SimpleEntry<>("/set " + s, "help.set." + s))
                         .toList();
         } else if (RERUN_ID.matcher(stripped).matches()) {
             toShow =
@@ -1944,7 +1944,7 @@ public class JShellTool implements MessageHandler {
                         .filter(c -> c.kind.showInHelp
                                   || (inHelp && c.kind == CommandKind.HELP_SUBJECT))
                         .sorted((c1, c2) -> c1.command.compareTo(c2.command))
-                        .map(c -> (Entry<String,String>) new SimpleEntry<>(c.command, c.helpKey))
+                        .map(c -> new SimpleEntry<>(c.command, c.helpKey))
                         .toList();
         }
 

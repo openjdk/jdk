@@ -589,7 +589,7 @@ class ConsoleIOContext extends IOContext {
 
         @Override
         public Result perform(String text, int cursor) throws IOException {
-            List<CharSequence> toShow;
+            List<? extends CharSequence> toShow;
 
             if (showSmart) {
                 toShow =
@@ -597,14 +597,12 @@ class ConsoleIOContext extends IOContext {
                                .filter(Suggestion::matchesType)
                                .map(Suggestion::continuation)
                                .distinct()
-                               .map(s -> (CharSequence) s)
                                .toList();
             } else {
                 toShow =
                     suggestions.stream()
                                .map(Suggestion::continuation)
                                .distinct()
-                               .map(s -> (CharSequence) s)
                                .toList();
             }
 

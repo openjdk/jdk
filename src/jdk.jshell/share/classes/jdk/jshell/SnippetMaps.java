@@ -173,13 +173,11 @@ final class SnippetMaps {
         Stream<String> pkgs = importSnippets()
                                .filter(isi -> isi.isStar)
                                .map(isi -> isi.fullname.substring(0, isi.fullname.lastIndexOf(".")));
-        pkgs = Stream.concat(Stream.of("java.lang"), pkgs);
-        for (String ipkg : pkgs.toList()) {
-            if (!ipkg.isEmpty() && ipkg.equals(pkg)) {
-                return full.substring(pkg.length() + 1);
-            }
-        }
-        return full;
+        return Stream.concat(Stream.of("java.lang"), pkgs)
+                     .filter(ipkg -> !ipkg.isEmpty() && ipkg.equals(pkg))
+                     .map(ipkg -> full.substring(pkg.length() + 1))
+                     .findFirst()
+                     .orElse(full);
     }
 
     /**
