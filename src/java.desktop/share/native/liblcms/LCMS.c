@@ -31,42 +31,8 @@
 #include "Trace.h"
 #include "Disposer.h"
 #include <lcms2.h>
+#include <lcms2_plugin.h>
 #include "jlong.h"
-
-
-#define ALIGNLONG(x) (((x)+3) & ~(3))         // Aligns to DWORD boundary
-
-#ifdef USE_BIG_ENDIAN
-#define AdjustEndianess32(a)
-#else
-
-static
-void AdjustEndianess32(cmsUInt8Number *pByte)
-{
-    cmsUInt8Number temp1;
-    cmsUInt8Number temp2;
-
-    temp1 = *pByte++;
-    temp2 = *pByte++;
-    *(pByte-1) = *pByte;
-    *pByte++ = temp2;
-    *(pByte-3) = *pByte;
-    *pByte = temp1;
-}
-
-#endif
-
-// Transports to properly encoded values - note that icc profiles does use
-// big endian notation.
-
-static
-cmsInt32Number TransportValue32(cmsInt32Number Value)
-{
-    cmsInt32Number Temp = Value;
-
-    AdjustEndianess32((cmsUInt8Number*) &Temp);
-    return Temp;
-}
 
 #define SigMake(a,b,c,d) \
                     ( ( ((int) ((unsigned char) (a))) << 24) | \
@@ -760,16 +726,18 @@ static cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
   memcpy(&pfHeader, pBuffer, sizeof(cmsICCHeader));
 
   // now set header fields, which we can access using the lcms2 public API
-  cmsSetHeaderFlags(pf, pfHeader.flags);
-  cmsSetHeaderManufacturer(pf, pfHeader.manufacturer);
-  cmsSetHeaderModel(pf, pfHeader.model);
-  cmsSetHeaderAttributes(pf, pfHeader.attributes);
+  cmsSetHeaderFlags(pf, _cmsAdjustEndianess32(pfHeader.flags));
+  cmsSetHeaderManufacturer(pf, _cmsAdjustEndianess32(pfHeader.manufacturer));
+  cmsSetHeaderModel(pf, _cmsAdjustEndianess32(pfHeader.model));
+  cmsUInt64Number attributes;
+  _cmsAdjustEndianess64(&attributes, &pfHeader.attributes);
+  cmsSetHeaderAttributes(pf, attributes);
   cmsSetHeaderProfileID(pf, (cmsUInt8Number*)&(pfHeader.profileID));
-  cmsSetHeaderRenderingIntent(pf, pfHeader.renderingIntent);
-  cmsSetPCS(pf, pfHeader.pcs);
-  cmsSetColorSpace(pf, pfHeader.colorSpace);
-  cmsSetDeviceClass(pf, pfHeader.deviceClass);
-  cmsSetEncodedICCversion(pf, pfHeader.version);
+  cmsSetHeaderRenderingIntent(pf, _cmsAdjustEndianess32(pfHeader.renderingIntent));
+  cmsSetPCS(pf, _cmsAdjustEndianess32(pfHeader.pcs));
+  cmsSetColorSpace(pf, _cmsAdjustEndianess32(pfHeader.colorSpace));
+  cmsSetDeviceClass(pf, _cmsAdjustEndianess32(pfHeader.deviceClass));
+  cmsSetEncodedICCversion(pf, _cmsAdjustEndianess32(pfHeader.version));
 
   return TRUE;
 }

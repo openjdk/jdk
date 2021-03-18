@@ -1213,7 +1213,7 @@ public class Lower extends TreeTranslator {
                 //sym is a local variable - check the lambda translation map to
                 //see if sym has been translated to something else in the current
                 //scope (by LambdaToMethod)
-                Symbol translatedSym = lambdaTranslationMap.get(sym);
+                Symbol translatedSym = lambdaTranslationMap.get(sym.baseSymbol());
                 if (translatedSym != null) {
                     tree = make.at(tree.pos).Ident(translatedSym);
                 }
@@ -3877,7 +3877,9 @@ public class Lower extends TreeTranslator {
 
                 stmtList.append(switch2);
 
-                return make.Block(0L, stmtList.toList());
+                JCBlock res = make.Block(0L, stmtList.toList());
+                res.endpos = TreeInfo.endPos(tree);
+                return res;
             } else {
                 JCSwitchExpression switch2 = make.SwitchExpression(make.Ident(dollar_tmp), lb.toList());
 

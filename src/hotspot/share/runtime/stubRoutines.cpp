@@ -30,7 +30,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/safefetch.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -515,8 +515,8 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
   name = #xxx_arraycopy; \
   return StubRoutines::xxx_arraycopy(); }
 
-#define RETURN_STUB_PARM(xxx_arraycopy, parm) {           \
-  name = #xxx_arraycopy; \
+#define RETURN_STUB_PARM(xxx_arraycopy, parm) { \
+  name = parm ? #xxx_arraycopy "_uninit": #xxx_arraycopy; \
   return StubRoutines::xxx_arraycopy(parm); }
 
   switch (t) {

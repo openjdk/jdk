@@ -445,8 +445,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     MutexLocker ml(Compile_lock);
     Klass* kls;
     if (!require_local) {
-      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader,
-                                                                       CHECK_AND_CLEAR_(fail_type));
+      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader, THREAD);
     } else {
       kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
@@ -659,6 +658,8 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
       assert (constant->is_instance(), "must be an instance, or not? ");
       return ciConstant(T_OBJECT, constant);
     }
+  } else if (tag.is_unresolved_klass_in_error()) {
+    return ciConstant();
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
     // 4881222: allow ldc to take a class type
     ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
@@ -956,7 +957,7 @@ void ciEnv::register_method(ciMethod* target,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
                             RTMState  rtm_state,
-                            const GrowableArrayView<BufferBlob*>& native_invokers) {
+                            const GrowableArrayView<RuntimeStub*>& native_invokers) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {

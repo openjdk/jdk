@@ -51,22 +51,20 @@ const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
 //
 // [1] Load all classes (static dump: from the classlist, dynamic dump: as part of app execution)
 // [2] Allocate "output buffer"
-// [3] Copy contents of the 3 "core" regions (mc/rw/ro) into the output buffer.
-//       - mc region:
-//         allocate_method_trampolines();
-//         allocate the cpp vtables (static dump only)
+// [3] Copy contents of the 2 "core" regions (rw/ro) into the output buffer.
+//       - allocate the cpp vtables in rw (static dump only)
 //       - memcpy the MetaspaceObjs into rw/ro:
 //         dump_rw_region();
 //         dump_ro_region();
 //       - fix all the pointers in the MetaspaceObjs to point to the copies
 //         relocate_metaspaceobj_embedded_pointers()
 // [4] Copy symbol table, dictionary, etc, into the ro region
-// [5] Relocate all the pointers in mc/rw/ro, so that the archive can be mapped to
+// [5] Relocate all the pointers in rw/ro, so that the archive can be mapped to
 //     the "requested" location without runtime relocation. See relocate_to_requested()
 class ArchiveBuilder : public StackObj {
 protected:
   DumpRegion* _current_dump_space;
-  address _buffer_bottom;                      // for writing the contents of mc/rw/ro regions
+  address _buffer_bottom;                      // for writing the contents of rw/ro regions
   address _last_verified_top;
   int _num_dump_regions_used;
   size_t _other_region_used_bytes;
@@ -195,7 +193,6 @@ private:
   ReservedSpace _shared_rs;
   VirtualSpace _shared_vs;
 
-  DumpRegion _mc_region;
   DumpRegion _rw_region;
   DumpRegion _ro_region;
   CHeapBitMap _ptrmap;    // bitmap used by ArchivePtrMarker
@@ -226,9 +223,8 @@ private:
   static ArchiveBuilder* _current;
 
 public:
-  // Use this when you allocate space with MetaspaceShare::read_only_space_alloc()
-  // outside of ArchiveBuilder::dump_{rw,ro}_region. These are usually for misc tables
-  // that are allocated in the RO space.
+  // Use this when you allocate space outside of ArchiveBuilder::dump_{rw,ro}_region.
+  // These are usually for misc tables that are allocated in the RO space.
   class OtherROAllocMark {
     char* _oldtop;
   public:
@@ -263,15 +259,10 @@ protected:
   // Conservative estimate for number of bytes needed for:
   size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
   size_t _estimated_hashtable_bytes;     // symbol table and dictionaries
-  size_t _estimated_trampoline_bytes;    // method entry trampolines
 
-  static const int _total_dump_regions = 3;
+  static const int _total_dump_regions = 2;
 
   size_t estimate_archive_size();
-
-  static size_t reserve_alignment() {
-    return os::vm_allocation_granularity();
-  }
 
   void start_dump_space(DumpRegion* next);
   void verify_estimate_size(size_t estimate, const char* which);
@@ -348,13 +339,9 @@ public:
   void add_special_ref(MetaspaceClosure::SpecialRef type, address src_obj, size_t field_offset);
   void remember_embedded_pointer_in_copied_obj(MetaspaceClosure::Ref* enclosing_ref, MetaspaceClosure::Ref* ref);
 
-  DumpRegion* mc_region() { return &_mc_region; }
   DumpRegion* rw_region() { return &_rw_region; }
   DumpRegion* ro_region() { return &_ro_region; }
 
-  static char* mc_region_alloc(size_t num_bytes) {
-    return current()->mc_region()->allocate(num_bytes);
-  }
   static char* rw_region_alloc(size_t num_bytes) {
     return current()->rw_region()->allocate(num_bytes);
   }
@@ -384,9 +371,8 @@ public:
     return align_up(byte_size, SharedSpaceObjectAlignment);
   }
 
-  void init_mc_region();
-  void dump_rw_region();
-  void dump_ro_region();
+  void dump_rw_metadata();
+  void dump_ro_metadata();
   void relocate_metaspaceobj_embedded_pointers();
   void relocate_roots();
   void relocate_vm_classes();
@@ -442,12 +428,6 @@ public:
 
   void print_stats();
   void report_out_of_space(const char* name, size_t needed_bytes);
-
-  // Method trampolines related functions
-  size_t collect_method_trampolines();
-  void allocate_method_trampolines();
-  void allocate_method_trampolines_for(InstanceKlass* ik);
-  void update_method_trampolines();
 };
 
 #endif // SHARE_MEMORY_ARCHIVEBUILDER_HPP

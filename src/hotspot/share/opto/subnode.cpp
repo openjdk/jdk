@@ -1057,14 +1057,8 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
     if (k1 && (k2 || conk2)) {
       Node* lhs = k1;
       Node* rhs = (k2 != NULL) ? k2 : conk2;
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn != NULL) {
-        set_req_X(1, lhs, igvn);
-        set_req_X(2, rhs, igvn);
-      } else {
-        set_req(1, lhs);
-        set_req(2, rhs);
-      }
+      set_req_X(1, lhs, phase);
+      set_req_X(2, rhs, phase);
       return this;
     }
   }

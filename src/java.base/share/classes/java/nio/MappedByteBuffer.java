@@ -26,6 +26,7 @@
 package java.nio;
 
 import java.io.FileDescriptor;
+import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.util.Objects;
 
@@ -234,15 +235,19 @@ public abstract class MappedByteBuffer
      * mapping modes. This method may or may not have an effect for
      * implementation-specific mapping modes. </p>
      *
+     * @throws UncheckedIOException
+     *         If an I/O error occurs writing the buffer's content to the
+     *         storage device containing the mapped file
+     *
      * @return  This buffer
      */
     public final MappedByteBuffer force() {
         if (fd == null) {
             return this;
         }
-        int limit = limit();
-        if (isSync || ((address != 0) && (limit != 0))) {
-            return force(0, limit);
+        int capacity = capacity();
+        if (isSync || ((address != 0) && (capacity != 0))) {
+            return force(0, capacity);
         }
         return this;
     }
@@ -275,15 +280,19 @@ public abstract class MappedByteBuffer
      * @param  index
      *         The index of the first byte in the buffer region that is
      *         to be written back to storage; must be non-negative
-     *         and less than limit()
+     *         and less than {@code capacity()}
      *
      * @param  length
      *         The length of the region in bytes; must be non-negative
-     *         and no larger than limit() - index
+     *         and no larger than {@code capacity() - index}
      *
      * @throws IndexOutOfBoundsException
      *         if the preconditions on the index and length do not
      *         hold.
+     *
+     * @throws UncheckedIOException
+     *         If an I/O error occurs writing the buffer's content to the
+     *         storage device containing the mapped file
      *
      * @return  This buffer
      *
@@ -293,10 +302,10 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return this;
         }
-        int limit = limit();
-        if ((address != 0) && (limit != 0)) {
+        int capacity = capacity();
+        if ((address != 0) && (capacity != 0)) {
             // check inputs
-            Objects.checkFromIndexSize(index, length, limit);
+            Objects.checkFromIndexSize(index, length, capacity);
             SCOPED_MEMORY_ACCESS.force(scope(), fd, address, isSync, index, length);
         }
         return this;

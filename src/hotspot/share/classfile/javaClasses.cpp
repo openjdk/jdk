@@ -1958,6 +1958,7 @@ int java_lang_Throwable::_backtrace_offset;
 int java_lang_Throwable::_detailMessage_offset;
 int java_lang_Throwable::_stackTrace_offset;
 int java_lang_Throwable::_depth_offset;
+int java_lang_Throwable::_cause_offset;
 int java_lang_Throwable::_static_unassigned_stacktrace_offset;
 
 #define THROWABLE_FIELDS_DO(macro) \
@@ -1965,6 +1966,7 @@ int java_lang_Throwable::_static_unassigned_stacktrace_offset;
   macro(_detailMessage_offset, k, "detailMessage", string_signature,                  false); \
   macro(_stackTrace_offset,    k, "stackTrace",    java_lang_StackTraceElement_array, false); \
   macro(_depth_offset,         k, "depth",         int_signature,                     false); \
+  macro(_cause_offset,         k, "cause",         throwable_signature,               false); \
   macro(_static_unassigned_stacktrace_offset, k, "UNASSIGNED_STACK", java_lang_StackTraceElement_array, true)
 
 void java_lang_Throwable::compute_offsets() {
@@ -2005,6 +2007,9 @@ oop java_lang_Throwable::message(oop throwable) {
   return throwable->obj_field(_detailMessage_offset);
 }
 
+oop java_lang_Throwable::cause(oop throwable) {
+  return throwable->obj_field(_cause_offset);
+}
 
 // Return Symbol for detailed_message or NULL
 Symbol* java_lang_Throwable::detail_message(oop throwable) {
@@ -2377,7 +2382,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
     }
     {
       // Call getCause() which doesn't necessarily return the _cause field.
-      EXCEPTION_MARK;
+      ExceptionMark em(THREAD);
       JavaValue cause(T_OBJECT);
       JavaCalls::call_virtual(&cause,
                               throwable,
@@ -2390,7 +2395,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
         CLEAR_PENDING_EXCEPTION;
         throwable = Handle();
       } else {
-        throwable = Handle(THREAD, (oop) cause.get_jobject());
+        throwable = Handle(THREAD, cause.get_oop());
         if (throwable.not_null()) {
           st->print("Caused by: ");
           print(throwable(), st);

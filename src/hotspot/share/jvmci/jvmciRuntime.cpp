@@ -990,7 +990,7 @@ JVMCIObject JVMCIRuntime::create_jvmci_primitive_type(BasicType type, JVMCI_TRAP
     args.push_int(type2char(type));
     JavaCalls::call_static(&result, HotSpotJVMCI::HotSpotResolvedPrimitiveType::klass(), vmSymbols::fromMetaspace_name(), vmSymbols::primitive_fromMetaspace_signature(), &args, CHECK_(JVMCIObject()));
 
-    return JVMCIENV->wrap(JNIHandles::make_local((oop)result.get_jobject()));
+    return JVMCIENV->wrap(JNIHandles::make_local(result.get_oop()));
   } else {
     JNIAccessMark jni(JVMCIENV);
     jobject result = jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotResolvedPrimitiveType::clazz(),
@@ -1160,7 +1160,7 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
     ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
     MutexLocker ml(Compile_lock);
     if (!require_local) {
-      found_klass = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader, CHECK_NULL);
+      found_klass = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader, THREAD);
     } else {
       found_klass = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
@@ -1627,7 +1627,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                  debug_info, dependencies, code_buffer,
                                  frame_words, oop_map_set,
                                  handler_table, implicit_exception_table,
-                                 compiler, comp_level, GrowableArrayView<BufferBlob*>::EMPTY,
+                                 compiler, comp_level, GrowableArrayView<RuntimeStub*>::EMPTY,
                                  speculations, speculations_len,
                                  nmethod_mirror_index, nmethod_mirror_name, failed_speculations);
 
