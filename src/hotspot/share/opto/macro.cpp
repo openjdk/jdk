@@ -596,7 +596,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
 }
 
 // Check the possibility of scalar replacement.
-bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, bool str_alloc, GrowableArray <SafePointNode *>& safepoints) {
+bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints) {
   //  Scan the uses of the allocation to check for anything that would
   //  prevent us from eliminating it.
   NOT_PRODUCT( const char* fail_eliminate = NULL; )
@@ -617,7 +617,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, bool str_al
       can_eliminate = false;
     } else if (res_type->isa_aryptr()) {
       int length = alloc->in(AllocateNode::ALength)->find_int_con(-1);
-      if (length < 0 && !str_alloc) {
+      if (length < 0) {
         NOT_PRODUCT(fail_eliminate = "Array's size is not constant";)
         can_eliminate = false;
       }
@@ -718,7 +718,6 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, bool str_al
 #endif /*ASSERT*/
     }
   }
-  assert(!str_alloc || can_eliminate, "OptimizeTempArray must succeed in elimination");
 #endif
   return can_eliminate;
 }
@@ -981,10 +980,9 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
           assert(ac != nullptr, "must see an ArrayCopyNode use field_val as Src");
 
           // res_type should be an instptr whose klass is j.l.String.
-          // There are only 3 fields on purpose! I use SafePointScalarObjectNode and ObjectValue
-          // as envelopes to mock and oop.
-          // The real purpose is to encode information so deoptimization can allocate an arrayOop.
-          // see Deoptimization::realloc_objects()
+          // There are only 3 fields on purpose! I use SafePointScalarObjectNode as an envelope to mock an oop.
+          // The real purpose is that ObjectValue can encode sufficient information so deoptimization can re-allocate
+          // the arrayOop. see Deoptimization::realloc_objects()
           SafePointScalarObjectNode* nest_sobj = new SafePointScalarObjectNode(res_type,
                                                       DEBUG_ONLY(alloc COMMA)
                                                       first_ind + j + 1, 3);
@@ -1014,50 +1012,6 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
     safepoints_done.append_if_missing(sfpt); // keep it for rollback
   }
   return true;
-}
-
-// This is the specialized version of "scalar" replacment, dedicated to j.l.String::value
-// the type of value is byte[]. process_users_of_string_allocation has replaced it with
-// ArrayCopy's src.
-//
-// Only create one SafePointScalarObject node and crecord 3 fixed fields:
-// 1. src oop 2. srcPos 3. length
-void PhaseMacroExpand::stable_array_replacement(AllocateArrayNode* alloc, ArrayCopyNode* ac, GrowableArray <SafePointNode* >& safepoints) {
-  const int nfields = 3;
-  Node* res = alloc->result_cast();
-  if (res == nullptr) return ;
-
-  assert(res->is_CheckCastPP(), "unexpected AllocateNode result");
-  const TypeOopPtr* res_type = _igvn.type(res)->isa_oopptr();
-
-  while (safepoints.length() > 0) {
-    SafePointNode* sfpt = safepoints.pop();
-    // Fields of scalar objs are referenced only at the end
-    // of regular debuginfo at the last (youngest) JVMS.
-    // Record relative start index.
-    uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
-    SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type,
-                                                 DEBUG_ONLY(alloc COMMA)
-                                                 first_ind, nfields);
-    sobj->init_req(0, C->root());
-    transform_later(sobj);
-
-    // 1. src oop
-    sfpt->add_req(ac->in(ArrayCopyNode::Src));
-    // 2. src Position
-    sfpt->add_req(ac->in(ArrayCopyNode::SrcPos));
-    // 3. length
-    sfpt->add_req(ac->in(ArrayCopyNode::Length));
-
-    JVMState *jvms = sfpt->jvms();
-    jvms->set_endoff(sfpt->req());
-    // Now make a pass over the debug information replacing any references
-    // to the allocated object with "sobj"
-    int start = jvms->debug_start();
-    int end   = jvms->debug_end();
-    sfpt->replace_edges_in_range(res, sobj, start, end);
-    _igvn._worklist.push(sfpt);
-  }
 }
 
 static void disconnect_projections(MultiNode* n, PhaseIterGVN& igvn) {
@@ -1150,72 +1104,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
     _igvn.remove_dead_node(res);
   }
 
-  //
-  // Process other users of allocation's projections
-  //
-  if (_resproj != NULL && _resproj->outcnt() != 0) {
-    // First disconnect stores captured by Initialize node.
-    // If Initialize node is eliminated first in the following code,
-    // it will kill such stores and DUIterator_Last will assert.
-    for (DUIterator_Fast jmax, j = _resproj->fast_outs(jmax);  j < jmax; j++) {
-      Node *use = _resproj->fast_out(j);
-      if (use->is_AddP()) {
-        // raw memory addresses used only by the initialization
-        _igvn.replace_node(use, C->top());
-        --j; --jmax;
-      }
-    }
-    for (DUIterator_Last jmin, j = _resproj->last_outs(jmin); j >= jmin; ) {
-      Node *use = _resproj->last_out(j);
-      uint oc1 = _resproj->outcnt();
-      if (use->is_Initialize()) {
-        // Eliminate Initialize node.
-        InitializeNode *init = use->as_Initialize();
-        assert(init->outcnt() <= 2, "only a control and memory projection expected");
-        Node *ctrl_proj = init->proj_out_or_null(TypeFunc::Control);
-        if (ctrl_proj != NULL) {
-          _igvn.replace_node(ctrl_proj, init->in(TypeFunc::Control));
-#ifdef ASSERT
-          Node* tmp = init->in(TypeFunc::Control);
-          assert(tmp == _fallthroughcatchproj, "allocation control projection");
-#endif
-        }
-        Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
-        if (mem_proj != NULL) {
-          Node *mem = init->in(TypeFunc::Memory);
-#ifdef ASSERT
-          if (mem->is_MergeMem()) {
-            assert(mem->in(TypeFunc::Memory) == _memproj_fallthrough, "allocation memory projection");
-          } else {
-            assert(mem == _memproj_fallthrough, "allocation memory projection");
-          }
-#endif
-          _igvn.replace_node(mem_proj, mem);
-        }
-      } else  {
-        assert(false, "only Initialize or AddP expected");
-      }
-      j -= (oc1 - _resproj->outcnt());
-    }
-  }
-  if (_fallthroughcatchproj != NULL) {
-    _igvn.replace_node(_fallthroughcatchproj, alloc->in(TypeFunc::Control));
-  }
-  if (_memproj_fallthrough != NULL) {
-    _igvn.replace_node(_memproj_fallthrough, alloc->in(TypeFunc::Memory));
-  }
-  if (_memproj_catchall != NULL) {
-    _igvn.replace_node(_memproj_catchall, C->top());
-  }
-  if (_ioproj_fallthrough != NULL) {
-    _igvn.replace_node(_ioproj_fallthrough, alloc->in(TypeFunc::I_O));
-  }
-  if (_ioproj_catchall != NULL) {
-    _igvn.replace_node(_ioproj_catchall, C->top());
-  }
-  if (_catchallcatchproj != NULL) {
-    _igvn.replace_node(_catchallcatchproj, C->top());
-  }
+  eliminate_allocation_common(alloc);
 }
 
 bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
@@ -1262,6 +1151,17 @@ bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
   return false;
 }
 
+// the helper function to work out the offset based on ac. src_adr is cached.
+Node* PhaseMacroExpand::get_offset_adr_from_ac(ArrayCopyNode* ac, Node*& src_adr, Node* offset) {
+  if (src_adr == nullptr) {
+    Node* src = ac->in(ArrayCopyNode::Src);
+    src_adr = ConvI2X(ac->in(ArrayCopyNode::SrcPos));
+    src_adr = basic_plus_adr(src, src, src_adr);
+  }
+
+  return (offset == nullptr) ? src_adr
+                             : basic_plus_adr(src_adr->in(AddPNode::Base), src_adr, offset);
+}
 //
 // BEFORE
 //                   -------------------
@@ -1320,19 +1220,7 @@ bool PhaseMacroExpand::eliminate_strcpy_node(ArrayCopyNode* ac) {
 //  AllocateArray: don't need to allocate byte[] (still need allocation in deoptimization)
 //  ArrayCopy: delete because we don't need to copy contents
 //  LoadRange: be replaced with ArrayCopy's Length
-//
-// the helper function to work out the offset based on ac. src_adr is cached.
-Node* PhaseMacroExpand::get_offset_adr_from_ac(ArrayCopyNode* ac, Node*& src_adr, Node* offset) {
-  if (src_adr == nullptr) {
-    Node* src = ac->in(ArrayCopyNode::Src);
-    src_adr = ConvI2X(ac->in(ArrayCopyNode::SrcPos));
-    src_adr = basic_plus_adr(src, src, src_adr);
-  }
-
-  return (offset == nullptr) ? src_adr
-                             : basic_plus_adr(src_adr->in(AddPNode::Base), src_adr, offset);
-}
-
+//  AllocateArray: delete because its value undefined.
 void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* alloc, ArrayCopyNode* ac) {
   Node* res = alloc->result_cast();
   Node* length = ac->in(ArrayCopyNode::Length);
@@ -1416,22 +1304,126 @@ void PhaseMacroExpand::process_users_of_string_allocation(AllocateArrayNode* all
       _igvn.remove_dead_node(use);
     } else if (use->is_ArrayCopy()) {
       ArrayCopyNode* ac2 = use->as_ArrayCopy();
-      if (use == ac || res != ac2->in(ArrayCopyNode::Src)) continue; // identity or res is not the src of ArrayCopy
-      Node* pos = transform_later(new AddINode(ac->in(ArrayCopyNode::SrcPos),
-                                               ac2->in(ArrayCopyNode::SrcPos)));
-      _igvn.replace_input_of(ac2, ArrayCopyNode::Src, src);
-      _igvn.replace_input_of(ac2, ArrayCopyNode::SrcPos, pos);
-      _igvn.replace_input_of(ac2, ArrayCopyNode::SrcLen, length);
+
+      if (ac2 != ac && res == ac2->in(ArrayCopyNode::Src)) {
+        Node* pos = transform_later(new AddINode(ac->in(ArrayCopyNode::SrcPos),
+                                                 ac2->in(ArrayCopyNode::SrcPos)));
+        _igvn.replace_input_of(ac2, ArrayCopyNode::Src, src);
+        _igvn.replace_input_of(ac2, ArrayCopyNode::SrcPos, pos);
+        _igvn.replace_input_of(ac2, ArrayCopyNode::SrcLen, length);
+      } else if (ac2 == ac) {
+        // Disconnect ArrayCopy node
+        CallProjections callprojs;
+        ac->extract_projections(&callprojs, true);
+
+        _igvn.replace_node(callprojs.fallthrough_ioproj, ac->in(TypeFunc::I_O));
+        _igvn.replace_node(callprojs.fallthrough_memproj, ac->in(TypeFunc::Memory));
+        _igvn.replace_node(callprojs.fallthrough_catchproj, ac->in(TypeFunc::Control));
+
+        // Set control to top. IGVN will remove the remaining projections
+        ac->set_req(0, top());
+        ac->replace_edge(res, top(), &_igvn);
+
+        // Disconnect src right away: it can help find new
+        // opportunities for allocation elimination
+        Node* src = ac->in(ArrayCopyNode::Src);
+        ac->replace_edge(src, top(), &_igvn);
+        // src can be top at this point if src and dest of the
+        // arraycopy were the same
+        if (src->outcnt() == 0 && !src->is_top()) {
+          _igvn.remove_dead_node(src);
+        }
+
+        _igvn._worklist.push(ac);
+      } else {
+        ac2->replace_edge(res, top(), &_igvn);
+        _igvn._worklist.push(ac2);
+      }
+    } else if (use->is_SafePoint()) {
+      use->replace_edge(res, top(), &_igvn);
+      _igvn._worklist.push(use);
     } else {
-      // don't touch other nodes
-      // remaining nodes should be SafePoint nodes. we should generate ad-hoc
-      // nodes for debuginfo here
+      eliminate_gc_barrier(use);
     }
 
     if (oc1 > res->outcnt()) {
       --i;
       imax -= oc1 - res->outcnt();
     }
+  }
+  assert(res->outcnt() == 0, "all uses of allocated objects must be deleted");
+  _igvn.remove_dead_node(res);
+
+  C->remove_macro_node(alloc);
+  eliminate_allocation_common(alloc);
+}
+
+void PhaseMacroExpand::eliminate_allocation_common(CallNode* alloc) {
+  //
+  // Process other users of allocation's projections
+  //
+  if (_resproj != NULL && _resproj->outcnt() != 0) {
+    // First disconnect stores captured by Initialize node.
+    // If Initialize node is eliminated first in the following code,
+    // it will kill such stores and DUIterator_Last will assert.
+    for (DUIterator_Fast jmax, j = _resproj->fast_outs(jmax);  j < jmax; j++) {
+      Node *use = _resproj->fast_out(j);
+      if (use->is_AddP()) {
+        // raw memory addresses used only by the initialization
+        _igvn.replace_node(use, C->top());
+        --j; --jmax;
+      }
+    }
+    for (DUIterator_Last jmin, j = _resproj->last_outs(jmin); j >= jmin; ) {
+      Node *use = _resproj->last_out(j);
+      uint oc1 = _resproj->outcnt();
+      if (use->is_Initialize()) {
+        // Eliminate Initialize node.
+        InitializeNode *init = use->as_Initialize();
+        assert(init->outcnt() <= 2, "only a control and memory projection expected");
+        Node *ctrl_proj = init->proj_out_or_null(TypeFunc::Control);
+        if (ctrl_proj != NULL) {
+          _igvn.replace_node(ctrl_proj, init->in(TypeFunc::Control));
+#ifdef ASSERT
+          Node* tmp = init->in(TypeFunc::Control);
+          assert(tmp == _fallthroughcatchproj, "allocation control projection");
+#endif
+        }
+        Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
+        if (mem_proj != NULL) {
+          Node *mem = init->in(TypeFunc::Memory);
+#ifdef ASSERT
+          if (mem->is_MergeMem()) {
+            assert(mem->in(TypeFunc::Memory) == _memproj_fallthrough, "allocation memory projection");
+          } else {
+            assert(mem == _memproj_fallthrough, "allocation memory projection");
+          }
+#endif
+          _igvn.replace_node(mem_proj, mem);
+        }
+      } else  {
+        assert(false, "only Initialize or AddP expected");
+      }
+      j -= (oc1 - _resproj->outcnt());
+    }
+  }
+  if (_fallthroughcatchproj != NULL) {
+    _igvn.replace_node(_fallthroughcatchproj, alloc->in(TypeFunc::Control));
+  }
+  if (_memproj_fallthrough != NULL) {
+    _igvn.replace_node(_memproj_fallthrough, alloc->in(TypeFunc::Memory));
+  }
+  if (_memproj_catchall != NULL) {
+    _igvn.replace_node(_memproj_catchall, C->top());
+  }
+  if (_ioproj_fallthrough != NULL) {
+    _igvn.replace_node(_ioproj_fallthrough, alloc->in(TypeFunc::I_O));
+  }
+  if (_ioproj_catchall != NULL) {
+    _igvn.replace_node(_ioproj_catchall, C->top());
+  }
+  if (_catchallcatchproj != NULL) {
+    _igvn.replace_node(_catchallcatchproj, C->top());
   }
 }
 
@@ -1447,12 +1439,6 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   Node* klass = alloc->in(AllocateNode::KlassNode);
   const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
   Node* res = alloc->result_cast();
-  ArrayCopyNode* ac = nullptr; // only valid if str_alloc is true
-
-  // if j.l.String::value has been obsolete, AllocateArray can be eliminated
-  bool str_alloc = alloc->is_AllocateArray() &&
-                   alloc->as_AllocateArray()->is_str_alloc_obsolete();
-
   // Eliminate boxing allocations which are not used
   // regardless scalar replacable status.
   bool boxing_alloc = C->eliminate_boxing() &&
@@ -1462,8 +1448,11 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     return false;
   }
 
+  extract_call_projections(alloc);
+
   if (alloc->is_AllocateArray()) {
     AllocateArrayNode* aa = alloc->as_AllocateArray();
+    ArrayCopyNode* ac = nullptr;
 
     // aa has deprecated, now we need to handle its uses
     if (aa->is_str_alloc_obsolete()) {
@@ -1473,10 +1462,8 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     }
   }
 
-  extract_call_projections(alloc);
-
   GrowableArray <SafePointNode *> safepoints;
-  if (!can_eliminate_allocation(alloc, str_alloc, safepoints)) {
+  if (!can_eliminate_allocation(alloc, safepoints)) {
     return false;
   }
 
@@ -1490,9 +1477,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     }
   }
 
-  if (str_alloc && ac != nullptr) {
-    stable_array_replacement(alloc->as_AllocateArray(), ac, safepoints);
-  } else if (!scalar_replacement(alloc, safepoints)) {
+  if (!scalar_replacement(alloc, safepoints)) {
     return false;
   }
 

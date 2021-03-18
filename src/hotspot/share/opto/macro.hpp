@@ -112,9 +112,8 @@ private:
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
   bool eliminate_strcpy_node(ArrayCopyNode* ac);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  bool can_eliminate_allocation(AllocateNode *alloc, bool str_alloc, GrowableArray <SafePointNode *>& safepoints);
+  bool can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
   bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
-  void stable_array_replacement(AllocateArrayNode* alloc, ArrayCopyNode* ac, GrowableArray<SafePointNode* >& safepoints_done);
   void process_users_of_allocation(CallNode *alloc);
   Node* get_offset_adr_from_ac(ArrayCopyNode* ac, Node*& src_adr, Node* offset = nullptr);
   void process_users_of_string_allocation(AllocateArrayNode* alloc, ArrayCopyNode* ac);
@@ -216,6 +215,7 @@ private:
 
   Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
   void sort_macro_for_strcpy_opt();
+  void eliminate_allocation_common(CallNode* alloc);
 public:
   PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {
     _igvn.set_delay_transform(true);
