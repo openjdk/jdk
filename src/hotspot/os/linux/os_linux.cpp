@@ -170,8 +170,10 @@ const char * os::Linux::_libc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
-void* os::Linux::_mallinfo_fun_ptr = NULL;
-void* os::Linux::_mallinfo2_fun_ptr = NULL;
+#ifdef __GLIBC__
+os::Linux::mallinfo_func_t os::Linux::_mallinfo = NULL;
+os::Linux::mallinfo2_func_t os::Linux::_mallinfo2 = NULL;
+#endif // __GLIBC__
 
 static jlong initial_time_count=0;
 
@@ -2233,26 +2235,20 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // (note: there is no implementation of mallinfo for muslc)
 #ifdef __GLIBC__
   size_t total_allocated = 0;
-  bool called_mallinfo = false;
   bool might_have_wrapped = false;
-#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
-  if (_mallinfo2_fun_ptr != NULL) {
-    called_mallinfo = true;
-    struct mallinfo2 mi = CAST_TO_FN_PTR(struct mallinfo2 (*)(void), _mallinfo2_fun_ptr)();
+  if (_mallinfo2 != NULL) {
+    struct glibc_mallinfo2 mi = _mallinfo2();
     total_allocated = mi.uordblks;
-  }
-#endif // __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
-  if (!called_mallinfo && _mallinfo_fun_ptr != NULL) {
-    called_mallinfo = true;
+  } else if (_mallinfo != NULL) {
     // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
     // So values may have wrapped around. Still useful enough to see how much glibc thinks
     // we allocated.
-    struct mallinfo mi = CAST_TO_FN_PTR(struct mallinfo (*)(void), _mallinfo_fun_ptr)();
+    struct glibc_mallinfo mi = _mallinfo();
     total_allocated = (size_t)(unsigned)mi.uordblks;
     // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
     might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
   }
-  if (called_mallinfo) {
+  if (_mallinfo2 != NULL || _mallinfo != NULL) {
     st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K%s",
                  total_allocated / K,
                  might_have_wrapped ? " (may have wrapped)" : "");
@@ -4421,8 +4417,10 @@ void os::init(void) {
 
   Linux::initialize_system_info();
 
-  Linux::_mallinfo_fun_ptr = dlsym(RTLD_DEFAULT, "mallinfo");
-  Linux::_mallinfo2_fun_ptr = dlsym(RTLD_DEFAULT, "mallinfo2");
+#ifdef __GLIBC__
+  Linux::_mallinfo = CAST_TO_FN_PTR(Linux::mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
+  Linux::_mallinfo2 = CAST_TO_FN_PTR(Linux::mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+#endif // __GLIBC__
 
   os::Linux::CPUPerfTicks pticks;
   bool res = os::Linux::get_tick_information(&pticks, -1);
