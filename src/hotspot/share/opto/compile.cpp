@@ -4752,6 +4752,16 @@ void igv_print(const char* phase_name) {
   Compile::current()->igv_print_method_to_file(phase_name);
 }
 
+// Called from debugger. Prints current method immediately. This differs from above, it creates a well-formed
+// and complete ideal graph xml immediately, while others accomplish their ideal graph xml when VM exists.
+void igv_print_immediately() {
+ Compile::current()->igv_print_method_to_file_immediately();
+}
+
+void igv_print_immediately(const char* phase_name) {
+ Compile::current()->igv_print_method_to_file_immediately(phase_name);
+}
+
 // Called from debugger. Prints method with the default phase name to the default network or the one specified with
 // the network flags for the Ideal Graph Visualizer, or to the default file depending on the 'network' argument.
 // This works regardless of any Ideal Graph Visualizer flags set or not.
@@ -4798,6 +4808,23 @@ void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
   }
   tty->print_cr("Method %s to %s", append ? "appended" : "printed", file_name);
   _debug_file_printer->print_method(phase_name, 0);
+}
+
+void Compile::igv_print_method_to_file_immediately(const char* phase_name) {
+  if (strlen(phase_name) >= 508) {
+    tty->print_cr("Method name %s too long!", phase_name);
+    return;
+  }
+  ResourceMark rm;
+  char file_name[512];
+  sprintf(file_name, "%s.xml", phase_name);
+  {
+    IdealGraphPrinter* tmp_printer = new IdealGraphPrinter(C, file_name, false);
+    tty->print_cr("Method printed to %s", file_name);
+    tmp_printer->print(phase_name, (Node*)C->root());
+    tmp_printer->end_method();
+    IdealGraphPrinter::clean_up(tmp_printer);
+  }
 }
 
 void Compile::igv_print_method_to_network(const char* phase_name) {

@@ -88,7 +88,13 @@ IdealGraphPrinter *IdealGraphPrinter::printer() {
   return compiler_thread->ideal_graph_printer();
 }
 
-void IdealGraphPrinter::clean_up() {
+void IdealGraphPrinter::clean_up(IdealGraphPrinter* printer) {
+  // clean the given ones
+  if (printer != NULL) {
+    delete printer;
+    return;
+  }
+  // otherwise, clean all others
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* p = jtiwh.next(); ) {
     if (p->is_Compiler_thread()) {
       CompilerThread* c = (CompilerThread*)p;

@@ -117,7 +117,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
 
  public:
   IdealGraphPrinter(Compile* compile, const char* file_name = NULL, bool append = false);
-  static void clean_up();
+  static void clean_up(IdealGraphPrinter* printer = NULL);
   static IdealGraphPrinter *printer();
 
   bool traverse_outs();
