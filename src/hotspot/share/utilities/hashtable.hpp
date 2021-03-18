@@ -42,7 +42,7 @@
 
 
 
-template <MEMFLAGS F> class BasicHashtableEntry : public CHeapObj<F> {
+template <MEMFLAGS F> class BasicHashtableEntry {
   friend class VMStructs;
 private:
   unsigned int         _hash;           // 32-bit hash for item
