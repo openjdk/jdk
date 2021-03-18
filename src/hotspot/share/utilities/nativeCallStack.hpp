@@ -56,12 +56,11 @@ class MemTracker;
 class NativeCallStack : public StackObj {
 private:
   address       _stack[NMT_TrackingStackDepth];
-  unsigned int  _hash_value;
   static const NativeCallStack _empty_stack;
 public:
   // Default ctor creates an empty stack.
   // (it may make sense to remove this altogether but its used in a few places).
-  NativeCallStack() : _hash_value(0) {
+  NativeCallStack() {
     memset(_stack, 0, sizeof(_stack));
   }
 
@@ -83,9 +82,6 @@ public:
   }
 
   inline bool equals(const NativeCallStack& other) const {
-    // compare hash values
-    if (hash() != other.hash()) return false;
-    // compare each frame
     return compare(other) == 0;
   }
 
@@ -94,7 +90,14 @@ public:
     return _stack[index];
   }
 
-  unsigned int hash() const { return _hash_value; }
+  // Helper; calculates a hash value over the stack frames in this stack
+  unsigned int calculate_hash() const {
+    uintptr_t hash = 0;
+    for (int i = 0; i < NMT_TrackingStackDepth; i++) {
+      hash += (uintptr_t)_stack[i];
+    }
+    return hash;
+  }
 
   void print_on(outputStream* out) const;
   void print_on(outputStream* out, int indent) const;

@@ -73,6 +73,7 @@
 
 #include "classfile/systemDictionary.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
@@ -401,7 +402,7 @@ jint ShenandoahHeap::initialize() {
   return JNI_OK;
 }
 
-void ShenandoahHeap::initialize_heuristics() {
+void ShenandoahHeap::initialize_mode() {
   if (ShenandoahGCMode != NULL) {
     if (strcmp(ShenandoahGCMode, "satb") == 0) {
       _gc_mode = new ShenandoahSATBMode();
@@ -426,7 +427,10 @@ void ShenandoahHeap::initialize_heuristics() {
             err_msg("GC mode \"%s\" is experimental, and must be enabled via -XX:+UnlockExperimentalVMOptions.",
                     _gc_mode->name()));
   }
+}
 
+void ShenandoahHeap::initialize_heuristics() {
+  assert(_gc_mode != NULL, "Must be initialized");
   _heuristics = _gc_mode->initialize_heuristics();
 
   if (_heuristics->is_diagnostic() && !UnlockDiagnosticVMOptions) {
@@ -461,6 +465,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _update_refs_iterator(this),
   _control_thread(NULL),
   _shenandoah_policy(policy),
+  _gc_mode(NULL),
   _heuristics(NULL),
   _free_set(NULL),
   _pacer(NULL),
@@ -483,6 +488,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _liveness_cache(NULL),
   _collection_set(NULL)
 {
+  // Initialize GC mode early, so we can adjust barrier support
+  initialize_mode();
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this));
 
   _max_workers = MAX2(_max_workers, 1U);
@@ -1544,11 +1551,6 @@ public:
   bool is_thread_safe() { return true; }
 };
 
-void ShenandoahHeap::rendezvous_threads() {
-  ShenandoahRendezvousClosure cl;
-  Handshake::execute(&cl);
-}
-
 void ShenandoahHeap::recycle_trash() {
   free_set()->recycle_trash();
 }
@@ -1654,7 +1656,6 @@ void ShenandoahHeap::prepare_regions_and_collection_set(bool concurrent) {
 
 void ShenandoahHeap::do_class_unloading() {
   _unloader.unload();
-  set_concurrent_weak_root_in_progress(false);
 }
 
 void ShenandoahHeap::stw_weak_refs(bool full_gc) {
@@ -1695,11 +1696,8 @@ void ShenandoahHeap::set_gc_state_mask(uint mask, bool value) {
 }
 
 void ShenandoahHeap::set_concurrent_mark_in_progress(bool in_progress) {
-  if (has_forwarded_objects()) {
-    set_gc_state_mask(MARKING | UPDATEREFS, in_progress);
-  } else {
-    set_gc_state_mask(MARKING, in_progress);
-  }
+  assert(!has_forwarded_objects(), "Not expected before/after mark phase");
+  set_gc_state_mask(MARKING, in_progress);
   ShenandoahBarrierSet::satb_mark_queue_set().set_active_all_threads(in_progress, !in_progress);
 }
 
@@ -1716,12 +1714,8 @@ void ShenandoahHeap::set_concurrent_strong_root_in_progress(bool in_progress) {
   }
 }
 
-void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool in_progress) {
-  if (in_progress) {
-    _concurrent_weak_root_in_progress.set();
-  } else {
-    _concurrent_weak_root_in_progress.unset();
-  }
+void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool cond) {
+  set_gc_state_mask(WEAK_ROOTS, cond);
 }
 
 GCTracer* ShenandoahHeap::tracer() {

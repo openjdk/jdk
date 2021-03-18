@@ -24,8 +24,10 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/diagnosticCommand.hpp"

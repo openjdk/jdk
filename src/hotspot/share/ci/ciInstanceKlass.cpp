@@ -727,7 +727,7 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   // Try to record related loaded classes
   Klass* sub = ik->subklass();
   while (sub != NULL) {
-    if (sub->is_instance_klass()) {
+    if (sub->is_instance_klass() && !sub->is_hidden() && !InstanceKlass::cast(sub)->is_unsafe_anonymous()) {
       out->print_cr("instanceKlass %s", sub->name()->as_quoted_ascii());
     }
     sub = sub->next_sibling();

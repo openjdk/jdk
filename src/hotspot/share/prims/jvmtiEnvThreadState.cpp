@@ -258,19 +258,16 @@ class GetCurrentLocationClosure : public HandshakeClosure {
     JavaThread *jt = target->as_Java_thread();
     ResourceMark rmark; // jt != Thread::current()
     RegisterMap rm(jt, false);
-    // There can be a race condition between a VM_Operation reaching a safepoint
+    // There can be a race condition between a handshake
     // and the target thread exiting from Java execution.
-    // We must recheck the last Java frame still exists.
+    // We must recheck that the last Java frame still exists.
     if (!jt->is_exiting() && jt->has_last_Java_frame()) {
       javaVFrame* vf = jt->last_java_vframe(&rm);
-      assert(vf != NULL, "must have last java frame");
-      Method* method = vf->method();
-      _method_id = method->jmethod_id();
-      _bci = vf->bci();
-    } else {
-      // Clear current location as the target thread has no Java frames anymore.
-      _method_id = (jmethodID)NULL;
-      _bci = 0;
+      if (vf != NULL) {
+        Method* method = vf->method();
+        _method_id = method->jmethod_id();
+        _bci = vf->bci();
+      }
     }
     _completed = true;
   }

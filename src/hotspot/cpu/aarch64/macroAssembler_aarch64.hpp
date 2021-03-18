@@ -527,6 +527,7 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
+
 public:
 
   // Generalized Test Bit And Branch, including a "far" variety which

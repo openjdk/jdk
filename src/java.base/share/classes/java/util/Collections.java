@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1008,12 +1008,17 @@ public class Collections {
      * The returned collection will be serializable if the specified collection
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the collection
      * @param  c the collection for which an unmodifiable view is to be
      *         returned.
      * @return an unmodifiable view of the specified collection.
      */
+    @SuppressWarnings("unchecked")
     public static <T> Collection<T> unmodifiableCollection(Collection<? extends T> c) {
+        if (c.getClass() == UnmodifiableCollection.class) {
+            return (Collection<T>) c;
+        }
         return new UnmodifiableCollection<>(c);
     }
 
@@ -1116,11 +1121,17 @@ public class Collections {
      * The returned set will be serializable if the specified set
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the set
      * @param  s the set for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified set.
      */
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> unmodifiableSet(Set<? extends T> s) {
+        // Not checking for subclasses because of heap pollution and information leakage.
+        if (s.getClass() == UnmodifiableSet.class) {
+            return (Set<T>) s;
+        }
         return new UnmodifiableSet<>(s);
     }
 
@@ -1148,12 +1159,17 @@ public class Collections {
      * The returned sorted set will be serializable if the specified sorted set
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the set
      * @param s the sorted set for which an unmodifiable view is to be
      *        returned.
      * @return an unmodifiable view of the specified sorted set.
      */
     public static <T> SortedSet<T> unmodifiableSortedSet(SortedSet<T> s) {
+        // Not checking for subclasses because of heap pollution and information leakage.
+        if (s.getClass() == UnmodifiableSortedSet.class) {
+            return s;
+        }
         return new UnmodifiableSortedSet<>(s);
     }
 
@@ -1197,6 +1213,7 @@ public class Collections {
      * The returned navigable set will be serializable if the specified
      * navigable set is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the set
      * @param s the navigable set for which an unmodifiable view is to be
      *        returned
@@ -1204,6 +1221,9 @@ public class Collections {
      * @since 1.8
      */
     public static <T> NavigableSet<T> unmodifiableNavigableSet(NavigableSet<T> s) {
+        if (s.getClass() == UnmodifiableNavigableSet.class) {
+            return s;
+        }
         return new UnmodifiableNavigableSet<>(s);
     }
 
@@ -1289,11 +1309,17 @@ public class Collections {
      * is serializable. Similarly, the returned list will implement
      * {@link RandomAccess} if the specified list does.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the list
      * @param  list the list for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified list.
      */
+    @SuppressWarnings("unchecked")
     public static <T> List<T> unmodifiableList(List<? extends T> list) {
+        if (list.getClass() == UnmodifiableList.class || list.getClass() == UnmodifiableRandomAccessList.class) {
+           return (List<T>) list;
+        }
+
         return (list instanceof RandomAccess ?
                 new UnmodifiableRandomAccessList<>(list) :
                 new UnmodifiableList<>(list));
@@ -1438,12 +1464,18 @@ public class Collections {
      * The returned map will be serializable if the specified map
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param <K> the class of the map keys
      * @param <V> the class of the map values
      * @param  m the map for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified map.
      */
+    @SuppressWarnings("unchecked")
     public static <K,V> Map<K,V> unmodifiableMap(Map<? extends K, ? extends V> m) {
+        // Not checking for subclasses because of heap pollution and information leakage.
+        if (m.getClass() == UnmodifiableMap.class) {
+            return (Map<K,V>) m;
+        }
         return new UnmodifiableMap<>(m);
     }
 
@@ -1795,13 +1827,19 @@ public class Collections {
      * The returned sorted map will be serializable if the specified sorted map
      * is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param <K> the class of the map keys
      * @param <V> the class of the map values
      * @param m the sorted map for which an unmodifiable view is to be
      *        returned.
      * @return an unmodifiable view of the specified sorted map.
      */
+    @SuppressWarnings("unchecked")
     public static <K,V> SortedMap<K,V> unmodifiableSortedMap(SortedMap<K, ? extends V> m) {
+        // Not checking for subclasses because of heap pollution and information leakage.
+        if (m.getClass() == UnmodifiableSortedMap.class) {
+            return (SortedMap<K,V>) m;
+        }
         return new UnmodifiableSortedMap<>(m);
     }
 
@@ -1840,6 +1878,7 @@ public class Collections {
      * The returned navigable map will be serializable if the specified
      * navigable map is serializable.
      *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param <K> the class of the map keys
      * @param <V> the class of the map values
      * @param m the navigable map for which an unmodifiable view is to be
@@ -1847,7 +1886,11 @@ public class Collections {
      * @return an unmodifiable view of the specified navigable map
      * @since 1.8
      */
+    @SuppressWarnings("unchecked")
     public static <K,V> NavigableMap<K,V> unmodifiableNavigableMap(NavigableMap<K, ? extends V> m) {
+        if (m.getClass() == UnmodifiableNavigableMap.class) {
+            return (NavigableMap<K,V>) m;
+        }
         return new UnmodifiableNavigableMap<>(m);
     }
 

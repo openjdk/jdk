@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test LoaderConstraintsTest
  * @bug 8149996
  * @modules java.base/jdk.internal.misc
- * @library /test/lib /runtime/testlibrary classes
+ * @library /test/lib classes
  * @run driver LoaderConstraintsTest
  */
 
@@ -37,6 +37,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class LoaderConstraintsTest {
     private static OutputAnalyzer out;

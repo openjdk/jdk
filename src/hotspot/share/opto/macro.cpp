@@ -452,6 +452,9 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         Node* n = val->in(MemNode::ValueIn);
         BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
         n = bs->step_over_gc_barrier(n);
+        if (is_subword_type(ft)) {
+          n = Compile::narrow_value(ft, n, phi_type, &_igvn, true);
+        }
         values.at_put(j, n);
       } else if(val->is_Proj() && val->in(0) == alloc) {
         values.at_put(j, _igvn.zerocon(ft));
@@ -1007,7 +1010,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
     // to the allocated object with "sobj"
     int start = jvms->debug_start();
     int end   = jvms->debug_end();
-    sfpt->replace_edges_in_range(res, sobj, start, end);
+    sfpt->replace_edges_in_range(res, sobj, start, end, &_igvn);
     _igvn._worklist.push(sfpt);
     safepoints_done.append_if_missing(sfpt); // keep it for rollback
   }
@@ -1082,12 +1085,12 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
 
           // Set control to top. IGVN will remove the remaining projections
           ac->set_req(0, top());
-          ac->replace_edge(res, top());
+          ac->replace_edge(res, top(), &_igvn);
 
           // Disconnect src right away: it can help find new
           // opportunities for allocation elimination
           Node* src = ac->in(ArrayCopyNode::Src);
-          ac->replace_edge(src, top());
+          ac->replace_edge(src, top(), &_igvn);
           // src can be top at this point if src and dest of the
           // arraycopy were the same
           if (src->outcnt() == 0 && !src->is_top()) {

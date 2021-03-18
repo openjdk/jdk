@@ -193,6 +193,16 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
         fi
 
         if test "x$FOUND_FREETYPE" != "xyes" ; then
+          LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include],
+              [$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI], [well-known location])
+        fi
+
+        if test "x$FOUND_FREETYPE" != "xyes" ; then
+          LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include],
+              [$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI], [well-known location])
+        fi
+
+        if test "x$FOUND_FREETYPE" != "xyes" ; then
           FREETYPE_BASE_DIR="$SYSROOT/usr/X11"
           LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include],
               [$FREETYPE_BASE_DIR/lib], [well-known location])

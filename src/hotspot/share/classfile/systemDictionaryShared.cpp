@@ -757,7 +757,7 @@ Handle SystemDictionaryShared::get_shared_jar_url(int shared_path_index, TRAPS) 
                            vmSymbols::toFileURL_signature(),
                            path_string, CHECK_(url_h));
 
-    atomic_set_shared_jar_url(shared_path_index, (oop)result.get_jobject());
+    atomic_set_shared_jar_url(shared_path_index, result.get_oop());
   }
 
   url_h = Handle(THREAD, shared_jar_url(shared_path_index));
@@ -819,7 +819,7 @@ Handle SystemDictionaryShared::get_protection_domain_from_classloader(Handle cla
                           vmSymbols::getProtectionDomain_name(),
                           vmSymbols::getProtectionDomain_signature(),
                           cs, CHECK_NH);
-  return Handle(THREAD, (oop)obj_result.get_jobject());
+  return Handle(THREAD, obj_result.get_oop());
 }
 
 // Returns the ProtectionDomain associated with the JAR file identified by the url.
@@ -862,7 +862,7 @@ Handle SystemDictionaryShared::get_shared_protection_domain(Handle class_loader,
         JavaCalls::call_static(&result, classLoaders_klass, vmSymbols::toFileURL_name(),
                                vmSymbols::toFileURL_signature(),
                                location_string, CHECK_NH);
-        url = Handle(THREAD, (oop)result.get_jobject());
+        url = Handle(THREAD, result.get_oop());
       }
 
       Handle pd = get_protection_domain_from_classloader(class_loader, url,
@@ -1196,18 +1196,23 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   return created;
 }
 
-// This function is called to resolve the super/interfaces of shared classes for
-// non-built-in loaders. E.g., SharedClass in the below example
+// This function is called to lookup the super/interfaces of shared classes for
+// unregistered loaders. E.g., SharedClass in the below example
 // where "super:" (and optionally "interface:") have been specified.
 //
 // java/lang/Object id: 0
-// Interface   id: 2 super: 0 source: cust.jar
+// Interface    id: 2 super: 0 source: cust.jar
 // SharedClass  id: 4 super: 0 interfaces: 2 source: cust.jar
-InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
-    Symbol* class_name, Symbol* super_name, Handle class_loader,
-    Handle protection_domain, bool is_superclass, TRAPS) {
+InstanceKlass* SystemDictionaryShared::lookup_super_for_unregistered_class(
+    Symbol* class_name, Symbol* super_name, bool is_superclass) {
 
-  assert(DumpSharedSpaces, "only when dumping");
+  assert(DumpSharedSpaces, "only when static dumping");
+
+  if (!ClassListParser::is_parsing_thread()) {
+    // Unregistered classes can be created only by ClassListParser::_parsing_thread.
+
+    return NULL;
+  }
 
   ClassListParser* parser = ClassListParser::instance();
   if (parser == NULL) {
@@ -1672,7 +1677,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
                                                                          InstanceKlass* caller_ik, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
-  PackageEntry* pkg_entry = get_package_entry_from_class(caller_ik, class_loader);
+  PackageEntry* pkg_entry = caller_ik->package();
   if (caller_ik->class_loader() != NULL) {
     protection_domain = SystemDictionaryShared::init_security_info(class_loader, caller_ik, pkg_entry, CHECK_NULL);
   }
@@ -2236,12 +2241,14 @@ public:
   SharedLambdaDictionaryPrinter(outputStream* st) : _st(st), _index(0) {}
 
   void do_value(const RunTimeLambdaProxyClassInfo* record) {
-    ResourceMark rm;
-    _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
-    Klass* k = record->proxy_klass_head()->next_link();
-    while (k != NULL) {
-      _st->print_cr("%4d:  %s", (_index++), k->external_name());
-      k = k->next_link();
+    if (record->proxy_klass_head()->lambda_proxy_is_available()) {
+      ResourceMark rm;
+      _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
+      Klass* k = record->proxy_klass_head()->next_link();
+      while (k != NULL) {
+        _st->print_cr("%4d:  %s", (_index++), k->external_name());
+        k = k->next_link();
+      }
     }
   }
 };

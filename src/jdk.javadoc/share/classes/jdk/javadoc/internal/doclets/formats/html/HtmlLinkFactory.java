@@ -250,16 +250,16 @@ public class HtmlLinkFactory extends LinkFactory {
                     utils.getSimpleName(typeElement));
         } else if (utils.isInterface(typeElement)){
             return resources.getText("doclet.Href_Interface_Title",
-                utils.getPackageName(utils.containingPackage(typeElement)));
+                m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         } else if (utils.isAnnotationType(typeElement)) {
             return resources.getText("doclet.Href_Annotation_Title",
-                utils.getPackageName(utils.containingPackage(typeElement)));
+                m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         } else if (utils.isEnum(typeElement)) {
             return resources.getText("doclet.Href_Enum_Title",
-                utils.getPackageName(utils.containingPackage(typeElement)));
+                m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         } else {
             return resources.getText("doclet.Href_Class_Title",
-                utils.getPackageName(utils.containingPackage(typeElement)));
+                m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         }
     }
 
