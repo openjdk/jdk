@@ -116,8 +116,11 @@ class ClassListParser : public StackObj {
   void print_actual_interfaces(InstanceKlass *ik);
   bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
 
-  void resolve_indy(Symbol* class_name_symbol, TRAPS);
+  void resolve_indy(Thread* current, Symbol* class_name_symbol);
   void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
+  bool parse_one_line();
+  Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
+
 public:
   ClassListParser(const char* file);
   ~ClassListParser();
@@ -129,7 +132,7 @@ public:
     return _instance;
   }
 
-  bool parse_one_line();
+  int parse(TRAPS);
   void split_tokens_by_whitespace(int offset);
   int split_at_tag_from_line();
   bool parse_at_tags();
@@ -169,8 +172,6 @@ public:
     return _class_name;
   }
 
-  Klass* load_current_class(TRAPS);
-
   bool is_loading_from_source();
 
   bool lambda_form_line() { return _lambda_form_line; }
@@ -180,6 +181,6 @@ public:
   InstanceKlass* lookup_super_for_current_class(Symbol* super_name);
   InstanceKlass* lookup_interface_for_current_class(Symbol* interface_name);
 
-  static void populate_cds_indy_info(Thread* current, const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii);
+  static void populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS);
 };
 #endif // SHARE_CLASSFILE_CLASSLISTPARSER_HPP

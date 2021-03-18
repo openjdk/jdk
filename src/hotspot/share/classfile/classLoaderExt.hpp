@@ -58,7 +58,7 @@ private:
   static bool _has_platform_classes;
 
   static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, bool clean_text);
-  static ClassPathEntry* find_classpath_entry_from_cache(const char* path, TRAPS);
+  static ClassPathEntry* find_classpath_entry_from_cache(Thread* current, const char* path);
 
 public:
   static void process_jar_manifest(ClassPathEntry* entry, bool check_for_duplicates, TRAPS);

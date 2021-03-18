@@ -138,7 +138,11 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
   // Read and check the gc-state-flag.
   LIR_Opr flag_val = gen->new_register(T_INT);
   __ load(active_flag_addr, flag_val);
-  LIR_Opr mask = LIR_OprFact::intConst(ShenandoahHeap::HAS_FORWARDED);
+  int flags = ShenandoahHeap::HAS_FORWARDED;
+  if (!ShenandoahBarrierSet::is_strong_access(decorators)) {
+    flags |= ShenandoahHeap::WEAK_ROOTS;
+  }
+  LIR_Opr mask = LIR_OprFact::intConst(flags);
   LIR_Opr mask_reg = gen->new_register(T_INT);
   __ move(mask, mask_reg);
 

@@ -225,7 +225,6 @@ public:
 class ArchiveUtils {
 public:
   static void log_to_classlist(Thread* current, BootstrapInfo* bootstrap_specifier) NOT_CDS_RETURN;
-  static void check_for_oom(oop exception) NOT_CDS_RETURN;
 };
 
 #endif // SHARE_MEMORY_ARCHIVEUTILS_HPP

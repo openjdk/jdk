@@ -198,18 +198,18 @@ FileMapInfo::~FileMapInfo() {
   }
 }
 
-void FileMapInfo::populate_header(size_t alignment) {
-  header()->populate(this, alignment);
+void FileMapInfo::populate_header(size_t core_region_alignment) {
+  header()->populate(this, core_region_alignment);
 }
 
-void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
+void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment) {
   if (DynamicDumpSharedSpaces) {
     _magic = CDS_DYNAMIC_ARCHIVE_MAGIC;
   } else {
     _magic = CDS_ARCHIVE_MAGIC;
   }
   _version = CURRENT_CDS_ARCHIVE_VERSION;
-  _alignment = alignment;
+  _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
   if (HeapShared::is_heap_object_archiving_allowed()) {
@@ -267,7 +267,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("============ end regions ======== ");
 
   st->print_cr("- header_size:                    " SIZE_FORMAT, _header_size);
-  st->print_cr("- alignment:                      " SIZE_FORMAT, _alignment);
+  st->print_cr("- core_region_alignment:          " SIZE_FORMAT, _core_region_alignment);
   st->print_cr("- obj_alignment:                  %d", _obj_alignment);
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
@@ -1225,7 +1225,7 @@ void FileMapInfo::open_for_write(const char* path) {
     header_bytes += strlen(Arguments::GetSharedArchivePath()) + 1;
   }
 
-  header_bytes = align_up(header_bytes, os::vm_allocation_granularity());
+  header_bytes = align_up(header_bytes, MetaspaceShared::core_region_alignment());
   _file_offset = header_bytes;
   seek_to_position(_file_offset);
 }
@@ -1251,7 +1251,7 @@ void FileMapInfo::write_header() {
 }
 
 size_t FileMapRegion::used_aligned() const {
-  return align_up(used(), os::vm_allocation_granularity());
+  return align_up(used(), MetaspaceShared::core_region_alignment());
 }
 
 void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, bool read_only,
@@ -1456,7 +1456,7 @@ void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
 
 bool FileMapInfo::is_file_position_aligned() const {
   return _file_offset == align_up(_file_offset,
-                                  os::vm_allocation_granularity());
+                                  MetaspaceShared::core_region_alignment());
 }
 
 // Align file position to an allocation unit boundary.
@@ -1464,7 +1464,7 @@ bool FileMapInfo::is_file_position_aligned() const {
 void FileMapInfo::align_file_position() {
   assert(_file_open, "must be");
   size_t new_file_offset = align_up(_file_offset,
-                                    os::vm_allocation_granularity());
+                                    MetaspaceShared::core_region_alignment());
   if (new_file_offset != _file_offset) {
     _file_offset = new_file_offset;
     // Seek one byte back from the target and write a byte to insure
@@ -1507,8 +1507,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
     // the space is already readwrite so we are done
     return true;
   }
-  size_t used = si->used();
-  size_t size = align_up(used, os::vm_allocation_granularity());
+  size_t size = si->used_aligned();
   if (!open_for_read()) {
     return false;
   }
@@ -2088,8 +2087,7 @@ void FileMapInfo::unmap_region(int i) {
   assert(!HeapShared::is_heap_region(i), "sanity");
   FileMapRegion* si = space_at(i);
   char* mapped_base = si->mapped_base();
-  size_t used = si->used();
-  size_t size = align_up(used, os::vm_allocation_granularity());
+  size_t size = si->used_aligned();
 
   if (mapped_base != NULL) {
     if (size > 0 && si->mapped_from_file()) {

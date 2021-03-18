@@ -331,13 +331,17 @@ class Exceptions {
 class ExceptionMark {
  private:
   Thread* _thread;
+  inline void check_no_pending_exception();
 
  public:
-  ExceptionMark(Thread*& thread);
+  ExceptionMark();
+  ExceptionMark(Thread* thread);
   ~ExceptionMark();
+
+  Thread* thread() {
+    return _thread;
+  }
 };
-
-
 
 // Use an EXCEPTION_MARK for 'local' exceptions. EXCEPTION_MARK makes sure that no
 // pending exception exists upon entering its scope and tests that no pending exception
@@ -347,6 +351,6 @@ class ExceptionMark {
 // which preserves pre-existing exceptions and does not allow new
 // exceptions.
 
-#define EXCEPTION_MARK                           Thread* THREAD = NULL; ExceptionMark __em(THREAD);
+#define EXCEPTION_MARK                           ExceptionMark __em; Thread* THREAD = __em.thread();
 
 #endif // SHARE_UTILITIES_EXCEPTIONS_HPP
