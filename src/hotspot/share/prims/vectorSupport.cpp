@@ -94,6 +94,7 @@ void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicTy
     // occupies the whole 512-bit vector register when scalarized.
     // (In generated code, the conversion is performed by VectorStoreMask.)
     //
+    // TODO: revisit when predicate registers are fully supported.
     switch (elem_bt) {
       case T_BYTE:   arr->bool_at_put(index,  (*(jbyte*)addr) != 0); break;
       case T_SHORT:  arr->bool_at_put(index, (*(jshort*)addr) != 0); break;

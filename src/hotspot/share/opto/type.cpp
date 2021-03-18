@@ -2410,11 +2410,12 @@ const TypeVect* TypeVect::make(const Type *elem, uint length) {
   return NULL;
 }
 
-const TypeVect *TypeVect::makemask(const BasicType elem_bt, uint length) {
+const TypeVect *TypeVect::makemask(const Type* elem, uint length) {
   if (Matcher::has_predicated_vectors()) {
-    return (TypeVect*)(Matcher::predicate_reg_type(get_const_basic_type(elem_bt), length))->hashcons();
+    const TypeVect* mtype = Matcher::predicate_reg_type(elem, length);
+    return (TypeVect*)(const_cast<TypeVect*>(mtype))->hashcons();
   } else {
-    return make(get_const_basic_type(elem_bt), length);
+    return make(elem, length);
   }
 }
 
@@ -2432,7 +2433,13 @@ const Type *TypeVect::xmeet( const Type *t ) const {
 
   default:                      // All else is a mistake
     typerr(t);
-  case VectorM:
+  case VectorM: {
+    const TypeVectMask* v = t->is_vectmask();
+    assert(  base() == v->base(), "");
+    assert(length() == v->length(), "");
+    assert(element_basic_type() == v->element_basic_type(), "");
+    return TypeVect::makemask(_elem->xmeet(v->_elem), _length);
+  }
   case VectorA:
   case VectorS:
   case VectorD:
@@ -2511,6 +2518,17 @@ void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
 }
 #endif
 
+bool TypeVectMask::eq(const Type *t) const {
+  if (!t->isa_vectmask()) {
+    return false;
+  }
+  const TypeVectMask *v = t->is_vectmask();
+  return (element_type() == v->element_type()) && (length() == v->length());
+}
+
+const Type *TypeVectMask::xdual() const {
+  return new TypeVectMask(element_type()->dual(), length());
+}
 
 //=============================================================================
 // Convenience common pre-built types.

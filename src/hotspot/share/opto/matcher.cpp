@@ -701,9 +701,7 @@ void Matcher::init_first_stack_mask() {
   idealreg2debugmask[Op_RegF]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegD]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegP]->SUBTRACT(*caller_save_mask);
-  if (Matcher::has_predicated_vectors()) {
-    idealreg2debugmask[Op_RegVMask]->SUBTRACT(*caller_save_mask);
-  }
+  idealreg2debugmask[Op_RegVMask]->SUBTRACT(*caller_save_mask);
 
   idealreg2debugmask[Op_VecA]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_VecS]->SUBTRACT(*caller_save_mask);
@@ -718,9 +716,8 @@ void Matcher::init_first_stack_mask() {
   idealreg2mhdebugmask[Op_RegF]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegD]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegP]->SUBTRACT(*mh_caller_save_mask);
-  if (Matcher::has_predicated_vectors()) {
-    idealreg2mhdebugmask[Op_RegVMask]->SUBTRACT(*mh_caller_save_mask);
-  }
+  idealreg2mhdebugmask[Op_RegVMask]->SUBTRACT(*mh_caller_save_mask);
+
   idealreg2mhdebugmask[Op_VecA]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_VecS]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_VecD]->SUBTRACT(*mh_caller_save_mask);
@@ -987,7 +984,6 @@ void Matcher::init_spill_mask( Node *ret ) {
   idealreg2regmask[Op_VecD] = regmask_for_ideal_register(Op_VecD, ret);
   idealreg2regmask[Op_VecX] = regmask_for_ideal_register(Op_VecX, ret);
   idealreg2regmask[Op_VecY] = regmask_for_ideal_register(Op_VecY, ret);
-  idealreg2regmask[Op_VecZ] = regmask_for_ideal_register(Op_VecZ, ret);
   idealreg2regmask[Op_VecZ] = regmask_for_ideal_register(Op_VecZ, ret);
   idealreg2regmask[Op_RegVMask] = regmask_for_ideal_register(Op_RegVMask, ret);
 }

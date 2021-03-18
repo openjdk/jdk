@@ -4883,6 +4883,15 @@ define
 //               in the encode section of the architecture description.
 
 
+// ============================= NOTE =====================================
+// Temporary kReg operand in following instruction patterns gets used only
+// for targets supporting AVX-512 feature, it's existing here to save
+// redundant pattern replication for non-AVX512 targets.
+// Patterns: rep_stos, rep_stos_large, string_compareL, string_compareU,
+// string_compareLU, string_compareUL, string_equals, array_equalsB,
+// array_equalsC, has_negatives, string_compress, string_inflate
+// =======================================================================
+
 //----------Load/Store/Move Instructions---------------------------------------
 //----------Load Instructions--------------------------------------------------
 
@@ -10949,9 +10958,7 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
   ins_pipe( pipe_slow );
 %}
 
-
-// =======================================================================
-// fast clearing of an array
+// Fast clearing of an array
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, rax_RegI zero,
                   Universe dummy, rFlagsReg cr)
 %{
@@ -12185,6 +12192,8 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
 
 // mask version
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
+// Bounded mask operand used in following patten is needed for
+// post-loop multiversioning.
 instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, rFlagsReg cr, label labl)
 %{
   predicate(n->has_vector_mask_set());
@@ -12204,6 +12213,8 @@ instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, rFlagsReg cr, label
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
+// Bounded mask operand used in following patten is needed for
+// post-loop multiversioning.
 instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, rFlagsRegU cmp, label labl) %{
   predicate(n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
@@ -12221,6 +12232,8 @@ instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, rFlagsRegU cmp, l
   ins_pipe(pipe_jcc);
 %}
 
+// Bounded mask operand used in following patten is needed for
+// post-loop multiversioning.
 instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, kReg_K1 ktmp, rFlagsRegUCF cmp, label labl) %{
   predicate(n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);

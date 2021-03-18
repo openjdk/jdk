@@ -5077,6 +5077,15 @@ define %{
 //               name must have been defined in an 'enc_class' specification
 //               in the encode section of the architecture description.
 
+// ============================= NOTE =====================================
+// Temporary kReg operand in following instruction patterns gets used only
+// for targets supporting AVX-512 feature, it's existing here to save
+// redundant pattern replication for non-AVX512 targets.
+// Patterns: rep_stos, rep_stos_large, string_compareL, string_compareU,
+// string_compareLU, string_compareUL, string_equals, array_equalsB,
+// array_equalsC, has_negatives, string_compress, string_inflate
+// =======================================================================
+
 //----------BSWAP-Instruction--------------------------------------------------
 instruct bytes_reverse_int(rRegI dst) %{
   match(Set dst (ReverseBytesI dst));
@@ -12390,6 +12399,8 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
 
 // mask version
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
+// Bounded mask operand used in following patten is needed for
+// post-loop multiversioning.
 instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, eFlagsReg cr, label labl) %{
   predicate(n->has_vector_mask_set());
   match(CountedLoopEnd cop cr);
@@ -12408,6 +12419,8 @@ instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, eFlagsReg cr, label
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
+// Bounded mask operand used in following patten is needed for
+// post-loop multiversioning.
 instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, eFlagsRegU cmp, label labl) %{
   predicate(n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
@@ -12425,6 +12438,8 @@ instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, eFlagsRegU cmp, l
   ins_pipe( pipe_jcc );
 %}
 
+// Bounded mask operand used in following patten is needed for
+// post-loop multiversioning.
 instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, kReg_K1 ktmp, eFlagsRegUCF cmp, label labl) %{
   predicate(n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);

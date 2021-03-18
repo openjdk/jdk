@@ -1614,6 +1614,7 @@ const bool Matcher::match_rule_supported(int opcode) {
 // Identify extra cases that we might want to provide match rules for vector nodes and
 // other intrinsics guarded with vector length (vlen) and element type (bt).
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+  const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
   if (!match_rule_supported(opcode)) {
     return false;
   }
@@ -1664,16 +1665,12 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_VectorMaskGen:
     case Op_LoadVectorMasked:
     case Op_StoreVectorMasked:
-#ifdef _LP64
-      if (!VM_Version::supports_avx512bw()) {
+      if (!is_LP64 || !VM_Version::supports_avx512bw()) {
         return false;
       }
       if ((size_in_bits != 512) && !VM_Version::supports_avx512vl()) {
         return false;
       }
-#else
-      return false;
-#endif
       break;
     case Op_CMoveVD:
       if (vlen != 4) {
@@ -1895,7 +1892,7 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return &_OPMASK_REG_mask;
 }
 
-TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return new TypeVectMask(TypeInt::BOOL, length);
 }
 
@@ -2620,7 +2617,11 @@ instruct ShouldNotReachHere() %{
 %}
 
 // =================================EVEX special===============================
-
+// Existing partial implementation for post-loop multi-versioning computes
+// the mask corresponding to tail loop in K1 opmask register. This may then be
+// used for predicating instructions in loop body during last post-loop iteration.
+// TODO: Remove hard-coded K1 usage while fixing existing post-loop
+// multiversioning support.
 instruct setMask(rRegI dst, rRegI src, kReg_K1 mask) %{
   predicate(Matcher::has_predicated_vectors());
   match(Set dst (SetVectMaskI  src));
