@@ -1086,7 +1086,8 @@ public class JFormattedTextField extends JTextField {
         }
 
         /**
-         * Subclass and override if you wish to provide a
+         * @implNote Default implementation returns null.
+         * Subclass must override if you wish to provide a
          * <code>DocumentFilter</code> to restrict what can be input.
          * <code>install</code> will install the returned value onto
          * the <code>JFormattedTextField</code>.
@@ -1098,7 +1099,8 @@ public class JFormattedTextField extends JTextField {
         }
 
         /**
-         * Subclass and override if you wish to provide a filter to restrict
+         * @implNote Default implementation returns null.
+         * Subclass must override if you wish to provide a filter to restrict
          * where the user can navigate to.
          * <code>install</code> will install the returned value onto
          * the <code>JFormattedTextField</code>.
