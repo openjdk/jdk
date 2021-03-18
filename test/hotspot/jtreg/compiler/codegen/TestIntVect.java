@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ public class TestIntVect {
   private static final int SCALE = 2;
   private static final int ALIGN_OFF = 8;
   private static final int UNALIGN_OFF = 5;
+  private static final int SHIFT = 32;
+  private static final int ADD_INIT = Integer.MAX_VALUE - 500;
+  private static final int VALUE = 7;
 
   public static void main(String args[]) {
     System.out.println("Testing Integer vectors");
@@ -52,10 +55,29 @@ public class TestIntVect {
   }
 
   static int test() {
+    int[] a0 = new int[ARRLEN];
     int[] a1 = new int[ARRLEN];
     int[] a2 = new int[ARRLEN];
     System.out.println("Warmup");
     for (int i=0; i<ITERS; i++) {
+      test_sllc(a0, a1);
+      test_sllc_n(a0, a1);
+      test_sllc_o(a0, a1);
+      test_sllc_on(a0, a1);
+      test_sllv(a0, a1, VALUE);
+
+      test_srlc(a0, a1);
+      test_srlc_n(a0, a1);
+      test_srlc_o(a0, a1);
+      test_srlc_on(a0, a1);
+      test_srlv(a0, a1, VALUE);
+
+      test_srac(a0, a1);
+      test_srac_n(a0, a1);
+      test_srac_o(a0, a1);
+      test_srac_on(a0, a1);
+      test_srav(a0, a1, VALUE);
+
       test_ci(a1);
       test_vi(a2, (int)123);
       test_cp(a1, a2);
@@ -488,6 +510,118 @@ public class TestIntVect {
         errn += verify("test_2vi_unaln_overlap: a1", i, a1[i], (int)103);
       }
 
+      // Initialize
+      for (int i = 0; i < ARRLEN; i++) {
+        a1[i] = ADD_INIT + i;
+      }
+      test_sllc(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_sllc: ", i, a0[i], ((ADD_INIT + i) << VALUE));
+      }
+      test_sllv(a0, a1, VALUE);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_sllv: ", i, a0[i], ((ADD_INIT + i) << VALUE));
+      }
+
+      test_srlc(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srlc: ", i, a0[i], ((ADD_INIT + i) >>> VALUE));
+      }
+      test_srlv(a0, a1, VALUE);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srlv: ", i, a0[i], ((ADD_INIT + i) >>> VALUE));
+      }
+
+      test_srac(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srac: ", i, a0[i], ((ADD_INIT + i) >> VALUE));
+      }
+      test_srav(a0, a1, VALUE);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srav: ", i, a0[i], ((ADD_INIT + i) >> VALUE));
+      }
+
+      test_sllc_n(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_sllc_n: ", i, a0[i], ((ADD_INIT + i) << (-VALUE)));
+      }
+      test_sllv(a0, a1, -VALUE);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_sllv_n: ", i, a0[i], ((ADD_INIT + i) << (-VALUE)));
+      }
+
+      test_srlc_n(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srlc_n: ", i, a0[i], ((ADD_INIT + i) >>> (-VALUE)));
+      }
+      test_srlv(a0, a1, -VALUE);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srlv_n: ", i, a0[i], ((ADD_INIT + i) >>> (-VALUE)));
+      }
+
+      test_srac_n(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srac_n: ", i, a0[i], ((ADD_INIT + i) >> (-VALUE)));
+      }
+      test_srav(a0, a1, -VALUE);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srav_n: ", i, a0[i], ((ADD_INIT + i) >> (-VALUE)));
+      }
+
+      test_sllc_o(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_sllc_o: ", i, a0[i], ((ADD_INIT + i) << SHIFT));
+      }
+      test_sllv(a0, a1, SHIFT);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_sllv_o: ", i, a0[i], ((ADD_INIT + i) << SHIFT));
+      }
+
+      test_srlc_o(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srlc_o: ", i, a0[i], ((ADD_INIT + i) >>> SHIFT));
+      }
+      test_srlv(a0, a1, SHIFT);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srlv_o: ", i, a0[i], ((ADD_INIT + i) >>> SHIFT));
+      }
+
+      test_srac_o(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srac_o: ", i, a0[i], ((ADD_INIT + i) >> SHIFT));
+      }
+      test_srav(a0, a1, SHIFT);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srav_o: ", i, a0[i], ((ADD_INIT + i) >> SHIFT));
+      }
+
+      test_sllc_on(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_sllc_on: ", i, a0[i], ((ADD_INIT + i) << (-SHIFT)));
+      }
+      test_sllv(a0, a1, -SHIFT);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_sllv_on: ", i, a0[i], ((ADD_INIT + i) << (-SHIFT)));
+      }
+
+      test_srlc_on(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srlc_on: ", i, a0[i], ((ADD_INIT + i) >>> (-SHIFT)));
+      }
+      test_srlv(a0, a1, -SHIFT);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srlv_on: ", i, a0[i], ((ADD_INIT + i) >>> (-SHIFT)));
+      }
+
+      test_srac_on(a0, a1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srac_on: ", i, a0[i], ((ADD_INIT + i) >> (-SHIFT)));
+      }
+      test_srav(a0, a1, -SHIFT);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_srav_on: ", i, a0[i], ((ADD_INIT + i) >> (-SHIFT)));
+      }
+
     }
 
     if (errn > 0)
@@ -732,6 +866,84 @@ public class TestIntVect {
     System.out.println("test_2vi_unaln: " + (end - start));
 
     return errn;
+  }
+
+  static void test_sllc(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] << VALUE;
+    }
+  }
+  static void test_sllc_n(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] << (-VALUE);
+    }
+  }
+  static void test_sllc_o(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] << SHIFT;
+    }
+  }
+  static void test_sllc_on(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] << (-SHIFT);
+    }
+  }
+  static void test_sllv(int[] a0, int[] a1, int b) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] << b;
+    }
+  }
+
+  static void test_srlc(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >>> VALUE;
+    }
+  }
+  static void test_srlc_n(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >>> (-VALUE);
+    }
+  }
+  static void test_srlc_o(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >>> SHIFT;
+    }
+  }
+  static void test_srlc_on(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >>> (-SHIFT);
+    }
+  }
+  static void test_srlv(int[] a0, int[] a1, int b) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >>> b;
+    }
+  }
+
+  static void test_srac(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >> VALUE;
+    }
+  }
+  static void test_srac_n(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >> (-VALUE);
+    }
+  }
+  static void test_srac_o(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >> SHIFT;
+    }
+  }
+  static void test_srac_on(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >> (-SHIFT);
+    }
+  }
+  static void test_srav(int[] a0, int[] a1, int b) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = a1[i] >> b;
+    }
   }
 
   static void test_ci(int[] a) {

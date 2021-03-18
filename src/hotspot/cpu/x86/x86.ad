@@ -5827,8 +5827,7 @@ instruct vsqrtD_mem(vec dst, memory mem) %{
 // Left and right shift count vectors are the same on x86
 // (only lowest bits of xmm reg are used for count).
 instruct vshiftcnt(vec dst, rRegI cnt) %{
-  match(Set dst (LShiftCntV cnt));
-  match(Set dst (RShiftCntV cnt));
+  match(Set dst (ShiftCntV cnt));
   format %{ "movdl    $dst,$cnt\t! load shift count" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $cnt$$Register);
@@ -6021,9 +6020,9 @@ instruct vshiftI(vec dst, vec src, vec shift) %{
 
 // Integers vector left constant shift
 instruct vshiftI_imm(vec dst, vec src, immI8 shift) %{
-  match(Set dst (LShiftVI src (LShiftCntV shift)));
-  match(Set dst (RShiftVI src (RShiftCntV shift)));
-  match(Set dst (URShiftVI src (RShiftCntV shift)));
+  match(Set dst (LShiftVI src (ShiftCntV shift)));
+  match(Set dst (RShiftVI src (ShiftCntV shift)));
+  match(Set dst (URShiftVI src (ShiftCntV shift)));
   format %{ "vshiftd_imm  $dst,$src,$shift\t! shift packedI" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
@@ -6068,8 +6067,8 @@ instruct vshiftL(vec dst, vec src, vec shift) %{
 
 // Longs vector constant shift
 instruct vshiftL_imm(vec dst, vec src, immI8 shift) %{
-  match(Set dst (LShiftVL src (LShiftCntV shift)));
-  match(Set dst (URShiftVL src (RShiftCntV shift)));
+  match(Set dst (LShiftVL src (ShiftCntV shift)));
+  match(Set dst (URShiftVL src (ShiftCntV shift)));
   format %{ "vshiftq_imm  $dst,$src,$shift\t! shift packedL" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();

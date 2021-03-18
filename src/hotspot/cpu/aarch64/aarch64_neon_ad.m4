@@ -1930,8 +1930,7 @@ define(`VSHIFTCNT', `
 instruct vshiftcnt$3$4`'(vec$5 dst, iRegIorL2I cnt) %{
   predicate(ifelse($3, 8, n->as_Vector()->length_in_bytes() == 4 ||`
             ')n->as_Vector()->length_in_bytes() == $3);
-  match(Set dst (LShiftCntV cnt));
-  match(Set dst (RShiftCntV cnt));
+  match(Set dst (ShiftCntV cnt));
   format %{ "$1  $dst, $cnt\t# shift count vector ($3$4)" %}
   ins_encode %{
     __ $2(as_FloatRegister($dst$$reg), __ T$3$4, as_Register($cnt$$reg));
@@ -2007,7 +2006,7 @@ instruct vsll$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
             ',
   $3$4, 4S, n->as_Vector()->length() == 2 ||`
             ')n->as_Vector()->length() == $3);
-  match(Set dst (LShiftV$4 src (LShiftCntV shift)));
+  match(Set dst (LShiftV$4 src (ShiftCntV shift)));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2041,7 +2040,7 @@ instruct vsra$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
             ',
   $3$4, 4S, n->as_Vector()->length() == 2 ||`
             ')n->as_Vector()->length() == $3);
-  match(Set dst (RShiftV$4 src (RShiftCntV shift)));
+  match(Set dst (RShiftV$4 src (ShiftCntV shift)));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2066,7 +2065,7 @@ instruct vsrl$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
             ',
   $3$4, 4S, n->as_Vector()->length() == 2 ||`
             ')n->as_Vector()->length() == $3);
-  match(Set dst (URShiftV$4 src (RShiftCntV shift)));
+  match(Set dst (URShiftV$4 src (ShiftCntV shift)));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2098,7 +2097,7 @@ dnl
 define(`VSRLA_IMM', `
 instruct vsrla$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
   predicate(n->as_Vector()->length() == $3);
-  match(Set dst (AddV$4 dst (URShiftV$4 src (RShiftCntV shift))));
+  match(Set dst (AddV$4 dst (URShiftV$4 src (ShiftCntV shift))));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2122,7 +2121,7 @@ dnl
 define(`VSRAA_IMM', `
 instruct vsraa$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
   predicate(n->as_Vector()->length() == $3);
-  match(Set dst (AddV$4 dst (RShiftV$4 src (RShiftCntV shift))));
+  match(Set dst (AddV$4 dst (RShiftV$4 src (ShiftCntV shift))));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2150,7 +2149,7 @@ VSLL(sshl, sshl, 16, B, B, X)
 //
 // Case 1: The vector shift count is from replication.
 //        |            |
-//    LoadVector  RShiftCntV
+//    LoadVector  ShiftCntV
 //        |       /
 //     RShiftVI
 // Note: In inner loop, multiple neg instructions are used, which can be
