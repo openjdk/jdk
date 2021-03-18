@@ -124,10 +124,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
   // Degenerated GC may carry concurrent root flags when upgrading to
   // full GC. We need to reset it before mutators resume.
-  if (ClassUnloading) {
-    heap->set_concurrent_strong_root_in_progress(false);
-    heap->set_concurrent_weak_root_in_progress(false);
-  }
+  heap->set_concurrent_strong_root_in_progress(false);
+  heap->set_concurrent_weak_root_in_progress(false);
 
   heap->set_full_gc_in_progress(true);
 

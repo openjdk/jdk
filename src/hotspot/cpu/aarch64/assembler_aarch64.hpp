@@ -2687,7 +2687,7 @@ public:
      *   1xxx xxx       1D/2D,  shift = UInt(immh:immb) - 64            \
      *   (1D is RESERVED)                                               \
      */                                                                 \
-    assert(!isSHR || (isSHR && (shift != 0)), "Zero right shift");      \
+    guarantee(!isSHR || (isSHR && (shift != 0)), "impossible encoding");\
     assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");           \
     int cVal = (1 << (((T >> 1) + 3) + (isSHR ? 1 : 0)));               \
     int encodedShift = isSHR ? cVal - shift : cVal + shift;             \

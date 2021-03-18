@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.dnd.SunDragSourceContextPeer;
 import sun.awt.util.ThreadGroupUtils;
+import sun.java2d.metal.MTLRenderQueue;
 import sun.java2d.opengl.OGLRenderQueue;
 import sun.lwawt.LWComponentPeer;
 import sun.lwawt.LWCursorManager;
@@ -500,8 +501,12 @@ public final class LWCToolkit extends LWToolkit {
 
     @Override
     public void sync() {
-        // flush the OGL pipeline (this is a no-op if OGL is not enabled)
-        OGLRenderQueue.sync();
+        // flush the rendering pipeline
+        if (CGraphicsDevice.usingMetalPipeline()) {
+            MTLRenderQueue.sync();
+        } else {
+            OGLRenderQueue.sync();
+        }
         // setNeedsDisplay() selector was sent to the appropriate CALayer so now
         // we have to flush the native selectors queue.
         flushNativeSelectors();

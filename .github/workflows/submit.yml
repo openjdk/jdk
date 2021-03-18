@@ -4,6 +4,7 @@ on:
   push:
     branches-ignore:
       - master
+      - pr/*
   workflow_dispatch:
     inputs:
       platforms:

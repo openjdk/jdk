@@ -1110,7 +1110,7 @@ size_t ObjectSynchronizer::in_use_list_ceiling() {
 }
 
 void ObjectSynchronizer::dec_in_use_list_ceiling() {
-  Atomic::add(&_in_use_list_ceiling, -AvgMonitorsPerThreadEstimate);
+  Atomic::sub(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate);
 }
 
 void ObjectSynchronizer::inc_in_use_list_ceiling() {

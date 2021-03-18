@@ -60,7 +60,7 @@
  *      -cfm attach024Agent00.jar ${test.src}/attach024Agent00.mf
  *      -C ./bin/classes
  *      java/util/TooManyListenersException.class
- * @run driver ClassFileInstaller
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller
  *      nsk.jvmti.AttachOnDemand.attach024.attach024Agent00
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
