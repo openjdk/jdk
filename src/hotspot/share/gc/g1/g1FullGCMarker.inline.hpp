@@ -31,7 +31,7 @@
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
-#include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupQueue.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
@@ -67,8 +67,7 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   }
 
   // Collect live words.
-  uint hr_index = G1CollectedHeap::heap()->addr_to_region(cast_from_oop<HeapWord*>(obj));
-  _mark_stats_cache.add_live_words(hr_index, (size_t)obj->size());
+  _mark_stats_cache.add_live_words(obj);
 
   return true;
 }

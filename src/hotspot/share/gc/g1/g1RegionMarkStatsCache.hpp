@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1REGIONMARKSTATSCACHE_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/oop.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
@@ -102,6 +103,7 @@ public:
 
   ~G1RegionMarkStatsCache();
 
+  void add_live_words(oop obj);
   void add_live_words(uint region_idx, size_t live_words) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
     cur->_stats._live_words += live_words;

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -42,6 +43,11 @@ G1RegionMarkStatsCache::G1RegionMarkStatsCache(G1RegionMarkStats* target, uint n
 
 G1RegionMarkStatsCache::~G1RegionMarkStatsCache() {
   FREE_C_HEAP_ARRAY(G1RegionMarkStatsCacheEntry, _cache);
+}
+
+void G1RegionMarkStatsCache::add_live_words(oop obj) {
+  uint hr_index = G1CollectedHeap::heap()->addr_to_region(cast_from_oop<HeapWord*>(obj));
+  add_live_words(hr_index, (size_t) obj->size());
 }
 
 // Evict all remaining statistics, returning cache hits and misses.
