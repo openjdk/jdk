@@ -136,7 +136,7 @@ final class LdapSchemaParser {
         }
     }
 
-    final private static DirContext objectDescs2ClassDefs(Attribute objDescsAttr,
+    private static final DirContext objectDescs2ClassDefs(Attribute objDescsAttr,
                                                    LdapSchemaCtx schemaRoot)
         throws NamingException {
 
@@ -168,7 +168,7 @@ final class LdapSchemaParser {
         return classDefTree;
     }
 
-    final private static DirContext attrDescs2AttrDefs(Attribute attributeDescAttr,
+    private static final DirContext attrDescs2AttrDefs(Attribute attributeDescAttr,
                                                 LdapSchemaCtx schemaRoot)
         throws NamingException {
 
@@ -200,7 +200,7 @@ final class LdapSchemaParser {
         return attrDefTree;
     }
 
-    final private static DirContext syntaxDescs2SyntaxDefs(
+    private static final DirContext syntaxDescs2SyntaxDefs(
                                                 Attribute syntaxDescAttr,
                                                 LdapSchemaCtx schemaRoot)
         throws NamingException {
@@ -233,7 +233,7 @@ final class LdapSchemaParser {
         return syntaxDefTree;
     }
 
-    final private static DirContext matchRuleDescs2MatchRuleDefs(
+    private static final DirContext matchRuleDescs2MatchRuleDefs(
                                                 Attribute matchRuleDescAttr,
                                                 LdapSchemaCtx schemaRoot)
         throws NamingException {
@@ -266,7 +266,7 @@ final class LdapSchemaParser {
         return matchRuleDefTree;
     }
 
-    final private static Object[] desc2Def(String desc)
+    private static final Object[] desc2Def(String desc)
         throws NamingException {
             //System.err.println(desc);
 
@@ -302,7 +302,7 @@ final class LdapSchemaParser {
 
     // returns the index of the first whitespace char of a linear whitespace
     // sequence ending at the given position.
-    final private static int findTrailingWhitespace(String string, int pos) {
+    private static final int findTrailingWhitespace(String string, int pos) {
         for(int i = pos; i > 0; i--) {
             if(string.charAt(i) != WHSP) {
                 return i + 1;
@@ -311,7 +311,7 @@ final class LdapSchemaParser {
         return 0;
     }
 
-    final private static void skipWhitespace(String string, int[] pos) {
+    private static final void skipWhitespace(String string, int[] pos) {
         for(int i=pos[0]; i < string.length(); i++) {
             if(string.charAt(i) != WHSP) {
                 pos[0] = i;
@@ -323,7 +323,7 @@ final class LdapSchemaParser {
         }
     }
 
-    final private static Attribute readNumericOID(String string, int[] pos)
+    private static final Attribute readNumericOID(String string, int[] pos)
         throws NamingException {
 
         if (debug) {
@@ -350,7 +350,7 @@ final class LdapSchemaParser {
         return new BasicAttribute(NUMERICOID_ID, value);
     }
 
-    final private static Attribute readNextTag(String string, int[] pos)
+    private static final Attribute readNextTag(String string, int[] pos)
         throws NamingException {
 
         Attribute       attr = null;
@@ -393,7 +393,7 @@ final class LdapSchemaParser {
         return attr;
     }
 
-    final private static String[] readTag(String tag, String string, int[] pos)
+    private static final String[] readTag(String tag, String string, int[] pos)
         throws NamingException {
 
         if (debug) {
@@ -441,7 +441,7 @@ final class LdapSchemaParser {
         return readQDStrings(string, pos);
     }
 
-    final private static String[] readQDString(String string, int[] pos)
+    private static final String[] readQDString(String string, int[] pos)
         throws NamingException {
 
         int begin, end;
@@ -490,7 +490,7 @@ final class LdapSchemaParser {
      * qdescr          = whsp "'" descr "'" whsp
      * descr           = keystring
      */
-    final private static String[] readQDescrs(String string, int[] pos)
+    private static final String[] readQDescrs(String string, int[] pos)
         throws NamingException {
 
         if (debug) {
@@ -515,7 +515,7 @@ final class LdapSchemaParser {
      * qdescr          = whsp "'" descr "'" whsp
      * descr           = keystring
      */
-    final private static String[] readQDescrList(String string, int[] pos)
+    private static final String[] readQDescrList(String string, int[] pos)
         throws NamingException {
 
         int begin, end;
@@ -557,7 +557,7 @@ final class LdapSchemaParser {
         return answer;
     }
 
-    final private static String[] readWOID(String string, int[] pos)
+    private static final String[] readWOID(String string, int[] pos)
         throws NamingException {
 
         if (debug) {
@@ -595,7 +595,7 @@ final class LdapSchemaParser {
      * oids            = woid / ( "(" oidlist ")" )
      * oidlist         = woid *( "$" woid )
      */
-    final private static String[] readOIDs(String string, int[] pos)
+    private static final String[] readOIDs(String string, int[] pos)
         throws NamingException {
 
         if (debug) {
@@ -764,7 +764,7 @@ final class LdapSchemaParser {
       * Translate attributes that describe an object class into the
       * string description as defined in RFC 2252.
       */
-    final private String classDef2ObjectDesc(Attributes attrs)
+    private final String classDef2ObjectDesc(Attributes attrs)
         throws NamingException {
 
         StringBuilder objectDesc = new StringBuilder("( ");
@@ -876,7 +876,7 @@ final class LdapSchemaParser {
       * Translate attributes that describe an attribute definition into the
       * string description as defined in RFC 2252.
       */
-    final private String attrDef2AttrDesc(Attributes attrs)
+    private final String attrDef2AttrDesc(Attributes attrs)
         throws NamingException {
 
         StringBuilder attrDesc = new StringBuilder("( "); // opening parens
@@ -1009,7 +1009,7 @@ final class LdapSchemaParser {
       * Translate attributes that describe an attribute syntax definition into the
       * string description as defined in RFC 2252.
       */
-    final private String syntaxDef2SyntaxDesc(Attributes attrs)
+    private final String syntaxDef2SyntaxDesc(Attributes attrs)
         throws NamingException {
 
         StringBuilder syntaxDesc = new StringBuilder("( "); // opening parens
@@ -1065,7 +1065,7 @@ final class LdapSchemaParser {
       * Translate attributes that describe an attribute matching rule
       * definition into the string description as defined in RFC 2252.
       */
-    final private String matchRuleDef2MatchRuleDesc(Attributes attrs)
+    private final String matchRuleDef2MatchRuleDesc(Attributes attrs)
         throws NamingException {
 
         StringBuilder matchRuleDesc = new StringBuilder("( "); // opening parens
@@ -1141,7 +1141,7 @@ final class LdapSchemaParser {
         return matchRuleDesc.toString();
     }
 
-    final private String writeNumericOID(Attribute nOIDAttr)
+    private final String writeNumericOID(Attribute nOIDAttr)
         throws NamingException {
         if(nOIDAttr.size() != 1) {
             throw new InvalidAttributeValueException(
@@ -1150,7 +1150,7 @@ final class LdapSchemaParser {
         return (String)(nOIDAttr.get()) + WHSP;
     }
 
-    final private String writeWOID(Attribute attr) throws NamingException {
+    private final String writeWOID(Attribute attr) throws NamingException {
         if (netscapeBug)
             return writeQDString(attr);
         else
@@ -1158,7 +1158,7 @@ final class LdapSchemaParser {
     }
 
     /*  qdescr          = whsp "'" descr "'" whsp */
-    final private String writeQDString(Attribute qdStringAttr)
+    private final String writeQDString(Attribute qdStringAttr)
         throws NamingException {
         if(qdStringAttr.size() != 1) {
             throw new InvalidAttributeValueException(
@@ -1216,7 +1216,7 @@ final class LdapSchemaParser {
         return qdList.toString();
     }
 
-    final private String writeOIDs(Attribute oidsAttr)
+    private final String writeOIDs(Attribute oidsAttr)
         throws NamingException {
 
         switch(oidsAttr.size()) {

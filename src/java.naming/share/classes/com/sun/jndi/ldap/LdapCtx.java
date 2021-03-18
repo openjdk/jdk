@@ -96,7 +96,7 @@ import com.sun.jndi.ldap.ext.StartTlsResponseImpl;
  * @author Rosanna Lee
  */
 
-final public class LdapCtx extends ComponentDirContext
+public final class LdapCtx extends ComponentDirContext
     implements EventDirContext, LdapContext {
 
     /*

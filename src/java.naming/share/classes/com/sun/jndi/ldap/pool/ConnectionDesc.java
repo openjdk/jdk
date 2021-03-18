@@ -41,7 +41,7 @@ final class ConnectionDesc {
     static final byte IDLE = (byte)1;
     static final byte EXPIRED = (byte)2;
 
-    final private PooledConnection conn;
+    private final PooledConnection conn;
 
     private byte state = IDLE;  // initial state
     private long idleSince;
