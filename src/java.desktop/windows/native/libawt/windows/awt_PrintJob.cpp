@@ -1949,15 +1949,15 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_setAdvancedGraphicsMode
 /*
  * Class:     sun_awt_windows_WPrinterJob
  * Method:    setGraphicsMode
- * Signature: (JI)I
+ * Signature: (JI)V
  */
-JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_setGraphicsMode
+JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setGraphicsMode
 (JNIEnv *env, jobject self, jlong printDC, jint mode) {
     TRY;
 
-    return (jint) ::SetGraphicsMode((HDC)printDC, mode);
+    ::SetGraphicsMode((HDC)printDC, mode);
 
-    CATCH_BAD_ALLOC_RET(0);
+    CATCH_BAD_ALLOC;
 }
 
 /*

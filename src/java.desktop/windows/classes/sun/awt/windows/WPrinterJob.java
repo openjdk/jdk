@@ -1022,8 +1022,8 @@ public final class WPrinterJob extends RasterPrinterJob
      * be one of the following Windows constants:
      * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
      */
-    private int setGraphicsMode(int mode) {
-        return setGraphicsMode(getPrintDC(), mode);
+    private void setGraphicsMode(int mode) {
+        setGraphicsMode(getPrintDC(), mode);
     }
 
     /**
@@ -1529,13 +1529,13 @@ public final class WPrinterJob extends RasterPrinterJob
     protected native int setAdvancedGraphicsMode(long printDC);
 
     /**
-     * Set the GDI graphics mode to {@code GM_ADVANCED}
+     * Set the GDI graphics {@code mode}
      * into the device context {@code printDC}.
      * The {@code mode} should
      * be one of the following Windows constants:
      * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
      */
-    protected native int setGraphicsMode(long printDC, int mode);
+    protected native void setGraphicsMode(long printDC, int mode);
 
     /**
      * Scale the GDI World Transform
