@@ -215,9 +215,9 @@ public abstract class MappedByteBuffer
     /**
      * Forces any changes made to this buffer's content to be written to the
      * storage device containing the mapped file.  The region starts at index
-     * zero in this buffer and is {@code limit} bytes.  An invocation of this
-     * method behaves in exactly the same way as the invocation
-     * {@link force(int,int) force(0,limit())}.
+     * zero in this buffer and is {@code capacity()} bytes.  An invocation of
+     * this method behaves in exactly the same way as the invocation
+     * {@link force(int,int) force(0,capacity())}.
      *
      * <p> If the file mapped into this buffer resides on a local storage
      * device then when this method returns it is guaranteed that all changes
@@ -374,7 +374,7 @@ public abstract class MappedByteBuffer
      * returned buffer, or writing bytes to the storage device by invoking
      * {@code force()} on the returned buffer, will only act on the sub-range
      * of this buffer that the returned buffer represents, namely
-     * {@code [position(),limit()]}.
+     * {@code [position(),limit())}.
      */
     @Override
     public abstract MappedByteBuffer slice();
