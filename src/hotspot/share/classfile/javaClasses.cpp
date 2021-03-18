@@ -826,7 +826,7 @@ GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;
 GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = NULL;
 
 #ifdef ASSERT
-inline static void assert_valid_fd(fieldDescriptor* fd) {
+inline static void assert_valid_static_string_field(fieldDescriptor* fd) {
   assert(fd->has_initial_value(), "caller should have checked this");
   assert(fd->field_type() == T_OBJECT, "caller should have checked this");
   // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
@@ -836,13 +836,13 @@ inline static void assert_valid_fd(fieldDescriptor* fd) {
 #endif
 
 static void initialize_static_string_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
-  DEBUG_ONLY(assert_valid_fd(fd);)
+  DEBUG_ONLY(assert_valid_static_string_field(fd);)
   oop string = fd->string_initial_value(CHECK);
   mirror()->obj_field_put(fd->offset(), string);
 }
 
 static void initialize_static_string_field_for_dump(fieldDescriptor* fd, Handle mirror) {
-  DEBUG_ONLY(assert_valid_fd(fd);)
+  DEBUG_ONLY(assert_valid_static_string_field(fd);)
   assert(DumpSharedSpaces, "must be");
   if (HeapShared::is_archived_object(mirror())) {
     // Archive the String field and update the pointer.
