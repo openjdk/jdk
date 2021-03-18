@@ -42,7 +42,7 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
     /**
      * The type of each address in an LDAP reference.
      */
-    public final static String ADDRESS_TYPE = "URL";
+    public static final String ADDRESS_TYPE = "URL";
 
     // ----------------- ObjectFactory interface --------------------
 

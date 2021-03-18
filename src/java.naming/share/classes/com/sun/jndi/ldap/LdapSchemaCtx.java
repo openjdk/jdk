@@ -386,7 +386,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
         info.modifyAttributes(myEnv, mods);
     }
 
-    final static private class SchemaInfo {
+    static final private class SchemaInfo {
         private LdapCtx schemaEntry;
         private String schemaEntryName;
         LdapSchemaParser parser;

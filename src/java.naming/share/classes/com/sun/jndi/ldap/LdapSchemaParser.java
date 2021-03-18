@@ -108,7 +108,7 @@ final class LdapSchemaParser {
         this.netscapeBug = netscapeBug;
     }
 
-    final static void LDAP2JNDISchema(Attributes schemaAttrs,
+    static final void LDAP2JNDISchema(Attributes schemaAttrs,
         LdapSchemaCtx schemaRoot) throws NamingException {
         Attribute               objectClassesAttr = null;
         Attribute               attributeDefAttr = null;
@@ -477,7 +477,7 @@ final class LdapSchemaParser {
     * qdstringlist    = [ qdstring *( qdstring ) ]
     * qdstrings       = qdstring / ( whsp "(" qdstringlist ")" whsp )
     */
-    private final static String[] readQDStrings(String string, int[] pos)
+    private static final String[] readQDStrings(String string, int[] pos)
         throws NamingException {
 
         return readQDescrs(string, pos);
