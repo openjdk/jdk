@@ -317,7 +317,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     /**
      * {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
-     * @implNote {@inheritDoc}
      * @since 10
      */
     @Override

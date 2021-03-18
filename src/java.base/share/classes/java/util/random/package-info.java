@@ -25,7 +25,7 @@
 
 /**
  * This package contains classes and interfaces that support a generic API
- * for random number generation in the JDK.
+ * for random number generation.
  *
  * <p>These classes and interfaces that support the definition and use of "random
  * generators", a term that is meant to cover what have traditionally been
@@ -37,11 +37,11 @@
  *
  * <p> The principal interface is {@link RandomGenerator}, which provides
  * methods for requesting individual values of type {@code int}, {@code long},
- * {@code float}, {@code double}, or {@code boolean} chosen (pseudo)randomly
+ * {@code float}, {@code double}, or {@code boolean} chosen pseudorandomly
  * from a uniform distribution; methods for requesting values of type
- * {@code double} chosen (pseudo)randomly from a normal distribution or from an
+ * {@code double} chosen pseudorandomly from a normal distribution or from an
  * exponential distribution; and methods for creating streams of values of type
- * {@code int}, {@code long}, or {@code double} chosen (pseudo)randomly from a
+ * {@code int}, {@code long}, or {@code double} chosen pseudorandomly from a
  * uniform distribution (such streams are spliterator-based, allowing for
  * parallel processing of their elements). There are also static factory methods
  * for creating an instance of a specific random number generator algorithm
@@ -66,13 +66,13 @@
  * very high probability) behave as if statistically independent.
  *
  * <p> For many purposes, these are the only two interfaces that a consumer of
- * (pseudo)random values will need. There are also some more specialized
+ * pseudorandom values will need. There are also some more specialized
  * interfaces that describe more specialized categories of random number
- * generators {@link RandomGenerator.SplittableGenerator},
- * {@link RandomGenerator.JumpableGenerator},
- * {@link RandomGenerator.LeapableGenerator}, and
- * {@link RandomGenerator.ArbitrarilyJumpableGenerator} that have specific
- * strategies for creating statistically independent instances.
+ * generators {@link RandomGenerator.SplittableGenerator SplittableGenerator},
+ * {@link RandomGenerator.JumpableGenerator JumpableGenerator},
+ * {@link RandomGenerator.LeapableGenerator LeapableGenerator}, and
+ * {@link RandomGenerator.ArbitrarilyJumpableGenerator ArbitrarilyJumpableGenerator}
+ * that have specific strategies for creating statistically independent instances.
  *
  * <h2>Using the Random Number Generator Interfaces</h2>
  *
@@ -154,31 +154,31 @@
  * equidistribution properties.
  *
  * <p> For applications with no special requirements,
- * "L64X128MixRandom" has a good balance among speed, space,
+ * {@code L64X128MixRandom} has a good balance among speed, space,
  * and period, and is suitable for both single-threaded and multi-threaded
  * applications when used properly (a separate instance for each thread).
  *
  * <p> If the application uses only a single thread, then
- * "Xoroshiro128PlusPlus" is even smaller and faster, and
+ * {@code Xoroshiro128PlusPlus} is even smaller and faster, and
  * certainly has a sufficiently long period.
  *
  * <p> For an application running in a 32-bit hardware environment and using
- * only one thread or a small number of threads, "L32X64MixRandom" may be a good
+ * only one thread or a small number of threads, {@code L32X64MixRandom} may be a good
  * choice.
  *
  * <p> For an application that uses many threads that are allocated in one batch
  * at the start of the computation, either a "jumpable" generator such as
- * "Xoroshiro128PlusPlus" or
- * "Xoshiro256PlusPlus" may be used, or a "splittable"
- * generator such as "L64X128MixRandom" or
- * "L64X256MixRandom" may be used.
+ * {@code Xoroshiro128PlusPlus} or
+ * {@code Xoshiro256PlusPlus} may be used, or a "splittable"
+ * generator such as {@code L64X128MixRandom} or
+ * {@code L64X256MixRandom} may be used.
  *
  * <p> For an application that creates many threads dynamically, perhaps through
  * the use of spliterators, a "splittable" generator such as
- * "L64X128MixRandom" or "L64X256MixRandom" is
+ * {@code L64X128MixRandom} or {@code L64X256MixRandom} is
  * recommended. If the number of generators created dynamically may
  * be very large (millions or more), then using generators such as
- * "L128X128MixRandom" or "L128X256MixRandom",
+ * {@code L128X128MixRandom} or {@code L128X256MixRandom},
  * which use a 128-bit parameter rather than a 64-bit parameter for their LCG
  * subgenerator, will make it much less likely that two instances use the same
  * state cycle.
@@ -186,8 +186,8 @@
  * <p> For an application that uses tuples of consecutively generated values, it
  * may be desirable to use a generator that is <i>k</i>-equidistributed such
  * that <i>k</i> is at least as large as the length of the tuples being
- * generated. The generator "L64X256MixRandom" is provably
- * 4-equidistributed, and "L64X1024MixRandom" is provably
+ * generated. The generator {@code L64X256MixRandom} is provably
+ * 4-equidistributed, and {@code L64X1024MixRandom} is provably
  * 16-equidistributed.
  *
  * <p> For applications that generate large permutations, it may be best to use
@@ -197,9 +197,9 @@
  * cards, the number of possible permutations is 52! (52 factorial), \ which is
  * larger than 2<sup>225</sup> (but smaller than 2<sup>226</sup>), so it may be
  * best to use a generator whose period at least 2<sup>256</sup>, such as
- * "L64X256MixRandom" or "L64X1024MixRandom"
- * or "L128X256MixRandom" or
- * "L128X1024MixRandom". (It is of course also necessary to
+ * {@code L64X256MixRandom} or {@code L64X1024MixRandom}
+ * or {@code L128X256MixRandom} or
+ * {@code L128X1024MixRandom}. (It is of course also necessary to
  * provide sufficiently many seed bits when the generator is initialized, or
  * else it will still be impossible to generate some of the intended
  * permutations.)
@@ -207,21 +207,18 @@
  *
  * <h2><a id="algorithms">Random Number Generator Algorithms Available.</a></h2>
  *
- * @implNote These algorithms [in the table below] must be found with the
- *           current version of Java SE. A particular JDK implementation may
- *           recognize additional algorithms; check the JDK's documentation for
- *           details. The set of algorithm required by Java SE may be updated
- *           by changes to the Java SE specification. Over time, new algorithms
- *           may be added and old algorithms may be removed.
- *           <p>In addition, as another life-cycle phase, an algorithm may be
- *           {@linkplain RandomGeneratorFactory#isDeprecated() deprecated}. A
- *           deprecated algorithm is not recommended for use. If a required
- *           algorithm is deprecated, it may be removed in a future release.
- *           Due to advances in random number generator algorithm development
- *           and analysis, an algorithm may be deprecated during the lifetime
- *           of a particular Java SE release. Changing the deprecation status
- *           of an algorithm is <em>not</em> a specification change.
- *
+ * These algorithms [in the table below] must be found with the current version
+ * of Java SE. A particular JDK implementation may recognize additional
+ * algorithms; check the JDK's documentation for details. The set of algorithm
+ * required by Java SE may be updated by changes to the Java SE specification.
+ * Over time, new algorithms may be added and old algorithms may be removed.
+ * <p>In addition, as another life-cycle phase, an algorithm may be {@linkplain
+ * RandomGeneratorFactory#isDeprecated() deprecated}. A deprecated algorithm is
+ * not recommended for use. If a required algorithm is deprecated, it may be
+ * removed in a future release. Due to advances in random number generator
+ * algorithm development and analysis, an algorithm may be deprecated during the
+ * lifetime of a particular Java SE release. Changing the deprecation status of
+ * an algorithm is <em>not</em> a specification change.
  *
  * <table style="padding:0px 20px 0px 0px">
  *  <caption>Available Algorithms</caption>

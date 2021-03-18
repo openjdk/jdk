@@ -41,9 +41,9 @@ import java.util.stream.Stream;
  * The {@link RandomGenerator} interface is designed to provide a common
  * protocol for objects that generate random or (more typically) pseudorandom
  * sequences of numbers (or Boolean values). Such a sequence may be obtained by
- * either repeatedly invoking a method that returns a single (pseudo)randomly
+ * either repeatedly invoking a method that returns a single pseudorandomly
  * chosen value, or by invoking a method that returns a stream of
- * (pseudo)randomly chosen values.
+ * pseudorandomly chosen values.
  *
  * <p> Ideally, given an implicitly or explicitly specified range of values,
  * each value would be chosen independently and uniformly from that range. In
@@ -65,12 +65,12 @@ import java.util.stream.Stream;
  *
  * <p> Each method that returns a stream produces a stream of values each of
  * which is chosen in the same manner as for a method that returns a single
- * (pseudo)randomly chosen value. For example, if {@code r} implements
+ * pseudorandomly chosen value. For example, if {@code r} implements
  * {@link RandomGenerator}, then the method call {@code r.ints(100)} returns a
  * stream of 100 {@code int} values. These are not necessarily the exact same
  * values that would have been returned if instead {@code r.nextInt()} had been
  * called 100 times; all that is guaranteed is that each value in the stream is
- * chosen in a similar (pseudo)random manner from the same range.
+ * chosen in a similar pseudorandom manner from the same range.
  *
  * <p> Every object that implements the {@link RandomGenerator} interface by
  * using a pseudorandom algorithm is assumed to contain a finite amount of
@@ -130,6 +130,7 @@ public interface RandomGenerator {
      *
      * @implSpec  Since algorithms will improve over time, there is no
      * guarantee that this method will return the same algorithm over time.
+     * <p> The default implementation selects L32X64MixRandom.
      *
      * @return a {@link RandomGenerator}
      */
@@ -142,43 +143,46 @@ public interface RandomGenerator {
      * marked for deprecation.
      *
      * @implNote Random number generator algorithms evolve over time; new
-     *           algorithms will be introduced and old algorithms will
-     *           lose standing. If an older algorithm is deemed unsuitable
-     *           for continued use, it will be marked as deprecated to indicate
-     *           that it may be removed at some point in the future.
+     * algorithms will be introduced and old algorithms will
+     * lose standing. If an older algorithm is deemed unsuitable
+     * for continued use, it will be marked as deprecated to indicate
+     * that it may be removed at some point in the future.
      *
      * @return true if the implementation of RandomGenerator (algorithm) has been
      *         marked for deprecation
+     *
+     * @implSpec The default implementation checks for the @Deprecated annotation.
      */
      default boolean isDeprecated() {
         return this.getClass().isAnnotationPresent(Deprecated.class);
      }
 
     /**
-     * Returns an effectively unlimited stream of (pseudo)randomly chosen
+     * Returns an effectively unlimited stream of pseudorandomly chosen
      * {@code double} values.
      *
-     * @return a stream of (pseudo)randomly chosen {@code double} values
+     * @return a stream of pseudorandomly chosen {@code double} values
      *
      * @implNote It is permitted to implement this method in a manner equivalent to
-     *           {@link RandomGenerator#doubles(long) doubles}
-     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
-     *           The default implementation produces a sequential stream
-     *           that repeatedly calls {@link RandomGenerator#nextDouble nextDouble}().
+     * {@link RandomGenerator#doubles(long) doubles}
+     * ({@link Long#MAX_VALUE Long.MAX_VALUE}).
+     *
+     * @implSpec The default implementation produces a sequential stream
+     * that repeatedly calls {@link RandomGenerator#nextDouble nextDouble}().
      */
     default DoubleStream doubles() {
         return DoubleStream.generate(this::nextDouble).sequential();
     }
 
     /**
-     * Returns an effectively unlimited stream of (pseudo)randomly chosen
+     * Returns an effectively unlimited stream of pseudorandomly chosen
      * {@code double} values, where each value is between the specified origin
      * (inclusive) and the specified bound (exclusive).
      *
      * @param randomNumberOrigin the least value that can be produced
      * @param randomNumberBound the upper bound (exclusive) for each value produced
      *
-     * @return a stream of (pseudo)randomly chosen {@code double} values, each between
+     * @return a stream of pseudorandomly chosen {@code double} values, each between
      *         the specified origin (inclusive) and the specified bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code randomNumberOrigin} is not finite,
@@ -186,10 +190,11 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code randomNumberBound}
      *
      * @implNote It is permitted to implement this method in a manner equivalent to
-     *           {@link RandomGenerator#doubles(long, double, double) doubles}
-     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
-     *           The default implementation produces a sequential stream that repeatedly
-     *           calls {@link RandomGenerator#nextDouble(double, double) nextDouble}(randomNumberOrigin, randomNumberBound).
+     * {@link RandomGenerator#doubles(long, double, double) doubles}
+     * ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
+     *
+     * @implSpec The default implementation produces a sequential stream that repeatedly
+     * calls {@link RandomGenerator#nextDouble(double, double) nextDouble}(randomNumberOrigin, randomNumberBound).
      */
     default DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -199,17 +204,17 @@ public interface RandomGenerator {
 
     /**
      * Returns a stream producing the given {@code streamSize} number of
-     * (pseudo)randomly chosen {@code double} values.
+     * pseudorandomly chosen {@code double} values.
      *
      * @param streamSize the number of values to generate
      *
-     * @return a stream of (pseudo)randomly chosen {@code double} values
+     * @return a stream of pseudorandomly chosen {@code double} values
      *
      * @throws IllegalArgumentException if {@code streamSize} is
      *         less than zero
      *
-     * @implNote The default implementation produces a sequential stream
-     *           that repeatedly calls {@link RandomGenerator#nextDouble nextDouble()}.
+     * @implSpec The default implementation produces a sequential stream
+     * that repeatedly calls {@link RandomGenerator#nextDouble nextDouble()}.
      */
     default DoubleStream doubles(long streamSize) {
         RandomSupport.checkStreamSize(streamSize);
@@ -219,7 +224,7 @@ public interface RandomGenerator {
 
     /**
      * Returns a stream producing the given {@code streamSize} number of
-     * (pseudo)randomly chosen {@code double} values, where each value is
+     * pseudorandomly chosen {@code double} values, where each value is
      * between the specified origin (inclusive) and the specified bound
      * (exclusive).
      *
@@ -227,7 +232,7 @@ public interface RandomGenerator {
      * @param randomNumberOrigin the least value that can be produced
      * @param randomNumberBound the upper bound (exclusive) for each value produced
      *
-     * @return a stream of (pseudo)randomly chosen {@code double} values, each between
+     * @return a stream of pseudorandomly chosen {@code double} values, each between
      *         the specified origin (inclusive) and the specified bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code streamSize} is less than zero,
@@ -235,8 +240,8 @@ public interface RandomGenerator {
      *         or {@code randomNumberBound} is not finite, or {@code randomNumberOrigin}
      *         is greater than or equal to {@code randomNumberBound}
      *
-     * @implNote The default implementation produces a sequential stream that repeatedly
-     *           calls {@link RandomGenerator#nextDouble(double, double)  nextDouble}(randomNumberOrigin, randomNumberBound).
+     * @implSpec The default implementation produces a sequential stream that repeatedly
+     * calls {@link RandomGenerator#nextDouble(double, double)  nextDouble}(randomNumberOrigin, randomNumberBound).
      */
     default DoubleStream doubles(long streamSize, double randomNumberOrigin,
                 double randomNumberBound) {
@@ -247,40 +252,42 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns an effectively unlimited stream of (pseudo)randomly chosen
+     * Returns an effectively unlimited stream of pseudorandomly chosen
      * {@code int} values.
      *
-     * @return a stream of (pseudo)randomly chosen {@code int} values
+     * @return a stream of pseudorandomly chosen {@code int} values
      *
      * @implNote It is permitted to implement this method in a manner
-     *           equivalent to {@link RandomGenerator#ints(long) ints}
-     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
-     *           The default implementation produces a sequential stream
-     *           that repeatedly calls {@link RandomGenerator#nextInt() nextInt}().
+     * equivalent to {@link RandomGenerator#ints(long) ints}
+     * ({@link Long#MAX_VALUE Long.MAX_VALUE}).
+     *
+     * @implSpec The default implementation produces a sequential stream
+     * that repeatedly calls {@link RandomGenerator#nextInt() nextInt}().
      */
     default IntStream ints() {
         return IntStream.generate(this::nextInt).sequential();
     }
 
     /**
-     * Returns an effectively unlimited stream of (pseudo)randomly chosen
+     * Returns an effectively unlimited stream of pseudorandomly chosen
      * {@code int} values, where each value is between the specified origin
      * (inclusive) and the specified bound (exclusive).
      *
      * @param randomNumberOrigin the least value that can be produced
      * @param randomNumberBound the upper bound (exclusive) for each value produced
      *
-     * @return a stream of (pseudo)randomly chosen {@code int} values, each between
+     * @return a stream of pseudorandomly chosen {@code int} values, each between
      *         the specified origin (inclusive) and the specified bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code randomNumberOrigin}
      *         is greater than or equal to {@code randomNumberBound}
      *
      * @implNote It is permitted to implement this method in a manner equivalent to
-     *           {@link RandomGenerator#ints(long, int, int) ints}
-     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
-     *           The default implementation produces a sequential stream that repeatedly
-     *           calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
+     * {@link RandomGenerator#ints(long, int, int) ints}
+     * ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
+     *
+     * @implSpec The default implementation produces a sequential stream that repeatedly
+     * calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
      */
     default IntStream ints(int randomNumberOrigin, int randomNumberBound) {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -290,17 +297,17 @@ public interface RandomGenerator {
 
     /**
      * Returns a stream producing the given {@code streamSize} number of
-     * (pseudo)randomly chosen {@code int} values.
+     * pseudorandomly chosen {@code int} values.
      *
      * @param streamSize the number of values to generate
      *
-     * @return a stream of (pseudo)randomly chosen {@code int} values
+     * @return a stream of pseudorandomly chosen {@code int} values
      *
      * @throws IllegalArgumentException if {@code streamSize} is
      *         less than zero
      *
-     * @implNote The default implementation produces a sequential stream
-     *           that repeatedly calls {@link RandomGenerator#nextInt() nextInt}().
+     * @implSpec The default implementation produces a sequential stream
+     * that repeatedly calls {@link RandomGenerator#nextInt() nextInt}().
      */
     default IntStream ints(long streamSize) {
         RandomSupport.checkStreamSize(streamSize);
@@ -310,22 +317,22 @@ public interface RandomGenerator {
 
     /**
      * Returns a stream producing the given {@code streamSize} number of
-     * (pseudo)randomly chosen {@code int} values, where each value is between
+     * pseudorandomly chosen {@code int} values, where each value is between
      * the specified origin (inclusive) and the specified bound (exclusive).
      *
      * @param streamSize the number of values to generate
      * @param randomNumberOrigin the least value that can be produced
      * @param randomNumberBound the upper bound (exclusive) for each value produced
      *
-     * @return a stream of (pseudo)randomly chosen {@code int} values, each between
+     * @return a stream of pseudorandomly chosen {@code int} values, each between
      *         the specified origin (inclusive) and the specified bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code streamSize} is
      *         less than zero, or {@code randomNumberOrigin}
      *         is greater than or equal to {@code randomNumberBound}
      *
-     * @implNote The default implementation produces a sequential stream that repeatedly
-     *           calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
+     * @implSpec The default implementation produces a sequential stream that repeatedly
+     * calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
      */
     default IntStream ints(long streamSize, int randomNumberOrigin,
               int randomNumberBound) {
@@ -336,40 +343,42 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns an effectively unlimited stream of (pseudo)randomly chosen
+     * Returns an effectively unlimited stream of pseudorandomly chosen
      * {@code long} values.
      *
-     * @return a stream of (pseudo)randomly chosen {@code long} values
+     * @return a stream of pseudorandomly chosen {@code long} values
      *
      * @implNote It is permitted to implement this method in a manner
-     *           equivalent to {@link RandomGenerator#longs(long) longs}
-     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
-     *           The default implementation produces a sequential stream
-     *           that repeatedly calls {@link RandomGenerator#nextLong() nextLong}().
+     * equivalent to {@link RandomGenerator#longs(long) longs}
+     * ({@link Long#MAX_VALUE Long.MAX_VALUE}).
+     *
+     * @implSpec The default implementation produces a sequential stream
+     * that repeatedly calls {@link RandomGenerator#nextLong() nextLong}().
      */
     default LongStream longs() {
         return LongStream.generate(this::nextLong).sequential();
     }
 
     /**
-     * Returns an effectively unlimited stream of (pseudo)randomly chosen
+     * Returns an effectively unlimited stream of pseudorandomly chosen
      * {@code long} values, where each value is between the specified origin
      * (inclusive) and the specified bound (exclusive).
      *
      * @param randomNumberOrigin the least value that can be produced
      * @param randomNumberBound the upper bound (exclusive) for each value produced
      *
-     * @return a stream of (pseudo)randomly chosen {@code long} values, each between
+     * @return a stream of pseudorandomly chosen {@code long} values, each between
      *         the specified origin (inclusive) and the specified bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code randomNumberOrigin}
      *         is greater than or equal to {@code randomNumberBound}
      *
      * @implNote It is permitted to implement this method in a manner equivalent to
-     *           {@link RandomGenerator#longs(long, long, long) longs}
-     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
-     *           The default implementation produces a sequential stream that repeatedly
-     *           calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
+     * {@link RandomGenerator#longs(long, long, long) longs}
+     * ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
+     *
+     * @implSpec The default implementation produces a sequential stream that repeatedly
+     * calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
      */
     default LongStream longs(long randomNumberOrigin, long randomNumberBound) {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
@@ -379,16 +388,16 @@ public interface RandomGenerator {
 
     /**
      * Returns a stream producing the given {@code streamSize} number of
-     * (pseudo)randomly chosen {@code long} values.
+     * pseudorandomly chosen {@code long} values.
      *
      * @param streamSize the number of values to generate
      *
-     * @return a stream of (pseudo)randomly chosen {@code long} values
+     * @return a stream of pseudorandomly chosen {@code long} values
      *
      * @throws IllegalArgumentException if {@code streamSize} is
      *         less than zero
      *
-     * @implNote The default implementation produces a sequential stream
+     * @implSpec The default implementation produces a sequential stream
      * that repeatedly calls {@link RandomGenerator#nextLong() nextLong}().
      */
     default LongStream longs(long streamSize) {
@@ -399,22 +408,22 @@ public interface RandomGenerator {
 
     /**
      * Returns a stream producing the given {@code streamSize} number of
-     * (pseudo)randomly chosen {@code long} values, where each value is between
+     * pseudorandomly chosen {@code long} values, where each value is between
      * the specified origin (inclusive) and the specified bound (exclusive).
      *
      * @param streamSize the number of values to generate
      * @param randomNumberOrigin the least value that can be produced
      * @param randomNumberBound the upper bound (exclusive) for each value produced
      *
-     * @return a stream of (pseudo)randomly chosen {@code long} values, each between
+     * @return a stream of pseudorandomly chosen {@code long} values, each between
      *         the specified origin (inclusive) and the specified bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code streamSize} is
      *         less than zero, or {@code randomNumberOrigin}
      *         is greater than or equal to {@code randomNumberBound}
      *
-     * @implNote The default implementation produces a sequential stream that repeatedly
-     *            calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
+     * @implSpec The default implementation produces a sequential stream that repeatedly
+     * calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
      */
     default LongStream longs(long streamSize, long randomNumberOrigin,
                 long randomNumberBound) {
@@ -425,7 +434,7 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code boolean} value.
+     * Returns a pseudorandomly chosen {@code boolean} value.
      *
      * <p> The default implementation tests the high-order bit (sign bit) of a
      * value produced by {@link RandomGenerator#nextInt() nextInt}(), on the
@@ -433,7 +442,10 @@ public interface RandomGenerator {
      * values whose high-order bits have better statistical quality than the
      * low-order bits.
      *
-     * @return a (pseudo)randomly chosen {@code boolean} value
+     * @return a pseudorandomly chosen {@code boolean} value
+     *
+     * @implSpec The default implementation produces a result based on the
+     * sign bit of a number generated by {@link nextInt()}.
      */
     default boolean nextBoolean() {
         return nextInt() < 0;
@@ -441,7 +453,7 @@ public interface RandomGenerator {
 
     /**
      * Fills a user-supplied byte array with generated byte values
-     * (pseudo)randomly chosen uniformly from the range of values between -128
+     * pseudorandomly chosen uniformly from the range of values between -128
      * (inclusive) and 127 (inclusive).
      *
      * @implNote Algorithm used to fill the byte array;
@@ -461,6 +473,9 @@ public interface RandomGenerator {
      *
      * @param  bytes the byte array to fill with pseudorandom bytes
      * @throws NullPointerException if bytes is null
+     *
+     * @implSpec The default implementation produces results from repeated calls
+     * to {@link nextLong()}.
      */
     default void nextBytes(byte[] bytes) {
         int i = 0;
@@ -479,31 +494,31 @@ public interface RandomGenerator {
      * Returns a pseudorandom {@code float} value between zero (inclusive) and
      * one (exclusive).
      *
-     * <p> The default implementation uses the 24 high-order bits from a call to
-     * {@link RandomGenerator#nextInt() nextInt}().
-     *
      * @return a pseudorandom {@code float} value between zero (inclusive) and one (exclusive)
+     *
+     * @implSpec The default implementation uses the 24 high-order bits from a call to
+     * {@link RandomGenerator#nextInt() nextInt}().
      */
     default float nextFloat() {
         return (nextInt() >>> 8) * 0x1.0p-24f;
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code float} value between zero
+     * Returns a pseudorandomly chosen {@code float} value between zero
      * (inclusive) and the specified bound (exclusive).
      *
      * @param bound the upper bound (exclusive) for the returned value.
      *        Must be positive and finite
      *
-     * @return a (pseudo)randomly chosen {@code float} value between
+     * @return a pseudorandomly chosen {@code float} value between
      *         zero (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code bound} is not
      *         both positive and finite
      *
-     * @implNote The default implementation simply calls
-     *           {@link RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
+     * @implSpec The default implementation simply calls
+     * {@link RandomSupport#checkBound checkBound}(bound) and then
+     * {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
      */
     default float nextFloat(float bound) {
         RandomSupport.checkBound(bound);
@@ -512,22 +527,22 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code float} value between the
+     * Returns a pseudorandomly chosen {@code float} value between the
      * specified origin (inclusive) and the specified bound (exclusive).
      *
      * @param origin the least value that can be returned
      * @param bound the upper bound (exclusive)
      *
-     * @return a (pseudo)randomly chosen {@code float} value between the
+     * @return a pseudorandomly chosen {@code float} value between the
      *         origin (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code origin} is not finite,
      *         or {@code bound} is not finite, or {@code origin}
      *         is greater than or equal to {@code bound}
      *
-     * @implNote The default implementation simply calls
-     *           {@link RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
+     * @implSpec The default implementation simply calls
+     * {@link RandomSupport#checkBound checkBound}(bound) and then
+     * {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
      */
     default float nextFloat(float origin, float bound) {
         RandomSupport.checkRange(origin, bound);
@@ -539,32 +554,32 @@ public interface RandomGenerator {
      * Returns a pseudorandom {@code double} value between zero (inclusive) and
      * one (exclusive).
      *
-     * <p> The default implementation uses the 53 high-order bits from a call to
-     * {@link RandomGenerator#nextLong nextLong}().
-     *
      * @return a pseudorandom {@code double} value between zero (inclusive)
      *         and one (exclusive)
+     *
+     * @implSpec The default implementation uses the 53 high-order bits from a call to
+     * {@link RandomGenerator#nextLong nextLong}().
      */
     default double nextDouble() {
         return (nextLong() >>> 11) * 0x1.0p-53;
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code double} value between zero
+     * Returns a pseudorandomly chosen {@code double} value between zero
      * (inclusive) and the specified bound (exclusive).
      *
      * @param bound the upper bound (exclusive) for the returned value.
      *        Must be positive and finite
      *
-     * @return a (pseudo)randomly chosen {@code double} value between
+     * @return a pseudorandomly chosen {@code double} value between
      *         zero (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code bound} is not
      *         both positive and finite
      *
-     * @implNote The default implementation simply calls
-     *           {@link RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
+     * @implSpec The default implementation simply calls
+     * {@link RandomSupport#checkBound checkBound}(bound) and then
+     * {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
      */
     default double nextDouble(double bound) {
         RandomSupport.checkBound(bound);
@@ -573,22 +588,22 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code double} value between the
+     * Returns a pseudorandomly chosen {@code double} value between the
      * specified origin (inclusive) and the specified bound (exclusive).
      *
      * @param origin the least value that can be returned
      * @param bound the upper bound (exclusive) for the returned value
      *
-     * @return a (pseudo)randomly chosen {@code double} value between the
+     * @return a pseudorandomly chosen {@code double} value between the
      *         origin (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code origin} is not finite,
      *         or {@code bound} is not finite, or {@code origin}
      *         is greater than or equal to {@code bound}
      *
-     * @implNote The default implementation simply calls
-     *           {@link RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
+     * @implSpec The default implementation simply calls
+     * {@link RandomSupport#checkBound checkBound}(bound) and then
+     * {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
      */
     default double nextDouble(double origin, double bound) {
         RandomSupport.checkRange(origin, bound);
@@ -597,31 +612,31 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code int} value.
+     * Returns a pseudorandomly chosen {@code int} value.
      *
-     * <p> The default implementation uses the 32 high-order bits from a call to
+     * @return a pseudorandomly chosen {@code int} value
+     *
+     * @implSpec The default implementation uses the 32 high-order bits from a call to
      * {@link RandomGenerator#nextLong nextLong}().
-     *
-     * @return a (pseudo)randomly chosen {@code int} value
      */
     default int nextInt() {
         return (int)(nextLong() >>> 32);
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code int} value between zero
+     * Returns a pseudorandomly chosen {@code int} value between zero
      * (inclusive) and the specified bound (exclusive).
      *
      * @param bound the upper bound (exclusive) for the returned value. Must be positive.
      *
-     * @return a (pseudo)randomly chosen {@code int} value between
+     * @return a pseudorandomly chosen {@code int} value between
      *         zero (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
-     * @implNote The default implementation simply calls
-     *           {@link RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link RandomSupport#boundedNextInt boundedNextInt}(this, bound).
+     * @implSpec The default implementation simply calls
+     * {@link RandomSupport#checkBound checkBound}(bound) and then
+     * {@link RandomSupport#boundedNextInt boundedNextInt}(this, bound).
      */
     default int nextInt(int bound) {
         RandomSupport.checkBound(bound);
@@ -630,21 +645,21 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code int} value between the specified
+     * Returns a pseudorandomly chosen {@code int} value between the specified
      * origin (inclusive) and the specified bound (exclusive).
      *
      * @param origin the least value that can be returned
      * @param bound the upper bound (exclusive) for the returned value
      *
-     * @return a (pseudo)randomly chosen {@code int} value between the
+     * @return a pseudorandomly chosen {@code int} value between the
      *         origin (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code origin} is greater than
      *         or equal to {@code bound}
      *
-     * @implNote The default implementation simply calls
-     *           {@link RandomSupport#checkBound(long) checkBound}(bound) and then
-     *           {@link RandomSupport#boundedNextInt(RandomGenerator, int) boundedNextInt}(this, bound).
+     * @implSpec The default implementation simply calls
+     * {@link RandomSupport#checkBound(long) checkBound}(bound) and then
+     * {@link RandomSupport#boundedNextInt(RandomGenerator, int) boundedNextInt}(this, bound).
      */
     default int nextInt(int origin, int bound) {
         RandomSupport.checkRange(origin, bound);
@@ -653,26 +668,26 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code long} value.
+     * Returns a pseudorandomly chosen {@code long} value.
      *
-     * @return a (pseudo)randomly chosen {@code long} value
+     * @return a pseudorandomly chosen {@code long} value
      */
     long nextLong();
 
     /**
-     * Returns a (pseudo)randomly chosen {@code long} value between zero
+     * Returns a pseudorandomly chosen {@code long} value between zero
      * (inclusive) and the specified bound (exclusive).
      *
      * @param bound the upper bound (exclusive) for the returned value.  Must be positive.
      *
-     * @return a (pseudo)randomly chosen {@code long} value between
+     * @return a pseudorandomly chosen {@code long} value between
      *         zero (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
-     * @implNote The default implementation simply calls
-     *           {@link RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
+     * @implSpec The default implementation simply calls
+     * {@link RandomSupport#checkBound checkBound}(bound) and then
+     * {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
      */
     default long nextLong(long bound) {
         RandomSupport.checkBound(bound);
@@ -681,21 +696,21 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code long} value between the
+     * Returns a pseudorandomly chosen {@code long} value between the
      * specified origin (inclusive) and the specified bound (exclusive).
      *
      * @param origin the least value that can be returned
      * @param bound the upper bound (exclusive) for the returned value
      *
-     * @return a (pseudo)randomly chosen {@code long} value between the
+     * @return a pseudorandomly chosen {@code long} value between the
      *         origin (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code origin} is greater than
      *         or equal to {@code bound}
      *
-     * @implNote The default implementation simply calls
-     *           {@link RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
+     * @implSpec The default implementation simply calls
+     * {@link RandomSupport#checkBound checkBound}(bound) and then
+     * {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
      */
     default long nextLong(long origin, long bound) {
         RandomSupport.checkRange(origin, bound);
@@ -704,11 +719,16 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a {@code double} value (pseudo)randomly chosen from a Gaussian
+     * Returns a {@code double} value pseudorandomly chosen from a Gaussian
      * (normal) distribution whose mean is 0 and whose standard deviation is 1.
      *
-     * @return a {@code double} value (pseudo)randomly chosen from a
+     * @return a {@code double} value pseudorandomly chosen from a
      *         Gaussian distribution
+     *
+     * @implSpec The default implementation uses McFarland's fast modified
+     * ziggurat algorithm (largely table-driven, with rare cases handled by
+     * computation and rejection sampling). Walker's alias method for sampling
+     * a discrete distribution also plays a role.
      */
     default double nextGaussian() {
         // See Knuth, TAOCP, Vol. 2, 3rd edition, Section 3.4.1 Algorithm C.
@@ -716,7 +736,7 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a {@code double} value (pseudo)randomly chosen from a Gaussian
+     * Returns a {@code double} value pseudorandomly chosen from a Gaussian
      * (normal) distribution with a mean and standard deviation specified by the
      * arguments.
      *
@@ -724,10 +744,15 @@ public interface RandomGenerator {
      * @param stddev the standard deviation (square root of the variance)
      *        of the Gaussian distribution to be drawn from
      *
-     * @return a {@code double} value (pseudo)randomly chosen from the
+     * @return a {@code double} value pseudorandomly chosen from the
      *         specified Gaussian distribution
      *
      * @throws IllegalArgumentException if {@code stddev} is negative
+     *
+     * @implSpec The default implementation uses McFarland's fast modified
+     * ziggurat algorithm (largely table-driven, with rare cases handled by
+     * computation and rejection sampling). Walker's alias method for sampling
+     * a discrete distribution also plays a role.
      */
     default double nextGaussian(double mean, double stddev) {
         if (stddev < 0.0) throw new IllegalArgumentException("standard deviation must be non-negative");
@@ -736,11 +761,16 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a nonnegative {@code double} value (pseudo)randomly chosen from
+     * Returns a nonnegative {@code double} value pseudorandomly chosen from
      * an exponential distribution whose mean is 1.
      *
-     * @return a nonnegative {@code double} value (pseudo)randomly chosen from an
+     * @return a nonnegative {@code double} value pseudorandomly chosen from an
      *         exponential distribution
+     *
+     * @implSpec The default implementation uses McFarland's fast modified
+     * ziggurat algorithm (largely table-driven, with rare cases handled by
+     * computation and rejection sampling). Walker's alias method for sampling
+     * a discrete distribution also plays a role.
      */
     default double nextExponential() {
         return RandomSupport.computeNextExponential(this);
@@ -822,8 +852,8 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code streamSize} is
          *         less than zero
          *
-         * @implNote The default implementation calls {@link StreamableGenerator#rngs() rngs}() and
-         *           then limits its length to {@code streamSize}.
+         * @implSpec The default implementation calls {@link StreamableGenerator#rngs() rngs}() and
+         * then limits its length to {@code streamSize}.
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
             RandomSupport.checkStreamSize(streamSize);
@@ -834,10 +864,9 @@ public interface RandomGenerator {
 
     /**
      * This interface is designed to provide a common protocol for objects that
-     * generate sequences of pseudorandom numbers (or boolean values) and
-     * furthermore can be <i>split</i> into two objects (the original one and a
-     * new one) each of which obey that same protocol (and therefore can be
-     * recursively split indefinitely).
+     * generate sequences of pseudorandom values and can be <i>split</i> into
+     * two objects (the original one and a new one) each of which obey that same
+     * protocol (and therefore can be recursively split indefinitely).
      *
      * <p> Ideally, all {@link SplittableGenerator} objects produced by
      * recursive splitting from a single original {@link SplittableGenerator}
@@ -923,6 +952,9 @@ public interface RandomGenerator {
          * ({@link Long#MAX_VALUE Long.MAX_VALUE}).
          *
          * @return a stream of {@link SplittableGenerator} objects
+         *
+         * @implSpec The default implementation invokes
+         * {@link SplittableGenerator#splits(SplittableGenerator) splits(this)}.
          */
         default Stream<SplittableGenerator> splits() {
             return this.splits(this);
@@ -990,7 +1022,7 @@ public interface RandomGenerator {
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
-         * @implNote The default implementation calls {@link SplittableGenerator#splits() splits}().
+         * @implSpec The default implementation calls {@link SplittableGenerator#splits() splits}().
          */
         default Stream<RandomGenerator> rngs() {
             return this.splits().map(x -> x);
@@ -1009,7 +1041,7 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code streamSize} is
          *         less than zero
          *
-         * @implNote The default implementation calls {@link SplittableGenerator#splits(long) splits}(streamSize).
+         * @implSpec The default implementation calls {@link SplittableGenerator#splits(long) splits}(streamSize).
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
             return this.splits(streamSize).map(x -> x);
@@ -1018,9 +1050,8 @@ public interface RandomGenerator {
 
     /**
      * This interface is designed to provide a common protocol for objects that
-     * generate pseudorandom sequences of numbers (or Boolean values) and
-     * furthermore can easily <i>jump</i> forward, by a moderate amount (ex.
-     * 2<sup>64</sup>) to a distant point in the state cycle.
+     * generate pseudorandom values and can easily <i>jump</i> forward, by a
+     * moderate amount (ex. 2<sup>64</sup>) to a distant point in the state cycle.
      *
      * <p> Ideally, all {@link JumpableGenerator} objects produced by iterative
      * jumping from a single original {@link JumpableGenerator} object are
@@ -1108,11 +1139,12 @@ public interface RandomGenerator {
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
          * @implNote It is permitted to implement this method in a manner equivalent to
-         *           {@link JumpableGenerator#jumps(long) jumps}
-         *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
-         *           The default implementation produces a sequential stream that  repeatedly
-         *           calls {@link JumpableGenerator#copy copy}() and {@link JumpableGenerator#jump jump}()
-         *           on this generator, and the copies become the generators produced by the stream.
+         * {@link JumpableGenerator#jumps(long) jumps}
+         * ({@link Long#MAX_VALUE Long.MAX_VALUE}).
+         *
+         * @implSpec The default implementation produces a sequential stream that  repeatedly
+         * calls {@link JumpableGenerator#copy copy}() and {@link JumpableGenerator#jump jump}()
+         * on this generator, and the copies become the generators produced by the stream.
          */
         default Stream<RandomGenerator> jumps() {
             return Stream.generate(this::copyAndJump).sequential();
@@ -1129,9 +1161,9 @@ public interface RandomGenerator {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          *
-         * @implNote The default implementation produces a sequential stream that  repeatedly
-         *           calls {@link JumpableGenerator#copy copy}() and {@link JumpableGenerator#jump jump}()
-         *           on this generator, and the copies become the generators produced by the stream.
+         * @implSpec The default implementation produces a sequential stream that  repeatedly
+         * calls {@link JumpableGenerator#copy copy}() and {@link JumpableGenerator#jump jump}()
+         * on this generator, and the copies become the generators produced by the stream.
          */
         default Stream<RandomGenerator> jumps(long streamSize) {
             return jumps().limit(streamSize);
@@ -1145,7 +1177,7 @@ public interface RandomGenerator {
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
-         * @implNote The default implementation calls {@link JumpableGenerator#jump jump}().
+         * @implSpec The default implementation calls {@link JumpableGenerator#jump jump}().
          */
         default Stream<RandomGenerator> rngs() {
             return this.jumps();
@@ -1163,7 +1195,7 @@ public interface RandomGenerator {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          *
-         * @implNote The default implementation calls {@link JumpableGenerator#jumps(long) jumps}(streamSize).
+         * @implSpec The default implementation calls {@link JumpableGenerator#jumps(long) jumps}(streamSize).
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
             return this.jumps(streamSize);
@@ -1174,6 +1206,9 @@ public interface RandomGenerator {
          * copy.
          *
          * @return a copy of this generator object before the jump occurred
+         *
+         * @implSpec The default implementation copies this, jumps and then
+         * returns the copy.
          */
         default RandomGenerator copyAndJump() {
             RandomGenerator result = copy();
@@ -1186,10 +1221,9 @@ public interface RandomGenerator {
 
     /**
      * This interface is designed to provide a common protocol for objects that
-     * generate sequences of pseudorandom numbers (or Boolean values) and
-     * furthermore can easily not only jump but also
-     * <i>leap</i> forward, by a large amount (ex. 2<sup>128</sup>), to a
-     * very distant point in the state cycle.
+     * generate sequences of pseudorandom values and can easily not only jump
+     * but also <i>leap</i> forward, by a large amount (ex. 2<sup>128</sup>), to
+     * a very distant point in the state cycle.
      *
      * Typically one will construct a series of {@link LeapableGenerator}
      * objects by iterative leaping from a single original
@@ -1279,11 +1313,12 @@ public interface RandomGenerator {
          * @return a stream of objects that implement the {@link JumpableGenerator} interface
          *
          * @implNote It is permitted to implement this method in a manner equivalent to
-         *           {@link LeapableGenerator#leaps(long) leaps}
-         *           ({@link  Long#MAX_VALUE Long.MAX_VALUE}).
-         *           The default implementation produces a sequential stream that  repeatedly
-         *           calls {@link LeapableGenerator#copy() copy}() and {@link LeapableGenerator#leap() leap}()
-         *           on this generator, and the copies become the generators produced by the stream.
+         * {@link LeapableGenerator#leaps(long) leaps}
+         * ({@link  Long#MAX_VALUE Long.MAX_VALUE}).
+         *
+         * @implSpec The default implementation produces a sequential stream that  repeatedly
+         * calls {@link LeapableGenerator#copy() copy}() and {@link LeapableGenerator#leap() leap}()
+         * on this generator, and the copies become the generators produced by the stream.
          */
         default Stream<JumpableGenerator> leaps() {
             return Stream.generate(this::copyAndLeap).sequential();
@@ -1300,7 +1335,7 @@ public interface RandomGenerator {
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          *
-         * @implNote The default implementation produces a sequential stream that  repeatedly
+         * @implSpec The default implementation produces a sequential stream that  repeatedly
          *           calls {@link LeapableGenerator#copy() copy}() and {@link LeapableGenerator#leap() leap}()
          *           on this generator, and the copies become the generators produced by the stream.
          */
@@ -1313,6 +1348,9 @@ public interface RandomGenerator {
          * copy.
          *
          * @return a copy of this generator object before the leap occurred
+         *
+         * @implSpec The default implementation copies this, leaps and then
+         * returns the copy.
          */
         default JumpableGenerator copyAndLeap() {
             JumpableGenerator result = copy();
@@ -1324,9 +1362,8 @@ public interface RandomGenerator {
 
     /**
      * This interface is designed to provide a common protocol for objects that
-     * generate sequences of pseudorandom numbers (or Boolean values) and
-     * furthermore can easily <i>jump</i> forward, by an arbitrary amount, to a
-     * distant point in the state cycle.
+     * generate sequences of pseudorandom values and can easily <i>jump</i>
+     * forward, by an arbitrary amount, to a distant point in the state cycle.
      *
      * <p> Ideally, all {@link ArbitrarilyJumpableGenerator} objects produced by
      * iterative jumping from a single original
@@ -1422,6 +1459,8 @@ public interface RandomGenerator {
          * forward a large, fixed distance (typically 2<sup>64</sup> or more)
          * within its state cycle. The distance used is that returned by method
          * {@link ArbitrarilyJumpableGenerator#jumpDistance() jumpDistance}().
+         *
+         * @implSpec The default implementation invokes jump(jumpDistance()).
          */
         default void jump() { jump(jumpDistance()); }
 
@@ -1440,9 +1479,9 @@ public interface RandomGenerator {
          *                                  or equal to 0.0, or is greater than the
          *                                  period of this generator
          *
-         * @implNote This method is implemented to be equivalent to
-         *           {@link ArbitrarilyJumpableGenerator#jumps(long) jumps}
-         *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
+         * @implSpec The default implementation is equivalent to
+         * {@link ArbitrarilyJumpableGenerator#jumps(long) jumps}
+         * ({@link Long#MAX_VALUE Long.MAX_VALUE}).
          */
         default Stream<ArbitrarilyJumpableGenerator> jumps(double distance) {
             return Stream.generate(() -> copyAndJump(distance)).sequential();
@@ -1464,6 +1503,9 @@ public interface RandomGenerator {
          *                                  {@code distance} is not greater than
          *                                  or equal to 0.0, or is greater than the
          *                                  period of this generator
+         *
+         * @implSpec The default implementation is equivalent to
+         * jumps(distance).limit(streamSize).
          */
         default Stream<ArbitrarilyJumpableGenerator> jumps(long streamSize, double distance) {
             return jumps(distance).limit(streamSize);
@@ -1489,6 +1531,9 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code distance} is not greater than
          *                                  or equal to 0.0, or is greater than the
          *                                  period of this generator
+         *
+         * @implSpec The default implementation copies this, jumps(distance) and then
+         * returns the copy.
          */
         default ArbitrarilyJumpableGenerator copyAndJump(double distance) {
             ArbitrarilyJumpableGenerator result = copy();

@@ -519,7 +519,7 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     * @since 17
+     * @since 7
      */
     public float nextFloat() {
         return super.nextFloat();
@@ -547,7 +547,7 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * {@inheritDoc}
-     * @since 17
+     * @since 7
      */
     public double nextDouble() {
         return super.nextDouble();
