@@ -656,7 +656,7 @@ public abstract class JComponent extends Container implements Serializable,
 
 
     /**
-     * Resets the UI property to a value from the current look and feel.     *
+     * Resets the UI property to a value from the current look and feel.
      * <code>JComponent</code> subclasses must override this method
      * like this:
      * <pre>
