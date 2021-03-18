@@ -72,7 +72,7 @@ import java.security.AccessController;
  * SecurityException.
  *
  * <p>
- * @implnote
+ * @implNote
  * When the {@systemProperty apple.awt.enableTemplateImages} property is
  * set, all images associated with instances of this class are treated
  * as template images by the native desktop system. This means all color
