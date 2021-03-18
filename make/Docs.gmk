@@ -298,7 +298,7 @@ define SetupApiDocsGenerationBody
       $$(JAVADOC_DISABLED_DOCLINT_WARNINGS)))
   # Ignore the doclint warnings in certain packages
   $1_OPTIONS += -Xdoclint/package:$$(call CommaList, $$(addprefix -, \
-      $$(JAVADOC_DISABLED_DOCLINT_PACKAGES))) 
+      $$(JAVADOC_DISABLED_DOCLINT_PACKAGES)))
 
   ifneq ($$($1_OTHER_VERSIONS), )
     $1_LINKED_SHORT_NAME = <a href="$$($1_OTHER_VERSIONS)">$$($1_SHORT_NAME)</a>
