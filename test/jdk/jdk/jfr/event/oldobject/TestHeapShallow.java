@@ -36,7 +36,6 @@ import jdk.test.lib.jfr.EventNames;
  * @test
  * @key jfr
  * @requires vm.hasJFR
- * @requires vm.gc == "null"
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @run main/othervm -XX:TLABSize=2k jdk.jfr.event.oldobject.TestHeapShallow
