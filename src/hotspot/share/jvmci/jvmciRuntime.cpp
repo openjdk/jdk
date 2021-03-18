@@ -491,7 +491,7 @@ class ArgumentPusher : public SignatureIterator {
   }
 
  public:
-  ArgumentPusher(Symbol* signature, JavaCallArguments*  jca, jlong argument, bool is_static) : SignatureIterator(signature) {
+  ArgumentPusher(Symbol* signature, JavaCallArguments*  jca, jlong argument) : SignatureIterator(signature) {
     this->_return_type = T_ILLEGAL;
     _jca = jca;
     _argument = argument;
@@ -511,7 +511,7 @@ class ArgumentPusher : public SignatureIterator {
       case T_LONG:    _jca->push_long((jlong) next_arg());   break;
       case T_FLOAT:   _jca->push_float(next_float());        break;
       case T_DOUBLE:  _jca->push_double(next_double());      break;
-      default:            ShouldNotReachHere();
+      default:        fatal("Unexpected type %s", type2name(type));
     }
   }
 };
@@ -528,19 +528,20 @@ JRT_ENTRY(jlong, JVMCIRuntime::invoke_static_method_one_arg(JavaThread* thread, 
 
   Symbol* signature = mh->signature();
   JavaCallArguments jca(mh->size_of_parameters());
-  ArgumentPusher jap(signature, &jca, argument, mh->is_static());
-  JavaValue result(jap.return_type());
+  ArgumentPusher jap(signature, &jca, argument);
+  BasicType return_type = jap.return_type();
+  JavaValue result(return_type);
   JavaCalls::call(&result, mh, &jca, CHECK_0);
 
-  if (jap.return_type() == T_VOID) {
+  if (return_type == T_VOID) {
     return 0;
-  } else if (jap.return_type() == T_OBJECT || jap.return_type() == T_ARRAY) {
+  } else if (return_type == T_OBJECT || return_type == T_ARRAY) {
     thread->set_vm_result((oop) result.get_jobject());
     return 0;
   } else {
     jvalue *value = (jvalue *) result.get_value_addr();
     // Narrow the value down if required (Important on big endian machines)
-    switch (jap.return_type()) {
+    switch (return_type) {
       case T_BOOLEAN:
         return (jboolean) value->i;
       case T_BYTE:
@@ -556,7 +557,7 @@ JRT_ENTRY(jlong, JVMCIRuntime::invoke_static_method_one_arg(JavaThread* thread, 
       case T_DOUBLE:
         return value->j;
       default:
-        ShouldNotReachHere();
+        fatal("Unexpected type %s", type2name(return_type));
         return 0;
     }
   }
