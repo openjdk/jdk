@@ -121,7 +121,7 @@ struct PrimitiveConversions::Translate<oop> : public TrueType {
        type##Oop() : oop() {}                                              \
        type##Oop(const type##Oop& o) : oop(o) {}                           \
        type##Oop(const oop& o) : oop(o) {}                                 \
-       type##Oop(const void* p) : oop(p) {}                                \
+       type##Oop(type##OopDesc* o) : oop((oopDesc*)o) {}                   \
        operator type##OopDesc* () const { return (type##OopDesc*)obj(); }  \
        type##OopDesc* operator->() const {                                 \
             return (type##OopDesc*)obj();                                  \
