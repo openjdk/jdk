@@ -26,6 +26,7 @@
 package java.nio;
 
 import java.io.FileDescriptor;
+import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.util.Objects;
 
@@ -221,6 +222,10 @@ public abstract class MappedByteBuffer
      * mapping modes. This method may or may not have an effect for
      * implementation-specific mapping modes. </p>
      *
+     * @throws UncheckedIOException
+     *         If an I/O error occurs writing the buffer's content to the
+     *         storage device containing the mapped file
+     *
      * @return  This buffer
      */
     public final MappedByteBuffer force() {
@@ -271,6 +276,10 @@ public abstract class MappedByteBuffer
      * @throws IndexOutOfBoundsException
      *         if the preconditions on the index and length do not
      *         hold.
+     *
+     * @throws UncheckedIOException
+     *         If an I/O error occurs writing the buffer's content to the
+     *         storage device containing the mapped file
      *
      * @return  This buffer
      *

@@ -376,7 +376,7 @@ final class LdapSchemaParser {
         values = readTag(tagName, string, pos);
 
         // make sure at least one value was returned
-        if(values.length < 0) {
+        if (values.length == 0) {
             throw new InvalidAttributeValueException("no values for " +
                                                      "attribute \"" +
                                                      tagName + "\"");

@@ -27,7 +27,6 @@ package gc.shenandoah;
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @modules java.base
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
@@ -40,12 +39,37 @@ package gc.shenandoah;
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @modules java.base
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
+ *      gc.shenandoah.TestReferenceRefersToShenandoah
+ */
+
+/* @test
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @modules java.base
+ * @run main jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGarbageThreshold=100 -Xmx100m
+ *      gc.shenandoah.TestReferenceRefersToShenandoah
+ */
+
+/* @test
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @modules java.base
+ * @run main jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGarbageThreshold=100 -Xmx100m
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 

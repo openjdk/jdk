@@ -88,7 +88,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     return;
   }
 
-  objArrayHandle h_array(THREAD, (objArrayOop)result.get_jobject());
+  objArrayHandle h_array(THREAD, (objArrayOop)result.get_oop());
   int sz = h_array->length();
   assert(sz % 2 == 0 && sz >= 2, "Must be even size of length");
   for (int i = 0; i < sz; i+= 2) {
@@ -143,7 +143,7 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
     SystemDictionary::add_to_hierarchy(result);
   }
   // new class not linked yet.
-  MetaspaceShared::try_link_class(result, THREAD);
+  MetaspaceShared::try_link_class(THREAD, result);
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
   // exclude the existing class from dump

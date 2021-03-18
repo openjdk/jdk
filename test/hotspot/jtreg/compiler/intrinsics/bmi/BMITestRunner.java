@@ -218,6 +218,7 @@ public class BMITestRunner {
             runUnaryIntMemTest(expr, iterations, rng);
             runUnaryLongRegTest(expr, iterations, rng);
             runUnaryLongMemTest(expr, iterations, rng);
+            runUnaryIntToLongRegTest(expr, iterations, rng);
             runBinaryRegRegIntTest(expr, iterations, rng);
             runBinaryRegMemIntTest(expr, iterations, rng);
             runBinaryMemRegIntTest(expr, iterations, rng);
@@ -303,6 +304,25 @@ public class BMITestRunner {
                 long value = rng.nextLong();
                 log("UnaryLongMem(0X%x) -> 0X%x",
                     value, expr.longExpr(new Expr.MemL(value)));
+            }
+        }
+
+        public static void runUnaryIntToLongRegTest(Expr expr, int iterations,
+                                                    Random rng) {
+            if (!(expr.isUnaryArgumentSupported()
+                  && expr.isIntToLongExprSupported())) {
+                return;
+            }
+
+            for (int value : getIntBitShifts()) {
+                log("UnaryIntToLongReg(0X%x) -> 0X%x",
+                    value, expr.intToLongExpr(value));
+            }
+
+            for (int i = 0; i < iterations; i++) {
+                int value = rng.nextInt();
+                log("UnaryIntToLongReg(0X%x) -> 0X%x",
+                    value, expr.intToLongExpr(value));
             }
         }
 

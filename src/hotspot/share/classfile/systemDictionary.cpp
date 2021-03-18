@@ -127,7 +127,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
                          vmSymbols::void_classloader_signature(),
                          CHECK);
 
-  _java_system_loader = OopHandle(Universe::vm_global(), (oop)result.get_jobject());
+  _java_system_loader = OopHandle(Universe::vm_global(), result.get_oop());
 
   JavaCalls::call_static(&result,
                          class_loader_klass,
@@ -135,7 +135,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
                          vmSymbols::void_classloader_signature(),
                          CHECK);
 
-  _java_platform_loader = OopHandle(Universe::vm_global(), (oop)result.get_jobject());
+  _java_platform_loader = OopHandle(Universe::vm_global(), result.get_oop());
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool create_mirror_cld) {
@@ -1501,7 +1501,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
                             CHECK_NULL);
 
     assert(result.get_type() == T_OBJECT, "just checking");
-    oop obj = (oop) result.get_jobject();
+    oop obj = result.get_oop();
 
     // Primitive classes return null since forName() can not be
     // used to obtain any of the Class objects representing primitives or void
@@ -2243,7 +2243,7 @@ Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
                          vmSymbols::linkMethod_name(),
                          vmSymbols::linkMethod_signature(),
                          &args, CHECK_NULL);
-  Handle mname(THREAD, (oop) result.get_jobject());
+  Handle mname(THREAD, result.get_oop());
   return unpack_method_and_appendix(mname, accessing_klass, appendix_box, appendix_result, THREAD);
 }
 
@@ -2377,7 +2377,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
                          vmSymbols::findMethodHandleType_name(),
                          vmSymbols::findMethodHandleType_signature(),
                          &args, CHECK_(empty));
-  Handle method_type(THREAD, (oop) result.get_jobject());
+  Handle method_type(THREAD, result.get_oop());
 
   if (can_be_cached) {
     // We can cache this MethodType inside the JVM.
@@ -2463,7 +2463,7 @@ Handle SystemDictionary::link_method_handle_constant(Klass* caller,
                          vmSymbols::linkMethodHandleConstant_name(),
                          vmSymbols::linkMethodHandleConstant_signature(),
                          &args, CHECK_(empty));
-  return Handle(THREAD, (oop) result.get_jobject());
+  return Handle(THREAD, result.get_oop());
 }
 
 // Ask Java to run a bootstrap method, in order to create a dynamic call site
@@ -2505,7 +2505,7 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
                          is_indy ? vmSymbols::linkCallSite_signature() : vmSymbols::linkDynamicConstant_signature(),
                          &args, CHECK);
 
-  Handle value(THREAD, (oop) result.get_jobject());
+  Handle value(THREAD, result.get_oop());
   if (is_indy) {
     Handle appendix;
     Method* method = unpack_method_and_appendix(value,

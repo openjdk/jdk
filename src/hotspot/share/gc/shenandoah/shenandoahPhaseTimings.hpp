@@ -82,7 +82,6 @@ class outputStream;
   f(conc_weak_roots,                                "Concurrent Weak Roots")           \
   f(conc_weak_roots_work,                           "  Roots")                         \
   SHENANDOAH_PAR_PHASE_DO(conc_weak_roots_work_,    "    CWR: ", f)                    \
-  f(conc_weak_roots_rendezvous,                     "  Rendezvous")                    \
   f(conc_cleanup_early,                             "Concurrent Cleanup")              \
   f(conc_class_unload,                              "Concurrent Class Unloading")      \
   f(conc_class_unload_unlink,                       "  Unlink Stale")                  \
@@ -96,8 +95,10 @@ class outputStream;
   f(conc_class_unload_purge_ec,                     "    Exception Caches")            \
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
-  f(conc_rendezvous_roots,                          "Rendezvous")                      \
   f(conc_evac,                                      "Concurrent Evacuation")           \
+                                                                                       \
+  f(final_roots_gross,                              "Pause Final Roots (G)")           \
+  f(final_roots,                                    "Pause Final Roots (N)")           \
                                                                                        \
   f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
   f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
