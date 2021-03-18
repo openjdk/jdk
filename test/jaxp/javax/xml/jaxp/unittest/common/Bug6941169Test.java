@@ -23,11 +23,9 @@
 
 package common;
 
-import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
-import static jaxp.library.JAXPTestUtilities.getSystemProperty;
-import static jaxp.library.JAXPTestUtilities.setSystemProperty;
-
-import java.io.FilePermission;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 
@@ -35,6 +33,7 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
@@ -44,15 +43,18 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.XPathFactoryConfigurationException;
 
-import jaxp.library.JAXPTestUtilities;
-
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /*
  * @test
@@ -65,47 +67,37 @@ import org.xml.sax.InputSource;
 @Test(singleThreaded = true)
 @Listeners({ jaxp.library.FilePolicy.class })
 public class Bug6941169Test {
-    static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
-    static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
+    private static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
+    private static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
 
     private static final String DOM_FACTORY_ID = "javax.xml.parsers.DocumentBuilderFactory";
     private static final String SAX_FACTORY_ID = "javax.xml.parsers.SAXParserFactory";
+    private static final String SAX_FACTORY_IMP = "MySAXFactoryImpl";
+    private static final String DOM_FACTORY_IMP = "MyDOMFactoryImpl";
 
     // impl specific feature
-    final String ORACLE_FEATURE_SERVICE_MECHANISM = "http://www.oracle.com/feature/use-service-mechanism";
+    private static final String ORACLE_FEATURE_SERVICE_MECHANISM = "http://www.oracle.com/feature/use-service-mechanism";
 
-    static String _xml = Bug6941169Test.class.getResource("Bug6941169.xml").getPath();
-    static String _xsd = Bug6941169Test.class.getResource("Bug6941169.xsd").getPath();
+    private static final String _XML = Bug6941169Test.class.getResource("Bug6941169.xml").getPath();
+    private static final String _XSD = Bug6941169Test.class.getResource("Bug6941169.xsd").getPath();
+    private static final String FACT_CONF_ERR_MSG = "javax.xml.parsers.FactoryConfigurationError: Provider MySAXFactoryImpl not found";
+    private static final String DOM_FACT_ERR_MSG = "Provider MyDOMFactoryImpl not found";
 
     @Test
-    public void testValidation_SAX_withoutServiceMech() {
+    public void testValidation_SAX_withoutServiceMech() throws FileNotFoundException {
         System.out.println("Validation using SAX Source;  Service mechnism is turned off;  SAX Impl should be the default:");
-        InputSource is = new InputSource(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml"));
+        InputSource is = new InputSource(new FileInputStream(_XML));
         SAXSource ss = new SAXSource(is);
-        setSystemProperty(SAX_FACTORY_ID, "MySAXFactoryImpl");
+        setSystemProperty(SAX_FACTORY_ID, SAX_FACTORY_IMP);
         long start = System.currentTimeMillis();
         try {
-            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            factory.setFeature(ORACLE_FEATURE_SERVICE_MECHANISM, false);
-            Schema schema = factory.newSchema(new StreamSource(_xsd));
-            Validator validator = schema.newValidator();
-            validator.validate(ss, null);
+            saxValidator(ss, true);
         } catch (Exception e) {
-            // e.printStackTrace();
-            String error = e.getMessage();
-            if (error.indexOf("javax.xml.parsers.FactoryConfigurationError: Provider MySAXFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl is used");
-            }
-
-            // System.out.println(e.getMessage());
-
+            domSaxErrorHandler(e, FACT_CONF_ERR_MSG, "Default impl is used");
+        } finally {
+            clearSystemProperty(SAX_FACTORY_ID);
         }
-        long end = System.currentTimeMillis();
-        double elapsedTime = ((end - start));
-        System.out.println("Time elapsed: " + elapsedTime);
-        clearSystemProperty(SAX_FACTORY_ID);
+        testExecutionTime(start);
     }
 
     @Test
@@ -113,73 +105,47 @@ public class Bug6941169Test {
         System.out.println("Validation using SAX Source. Using service mechnism (by default) to find SAX Impl:");
         InputSource is = new InputSource(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml"));
         SAXSource ss = new SAXSource(is);
-        setSystemProperty(SAX_FACTORY_ID, "MySAXFactoryImpl");
+        setSystemProperty(SAX_FACTORY_ID, SAX_FACTORY_IMP);
         long start = System.currentTimeMillis();
         try {
-            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            Schema schema = factory.newSchema(new StreamSource(_xsd));
-            Validator validator = schema.newValidator();
-            validator.validate(ss, null);
+            saxValidator(ss, false);
             Assert.fail("User impl MySAXFactoryImpl should be used.");
         } catch (Exception e) {
             String error = e.getMessage();
-            if (error.indexOf("javax.xml.parsers.FactoryConfigurationError: Provider MySAXFactoryImpl not found") > 0) {
+            if (error.contains(FACT_CONF_ERR_MSG)) {
                 // expected
             }
-            // System.out.println(e.getMessage());
-
+        } finally {
+            clearSystemProperty(SAX_FACTORY_ID);
         }
-        long end = System.currentTimeMillis();
-        double elapsedTime = ((end - start));
-        System.out.println("Time elapsed: " + elapsedTime);
-        clearSystemProperty(SAX_FACTORY_ID);
+        testExecutionTime(start);
     }
 
     @Test
     public void testValidation_SAX_withSM() throws Exception {
-        if(System.getSecurityManager() == null)
+        if(System.getSecurityManager() == null) {
             return;
-
+        }
         System.out.println("Validation using SAX Source with security manager:");
         InputSource is = new InputSource(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml"));
         SAXSource ss = new SAXSource(is);
-        setSystemProperty(SAX_FACTORY_ID, "MySAXFactoryImpl");
-
+        setSystemProperty(SAX_FACTORY_ID, SAX_FACTORY_IMP);
         long start = System.currentTimeMillis();
         try {
-            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            factory.setFeature(ORACLE_FEATURE_SERVICE_MECHANISM, false);
-            Schema schema = factory.newSchema(new StreamSource(_xsd));
-            Validator validator = schema.newValidator();
-            validator.validate(ss, null);
+            saxValidator(ss, false);
         } catch (Exception e) {
-            String error = e.getMessage();
-            if (error.indexOf("javax.xml.parsers.FactoryConfigurationError: Provider MySAXFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl is used");
-            }
-
-            // System.out.println(e.getMessage());
-
+            domSaxErrorHandler(e, FACT_CONF_ERR_MSG, "Default impl is used");
         } finally {
             clearSystemProperty(SAX_FACTORY_ID);
         }
-        long end = System.currentTimeMillis();
-        double elapsedTime = ((end - start));
-        System.out.println("Time elapsed: " + elapsedTime);
-
+        testExecutionTime(start);
     }
 
     @Test
     public void testTransform_DOM_withoutServiceMech() {
         System.out.println("Transform using DOM Source;  Service mechnism is turned off;  Default DOM Impl should be the default:");
-        DOMSource domSource = new DOMSource();
-        domSource.setSystemId(_xml);
-
-        // DOMSource domSource = new
-        // DOMSource(getDocument(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml")));
-        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        DOMSource domSource = new DOMSource(getDocument(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml")));
+        setSystemProperty(DOM_FACTORY_ID, DOM_FACTORY_IMP);
         long start = System.currentTimeMillis();
         try {
             TransformerFactory factory = TransformerFactory.newInstance();
@@ -192,34 +158,13 @@ public class Bug6941169Test {
             t.transform(domSource, streamResult);
             System.out.println("Writing to " + result.toString());
 
-        } catch (Exception e) {
+        } catch (Exception | Error e) {
             // e.printStackTrace();
-            String error = e.getMessage();
-            if (error.indexOf("Provider MyDOMFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl is used");
-            }
-
-            // System.out.println(e.getMessage());
-
-        } catch (Error e) {
-            // e.printStackTrace();
-            String error = e.getMessage();
-            if (error.indexOf("Provider MyDOMFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl is used");
-            }
-
-            // System.out.println(e.getMessage());
-
+            domSaxErrorHandler(e, DOM_FACT_ERR_MSG, "Default impl is used");
+        } finally {
+            clearSystemProperty(DOM_FACTORY_ID);
         }
-
-        long end = System.currentTimeMillis();
-        double elapsedTime = ((end - start));
-        System.out.println("Time elapsed: " + elapsedTime);
-        clearSystemProperty(DOM_FACTORY_ID);
+        testExecutionTime(start);
     }
 
     /** this is by default */
@@ -227,94 +172,44 @@ public class Bug6941169Test {
     public void testTransform_DOM_withServiceMech() {
         System.out.println("Transform using DOM Source;  By default, the factory uses services mechanism to look up impl:");
         DOMSource domSource = new DOMSource();
-        domSource.setSystemId(_xml);
-
-        // DOMSource domSource = new
-        // DOMSource(getDocument(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml")));
-        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        domSource.setSystemId(_XML);
+        setSystemProperty(DOM_FACTORY_ID, DOM_FACTORY_IMP);
         long start = System.currentTimeMillis();
         try {
             TransformerFactory factory = TransformerFactory.newInstance();
-            Transformer t = factory.newTransformer();
-
-            StringWriter result = new StringWriter();
-            StreamResult streamResult = new StreamResult(result);
-            t.transform(domSource, streamResult);
-            System.out.println("Writing to " + result.toString());
-
+            domTransformer(domSource, factory);
             Assert.fail("User impl MyDOMFactoryImpl should be used.");
-
-        } catch (Exception e) {
+        } catch (Exception | Error e) {
             String error = e.getMessage();
-            if (error.indexOf("Provider MyDOMFactoryImpl not found") > 0) {
+            if (error.contains(DOM_FACT_ERR_MSG)) {
                 // expected
             }
             System.out.println(error);
-
-        } catch (Error e) {
-            String error = e.getMessage();
-            if (error.indexOf("Provider MyDOMFactoryImpl not found") > 0) {
-                // expected
-            }
-            System.out.println(error);
-
+        } finally {
+            clearSystemProperty(DOM_FACTORY_ID);
         }
-
-        long end = System.currentTimeMillis();
-        double elapsedTime = ((end - start));
-        System.out.println("Time elapsed: " + elapsedTime);
-        clearSystemProperty(DOM_FACTORY_ID);
+        testExecutionTime(start);
     }
 
     @Test
-    public void testTransform_DOM_withSM() throws Exception {
+    public void testTransform_DOM_withSM() {
         if(System.getSecurityManager() == null)
             return;
         System.out.println("Transform using DOM Source;  Security Manager is set:");
         DOMSource domSource = new DOMSource();
-        domSource.setSystemId(_xml);
-
-        // DOMSource domSource = new
-        // DOMSource(getDocument(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml")));
-        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        domSource.setSystemId(_XML);
+        setSystemProperty(DOM_FACTORY_ID, DOM_FACTORY_IMP);
         long start = System.currentTimeMillis();
         try {
             TransformerFactory factory = TransformerFactory.newInstance("com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
                     TransformerFactory.class.getClassLoader());
-            Transformer t = factory.newTransformer();
-
-            StringWriter result = new StringWriter();
-            StreamResult streamResult = new StreamResult(result);
-            t.transform(domSource, streamResult);
-            System.out.println("Writing to " + result.toString());
-
-        } catch (Exception e) {
-            String error = e.getMessage();
-            if (error.indexOf("Provider MyDOMFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl is used");
-            }
-
-            // System.out.println(e.getMessage());
-
-        } catch (Error e) {
-            String error = e.getMessage();
-            if (error.indexOf("Provider MyDOMFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl is used");
-            }
-
-            // System.out.println(e.getMessage());
-
+            domTransformer(domSource, factory);
+        } catch (Exception | Error e) {
+            domSaxErrorHandler(e, DOM_FACT_ERR_MSG, "Default impl is used");
         } finally {
             clearSystemProperty(DOM_FACTORY_ID);
         }
-        long end = System.currentTimeMillis();
-        double elapsedTime = ((end - start));
-        System.out.println("Time elapsed: " + elapsedTime);
-
+        testExecutionTime(start);
     }
 
     @Test
@@ -322,44 +217,18 @@ public class Bug6941169Test {
         final String XPATH_EXPRESSION = "/fooTest";
         System.out.println("Evaluate DOM Source;  Service mechnism is turned off;  Default DOM Impl should be used:");
         Document doc = getDocument(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml"));
-        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        setSystemProperty(DOM_FACTORY_ID, DOM_FACTORY_IMP);
         long start = System.currentTimeMillis();
         try {
             XPathFactory xPathFactory = XPathFactory.newInstance();
-            xPathFactory.setFeature(ORACLE_FEATURE_SERVICE_MECHANISM, false);
-
-            XPath xPath = xPathFactory.newXPath();
-
-            String xPathResult = xPath.evaluate(XPATH_EXPRESSION, doc);
-
-        } catch (Exception e) {
+            xPathEvaluator(XPATH_EXPRESSION, doc, xPathFactory, true, null);
+        } catch (Exception | Error e) {
             // e.printStackTrace();
-            String error = e.getMessage();
-            if (error.indexOf("MyDOMFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl is used");
-            }
-
-            // System.out.println(e.getMessage());
-
-        } catch (Error e) {
-            // e.printStackTrace();
-            String error = e.getMessage();
-            if (error.indexOf("MyDOMFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl is used");
-            }
-
-            // System.out.println(e.getMessage());
-
+            domSaxErrorHandler(e, DOM_FACT_ERR_MSG, "Default impl is used");
+        } finally {
+            clearSystemProperty(DOM_FACTORY_ID);
         }
-
-        long end = System.currentTimeMillis();
-        double elapsedTime = ((end - start));
-        System.out.println("Time elapsed: " + elapsedTime);
-        clearSystemProperty(DOM_FACTORY_ID);
+        testExecutionTime(start);
     }
 
     @Test
@@ -376,46 +245,24 @@ public class Bug6941169Test {
         System.out.println("Evaluate DOM Source;  Service mechnism is on by default;  It would try to use MyDOMFactoryImpl:");
         InputStream input = getClass().getResourceAsStream("Bug6941169.xml");
         InputSource source = new InputSource(input);
-        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        setSystemProperty(DOM_FACTORY_ID, DOM_FACTORY_IMP);
         long start = System.currentTimeMillis();
         try {
             XPathFactory xPathFactory = XPathFactory.newInstance();
-
-            XPath xPath = xPathFactory.newXPath();
-
-            String xPathResult = xPath.evaluate(XPATH_EXPRESSION, source);
+            xPathEvaluator(XPATH_EXPRESSION, null, xPathFactory, false, source);
             Assert.fail("User impl MyDOMFactoryImpl should be used.");
-
-        } catch (Exception e) {
+        } catch (Exception  | Error e) {
             // e.printStackTrace();
             String error = e.getMessage();
-            if (error.indexOf("MyDOMFactoryImpl not found") > 0) {
+            if (error.contains(DOM_FACT_ERR_MSG)) {
                 System.out.println("Tried to locate MyDOMFactoryImpl");
             } else {
                 Assert.fail(e.getMessage());
-
             }
-
-            // System.out.println(e.getMessage());
-
-        } catch (Error e) {
-            // e.printStackTrace();
-            String error = e.getMessage();
-            if (error.indexOf("MyDOMFactoryImpl not found") > 0) {
-                System.out.println("Tried to locate MyDOMFactoryImpl");
-            } else {
-                Assert.fail(e.getMessage());
-
-            }
-
-            // System.out.println(e.getMessage());
-
+        } finally {
+            clearSystemProperty(DOM_FACTORY_ID);
         }
-
-        long end = System.currentTimeMillis();
-        double elapsedTime = ((end - start));
-        System.out.println("Time elapsed: " + elapsedTime);
-        clearSystemProperty(DOM_FACTORY_ID);
+        testExecutionTime(start);
     }
 
     @Test
@@ -426,45 +273,19 @@ public class Bug6941169Test {
         System.out.println("Evaluate DOM Source;  Security Manager is set:");
         InputStream input = getClass().getResourceAsStream("Bug6941169.xml");
         InputSource source = new InputSource(input);
-        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        setSystemProperty(DOM_FACTORY_ID, DOM_FACTORY_IMP);
         long start = System.currentTimeMillis();
         try {
             XPathFactory xPathFactory = XPathFactory.newInstance("http://java.sun.com/jaxp/xpath/dom",
                     "com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl", null);
-
-            XPath xPath = xPathFactory.newXPath();
-
-            String xPathResult = xPath.evaluate(XPATH_EXPRESSION, source);
+            xPathEvaluator(XPATH_EXPRESSION, null, xPathFactory, false, source);
             System.out.println("Use default impl");
-        } catch (Exception e) {
-            // e.printStackTrace();
-            String error = e.getMessage();
-            if (error.indexOf("MyDOMFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl should be used");
-            }
-
-            // System.out.println(e.getMessage());
-
-        } catch (Error e) {
-            // e.printStackTrace();
-            String error = e.getMessage();
-            if (error.indexOf("MyDOMFactoryImpl not found") > 0) {
-                Assert.fail(e.getMessage());
-            } else {
-                System.out.println("Default impl should be used");
-            }
-
-            // System.out.println(e.getMessage());
-
+        } catch (Exception | Error e) {
+            domSaxErrorHandler(e, DOM_FACT_ERR_MSG, "Default impl should be used");
         } finally {
             clearSystemProperty(DOM_FACTORY_ID);
         }
-        long end = System.currentTimeMillis();
-        double elapsedTime = ((end - start));
-        System.out.println("Time elapsed: " + elapsedTime);
-
+        testExecutionTime(start);
     }
 
     @Test
@@ -477,10 +298,55 @@ public class Bug6941169Test {
         }
     }
 
+    private void domSaxErrorHandler(Throwable e, String domFactErrMsg, String s) {
+        String error = e.getMessage();
+        if (error.contains(domFactErrMsg)) {
+            Assert.fail(e.getMessage());
+        } else {
+            System.out.println(s);
+        }
+    }
+
+    private void saxValidator(SAXSource ss, boolean setFeature) throws SAXException, IOException {
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        if(setFeature) {
+            factory.setFeature(ORACLE_FEATURE_SERVICE_MECHANISM, false);
+        }
+        Schema schema = factory.newSchema(new StreamSource(_XSD));
+        Validator validator = schema.newValidator();
+        validator.validate(ss, null);
+    }
+
+    private void xPathEvaluator(String XPATH_EXPRESSION, Document doc, XPathFactory xPathFactory, boolean setFeature, InputSource source) throws
+            XPathFactoryConfigurationException, XPathExpressionException {
+        if(setFeature) {
+            xPathFactory.setFeature(ORACLE_FEATURE_SERVICE_MECHANISM, false);
+        }
+        XPath xPath = xPathFactory.newXPath();
+        String xPathResult;
+        if(doc != null) {
+            xPathResult = xPath.evaluate(XPATH_EXPRESSION, doc);
+        } else {
+            xPathResult = xPath.evaluate(XPATH_EXPRESSION, source);
+        }
+    }
+
+    private void testExecutionTime(long start) {
+        long end = System.currentTimeMillis();
+        double elapsedTime = ((end - start));
+        System.out.println("Time elapsed: " + elapsedTime + " milli seconds");
+    }
+
+    private void domTransformer(DOMSource domSource, TransformerFactory factory) throws TransformerException {
+        Transformer t = factory.newTransformer();
+        StringWriter result = new StringWriter();
+        StreamResult streamResult = new StreamResult(result);
+        t.transform(domSource, streamResult);
+        System.out.println("Writing to " + result.toString());
+    }
+
     private static Document getDocument(InputStream in) {
-
         Document document = null;
-
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
@@ -490,7 +356,6 @@ public class Bug6941169Test {
             e.printStackTrace();
             Assert.fail(e.toString());
         }
-
         return document;
     }
 }

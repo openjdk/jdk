@@ -23,13 +23,14 @@
 
 package common;
 
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
-import org.testng.Assert;
 import java.net.URL;
 import java.net.URLClassLoader;
 
 import javax.xml.parsers.SAXParserFactory;
+
+import org.testng.Assert;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
 
 /*
  * @test
@@ -41,27 +42,28 @@ import javax.xml.parsers.SAXParserFactory;
  */
 @Listeners({jaxp.library.BasePolicy.class})
 public class Bug6723276Test {
+    private static final String ERR_MSG = "org.apache.xerces.jaxp.SAXParserFactoryImpl not found";
 
     @Test
-    public void test1() {
+    public void testSAXParserFactoryCreationWithDefaultContextClassLoader() {
         try {
             SAXParserFactory.newInstance();
         } catch (Exception e) {
-            if (e.getMessage().indexOf("org.apache.xerces.jaxp.SAXParserFactoryImpl not found") > 0) {
+            if (e.getMessage().contains(ERR_MSG)) {
                 Assert.fail(e.getMessage());
             }
         }
     }
 
     @Test
-    public void test2() {
+    public void testSAXParserFactoryCreationWithGivenURLContextClassLoader() {
         try {
             System.out.println(Thread.currentThread().getContextClassLoader());
             System.out.println(ClassLoader.getSystemClassLoader().getParent());
             Thread.currentThread().setContextClassLoader(new URLClassLoader(new URL[0], ClassLoader.getSystemClassLoader().getParent()));
             SAXParserFactory.newInstance();
         } catch (Exception e) {
-            if (e.getMessage().indexOf("org.apache.xerces.jaxp.SAXParserFactoryImpl not found") > 0) {
+            if (e.getMessage().contains(ERR_MSG)) {
                 Assert.fail(e.getMessage());
             }
         }
