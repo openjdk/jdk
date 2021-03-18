@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,6 +39,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseLargePages
  */
 
@@ -49,6 +50,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseLargePages -XX:LargePageSizeInBytes=1G
  */
 
@@ -58,5 +60,6 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseLargePages -XX:+UseSHM
  */
