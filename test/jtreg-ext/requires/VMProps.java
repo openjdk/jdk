@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package requires;
 
 import java.io.BufferedInputStream;
@@ -31,10 +32,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -118,6 +121,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.musl", this::isMusl);
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
+        map.put("vm.flagless", this::isFlagless);
         vmGC(map); // vm.gc.X = true/false
         vmOptFinalFlags(map);
 
@@ -527,6 +531,65 @@ public class VMProps implements Callable<Map<String, String>> {
     private String jdkContainerized() {
         String isEnabled = System.getenv("TEST_JDK_CONTAINERIZED");
         return "" + "true".equalsIgnoreCase(isEnabled);
+    }
+
+    /**
+     * Checks if we are in <i>almost</i> out-of-box configuration, i.e. the flags
+     * which JVM is started with don't affect its behavior "significantly".
+     * {@code TEST_VM_FLAGLESS} enviroment variable can be used to force this
+     * method to return true and allow any flags.
+     *
+     * @return true if there are no JVM flags
+     */
+    private String isFlagless() {
+        boolean result = true;
+        if (System.getenv("TEST_VM_FLAGLESS") != null) {
+            return "" + result;
+        }
+
+        List<String> allFlags = new ArrayList<String>();
+        Collections.addAll(allFlags, System.getProperty("test.vm.opts", "").trim().split("\\s+"));
+        Collections.addAll(allFlags, System.getProperty("test.java.opts", "").trim().split("\\s+"));
+
+        // check -XX flags
+        var ignoredXXFlags = Set.of(
+                // added by run-test framework
+                "MaxRAMPercentage",
+                // added by test environment
+                "CreateCoredumpOnCrash"
+        );
+        result &= allFlags.stream()
+                          .filter(s -> s.startsWith("-XX:"))
+                          // map to names:
+                              // remove -XX:
+                              .map(s -> s.substring(4))
+                              // remove +/- from bool flags
+                              .map(s -> s.charAt(0) == '+' || s.charAt(0) == '-' ? s.substring(1) : s)
+                              // remove =.* from others
+                              .map(s -> s.contains("=") ? s.substring(0, s.indexOf('=')) : s)
+                          // skip known-to-be-there flags
+                          .filter(s -> !ignoredXXFlags.contains(s))
+                          .findAny()
+                          .isEmpty();
+
+        // check -X flags
+        var ignoredXFlags = Set.of(
+                // default, yet still seen to be explicitly set
+                "mixed"
+        );
+        result &= allFlags.stream()
+                          .filter(s -> s.startsWith("-X") && !s.startsWith("-XX:"))
+                          // map to names:
+                              // remove -X
+                              .map(s -> s.substring(2))
+                              // remove :.* from flags with values
+                              .map(s -> s.contains(":") ? s.substring(0, s.indexOf(':')) : s)
+                          // skip known-to-be-there flags
+                          .filter(s -> !ignoredXFlags.contains(s))
+                          .findAny()
+                          .isEmpty();
+
+        return "" + result;
     }
 
     /**
