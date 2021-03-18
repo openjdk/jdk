@@ -236,14 +236,14 @@ class Method : public Metadata {
       return mcs->number_of_breakpoints();
     }
   }
-  void incr_number_of_breakpoints(TRAPS)         {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void incr_number_of_breakpoints(Thread* current)         {
+    MethodCounters* mcs = get_method_counters(current);
     if (mcs != NULL) {
       mcs->incr_number_of_breakpoints();
     }
   }
-  void decr_number_of_breakpoints(TRAPS)         {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void decr_number_of_breakpoints(Thread* current)         {
+    MethodCounters* mcs = get_method_counters(current);
     if (mcs != NULL) {
       mcs->decr_number_of_breakpoints();
     }
@@ -292,8 +292,8 @@ class Method : public Metadata {
 
 #if COMPILER2_OR_JVMCI
   // Count of times method was exited via exception while interpreting
-  void interpreter_throwout_increment(TRAPS) {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void interpreter_throwout_increment(Thread* current) {
+    MethodCounters* mcs = get_method_counters(current);
     if (mcs != NULL) {
       mcs->interpreter_throwout_increment();
     }
@@ -685,7 +685,7 @@ public:
   }
   static int size(bool is_native);
   int size() const                               { return method_size(); }
-  void log_touched(TRAPS);
+  void log_touched(Thread* current);
   static void print_touched_methods(outputStream* out);
 
   // interpreter support
@@ -944,8 +944,9 @@ public:
   void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);
 
  public:
-  MethodCounters* get_method_counters(TRAPS) {
+  MethodCounters* get_method_counters(Thread* current) {
     if (_method_counters == NULL) {
+      Thread* THREAD = current;
       build_method_counters(this, CHECK_AND_CLEAR_NULL);
     }
     return _method_counters;

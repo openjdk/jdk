@@ -576,7 +576,7 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
   }
 
   if (LogTouchedMethods) {
-    mh->log_touched(CHECK_NULL);
+    mh->log_touched(THREAD);
   }
 
   return mh->method_counters();
@@ -2375,7 +2375,7 @@ public:
 static const int TOUCHED_METHOD_TABLE_SIZE = 20011;
 static TouchedMethodRecord** _touched_method_table = NULL;
 
-void Method::log_touched(TRAPS) {
+void Method::log_touched(Thread* current) {
 
   const int table_size = TOUCHED_METHOD_TABLE_SIZE;
   Symbol* my_class = klass_name();
@@ -2387,7 +2387,7 @@ void Method::log_touched(TRAPS) {
                       my_sig->identity_hash();
   juint index = juint(hash) % table_size;
 
-  MutexLocker ml(THREAD, TouchedMethodLog_lock);
+  MutexLocker ml(current, TouchedMethodLog_lock);
   if (_touched_method_table == NULL) {
     _touched_method_table = NEW_C_HEAP_ARRAY2(TouchedMethodRecord*, table_size,
                                               mtTracing, CURRENT_PC);

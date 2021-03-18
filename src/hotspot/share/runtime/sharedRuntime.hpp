@@ -52,9 +52,7 @@ class SharedRuntime: AllStatic {
   static bool resolve_sub_helper_internal(methodHandle callee_method, const frame& caller_frame,
                                           CompiledMethod* caller_nm, bool is_virtual, bool is_optimized,
                                           Handle receiver, CallInfo& call_info, Bytecodes::Code invoke_code, TRAPS);
-  static methodHandle resolve_sub_helper(JavaThread *thread,
-                                         bool is_virtual,
-                                         bool is_optimized, TRAPS);
+  static methodHandle resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS);
 
   // Shared stub locations
 
@@ -316,9 +314,7 @@ class SharedRuntime: AllStatic {
 
   // Resolves a call site- may patch in the destination of the call into the
   // compiled code.
-  static methodHandle resolve_helper(JavaThread *thread,
-                                     bool is_virtual,
-                                     bool is_optimized, TRAPS);
+  static methodHandle resolve_helper(bool is_virtual, bool is_optimized, TRAPS);
 
  private:
   // deopt blob
@@ -332,25 +328,23 @@ class SharedRuntime: AllStatic {
   static DeoptimizationBlob* deopt_blob(void)      { return _deopt_blob; }
 
   // Resets a call-site in compiled code so it will get resolved again.
-  static methodHandle reresolve_call_site(JavaThread *thread, TRAPS);
+  static methodHandle reresolve_call_site(TRAPS);
 
   // In the code prolog, if the klass comparison fails, the inline cache
   // misses and the call site is patched to megamorphic
-  static methodHandle handle_ic_miss_helper(JavaThread* thread, TRAPS);
+  static methodHandle handle_ic_miss_helper(TRAPS);
 
   // Find the method that called us.
-  static methodHandle find_callee_method(JavaThread* thread, TRAPS);
+  static methodHandle find_callee_method(TRAPS);
 
   static void monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
 
   static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
  private:
-  static Handle find_callee_info(JavaThread* thread,
-                                 Bytecodes::Code& bc,
+  static Handle find_callee_info(Bytecodes::Code& bc,
                                  CallInfo& callinfo, TRAPS);
-  static Handle find_callee_info_helper(JavaThread* thread,
-                                        vframeStream& vfst,
+  static Handle find_callee_info_helper(vframeStream& vfst,
                                         Bytecodes::Code& bc,
                                         CallInfo& callinfo, TRAPS);
 

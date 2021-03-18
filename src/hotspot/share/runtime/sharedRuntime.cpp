@@ -1049,13 +1049,14 @@ JRT_END
 // for a call current in progress, i.e., arguments has been pushed on stack
 // put callee has not been invoked yet.  Used by: resolve virtual/static,
 // vtable updates, etc.  Caller frame must be compiled.
-Handle SharedRuntime::find_callee_info(JavaThread* thread, Bytecodes::Code& bc, CallInfo& callinfo, TRAPS) {
-  ResourceMark rm(THREAD);
+Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
+  ResourceMark rm(thread);
 
   // last java frame on stack (which includes native call frames)
   vframeStream vfst(thread, true);  // Do not skip and javaCalls
 
-  return find_callee_info_helper(thread, vfst, bc, callinfo, THREAD);
+  return find_callee_info_helper(vfst, bc, callinfo, THREAD);
 }
 
 Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
@@ -1074,24 +1075,24 @@ Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
 // Finds receiver, CallInfo (i.e. receiver method), and calling bytecode
 // for a call current in progress, i.e., arguments has been pushed on stack
 // but callee has not been invoked yet.  Caller frame must be compiled.
-Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
-                                              vframeStream& vfst,
+Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst,
                                               Bytecodes::Code& bc,
                                               CallInfo& callinfo, TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
   Handle receiver;
   Handle nullHandle;  //create a handy null handle for exception returns
 
   assert(!vfst.at_end(), "Java frame must exist");
 
   // Find caller and bci from vframe
-  methodHandle caller(THREAD, vfst.method());
+  methodHandle caller(thread, vfst.method());
   int          bci   = vfst.bci();
 
   Bytecode_invoke bytecode(caller, bci);
   int bytecode_index = bytecode.index();
   bc = bytecode.invoke_code();
 
-  methodHandle attached_method(THREAD, extract_attached_method(vfst));
+  methodHandle attached_method(thread, extract_attached_method(vfst));
   if (attached_method.not_null()) {
     Method* callee = bytecode.static_target(CHECK_NH);
     vmIntrinsics::ID id = callee->intrinsic_id();
@@ -1148,7 +1149,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
     }
 
     // Retrieve from a compiled argument list
-    receiver = Handle(THREAD, callerFrame.retrieve_receiver(&reg_map2));
+    receiver = Handle(thread, callerFrame.retrieve_receiver(&reg_map2));
 
     if (receiver.is_null()) {
       THROW_(vmSymbols::java_lang_NullPointerException(), nullHandle);
@@ -1161,7 +1162,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
     LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
   } else {
     // Parameterized by bytecode.
-    constantPoolHandle constants(THREAD, caller->constants());
+    constantPoolHandle constants(thread, caller->constants());
     LinkResolver::resolve_invoke(callinfo, receiver, constants, bytecode_index, bc, CHECK_NH);
   }
 
@@ -1176,7 +1177,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
       rk = attached_method->method_holder();
     } else {
       // Klass is already loaded.
-      constantPoolHandle constants(THREAD, caller->constants());
+      constantPoolHandle constants(thread, caller->constants());
       rk = constants->klass_ref_at(bytecode_index, CHECK_NH);
     }
     Klass* static_receiver_klass = rk;
@@ -1195,8 +1196,9 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
   return receiver;
 }
 
-methodHandle SharedRuntime::find_callee_method(JavaThread* thread, TRAPS) {
-  ResourceMark rm(THREAD);
+methodHandle SharedRuntime::find_callee_method(TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
+  ResourceMark rm(thread);
   // We need first to check if any Java activations (compiled, interpreted)
   // exist on the stack since last JavaCall.  If not, we need
   // to get the target method from the JavaCall wrapper.
@@ -1212,23 +1214,21 @@ methodHandle SharedRuntime::find_callee_method(JavaThread* thread, TRAPS) {
     fr = fr.sender(&reg_map);
     assert(fr.is_entry_frame(), "must be");
     // fr is now pointing to the entry frame.
-    callee_method = methodHandle(THREAD, fr.entry_frame_call_wrapper()->callee_method());
+    callee_method = methodHandle(thread, fr.entry_frame_call_wrapper()->callee_method());
   } else {
     Bytecodes::Code bc;
     CallInfo callinfo;
-    find_callee_info_helper(thread, vfst, bc, callinfo, CHECK_(methodHandle()));
-    callee_method = methodHandle(THREAD, callinfo.selected_method());
+    find_callee_info_helper(vfst, bc, callinfo, CHECK_(methodHandle()));
+    callee_method = methodHandle(thread, callinfo.selected_method());
   }
   assert(callee_method()->is_method(), "must be");
   return callee_method;
 }
 
 // Resolves a call.
-methodHandle SharedRuntime::resolve_helper(JavaThread *thread,
-                                           bool is_virtual,
-                                           bool is_optimized, TRAPS) {
+methodHandle SharedRuntime::resolve_helper(bool is_virtual, bool is_optimized, TRAPS) {
   methodHandle callee_method;
-  callee_method = resolve_sub_helper(thread, is_virtual, is_optimized, THREAD);
+  callee_method = resolve_sub_helper(is_virtual, is_optimized, THREAD);
   if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
     int retry_count = 0;
     while (!HAS_PENDING_EXCEPTION && callee_method->is_old() &&
@@ -1245,7 +1245,7 @@ methodHandle SharedRuntime::resolve_helper(JavaThread *thread,
       guarantee((retry_count++ < 100),
                 "Could not resolve to latest version of redefined method");
       // method is redefined in the middle of resolve so re-try.
-      callee_method = resolve_sub_helper(thread, is_virtual, is_optimized, THREAD);
+      callee_method = resolve_sub_helper(is_virtual, is_optimized, THREAD);
     }
   }
   return callee_method;
@@ -1336,10 +1336,8 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
 
 // Resolves a call.  The compilers generate code for calls that go here
 // and are patched with the real destination of the call.
-methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
-                                               bool is_virtual,
-                                               bool is_optimized, TRAPS) {
-
+methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
   ResourceMark rm(thread);
   RegisterMap cbl_map(thread, false);
   frame caller_frame = thread->last_frame().sender(&cbl_map);
@@ -1358,9 +1356,9 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   //       b) an exception is thrown if receiver is NULL for non-static calls
   CallInfo call_info;
   Bytecodes::Code invoke_code = Bytecodes::_illegal;
-  Handle receiver = find_callee_info(thread, invoke_code,
+  Handle receiver = find_callee_info(invoke_code,
                                      call_info, CHECK_(methodHandle()));
-  methodHandle callee_method(THREAD, call_info.selected_method());
+  methodHandle callee_method(thread, call_info.selected_method());
 
   assert((!is_virtual && invoke_code == Bytecodes::_invokestatic ) ||
          (!is_virtual && invoke_code == Bytecodes::_invokespecial) ||
@@ -1449,7 +1447,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* 
 
   methodHandle callee_method;
   JRT_BLOCK
-    callee_method = SharedRuntime::handle_ic_miss_helper(thread, CHECK_NULL);
+    callee_method = SharedRuntime::handle_ic_miss_helper(CHECK_NULL);
     // Return Method* through TLS
     thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
@@ -1500,7 +1498,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* thread))
   methodHandle callee_method;
   JRT_BLOCK
     // Force resolving of caller (if we called from compiled frame)
-    callee_method = SharedRuntime::reresolve_call_site(thread, CHECK_NULL);
+    callee_method = SharedRuntime::reresolve_call_site(CHECK_NULL);
     thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
@@ -1544,7 +1542,7 @@ JRT_END
 JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_static_call_C(JavaThread *thread ))
   methodHandle callee_method;
   JRT_BLOCK
-    callee_method = SharedRuntime::resolve_helper(thread, false, false, CHECK_NULL);
+    callee_method = SharedRuntime::resolve_helper(false, false, CHECK_NULL);
     thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
@@ -1557,7 +1555,7 @@ JRT_END
 JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_virtual_call_C(JavaThread *thread ))
   methodHandle callee_method;
   JRT_BLOCK
-    callee_method = SharedRuntime::resolve_helper(thread, true, false, CHECK_NULL);
+    callee_method = SharedRuntime::resolve_helper(true, false, CHECK_NULL);
     thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
@@ -1571,7 +1569,7 @@ JRT_END
 JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_opt_virtual_call_C(JavaThread *thread))
   methodHandle callee_method;
   JRT_BLOCK
-    callee_method = SharedRuntime::resolve_helper(thread, true, true, CHECK_NULL);
+    callee_method = SharedRuntime::resolve_helper(true, true, CHECK_NULL);
     thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
@@ -1659,14 +1657,15 @@ bool SharedRuntime::handle_ic_miss_helper_internal(Handle receiver, CompiledMeth
   return true;
 }
 
-methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
+methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
   ResourceMark rm(thread);
   CallInfo call_info;
   Bytecodes::Code bc;
 
   // receiver is NULL for static calls. An exception is thrown for NULL
   // receivers for non-static calls
-  Handle receiver = find_callee_info(thread, bc, call_info,
+  Handle receiver = find_callee_info(bc, call_info,
                                      CHECK_(methodHandle()));
   // Compiler1 can produce virtual call sites that can actually be statically bound
   // If we fell thru to below we would think that the site was going megamorphic
@@ -1679,7 +1678,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
   // did this would still be the correct thing to do for it too, hence no ifdef.
   //
   if (call_info.resolved_method()->can_be_statically_bound()) {
-    methodHandle callee_method = SharedRuntime::reresolve_call_site(thread, CHECK_(methodHandle()));
+    methodHandle callee_method = SharedRuntime::reresolve_call_site(CHECK_(methodHandle()));
     if (TraceCallFixup) {
       RegisterMap reg_map(thread, false);
       frame caller_frame = thread->last_frame().sender(&reg_map);
@@ -1766,7 +1765,8 @@ static bool clear_ic_at_addr(CompiledMethod* caller_nm, address call_addr, bool 
 // sites, and static call sites. Typically used to change a call sites
 // destination from compiled to interpreted.
 //
-methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
+methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
   ResourceMark rm(thread);
   RegisterMap reg_map(thread, false);
   frame stub_frame = thread->last_frame();
@@ -1850,7 +1850,7 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
     }
   }
 
-  methodHandle callee_method = find_callee_method(thread, CHECK_(methodHandle()));
+  methodHandle callee_method = find_callee_method(CHECK_(methodHandle()));
 
 
 #ifndef PRODUCT
@@ -2121,7 +2121,7 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
   if (PrintBiasedLockingStatistics) {
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
-  Handle h_obj(THREAD, obj);
+  Handle h_obj(thread, obj);
   ObjectSynchronizer::enter(h_obj, lock, thread);
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
   JRT_BLOCK_END
