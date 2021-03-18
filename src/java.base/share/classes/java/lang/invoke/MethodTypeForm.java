@@ -230,13 +230,8 @@ final class MethodTypeForm {
      * ERASE means change every reference to {@code Object}.
      * WRAP means convert primitives (including {@code void} to their
      * corresponding wrapper types.  UNWRAP means the reverse of WRAP.
-     * INTS means convert all non-void primitive types to int or long,
-     * according to size.  LONGS means convert all non-void primitives
-     * to long, regardless of size.  RAW_RETURN means convert a type
-     * (assumed to be a return type) to int if it is smaller than an int,
-     * or if it is void.
      */
-    public static final int ERASE = 1, WRAP = 2, UNWRAP = 3, INTS = 4, LONGS = 5, RAW_RETURN = 6;
+    public static final int ERASE = 1, WRAP = 2, UNWRAP = 3;
 
     /** Canonicalize the types in the given method type.
      * If any types change, intern the new type, and return it.
@@ -270,40 +265,11 @@ final class MethodTypeForm {
                     ct = Wrapper.asPrimitiveType(t);
                     if (ct != t)  return ct;
                     break;
-                case RAW_RETURN:
                 case ERASE:
                     return Object.class;
             }
-        } else if (t == void.class) {
-            // no change, usually
-            switch (how) {
-                case RAW_RETURN:
-                    return int.class;
-                case WRAP:
-                    return Void.class;
-            }
-        } else {
-            // non-void primitive
-            switch (how) {
-                case WRAP:
-                    return Wrapper.asWrapperType(t);
-                case INTS:
-                    if (t == int.class || t == long.class)
-                        return null;  // no change
-                    if (t == double.class)
-                        return long.class;
-                    return int.class;
-                case LONGS:
-                    if (t == long.class)
-                        return null;  // no change
-                    return long.class;
-                case RAW_RETURN:
-                    if (t == int.class || t == long.class ||
-                        t == float.class || t == double.class)
-                        return null;  // no change
-                    // everything else returns as an int
-                    return int.class;
-            }
+        } else if (how == WRAP) {
+            return Wrapper.asWrapperType(t);
         }
         // no change; return null to signify
         return null;
