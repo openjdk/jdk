@@ -107,27 +107,7 @@ void ShenandoahScanRememberedTask::work(uint worker_id) {
   ShenandoahHeapRegion* region = _regions->next();
   while (region != NULL) {
     if (region->affiliation() == OLD_GENERATION) {
-      HeapWord *start_of_range = region->bottom();
-      size_t start_cluster_no = rs->cluster_for_addr(start_of_range);
-
-      // region->end() represents the end of memory spanned by this region, but not all of this
-      //   memory is eligible to be scanned because some of this memory has not yet been allocated.
-      //
-      // region->top() represents the end of allocated memory within this region.  Any addresses
-      //   beyond region->top() should not be scanned as that memory does not hold valid objects.
-      HeapWord *end_of_range = region->top();
-
-      // end_of_range may point to the middle of a cluster because region->top() may be different than region->end.
-      // We want to assure that our process_clusters() request spans all relevant clusters.  Note that each cluster
-      // processed will avoid processing beyond end_of_range.
-
-      size_t num_heapwords = end_of_range - start_of_range;
-      unsigned int cluster_size = CardTable::card_size_in_words *
-        ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-      size_t num_clusters = (size_t) ((num_heapwords - 1 + cluster_size) / cluster_size);
-
-      // Remembered set scanner
-      rs->process_clusters(start_cluster_no, num_clusters, end_of_range, &cl);
+      rs->process_region(region, &cl);
     }
     region = _regions->next();
   }

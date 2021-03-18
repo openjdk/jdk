@@ -213,6 +213,7 @@
 #include "memory/iterator.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 class ShenandoahReferenceProcessor;
@@ -929,6 +930,8 @@ public:
   template <typename ClosureType>
   inline void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops);
 
+  template <typename ClosureType>
+  inline void process_region(ShenandoahHeapRegion* region, ClosureType *cl);
 
   // To Do:
   //  Create subclasses of ShenandoahInitMarkRootsClosure and

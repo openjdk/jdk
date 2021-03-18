@@ -539,6 +539,33 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
 }
 
 template<typename RememberedSet>
+template <typename ClosureType>
+inline void
+ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *region, ClosureType *cl) {
+  HeapWord *start_of_range = region->bottom();
+  size_t start_cluster_no = cluster_for_addr(start_of_range);
+
+  // region->end() represents the end of memory spanned by this region, but not all of this
+  //   memory is eligible to be scanned because some of this memory has not yet been allocated.
+  //
+  // region->top() represents the end of allocated memory within this region.  Any addresses
+  //   beyond region->top() should not be scanned as that memory does not hold valid objects.
+  HeapWord *end_of_range = region->top();
+
+  // end_of_range may point to the middle of a cluster because region->top() may be different than region->end.
+  // We want to assure that our process_clusters() request spans all relevant clusters.  Note that each cluster
+  // processed will avoid processing beyond end_of_range.
+
+  size_t num_heapwords = end_of_range - start_of_range;
+  unsigned int cluster_size = CardTable::card_size_in_words *
+    ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  size_t num_clusters = (size_t) ((num_heapwords - 1 + cluster_size) / cluster_size);
+
+  // Remembered set scanner
+  process_clusters(start_cluster_no, num_clusters, end_of_range, cl);
+}
+
+template<typename RememberedSet>
 inline size_t
 ShenandoahScanRemembered<RememberedSet>::cluster_for_addr(HeapWordImpl **addr) {
   size_t card_index = _rs->card_index_for_addr(addr);

@@ -2039,7 +2039,7 @@ private:
   void do_work() {
     T cl;
     ShenandoahHeapRegion* r = _regions->next();
-    // We update references for global and young collections.
+    // We update references for global, old, and young collections.
     assert(_heap->active_generation()->is_mark_complete(), "Expected complete marking");
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
 
@@ -2048,40 +2048,34 @@ private:
       assert (update_watermark >= r->bottom(), "sanity");
 
       if (r->is_active() && !r->is_cset()) {
-        if (r->affiliation() == YOUNG_GENERATION || !_heap->mode()->is_generational()) {
+        if (!_heap->mode()->is_generational() || r->affiliation() == YOUNG_GENERATION) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         } else {
           assert(r->affiliation() == OLD_GENERATION, "Should not be updating references on FREE regions");
           if (!_heap->is_gc_generation_young()) {
-            // Old region in a global cycle.
+            // Old region in an old or global cycle.
             // We need to make sure that the next cycle does not iterate over dead objects
             // which haven't had their references updated.
             r->oop_iterate(&cl, /*fill_dead_objects*/ true, /* reregister_coalesced_objects */ true);
-          } else if (ShenandoahBarrierSet::barrier_set()->card_table()->is_dirty(MemRegion(r->bottom(), r->top()))) {
+          } else {
             // Old region in a young cycle.
-            if (r->is_humongous()) {
-              r->oop_iterate_humongous(&cl);
-            } else {
-              // We don't have liveness information about this region.
-              // Therefore we process all objects, rather than just marked ones.
-              // Otherwise subsequent traversals will encounter stale pointers.
-
-              // HEY! kelvin thinks we don't have to update refs throughout the entire region r.  We only need
-              // to update refs for objects that span dirty cards.  The code in process clusters does that.  We cannot invoke process_clusters
-              // because that's designed to process transitive closure of live objects.  Here, we are just looking
-              // one level deep in each of the relevant regions.  But we can copy and paste some of the code from
-              // there.
-
-              // HEY moreover!  Need to figure out how regions are partitioned between worker threads.  Is it possible
-              // that each region is being processed redundantly by each worker thread?
-
-              HeapWord *p = r->bottom();
-              ShenandoahObjectToOopBoundedClosure<T> objs(&cl, p, update_watermark);
-              // Anything beyond update_watermark is not yet allocated or initialized.
-              while (p < update_watermark) {
-                oop obj = oop(p);
-                objs.do_object(obj);
-                p += obj->size();
+            if (!ShenandoahUseSimpleCardScanning) {
+              _heap->card_scan()->process_region(r, &cl);
+            } else if (ShenandoahBarrierSet::barrier_set()->card_table()->is_dirty(MemRegion(r->bottom(), r->top()))) {
+              if (r->is_humongous()) {
+                r->oop_iterate_humongous(&cl);
+              } else {
+                // We don't have liveness information about this region.
+                // Therefore we process all objects, rather than just marked ones.
+                // Otherwise subsequent traversals will encounter stale pointers.
+                HeapWord *p = r->bottom();
+                ShenandoahObjectToOopBoundedClosure<T> objs(&cl, p, update_watermark);
+                // Anything beyond update_watermark is not yet allocated or initialized.
+                while (p < update_watermark) {
+                  oop obj = oop(p);
+                  objs.do_object(obj);
+                  p += obj->size();
+                }
               }
             }
           }
