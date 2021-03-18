@@ -198,7 +198,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @throws    IOException If an I/O error has occurred.
      * @throws    IllegalArgumentException if {@code size <= 0}
      *
-     * @since 17 
+     * @since 17
      */
     public GZIPOutputStream(OutputStream out,
                             boolean generateHeaderCRC,
