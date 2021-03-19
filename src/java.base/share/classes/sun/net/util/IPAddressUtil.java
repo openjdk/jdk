@@ -307,7 +307,7 @@ public class IPAddressUtil {
      * Mapping from unscoped local Inet(6)Address to the same address
      * including the correct scope-id, determined from NetworkInterface.
      */
-    private final static ConcurrentHashMap<InetAddress,InetAddress>
+    private static final ConcurrentHashMap<InetAddress,InetAddress>
         cache = new ConcurrentHashMap<>();
 
     /**
