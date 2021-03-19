@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8238911
+ * @bug 8261502
  * @summary Check that ECPrivateKey's that are not ECPrivateKeyImpl can use
  * ECDHKeyAgreement
  */
