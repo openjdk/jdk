@@ -223,6 +223,7 @@ public final class Constructor<T> extends Executable {
 
     /**
      * {@inheritDoc}
+     * @jls 8.8.3 Constructor Modifiers
      */
     @Override
     public int getModifiers() {
@@ -332,7 +333,7 @@ public final class Constructor<T> extends Executable {
      * followed by a parenthesized, comma-separated list of the
      * constructor's formal parameter types.  For example:
      * <pre>{@code
-     *    public java.util.Hashtable(int,float)
+     *    public java.util.HashMap(int,float)
      * }</pre>
      *
      * <p>If the constructor is declared to throw exceptions, the
@@ -502,6 +503,7 @@ public final class Constructor<T> extends Executable {
     /**
      * {@inheritDoc}
      * @since 1.5
+     * @jls 8.4.1 Formal Parameters
      */
     @Override
     public boolean isVarArgs() {

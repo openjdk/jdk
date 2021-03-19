@@ -246,7 +246,7 @@ void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
 
 void DumpRegion::pack(DumpRegion* next) {
   assert(!is_packed(), "sanity");
-  _end = (char*)align_up(_top, MetaspaceShared::reserved_space_alignment());
+  _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
   _is_packed = true;
   if (next != NULL) {
     next->_rs = _rs;
@@ -346,14 +346,5 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
       }
       w.stream()->cr();
     }
-  }
-}
-
-void ArchiveUtils::check_for_oom(oop exception) {
-  assert(exception != nullptr, "Sanity check");
-  if (exception->is_a(vmClasses::OutOfMemoryError_klass())) {
-    vm_direct_exit(-1,
-      err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-              SIZE_FORMAT "M", MaxHeapSize/M));
   }
 }

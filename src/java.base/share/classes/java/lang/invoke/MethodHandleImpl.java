@@ -566,55 +566,6 @@ abstract class MethodHandleImpl {
         }
     }
 
-    /** Factory method:  Spread selected argument. */
-    static MethodHandle makeSpreadArguments(MethodHandle target,
-                                            Class<?> spreadArgType, int spreadArgPos, int spreadArgCount) {
-        MethodType targetType = target.type();
-
-        for (int i = 0; i < spreadArgCount; i++) {
-            Class<?> arg = VerifyType.spreadArgElementType(spreadArgType, i);
-            if (arg == null)  arg = Object.class;
-            targetType = targetType.changeParameterType(spreadArgPos + i, arg);
-        }
-        target = target.asType(targetType);
-
-        MethodType srcType = targetType
-                .replaceParameterTypes(spreadArgPos, spreadArgPos + spreadArgCount, spreadArgType);
-        // Now build a LambdaForm.
-        MethodType lambdaType = srcType.invokerType();
-        Name[] names = arguments(spreadArgCount + 2, lambdaType);
-        int nameCursor = lambdaType.parameterCount();
-        int[] indexes = new int[targetType.parameterCount()];
-
-        for (int i = 0, argIndex = 1; i < targetType.parameterCount() + 1; i++, argIndex++) {
-            Class<?> src = lambdaType.parameterType(i);
-            if (i == spreadArgPos) {
-                // Spread the array.
-                MethodHandle aload = MethodHandles.arrayElementGetter(spreadArgType);
-                Name array = names[argIndex];
-                names[nameCursor++] = new Name(getFunction(NF_checkSpreadArgument), array, spreadArgCount);
-                for (int j = 0; j < spreadArgCount; i++, j++) {
-                    indexes[i] = nameCursor;
-                    names[nameCursor++] = new Name(new NamedFunction(aload, Intrinsic.ARRAY_LOAD), array, j);
-                }
-            } else if (i < indexes.length) {
-                indexes[i] = argIndex;
-            }
-        }
-        assert(nameCursor == names.length-1);  // leave room for the final call
-
-        // Build argument array for the call.
-        Name[] targetArgs = new Name[targetType.parameterCount()];
-        for (int i = 0; i < targetType.parameterCount(); i++) {
-            int idx = indexes[i];
-            targetArgs[i] = names[idx];
-        }
-        names[names.length - 1] = new Name(target, (Object[]) targetArgs);
-
-        LambdaForm form = new LambdaForm(lambdaType.parameterCount(), names, Kind.SPREAD);
-        return SimpleMethodHandle.make(srcType, form);
-    }
-
     static void checkSpreadArgument(Object av, int n) {
         if (av == null && n == 0) {
             return;
@@ -629,60 +580,6 @@ abstract class MethodHandleImpl {
         }
         // fall through to error:
         throw newIllegalArgumentException("array is not of length "+n);
-    }
-
-    /** Factory method:  Collect or filter selected argument(s). */
-    static MethodHandle makeCollectArguments(MethodHandle target,
-                MethodHandle collector, int collectArgPos, boolean retainOriginalArgs) {
-        MethodType targetType = target.type();          // (a..., c, [b...])=>r
-        MethodType collectorType = collector.type();    // (b...)=>c
-        int collectArgCount = collectorType.parameterCount();
-        Class<?> collectValType = collectorType.returnType();
-        int collectValCount = (collectValType == void.class ? 0 : 1);
-        MethodType srcType = targetType                 // (a..., [b...])=>r
-                .dropParameterTypes(collectArgPos, collectArgPos+collectValCount);
-        if (!retainOriginalArgs) {                      // (a..., b...)=>r
-            srcType = srcType.insertParameterTypes(collectArgPos, collectorType.parameterArray());
-        }
-        // in  arglist: [0: ...keep1 | cpos: collect...  | cpos+cacount: keep2... ]
-        // out arglist: [0: ...keep1 | cpos: collectVal? | cpos+cvcount: keep2... ]
-        // out(retain): [0: ...keep1 | cpos: cV? coll... | cpos+cvc+cac: keep2... ]
-
-        // Now build a LambdaForm.
-        MethodType lambdaType = srcType.invokerType();
-        Name[] names = arguments(2, lambdaType);
-        final int collectNamePos = names.length - 2;
-        final int targetNamePos  = names.length - 1;
-
-        Name[] collectorArgs = Arrays.copyOfRange(names, 1 + collectArgPos, 1 + collectArgPos + collectArgCount);
-        names[collectNamePos] = new Name(collector, (Object[]) collectorArgs);
-
-        // Build argument array for the target.
-        // Incoming LF args to copy are: [ (mh) headArgs collectArgs tailArgs ].
-        // Output argument array is [ headArgs (collectVal)? (collectArgs)? tailArgs ].
-        Name[] targetArgs = new Name[targetType.parameterCount()];
-        int inputArgPos  = 1;  // incoming LF args to copy to target
-        int targetArgPos = 0;  // fill pointer for targetArgs
-        int chunk = collectArgPos;  // |headArgs|
-        System.arraycopy(names, inputArgPos, targetArgs, targetArgPos, chunk);
-        inputArgPos  += chunk;
-        targetArgPos += chunk;
-        if (collectValType != void.class) {
-            targetArgs[targetArgPos++] = names[collectNamePos];
-        }
-        chunk = collectArgCount;
-        if (retainOriginalArgs) {
-            System.arraycopy(names, inputArgPos, targetArgs, targetArgPos, chunk);
-            targetArgPos += chunk;   // optionally pass on the collected chunk
-        }
-        inputArgPos += chunk;
-        chunk = targetArgs.length - targetArgPos;  // all the rest
-        System.arraycopy(names, inputArgPos, targetArgs, targetArgPos, chunk);
-        assert(inputArgPos + chunk == collectNamePos);  // use of rest of input args also
-        names[targetNamePos] = new Name(target, (Object[]) targetArgs);
-
-        LambdaForm form = new LambdaForm(lambdaType.parameterCount(), names, Kind.COLLECT);
-        return SimpleMethodHandle.make(srcType, form);
     }
 
     @Hidden

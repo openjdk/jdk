@@ -234,7 +234,6 @@ java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/TranslucentChoice.java 8221901 linux-all
 java/awt/Window/MultiWindowApp/ChildAlwaysOnTopTest.java 8222323 windows-all
 java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/Shaped.java  8222328 windows-all,linux-all,macosx-all
@@ -673,6 +672,9 @@ sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8209398 generic-all
 
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java  8243543 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java   8263059 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java 8248899 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all

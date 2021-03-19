@@ -223,8 +223,7 @@ class ConstantPoolCacheEntry {
     int             field_offset,                // the field offset in words in the field holder
     TosState        field_type,                  // the (machine) field type
     bool            is_final,                    // the field is final
-    bool            is_volatile,                 // the field is volatile
-    Klass*          root_klass                   // needed by the GC to dirty the klass
+    bool            is_volatile                  // the field is volatile
   );
 
  private:

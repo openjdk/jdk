@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,11 @@
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/support/jfrAllocationTracer.hpp"
 #include "jfr/support/jfrObjectAllocationSample.hpp"
-#include "jfr/support/jfrThreadLocal.hpp"
 #include "runtime/thread.hpp"
 
-JfrAllocationTracer::JfrAllocationTracer(const Klass* klass, HeapWord* obj, size_t alloc_size, bool outside_tlab, Thread* thread) : _tl(NULL) {
+JfrAllocationTracer::JfrAllocationTracer(const Klass* klass, HeapWord* obj, size_t alloc_size, bool outside_tlab, Thread* thread) {
   if (LeakProfiler::is_running()) {
-    _tl = thread->jfr_thread_local();
     LeakProfiler::sample(obj, alloc_size, thread->as_Java_thread());
   }
-  // Let this happen after LeakProfiler::sample, to possibly reuse a cached stacktrace.
   JfrObjectAllocationSample::send_event(klass, alloc_size, outside_tlab, thread);
-}
-
-JfrAllocationTracer::~JfrAllocationTracer() {
-  if (_tl != NULL) {
-    _tl->clear_cached_stack_trace();
-  }
 }

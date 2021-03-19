@@ -75,11 +75,11 @@ public final class LauncherIconVerifier {
     public static Path getDefaultIcon() {
         final String[] components;
         if (TKit.isOSX()) {
-            components = new String[] { "macosx", "java.icns" };
+            components = new String[] { "macosx", "JavaApp.icns" };
         } else if (TKit.isLinux()) {
-            components = new String[] { "linux", "java32.png" };
+            components = new String[] { "linux", "JavaApp.png" };
         } else if (TKit.isWindows()) {
-            components = new String[] { "windows", "java48.ico" };
+            components = new String[] { "windows", "JavaApp.ico" };
         } else {
             throw TKit.throwUnknownPlatformError();
         }
