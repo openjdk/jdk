@@ -200,18 +200,16 @@ public class LinkedHashSet<E>
     }
 
     /**
-     * Not supported.
-     *
-     * @throws UnsupportedOperationException always
+     * Inserts the specified element at the front of this collection.
+     * @param e the element to add
      */
     public void addFirst(E e) {
         map().putFirst(e, PRESENT);
     }
 
     /**
-     * Not supported.
-     *
-     * @throws UnsupportedOperationException always
+     * Inserts the specified element at the end of this collection.
+     * @param e the element to add
      */
     public void addLast(E e) {
         map().putLast(e, PRESENT);

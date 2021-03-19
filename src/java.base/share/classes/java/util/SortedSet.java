@@ -320,7 +320,7 @@ public interface SortedSet<E> extends Set<E>, ReversibleSet<E> {
      * may be visible in this reversed view.
      * @return a reversed-order view
      */
-    default ReversibleSet<E> reversed() {
+    default SortedSet<E> reversed() {
         return ReverseOrderSortedSetView.of(this);
     }
 }
