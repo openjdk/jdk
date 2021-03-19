@@ -80,12 +80,12 @@ Java_SuspendWithRawMonitorEnter_DestroyRawMonitor(JNIEnv *jni, jclass cls, jint 
 
 JNIEXPORT jint JNICALL
 Java_SuspendWithRawMonitorEnter_GetResult(JNIEnv *env, jclass cls) {
-    return iGlobalStatus;
+  return iGlobalStatus;
 }
 
 JNIEXPORT void JNICALL
 Java_SuspendWithRawMonitorEnter_SetPrintDebug(JNIEnv *env, jclass cls) {
-    printdebug = 1;
+  printdebug = 1;
 }
 
 JNIEXPORT void JNICALL
@@ -98,7 +98,7 @@ Java_SuspendWithRawMonitorEnter_SuspendThread(JNIEnv *jni, jclass cls, jint id, 
 
 JNIEXPORT jint JNICALL
 Java_SuspendWithRawMonitorEnterWorker_GetPrintDebug(JNIEnv *env, jclass cls) {
-    return printdebug;
+  return printdebug;
 }
 
 JNIEXPORT void JNICALL

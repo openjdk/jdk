@@ -66,12 +66,12 @@ static void print_debug(jint id, const char* mesg) {
 
 JNIEXPORT jint JNICALL
 Java_SuspendWithObjectMonitorEnter_GetResult(JNIEnv *env, jclass cls) {
-    return iGlobalStatus;
+  return iGlobalStatus;
 }
 
 JNIEXPORT void JNICALL
 Java_SuspendWithObjectMonitorEnter_SetPrintDebug(JNIEnv *env, jclass cls) {
-    printdebug = 1;
+  printdebug = 1;
 }
 
 JNIEXPORT void JNICALL
@@ -95,7 +95,7 @@ Java_SuspendWithObjectMonitorEnter_Wait4ContendedEnter(JNIEnv *jni, jclass cls, 
 
 JNIEXPORT jint JNICALL
 Java_SuspendWithObjectMonitorEnterWorker_GetPrintDebug(JNIEnv *env, jclass cls) {
-    return printdebug;
+  return printdebug;
 }
 
 JNIEXPORT void JNICALL
