@@ -101,7 +101,7 @@ public final class TransformerImpl extends Transformer
     implements DOMCache
 {
 
-    private final static String LEXICAL_HANDLER_PROPERTY =
+    private static final String LEXICAL_HANDLER_PROPERTY =
         "http://xml.org/sax/properties/lexical-handler";
 
     /**

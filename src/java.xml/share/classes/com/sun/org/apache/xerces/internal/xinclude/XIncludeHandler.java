@@ -132,33 +132,33 @@ import org.xml.sax.InputSource;
 public class XIncludeHandler
     implements XMLComponent, XMLDocumentFilter, XMLDTDFilter {
 
-    public final static String HTTP_ACCEPT = "Accept";
-    public final static String HTTP_ACCEPT_LANGUAGE = "Accept-Language";
-    public final static String XPOINTER = "xpointer";
+    public static final String HTTP_ACCEPT = "Accept";
+    public static final String HTTP_ACCEPT_LANGUAGE = "Accept-Language";
+    public static final String XPOINTER = "xpointer";
 
-    public final static String XINCLUDE_NS_URI =
+    public static final String XINCLUDE_NS_URI =
         "http://www.w3.org/2001/XInclude".intern();
-    public final static String XINCLUDE_INCLUDE = "include".intern();
-    public final static String XINCLUDE_FALLBACK = "fallback".intern();
+    public static final String XINCLUDE_INCLUDE = "include".intern();
+    public static final String XINCLUDE_FALLBACK = "fallback".intern();
 
-    public final static String XINCLUDE_PARSE_XML = "xml".intern();
-    public final static String XINCLUDE_PARSE_TEXT = "text".intern();
+    public static final String XINCLUDE_PARSE_XML = "xml".intern();
+    public static final String XINCLUDE_PARSE_TEXT = "text".intern();
 
-    public final static String XINCLUDE_ATTR_HREF = "href".intern();
-    public final static String XINCLUDE_ATTR_PARSE = "parse".intern();
-    public final static String XINCLUDE_ATTR_ENCODING = "encoding".intern();
-    public final static String XINCLUDE_ATTR_ACCEPT = "accept".intern();
-    public final static String XINCLUDE_ATTR_ACCEPT_LANGUAGE = "accept-language".intern();
+    public static final String XINCLUDE_ATTR_HREF = "href".intern();
+    public static final String XINCLUDE_ATTR_PARSE = "parse".intern();
+    public static final String XINCLUDE_ATTR_ENCODING = "encoding".intern();
+    public static final String XINCLUDE_ATTR_ACCEPT = "accept".intern();
+    public static final String XINCLUDE_ATTR_ACCEPT_LANGUAGE = "accept-language".intern();
 
     // Top Level Information Items have [included] property in infoset
-    public final static String XINCLUDE_INCLUDED = "[included]".intern();
+    public static final String XINCLUDE_INCLUDED = "[included]".intern();
 
     /** The identifier for the Augmentation that contains the current base URI */
-    public final static String CURRENT_BASE_URI = "currentBaseURI";
+    public static final String CURRENT_BASE_URI = "currentBaseURI";
 
     // used for adding [base URI] attributes
-    private final static String XINCLUDE_BASE = "base".intern();
-    private final static QName XML_BASE_QNAME =
+    private static final String XINCLUDE_BASE = "base".intern();
+    private static final QName XML_BASE_QNAME =
         new QName(
             XMLSymbols.PREFIX_XML,
             XINCLUDE_BASE,
@@ -166,15 +166,15 @@ public class XIncludeHandler
             NamespaceContext.XML_URI);
 
     // used for adding [language] attributes
-    private final static String XINCLUDE_LANG = "lang".intern();
-    private final static QName XML_LANG_QNAME =
+    private static final String XINCLUDE_LANG = "lang".intern();
+    private static final QName XML_LANG_QNAME =
         new QName(
             XMLSymbols.PREFIX_XML,
             XINCLUDE_LANG,
             (XMLSymbols.PREFIX_XML + ":" + XINCLUDE_LANG).intern(),
             NamespaceContext.XML_URI);
 
-    private final static QName NEW_NS_ATTR_QNAME =
+    private static final QName NEW_NS_ATTR_QNAME =
         new QName(
             XMLSymbols.PREFIX_XMLNS,
             "",
@@ -182,13 +182,13 @@ public class XIncludeHandler
             NamespaceContext.XMLNS_URI);
 
     // Processing States
-    private final static int STATE_NORMAL_PROCESSING = 1;
+    private static final int STATE_NORMAL_PROCESSING = 1;
     // we go into this state after a successful include (thus we ignore the children
     // of the include) or after a fallback
-    private final static int STATE_IGNORE = 2;
+    private static final int STATE_IGNORE = 2;
     // we go into this state after a failed include.  If we don't encounter a fallback
     // before we reach the end include tag, it's a fatal error
-    private final static int STATE_EXPECT_FALLBACK = 3;
+    private static final int STATE_EXPECT_FALLBACK = 3;
 
     // recognized features and properties
 

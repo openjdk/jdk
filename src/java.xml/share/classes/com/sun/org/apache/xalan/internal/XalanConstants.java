@@ -177,9 +177,9 @@ public final class XalanConstants {
     public static final String JDK_EXTENSION_CLASSLOADER = "jdk.xml.transform.extensionClassLoader";
 
     //legacy System Properties
-    public final static String ENTITY_EXPANSION_LIMIT = "entityExpansionLimit";
+    public static final String ENTITY_EXPANSION_LIMIT = "entityExpansionLimit";
     public static final String ELEMENT_ATTRIBUTE_LIMIT = "elementAttributeLimit" ;
-    public final static String MAX_OCCUR_LIMIT = "maxOccurLimit";
+    public static final String MAX_OCCUR_LIMIT = "maxOccurLimit";
 
     /**
      * A string "yes" that can be used for properties such as getEntityCountInfo

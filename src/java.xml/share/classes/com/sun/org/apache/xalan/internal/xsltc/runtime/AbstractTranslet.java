@@ -101,10 +101,10 @@ public abstract class AbstractTranslet implements Translet {
     protected StringValueHandler stringValueHandler = new StringValueHandler();
 
     // Use one empty string instead of constantly instanciating String("");
-    private final static String EMPTYSTRING = "";
+    private static final String EMPTYSTRING = "";
 
     // This is the name of the index used for ID attributes
-    private final static String ID_INDEX_NAME = "##id";
+    private static final String ID_INDEX_NAME = "##id";
 
     private boolean _overrideDefaultParser;
 

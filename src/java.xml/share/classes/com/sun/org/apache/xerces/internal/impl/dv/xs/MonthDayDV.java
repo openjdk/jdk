@@ -40,7 +40,7 @@ import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
 public class MonthDayDV extends AbstractDateTimeDV {
 
     //size without time zone: --MM-DD
-    private final static int MONTHDAY_SIZE = 7;
+    private static final int MONTHDAY_SIZE = 7;
 
     /**
      * Convert a string to a compiled form

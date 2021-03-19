@@ -91,16 +91,16 @@ public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader
 {
     // Public constants for attributes supported by the XSLTC TransformerFactory.
-    public final static String TRANSLET_NAME = "translet-name";
-    public final static String DESTINATION_DIRECTORY = "destination-directory";
-    public final static String PACKAGE_NAME = "package-name";
-    public final static String JAR_NAME = "jar-name";
-    public final static String GENERATE_TRANSLET = "generate-translet";
-    public final static String AUTO_TRANSLET = "auto-translet";
-    public final static String USE_CLASSPATH = "use-classpath";
-    public final static String DEBUG = "debug";
-    public final static String ENABLE_INLINING = "enable-inlining";
-    public final static String INDENT_NUMBER = "indent-number";
+    public static final String TRANSLET_NAME = "translet-name";
+    public static final String DESTINATION_DIRECTORY = "destination-directory";
+    public static final String PACKAGE_NAME = "package-name";
+    public static final String JAR_NAME = "jar-name";
+    public static final String GENERATE_TRANSLET = "generate-translet";
+    public static final String AUTO_TRANSLET = "auto-translet";
+    public static final String USE_CLASSPATH = "use-classpath";
+    public static final String DEBUG = "debug";
+    public static final String ENABLE_INLINING = "enable-inlining";
+    public static final String INDENT_NUMBER = "indent-number";
 
     /**
      * Default error listener
@@ -131,7 +131,7 @@ public class TransformerFactoryImpl
      * compared to the rest of his bulk, waved helplessly before his eyes.
      * "What has happened to me?", he thought. It was no dream....
      */
-    protected final static String DEFAULT_TRANSLET_NAME = "GregorSamsa";
+    protected static final String DEFAULT_TRANSLET_NAME = "GregorSamsa";
 
     /**
      * The class name of the translet

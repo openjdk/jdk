@@ -840,7 +840,7 @@ public class NodeSequence extends XObject
     * <p>
     * Its use-count is the number of NodeSequence objects that use it.
     */
-   private final static class IteratorCache {
+   private static final class IteratorCache {
        /**
         * A list of nodes already obtained from the iterator.
         * As the iterator is walked the nodes obtained from

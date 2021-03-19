@@ -174,7 +174,7 @@ public class XMLDocumentFragmentScannerImpl
     /** access external dtd: file protocol
      *  For DOM/SAX, the secure feature is set to true by default
      */
-    final static String EXTERNAL_ACCESS_DEFAULT = Constants.EXTERNAL_ACCESS_DEFAULT;
+    static final String EXTERNAL_ACCESS_DEFAULT = Constants.EXTERNAL_ACCESS_DEFAULT;
 
     // recognized features and properties
 

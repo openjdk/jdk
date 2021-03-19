@@ -103,66 +103,66 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
     // DOM Level 3 DOM Configuration parameter names
     // ************************************************************************
     // Parameter canonical-form, true [optional] - NOT SUPPORTED
-    private final static int CANONICAL = 0x1 << 0;
+    private static final int CANONICAL = 0x1 << 0;
 
     // Parameter cdata-sections, true [required] (default)
-    private final static int CDATA = 0x1 << 1;
+    private static final int CDATA = 0x1 << 1;
 
     // Parameter check-character-normalization, true [optional] - NOT SUPPORTED
-    private final static int CHARNORMALIZE = 0x1 << 2;
+    private static final int CHARNORMALIZE = 0x1 << 2;
 
     // Parameter comments, true [required] (default)
-    private final static int COMMENTS = 0x1 << 3;
+    private static final int COMMENTS = 0x1 << 3;
 
     // Parameter datatype-normalization, true [optional] - NOT SUPPORTED
-    private final static int DTNORMALIZE = 0x1 << 4;
+    private static final int DTNORMALIZE = 0x1 << 4;
 
     // Parameter element-content-whitespace, true [required] (default) - value - false [optional] NOT SUPPORTED
-    private final static int ELEM_CONTENT_WHITESPACE = 0x1 << 5;
+    private static final int ELEM_CONTENT_WHITESPACE = 0x1 << 5;
 
     // Parameter entities, true [required] (default)
-    private final static int ENTITIES = 0x1 << 6;
+    private static final int ENTITIES = 0x1 << 6;
 
     // Parameter infoset, true [required] (default), false has no effect --> True has no effect for the serializer
-    private final static int INFOSET = 0x1 << 7;
+    private static final int INFOSET = 0x1 << 7;
 
     // Parameter namespaces, true [required] (default)
-    private final static int NAMESPACES = 0x1 << 8;
+    private static final int NAMESPACES = 0x1 << 8;
 
     // Parameter namespace-declarations, true [required] (default)
-    private final static int NAMESPACEDECLS = 0x1 << 9;
+    private static final int NAMESPACEDECLS = 0x1 << 9;
 
     // Parameter normalize-characters, true [optional] - NOT SUPPORTED
-    private final static int NORMALIZECHARS = 0x1 << 10;
+    private static final int NORMALIZECHARS = 0x1 << 10;
 
     // Parameter split-cdata-sections, true [required] (default)
-    private final static int SPLITCDATA = 0x1 << 11;
+    private static final int SPLITCDATA = 0x1 << 11;
 
     // Parameter validate, true [optional] - NOT SUPPORTED
-    private final static int VALIDATE = 0x1 << 12;
+    private static final int VALIDATE = 0x1 << 12;
 
     // Parameter validate-if-schema, true [optional] - NOT SUPPORTED
-    private final static int SCHEMAVALIDATE = 0x1 << 13;
+    private static final int SCHEMAVALIDATE = 0x1 << 13;
 
     // Parameter split-cdata-sections, true [required] (default)
-    private final static int WELLFORMED = 0x1 << 14;
+    private static final int WELLFORMED = 0x1 << 14;
 
     // Parameter discard-default-content, true [required] (default)
     // Not sure how this will be used in level 2 Documents
-    private final static int DISCARDDEFAULT = 0x1 << 15;
+    private static final int DISCARDDEFAULT = 0x1 << 15;
 
     // Parameter format-pretty-print, true [optional]
-    private final static int PRETTY_PRINT = 0x1 << 16;
+    private static final int PRETTY_PRINT = 0x1 << 16;
 
     // Parameter ignore-unknown-character-denormalizations, true [required] (default)
     // We currently do not support XML 1.1 character normalization
-    private final static int IGNORE_CHAR_DENORMALIZE = 0x1 << 17;
+    private static final int IGNORE_CHAR_DENORMALIZE = 0x1 << 17;
 
     // Parameter discard-default-content, true [required] (default)
-    private final static int XMLDECL = 0x1 << 18;
+    private static final int XMLDECL = 0x1 << 18;
 
     // Parameter is-standalone, jdk specific, not required
-    private final static int IS_STANDALONE = 0x1 << 19;
+    private static final int IS_STANDALONE = 0x1 << 19;
 
     // ************************************************************************
 

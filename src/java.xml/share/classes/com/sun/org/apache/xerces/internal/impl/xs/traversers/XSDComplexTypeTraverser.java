@@ -68,7 +68,7 @@ import org.w3c.dom.Element;
 class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
 
     // size of stack to hold globals:
-    private final static int GLOBAL_NUM = 11;
+    private static final int GLOBAL_NUM = 11;
 
     private static XSParticleDecl fErrorContent = null;
     private static XSWildcardDecl fErrorWildcard = null;

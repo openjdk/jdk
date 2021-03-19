@@ -45,7 +45,7 @@ import com.sun.org.apache.xml.internal.serializer.NamespaceMappings;
  */
 public class DOM2TO implements XMLReader, Locator2 {
 
-    private final static String EMPTYSTRING = "";
+    private static final String EMPTYSTRING = "";
     private static final String XMLNS_PREFIX = "xmlns";
 
     /**

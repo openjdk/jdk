@@ -186,7 +186,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
         Constants.JAXP_PROPERTY_PREFIX + Constants.SCHEMA_SOURCE;
 
     /** Property identifier: DTD validator. */
-    protected final static String DTD_VALIDATOR_PROPERTY =
+    protected static final String DTD_VALIDATOR_PROPERTY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.DTD_VALIDATOR_PROPERTY;
 
     /** Property identifier: datatype validator factory. */
@@ -223,20 +223,20 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
     /** Normalization features*/
     protected short features = 0;
 
-    protected final static short NAMESPACES          = 0x1<<0;
-    protected final static short DTNORMALIZATION     = 0x1<<1;
-    protected final static short ENTITIES            = 0x1<<2;
-    protected final static short CDATA               = 0x1<<3;
-    protected final static short SPLITCDATA          = 0x1<<4;
-    protected final static short COMMENTS            = 0x1<<5;
-    protected final static short VALIDATE            = 0x1<<6;
-    protected final static short PSVI                = 0x1<<7;
-    protected final static short WELLFORMED          = 0x1<<8;
-    protected final static short NSDECL              = 0x1<<9;
+    protected static final short NAMESPACES          = 0x1<<0;
+    protected static final short DTNORMALIZATION     = 0x1<<1;
+    protected static final short ENTITIES            = 0x1<<2;
+    protected static final short CDATA               = 0x1<<3;
+    protected static final short SPLITCDATA          = 0x1<<4;
+    protected static final short COMMENTS            = 0x1<<5;
+    protected static final short VALIDATE            = 0x1<<6;
+    protected static final short PSVI                = 0x1<<7;
+    protected static final short WELLFORMED          = 0x1<<8;
+    protected static final short NSDECL              = 0x1<<9;
 
-    protected final static short INFOSET_TRUE_PARAMS = NAMESPACES | COMMENTS | WELLFORMED | NSDECL;
-    protected final static short INFOSET_FALSE_PARAMS = ENTITIES | DTNORMALIZATION | CDATA;
-    protected final static short INFOSET_MASK = INFOSET_TRUE_PARAMS | INFOSET_FALSE_PARAMS;
+    protected static final short INFOSET_TRUE_PARAMS = NAMESPACES | COMMENTS | WELLFORMED | NSDECL;
+    protected static final short INFOSET_FALSE_PARAMS = ENTITIES | DTNORMALIZATION | CDATA;
+    protected static final short INFOSET_MASK = INFOSET_TRUE_PARAMS | INFOSET_FALSE_PARAMS;
 
     // components
 

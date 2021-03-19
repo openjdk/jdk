@@ -150,7 +150,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
 
     private Thread currentThread;
 
-    protected final static boolean DEBUG = false;
+    protected static final boolean DEBUG = false;
 
     private String fSchemaLocation = null;
         private DOMStringList fRecognizedParameters;

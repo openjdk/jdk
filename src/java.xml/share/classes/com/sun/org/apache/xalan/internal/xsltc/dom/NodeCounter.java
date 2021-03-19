@@ -57,13 +57,13 @@ public abstract class NodeCounter {
     private int _nSepars  = 0;
     private int _nFormats = 0;
 
-    private final static String[] Thousands =
+    private static final String[] Thousands =
         {"", "m", "mm", "mmm" };
-    private final static String[] Hundreds =
+    private static final String[] Hundreds =
     {"", "c", "cc", "ccc", "cd", "d", "dc", "dcc", "dccc", "cm"};
-    private final static String[] Tens =
+    private static final String[] Tens =
     {"", "x", "xx", "xxx", "xl", "l", "lx", "lxx", "lxxx", "xc"};
-    private final static String[] Ones =
+    private static final String[] Ones =
     {"", "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix"};
 
     private StringBuilder _tempBuffer = new StringBuilder();

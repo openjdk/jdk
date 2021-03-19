@@ -72,7 +72,7 @@ import jdk.xml.internal.SecuritySupport;
  */
 public final class TemplatesImpl implements Templates, Serializable {
     static final long serialVersionUID = 673094361519270707L;
-    public final static String DESERIALIZE_TRANSLET = "jdk.xml.enableTemplatesImplDeserialization";
+    public static final String DESERIALIZE_TRANSLET = "jdk.xml.enableTemplatesImplDeserialization";
 
     /**
      * Name of the superclass of all translets. This is needed to

@@ -167,10 +167,10 @@ public class ParserAdapter implements XMLReader, DocumentHandler
     //
     // Internal constants for the sake of convenience.
     //
-    private final static String FEATURES = "http://xml.org/sax/features/";
-    private final static String NAMESPACES = FEATURES + "namespaces";
-    private final static String NAMESPACE_PREFIXES = FEATURES + "namespace-prefixes";
-    private final static String XMLNS_URIs = FEATURES + "xmlns-uris";
+    private static final String FEATURES = "http://xml.org/sax/features/";
+    private static final String NAMESPACES = FEATURES + "namespaces";
+    private static final String NAMESPACE_PREFIXES = FEATURES + "namespace-prefixes";
+    private static final String XMLNS_URIs = FEATURES + "xmlns-uris";
 
 
     /**

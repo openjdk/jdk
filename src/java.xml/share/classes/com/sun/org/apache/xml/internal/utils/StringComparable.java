@@ -33,9 +33,9 @@ import java.util.Locale;
 */
 public class StringComparable implements Comparable<StringComparable>  {
 
-     public final static int UNKNOWN_CASE = -1;
-     public final static int UPPER_CASE = 1;
-     public final static int LOWER_CASE = 2;
+     public static final int UNKNOWN_CASE = -1;
+     public static final int UPPER_CASE = 1;
+     public static final int LOWER_CASE = 2;
 
      private  String m_text;
      private  Locale m_locale;
@@ -53,7 +53,7 @@ public class StringComparable implements Comparable<StringComparable>  {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public final static Comparable getComparator( final String text, final Locale locale,
+    public static final Comparable getComparator( final String text, final Locale locale,
             final Collator collator, final String caseOrder){
         if((caseOrder == null) ||(caseOrder.length() == 0)){// no case-order specified
             return  ((RuleBasedCollator)collator).getCollationKey(text);

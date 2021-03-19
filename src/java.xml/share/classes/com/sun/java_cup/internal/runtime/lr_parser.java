@@ -161,7 +161,7 @@ public abstract class lr_parser {
   /** The default number of Symbols after an error we much match to consider
    *  it recovered from.
    */
-  protected final static int _error_sync_size = 3;
+  protected static final int _error_sync_size = 3;
 
   /*. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .*/
 

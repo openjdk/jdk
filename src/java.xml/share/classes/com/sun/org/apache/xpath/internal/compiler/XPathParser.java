@@ -68,9 +68,9 @@ public class XPathParser
   /**
    * Results from checking FilterExpr syntax
    */
-  protected final static int FILTER_MATCH_FAILED     = 0;
-  protected final static int FILTER_MATCH_PRIMARY    = 1;
-  protected final static int FILTER_MATCH_PREDICATES = 2;
+  protected static final int FILTER_MATCH_FAILED     = 0;
+  protected static final int FILTER_MATCH_PRIMARY    = 1;
+  protected static final int FILTER_MATCH_PREDICATES = 2;
 
   // counts open predicates
   private int countPredicate;

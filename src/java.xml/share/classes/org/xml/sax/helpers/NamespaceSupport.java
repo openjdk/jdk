@@ -100,7 +100,7 @@ public class NamespaceSupport
      * <p>This is the Namespace URI that is automatically mapped
      * to the "xml" prefix.</p>
      */
-    public final static String XMLNS =
+    public static final String XMLNS =
         "http://www.w3.org/XML/1998/namespace";
 
 
@@ -120,14 +120,14 @@ public class NamespaceSupport
      * @see #setNamespaceDeclUris
      * @see #isNamespaceDeclUris
      */
-    public final static String NSDECL =
+    public static final String NSDECL =
         "http://www.w3.org/xmlns/2000/";
 
 
     /**
      * An empty enumeration.
      */
-    private final static Enumeration<String> EMPTY_ENUMERATION =
+    private static final Enumeration<String> EMPTY_ENUMERATION =
             Collections.enumeration(new ArrayList<String>());
 
 

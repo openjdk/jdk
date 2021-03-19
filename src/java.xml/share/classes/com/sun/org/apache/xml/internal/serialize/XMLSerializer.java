@@ -121,7 +121,7 @@ extends BaseMarkupSerializer {
     /** symbol table for serialization */
     protected SymbolTable fSymbolTable;
 
-    protected final static String PREFIX = "NS";
+    protected static final String PREFIX = "NS";
 
     /**
      * Controls whether namespace fixup should be performed during

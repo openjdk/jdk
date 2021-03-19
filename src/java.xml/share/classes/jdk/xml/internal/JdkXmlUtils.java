@@ -66,18 +66,18 @@ public class JdkXmlUtils {
     /**
      * Catalog features
      */
-    public final static String USE_CATALOG = XMLConstants.USE_CATALOG;
-    public final static String SP_USE_CATALOG = "javax.xml.useCatalog";
-    public final static String CATALOG_FILES = CatalogFeatures.Feature.FILES.getPropertyName();
-    public final static String CATALOG_DEFER = CatalogFeatures.Feature.DEFER.getPropertyName();
-    public final static String CATALOG_PREFER = CatalogFeatures.Feature.PREFER.getPropertyName();
-    public final static String CATALOG_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
+    public static final String USE_CATALOG = XMLConstants.USE_CATALOG;
+    public static final String SP_USE_CATALOG = "javax.xml.useCatalog";
+    public static final String CATALOG_FILES = CatalogFeatures.Feature.FILES.getPropertyName();
+    public static final String CATALOG_DEFER = CatalogFeatures.Feature.DEFER.getPropertyName();
+    public static final String CATALOG_PREFER = CatalogFeatures.Feature.PREFER.getPropertyName();
+    public static final String CATALOG_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
 
     /**
      * Reset SymbolTable feature System property name is identical to feature
      * name
      */
-    public final static String RESET_SYMBOL_TABLE = "jdk.xml.resetSymbolTable";
+    public static final String RESET_SYMBOL_TABLE = "jdk.xml.resetSymbolTable";
 
     /**
      * jdk.xml.overrideDefaultParser: enables the use of a 3rd party's parser
@@ -108,7 +108,7 @@ public class JdkXmlUtils {
     /**
      * JDK features (will be consolidated in the next major feature revamp
      */
-    public final static String CDATA_CHUNK_SIZE = "jdk.xml.cdataChunkSize";
+    public static final String CDATA_CHUNK_SIZE = "jdk.xml.cdataChunkSize";
     public static final int CDATA_CHUNK_SIZE_DEFAULT
             = SecuritySupport.getJAXPSystemProperty(Integer.class, CDATA_CHUNK_SIZE, "0");
 

@@ -233,17 +233,17 @@ public class XSDHandler {
 
     // different sorts of declarations; should make lookup and
     // traverser calling more efficient/less bulky.
-    final static int ATTRIBUTE_TYPE          = 1;
-    final static int ATTRIBUTEGROUP_TYPE     = 2;
-    final static int ELEMENT_TYPE            = 3;
-    final static int GROUP_TYPE              = 4;
-    final static int IDENTITYCONSTRAINT_TYPE = 5;
-    final static int NOTATION_TYPE           = 6;
-    final static int TYPEDECL_TYPE           = 7;
+    static final int ATTRIBUTE_TYPE          = 1;
+    static final int ATTRIBUTEGROUP_TYPE     = 2;
+    static final int ELEMENT_TYPE            = 3;
+    static final int GROUP_TYPE              = 4;
+    static final int IDENTITYCONSTRAINT_TYPE = 5;
+    static final int NOTATION_TYPE           = 6;
+    static final int TYPEDECL_TYPE           = 7;
 
     // this string gets appended to redefined names; it's purpose is to be
     // as unlikely as possible to cause collisions.
-    public final static String REDEF_IDENTIFIER = "_fn3dktizrknc9pi";
+    public static final String REDEF_IDENTIFIER = "_fn3dktizrknc9pi";
 
     //protected data that can be accessible by any traverser
 

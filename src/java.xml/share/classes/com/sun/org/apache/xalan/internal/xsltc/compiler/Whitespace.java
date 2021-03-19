@@ -63,7 +63,7 @@ final class Whitespace extends TopLevelElement {
     /**
      * Auxillary class for encapsulating a single strip/preserve rule
      */
-    final static class WhitespaceRule {
+    static final class WhitespaceRule {
         private final int _action;
         private String _namespace; // Should be replaced by NS type (int)
         private String _element;   // Should be replaced by node type (int)

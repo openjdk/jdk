@@ -104,10 +104,10 @@ public final class SAXImpl extends SAX2DTM2
     /* ------------------------------------------------------------------- */
 
     // empty String for null attribute values
-    private final static String EMPTYSTRING = "";
+    private static final String EMPTYSTRING = "";
 
     // empty iterator to be returned when there are no children
-    private final static DTMAxisIterator EMPTYITERATOR = EmptyIterator.getInstance();
+    private static final DTMAxisIterator EMPTYITERATOR = EmptyIterator.getInstance();
     // The number of expanded names
     private int _namesSize = -1;
 
@@ -141,7 +141,7 @@ public final class SAXImpl extends SAX2DTM2
     // Support for access/navigation through org.w3c.dom API
     private Node[] _nodes;
     private NodeList[] _nodeLists;
-    // private final static String XML_LANG_ATTRIBUTE = "http://www.w3.org/XML/1998/namespace:@lang";
+    // private static final String XML_LANG_ATTRIBUTE = "http://www.w3.org/XML/1998/namespace:@lang";
 
     /**
      * Define the origin of the document from which the tree was built

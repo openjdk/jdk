@@ -56,9 +56,9 @@ public abstract class AbstractDateTimeDV extends TypeValidator {
     //define shared variables for date/time
     //define constants to be used in assigning default values for
     //all date/time excluding duration
-    protected final static int YEAR = 2000;
-    protected final static int MONTH = 01;
-    protected final static int DAY = 01;
+    protected static final int YEAR = 2000;
+    protected static final int MONTH = 01;
+    protected static final int DAY = 01;
     protected static final DatatypeFactory datatypeFactory = new DatatypeFactoryImpl();
 
     @Override

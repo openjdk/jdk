@@ -42,33 +42,33 @@ public class XSDDescription extends XMLResourceIdentifierImpl
     /**
      * Indicate that this description was just initialized.
      */
-    public final static short CONTEXT_INITIALIZE = -1;
+    public static final short CONTEXT_INITIALIZE = -1;
     /**
      * Indicate that the current schema document is <include>d by another
      * schema document.
      */
-    public final static short CONTEXT_INCLUDE   = 0;
+    public static final short CONTEXT_INCLUDE   = 0;
     /**
      * Indicate that the current schema document is <redefine>d by another
      * schema document.
      */
-    public final static short CONTEXT_REDEFINE  = 1;
+    public static final short CONTEXT_REDEFINE  = 1;
     /**
      * Indicate that the current schema document is <import>ed by another
      * schema document.
      */
-    public final static short CONTEXT_IMPORT    = 2;
+    public static final short CONTEXT_IMPORT    = 2;
     /**
      * Indicate that the current schema document is being preparsed.
      */
-    public final static short CONTEXT_PREPARSE  = 3;
+    public static final short CONTEXT_PREPARSE  = 3;
     /**
      * Indicate that the parse of the current schema document is triggered
      * by xsi:schemaLocation/noNamespaceSchemaLocation attribute(s) in the
      * instance document. This value is only used if we don't defer the loading
      * of schema documents.
      */
-    public final static short CONTEXT_INSTANCE  = 4;
+    public static final short CONTEXT_INSTANCE  = 4;
     /**
      * Indicate that the parse of the current schema document is triggered by
      * the occurrence of an element whose namespace is the target namespace
@@ -76,7 +76,7 @@ public class XSDDescription extends XMLResourceIdentifierImpl
      * loading of schema documents until a component from that namespace is
      * referenced from the instance.
      */
-    public final static short CONTEXT_ELEMENT   = 5;
+    public static final short CONTEXT_ELEMENT   = 5;
     /**
      * Indicate that the parse of the current schema document is triggered by
      * the occurrence of an attribute whose namespace is the target namespace
@@ -84,7 +84,7 @@ public class XSDDescription extends XMLResourceIdentifierImpl
      * loading of schema documents until a component from that namespace is
      * referenced from the instance.
      */
-    public final static short CONTEXT_ATTRIBUTE = 6;
+    public static final short CONTEXT_ATTRIBUTE = 6;
     /**
      * Indicate that the parse of the current schema document is triggered by
      * the occurrence of an "xsi:type" attribute, whose value (a QName) has
@@ -92,7 +92,7 @@ public class XSDDescription extends XMLResourceIdentifierImpl
      * This value is only used if we do defer the loading of schema documents
      * until a component from that namespace is referenced from the instance.
      */
-    public final static short CONTEXT_XSITYPE   = 7;
+    public static final short CONTEXT_XSITYPE   = 7;
 
     // REVISIT: write description of these fields
     protected short fContextType;

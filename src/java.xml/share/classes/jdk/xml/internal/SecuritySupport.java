@@ -45,7 +45,7 @@ import java.util.ResourceBundle;
  * This class contains utility methods for reading resources in the JAXP packages
  */
 public class SecuritySupport {
-    public final static String NEWLINE = System.lineSeparator();
+    public static final String NEWLINE = System.lineSeparator();
 
     /**
      * Cache for properties in java.home/conf/jaxp.properties

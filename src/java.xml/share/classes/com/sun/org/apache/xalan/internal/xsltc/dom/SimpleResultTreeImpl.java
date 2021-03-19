@@ -215,7 +215,7 @@ public class SimpleResultTreeImpl extends EmptySerializer implements DOM, DTM
     }  // END of SingletonIterator
 
     // empty iterator to be returned when there are no children
-    private final static DTMAxisIterator EMPTY_ITERATOR =
+    private static final DTMAxisIterator EMPTY_ITERATOR =
         new DTMAxisIteratorBase() {
             public DTMAxisIterator reset() { return this; }
             public DTMAxisIterator setStartNode(int node) { return this; }

@@ -674,7 +674,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
         fEventType = fScanner.next();
     }
 
-    final static String getEventTypeString(int eventType) {
+    static final String getEventTypeString(int eventType) {
         switch (eventType) {
             case XMLEvent.START_ELEMENT:
                 return "START_ELEMENT";

@@ -479,10 +479,10 @@ public class EncodingMap {
     //
 
     /** fIANA2JavaMap */
-    protected final static Map<String, String> fIANA2JavaMap;
+    protected static final Map<String, String> fIANA2JavaMap;
 
     /** fJava2IANAMap */
-    protected final static Map<String, String> fJava2IANAMap;
+    protected static final Map<String, String> fJava2IANAMap;
 
     //
     // Static initialization

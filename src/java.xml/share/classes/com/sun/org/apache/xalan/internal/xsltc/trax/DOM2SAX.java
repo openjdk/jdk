@@ -49,7 +49,7 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 public class DOM2SAX implements XMLReader, Locator {
 
-    private final static String EMPTYSTRING = "";
+    private static final String EMPTYSTRING = "";
     private static final String XMLNS_PREFIX = "xmlns";
 
     private Node _dom = null;

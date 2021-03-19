@@ -57,7 +57,7 @@ import javax.xml.stream.XMLStreamException;
  */
 public class StAXStream2SAX implements XMLReader, Locator {
 
-    //private final static String EMPTYSTRING = "";
+    //private static final String EMPTYSTRING = "";
     //private static final String XMLNS_PREFIX = "xmlns";
 
     // StAX Stream source

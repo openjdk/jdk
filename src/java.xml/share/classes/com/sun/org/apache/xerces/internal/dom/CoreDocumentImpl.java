@@ -146,7 +146,7 @@ public class CoreDocumentImpl
     transient Object fXPathEvaluator = null;
 
     /** Table for quick check of child insertion. */
-    private final static int[] kidOK;
+    private static final int[] kidOK;
 
     /**
      * Number of alterations made to this document since its creation.

@@ -45,16 +45,16 @@ public final class SecurityManager {
     //
 
     // default value for entity expansion limit
-    private final static int DEFAULT_ENTITY_EXPANSION_LIMIT = 64000;
+    private static final int DEFAULT_ENTITY_EXPANSION_LIMIT = 64000;
 
     /** Default value of number of nodes created. **/
-    private final static int DEFAULT_MAX_OCCUR_NODE_LIMIT = 5000;
+    private static final int DEFAULT_MAX_OCCUR_NODE_LIMIT = 5000;
 
     //
     // Data
     //
 
-        private final static int DEFAULT_ELEMENT_ATTRIBUTE_LIMIT = 10000;
+        private static final int DEFAULT_ELEMENT_ATTRIBUTE_LIMIT = 10000;
 
     /** Entity expansion limit. **/
     private int entityExpansionLimit;

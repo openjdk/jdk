@@ -31,13 +31,13 @@ import com.sun.org.apache.xml.internal.dtm.DTM;
  */
 public interface Constants {
 
-    final static int ANY       = -1;
-    final static int ATTRIBUTE = -2;
-    final static int ROOT      = DTM.ROOT_NODE;
-    final static int TEXT      = DTM.TEXT_NODE;
-    final static int ELEMENT   = DTM.ELEMENT_NODE;
-    final static int COMMENT   = DTM.COMMENT_NODE;
-    final static int PROCESSING_INSTRUCTION = DTM.PROCESSING_INSTRUCTION_NODE;
+    static final int ANY       = -1;
+    static final int ATTRIBUTE = -2;
+    static final int ROOT      = DTM.ROOT_NODE;
+    static final int TEXT      = DTM.TEXT_NODE;
+    static final int ELEMENT   = DTM.ELEMENT_NODE;
+    static final int COMMENT   = DTM.COMMENT_NODE;
+    static final int PROCESSING_INSTRUCTION = DTM.PROCESSING_INSTRUCTION_NODE;
 
     public static final String XSLT_URI = "http://www.w3.org/1999/XSL/Transform";
     public static final String NAMESPACE_FEATURE =

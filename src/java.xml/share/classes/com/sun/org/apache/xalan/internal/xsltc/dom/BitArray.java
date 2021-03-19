@@ -42,7 +42,7 @@ public class BitArray implements Externalizable {
 
     // This table is used to prevent expensive shift operations
     // (These operations are inexpensive on CPUs but very expensive on JVMs.)
-    private final static int[] _masks = {
+    private static final int[] _masks = {
         0x80000000, 0x40000000, 0x20000000, 0x10000000,
         0x08000000, 0x04000000, 0x02000000, 0x01000000,
         0x00800000, 0x00400000, 0x00200000, 0x00100000,
@@ -52,7 +52,7 @@ public class BitArray implements Externalizable {
         0x00000080, 0x00000040, 0x00000020, 0x00000010,
         0x00000008, 0x00000004, 0x00000002, 0x00000001 };
 
-    private final static boolean DEBUG_ASSERTIONS = false;
+    private static final boolean DEBUG_ASSERTIONS = false;
 
     /**
      * Constructor. Defines the initial size of the bit array (in bits).

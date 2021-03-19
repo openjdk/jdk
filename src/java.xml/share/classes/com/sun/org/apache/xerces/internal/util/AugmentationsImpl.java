@@ -114,7 +114,7 @@ public class AugmentationsImpl implements Augmentations{
     }
 
     class SmallContainer extends AugmentationsItemsContainer {
-        final static int SIZE_LIMIT = 10;
+        static final int SIZE_LIMIT = 10;
         final Object[] fAugmentations = new Object[SIZE_LIMIT*2];
         int fNumEntries = 0;
 

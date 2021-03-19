@@ -114,7 +114,7 @@ extends XMLSerializer {
     protected boolean fDOML1 = false;
     // counter for new prefix names
     protected int fNamespaceCounter = 1;
-    protected final static String PREFIX = "NS";
+    protected static final String PREFIX = "NS";
 
     /**
      * Controls whether namespace fixup should be performed during

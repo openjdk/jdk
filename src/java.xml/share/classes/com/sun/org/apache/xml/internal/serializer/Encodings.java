@@ -308,7 +308,7 @@ public final class Encodings extends Object
     // Using an inner static class here prevent initialization races
     // where the hash maps could be used before they were populated.
     //
-    private final static class EncodingInfos {
+    private static final class EncodingInfos {
         // These maps are final and not modified after initialization.
         private final Map<String, EncodingInfo> _encodingTableKeyJava = new HashMap<>();
         private final Map<String, EncodingInfo> _encodingTableKeyMime = new HashMap<>();
@@ -576,6 +576,6 @@ public final class Encodings extends Object
         return codePoint;
     }
 
-    private final static EncodingInfos _encodingInfos = new EncodingInfos();
+    private static final EncodingInfos _encodingInfos = new EncodingInfos();
 
 }
