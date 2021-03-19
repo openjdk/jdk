@@ -25,6 +25,7 @@ jobs:
       platform_windows_aarch64: ${{ steps.check_platforms.outputs.platform_windows_aarch64 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
+      platform_macos_aarch64: ${{ steps.check_platforms.outputs.platform_macos_aarch64 }}
       dependencies: ${{ steps.check_deps.outputs.dependencies }}
 
     steps:
@@ -41,6 +42,7 @@ jobs:
           echo "::set-output name=platform_windows_aarch64::${{ contains(github.event.inputs.platforms, 'windows aarch64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows aarch64'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
           echo "::set-output name=platform_macos_x64::${{ contains(github.event.inputs.platforms, 'macos x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos x64'))) }}"
+          echo "::set-output name=platform_macos_aarch64::${{ contains(github.event.inputs.platforms, 'macos aarch64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos aarch64'))) }}"
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine unique bundle identifier
@@ -1362,6 +1364,110 @@ jobs:
             jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}.tar.gz
             jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}.tar.gz
 
+  macos_aarch64_build:
+    name: macOS aarch64
+    runs-on: "macos-10.15"
+    needs: prerequisites
+    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_macos_aarch64 != 'false'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor:
+          - build release
+          - build debug
+        include:
+          - flavor: build release
+          - flavor: build debug
+            flags: --enable-debug
+            artifact: -debug
+
+    env:
+      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
+      BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_FILENAME }}"
+      BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_URL }}"
+      BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_SHA256 }}"
+
+    steps:
+      - name: Checkout the source
+        uses: actions/checkout@v2
+        with:
+          path: jdk
+
+      - name: Restore boot JDK from cache
+        id: bootjdk
+        uses: actions/cache@v2
+        with:
+          path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+          key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
+
+      - name: Download boot JDK
+        run: |
+          mkdir -p ${HOME}/bootjdk/${BOOT_JDK_VERSION} || true
+          wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+          echo "${BOOT_JDK_SHA256}  ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | shasum -a 256 -c >/dev/null -
+          tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          mv "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"*/* "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"
+        if: steps.bootjdk.outputs.cache-hit != 'true'
+
+      - name: Restore jtreg artifact
+        id: jtreg_restore
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
+
+      - name: Checkout gtest sources
+        uses: actions/checkout@v2
+        with:
+          repository: "google/googletest"
+          ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
+          path: gtest
+
+      - name: Install dependencies
+        run: brew install make
+
+      - name: Configure
+        run: >
+          bash configure
+          --with-conf-name=macos-aarch64
+          --openjdk-target=aarch64-apple-darwin
+          --with-extra-cflags="-arch arm64"
+          --with-extra-cxxflags="-arch arm64"
+          --with-extra-ldflags="-arch arm64"
+          ${{ matrix.flags }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-version-build=0
+          --with-boot-jdk=${HOME}/bootjdk/${BOOT_JDK_VERSION}/Contents/Home
+          --with-jtreg=${HOME}/jtreg
+          --with-gtest=${GITHUB_WORKSPACE}/gtest
+          --with-default-make-target="product-bundles test-bundles"
+          --with-zlib=system
+          --enable-jtreg-failure-handler
+        working-directory: jdk
+
+      - name: Build
+        run: make CONF_NAME=macos-aarch64
+        working-directory: jdk
+
+      - name: Persist test bundles
+        uses: actions/upload-artifact@v2
+        with:
+          name: transient_jdk-macos-aarch64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: |
+            jdk/build/macos-aarch64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-aarch64_bin${{ matrix.artifact }}.tar.gz
+            jdk/build/macos-aarch64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-aarch64_bin-tests${{ matrix.artifact }}.tar.gz
+
+
   macos_x64_test:
     name: macOS x64
     runs-on: "macos-10.15"
@@ -1560,6 +1666,7 @@ jobs:
       - linux_x86_test
       - windows_x64_test
       - macos_x64_test
+      - macos_aarch64_build
 
     steps:
       - name: Determine current artifacts endpoint
