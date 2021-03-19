@@ -543,8 +543,8 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
     if (ary_t != NULL && ld_addp->is_AddP()) {
       Node* ld_offs = ld_addp->in(AddPNode::Offset);
       BasicType ary_elem = ary_t->klass()->as_array_klass()->element_type()->basic_type();
-      int header = arrayOopDesc::base_offset_in_bytes(ary_elem);
-      int elemsize = type2aelembytes(ary_elem);
+      jlong header = arrayOopDesc::base_offset_in_bytes(ary_elem);
+      jlong elemsize = type2aelembytes(ary_elem);
 
       const TypeX*   ld_offs_t = phase->type(ld_offs)->isa_intptr_t();
       const TypeInt* sizetype  = ary_t->size();
