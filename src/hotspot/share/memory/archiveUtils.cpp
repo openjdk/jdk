@@ -330,12 +330,10 @@ void ReadClosure::do_region(u_char* start, size_t size) {
 
 fileStream* ClassListWriter::_classlist_file = NULL;
 
-void ArchiveUtils::log_to_classlist(Thread* current, BootstrapInfo* bootstrap_specifier) {
+void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   if (ClassListWriter::is_enabled()) {
     if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
-      ExceptionMark em(current);
-      Thread* THREAD = current; // For exception macros.
-      ResourceMark rm(current);
+      ResourceMark rm(THREAD);
       const constantPoolHandle& pool = bootstrap_specifier->pool();
       int pool_index = bootstrap_specifier->bss_index();
       ClassListWriter w;
