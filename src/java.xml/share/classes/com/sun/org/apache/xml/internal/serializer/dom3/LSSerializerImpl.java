@@ -70,7 +70,7 @@ import org.w3c.dom.ls.LSSerializerFilter;
  * @xsl.usage internal
  * @LastModified: Jan 2021
  */
-final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
+public final class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
     /** private data members */
     private Serializer fXMLSerializer = null;

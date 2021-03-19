@@ -344,7 +344,7 @@ public class CoreDocumentImpl
 
     // even though ownerDocument refers to this in this implementation
     // the DOM Level 2 spec says it must be null, so make it appear so
-    final public Document getOwnerDocument() {
+    public final Document getOwnerDocument() {
         return null;
     }
 
