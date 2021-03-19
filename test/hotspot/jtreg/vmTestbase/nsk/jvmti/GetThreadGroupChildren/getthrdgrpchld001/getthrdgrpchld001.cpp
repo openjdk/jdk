@@ -351,16 +351,16 @@ static jthreadGroup findThreadGroupByName(jvmtiEnv* jvmti, JNIEnv* jni, const ch
             for (j = 0; j < groupsCount; j++) {
                 jvmtiThreadGroupInfo info;
 
-                if (groups[i] != NULL) {
+                if (groups[j] != NULL) {
 
                     if (!NSK_JVMTI_VERIFY(
-                            jvmti->GetThreadGroupInfo(groups[i], &info))) {
+                            jvmti->GetThreadGroupInfo(groups[j], &info))) {
                         nsk_jvmti_setFailStatus();
                         continue;
                     }
 
                     if (info.name != 0 && strcmp(info.name, name) == 0) {
-                        foundGroup = groups[i];
+                        foundGroup = groups[j];
                         break;
                     }
                 }
