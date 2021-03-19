@@ -626,6 +626,13 @@ void HandshakeState::thread_exit() {
   }
 }
 
+bool HandshakeState::suspend_request_pending() {
+  assert(JavaThread::current()->thread_state() != _thread_blocked, "should not be in a blocked state");
+  assert(JavaThread::current()->thread_state() != _thread_in_native, "should not be in native");
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  return _handshakee->is_suspend_requested();
+}
+
 void HandshakeState::suspend_in_handshake() {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(_lock.owned_by_self(), "Lock must be held");

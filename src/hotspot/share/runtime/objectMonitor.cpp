@@ -411,7 +411,8 @@ bool ObjectMonitor::enter(JavaThread* current) {
       current->set_thread_state(_thread_blocked);
       EnterI(current);
       current->set_thread_state_fence(_thread_blocked_trans);
-      if (SafepointMechanism::should_process(current)) {
+      if (SafepointMechanism::should_process(current) &&
+        current->suspend_request_pending()) {
         // We have acquired the contended monitor, but while we were
         // waiting another thread suspended us. We don't want to enter
         // the monitor while suspended because that would surprise the
@@ -423,6 +424,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
         // Since we are going to _thread_blocked we skip setting _thread_in_vm here.
       } else {
         // Only exit path from for loop
+        SafepointMechanism::process_if_requested(current);
         current->set_thread_state(_thread_in_vm);
         break;
       }

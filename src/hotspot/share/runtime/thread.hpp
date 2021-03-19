@@ -1129,11 +1129,13 @@ class JavaThread: public Thread {
   bool java_suspend(); // higher-level suspension logic called by the public APIs
   bool java_resume();  // higher-level resume logic called by the public APIs
 
-  bool is_suspended() { return Atomic::load(&_suspended); }
-  void set_suspend(bool to) { return Atomic::store(&_suspended, to); }
+  bool is_suspended()                 { return Atomic::load(&_suspended); }
+  void set_suspend(bool to)           { return Atomic::store(&_suspended, to); }
 
-  bool is_suspend_requested() { return Atomic::load(&_suspend_requested); }
+  bool is_suspend_requested()         { return Atomic::load(&_suspend_requested); }
   void set_suspend_requested(bool to) { return Atomic::store(&_suspend_requested, to); }
+
+  bool suspend_request_pending()      { return _handshake.suspend_request_pending(); }
 
   static void check_safepoint_and_suspend_for_native_trans(JavaThread *thread);
   // Check for async exception in addition to safepoint and suspend request.

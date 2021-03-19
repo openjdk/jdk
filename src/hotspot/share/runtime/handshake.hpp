@@ -100,8 +100,6 @@ class HandshakeState {
 
   void add_operation(HandshakeOperation* op);
 
-  void thread_exit();
-
   bool has_operation() {
     return !_queue.is_empty();
   }
@@ -132,6 +130,11 @@ class HandshakeState {
   ProcessResult try_process(HandshakeOperation* match_op);
 
   Thread* active_handshaker() const { return _active_handshaker; }
+
+  // Suspend/resume support
+  void thread_exit();
+
+  bool suspend_request_pending();
 
   void suspend_in_handshake();
   bool resume();
