@@ -2085,46 +2085,25 @@ public:
   }
 };
 
-class ParallelCompactRefProcClosureContext : public AbstractRefProcClosureContext {
-  uint _max_workers;
+class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
   TaskTerminator _terminator;
-  PCMarkAndPushClosure* _keep_alive;
-  ParCompactionManager::FollowStackClosure* _complete_gc;
-  RefProcThreadModel _tm;
 
 public:
-  ParallelCompactRefProcClosureContext(uint max_workers)
-    : _max_workers(max_workers),
-      _terminator(_max_workers, ParCompactionManager::oop_task_queues()),
-      _keep_alive(NEW_C_HEAP_ARRAY(PCMarkAndPushClosure, _max_workers, mtGC)),
-      _complete_gc(NEW_C_HEAP_ARRAY(ParCompactionManager::FollowStackClosure, _max_workers, mtGC)),
-      _tm(RefProcThreadModel::Single) {}
+  ParallelCompactRefProcProxyTask(uint max_workers)
+    : RefProcProxyTask("ParallelCompactRefProcProxyTask", max_workers),
+      _terminator(_max_workers, ParCompactionManager::oop_task_queues()) {}
 
-  ~ParallelCompactRefProcClosureContext() {
-    FREE_C_HEAP_ARRAY(PCMarkAndPushClosure, _keep_alive);
-    FREE_C_HEAP_ARRAY(ParCompactionManager::FollowStackClosure, _complete_gc);
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    ParCompactionManager* cm = (_tm == RefProcThreadModel::Single) ? ParCompactionManager::get_vmthread_cm() : ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    PCMarkAndPushClosure keep_alive(cm);
+    ParCompactionManager::FollowStackClosure complete_gc(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
+    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &keep_alive, &complete_gc);
   }
 
-  BoolObjectClosure* is_alive(uint worker_id) {
-    return PSParallelCompact::is_alive_closure();
+  void prepare_run_task_hook() override {
+    _terminator.reset_for_reuse(_queue_count);
   }
-
-  OopClosure* keep_alive(uint worker_id) {
-    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
-    return ::new (&_keep_alive[worker_id]) PCMarkAndPushClosure(cm);
-  }
-
-  VoidClosure* complete_gc(uint worker_id) {
-    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
-    return ::new (&_complete_gc[worker_id]) ParCompactionManager::FollowStackClosure(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
-  }
-
-  void prepare_run_task(uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
-    log_debug(gc, ref)("ParallelCompactRefProcClosureContext: prepare_run_task");
-    assert(queue_count <= _max_workers, "sanity");
-    _tm = tm;
-   _terminator.reset_for_reuse(queue_count);
-  };
 };
 
 void PSParallelCompact::marking_phase(ParCompactionManager* cm,
@@ -2153,8 +2132,8 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->max_num_queues());
 
     ref_processor()->set_active_mt_degree(active_gc_threads);
-    ParallelCompactRefProcClosureContext context(ref_processor()->max_num_queues());
-    stats = ref_processor()->process_discovered_references(context, pt);
+    ParallelCompactRefProcProxyTask task(ref_processor()->max_num_queues());
+    stats = ref_processor()->process_discovered_references(task, pt);
 
     gc_tracer->report_gc_reference_stats(stats);
     pt.print_all_references();

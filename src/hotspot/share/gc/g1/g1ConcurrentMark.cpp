@@ -1461,50 +1461,31 @@ class G1CMDrainMarkingStackClosure : public VoidClosure {
   }
 };
 
-class G1CMRefProcClosureContext : public AbstractRefProcClosureContext {
-  uint _max_workers;
+class G1CMRefProcProxyTask : public RefProcProxyTask {
+  G1CollectedHeap& _g1h;
   G1ConcurrentMark& _cm;
-  G1CMIsAliveClosure _is_alive;
-  G1CMKeepAliveAndDrainClosure* _keep_alive;
-  G1CMDrainMarkingStackClosure* _complete_gc;
-  RefProcThreadModel _tm;
 
 public:
-  G1CMRefProcClosureContext(uint max_workers,
-                            G1CollectedHeap& g1h,
-                            G1ConcurrentMark& cm)
-    : _max_workers(max_workers),
-      _cm(cm),
-      _is_alive(&g1h),
-      _keep_alive(NEW_C_HEAP_ARRAY(G1CMKeepAliveAndDrainClosure, _max_workers, mtGC)),
-      _complete_gc(NEW_C_HEAP_ARRAY(G1CMDrainMarkingStackClosure, _max_workers, mtGC)),
-      _tm(RefProcThreadModel::Single) {}
+  G1CMRefProcProxyTask(uint max_workers, G1CollectedHeap& g1h, G1ConcurrentMark &cm)
+    : RefProcProxyTask("G1CMRefProcProxyTask", max_workers),
+      _g1h(g1h),
+      _cm(cm) {}
 
-  ~G1CMRefProcClosureContext() {
-    FREE_C_HEAP_ARRAY(G1CMKeepAliveAndDrainClosure, _keep_alive);
-    FREE_C_HEAP_ARRAY(G1CMDrainMarkingStackClosure, _complete_gc);
-  }
-
-  BoolObjectClosure* is_alive(uint worker_id) {
-    return &_is_alive;
-  }
-
-  OopClosure* keep_alive(uint worker_id) {
+  void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
-    return ::new (&_keep_alive[index(worker_id, _tm)]) G1CMKeepAliveAndDrainClosure(&_cm, _cm.task(index(worker_id, _tm)), _tm == RefProcThreadModel::Single );
+    G1CMIsAliveClosure is_alive(&_g1h);
+    G1CMKeepAliveAndDrainClosure keep_alive(&_cm, _cm.task(index(worker_id)), _tm == RefProcThreadModel::Single);
+    G1CMDrainMarkingStackClosure complete_gc(&_cm, _cm.task(index(worker_id)), _tm == RefProcThreadModel::Single);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
   }
 
-  VoidClosure* complete_gc(uint worker_id) {
-    assert(worker_id < _max_workers, "sanity");
-    return ::new (&_complete_gc[index(worker_id, _tm)]) G1CMDrainMarkingStackClosure(&_cm, _cm.task(index(worker_id, _tm)), _tm == RefProcThreadModel::Single);
+  void prepare_run_task_hook() override {
+    // We need to reset the concurrency level before each
+    // proxy task execution, so that the termination protocol
+    // and overflow handling in G1CMTask::do_marking_step() knows
+    // how many workers to wait for.
+    _cm.set_concurrency(_queue_count);
   }
-
-  void prepare_run_task(uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
-    log_debug(gc, ref)("G1CMRefProcClosureContext: prepare_run_task");
-    assert(queue_count <= _max_workers, "sanity");
-    _tm = tm;
-    _cm.set_concurrency(queue_count);
-  };
 };
 
 void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
@@ -1534,7 +1515,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     bool processing_is_mt = rp->processing_is_mt();
     uint active_workers = (processing_is_mt ? _g1h->workers()->active_workers() : 1U);
     active_workers = clamp(active_workers, 1u, _max_num_tasks);
-    G1CMRefProcClosureContext context(rp->max_num_queues(), *_g1h, *this);
+    G1CMRefProcProxyTask task(rp->max_num_queues(), *_g1h, *this);
 
     // Set the concurrency level. The phase was already set prior to
     // executing the remark task.
@@ -1549,7 +1530,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->max_num_queues());
 
     // Process the weak references.
-    const ReferenceProcessorStats& stats = rp->process_discovered_references(context, pt);
+    const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);
     _gc_tracer_cm->report_gc_reference_stats(stats);
     pt.print_all_references();
 

@@ -282,7 +282,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMConcurrentMarkingTask;
   friend class G1CMDrainMarkingStackClosure;
   friend class G1CMKeepAliveAndDrainClosure;
-  friend class G1CMRefProcClosureContext;
+  friend class G1CMRefProcProxyTask;
   friend class G1CMRemarkTask;
   friend class G1CMTask;
   friend class G1ConcurrentMarkThread;

@@ -50,7 +50,6 @@ class PSOldGen;
 class ParCompactionManager;
 
 class PSPromotionManager {
-  friend class ParallelScavengeRefProcClosureContext;
   friend class PSScavenge;
   friend class ScavengeRootsTask;
 
