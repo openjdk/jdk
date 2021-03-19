@@ -42,7 +42,7 @@ import java.nio.channels.MulticastChannel;
  * Joining one or more multicast groups makes it possible to
  * receive multicast datagrams sent to these groups.
  * <P>
- * A multicast group is specified by a class D IP address
+ * An IPv4 multicast group is specified by a class D IP address
  * and by a standard UDP port number. Class D IP addresses
  * are in the range {@code 224.0.0.0} to {@code 239.255.255.255},
  * inclusive. The address 224.0.0.0 is reserved and should not be used.
