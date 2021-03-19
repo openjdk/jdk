@@ -506,12 +506,6 @@ endif
 
 LIBFONTMANAGER_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
 
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  # Turn off all warnings for sunFont.c. This is needed because the specific warning
-  # about discarding 'const' qualifier cannot be turned off individually.
-  BUILD_LIBFONTMANAGER_sunFont.c_CFLAGS := -w
-endif
-
 # LDFLAGS clarification:
 #   Filter relevant linker flags disallowing unresolved symbols as we cannot
 #   build-time decide to which library to link against (libawt_headless or
