@@ -212,13 +212,14 @@ module java.base {
         jdk.jartool,
         jdk.jfr,
         jdk.jlink,
-        jdk.jpackage;
+        jdk.jpackage;  
     exports jdk.internal.perf to
         java.management,
         jdk.management.agent,
         jdk.internal.jvmstat;
     exports jdk.internal.platform to
-        jdk.management;
+        jdk.management,
+        jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
         jdk.incubator.foreign;

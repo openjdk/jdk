@@ -27,10 +27,15 @@ package jdk.jfr.internal.instrument;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
+import jdk.jfr.events.ContainerIOUsageEvent;
+import jdk.jfr.events.ContainerConfigurationEvent;
+import jdk.jfr.events.ContainerCPUUsageEvent;
+import jdk.jfr.events.ContainerMemoryUsageEvent;
 import jdk.jfr.events.DirectBufferStatisticsEvent;
 import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.events.ExceptionStatisticsEvent;
@@ -53,8 +58,10 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.RequestEngine;
 import jdk.jfr.internal.SecuritySupport;
 
-public final class JDKEvents {
+import jdk.internal.platform.Container;
+import jdk.internal.platform.Metrics;
 
+public final class JDKEvents {
     private static final Class<?>[] mirrorEventClasses = {
         DeserializationEvent.class,
         ProcessStartEvent.class,
@@ -82,6 +89,10 @@ public final class JDKEvents {
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
 
+        ContainerConfigurationEvent.class,
+        ContainerCPUUsageEvent.class,
+        ContainerMemoryUsageEvent.class,
+        ContainerIOUsageEvent.class,
         DirectBufferStatisticsEvent.class
     };
 
@@ -100,6 +111,11 @@ public final class JDKEvents {
     private static final JVM jvm = JVM.getJVM();
     private static final Runnable emitExceptionStatistics = JDKEvents::emitExceptionStatistics;
     private static final Runnable emitDirectBufferStatistics = JDKEvents::emitDirectBufferStatistics;
+    private static final Runnable emitContainerConfiguration = JDKEvents::emitContainerConfiguration;
+    private static final Runnable emitContainerCPUUsage = JDKEvents::emitContainerCPUUsage;
+    private static final Runnable emitContainerMemoryUsage = JDKEvents::emitContainerMemoryUsage;
+    private static final Runnable emitContainerIOUsage = JDKEvents::emitContainerIOUsage;
+    private static Metrics containerMetrics = null;
     private static boolean initializationTriggered;
 
     @SuppressWarnings("unchecked")
@@ -112,9 +128,14 @@ public final class JDKEvents {
                 for (Class<?> eventClass : eventClasses) {
                     SecuritySupport.registerEvent((Class<? extends Event>) eventClass);
                 }
+                containerMetrics = Container.metrics();
                 initializationTriggered = true;
                 RequestEngine.addTrustedJDKHook(ExceptionStatisticsEvent.class, emitExceptionStatistics);
                 RequestEngine.addTrustedJDKHook(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
+                RequestEngine.addTrustedJDKHook(ContainerConfigurationEvent.class, emitContainerConfiguration);
+                RequestEngine.addTrustedJDKHook(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
+                RequestEngine.addTrustedJDKHook(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
+                RequestEngine.addTrustedJDKHook(ContainerIOUsageEvent.class, emitContainerIOUsage);
             }
         } catch (Exception e) {
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Could not initialize JDK events. " + e.getMessage());
@@ -147,6 +168,55 @@ public final class JDKEvents {
         t.commit();
     }
 
+    private static void emitContainerConfiguration() {
+        if (containerMetrics != null) {
+            ContainerConfigurationEvent t = new ContainerConfigurationEvent();
+            t.cpuSlicePeriod = containerMetrics.getCpuPeriod();
+            t.cpuQuota = containerMetrics.getCpuQuota();
+            t.cpuShares = containerMetrics.getCpuShares();
+            t.cpuThrottledSlices = containerMetrics.getCpuNumThrottled();
+            t.cpuThrottledTime = containerMetrics.getCpuThrottledTime();
+            t.effectiveCpuCount = containerMetrics.getEffectiveCpuCount();
+            t.memorySoftLimit = containerMetrics.getMemorySoftLimit();
+            t.memoryLimit = containerMetrics.getMemoryLimit();
+            t.swapMemoryLimit = containerMetrics.getMemoryAndSwapLimit();
+            t.commit();
+        }
+    }
+
+    private static void emitContainerCPUUsage() {
+        if (containerMetrics != null) {
+            ContainerCPUUsageEvent event = new ContainerCPUUsageEvent();
+
+            event.cpuTime = containerMetrics.getCpuUsage();
+            event.cpuSystemTime = containerMetrics.getCpuSystemUsage();
+            event.cpuUserTime = containerMetrics.getCpuUserUsage();
+            event.commit();
+        }
+    }
+    private static void emitContainerMemoryUsage() {
+        if (containerMetrics != null) {
+            ContainerMemoryUsageEvent event = new ContainerMemoryUsageEvent();
+
+            if (event.shouldCommit()) {
+                event.memoryFailCount = containerMetrics.getMemoryFailCount();
+                event.memoryUsage = containerMetrics.getMemoryUsage();
+                event.swapMemoryUsage = containerMetrics.getMemoryAndSwapUsage();
+                event.commit();
+            }
+        }
+    }
+
+    private static void emitContainerIOUsage() {
+        if (containerMetrics != null) {
+            ContainerIOUsageEvent event = new ContainerIOUsageEvent();
+        
+            event.serviceRequests = containerMetrics.getBlkIOServiceCount();
+            event.dataTransferred = containerMetrics.getBlkIOServiced();
+            event.commit();
+        }
+    }
+
     @SuppressWarnings("deprecation")
     public static byte[] retransformCallback(Class<?> klass, byte[] oldBytes) throws Throwable {
         if (java.lang.Throwable.class == klass) {
@@ -172,8 +242,13 @@ public final class JDKEvents {
     }
 
     public static void remove() {
-        RequestEngine.removeHook(JDKEvents::emitExceptionStatistics);
+        RequestEngine.removeHook(emitExceptionStatistics);
         RequestEngine.removeHook(emitDirectBufferStatistics);
+        
+        RequestEngine.removeHook(emitContainerConfiguration);
+        RequestEngine.removeHook(emitContainerCPUUsage);
+        RequestEngine.removeHook(emitContainerMemoryUsage);
+        RequestEngine.removeHook(emitContainerIOUsage);
     }
 
     private static void emitDirectBufferStatistics() {
