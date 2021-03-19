@@ -44,7 +44,7 @@ import javax.print.attribute.standard.PrinterName;
 public class PrintServiceLookupProvider extends PrintServiceLookup {
 
     private PrintService defaultPrintService;
-    private PrintService[] printServices;
+    private PrintService[] printServices; /* includes the default printer */
 
     static {
         java.security.AccessController.doPrivileged(
