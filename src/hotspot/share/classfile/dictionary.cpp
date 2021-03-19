@@ -69,11 +69,10 @@ Dictionary::~Dictionary() {
     }
   }
   assert(number_of_entries() == 0, "should have removed all entries");
-  assert(new_entry_free_list() == NULL, "entry present on Dictionary's free list");
 }
 
 DictionaryEntry* Dictionary::new_entry(unsigned int hash, InstanceKlass* klass) {
-  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::allocate_new_entry(hash, klass);
+  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::new_entry(hash, klass);
   entry->set_pd_set(NULL);
   assert(klass->is_instance_klass(), "Must be");
   return entry;
@@ -90,9 +89,7 @@ void Dictionary::free_entry(DictionaryEntry* entry) {
     entry->set_pd_set(to_delete->next());
     delete to_delete;
   }
-  // Unlink from the Hashtable prior to freeing
-  unlink_entry(entry);
-  FREE_C_HEAP_ARRAY(char, entry);
+  BasicHashtable<mtClass>::free_entry(entry);
 }
 
 const int _resize_load_trigger = 5;       // load factor that will trigger the resize
@@ -479,7 +476,7 @@ void SymbolPropertyTable::methods_do(void f(Method*)) {
 
 void SymbolPropertyTable::free_entry(SymbolPropertyEntry* entry) {
   entry->free_entry();
-  Hashtable<Symbol*, mtSymbol>::free_entry(entry);
+  BasicHashtable<mtSymbol>::free_entry(entry);
 }
 
 void DictionaryEntry::verify_protection_domain_set() {

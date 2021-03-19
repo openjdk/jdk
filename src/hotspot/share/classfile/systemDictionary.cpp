@@ -1646,13 +1646,14 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     // Other cases fall through, and may run into duplicate defines
     // caught by finding an entry in the SystemDictionary
     if (is_parallelDefine(class_loader) && (probe->instance_klass() != NULL)) {
+      InstanceKlass* ik = probe->instance_klass();
       placeholders()->find_and_remove(name_hash, name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
       SystemDictionary_lock->notify_all();
 #ifdef ASSERT
       InstanceKlass* check = dictionary->find_class(name_hash, name_h);
       assert(check != NULL, "definer missed recording success");
 #endif
-      return probe->instance_klass();
+      return ik;
     } else {
       // This thread will define the class (even if earlier thread tried and had an error)
       probe->set_definer(THREAD);

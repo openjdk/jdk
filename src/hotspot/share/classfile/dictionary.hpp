@@ -93,14 +93,6 @@ public:
     return (DictionaryEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
   }
 
-  void add_entry(int index, DictionaryEntry* new_entry) {
-    Hashtable<InstanceKlass*, mtClass>::add_entry(index, (HashtableEntry<InstanceKlass*, mtClass>*)new_entry);
-  }
-
-  void unlink_entry(DictionaryEntry* entry) {
-    Hashtable<InstanceKlass*, mtClass>::unlink_entry((HashtableEntry<InstanceKlass*, mtClass>*)entry);
-  }
-
   void free_entry(DictionaryEntry* entry);
 };
 
