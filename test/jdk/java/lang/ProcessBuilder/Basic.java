@@ -2153,7 +2153,7 @@ public class Basic {
                             break;
                         case 1:
                             childArgs.set(1, "-XX:+DisplayVMOutputToStdout");
-                            pb.redirectInput(INHERIT);
+                            pb.redirectOutput(INHERIT);
                             break;
                         default:
                             throw new Error();
