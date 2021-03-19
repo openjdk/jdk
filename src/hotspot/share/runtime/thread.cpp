@@ -1092,9 +1092,6 @@ JavaThread::JavaThread() :
 
   _handshake(this),
 
-  _suspended(false),
-  _suspend_requested(false),
-
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
 
@@ -1773,57 +1770,6 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
   this->interrupt();
 }
 
-// This is the closure that prevents a suspended JavaThread from
-// escaping the suspend request.
-class ThreadSuspensionHandshake : public AsyncHandshakeClosure {
- public:
-  ThreadSuspensionHandshake() : AsyncHandshakeClosure("ThreadSuspension") {}
-  void do_thread(Thread* thr) {
-    JavaThread* target = thr->as_Java_thread();
-    target->handshake_state()->suspend_in_handshake();
-  }
-};
-
-// This is the closure that synchronously honors the suspend request.
-class SuspendThreadHandshake : public HandshakeClosure {
-  bool _did_suspend;
-public:
-  SuspendThreadHandshake() : HandshakeClosure("SuspendThread"), _did_suspend(false) {}
-  void do_thread(Thread* thr) {
-    JavaThread* target = thr->as_Java_thread();
-    if (target->is_exiting() ||
-       target->threadObj() == NULL) {
-      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(target));
-      return;
-    }
-    assert(java_lang_Thread::thread(target->threadObj()) != NULL, "BAD");
-    if (target->is_suspend_requested()) {
-      if (target->is_suspended()) {
-        // Target is already suspended.
-        log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(target));
-        return;
-      } else {
-        // Target is going to wake up and leave suspension.
-        // Let's just stop the thread from doing that.
-        log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(target));
-        target->set_suspend(true);
-        _did_suspend = true;
-        return;
-      }
-    }
-    // no suspend request
-    assert(!target->is_suspended(), "cannot be suspended without a suspend request");
-    // Thread is safe, so it must execute the request, thus we can count it as suspended
-    // from this point.
-    target->set_suspend(true);
-    _did_suspend = true;
-    target->set_suspend_requested(true);
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(target));
-    ThreadSuspensionHandshake* ts = new ThreadSuspensionHandshake();
-    Handshake::execute(ts, target);
-  }
-  bool did_suspend() { return _did_suspend; }
-};
 
 // External suspension mechanism.
 //
@@ -1837,9 +1783,7 @@ bool JavaThread::java_suspend() {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, no suspension", p2i(this));
     return false;
   }
-  SuspendThreadHandshake st;
-  Handshake::execute(&st, this);
-  return st.did_suspend();
+  return this->handshake_state()->suspend();
 }
 
 bool JavaThread::java_resume() {

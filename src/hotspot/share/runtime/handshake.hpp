@@ -33,6 +33,8 @@
 
 class HandshakeOperation;
 class JavaThread;
+class ThreadSuspensionHandshake;
+class SuspendThreadHandshake;
 
 // A handshake closure is a callback that is executed for a JavaThread
 // while it is in a safepoint/handshake-safe state. Depending on the
@@ -72,6 +74,9 @@ class JvmtiRawMonitor;
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
   friend JvmtiRawMonitor;
+  friend ThreadSuspensionHandshake;
+  friend SuspendThreadHandshake;
+  friend JavaThread;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
   JavaThread* _handshakee;
@@ -132,12 +137,25 @@ class HandshakeState {
   Thread* active_handshaker() const { return _active_handshaker; }
 
   // Suspend/resume support
-  void thread_exit();
+ private:
+  volatile bool _suspended;
+  volatile bool _suspend_requested;
 
-  bool suspend_request_pending();
-
+  // Called from the suspend handshake.
+  bool handshake_suspend();
+  // Called from the async handshake (the trap)
+  // to stop a thread from continuing executing when suspended.
   void suspend_in_handshake();
+
+  bool is_suspended()                 { return Atomic::load(&_suspended); }
+  void set_suspend(bool to)           { return Atomic::store(&_suspended, to); }
+  bool is_suspend_requested()         { return Atomic::load(&_suspend_requested); }
+  void set_suspend_requested(bool to) { return Atomic::store(&_suspend_requested, to); }
+
+  bool suspend();
   bool resume();
+  void thread_exit();
+  bool suspend_request_pending();
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP

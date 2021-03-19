@@ -320,7 +320,7 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
       jt->handshake_state()->lock();
       // Suspend request flag can only be set in handshakes.
       // By blocking handshakes, suspend request flag cannot change its value.
-      if (!jt->is_suspend_requested()) {
+      if (!jt->handshake_state()->is_suspend_requested()) {
         contended = Atomic::cmpxchg(&_owner, (Thread*)NULL, jt);
         jt->handshake_state()->unlock();
         break;
