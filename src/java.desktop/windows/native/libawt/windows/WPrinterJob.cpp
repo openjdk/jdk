@@ -175,6 +175,10 @@ static jobjectArray getPrinterNames(JNIEnv *env, DWORD flags) {
         }
     } catch (std::bad_alloc&) {
         delete [] pPrinterEnum;
+        if (nameArray != NULL) {
+            env->DeleteLocalRef(nameArray);
+            nameArray = NULL;
+        }
         throw;
     }
 
