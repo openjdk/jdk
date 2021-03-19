@@ -546,6 +546,26 @@ bool os::get_host_name(char* buf, size_t buflen) {
   return true;
 }
 
+#ifndef _LP64
+// Helper, on 32bit, for os::has_allocatable_memory_limit
+static bool is_allocatable(size_t s) {
+  if (s < 2 * G) {
+    return true;
+  }
+  // Use raw anonymous mmap here; no need to go through any
+  // of our reservation layers. We will unmap right away.
+  void* p = ::mmap(NULL, s, PROT_NONE,
+                   MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS, -1, 0);
+  if (p == (void*)MAP_FAILED) {
+    return false;
+  } else {
+    ::munmap(p, s);
+    return true;
+  }
+}
+#endif // !_LP64
+
+
 bool os::has_allocatable_memory_limit(size_t* limit) {
   struct rlimit rlim;
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
