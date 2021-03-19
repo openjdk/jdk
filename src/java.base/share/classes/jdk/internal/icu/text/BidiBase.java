@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ import jdk.internal.icu.impl.UBiDiProps;
  *
  * This is an implementation of the Unicode Bidirectional Algorithm. The
  * algorithm is defined in the <a
- * href="http://www.unicode.org/unicode/reports/tr9/">Unicode Standard Annex #9</a>.
+ * href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9</a>.
  * <p>
  *
  * Note: Libraries that perform a bidirectional algorithm and reorder strings
@@ -3363,7 +3363,7 @@ public class BidiBase {
 
     /**
      * Perform the Unicode Bidi algorithm. It is defined in the
-     * <a href="http://www.unicode.org/unicode/reports/tr9/">Unicode Standard Annex #9</a>,
+     * <a href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9</a>,
      * version 13,
      * also described in The Unicode Standard, Version 4.0 .<p>
      *
@@ -3448,7 +3448,7 @@ public class BidiBase {
 
     /**
      * Perform the Unicode Bidi algorithm. It is defined in the
-     * <a href="http://www.unicode.org/unicode/reports/tr9/">Unicode Standard Annex #9</a>,
+     * <a href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9</a>,
      * version 13,
      * also described in The Unicode Standard, Version 4.0 .<p>
      *
@@ -3784,7 +3784,7 @@ public class BidiBase {
 
     /**
      * Perform the Unicode Bidi algorithm on a given paragraph, as defined in the
-     * <a href="http://www.unicode.org/unicode/reports/tr9/">Unicode Standard Annex #9</a>,
+     * <a href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9</a>,
      * version 13,
      * also described in The Unicode Standard, Version 4.0 .<p>
      *
