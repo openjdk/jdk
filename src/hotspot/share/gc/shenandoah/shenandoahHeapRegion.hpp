@@ -403,7 +403,8 @@ public:
   void increment_age() { if (_age < markWord::max_age) { _age++; } }
   void reset_age()     { _age = 0; }
 
-  void promote();
+  // If this is a humongous start, returns the number of regions in the object.
+  size_t promote();
 
 private:
   void do_commit();

@@ -56,13 +56,11 @@ class ShenandoahPromoteTenuredRegionsTask : public AbstractGangTask {
 private:
   ShenandoahRegionIterator* _regions;
 public:
-  volatile size_t _used;
   volatile size_t _promoted;
 
   ShenandoahPromoteTenuredRegionsTask(ShenandoahRegionIterator* regions) :
     AbstractGangTask("Shenandoah Promote Tenured Regions"),
     _regions(regions),
-    _used(0),
     _promoted(0) {
   }
 
@@ -71,11 +69,12 @@ public:
     ShenandoahHeapRegion* r = _regions->next();
     while (r != NULL) {
       if (r->is_young()) {
+        // The thread that first encounters a humongous start region is responsible
+        // for promoting the continuation regions so we need this guard here to
+        // keep other worker threads from trying to promote the continuations.
         if (r->age() >= InitialTenuringThreshold && !r->is_humongous_continuation()) {
-          r->promote();
-          Atomic::inc(&_promoted);
-        } else {
-          Atomic::add(&_used, r->used());
+          size_t promoted = r->promote();
+          Atomic::add(&_promoted, promoted);
         }
       }
       r = _regions->next();
@@ -87,7 +86,6 @@ void ShenandoahYoungGeneration::promote_tenured_regions() {
   ShenandoahRegionIterator regions;
   ShenandoahPromoteTenuredRegionsTask task(&regions);
   ShenandoahHeap::heap()->workers()->run_task(&task);
-  _used = task._used;
   log_info(gc)("Promoted " SIZE_FORMAT " regions.", task._promoted);
 }
 
@@ -125,6 +123,11 @@ void ShenandoahYoungGeneration::parallel_heap_region_iterate(ShenandoahHeapRegio
     ShenandoahGenerationRegionClosure<YOUNG> young_regions(cl);
     ShenandoahHeap::heap()->parallel_heap_region_iterate(&young_regions);
   }
+}
+
+void ShenandoahYoungGeneration::heap_region_iterate(ShenandoahHeapRegionClosure* cl) {
+  ShenandoahGenerationRegionClosure<YOUNG> young_regions(cl);
+  ShenandoahHeap::heap()->heap_region_iterate(&young_regions);
 }
 
 bool ShenandoahYoungGeneration::is_concurrent_mark_in_progress() {

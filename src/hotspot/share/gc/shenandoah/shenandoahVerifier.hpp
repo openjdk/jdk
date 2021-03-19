@@ -166,7 +166,7 @@ public:
   };
 
 private:
-  void verify_at_safepoint(const char *label,
+  void verify_at_safepoint(const char* label,
                            VerifyForwarded forwarded,
                            VerifyMarked marked,
                            VerifyCollectionSet cset,

@@ -38,6 +38,9 @@ class ShenandoahOldGeneration : public ShenandoahGeneration {
 
   bool contains(ShenandoahHeapRegion* region) const;
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl);
+
+  void heap_region_iterate(ShenandoahHeapRegionClosure* cl);
+
   void set_concurrent_mark_in_progress(bool in_progress);
 
   // We leave the SATB barrier on for the entirety of the old generation

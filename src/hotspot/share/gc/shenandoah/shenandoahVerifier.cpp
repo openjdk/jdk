@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
@@ -67,6 +68,7 @@ private:
   ShenandoahLivenessData* _ld;
   void* _interior_loc;
   oop _loc;
+  ShenandoahGeneration* _generation;
 
 public:
   ShenandoahVerifyOopClosure(ShenandoahVerifierStack* stack, MarkBitMap* map, ShenandoahLivenessData* ld,
@@ -78,10 +80,16 @@ public:
     _map(map),
     _ld(ld),
     _interior_loc(NULL),
-    _loc(NULL) {
+    _loc(NULL),
+    _generation(NULL) {
     if (options._verify_marked == ShenandoahVerifier::_verify_marked_complete_except_references ||
         options._verify_marked == ShenandoahVerifier::_verify_marked_disable) {
       set_ref_discoverer_internal(new ShenandoahIgnoreReferenceDiscoverer());
+    }
+
+    if (_heap->mode()->is_generational()) {
+      _generation = _heap->active_generation();
+      assert(_generation != NULL, "Expected active generation in this mode");
     }
   }
 
@@ -106,11 +114,20 @@ private:
       // For performance reasons, only fully verify non-marked field values.
       // We are here when the host object for *p is already marked.
 
-      if (_map->par_mark(obj)) {
+      if ( in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);
         _stack->push(ShenandoahVerifierTask(obj));
       }
     }
+  }
+
+  bool in_generation(oop obj) {
+    if (_generation == NULL) {
+      return true;
+    }
+
+    ShenandoahHeapRegion* region = _heap->heap_region_containing(obj);
+    return _generation->contains(region);
   }
 
   void verify_oop(oop obj) {
@@ -123,7 +140,7 @@ private:
     check(ShenandoahAsserts::_safe_unknown, obj, is_object_aligned(obj),
               "oop must be aligned");
 
-    ShenandoahHeapRegion *obj_reg = _heap->heap_region_containing(obj);
+    ShenandoahHeapRegion* obj_reg = _heap->heap_region_containing(obj);
     Klass* obj_klass = obj->klass_or_null();
 
     // Verify that obj is not in dead space:
@@ -134,7 +151,7 @@ private:
       check(ShenandoahAsserts::_safe_unknown, obj, Metaspace::contains(obj_klass),
              "Object klass pointer must go to metaspace");
 
-      HeapWord *obj_addr = cast_from_oop<HeapWord*>(obj);
+      HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
       check(ShenandoahAsserts::_safe_unknown, obj, obj_addr < obj_reg->top(),
              "Object start should be within the region");
 
@@ -199,7 +216,7 @@ private:
       check(ShenandoahAsserts::_safe_oop, obj, !fwd_reg->is_humongous(),
              "Should have no humongous forwardees");
 
-      HeapWord *fwd_addr = cast_from_oop<HeapWord *>(fwd);
+      HeapWord* fwd_addr = cast_from_oop<HeapWord* >(fwd);
       check(ShenandoahAsserts::_safe_oop, obj, fwd_addr < fwd_reg->top(),
              "Forwardee start should be within the region");
       check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + fwd->size()) <= fwd_reg->top(),
@@ -213,7 +230,14 @@ private:
     }
 
     // ------------ obj and fwd are safe at this point --------------
-
+    // We allow for marked or old here for two reasons:
+    //  1. If this is a young collect, old objects wouldn't be marked. We've
+    //     recently change the verifier traversal to only follow young objects
+    //     during a young collect so this _shouldn't_ be necessary.
+    //  2. At present, we do not clear dead objects from the remembered set.
+    //     Everything in the remembered set is old (ipso facto), so allowing for
+    //     'marked_or_old' covers the case of stale objects in rset.
+    // TODO: Just use 'is_marked' here.
     switch (_options._verify_marked) {
       case ShenandoahVerifier::_verify_marked_disable:
         // skip
@@ -227,7 +251,7 @@ private:
                "Must be marked in complete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete_except_references:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked_or_old(obj),
               "Must be marked in complete bitmap, except j.l.r.Reference referents");
         break;
       default:
@@ -492,11 +516,12 @@ class ShenandoahVerifierMarkedRegionTask : public AbstractGangTask {
 private:
   const char* _label;
   ShenandoahVerifier::VerifyOptions _options;
-  ShenandoahHeap *_heap;
+  ShenandoahHeap* _heap;
   MarkBitMap* _bitmap;
   ShenandoahLivenessData* _ld;
   volatile size_t _claimed;
   volatile size_t _processed;
+  ShenandoahGeneration* _generation;
 
 public:
   ShenandoahVerifierMarkedRegionTask(MarkBitMap* bitmap,
@@ -510,7 +535,13 @@ public:
           _bitmap(bitmap),
           _ld(ld),
           _claimed(0),
-          _processed(0) {};
+          _processed(0),
+          _generation(NULL) {
+    if (_heap->mode()->is_generational()) {
+      _generation = _heap->active_generation();
+      assert(_generation != NULL, "Expected active generation in this mode.");
+    }
+  };
 
   size_t processed() {
     return Atomic::load(&_processed);
@@ -526,6 +557,10 @@ public:
       size_t v = Atomic::fetch_and_add(&_claimed, 1u, memory_order_relaxed);
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
+        if (!in_generation(r)) {
+          continue;
+        }
+
         if (!r->is_humongous() && !r->is_trash()) {
           work_regular(r, stack, cl);
         } else if (r->is_humongous_start()) {
@@ -537,7 +572,11 @@ public:
     }
   }
 
-  virtual void work_humongous(ShenandoahHeapRegion *r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
+  bool in_generation(ShenandoahHeapRegion* r) {
+    return _generation == NULL || _generation->contains(r);
+  }
+
+  virtual void work_humongous(ShenandoahHeapRegion* r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
     size_t processed = 0;
     HeapWord* obj = r->bottom();
     if (_heap->complete_marking_context()->is_marked((oop)obj)) {
@@ -546,7 +585,7 @@ public:
     Atomic::add(&_processed, processed, memory_order_relaxed);
   }
 
-  virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
+  virtual void work_regular(ShenandoahHeapRegion* r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
     size_t processed = 0;
     ShenandoahMarkingContext* ctx = _heap->complete_marking_context();
     HeapWord* tams = ctx->top_at_mark_start(r);
@@ -579,7 +618,7 @@ public:
     Atomic::add(&_processed, processed, memory_order_relaxed);
   }
 
-  void verify_and_follow(HeapWord *addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t *processed) {
+  void verify_and_follow(HeapWord* addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t* processed) {
     if (!_bitmap->par_mark(addr)) return;
 
     // Verify the object itself:
@@ -615,7 +654,7 @@ public:
   }
 };
 
-void ShenandoahVerifier::verify_at_safepoint(const char *label,
+void ShenandoahVerifier::verify_at_safepoint(const char* label,
                                              VerifyForwarded forwarded, VerifyMarked marked,
                                              VerifyCollectionSet cset,
                                              VerifyLiveness liveness, VerifyRegions regions,
@@ -690,10 +729,35 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
               byte_size_in_proper_unit(cl.committed()), proper_unit_for_byte_size(cl.committed()));
   }
 
+  ShenandoahGeneration* generation;
+  if (_heap->mode()->is_generational()) {
+    generation = _heap->active_generation();
+    guarantee(generation != NULL, "Need to know which generation to verify.");
+  } else {
+    generation = NULL;
+  }
+
+  if (generation != NULL) {
+    ShenandoahHeapLocker lock(_heap->lock());
+
+    ShenandoahCalculateRegionStatsClosure cl;
+    generation->heap_region_iterate(&cl);
+    size_t generation_used = generation->used();
+    guarantee(cl.used() == generation_used,
+              "%s: generation (%s) used size must be consistent: generation-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
+              label, generation->name(),
+              byte_size_in_proper_unit(generation_used), proper_unit_for_byte_size(generation_used),
+              byte_size_in_proper_unit(cl.used()), proper_unit_for_byte_size(cl.used()));
+  }
+
   // Internal heap region checks
   if (ShenandoahVerifyLevel >= 1) {
     ShenandoahVerifyHeapRegionClosure cl(label, regions);
-    _heap->heap_region_iterate(&cl);
+    if (generation != NULL) {
+      generation->heap_region_iterate(&cl);
+    } else {
+      _heap->heap_region_iterate(&cl);
+    }
   }
 
   OrderAccess::fence();
@@ -744,8 +808,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
   if (ShenandoahVerifyLevel >= 4 && marked == _verify_marked_complete && liveness == _verify_liveness_complete) {
     for (size_t i = 0; i < _heap->num_regions(); i++) {
       ShenandoahHeapRegion* r = _heap->get_region(i);
-      if (r->is_old() && _heap->is_gc_generation_young()) {
-        // Old regions don't have computed live data during young collections.
+      if (generation != NULL && !generation->contains(r)) {
         continue;
       }
 

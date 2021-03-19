@@ -92,6 +92,9 @@ public:
   // Apply closure to all regions affiliated with this generation.
   virtual void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) = 0;
 
+  // Apply closure to all regions affiliated with this generation (single threaded).
+  virtual void heap_region_iterate(ShenandoahHeapRegionClosure* cl) = 0;
+
   // This is public to support cancellation of marking when a Full cycle is started.
   virtual void set_concurrent_mark_in_progress(bool in_progress) = 0;
 

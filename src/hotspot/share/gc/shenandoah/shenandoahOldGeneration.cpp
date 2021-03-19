@@ -135,6 +135,11 @@ void ShenandoahOldGeneration::parallel_heap_region_iterate(ShenandoahHeapRegionC
   ShenandoahHeap::heap()->parallel_heap_region_iterate(&old_regions);
 }
 
+void ShenandoahOldGeneration::heap_region_iterate(ShenandoahHeapRegionClosure* cl) {
+  ShenandoahGenerationRegionClosure<OLD> old_regions(cl);
+  ShenandoahHeap::heap()->heap_region_iterate(&old_regions);
+}
+
 void ShenandoahOldGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap::heap()->set_concurrent_old_mark_in_progress(in_progress);
 }

@@ -50,7 +50,8 @@ public:
     WeakRoots           = 1 << 4,
     StringDedupRoots    = 1 << 5,
     JNIHandleRoots      = 1 << 6,
-    AllRoots            = (SerialRoots | ThreadRoots | CodeRoots | CLDGRoots | WeakRoots | StringDedupRoots | JNIHandleRoots)
+    RememberedSetRoots  = 1 << 7,
+    AllRoots            = (SerialRoots | ThreadRoots | CodeRoots | CLDGRoots | WeakRoots | StringDedupRoots | JNIHandleRoots | RememberedSetRoots)
   };
 
 private:

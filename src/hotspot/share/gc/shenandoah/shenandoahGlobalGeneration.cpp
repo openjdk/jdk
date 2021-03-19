@@ -78,6 +78,10 @@ void ShenandoahGlobalGeneration::parallel_heap_region_iterate(ShenandoahHeapRegi
   ShenandoahHeap::heap()->parallel_heap_region_iterate(cl);
 }
 
+void ShenandoahGlobalGeneration::heap_region_iterate(ShenandoahHeapRegionClosure* cl) {
+  ShenandoahHeap::heap()->heap_region_iterate(cl);
+}
+
 bool ShenandoahGlobalGeneration::is_concurrent_mark_in_progress() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   return heap->is_concurrent_mark_in_progress();

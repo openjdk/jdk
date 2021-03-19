@@ -816,7 +816,7 @@ public:
   }
 };
 
-void ShenandoahHeapRegion::promote() {
+size_t ShenandoahHeapRegion::promote() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
@@ -825,6 +825,9 @@ void ShenandoahHeapRegion::promote() {
   assert(affiliation() == YOUNG_GENERATION, "Only young regions can be promoted");
 
   UpdateCardValuesClosure update_card_values;
+  ShenandoahGeneration* old_generation = heap->old_generation();
+  ShenandoahGeneration* young_generation = heap->young_generation();
+
   if (is_humongous_start()) {
     oop obj = oop(bottom());
     assert(marking_context->is_marked(obj), "promoted humongous object should be alive");
@@ -838,7 +841,8 @@ void ShenandoahHeapRegion::promote() {
 
       ShenandoahBarrierSet::barrier_set()->card_table()->clear_MemRegion(MemRegion(r->bottom(), r->end()));
       r->set_affiliation(OLD_GENERATION);
-      heap->old_generation()->increase_used(used());
+      old_generation->increase_used(r->used());
+      young_generation->decrease_used(r->used());
     }
     // HEY!  Better to call ShenandoahHeap::heap()->card_scan()->mark_range_as_clean(r->bottom(), obj->size())
     //  and skip the calls to clear_MemRegion() above.
@@ -846,6 +850,7 @@ void ShenandoahHeapRegion::promote() {
     // Iterate over all humongous regions that are spanned by the humongous object obj.  The remnant
     // of memory in the last humongous region that is not spanned by obj is currently not used.
     obj->oop_iterate(&update_card_values);
+    return index_limit - index();
   } else {
     log_debug(gc)("promoting region " SIZE_FORMAT ", clear cards from " SIZE_FORMAT " to " SIZE_FORMAT,
       index(), (size_t) bottom(), (size_t) top());
@@ -862,7 +867,9 @@ void ShenandoahHeapRegion::promote() {
     // HEY!  Better to call ShenandoahHeap::heap()->card_scan()->mark_range_as_dirty(r->bottom(), obj->size());
     ShenandoahBarrierSet::barrier_set()->card_table()->dirty_MemRegion(MemRegion(bottom(), end()));
     set_affiliation(OLD_GENERATION);
-    heap->old_generation()->increase_used(used());
+    old_generation->increase_used(used());
+    young_generation->decrease_used(used());
     oop_iterate_objects(&update_card_values, /*fill_dead_objects*/ true, /* reregister_coalesced_objects */ false);
+    return 1;
   }
 }

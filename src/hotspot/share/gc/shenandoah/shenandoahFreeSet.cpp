@@ -364,9 +364,9 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   increase_used(ShenandoahHeapRegion::region_size_bytes() * num);
 
   if (req.affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION) {
-    _heap->young_generation()->increase_used(ShenandoahHeapRegion::region_size_bytes() * num);
+    _heap->young_generation()->increase_used(words_size * HeapWordSize);
   } else if (req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
-    _heap->old_generation()->increase_used(ShenandoahHeapRegion::region_size_bytes() * num);
+    _heap->old_generation()->increase_used(words_size * HeapWordSize);
   }
 
   if (remainder != 0) {

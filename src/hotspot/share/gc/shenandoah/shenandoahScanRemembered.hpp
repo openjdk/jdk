@@ -955,6 +955,7 @@ public:
   //  implementations will want to update this value each time they
   //  cross one of these boundaries.
 
+  void oops_do(OopClosure* cl);
 };
 
 typedef ShenandoahScanRemembered<ShenandoahDirectCardMarkRememberedSet> RememberedScanner;
