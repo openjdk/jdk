@@ -128,7 +128,7 @@ void LCMS_freeTransform(JNIEnv *env, jlong ID)
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
  * Method:    createNativeTransform
- * Signature: ([JI)J
+ * Signature: ([JIIZIZLjava/lang/Object;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
   (JNIEnv *env, jclass cls, jlongArray profileIDs, jint renderType,
@@ -214,11 +214,11 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
 
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
- * Method:    loadProfile
- * Signature: ([B,Lsun/java2d/cmm/lcms/LCMSProfile;)V
+ * Method:    loadProfileNative
+ * Signature: ([BLjava/lang/Object;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
-  (JNIEnv *env, jobject obj, jbyteArray data, jobject disposerRef)
+  (JNIEnv *env, jclass cls, jbyteArray data, jobject disposerRef)
 {
     jbyte* dataArray;
     jint dataSize;
@@ -278,10 +278,10 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
  * Method:    getProfileDataNative
- * Signature: (J[B)V
+ * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileDataNative
-  (JNIEnv *env, jobject obj, jlong id)
+  (JNIEnv *env, jclass cls, jlong id)
 {
     lcmsProfile_p sProf = (lcmsProfile_p)jlong_to_ptr(id);
     cmsUInt32Number pfSize = 0;
@@ -325,11 +325,11 @@ static cmsHPROFILE _writeCookedTag(cmsHPROFILE pfTarget, cmsTagSignature sig, jb
 
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
- * Method:    getTagData
- * Signature: (JI[B)V
+ * Method:    getTagNative
+ * Signature: (JI)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
-  (JNIEnv *env, jobject obj, jlong id, jint tagSig)
+  (JNIEnv *env, jclass cls, jlong id, jint tagSig)
 {
     lcmsProfile_p sProf = (lcmsProfile_p)jlong_to_ptr(id);
     TagSignature_t sig;
@@ -410,11 +410,11 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
 
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
- * Method:    setTagData
+ * Method:    setTagDataNative
  * Signature: (JI[B)V
  */
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
-  (JNIEnv *env, jobject obj, jlong id, jint tagSig, jbyteArray data)
+  (JNIEnv *env, jclass cls, jlong id, jint tagSig, jbyteArray data)
 {
     lcmsProfile_p sProf = (lcmsProfile_p)jlong_to_ptr(id);
     cmsHPROFILE pfReplace = NULL;
@@ -510,7 +510,7 @@ void releaseILData (JNIEnv *env, void* pData, jint dataType,
  * Signature: (Lsun/java2d/cmm/lcms/LCMSTransform;Lsun/java2d/cmm/lcms/LCMSImageLayout;Lsun/java2d/cmm/lcms/LCMSImageLayout;)V
  */
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
-  (JNIEnv *env, jclass obj, jobject trans, jobject src, jobject dst)
+  (JNIEnv *env, jclass cls, jobject trans, jobject src, jobject dst)
 {
     cmsHTRANSFORM sTrans = NULL;
     int srcDType, dstDType;
@@ -579,50 +579,32 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
  * Method:    getProfileID
- * Signature: (Ljava/awt/color/ICC_Profile;)Lsun/java2d/cmm/lcms/LCMSProfile
+ * Signature: (Ljava/awt/color/ICC_Profile;)Lsun/java2d/cmm/lcms/LCMSProfile;
  */
 JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
   (JNIEnv *env, jclass cls, jobject pf)
 {
-    jclass clsLcmsProfile;
-    jobject cmmProfile;
-    jfieldID fid;
-
     if (pf == NULL) {
         return NULL;
     }
-
     jclass pcls = (*env)->GetObjectClass(env, pf);
     if (pcls == NULL) {
         return NULL;
     }
-    jmethodID mid = (*env)->GetMethodID(env, pcls, "activate", "()V");
+    jmethodID mid = (*env)->GetMethodID(env, pcls, "cmmProfile",
+                                        "()Lsun/java2d/cmm/Profile;");
     if (mid == NULL) {
         return NULL;
     }
-    (*env)->CallVoidMethod(env, pf, mid);
+    jobject cmmProfile = (*env)->CallObjectMethod(env, pf, mid);
     if ((*env)->ExceptionOccurred(env)) {
         return NULL;
     }
-
-    fid = (*env)->GetFieldID(env, pcls, "cmmProfile",
-                             "Lsun/java2d/cmm/Profile;");
-    if (fid == NULL) {
+    jclass lcmsPCls = (*env)->FindClass(env, "sun/java2d/cmm/lcms/LCMSProfile");
+    if (lcmsPCls == NULL) {
         return NULL;
     }
-
-    clsLcmsProfile = (*env)->FindClass(env,
-            "sun/java2d/cmm/lcms/LCMSProfile");
-    if (clsLcmsProfile == NULL) {
-        return NULL;
-    }
-
-    cmmProfile = (*env)->GetObjectField (env, pf, fid);
-
-    if (JNU_IsNull(env, cmmProfile)) {
-        return NULL;
-    }
-    if ((*env)->IsInstanceOf(env, cmmProfile, clsLcmsProfile)) {
+    if ((*env)->IsInstanceOf(env, cmmProfile, lcmsPCls)) {
         return cmmProfile;
     }
     return NULL;
