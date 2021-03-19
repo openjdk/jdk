@@ -47,7 +47,8 @@ final class BidiLine {
      * text in a single paragraph or in a line of a single paragraph
      * which has already been processed according to
      * the Unicode 3.0 Bidi algorithm as defined in
-     * http://www.unicode.org/reports/tr9/ , version 13,
+     * <a href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
+     * Unicode Bidirectional Algorithm</a>, version 13,
      * also described in The Unicode Standard, Version 4.0.1 .
      *
      * This means that there is a Bidi object with a levels

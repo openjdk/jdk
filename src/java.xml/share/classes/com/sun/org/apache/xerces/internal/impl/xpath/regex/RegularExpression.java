@@ -473,7 +473,7 @@ import com.sun.org.apache.xerces.internal.util.IntStack;
  * <hr width="50%">
  * <h3>TODO</h3>
  * <ul>
- *   <li><a href="http://www.unicode.org/reports/tr18/">Unicode Regular Expression Guidelines</a>
+ *   <li><a href="http://www.unicode.org/reports/tr18/">Unicode Technical Standard #18: Unicode Regular Expressions</a>
  *     <ul>
  *       <li>2.4 Canonical Equivalents
  *       <li>Level 3
