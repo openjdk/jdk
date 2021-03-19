@@ -255,21 +255,10 @@ public class GZIPOutputStream extends DeflaterOutputStream {
     }
 
     /*
-     * Writes GZIP member header.
+     * Writes GZIP member header without any header flags.
      */
     private void writeHeader() throws IOException {
-        out.write(new byte[] {
-                      (byte) GZIP_MAGIC,        // Magic number (short)
-                      (byte)(GZIP_MAGIC >> 8),  // Magic number (short)
-                      Deflater.DEFLATED,        // Compression method (CM)
-                      0,                        // Flags (FLG)
-                      0,                        // Modification time MTIME (int)
-                      0,                        // Modification time MTIME (int)
-                      0,                        // Modification time MTIME (int)
-                      0,                        // Modification time MTIME (int)
-                      0,                        // Extra flags (XFLG)
-                      OS_UNKNOWN                // Operating system (OS)
-                  });
+        writeHeader(false, null, null, null);
     }
 
     /**
