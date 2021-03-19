@@ -2145,6 +2145,7 @@ public class Basic {
                     // from the child VM.
                     // This test requires the thread reading from the subprocess be blocked
                     // in the read from the subprocess; there should be no bytes to read.
+                    // Modify the argument list shared with ProcessBuilder to redirect VM output.
                     assert (childArgs.get(1).equals("-XX:+DisplayVMOutputToStderr")) : "Expected arg 1 to be \"-XX:+DisplayVMOutputToStderr\"";
                     switch (action & 0x1) {
                         case 0:
