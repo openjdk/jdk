@@ -274,7 +274,8 @@ public abstract class FileChannel
      *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          and the file is being opened for writing
-     *          <i>(optional specific exception)</i>
+     *          <i>(<a href="../file/package-summary.html#optspecex">optional
+     *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
      * @throws  SecurityException
@@ -328,7 +329,8 @@ public abstract class FileChannel
      *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          and the file is being opened for writing
-     *          <i>(optional specific exception)</i>
+     *          <i>(<a href="../file/package-summary.html#optspecex">optional
+     *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
      * @throws  SecurityException
