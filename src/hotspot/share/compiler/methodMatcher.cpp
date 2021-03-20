@@ -241,9 +241,14 @@ void skip_leading_spaces(char*& line, int* total_bytes_read ) {
 }
 
 PRAGMA_DIAG_PUSH
+// FIXME: Can we rewrite this func to avoid the following warnings?
 // warning C4189: The file contains a character that cannot be represented
 //                in the current code page
 PRAGMA_DISABLE_MSVC_WARNING(4819)
+// warning C4778: 'sscanf' : unterminated format string ...
+PRAGMA_DISABLE_MSVC_WARNING(4778)
+// warning C4474: 'sscanf' : too many arguments passed for format string
+PRAGMA_DISABLE_MSVC_WARNING(4474)
 void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, MethodMatcher* matcher) {
   MethodMatcher::Mode c_match;
   MethodMatcher::Mode m_match;
