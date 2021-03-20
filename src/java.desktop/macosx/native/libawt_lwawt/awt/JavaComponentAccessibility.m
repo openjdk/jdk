@@ -1456,6 +1456,7 @@ static NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
 - (id)accessibilityFocusedUIElement
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CACCESSIBILITY_CLASS_RETURN(nil);
     DECLARE_STATIC_METHOD_RETURN(jm_getFocusOwner, sjc_CAccessibility, "getFocusOwner",
                                   "(Ljava/awt/Component;)Ljavax/accessibility/Accessible;", nil);
     id value = nil;
