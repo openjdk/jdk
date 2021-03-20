@@ -277,28 +277,22 @@ final class P11RSAKeyFactory extends P11KeyFactory {
 
     <T extends KeySpec> T implGetPrivateKeySpec(P11Key key, Class<T> keySpec,
             Session[] session) throws PKCS11Exception, InvalidKeySpecException {
-        // If a PKCS11Exception is thrown, then that implies that we cannot retrieve some attributes
-        // First, if we can retrieve the CRT parameters, we do so for better efficiency
-        try {
-            if (keySpec.isAssignableFrom(RSAPrivateCrtKeySpec.class)) {
-                session[0] = token.getObjSession();
-                CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
-                    new CK_ATTRIBUTE(CKA_MODULUS),
-                    new CK_ATTRIBUTE(CKA_PUBLIC_EXPONENT),
-                    new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
-                    new CK_ATTRIBUTE(CKA_PRIME_1),
-                    new CK_ATTRIBUTE(CKA_PRIME_2),
-                    new CK_ATTRIBUTE(CKA_EXPONENT_1),
-                    new CK_ATTRIBUTE(CKA_EXPONENT_2),
-                    new CK_ATTRIBUTE(CKA_COEFFICIENT),
-                };
-                long keyID = key.getKeyID();
-                try {
-                    token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
-                } finally {
-                    key.releaseKeyID();
-                }
-
+        // must be either RSAPrivateKeySpec or RSAPrivateCrtKeySpec
+        if (keySpec.isAssignableFrom(RSAPrivateCrtKeySpec.class)) {
+            session[0] = token.getObjSession();
+            CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
+                new CK_ATTRIBUTE(CKA_MODULUS),
+                new CK_ATTRIBUTE(CKA_PUBLIC_EXPONENT),
+                new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
+                new CK_ATTRIBUTE(CKA_PRIME_1),
+                new CK_ATTRIBUTE(CKA_PRIME_2),
+                new CK_ATTRIBUTE(CKA_EXPONENT_1),
+                new CK_ATTRIBUTE(CKA_EXPONENT_2),
+                new CK_ATTRIBUTE(CKA_COEFFICIENT),
+            };
+            long keyID = key.getKeyID();
+            try {
+                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
                 KeySpec spec = new RSAPrivateCrtKeySpec(
                     attributes[0].getBigInteger(),
                     attributes[1].getBigInteger(),
@@ -310,22 +304,21 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                     attributes[7].getBigInteger()
                 );
                 return keySpec.cast(spec);
+            } catch (final PKCS11Exception ex) {
+                // bubble this up if RSAPrivateCrtKeySpec is specified
+                // otherwise fall through to RSAPrivateKeySpec
+                if (!keySpec.isAssignableFrom(RSAPrivateKeySpec.class)) {
+                    throw ex;
+                }
+            }  finally {
+                key.releaseKeyID();
             }
-        } catch (final PKCS11Exception ex) {
-            // Fall through to RSAPrivateKeySpec if possible, else, bubble this exception up
-            if (!keySpec.isAssignableFrom(RSAPrivateKeySpec.class)) {
-                throw ex;
-            }
-        }
 
-        // Fall back to RSAPrivateKeySpec if this was requested and all the available attributes
-        if (keySpec.isAssignableFrom(RSAPrivateKeySpec.class)) {
-            session[0] = token.getObjSession();
-            CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
+            attributes = new CK_ATTRIBUTE[] {
                 new CK_ATTRIBUTE(CKA_MODULUS),
                 new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
             };
-            long keyID = key.getKeyID();
+            keyID = key.getKeyID();
             try {
                 token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
             } finally {
