@@ -157,11 +157,11 @@ abstract class Command {
     }
 
     protected boolean acceptSwitch(Deque<String> options, String expected) throws UserSyntaxException {
-    	if (!options.isEmpty() && options.peek().equals(expected)) {
+        if (!options.isEmpty() && options.peek().equals(expected)) {
             options.remove();
             return true;
         }
-    	return false;
+        return false;
     }
 
     protected boolean acceptOption(Deque<String> options, String expected) throws UserSyntaxException {
