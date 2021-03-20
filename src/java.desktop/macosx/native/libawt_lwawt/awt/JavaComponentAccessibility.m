@@ -799,7 +799,6 @@ static NSObject *sAttributeNamesLOCK = nil;
     }
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    GET_CACCESSIBILITY_CLASS_RETURN(0);
     GET_ACCESSIBLEINDEXINPARENT_STATIC_METHOD_RETURN(0);
     jint returnValue =
         (*env)->CallStaticIntMethod( env,
