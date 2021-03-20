@@ -195,7 +195,7 @@ final class Configure extends Command {
                 return;
             }
             params.saveToFile(output);
-            ui.println("Configuration written succesfully to:");
+            ui.println("Configuration written successfully to:");
             ui.println(output.toPath().toAbsolutePath().toString());
         } catch (IllegalArgumentException iae) {
             throw new UserDataException(iae.getMessage());
