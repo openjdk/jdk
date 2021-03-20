@@ -421,7 +421,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
       //
       _recursions = 0;
       _succ = NULL;
-      exit(false, current);
+      exit(current);
 
       current->java_suspend_self();
     }
@@ -1139,7 +1139,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 // structured the code so the windows are short and the frequency
 // of such futile wakups is low.
 
-void ObjectMonitor::exit(bool not_suspended, JavaThread* current) {
+void ObjectMonitor::exit(JavaThread* current) {
   void* cur = owner_raw();
   if (current != cur) {
     if (current->is_lock_owned((address)cur)) {
@@ -1178,9 +1178,9 @@ void ObjectMonitor::exit(bool not_suspended, JavaThread* current) {
   _Responsible = NULL;
 
 #if INCLUDE_JFR
-  // get the owner's thread id for the MonitorEnter event
-  // if it is enabled and the thread isn't suspended
-  if (not_suspended && EventJavaMonitorEnter::is_enabled()) {
+  // set _previous_owner_tid for the MonitorEnter event if it is enabled and
+  // the thread isn't releasing the monitor from inside enter()
+  if (current->current_pending_monitor() == NULL && EventJavaMonitorEnter::is_enabled()) {
     _previous_owner_tid = JFR_THREAD_ID(current);
   }
 #endif
@@ -1372,7 +1372,7 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
   guarantee(current == owner_raw(), "complete_exit not owner");
   intx save = _recursions; // record the old recursion count
   _recursions = 0;         // set the recursion level to be 0
-  exit(true, current);     // exit the monitor
+  exit(current);           // exit the monitor
   guarantee(owner_raw() != current, "invariant");
   return save;
 }
@@ -1506,7 +1506,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   intx save = _recursions;     // record the old recursion count
   _waiters++;                  // increment the number of waiters
   _recursions = 0;             // set the recursion level to be 1
-  exit(true, current);         // exit the monitor
+  exit(current);               // exit the monitor
   guarantee(owner_raw() != current, "invariant");
 
   // The thread is on the WaitSet list - now park() it.
