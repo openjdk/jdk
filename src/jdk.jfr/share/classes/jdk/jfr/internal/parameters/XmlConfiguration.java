@@ -53,16 +53,16 @@ final class XmlConfiguration extends XmlElement {
     public List<XmlControl> getControls() {
         return elements(XmlControl.class);
     }
-    
+
     @Override
     String comment() {
         return """
                Recommended way to edit .jfc files is to use the configure command of
-               the 'jfr'-tool, i.e. jfr configure, or JDK Mission Control
+               the 'jfr' tool, i.e. jfr configure, or JDK Mission Control
                see Window -> Flight Recorder Template Manager
                """;
     }
-    
+
     XmlEvent getEvent(String eventName, boolean add) {
         for (XmlEvent event : getEvents()) {
             if (eventName.equals(event.getName())) {
@@ -77,12 +77,12 @@ final class XmlConfiguration extends XmlElement {
         addChild(event);
         return event;
     }
-    
+
     @Override
     protected List<String> attributes() {
         return List.of("version", "label");
     }
-    
+
     @Override
     protected void validateAttributes() throws ParseException {
         super.validateAttributes();

@@ -33,7 +33,7 @@ public final class UserInterface {
     public void println() {
         System.out.println();
     }
-    
+
     public void println(String text) {
         System.out.println(text);
     }

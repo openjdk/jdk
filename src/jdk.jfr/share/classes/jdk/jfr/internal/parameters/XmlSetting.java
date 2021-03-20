@@ -54,7 +54,7 @@ final class XmlSetting extends XmlElement {
             setContent(value);
         }
     }
-    
+
     final void setContent(String value) {
         super.setContent(value);
         if (getParent() instanceof XmlEvent event) {

@@ -89,7 +89,7 @@ public final class Parameters {
         XmlEvent event = configuration.getEvent(name.substring(0, index), add);
         String settingName = name.substring(index + 1);
         XmlSetting setting = event.getSetting(settingName, add);
-        
+
         if (settingName.equals("period") || settingName.equals("threshold")) {
             try {
                 value = Utilities.parseTimespan(value);
@@ -97,7 +97,7 @@ public final class Parameters {
                 // OK, no validation to allow forward compatibility.
             }
         }
-        
+
         setting.setContent(value);
     }
 
@@ -177,11 +177,9 @@ public final class Parameters {
                 var control = setting.getControl();
                 if (control.isPresent()) {
                     List<XmlVariable> variables = getVariables(control.get());
-                   
                     if (variables.isEmpty()) { // dangling reference
                         System.out.println("Warning! Setting '" + setting.getFullName() + "' refers to missing control '" + control.get() + "'");
                     }
-                    
                     for (XmlVariable variable : variables) {
                         XmlElement producer = (XmlElement) variable;
                         producer.addListener(setting);

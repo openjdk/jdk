@@ -30,7 +30,7 @@ final class XmlAnd extends XmlExpression {
     boolean isEntity() {
         return false;
     }
-    
+
     @Override
     protected Result evaluate() {
         Result result = Result.NULL;
@@ -39,7 +39,7 @@ final class XmlAnd extends XmlExpression {
             if (r.isFalse()) {
                 return Result.FALSE;
             }
-            if  (r.isTrue()) {
+            if (r.isTrue()) {
                 result = Result.TRUE;
             }
         }

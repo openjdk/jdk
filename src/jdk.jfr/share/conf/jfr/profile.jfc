@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
      Recommended way to edit .jfc files is to use the configure command of
-     the 'jfr'-tool, i.e. jfr configure, or JDK Mission Control
+     the 'jfr' tool, i.e. jfr configure, or JDK Mission Control
      see Window -> Flight Recorder Template Manager
 -->
 
@@ -821,7 +821,7 @@
 
   <!--                                                                                                        
   Contents of the control element is not read by the JVM, it's used                                           
-  by JDK Mission Control and the 'jfr'-tool to change settings that                                           
+  by JDK Mission Control and the 'jfr' tool to change settings that                                           
   carry the control attribute.                                                                                
   -->
     <control>
@@ -837,24 +837,24 @@
         <or>
           <test name="gc" operator="equal" value="normal"/>
           <test name="gc" operator="equal" value="detailed"/>
-	  <test name="gc" operator="equal" value="high"/>
-	  <test name="gc" operator="equal" value="all"/>
+          <test name="gc" operator="equal" value="high"/>
+          <test name="gc" operator="equal" value="all"/>
         </or>
       </condition>
 
       <condition name="gc-enabled-detailed" true="true" false="false">
-	<or>
-         <test name="gc" operator="equal" value="detailed"/>
-         <test name="gc" operator="equal" value="high"/>
-         <test name="gc" operator="equal" value="all"/>
-	</or>
+       <or>
+          <test name="gc" operator="equal" value="detailed"/>
+          <test name="gc" operator="equal" value="high"/>
+          <test name="gc" operator="equal" value="all"/>
+       </or>
       </condition>
 
       <condition name="gc-enabled-high" true="true" false="false">
-	<or>
-         <test name="gc" operator="equal" value="high"/>
-         <test name="gc" operator="equal" value="all"/>
-	</or>
+        <or>
+          <test name="gc" operator="equal" value="high"/>
+          <test name="gc" operator="equal" value="all"/>
+        </or>
       </condition>
 
       <condition name="gc-enabled-all" true="true" false="false">
@@ -865,12 +865,12 @@
         <option label="Off" name="off">0/s</option>
         <option label="Low" name="low">150/s</option>
         <option label="Medium" name="medium">300/s</option>
-	<option label="High" name="high">1000/s</option>
+	    <option label="High" name="high">1000/s</option>
         <option label="Maximum" name="maximum">1000000000/s</option>
       </selection>
 
       <condition name="object-allocation-enabled" true="true" false="false">
-	 <not>
+        <not>
           <test name="allocation-profiling" operator="equal" value="off"/>
         </not>
       </condition>

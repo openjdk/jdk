@@ -173,7 +173,7 @@ final class Configure extends Command {
             UserInterface ui = new UserInterface();
             Parameters params = new Parameters(inputFiles);
             params.setLabel("Custom");
-            if(log) {
+            if (log) {
                 SettingsLog.enable();
             }
             for (var option : options.entrySet()) {
@@ -202,10 +202,10 @@ final class Configure extends Command {
         } catch (FileNotFoundException ffe) {
             throw new UserDataException("could not find file: " + ffe.getMessage());
         } catch (IOException ioe) {
-            throw new UserDataException("i/o error: "+ ioe.getMessage());
+            throw new UserDataException("i/o error: " + ioe.getMessage());
         } catch (ParseException pe) {
             pe.printStackTrace();
-            throw new UserDataException("parsing error: "+ pe.getMessage());
+            throw new UserDataException("parsing error: " + pe.getMessage());
         }
     }
 

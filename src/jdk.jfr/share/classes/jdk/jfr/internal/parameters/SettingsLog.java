@@ -33,15 +33,15 @@ public final class SettingsLog {
     private static boolean enabled;
 
     public static void enable() {
-        enabled = true; 
+        enabled = true;
     }
-    
+
     public static void flush() {
         if (!settings.isEmpty()) {
             System.out.println();
             System.out.println("Setting:");
             for (var s : settings.entrySet()) {
-                System.out.println("\""  + s.getKey() + "=" + s.getValue() + "\"");
+                System.out.println("\"" + s.getKey() + "=" + s.getValue() + "\"");
             }
             settings.clear();
         }
@@ -50,7 +50,7 @@ public final class SettingsLog {
     static void log(XmlSetting setting, String value) {
         if (enabled) {
             settings.put(setting.getFullName(), value);
-           
+
         }
     }
 }

@@ -40,7 +40,7 @@ import jdk.internal.util.xml.SAXParser;
 import jdk.internal.util.xml.impl.SAXParserImpl;
 
 final class Parser {
-    
+
     static XmlConfiguration parse(Path path) throws ParseException, IOException {
         try (FileReader r = new FileReader(path.toFile(), Charset.forName("UTF-8"))) {
             SAXParser saxParser = new SAXParserImpl();
@@ -55,7 +55,7 @@ final class Parser {
     }
 
     private static final class ConfigurationHandler extends DefaultHandler {
-        private final Deque<XmlElement> stack =  new ArrayDeque<>();
+        private final Deque<XmlElement> stack = new ArrayDeque<>();
         private final StringBuilder buffer = new StringBuilder();
         private XmlConfiguration configuration;
 

@@ -81,7 +81,7 @@ final class XmlSelection extends XmlInput {
             }
         }
     }
-    
+
     @Override
     protected List<String> attributes() {
         return List.of("name", "label", "default");

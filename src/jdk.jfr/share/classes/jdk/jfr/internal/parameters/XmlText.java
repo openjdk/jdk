@@ -62,7 +62,7 @@ final class XmlText extends XmlInput {
     private boolean readInput(UserInterface ui) throws AbortException {
         String line = ui.readLine();
         if (line.isBlank()) {
-            ui.println("Using default: " +  getContent());
+            ui.println("Using default: " + getContent());
             return true;
         }
         if (isTimespan()) {
@@ -77,7 +77,7 @@ final class XmlText extends XmlInput {
         configure(line);
         return true;
     }
-    
+
     private boolean isTimespan() {
         return getContentType().orElse("text").equals("timespan");
     }

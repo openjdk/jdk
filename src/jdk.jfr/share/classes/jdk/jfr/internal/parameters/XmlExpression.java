@@ -32,7 +32,7 @@ abstract class XmlExpression extends XmlElement {
     public final List<XmlExpression> getExpressions() {
         return elements(XmlExpression.class);
     }
-    
+
     @Override
     protected List<Constraint> constraints() {
         return List.of(

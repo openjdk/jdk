@@ -30,7 +30,7 @@ import java.util.Optional;
 public abstract class XmlInput extends XmlElement implements XmlVariable {
 
     public abstract String getOptionSyntax();
-    
+
     abstract void configure(UserInterface ui) throws AbortException;
 
     abstract void configure(String value);
@@ -47,7 +47,7 @@ public abstract class XmlInput extends XmlElement implements XmlVariable {
     public final String getLabel() {
         return attribute("label");
     }
-    
+
     @Override
     protected List<String> attributes() {
         return List.of("name", "label");

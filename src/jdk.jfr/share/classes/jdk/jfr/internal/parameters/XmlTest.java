@@ -40,17 +40,17 @@ final class XmlTest extends XmlExpression {
     public String getValue() {
         return attribute("value");
     }
-    
+
     @Override
     boolean isEntity() {
         return false;
     }
-    
+
     @Override
     protected List<String> attributes() {
         return List.of("name", "operator", "value");
     }
-    
+
     @Override
     protected void validateChildConstraints() throws ParseException {
         if (!getExpressions().isEmpty()) {

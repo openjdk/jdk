@@ -31,7 +31,6 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -55,7 +54,7 @@ abstract class Command {
     private static List<Command> createCommands() {
         List<Command> commands = new ArrayList<>();
         commands.add(new Print());
-	commands.add(new Configure());
+        commands.add(new Configure());
         commands.add(new Metadata());
         commands.add(new Summary());
         commands.add(new Assemble());
@@ -164,7 +163,7 @@ abstract class Command {
         }
     	return false;
     }
-    
+
     protected boolean acceptOption(Deque<String> options, String expected) throws UserSyntaxException {
         if (expected.equals(options.peek())) {
             if (options.size() < 2) {

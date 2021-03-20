@@ -57,7 +57,7 @@ final class XmlNot extends XmlExpression {
     boolean isEntity() {
         return false;
     }
-    
+
     @Override
     protected void validateChildConstraints() throws ParseException {
         if (getExpressions().size() != 1) {

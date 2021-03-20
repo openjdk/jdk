@@ -62,48 +62,48 @@ public class TestConfigure {
         var expected = readSettings(input);
         expected.put("com.example.Tiger#threshold", "20 s");
         expected.put("com.example.Lion#period", "20 s");
-        
-        aseertEqual(outputSetting, expected); 
-        
+
+        aseertEqual(outputSetting, expected);
+
         output = newOutputFile("compact-timespan.jfc");
         jfrConfigure("--input", input, "value=13s","--output", output);
         outputSetting = readSettings(output);
         expected = readSettings(input);
         expected.put("com.example.Tiger#threshold", "13 s");
         expected.put("com.example.Lion#period", "13 s");
-        
-        aseertEqual(outputSetting, expected); 
-        
+
+        aseertEqual(outputSetting, expected);
+
         output = newOutputFile("threshold-period-timespan.jfc");
-        jfrConfigure("--input", input, 
+        jfrConfigure("--input", input,
                 "com.example.Tiger#threshold=2s",
                 "com.example.Lion#period=3s",
                 "--output", output);
-        
+
         outputSetting = readSettings(output);
         expected = readSettings(input);
         expected.put("com.example.Tiger#threshold", "2 s");
         expected.put("com.example.Lion#period", "3 s");
-        
-        aseertEqual(outputSetting, expected); 
+
+        aseertEqual(outputSetting, expected);
     }
 
     private static void testUnification() throws Throwable {
         var input1 = newInputFile("or.jfc");
         var input2 = newInputFile("and.jfc");
         var output = newOutputFile("combined.jfc");
-        
+
         jfrConfigure("--input", input1 + "," + input2, "--output", output);
 
         var input1Setting = readSettings(input1);
         var input2Setting = readSettings(input2);
         var outputSetting = readSettings(output);
-        
+
         Map<String, String> expected = new HashMap<>();
         expected.putAll(input1Setting);
         expected.putAll(input2Setting);
-        
-        aseertEqual(outputSetting, expected); 
+
+        aseertEqual(outputSetting, expected);
     }
 
     private static void testAdding() throws Throwable {
@@ -116,17 +116,17 @@ public class TestConfigure {
         var expected = readSettings(input);
         expected.put("com.example.Tiger#legs", "4");
 
-        aseertEqual(outputSetting, expected); 
-        
+        aseertEqual(outputSetting, expected);
+
         output = newOutputFile("test-adding-succeed-2.jfc");
         result = jfrConfigure("--input", input, "+com.example.Foo#bar=baz", "--output", output);
         result.shouldNotContain("Could not find");
-        
+
         outputSetting = readSettings(output);
         expected = readSettings(input);
         expected.put("com.example.Foo#bar", "baz");
 
-        aseertEqual(outputSetting, expected); 
+        aseertEqual(outputSetting, expected);
     }
 
     private static void testModify() throws Throwable {
@@ -143,12 +143,12 @@ public class TestConfigure {
         output = newOutputFile("test-modify-succeed.jfc");
         result = jfrConfigure("--input", input, "com.example.Tiger#enabled=true", "--output", output);
         result.shouldNotContain("Could not find");
-        
+
         var outputSetting = readSettings(output);
         var expected = readSettings(input);
         expected.put("com.example.Tiger#enabled", "true");
 
-        aseertEqual(outputSetting, expected);        
+        aseertEqual(outputSetting, expected);
     }
 
     // JMC may add attributes or elements, make sure some random elements/attributes survive
@@ -210,18 +210,18 @@ public class TestConfigure {
         outputSetting = readSettings(output);
         expected = readSettings(input);
         expected.put("season.Spring#enabled", "false");
-        
+
         aseertEqual(outputSetting, expected);
     }
 
     private static void testAnd() throws Throwable {
         var output = newOutputFile("test-and-true.jfc");
         var input = newInputFile("and.jfc");
-        jfrConfigure("--input", input, 
-                "closure=true", 
-                "identity=true", 
-                "associativity=true", 
-                "inverse=true", 
+        jfrConfigure("--input", input,
+                "closure=true",
+                "identity=true",
+                "associativity=true",
+                "inverse=true",
                 "--output", output);
         var outputSetting = readSettings(output);
         var expected = readSettings(input);
@@ -230,19 +230,19 @@ public class TestConfigure {
         aseertEqual(outputSetting, expected);
 
         output = newOutputFile("test-and-false.jfc");
-        jfrConfigure("--input", input, 
-                "closure=true", 
-                "identity=true", 
-                "associativity=true", 
-                "inverse=false", 
+        jfrConfigure("--input", input,
+                "closure=true",
+                "identity=true",
+                "associativity=true",
+                "inverse=false",
                 "--output", output);
         outputSetting = readSettings(output);
         expected = readSettings(input);
         expected.put("algebra.Group#enabled", "false");
-        
+
         aseertEqual(outputSetting, expected);
     }
- 
+
 
     private static void testCondition() throws Throwable {
         var output = newOutputFile("test-condition-1.jfc");
@@ -261,7 +261,7 @@ public class TestConfigure {
         expected = readSettings(input);
         expected.put("com.example.Lion#period", "5 s");
         expected.put("com.example.Zebra#period", "7 s");
-        
+
         aseertEqual(outputSetting, expected);
     }
 

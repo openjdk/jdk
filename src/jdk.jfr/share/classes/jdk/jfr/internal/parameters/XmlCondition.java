@@ -42,11 +42,11 @@ final class XmlCondition extends XmlExpression implements XmlVariable {
     public Result getFalseValue() {
         return Result.of(attribute("false"));
     }
-    
+
     @Override
     protected void validateChildConstraints() throws ParseException {
         if (getExpressions().size() > 1) {
-            throw new ParseException("Expected <condition> to not have more than one child", 0);
+            throw new ParseException("Expected <condition> to not have more than one child", -1);
         }
     }
 

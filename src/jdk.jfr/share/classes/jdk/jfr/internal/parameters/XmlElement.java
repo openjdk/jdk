@@ -130,7 +130,7 @@ class XmlElement {
             listener.onChange();
         }
     }
-    
+
     protected final XmlElement getParent() {
         return parent;
     }
@@ -211,7 +211,7 @@ class XmlElement {
     private void addProducer(XmlElement producer) {
         producers.add(producer);
     }
-    
+
     private int count(Class<? extends XmlElement> type) {
         int count = 0;
         for (XmlElement element : getChildren()) {

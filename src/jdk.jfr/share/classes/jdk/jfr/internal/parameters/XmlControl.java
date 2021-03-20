@@ -39,7 +39,7 @@ final class XmlControl extends XmlElement {
     public List<XmlVariable> getVariables() {
         return elements(XmlVariable.class);
     }
-    
+
     @Override
     String comment() {
         return """
@@ -48,7 +48,7 @@ final class XmlControl extends XmlElement {
                carry the control attribute.
                """;
     }
-    
+
     @Override
     protected List<Constraint> constraints() {
         return List.of(

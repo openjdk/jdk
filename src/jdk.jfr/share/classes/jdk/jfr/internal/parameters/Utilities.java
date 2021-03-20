@@ -27,7 +27,7 @@ package jdk.jfr.internal.parameters;
 import java.util.StringJoiner;
 
 public final class Utilities {
-    private static final String[] UNITS = new String[] { 
+    private static final String[] UNITS = new String[] {
         "ns", "us", "ns", "ms", "s", "m", "h", "d" // order matters
     };
 
@@ -84,7 +84,7 @@ public final class Utilities {
         }
         s.append(c);
     }
-    
+
     static void checkValid(String value, Object... valid) {
         StringJoiner sj = new StringJoiner(", ");
         for (Object v : valid) {
@@ -100,7 +100,7 @@ public final class Utilities {
         }
         throw new IllegalArgumentException(msg);
     }
-    
+
     static String parseTimespan(String s) {
         StringBuilder sb = new StringBuilder();
         try {

@@ -52,7 +52,7 @@ final class XmlEvent extends XmlElement {
         addChild(setting);
         return setting;
     }
-    
+
     @Override
     protected List<String> attributes() {
         return List.of("name");
