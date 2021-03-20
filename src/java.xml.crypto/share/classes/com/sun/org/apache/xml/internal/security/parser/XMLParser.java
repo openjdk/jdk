@@ -20,12 +20,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
- */
-package com.sun.org.apache.xml.internal.security.signature.reference;
+package com.sun.org.apache.xml.internal.security.parser;
+
+import java.io.InputStream;
+
+import org.w3c.dom.Document;
 
 /**
- * An abstract representation of the result of dereferencing a ds:Reference URI.
+ * A interface to allow pluggable ways of parsing an InputStream into a DOM Document.
  */
-public interface ReferenceData { }
+public interface XMLParser {
+
+    Document parse(InputStream inputStream, boolean disallowDocTypeDeclarations) throws XMLParserException;
+
+}
