@@ -841,6 +841,7 @@ static void initialize_static_string_field(fieldDescriptor* fd, Handle mirror, T
   mirror()->obj_field_put(fd->offset(), string);
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
 static void initialize_static_string_field_for_dump(fieldDescriptor* fd, Handle mirror) {
   DEBUG_ONLY(assert_valid_static_string_field(fd);)
   assert(DumpSharedSpaces, "must be");
@@ -853,6 +854,7 @@ static void initialize_static_string_field_for_dump(fieldDescriptor* fd, Handle 
     guarantee(false, "Unexpected");
   }
 }
+#endif
 
 static void initialize_static_primitive_field(fieldDescriptor* fd, Handle mirror) {
   assert(fd->has_initial_value(), "caller should have checked this");
@@ -900,6 +902,7 @@ static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
   }
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
 static void initialize_static_field_for_dump(fieldDescriptor* fd, Handle mirror) {
   assert(mirror.not_null() && fd->is_static(), "just checking");
   if (fd->has_initial_value()) {
@@ -910,6 +913,7 @@ static void initialize_static_field_for_dump(fieldDescriptor* fd, Handle mirror)
     }
   }
 }
+#endif
 
 void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   assert(InstanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
