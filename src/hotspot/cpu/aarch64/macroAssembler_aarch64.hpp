@@ -527,6 +527,7 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
+
 public:
 
   // Generalized Test Bit And Branch, including a "far" variety which
@@ -1039,6 +1040,8 @@ public:
 
   void atomic_xchg(Register prev, Register newv, Register addr);
   void atomic_xchgw(Register prev, Register newv, Register addr);
+  void atomic_xchgl(Register prev, Register newv, Register addr);
+  void atomic_xchglw(Register prev, Register newv, Register addr);
   void atomic_xchgal(Register prev, Register newv, Register addr);
   void atomic_xchgalw(Register prev, Register newv, Register addr);
 

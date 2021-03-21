@@ -26,7 +26,6 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -1080,13 +1079,12 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
             nWait = j;
             break;
           }
-          Thread *t = mon->thread_of_waiter(waiter);
-          if (t != NULL && t->is_Java_thread()) {
-            JavaThread *wjava_thread = t->as_Java_thread();
+          JavaThread *w = mon->thread_of_waiter(waiter);
+          if (w != NULL) {
             // If the thread was found on the ObjectWaiter list, then
             // it has not been notified. This thread can't change the
             // state of the monitor so it doesn't need to be suspended.
-            Handle th(current_thread, wjava_thread->threadObj());
+            Handle th(current_thread, w->threadObj());
             ret.waiters[offset + j] = (jthread)jni_reference(calling_thread, th);
             ret.notify_waiters[j++] = (jthread)jni_reference(calling_thread, th);
           }

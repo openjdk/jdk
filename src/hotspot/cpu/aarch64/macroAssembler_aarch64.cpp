@@ -30,9 +30,10 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTable.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/disassembler.hpp"
@@ -319,8 +320,6 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
 
   // Always clear the pc because it could have been set by make_walkable()
   str(zr, Address(rthread, JavaThread::last_Java_pc_offset()));
-
-  str(zr, Address(rthread, JavaThread::saved_fp_address_offset()));
 }
 
 // Calls to C land
@@ -2566,6 +2565,8 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
 
 ATOMIC_XCHG(xchg, swp, ldxr, stxr, Assembler::xword)
 ATOMIC_XCHG(xchgw, swp, ldxrw, stxrw, Assembler::word)
+ATOMIC_XCHG(xchgl, swpl, ldxr, stlxr, Assembler::xword)
+ATOMIC_XCHG(xchglw, swpl, ldxrw, stlxrw, Assembler::word)
 ATOMIC_XCHG(xchgal, swpal, ldaxr, stlxr, Assembler::xword)
 ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word)
 
@@ -5265,10 +5266,14 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 // by the call to JavaThread::aarch64_get_thread_helper() or, indeed,
 // the call setup code.
 //
-// aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On Linux, aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On other systems, the helper is a usual C function.
 //
 void MacroAssembler::get_thread(Register dst) {
-  RegSet saved_regs = RegSet::range(r0, r1) + lr - dst;
+  RegSet saved_regs =
+    LINUX_ONLY(RegSet::range(r0, r1)  + lr - dst)
+    NOT_LINUX (RegSet::range(r0, r17) + lr - dst);
+
   push(saved_regs, sp);
 
   mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));

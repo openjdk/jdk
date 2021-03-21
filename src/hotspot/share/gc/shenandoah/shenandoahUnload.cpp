@@ -31,8 +31,6 @@
 #include "code/dependencyContext.hpp"
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -40,6 +38,7 @@
 #include "gc/shenandoah/shenandoahUnload.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 
@@ -133,6 +132,12 @@ void ShenandoahUnload::prepare() {
   CodeCache::increment_unloading_cycle();
   DependencyContext::cleaning_start();
 }
+
+class ShenandoahRendezvousClosure : public HandshakeClosure {
+public:
+  inline ShenandoahRendezvousClosure() : HandshakeClosure("ShenandoahRendezvous") {}
+  inline void do_thread(Thread* thread) {}
+};
 
 void ShenandoahUnload::unload() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();

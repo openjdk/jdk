@@ -26,9 +26,10 @@
 #define SHARE_RUNTIME_VMTHREAD_HPP
 
 #include "runtime/perfDataTypes.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/task.hpp"
-#include "runtime/vmOperations.hpp"
+#include "runtime/vmOperation.hpp"
 
 // VM operation timeout handling: warn or abort the VM when VM operation takes
 // too long. Periodic tasks do not participate in safepoint protocol, and therefore

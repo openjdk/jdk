@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"

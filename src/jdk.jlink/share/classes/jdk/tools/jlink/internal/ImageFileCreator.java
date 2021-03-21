@@ -133,7 +133,7 @@ public final class ImageFileCreator {
                                     Archive::moduleName,
                                     a -> {
                                         try (Stream<Entry> entries = a.entries()) {
-                                            return entries.collect(Collectors.toList());
+                                            return entries.toList();
                                         }
                                     }));
             ByteOrder order = ByteOrder.nativeOrder();

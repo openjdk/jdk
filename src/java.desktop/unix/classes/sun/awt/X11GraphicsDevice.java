@@ -42,6 +42,7 @@ import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.opengl.GLXGraphicsConfig;
+import sun.java2d.pipe.Region;
 import sun.java2d.xr.XRGraphicsConfig;
 
 /**
@@ -53,7 +54,11 @@ import sun.java2d.xr.XRGraphicsConfig;
  */
 public final class X11GraphicsDevice extends GraphicsDevice
         implements DisplayChangedListener {
-    int screen;
+    /**
+     * X11 screen number. This identifier can become non-valid at any time
+     * therefore methods, which is using this id should be ready to it.
+     */
+    private volatile int screen;
     HashMap<SurfaceType, Object> x11ProxyKeyMap = new HashMap<>();
 
     private static AWTPermission fullScreenExclusivePermission;
@@ -103,6 +108,25 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public int getType() {
         return TYPE_RASTER_SCREEN;
+    }
+
+    public int scaleUp(int x) {
+        return Region.clipRound(x * (double)getScaleFactor());
+    }
+
+    public int scaleDown(int x) {
+        return Region.clipRound(x / (double)getScaleFactor());
+    }
+
+    public Rectangle getBounds() {
+        Rectangle rect = pGetBounds(getScreen());
+        if (getScaleFactor() != 1) {
+            rect.x = scaleDown(rect.x);
+            rect.y = scaleDown(rect.y);
+            rect.width = scaleDown(rect.width);
+            rect.height = scaleDown(rect.height);
+        }
+        return rect;
     }
 
     /**
@@ -165,8 +189,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
                          doubleBufferVisuals.contains(Integer.valueOf(visNum)));
 
                     if (xrenderSupported) {
-                        ret[i] = XRGraphicsConfig.getConfig(this, visNum, depth,                                getConfigColormap(i, screen),
-                                doubleBuffer);
+                        ret[i] = XRGraphicsConfig.getConfig(this, visNum, depth,
+                                getConfigColormap(i, screen), doubleBuffer);
                     } else {
                        ret[i] = X11GraphicsConfig.getConfig(this, visNum, depth,
                               getConfigColormap(i, screen),
@@ -271,8 +295,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private static native void configDisplayMode(int screen,
                                                  int width, int height,
                                                  int displayMode);
-    private static native void resetNativeData(int screen);
     private static native double getNativeScaleFactor(int screen);
+    private native Rectangle pGetBounds(int screenNum);
 
     /**
      * Returns true only if:
@@ -514,7 +538,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
     }
 
     public int getNativeScale() {
-        isXrandrExtensionSupported();
         return (int)Math.round(getNativeScaleFactor(screen));
     }
 
@@ -543,5 +566,9 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     public String toString() {
         return ("X11GraphicsDevice[screen="+screen+"]");
+    }
+
+    public void invalidate(X11GraphicsDevice device) {
+        screen = device.screen;
     }
 }

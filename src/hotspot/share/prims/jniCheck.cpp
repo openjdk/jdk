@@ -26,7 +26,7 @@
 #include "jni.h"
 #include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -513,7 +513,7 @@ Klass* jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_primit
     ReportJNIFatalError(thr, fatal_received_null_class);
   }
 
-  if (mirror->klass() != SystemDictionary::Class_klass()) {
+  if (mirror->klass() != vmClasses::Class_klass()) {
     ReportJNIFatalError(thr, fatal_class_not_a_class);
   }
 
@@ -530,7 +530,7 @@ void jniCheck::validate_throwable_klass(JavaThread* thr, Klass* klass) {
   assert(klass != NULL, "klass argument must have a value");
 
   if (!klass->is_instance_klass() ||
-      !klass->is_subclass_of(SystemDictionary::Throwable_klass())) {
+      !klass->is_subclass_of(vmClasses::Throwable_klass())) {
     ReportJNIFatalError(thr, fatal_class_not_a_throwable_class);
   }
 }

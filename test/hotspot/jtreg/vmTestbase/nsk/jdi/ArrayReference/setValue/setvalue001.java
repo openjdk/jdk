@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,7 +495,7 @@ public class setvalue001 {
                         testFailed = true;
                         continue;
                     }
-                    dblSample = new Double(dblValue.value());
+                    dblSample = Double.valueOf(dblValue.value());
                     try {
                         dblValue = (DoubleValue)valueNew;
                     } catch (ClassCastException e) {
@@ -505,7 +505,7 @@ public class setvalue001 {
                         testFailed = true;
                         continue;
                     }
-                    dblNew = new Double(dblValue.value());
+                    dblNew = Double.valueOf(dblValue.value());
 
                     // Check two primitive values
                     if (!dblNew.equals(dblSample)) {
@@ -535,7 +535,7 @@ public class setvalue001 {
                         testFailed = true;
                         continue;
                     }
-                    fltSample = new Float(fltValue.value());
+                    fltSample = Float.valueOf(fltValue.value());
                     try {
                         fltValue = (FloatValue)valueNew;
                     } catch (ClassCastException e) {
@@ -545,7 +545,7 @@ public class setvalue001 {
                         testFailed = true;
                         continue;
                     }
-                    fltNew = new Float(fltValue.value());
+                    fltNew = Float.valueOf(fltValue.value());
 
                     // Check two primitive values
                     if (!fltNew.equals(fltSample)) {

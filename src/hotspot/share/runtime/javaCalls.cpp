@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -439,7 +438,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
       result = link.result();  // circumvent MS C++ 5.0 compiler bug (result is clobbered across call)
       // Preserve oop return value across possible gc points
       if (oop_result_flag) {
-        thread->set_vm_result((oop) result->get_jobject());
+        thread->set_vm_result(result->get_oop());
       }
     }
   } // Exit JavaCallWrapper (can block - potential return oop must be preserved)
@@ -450,7 +449,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   // Restore possible oop return
   if (oop_result_flag) {
-    result->set_jobject(cast_from_oop<jobject>(thread->vm_result()));
+    result->set_oop(thread->vm_result());
     thread->set_vm_result(NULL);
   }
 }

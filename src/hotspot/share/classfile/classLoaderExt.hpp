@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ private:
   };
 
   static char* get_class_path_attr(const char* jar_path, char* manifest, jint manifest_size);
-  static void setup_app_search_path(); // Only when -Xshare:dump
+  static void setup_app_search_path(TRAPS); // Only when -Xshare:dump
   static void process_module_table(ModuleEntryTable* met, TRAPS);
   // index of first app JAR in shared classpath entry table
   static jshort _app_class_paths_start_index;
@@ -58,15 +58,15 @@ private:
   static bool _has_platform_classes;
 
   static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, bool clean_text, TRAPS);
-  static ClassPathEntry* find_classpath_entry_from_cache(const char* path, TRAPS);
+  static ClassPathEntry* find_classpath_entry_from_cache(Thread* current, const char* path);
 
 public:
-  static void process_jar_manifest(ClassPathEntry* entry, bool check_for_duplicates);
+  static void process_jar_manifest(ClassPathEntry* entry, bool check_for_duplicates, TRAPS);
 
   // Called by JVMTI code to add boot classpath
   static void append_boot_classpath(ClassPathEntry* new_entry);
 
-  static void setup_search_paths();
+  static void setup_search_paths(TRAPS);
   static void setup_module_paths(TRAPS);
 
   static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, TRAPS) {

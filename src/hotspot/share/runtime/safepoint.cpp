@@ -27,7 +27,6 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
@@ -591,7 +590,7 @@ public:
       OopStorage::trigger_cleanup_if_needed();
     }
 
-    _subtasks.all_tasks_completed(_num_workers);
+    _subtasks.all_tasks_claimed();
   }
 };
 
@@ -969,7 +968,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // If we have a pending async exception deoptimize the frame
     // as otherwise we may never deliver it.
     if (self->has_async_condition()) {
-      ThreadInVMfromJavaNoAsyncException __tiv(self);
+      ThreadInVMfromJava __tiv(self, false /* check asyncs */);
       Deoptimization::deoptimize_frame(self, caller_fr.id());
     }
 

@@ -24,16 +24,9 @@
 
 #include "precompiled.hpp"
 
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
-
-#include "gc/shared/weakProcessor.inline.hpp"
-#include "gc/shared/gcTimer.hpp"
-#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
@@ -46,13 +39,8 @@
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-
 #include "memory/iterator.inline.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/handles.inline.hpp"
-
 
 class ShenandoahUpdateRootsTask : public AbstractGangTask {
 private:
@@ -108,23 +96,19 @@ class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
 private:
   SATBMarkQueueSet& _satb_qset;
   OopClosure* const _cl;
-  uintx _claim_token;
 
 public:
   ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
     _satb_qset(satb_qset),
-    _cl(cl),
-    _claim_token(Threads::thread_claim_token()) {}
+    _cl(cl) {}
 
   void do_thread(Thread* thread) {
-    if (thread->claim_threads_do(true, _claim_token)) {
-      // Transfer any partial buffer to the qset for completed buffer processing.
-      _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-      if (thread->is_Java_thread()) {
-        if (_cl != NULL) {
-          ResourceMark rm;
-          thread->oops_do(_cl, NULL);
-        }
+    // Transfer any partial buffer to the qset for completed buffer processing.
+    _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+    if (thread->is_Java_thread()) {
+      if (_cl != NULL) {
+        ResourceMark rm;
+        thread->oops_do(_cl, NULL);
       }
     }
   }
@@ -159,7 +143,7 @@ public:
       ShenandoahMarkRefsClosure mark_cl(q, rp);
       ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
                                                ShenandoahIUBarrier ? &mark_cl : NULL);
-      Threads::threads_do(&tc);
+      Threads::possibly_parallel_threads_do(true /*par*/, &tc);
     }
 
     _cm->mark_loop(worker_id, _terminator, rp,

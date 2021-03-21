@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jni/jfrJavaCall.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
@@ -139,7 +139,7 @@ void JfrJavaSupport::notify_all(jobject object, TRAPS) {
   HandleMark hm(THREAD);
   Handle h_obj(THREAD, resolve_non_null(object));
   assert(h_obj.not_null(), "invariant");
-  ObjectSynchronizer::jni_enter(h_obj, THREAD);
+  ObjectSynchronizer::jni_enter(h_obj, THREAD->as_Java_thread());
   ObjectSynchronizer::notifyall(h_obj, THREAD);
   ObjectSynchronizer::jni_exit(h_obj(), THREAD);
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
@@ -162,7 +162,7 @@ static void object_construction(JfrJavaArguments* args, JavaValue* result, Insta
   result->set_type(T_VOID); // constructor result type
   JfrJavaSupport::call_special(args, CHECK);
   result->set_type(T_OBJECT); // set back to original result type
-  result->set_jobject(cast_from_oop<jobject>(h_obj()));
+  result->set_oop(h_obj());
 }
 
 static void array_construction(JfrJavaArguments* args, JavaValue* result, InstanceKlass* klass, int array_length, TRAPS) {
@@ -175,7 +175,7 @@ static void array_construction(JfrJavaArguments* args, JavaValue* result, Instan
   ObjArrayKlass::cast(ak)->initialize(THREAD);
   HandleMark hm(THREAD);
   objArrayOop arr = ObjArrayKlass::cast(ak)->allocate(array_length, CHECK);
-  result->set_jobject(cast_from_oop<jobject>(arr));
+  result->set_oop(arr);
 }
 
 static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
@@ -199,7 +199,7 @@ static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
 static void handle_result(JavaValue* result, bool global_ref, Thread* t) {
   assert(result != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
-  const oop result_oop = (const oop)result->get_jobject();
+  const oop result_oop = result->get_oop();
   if (result_oop == NULL) {
     return;
   }
@@ -343,7 +343,7 @@ static void write_specialized_field(JfrJavaArguments* args, const Handle& h_oop,
       write_long_field(h_oop, fd, args->param(1).get_jlong());
       break;
     case T_OBJECT:
-      write_oop_field(h_oop, fd, (oop)args->param(1).get_jobject());
+      write_oop_field(h_oop, fd, args->param(1).get_oop());
       break;
     case T_ADDRESS:
       write_oop_field(h_oop, fd, JfrJavaSupport::resolve_non_null(args->param(1).get_jobject()));
@@ -376,7 +376,7 @@ static void read_specialized_field(JavaValue* result, const Handle& h_oop, field
       result->set_jlong(h_oop->long_field(fd->offset()));
       break;
     case T_OBJECT:
-      result->set_jobject(cast_from_oop<jobject>(h_oop->obj_field(fd->offset())));
+      result->set_oop(h_oop->obj_field(fd->offset()));
       break;
     default:
       ShouldNotReachHere();
@@ -457,7 +457,7 @@ void JfrJavaSupport::get_field_local_ref(JfrJavaArguments* args, TRAPS) {
   assert(result->get_type() == T_OBJECT, "invariant");
 
   read_field(args, result, CHECK);
-  const oop obj = (const oop)result->get_jobject();
+  const oop obj = result->get_oop();
 
   if (obj != NULL) {
     result->set_jobject(local_jni_handle(obj, THREAD));
@@ -472,7 +472,7 @@ void JfrJavaSupport::get_field_global_ref(JfrJavaArguments* args, TRAPS) {
   assert(result != NULL, "invariant");
   assert(result->get_type() == T_OBJECT, "invariant");
   read_field(args, result, CHECK);
-  const oop obj = (const oop)result->get_jobject();
+  const oop obj = result->get_oop();
   if (obj != NULL) {
     result->set_jobject(global_jni_handle(obj, THREAD));
   }
@@ -566,23 +566,23 @@ void JfrJavaSupport::set_cause(jthrowable throwable, Thread* t) {
     return;
   }
 
-  if (ex->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+  if (ex->is_a(vmClasses::OutOfMemoryError_klass())) {
     _cause = OUT_OF_MEMORY;
     return;
   }
-  if (ex->is_a(SystemDictionary::StackOverflowError_klass())) {
+  if (ex->is_a(vmClasses::StackOverflowError_klass())) {
     _cause = STACK_OVERFLOW;
     return;
   }
-  if (ex->is_a(SystemDictionary::Error_klass())) {
+  if (ex->is_a(vmClasses::Error_klass())) {
     _cause = VM_ERROR;
     return;
   }
-  if (ex->is_a(SystemDictionary::RuntimeException_klass())) {
+  if (ex->is_a(vmClasses::RuntimeException_klass())) {
     _cause = RUNTIME_EXCEPTION;
     return;
   }
-  if (ex->is_a(SystemDictionary::Exception_klass())) {
+  if (ex->is_a(vmClasses::Exception_klass())) {
     _cause = UNKNOWN;
     return;
   }

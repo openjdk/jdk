@@ -29,7 +29,6 @@
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -37,8 +36,10 @@
 #include "classfile/modules.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -287,7 +288,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
                                                    &st,
                                                    CHECK_NULL);
 
-  if (log_is_enabled(Debug, class, resolve) && k != NULL) {
+  if (log_is_enabled(Debug, class, resolve)) {
     trace_class_resolution(k);
   }
 
@@ -330,7 +331,7 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
       // When invoked from JNI_OnLoad, NativeLibraries::getFromClass returns
       // a non-NULL Class object.  When invoked from JNI_OnUnload,
       // it will return NULL to indicate no context.
-      oop mirror = (oop) result.get_jobject();
+      oop mirror = result.get_oop();
       if (mirror != NULL) {
         Klass* fromClass = java_lang_Class::as_Klass(mirror);
         loader = Handle(THREAD, fromClass->class_loader());
@@ -365,11 +366,11 @@ JNI_ENTRY(jmethodID, jni_FromReflectedMethod(JNIEnv *env, jobject method))
   oop mirror     = NULL;
   int slot       = 0;
 
-  if (reflected->klass() == SystemDictionary::reflect_Constructor_klass()) {
+  if (reflected->klass() == vmClasses::reflect_Constructor_klass()) {
     mirror = java_lang_reflect_Constructor::clazz(reflected);
     slot   = java_lang_reflect_Constructor::slot(reflected);
   } else {
-    assert(reflected->klass() == SystemDictionary::reflect_Method_klass(), "wrong type");
+    assert(reflected->klass() == vmClasses::reflect_Method_klass(), "wrong type");
     mirror = java_lang_reflect_Method::clazz(reflected);
     slot   = java_lang_reflect_Method::slot(reflected);
   }
@@ -467,7 +468,7 @@ JNI_ENTRY(jclass, jni_GetSuperclass(JNIEnv *env, jclass sub))
   Klass* super = k->java_super();
   // super2 is the value computed by the compiler's getSuperClass intrinsic:
   debug_only(Klass* super2 = ( k->is_array_klass()
-                                 ? SystemDictionary::Object_klass()
+                                 ? vmClasses::Object_klass()
                                  : k->super() ) );
   assert(super == super2,
          "java_super computation depends on interface, array, other super");
@@ -564,7 +565,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
   if (thread->has_pending_exception()) {
     Handle ex(thread, thread->pending_exception());
     thread->clear_pending_exception();
-    if (ex->is_a(SystemDictionary::ThreadDeath_klass())) {
+    if (ex->is_a(vmClasses::ThreadDeath_klass())) {
       // Don't print anything if we are being killed.
     } else {
       jio_fprintf(defaultStream::error_stream(), "Exception ");
@@ -573,11 +574,11 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
         jio_fprintf(defaultStream::error_stream(),
         "in thread \"%s\" ", thread->get_thread_name());
       }
-      if (ex->is_a(SystemDictionary::Throwable_klass())) {
+      if (ex->is_a(vmClasses::Throwable_klass())) {
         JavaValue result(T_VOID);
         JavaCalls::call_virtual(&result,
                                 ex,
-                                SystemDictionary::Throwable_klass(),
+                                vmClasses::Throwable_klass(),
                                 vmSymbols::printStackTrace_name(),
                                 vmSymbols::void_method_signature(),
                                 THREAD);
@@ -884,7 +885,7 @@ static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, 
 
   // Convert result
   if (is_reference_type(result->get_type())) {
-    result->set_jobject(JNIHandles::make_local(THREAD, (oop) result->get_jobject()));
+    result->set_jobject(JNIHandles::make_local(THREAD, result->get_oop()));
   }
 }
 
@@ -946,7 +947,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
 
   // Convert result
   if (is_reference_type(result->get_type())) {
-    result->set_jobject(JNIHandles::make_local(THREAD, (oop) result->get_jobject()));
+    result->set_jobject(JNIHandles::make_local(THREAD, result->get_oop()));
   }
 }
 
@@ -2711,7 +2712,7 @@ JNI_ENTRY(jint, jni_MonitorEnter(JNIEnv *env, jobject jobj))
   }
 
   Handle obj(thread, JNIHandles::resolve_non_null(jobj));
-  ObjectSynchronizer::jni_enter(obj, CHECK_(JNI_ERR));
+  ObjectSynchronizer::jni_enter(obj, thread);
   ret = JNI_OK;
   return ret;
 JNI_END

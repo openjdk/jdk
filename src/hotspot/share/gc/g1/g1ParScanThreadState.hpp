@@ -49,7 +49,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   G1ScannerTasksQueue* _task_queue;
   G1RedirtyCardsLocalQueueSet _rdc_local_qset;
-  G1RedirtyCardsQueue _rdcq;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
 
@@ -148,7 +147,7 @@ public:
     size_t card_index = ct()->index_for(p);
     // If the card hasn't been added to the buffer, do it.
     if (_last_enqueued_card != card_index) {
-      _rdc_local_qset.enqueue(_rdcq, ct()->byte_for_index(card_index));
+      _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
       _last_enqueued_card = card_index;
     }
   }

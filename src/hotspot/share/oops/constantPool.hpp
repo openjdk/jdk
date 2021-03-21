@@ -418,13 +418,7 @@ class ConstantPool : public Metadata {
 
   Klass* klass_at(int which, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, true, THREAD);
-  }
-
-  // Version of klass_at that doesn't save the resolution error, called during deopt
-  Klass* klass_at_ignore_error(int which, TRAPS) {
-    constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, false, THREAD);
+    return klass_at_impl(h_this, which, THREAD);
   }
 
   CPKlassSlot klass_slot_at(int which) const {
@@ -739,7 +733,7 @@ class ConstantPool : public Metadata {
   }
 
   // CDS support
-  void archive_resolved_references(Thread *THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
   void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   void remove_unshareable_info();
@@ -886,8 +880,7 @@ class ConstantPool : public Metadata {
 
   // Implementation of methods that needs an exposed 'this' pointer, in order to
   // handle GC while executing the method
-  static Klass* klass_at_impl(const constantPoolHandle& this_cp, int which,
-                              bool save_resolution_error, TRAPS);
+  static Klass* klass_at_impl(const constantPoolHandle& this_cp, int which, TRAPS);
   static oop string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS);
 
   static void trace_class_resolution(const constantPoolHandle& this_cp, Klass* k);
@@ -903,7 +896,6 @@ class ConstantPool : public Metadata {
                                                bool must_resolve, Handle if_not_available, TRAPS);
 
   // Exception handling
-  static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception);
   static void save_and_throw_exception(const constantPoolHandle& this_cp, int which, constantTag tag, TRAPS);
 
  public:
