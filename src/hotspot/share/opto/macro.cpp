@@ -156,59 +156,20 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
   return call;
 }
 
-void PhaseMacroExpand::extract_call_projections(CallNode *call) {
-  _fallthroughproj = NULL;
-  _fallthroughcatchproj = NULL;
-  _ioproj_fallthrough = NULL;
-  _ioproj_catchall = NULL;
-  _catchallcatchproj = NULL;
-  _memproj_fallthrough = NULL;
-  _memproj_catchall = NULL;
-  _resproj = NULL;
-  for (DUIterator_Fast imax, i = call->fast_outs(imax); i < imax; i++) {
-    ProjNode *pn = call->fast_out(i)->as_Proj();
-    switch (pn->_con) {
-      case TypeFunc::Control:
-      {
-        // For Control (fallthrough) and I_O (catch_all_index) we have CatchProj -> Catch -> Proj
-        _fallthroughproj = pn;
-        DUIterator_Fast jmax, j = pn->fast_outs(jmax);
-        const Node *cn = pn->fast_out(j);
-        if (cn->is_Catch()) {
-          ProjNode *cpn = NULL;
-          for (DUIterator_Fast kmax, k = cn->fast_outs(kmax); k < kmax; k++) {
-            cpn = cn->fast_out(k)->as_Proj();
-            assert(cpn->is_CatchProj(), "must be a CatchProjNode");
-            if (cpn->_con == CatchProjNode::fall_through_index)
-              _fallthroughcatchproj = cpn;
-            else {
-              assert(cpn->_con == CatchProjNode::catch_all_index, "must be correct index.");
-              _catchallcatchproj = cpn;
-            }
-          }
-        }
-        break;
-      }
-      case TypeFunc::I_O:
-        if (pn->_is_io_use)
-          _ioproj_catchall = pn;
-        else
-          _ioproj_fallthrough = pn;
-        break;
-      case TypeFunc::Memory:
-        if (pn->_is_io_use)
-          _memproj_catchall = pn;
-        else
-          _memproj_fallthrough = pn;
-        break;
-      case TypeFunc::Parms:
-        _resproj = pn;
-        break;
-      default:
-        assert(false, "unexpected projection from allocation node.");
-    }
-  }
+void PhaseMacroExpand::extract_call_projections(CallNode* call) {
+  CallProjections projs;
 
+  call->extract_projections(&projs, false/*separate_io_proj*/, false/*do_asserts*/);
+#define PROJ_ASSIGNMENT(dst, src) dst = !src ? nullptr : (src->as_Proj());
+  PROJ_ASSIGNMENT(_fallthroughproj,      projs.fallthrough_proj);
+  PROJ_ASSIGNMENT(_fallthroughcatchproj, projs.fallthrough_catchproj);
+  PROJ_ASSIGNMENT(_ioproj_fallthrough,   projs.fallthrough_ioproj);
+  PROJ_ASSIGNMENT(_ioproj_catchall,      projs.catchall_ioproj);
+  PROJ_ASSIGNMENT(_catchallcatchproj,    projs.catchall_catchproj);
+  PROJ_ASSIGNMENT(_memproj_fallthrough,  projs.fallthrough_memproj);
+  PROJ_ASSIGNMENT(_memproj_catchall,     projs.catchall_memproj);
+  PROJ_ASSIGNMENT(_resproj,              projs.resproj);
+#undef PROJ_ASSIGNMENT
 }
 
 void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
