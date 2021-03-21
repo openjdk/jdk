@@ -825,59 +825,91 @@ bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;
 GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = NULL;
 
+#ifdef ASSERT
+inline static void assert_valid_static_string_field(fieldDescriptor* fd) {
+  assert(fd->has_initial_value(), "caller should have checked this");
+  assert(fd->field_type() == T_OBJECT, "caller should have checked this");
+  // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
+  // during DumpSharedSpaces
+  assert(fd->signature()->equals("Ljava/lang/String;"), "just checking");
+}
+#endif
+
+static void initialize_static_string_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
+  DEBUG_ONLY(assert_valid_static_string_field(fd);)
+  oop string = fd->string_initial_value(CHECK);
+  mirror()->obj_field_put(fd->offset(), string);
+}
+
+static void initialize_static_string_field_for_dump(fieldDescriptor* fd, Handle mirror) {
+  DEBUG_ONLY(assert_valid_static_string_field(fd);)
+  assert(DumpSharedSpaces, "must be");
+  if (HeapShared::is_archived_object(mirror())) {
+    // Archive the String field and update the pointer.
+    oop s = mirror()->obj_field(fd->offset());
+    oop archived_s = StringTable::create_archived_string(s);
+    mirror()->obj_field_put(fd->offset(), archived_s);
+  } else {
+    guarantee(false, "Unexpected");
+  }
+}
+
+static void initialize_static_primitive_field(fieldDescriptor* fd, Handle mirror) {
+  assert(fd->has_initial_value(), "caller should have checked this");
+  BasicType t = fd->field_type();
+  switch (t) {
+  case T_BYTE:
+    mirror()->byte_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_BOOLEAN:
+    mirror()->bool_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_CHAR:
+    mirror()->char_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_SHORT:
+    mirror()->short_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_INT:
+    mirror()->int_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_FLOAT:
+    mirror()->float_field_put(fd->offset(), fd->float_initial_value());
+    break;
+  case T_DOUBLE:
+    mirror()->double_field_put(fd->offset(), fd->double_initial_value());
+    break;
+  case T_LONG:
+    mirror()->long_field_put(fd->offset(), fd->long_initial_value());
+    break;
+  default:
+    // Illegal ConstantValue attribute in class file should have been
+    // caught during classfile parsing.
+    ShouldNotReachHere();
+  }
+}
+
 static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
   assert(mirror.not_null() && fd->is_static(), "just checking");
   if (fd->has_initial_value()) {
-    BasicType t = fd->field_type();
-    switch (t) {
-      case T_BYTE:
-        mirror()->byte_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_BOOLEAN:
-        mirror()->bool_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_CHAR:
-        mirror()->char_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_SHORT:
-        mirror()->short_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_INT:
-        mirror()->int_field_put(fd->offset(), fd->int_initial_value());
-        break;
-      case T_FLOAT:
-        mirror()->float_field_put(fd->offset(), fd->float_initial_value());
-        break;
-      case T_DOUBLE:
-        mirror()->double_field_put(fd->offset(), fd->double_initial_value());
-        break;
-      case T_LONG:
-        mirror()->long_field_put(fd->offset(), fd->long_initial_value());
-        break;
-      case T_OBJECT:
-        {
-          // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
-          // during DumpSharedSpaces
-          assert(fd->signature()->equals("Ljava/lang/String;"),
-                 "just checking");
-          if (DumpSharedSpaces && HeapShared::is_archived_object(mirror())) {
-            // Archive the String field and update the pointer.
-            oop s = mirror()->obj_field(fd->offset());
-            oop archived_s = StringTable::create_archived_string(s);
-            mirror()->obj_field_put(fd->offset(), archived_s);
-          } else {
-            oop string = fd->string_initial_value(CHECK);
-            mirror()->obj_field_put(fd->offset(), string);
-          }
-        }
-        break;
-      default:
-        THROW_MSG(vmSymbols::java_lang_ClassFormatError(),
-                  "Illegal ConstantValue attribute in class file");
+    if (fd->field_type() != T_OBJECT) {
+      initialize_static_primitive_field(fd, mirror);
+    } else {
+      initialize_static_string_field(fd, mirror, CHECK);
     }
   }
 }
 
+static void initialize_static_field_for_dump(fieldDescriptor* fd, Handle mirror) {
+  assert(mirror.not_null() && fd->is_static(), "just checking");
+  if (fd->has_initial_value()) {
+    if (fd->field_type() != T_OBJECT) {
+      initialize_static_primitive_field(fd, mirror);
+    } else {
+      initialize_static_string_field_for_dump(fd, mirror);
+    }
+  }
+}
 
 void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   assert(InstanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
@@ -1080,7 +1112,7 @@ class ResetMirrorField: public FieldClosure {
     assert(_m.not_null(), "Mirror cannot be NULL");
 
     if (fd->is_static() && fd->has_initial_value()) {
-      initialize_static_field(fd, _m, Thread::current());
+      initialize_static_field_for_dump(fd, _m);
       return;
     }
 
