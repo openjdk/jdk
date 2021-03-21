@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <configuration version="2.0" label="Test and">
+<configuration version="2.0" label="Test and">
 
     <event name="algebra.Group">
       <setting name="enabled" control="group">unknown</setting>

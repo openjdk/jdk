@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
- <configuration version="2.0" label="Test superfluous elements and attributes">
+<configuration version="2.0" label="Test superfluous elements and attributes">
 
     <event legs="4" name="com.example.Tiger">
       <setting name="enabled" control="animal">false</setting>

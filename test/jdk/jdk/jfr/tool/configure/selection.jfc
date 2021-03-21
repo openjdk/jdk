@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
- <configuration version="2.0" label="Test selection">
+<configuration version="2.0" label="Test selection">
 
     <event name="com.example.Tiger">
       <setting name="enabled">false</setting>

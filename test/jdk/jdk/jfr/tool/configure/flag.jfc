@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <configuration version="2.0" label="Test flag">
+<configuration version="2.0" label="Test flag">
 
     <event name="com.example.Tiger">
       <setting name="enabled" control="mammal">false</setting>
