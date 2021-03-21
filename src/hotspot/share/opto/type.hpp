@@ -802,10 +802,15 @@ public:
     // Use bottom primitive type.
     return make(get_const_basic_type(elem_bt), length);
   }
-  static const TypeVect *makemask(const Type* elem, uint length);
-
   // Used directly by Replicate nodes to construct singleton vector.
   static const TypeVect *make(const Type* elem, uint length);
+
+  static const TypeVect *makemask(const BasicType elem_bt, uint length) {
+    // Use bottom primitive type.
+    return makemask(get_const_basic_type(elem_bt), length);
+  }
+  static const TypeVect *makemask(const Type* elem, uint length);
+
 
   virtual const Type *xmeet( const Type *t) const;
   virtual const Type *xdual() const;     // Compute dual right now.
@@ -1708,12 +1713,12 @@ inline const TypeVectMask *Type::isa_vectmask() const {
 }
 
 inline const TypeVect *Type::is_vect() const {
-  assert( _base >= VectorA && _base <= VectorZ, "Not a Vector" );
+  assert( _base >= VectorM && _base <= VectorZ, "Not a Vector" );
   return (TypeVect*)this;
 }
 
 inline const TypeVect *Type::isa_vect() const {
-  return (_base >= VectorA && _base <= VectorZ) ? (TypeVect*)this : NULL;
+  return (_base >= VectorM && _base <= VectorZ) ? (TypeVect*)this : NULL;
 }
 
 inline const TypePtr *Type::is_ptr() const {
