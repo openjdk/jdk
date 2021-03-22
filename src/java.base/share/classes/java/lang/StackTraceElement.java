@@ -407,11 +407,11 @@ public final class StackTraceElement implements java.io.Serializable {
         if (obj==this)
             return true;
         return (obj instanceof StackTraceElement e)
+                && e.lineNumber == lineNumber
                 && Objects.equals(classLoaderName, e.classLoaderName)
                 && Objects.equals(moduleName, e.moduleName)
                 && Objects.equals(moduleVersion, e.moduleVersion)
                 && e.declaringClass.equals(declaringClass)
-                && e.lineNumber == lineNumber
                 && Objects.equals(methodName, e.methodName)
                 && Objects.equals(fileName, e.fileName);
     }
