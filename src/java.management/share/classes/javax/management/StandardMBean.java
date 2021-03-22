@@ -125,7 +125,7 @@ import javax.management.openmbean.OpenMBeanParameterInfoSupport;
  */
 public class StandardMBean implements DynamicMBean, MBeanRegistration {
 
-    private final static DescriptorCache descriptors =
+    private static final DescriptorCache descriptors =
         DescriptorCache.getInstance(JMX.proof);
 
     /**
