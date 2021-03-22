@@ -73,9 +73,9 @@ public class HotSpotAgent {
     //  - Starting debug server for core file
 
     // These are options for the "client" side of things
-    private static final int PROCESS_MODE   = 0;
-    private static final int CORE_FILE_MODE = 1;
-    private static final int REMOTE_MODE    = 2;
+    public static final int PROCESS_MODE   = 0;
+    public static final int CORE_FILE_MODE = 1;
+    public static final int REMOTE_MODE    = 2;
     private int startupMode;
 
     // This indicates whether we are really starting a server or not
@@ -116,7 +116,7 @@ public class HotSpotAgent {
     // Accessors (once the system is set up)
     //
 
-    public synchronized Debugger getDebugger() {
+    public synchronized JVMDebugger getDebugger() {
         return debugger;
     }
 
@@ -649,5 +649,9 @@ public class HotSpotAgent {
         } else {
             throw new DebuggerException("Should not call attach() for startupMode == " + startupMode);
         }
+    }
+
+    public int getStartupMode() {
+        return startupMode;
     }
 }

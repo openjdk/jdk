@@ -101,6 +101,25 @@ class TypedMethodOptionMatcher;
 static TypedMethodOptionMatcher* option_list = NULL;
 static bool any_set = false;
 
+// A filter for quick lookup if an option is set
+static bool option_filter[static_cast<int>(CompileCommand::Unknown) + 1] = { 0 };
+
+void command_set_in_filter(enum CompileCommand option) {
+  assert(option != CompileCommand::Unknown, "sanity");
+  assert(option2type(option) != OptionType::Unknown, "sanity");
+
+  if ((option != CompileCommand::DontInline) &&
+      (option != CompileCommand::Inline) &&
+      (option != CompileCommand::Log)) {
+    any_set = true;
+  }
+  option_filter[static_cast<int>(option)] = true;
+}
+
+bool has_command(enum CompileCommand option) {
+  return option_filter[static_cast<int>(option)];
+}
+
 class TypedMethodOptionMatcher : public MethodMatcher {
  private:
   TypedMethodOptionMatcher* _next;
@@ -290,11 +309,8 @@ static void register_command(TypedMethodOptionMatcher* matcher,
   matcher->init(option, option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
-  if ((option != CompileCommand::DontInline) &&
-      (option != CompileCommand::Inline) &&
-      (option != CompileCommand::Log)) {
-    any_set = true;
-  }
+  command_set_in_filter(option);
+
   if (!CompilerOracle::be_quiet()) {
     // Print out the successful registration of a compile command
     ttyLocker ttyl;
@@ -307,6 +323,9 @@ static void register_command(TypedMethodOptionMatcher* matcher,
 template<typename T>
 bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value) {
   assert(option_matches_type(option, value), "Value must match option type");
+  if (!has_command(option)) {
+    return false;
+  }
   if (option_list != NULL) {
     TypedMethodOptionMatcher* m = option_list->match(method, option);
     if (m != NULL) {
@@ -321,18 +340,6 @@ static bool check_predicate(enum CompileCommand option, const methodHandle& meth
   bool value = false;
   if (CompilerOracle::has_option_value(method, option, value)) {
     return value;
-  }
-  return false;
-}
-
-static bool has_command(enum CompileCommand option) {
-  TypedMethodOptionMatcher* m = option_list;
-  while (m != NULL) {
-    if (m->option() == option) {
-      return true;
-    } else {
-      m = m->next();
-    }
   }
   return false;
 }

@@ -37,6 +37,7 @@
 - (NSRect)accessibilityFrame;
 - (nullable id)accessibilityParent;
 - (BOOL)performAccessibleAction:(int)index;
+- (BOOL)isAccessibilityElement;
 @end
 
 #endif

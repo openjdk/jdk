@@ -1268,14 +1268,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
                                                            name,
                                                            loader_data,
                                                            cl_info,
-                                                           THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    if (DumpSharedSpaces) {
-      log_error(cds)("Preload Error: Failed to load %s", class_name);
-    }
-    return NULL;
-  }
-
+                                                           CHECK_NULL);
   result->set_classpath_index(classpath_index);
   return result;
 }
