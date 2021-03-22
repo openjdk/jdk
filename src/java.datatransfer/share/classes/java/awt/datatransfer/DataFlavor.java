@@ -187,8 +187,8 @@ public class DataFlavor implements Externalizable, Cloneable {
      */
     private static DataFlavor initHtml(String htmlFlavorType) {
         try {
-            return new DataFlavor ("text/html; class=java.lang.String;document=" +
-                                       htmlFlavorType + ";charset=Unicode");
+            return new DataFlavor("text/html; class=java.lang.String;document="
+                                      + htmlFlavorType + ";charset=Unicode");
         } catch (Exception e) {
             return null;
         }
