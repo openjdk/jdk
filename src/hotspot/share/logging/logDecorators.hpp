@@ -89,6 +89,13 @@ class LogDecorators {
   LogDecorators(const LogDecorators& o) : _decorators(o._decorators) {
   }
 
+  LogDecorators& operator=(const LogDecorators& rhs) {
+    if (this != &rhs) {
+      _decorators = rhs._decorators;
+    }
+    return *this;
+  }
+
   void clear() {
     _decorators = 0;
   }
