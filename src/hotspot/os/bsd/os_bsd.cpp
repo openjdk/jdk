@@ -1400,8 +1400,14 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   if (sysctl(mib_machine, 2, machine, &size, NULL, 0) < 0) {
       strncpy(machine, "", sizeof(machine));
   }
-
-  snprintf(buf, buflen, "%s %s %d MHz", model, machine, mhz);
+  
+  char emulated[16] = "\0";
+#ifdef __APPLE__
+  if (VM_Version::is_cpu_emulated()) {
+    strcpy(emulated, " (EMULATED)");
+  }
+#endif
+  snprintf(buf, buflen, "\"%s\" %s%s %d MHz", model, machine, emulated, mhz);
 }
 
 void os::print_memory_info(outputStream* st) {

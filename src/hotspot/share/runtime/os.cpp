@@ -1059,13 +1059,7 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   }
 #endif // PRODUCT
   get_summary_cpu_info(buf, buflen);
-  st->print("%s", buf);
-#ifdef __APPLE__
-  if (VM_Version::is_cpu_emulated()) {
-    st->print(" (EMULATED)");
-  }
-#endif
-  st->print(", ");
+  st->print("%s, ", buf);
   size_t mem = physical_memory()/G;
   if (mem == 0) {  // for low memory systems
     mem = physical_memory()/M;
