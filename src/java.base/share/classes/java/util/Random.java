@@ -642,9 +642,16 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number of
+     * pseudorandom {@code int} values.
+     *
+     * <p>A pseudorandom {@code int} value is generated as if it's the result of
+     * calling the method {@link #nextInt()}.
+     *
+     * @param streamSize the number of values to generate
+     * @return a stream of pseudorandom {@code int} values
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero
      * @since 1.8
      */
     @Override
@@ -653,8 +660,16 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code int}
+     * values.
+     *
+     * <p>A pseudorandom {@code int} value is generated as if it's the result of
+     * calling the method {@link #nextInt()}.
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * ints(Long.MAX_VALUE)}.
+     *
+     * @return a stream of pseudorandom {@code int} values
      * @since 1.8
      */
     @Override
@@ -663,9 +678,35 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number
+     * of pseudorandom {@code int} values, each conforming to the given
+     * origin (inclusive) and bound (exclusive).
+     *
+     * <p>A pseudorandom {@code int} value is generated as if it's the result of
+     * calling the following method with the origin and bound:
+     * <pre> {@code
+     * int nextInt(int origin, int bound) {
+     *   int n = bound - origin;
+     *   if (n > 0) {
+     *     return nextInt(n) + origin;
+     *   }
+     *   else {  // range not representable as int
+     *     int r;
+     *     do {
+     *       r = nextInt();
+     *     } while (r < origin || r >= bound);
+     *     return r;
+     *   }
+     * }}</pre>
+     *
+     * @param streamSize the number of values to generate
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code int} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero, or {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      * @since 1.8
      */
     @Override
@@ -674,9 +715,36 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code
+     * int} values, each conforming to the given origin (inclusive) and bound
+     * (exclusive).
+     *
+     * <p>A pseudorandom {@code int} value is generated as if it's the result of
+     * calling the following method with the origin and bound:
+     * <pre> {@code
+     * int nextInt(int origin, int bound) {
+     *   int n = bound - origin;
+     *   if (n > 0) {
+     *     return nextInt(n) + origin;
+     *   }
+     *   else {  // range not representable as int
+     *     int r;
+     *     do {
+     *       r = nextInt();
+     *     } while (r < origin || r >= bound);
+     *     return r;
+     *   }
+     * }}</pre>
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * ints(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+     *
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code int} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      * @since 1.8
      */
     @Override
@@ -685,9 +753,16 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number of
+     * pseudorandom {@code long} values.
+     *
+     * <p>A pseudorandom {@code long} value is generated as if it's the result
+     * of calling the method {@link #nextLong()}.
+     *
+     * @param streamSize the number of values to generate
+     * @return a stream of pseudorandom {@code long} values
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero
      * @since 1.8
      */
     @Override
@@ -696,8 +771,16 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @implSpec {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code long}
+     * values.
+     *
+     * <p>A pseudorandom {@code long} value is generated as if it's the result
+     * of calling the method {@link #nextLong()}.
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * longs(Long.MAX_VALUE)}.
+     *
+     * @return a stream of pseudorandom {@code long} values
      * @since 1.8
      */
     @Override
@@ -706,9 +789,40 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @implSpec {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number of
+     * pseudorandom {@code long}, each conforming to the given origin
+     * (inclusive) and bound (exclusive).
+     *
+     * <p>A pseudorandom {@code long} value is generated as if it's the result
+     * of calling the following method with the origin and bound:
+     * <pre> {@code
+     * long nextLong(long origin, long bound) {
+     *   long r = nextLong();
+     *   long n = bound - origin, m = n - 1;
+     *   if ((n & m) == 0L)  // power of two
+     *     r = (r & m) + origin;
+     *   else if (n > 0L) {  // reject over-represented candidates
+     *     for (long u = r >>> 1;            // ensure nonnegative
+     *          u + m - (r = u % n) < 0L;    // rejection check
+     *          u = nextLong() >>> 1) // retry
+     *         ;
+     *     r += origin;
+     *   }
+     *   else {              // range not representable as long
+     *     while (r < origin || r >= bound)
+     *       r = nextLong();
+     *   }
+     *   return r;
+     * }}</pre>
+     *
+     * @param streamSize the number of values to generate
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code long} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero, or {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      * @since 1.8
      */
     @Override
@@ -717,9 +831,41 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code
+     * long} values, each conforming to the given origin (inclusive) and bound
+     * (exclusive).
+     *
+     * <p>A pseudorandom {@code long} value is generated as if it's the result
+     * of calling the following method with the origin and bound:
+     * <pre> {@code
+     * long nextLong(long origin, long bound) {
+     *   long r = nextLong();
+     *   long n = bound - origin, m = n - 1;
+     *   if ((n & m) == 0L)  // power of two
+     *     r = (r & m) + origin;
+     *   else if (n > 0L) {  // reject over-represented candidates
+     *     for (long u = r >>> 1;            // ensure nonnegative
+     *          u + m - (r = u % n) < 0L;    // rejection check
+     *          u = nextLong() >>> 1) // retry
+     *         ;
+     *     r += origin;
+     *   }
+     *   else {              // range not representable as long
+     *     while (r < origin || r >= bound)
+     *       r = nextLong();
+     *   }
+     *   return r;
+     * }}</pre>
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * longs(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+     *
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code long} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      * @since 1.8
      */
     @Override
@@ -728,9 +874,17 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number of
+     * pseudorandom {@code double} values, each between zero
+     * (inclusive) and one (exclusive).
+     *
+     * <p>A pseudorandom {@code double} value is generated as if it's the result
+     * of calling the method {@link #nextDouble()}.
+     *
+     * @param streamSize the number of values to generate
+     * @return a stream of {@code double} values
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero
      * @since 1.8
      */
     @Override
@@ -739,8 +893,17 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code
+     * double} values, each between zero (inclusive) and one
+     * (exclusive).
+     *
+     * <p>A pseudorandom {@code double} value is generated as if it's the result
+     * of calling the method {@link #nextDouble()}.
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * doubles(Long.MAX_VALUE)}.
+     *
+     * @return a stream of pseudorandom {@code double} values
      * @since 1.8
      */
     @Override
@@ -748,10 +911,31 @@ public class Random extends AbstractSpliteratorGenerator
         return super.doubles();
     }
 
-    /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+   /**
+     * Returns a stream producing the given {@code streamSize} number of
+     * pseudorandom {@code double} values, each conforming to the given origin
+     * (inclusive) and bound (exclusive).
+     *
+     * <p>A pseudorandom {@code double} value is generated as if it's the result
+     * of calling the following method with the origin and bound:
+     * <pre> {@code
+     * double nextDouble(double origin, double bound) {
+     *   double r = nextDouble();
+     *   r = r * (bound - origin) + origin;
+     *   if (r >= bound) // correct for rounding
+     *     r = Math.nextDown(bound);
+     *   return r;
+     * }}</pre>
+     *
+     * @param streamSize the number of values to generate
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code double} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero
+     * @throws IllegalArgumentException if {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      * @since 1.8
      */
     @Override
@@ -760,9 +944,30 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
-     * @implSpec  {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code
+     * double} values, each conforming to the given origin (inclusive) and bound
+     * (exclusive).
+     *
+     * <p>A pseudorandom {@code double} value is generated as if it's the result
+     * of calling the following method with the origin and bound:
+     * <pre> {@code
+     * double nextDouble(double origin, double bound) {
+     *   double r = nextDouble();
+     *   r = r * (bound - origin) + origin;
+     *   if (r >= bound) // correct for rounding
+     *     r = Math.nextDown(bound);
+     *   return r;
+     * }}</pre>
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+     *
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code double} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      * @since 1.8
      */
     @Override

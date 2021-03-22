@@ -369,8 +369,14 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number
+     * of pseudorandom {@code int} values from this generator and/or
+     * one split from it.
+     *
+     * @param streamSize the number of values to generate
+     * @return a stream of pseudorandom {@code int} values
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero
      */
     @Override
     public IntStream ints(long streamSize) {
@@ -378,7 +384,13 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code int}
+     * values from this generator and/or one split from it.
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * ints(Long.MAX_VALUE)}.
+     *
+     * @return a stream of pseudorandom {@code int} values
      */
     @Override
     public IntStream ints() {
@@ -386,8 +398,19 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number
+     * of pseudorandom {@code int} values from this generator and/or one split
+     * from it; each value conforms to the given origin (inclusive) and bound
+     * (exclusive).
+     *
+     * @param streamSize the number of values to generate
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code int} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero, or {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      */
     @Override
     public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
@@ -395,8 +418,19 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code
+     * int} values from this generator and/or one split from it; each value
+     * conforms to the given origin (inclusive) and bound (exclusive).
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * ints(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+     *
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code int} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      */
     @Override
     public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
@@ -404,8 +438,14 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number
+     * of pseudorandom {@code long} values from this generator and/or
+     * one split from it.
+     *
+     * @param streamSize the number of values to generate
+     * @return a stream of pseudorandom {@code long} values
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero
      */
     @Override
     public LongStream longs(long streamSize) {
@@ -413,7 +453,13 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code
+     * long} values from this generator and/or one split from it.
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * longs(Long.MAX_VALUE)}.
+     *
+     * @return a stream of pseudorandom {@code long} values
      */
     @Override
     public LongStream longs() {
@@ -421,8 +467,19 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number of
+     * pseudorandom {@code long} values from this generator and/or one split
+     * from it; each value conforms to the given origin (inclusive) and bound
+     * (exclusive).
+     *
+     * @param streamSize the number of values to generate
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code long} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero, or {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      */
     @Override
     public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
@@ -430,8 +487,19 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code
+     * long} values from this generator and/or one split from it; each value
+     * conforms to the given origin (inclusive) and bound (exclusive).
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * longs(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+     *
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code long} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      */
     @Override
     public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
@@ -439,8 +507,14 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number of
+     * pseudorandom {@code double} values from this generator and/or one split
+     * from it; each value is between zero (inclusive) and one (exclusive).
+     *
+     * @param streamSize the number of values to generate
+     * @return a stream of {@code double} values
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero
      */
     @Override
     public DoubleStream doubles(long streamSize) {
@@ -448,7 +522,14 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code
+     * double} values from this generator and/or one split from it; each value
+     * is between zero (inclusive) and one (exclusive).
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * doubles(Long.MAX_VALUE)}.
+     *
+     * @return a stream of pseudorandom {@code double} values
      */
     @Override
     public DoubleStream doubles() {
@@ -456,8 +537,19 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * Returns a stream producing the given {@code streamSize} number of
+     * pseudorandom {@code double} values from this generator and/or one split
+     * from it; each value conforms to the given origin (inclusive) and bound
+     * (exclusive).
+     *
+     * @param streamSize the number of values to generate
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code double} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code streamSize} is
+     *         less than zero, or {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      */
     @Override
     public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
@@ -465,8 +557,19 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     }
 
     /**
-     * {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * Returns an effectively unlimited stream of pseudorandom {@code
+     * double} values from this generator and/or one split from it; each value
+     * conforms to the given origin (inclusive) and bound (exclusive).
+     *
+     * @implNote This method is implemented to be equivalent to {@code
+     * doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
+     *
+     * @param randomNumberOrigin the origin (inclusive) of each random value
+     * @param randomNumberBound the bound (exclusive) of each random value
+     * @return a stream of pseudorandom {@code double} values,
+     *         each with the given origin (inclusive) and bound (exclusive)
+     * @throws IllegalArgumentException if {@code randomNumberOrigin}
+     *         is greater than or equal to {@code randomNumberBound}
      */
     @Override
     public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {

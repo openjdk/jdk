@@ -303,7 +303,7 @@
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">ThreadLocalRandom</td>
+ *      <td style="text-align:left">ThreadLocalRandom <sup>*</sup></td>
  *      <td style="text-align:left">Legacy</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
  *      <td style="text-align:right">64</td>
@@ -326,6 +326,8 @@
  *  </tbody>
  * </table>
  *
+ * <p><sup>*</sup> ThreadLocalRandom can only be accessed via
+ * {@link java.util.concurrent.ThreadLocalRandom#current()}.
  *
  * <h2>Categories of Random Number Generator Algorithms</h2>
  *
