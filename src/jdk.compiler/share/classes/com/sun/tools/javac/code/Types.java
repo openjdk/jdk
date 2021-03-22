@@ -4076,19 +4076,22 @@ public class Types {
             return buf.toList();
         }
 
-        private Type arraySuperType = null;
+        private volatile Type arraySuperType;
         private Type arraySuperType() {
             // initialized lazily to avoid problems during compiler startup
-            if (arraySuperType == null) {
+            Type ast = arraySuperType;
+            if (ast == null) {
                 synchronized (this) {
-                    if (arraySuperType == null) {
+                    ast = arraySuperType;
+                    if (ast == null) {
                         // JLS 10.8: all arrays implement Cloneable and Serializable.
-                        arraySuperType = makeIntersectionType(List.of(syms.serializableType,
+                        ast = makeIntersectionType(List.of(syms.serializableType,
                                 syms.cloneableType), true);
+                        arraySuperType = ast;
                     }
                 }
             }
-            return arraySuperType;
+            return ast;
         }
     // </editor-fold>
 
