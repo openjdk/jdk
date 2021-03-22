@@ -94,6 +94,7 @@ public class Navigation {
         HELP,
         INDEX,
         MODULE,
+        NEW,
         OVERVIEW,
         PACKAGE,
         PREVIEW,
@@ -185,8 +186,9 @@ public class Navigation {
                 addPageLabel(tree, contents.classLabel, true);
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
-                addDeprecatedLink(tree);
                 addPreviewLink(tree);
+                addNewLink(tree);
+                addDeprecatedLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -197,8 +199,9 @@ public class Navigation {
                 addPageLabel(tree, contents.classLabel, true);
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
-                addDeprecatedLink(tree);
                 addPreviewLink(tree);
+                addNewLink(tree);
+                addDeprecatedLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -215,8 +218,9 @@ public class Navigation {
                     addContentToTree(tree, links.createLink(DocPaths.PACKAGE_TREE,
                             contents.treeLabel, ""));
                 }
-                addDeprecatedLink(tree);
                 addPreviewLink(tree);
+                addNewLink(tree);
+                addDeprecatedLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -233,8 +237,9 @@ public class Navigation {
                     addContentToTree(tree, links.createLink(DocPaths.PACKAGE_TREE,
                             contents.treeLabel, ""));
                 }
-                addDeprecatedLink(tree);
                 addPreviewLink(tree);
+                addNewLink(tree);
+                addDeprecatedLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -256,8 +261,9 @@ public class Navigation {
                             ? links.createLink(DocPath.parent.resolve(DocPaths.PACKAGE_TREE), contents.treeLabel)
                             : links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), contents.treeLabel));
                 }
-                addDeprecatedLink(tree);
                 addPreviewLink(tree);
+                addNewLink(tree);
+                addDeprecatedLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -273,8 +279,9 @@ public class Navigation {
                 addPageLabel(tree, contents.classLabel, true);
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addActivePageLink(tree, contents.treeLabel, options.createTree());
-                addDeprecatedLink(tree);
                 addPreviewLink(tree);
+                addNewLink(tree);
+                addDeprecatedLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -282,23 +289,36 @@ public class Navigation {
             case INDEX:
             case HELP:
             case PREVIEW:
+            case NEW:
                 addOverviewLink(tree);
                 addModuleLink(tree);
                 addPackageLink(tree);
                 addPageLabel(tree, contents.classLabel, true);
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
-                if (documentedPage == PageMode.DEPRECATED) {
-                    addActivePageLink(tree, contents.deprecatedLabel,
-                            configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED));
-                } else {
-                    addDeprecatedLink(tree);
-                }
                 if (documentedPage == PageMode.PREVIEW) {
                     addActivePageLink(tree, contents.previewLabel,
                             configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW));
                 } else {
                     addPreviewLink(tree);
+                }
+                if (documentedPage == PageMode.NEW) {
+                    Content link = DocPaths.NEW_LIST.equals(path)
+                            ? contents.newLabel
+                            : links.createLink(pathToRoot.resolve(DocPaths.NEW_LIST), contents.newLabel);
+                    addActivePageLink(tree, link,
+                            configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW));
+                } else {
+                    addNewLink(tree);
+                }
+                if (documentedPage == PageMode.DEPRECATED) {
+                    Content link = DocPaths.DEPRECATED_LIST.equals(path)
+                            ? contents.deprecatedLabel
+                            : links.createLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST), contents.deprecatedLabel);
+                    addActivePageLink(tree, link,
+                            configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED));
+                } else {
+                    addDeprecatedLink(tree);
                 }
                 if (documentedPage == PageMode.INDEX) {
                     addActivePageLink(tree, contents.indexLabel, options.createIndex());
@@ -322,8 +342,9 @@ public class Navigation {
                 addPageLabel(tree, contents.classLabel, true);
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
-                addDeprecatedLink(tree);
                 addPreviewLink(tree);
+                addNewLink(tree);
+                addDeprecatedLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -334,8 +355,9 @@ public class Navigation {
                 addPageLabel(tree, contents.classLabel, true);
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
-                addDeprecatedLink(tree);
                 addPreviewLink(tree);
+                addNewLink(tree);
+                addDeprecatedLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -874,6 +896,13 @@ public class Navigation {
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
             tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.PREVIEW_LIST),
                     contents.previewLabel, "")));
+        }
+    }
+
+    private void addNewLink(Content tree) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
+            tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.NEW_LIST),
+                    contents.newLabel, "")));
         }
     }
 

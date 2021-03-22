@@ -336,21 +336,30 @@ public class HelpWriter extends HtmlDocletWriter {
             pageKindsSection.add(section);
         }
 
-        // Deprecated
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
-            section = newHelpSection(contents.deprecatedAPI, PageMode.DEPRECATED, subTOC);
-            Content deprBody = getContent("doclet.help.deprecated.body",
-                    links.createLink(DocPaths.DEPRECATED_LIST, resources.getText("doclet.Deprecated_API")));
-            section.add(HtmlTree.P(deprBody));
-            pageKindsSection.add(section);
-        }
-
         // Preview
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
             section = newHelpSection(contents.previewAPI, PageMode.PREVIEW, subTOC);
             Content previewBody = getContent("doclet.help.preview.body",
                     links.createLink(DocPaths.PREVIEW_LIST, contents.previewAPI));
             section.add(HtmlTree.P(previewBody));
+            pageKindsSection.add(section);
+        }
+
+        // New
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
+            section = newHelpSection(contents.newAPI, PageMode.NEW, subTOC);
+            Content newBody = getContent("doclet.help.new.body",
+                    links.createLink(DocPaths.NEW_LIST, contents.newAPI));
+            section.add(HtmlTree.P(newBody));
+            pageKindsSection.add(section);
+        }
+
+        // Deprecated
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
+            section = newHelpSection(contents.deprecatedAPI, PageMode.DEPRECATED, subTOC);
+            Content deprBody = getContent("doclet.help.deprecated.body",
+                    links.createLink(DocPaths.DEPRECATED_LIST, resources.getText("doclet.Deprecated_API")));
+            section.add(HtmlTree.P(deprBody));
             pageKindsSection.add(section);
         }
 

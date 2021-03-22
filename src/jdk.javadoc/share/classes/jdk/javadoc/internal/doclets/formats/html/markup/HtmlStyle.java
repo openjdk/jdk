@@ -646,6 +646,11 @@ public enum HtmlStyle {
     deprecatedListPage,
 
     /**
+     * The class of the {@code body} element for the page listing any deprecated items.
+     */
+    deprecatedInReleasePage,
+
+    /**
      * The class of the {@code body} element for a "doc-file" page..
      */
     docFilePage,
@@ -676,6 +681,11 @@ public enum HtmlStyle {
     moduleIndexPage,
 
     /**
+     * The class of the {@code body} element for the page listing new API elements.
+     */
+    newApiListPage,
+
+    /**
      * The class of the {@code body} element for a package-declaration page.
      */
     packageDeclarationPage,
@@ -696,7 +706,7 @@ public enum HtmlStyle {
     packageUsePage,
 
     /**
-     * The class of the {@code body} element for the page listing any deprecated items.
+     * The class of the {@code body} element for the page listing preview items.
      */
     previewListPage,
 

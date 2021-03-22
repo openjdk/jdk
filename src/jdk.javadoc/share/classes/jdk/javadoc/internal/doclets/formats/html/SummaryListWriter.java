@@ -53,7 +53,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryEl
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
+public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
 
     private String getHeadingKey(SummaryElementKind kind) {
         return switch (kind) {
@@ -166,6 +166,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        addExtraPageLinks(apiSummary, div);
         Content headingContent = contents.contentsHeading;
         div.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                 headingContent));
@@ -208,7 +209,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
             TableHeader tableHeader = new TableHeader(
                     contents.getContent(headerKey), contents.descriptionLabel);
 
-            Content caption = contents.getContent(headingKey);
+            Content caption = getCaption(headingKey);
             Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(tableHeader)
@@ -243,7 +244,8 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
      * @param e the element for which the summary text should be added
      * @param desc the target to which the text should be added
      */
-    protected abstract void addComments(Element e, Content desc);
+    protected void addComments(Element e, Content desc) {
+    }
 
     protected Content getSummaryLink(Element e) {
         AbstractMemberWriter writer = switch (e.getKind()) {
@@ -276,5 +278,18 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
      * @param target the target content to which the link should be added
      */
     protected void addExtraIndexLink(L list, Content target) {
+    }
+
+    /**
+     * Add optional links to other pages.
+     *
+     * @param list the element list
+     * @param target the target content to which the link should be added
+     */
+    protected void addExtraPageLinks(L list, Content target) {
+    }
+
+    protected Content getCaption(String headingKey) {
+        return contents.getContent(headingKey);
     }
 }

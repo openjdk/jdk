@@ -48,6 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
@@ -168,18 +169,25 @@ public class HtmlDoclet extends AbstractDoclet {
 
     @Override // defined by AbstractDoclet
     public void generateClassFiles(ClassTree classTree) throws DocletException {
-
+        List<String> summaries = configuration.getOptions().summaryForRelease();
         if (!(configuration.getOptions().noDeprecated()
                 || configuration.getOptions().noDeprecatedList())) {
-            DeprecatedAPIListBuilder builder = new DeprecatedAPIListBuilder(configuration);
-            if (!builder.isEmpty()) {
-                configuration.deprecatedAPIListBuilder = builder;
+            DeprecatedAPIListBuilder deprecatedBuilder = new DeprecatedAPIListBuilder(configuration, summaries);
+            if (!deprecatedBuilder.isEmpty()) {
+                configuration.deprecatedAPIListBuilder = deprecatedBuilder;
                 configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
             }
         }
-        PreviewAPIListBuilder builder = new PreviewAPIListBuilder(configuration);
-        if (!builder.isEmpty()) {
-            configuration.previewAPIListBuilder = builder;
+        if (!summaries.isEmpty()) {
+            NewAPIBuilder newAPIBuilder = new NewAPIBuilder(configuration, summaries);
+            if (!newAPIBuilder.isEmpty()) {
+                configuration.newAPIPageBuilder = newAPIBuilder;
+                configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.NEW);
+            }
+        }
+        PreviewAPIListBuilder previewBuilder = new PreviewAPIListBuilder(configuration);
+        if (!previewBuilder.isEmpty()) {
+            configuration.previewAPIListBuilder = previewBuilder;
             configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.PREVIEW);
         }
 
@@ -232,6 +240,10 @@ public class HtmlDoclet extends AbstractDoclet {
 
         if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.PREVIEW))) {
             PreviewListWriter.generate(configuration);
+        }
+
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.NEW))) {
+            NewAPIListWriter.generate(configuration);
         }
 
         if (options.createOverview()) {

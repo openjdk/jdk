@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,34 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.util.*;
-
-import javax.lang.model.element.Element;
-
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
+import javax.lang.model.element.Element;
+import java.util.ArrayList;
+import java.util.List;
+
+
+import static com.sun.source.doctree.DocTree.Kind.SINCE;
+
 /**
- * Build list of all the deprecated packages, classes, constructors, fields and methods.
+ * Build list of all the packages, classes, constructors, fields and methods
+ * that were added in the current release. This class is only used when documenting
+ * the platform library code, since that is the only time we know the version of
+ * the code. To enable testing, the feature can also be activated by setting a system
+ * property.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
+public class NewAPIBuilder {
 
-    private SortedSet<Element> forRemoval;
     public final List<PerReleaseBuilder> releases = new ArrayList<>();
 
-    /**
-     * Constructor.
-     *
-     * @param configuration the current configuration of the doclet
-     */
-    public DeprecatedAPIListBuilder(BaseConfiguration configuration, List<String> summaries) {
-        super(configuration, configuration.utils::isDeprecated);
-        buildSummaryAPIInfo();
-        summaries.forEach(release -> {
+    public NewAPIBuilder(BaseConfiguration configuration, List<String> newSince) {
+        newSince.forEach(release -> {
             PerReleaseBuilder builder = new PerReleaseBuilder(configuration, release);
             if (!builder.isEmpty()) {
                 releases.add(builder);
@@ -60,25 +60,14 @@ public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
         });
     }
 
-    public SortedSet<Element> getForRemoval() {
-        if (forRemoval == null) {
-            forRemoval = createSummarySet();
-        }
-        return forRemoval;
-    }
-
-    @Override
-    protected void handleElement(Element e) {
-        if (utils.isDeprecatedForRemoval(e)) {
-            getForRemoval().add(e);
-        }
+    public boolean isEmpty() {
+        // Builders in the list are guaranteed to be non-empty
+        return releases.isEmpty();
     }
 
     public static class PerReleaseBuilder extends SummaryAPIListBuilder {
 
         public final String release;
-        private SortedSet<Element> forRemoval;
-
 
         /**
          * Constructor.
@@ -87,33 +76,22 @@ public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
          * @param release single release id to document new APIs for
          */
         public PerReleaseBuilder(BaseConfiguration configuration, String release) {
-            super(configuration, e -> isDeprecatedSince(e, release));
+            super(configuration, e -> isNewAPI(e, release, configuration.utils));
             this.release = release;
             buildSummaryAPIInfo();
         }
 
-        private static boolean isDeprecatedSince(Element e, String release) {
-            Deprecated[] depr = e.getAnnotationsByType(Deprecated.class);
-            if (depr != null && depr.length > 0) {
-                return release.equals(depr[0].since());
+        private static boolean isNewAPI(Element e, String release, Utils utils) {
+            if (!utils.hasDocCommentTree(e)) {
+                return false;
             }
-            return false;
-        }
-
-        public SortedSet<Element> getForRemoval() {
-            if (forRemoval == null) {
-                forRemoval = createSummarySet();
+            List<? extends DocTree> since = utils.getBlockTags(e, SINCE);
+            if (since.isEmpty()) {
+                return false;
             }
-            return forRemoval;
-        }
-
-        @Override
-        protected void handleElement(Element e) {
-            if (isDeprecatedSince(e, release) && utils.isDeprecatedForRemoval(e)) {
-                getForRemoval().add(e);
-            }
+            CommentHelper ch = utils.getCommentHelper(e);
+            return since.stream().anyMatch(tree -> release.equals(ch.getBody(tree).toString()));
         }
 
     }
-
 }

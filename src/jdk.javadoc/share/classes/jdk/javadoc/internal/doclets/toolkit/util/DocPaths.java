@@ -64,6 +64,15 @@ public class DocPaths {
     /** The name of the file for deprecated elements. */
     public static final DocPath DEPRECATED_LIST = DocPath.create("deprecated-list.html");
 
+    /**
+     * Generate the name of one of the files in the per-release deprecated API list.
+     * @param release the id of the release
+     * @return the path
+     */
+    public static DocPath deprecatedInRelease(String release) {
+        return DocPath.create("deprecated-list-" + release + ".html");
+    }
+
     /** The name of the subdirectory for user-provided additional documentation files. */
     public static final DocPath DOC_FILES = DocPath.create("doc-files");
 
@@ -141,6 +150,18 @@ public class DocPaths {
 
     /** The name of the fie for preview elements. */
     public static final DocPath PREVIEW_LIST = DocPath.create("preview-list.html");
+
+    /** The name of the fie for new elements. */
+    public static final DocPath NEW_LIST = DocPath.create("new-list.html");
+
+    /**
+     * Generate the name of one of the files in the multi-release new API list.
+     * @param release the id of the release
+     * @return the path
+     */
+    public static DocPath newInRelease(String release) {
+        return DocPath.create("new-list-" + release + ".html");
+    }
 
     /** The name of the file for all system properties. */
     public static final DocPath SYSTEM_PROPERTIES = DocPath.create("system-properties.html");

@@ -176,6 +176,12 @@ public abstract class BaseOptions {
     private boolean linkSource = false;
 
     /**
+     * Argument for command line option {@code --summary-for-release}.
+     */
+    // A list containing release names
+    private final List<String> summaryForRelease = new ArrayList<>();
+
+    /**
      * Argument for command-line option {@code -nocomment}.
      * True if user wants to suppress descriptions and tags.
      */
@@ -388,6 +394,14 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         linkPlatformProperties = args.get(0);
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--summary-for-release", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        summaryForRelease.addAll(Arrays.asList(args.get(0).split("\\s*,\\s*")));
                         return true;
                     }
                 },
@@ -797,6 +811,13 @@ public abstract class BaseOptions {
      */
     public boolean linkSource() {
         return linkSource;
+    }
+
+    /**
+     * Arguments for command line option {@code --summary-for-release}.
+     */
+    public List<String> summaryForRelease() {
+        return summaryForRelease;
     }
 
     /**

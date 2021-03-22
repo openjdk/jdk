@@ -75,8 +75,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
             DocPath filename = DocPaths.PREVIEW_LIST;
             PreviewListWriter depr = new PreviewListWriter(configuration, filename);
-            depr.generateSummaryListFile(
-                   new PreviewAPIListBuilder(configuration));
+            depr.generateSummaryListFile(configuration.previewAPIListBuilder);
         }
     }
 

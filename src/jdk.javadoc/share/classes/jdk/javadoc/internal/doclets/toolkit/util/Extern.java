@@ -333,12 +333,8 @@ public class Extern {
      * Return the source version number used in the current execution of javadoc.
      * @return the source version number
      */
-    private int getSourceVersionNumber() {
-        SourceVersion sourceVersion = configuration.docEnv.getSourceVersion();
-        // TODO it would be nice if this was provided by SourceVersion
-        String versionNumber = sourceVersion.name().substring(8);
-        assert SourceVersion.valueOf("RELEASE_" + versionNumber) == sourceVersion;
-        return Integer.parseInt(versionNumber);
+    public int getSourceVersionNumber() {
+        return configuration.docEnv.getSourceVersion().ordinal();
     }
 
     /**

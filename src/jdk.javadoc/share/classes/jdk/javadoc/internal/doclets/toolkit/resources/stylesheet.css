@@ -378,7 +378,9 @@ ul.summary-list > li {
     border: none;
     height:16px;
 }
-
+div.table-tabs {
+    padding-top: 10px;
+}
 div.table-tabs > button {
    border: none;
    cursor: pointer;
