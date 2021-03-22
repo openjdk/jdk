@@ -93,6 +93,7 @@ static ArchivableStaticFieldInfo closed_archive_subgraph_entry_fields[] = {
 static ArchivableStaticFieldInfo open_archive_subgraph_entry_fields[] = {
   {"jdk/internal/module/ArchivedModuleGraph",     "archivedModuleGraph"},
   {"java/util/ImmutableCollections",              "archivedObjects"},
+  {"java/lang/ModuleLayer",                       "EMPTY_LAYER"},
   {"java/lang/module/Configuration",              "EMPTY_CONFIGURATION"},
   {"jdk/internal/math/FDBigInteger",              "archivedCaches"},
 };

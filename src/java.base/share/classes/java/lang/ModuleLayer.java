@@ -48,6 +48,8 @@ import jdk.internal.loader.ClassLoaderValue;
 import jdk.internal.loader.Loader;
 import jdk.internal.loader.LoaderPool;
 import jdk.internal.module.ServicesCatalog;
+import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.Stable;
 import sun.security.util.SecurityConstants;
 
 
@@ -147,9 +149,17 @@ import sun.security.util.SecurityConstants;
 
 public final class ModuleLayer {
 
-    // the empty layer
-    private static final ModuleLayer EMPTY_LAYER
-        = new ModuleLayer(Configuration.empty(), List.of(), null);
+    // the empty layer (may be initialized from the CDS archive)
+    private static @Stable ModuleLayer EMPTY_LAYER;
+
+    static {
+	// Initialize EMPTY_LAYER from the archive.
+        CDS.initializeFromArchive(ModuleLayer.class);
+        if (EMPTY_LAYER == null) {
+            // create a new empty layer if there is no archived version.
+            EMPTY_LAYER = new ModuleLayer(Configuration.empty(), List.of(), null);
+        }
+    }
 
     // the configuration from which this layer was created
     private final Configuration cf;
