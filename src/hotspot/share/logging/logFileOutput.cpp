@@ -333,7 +333,7 @@ int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
     return 0;
   }
 
-  assert(!AsyncLogging, "AsyncLogging is not supported yet");
+  assert(!_async_mode, "AsyncLogging is not supported yet");
   _rotation_semaphore.wait();
   int written = LogFileStreamOutput::write(msg_iterator);
   if (written > 0) {
