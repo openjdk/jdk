@@ -30,15 +30,8 @@
 #include "runtime/handles.hpp"
 #include "utilities/tableStatistics.hpp"
 
-// This is a generic hashtable, designed to be used for the symbol
-// and string tables.
-//
-// It is implemented as an open hash table with a fixed number of buckets.
-//
-// %note:
-//  - TableEntrys are allocated in blocks to reduce the space overhead.
-
-
+// This is a generic hashtable which is implemented as an open hash table with
+// a fixed number of buckets.
 
 template <MEMFLAGS F> class BasicHashtableEntry {
   friend class VMStructs;
@@ -79,7 +72,7 @@ private:
   T               _literal;          // ref to item in table.
 
 public:
-  HashtableEntry(unsigned int hashValue) : BasicHashtableEntry<F>(hashValue) {}
+  HashtableEntry(unsigned int hashValue, T value) : BasicHashtableEntry<F>(hashValue), _literal(value) {}
 
   // Literal
   T literal() const                   { return _literal; }

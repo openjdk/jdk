@@ -51,22 +51,13 @@
 template <MEMFLAGS F> BasicHashtableEntry<F>* BasicHashtable<F>::new_entry(unsigned int hashValue) {
   BasicHashtableEntry<F>* entry = ::new (NEW_C_HEAP_ARRAY(char, this->entry_size(), F))
                                         BasicHashtableEntry<F>(hashValue);
-  assert(_entry_size % HeapWordSize == 0, "");
   return entry;
 }
 
 
 template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::new_entry(unsigned int hashValue, T obj) {
   HashtableEntry<T, F>* entry = ::new (NEW_C_HEAP_ARRAY(char, this->entry_size(), F))
-                                      HashtableEntry<T, F>(hashValue);
-
-  if (DumpSharedSpaces) {
-    // Avoid random bits in structure padding so we can have deterministic content in CDS archive
-    memset((void*)entry, 0, this->entry_size());
-  }
-  entry->set_hash(hashValue);
-  entry->set_literal(obj);
-  entry->set_next(NULL);
+                                      HashtableEntry<T, F>(hashValue, obj);
   return entry;
 }
 
