@@ -429,18 +429,18 @@ class VM_RedefineClasses: public VM_Operation {
 
   // Increment the classRedefinedCount field in the specific InstanceKlass
   // and in all direct and indirect subclasses.
-  void increment_class_counter(InstanceKlass *ik, TRAPS);
+  void increment_class_counter(InstanceKlass *ik);
 
   // Support for constant pool merging (these routines are in alpha order):
   void append_entry(const constantPoolHandle& scratch_cp, int scratch_i,
-    constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS);
+    constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   void append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
-    constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS);
+    constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   void finalize_operands_merge(const constantPoolHandle& merge_cp, TRAPS);
   int find_or_append_indirect_entry(const constantPoolHandle& scratch_cp, int scratch_i,
-    constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS);
+    constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   int find_or_append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
-    constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS);
+    constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   int find_new_index(int old_index);
   int find_new_operand_index(int old_bootstrap_spec_index);
   bool is_unresolved_class_mismatch(const constantPoolHandle& cp1, int index1,
@@ -454,51 +454,46 @@ class VM_RedefineClasses: public VM_Operation {
     InstanceKlass* scratch_class, TRAPS);
   u2 rewrite_cp_ref_in_annotation_data(
     AnnotationArray* annotations_typeArray, int &byte_i_ref,
-    const char * trace_mesg, TRAPS);
+    const char * trace_mesg);
   bool rewrite_cp_refs(InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_annotation_struct(
-    AnnotationArray* class_annotations, int &byte_i_ref, TRAPS);
+    AnnotationArray* class_annotations, int &byte_i_ref);
   bool rewrite_cp_refs_in_annotations_typeArray(
-    AnnotationArray* annotations_typeArray, int &byte_i_ref, TRAPS);
-  bool rewrite_cp_refs_in_class_annotations(
-    InstanceKlass* scratch_class, TRAPS);
+    AnnotationArray* annotations_typeArray, int &byte_i_ref);
+  bool rewrite_cp_refs_in_class_annotations(InstanceKlass* scratch_class);
   bool rewrite_cp_refs_in_element_value(
-    AnnotationArray* class_annotations, int &byte_i_ref, TRAPS);
+    AnnotationArray* class_annotations, int &byte_i_ref);
   bool rewrite_cp_refs_in_type_annotations_typeArray(
     AnnotationArray* type_annotations_typeArray, int &byte_i_ref,
-    const char * location_mesg, TRAPS);
+    const char * location_mesg);
   bool rewrite_cp_refs_in_type_annotation_struct(
     AnnotationArray* type_annotations_typeArray, int &byte_i_ref,
-    const char * location_mesg, TRAPS);
+    const char * location_mesg);
   bool skip_type_annotation_target(
     AnnotationArray* type_annotations_typeArray, int &byte_i_ref,
-    const char * location_mesg, TRAPS);
+    const char * location_mesg);
   bool skip_type_annotation_type_path(
-    AnnotationArray* type_annotations_typeArray, int &byte_i_ref, TRAPS);
-  bool rewrite_cp_refs_in_fields_annotations(
-    InstanceKlass* scratch_class, TRAPS);
+    AnnotationArray* type_annotations_typeArray, int &byte_i_ref);
+  bool rewrite_cp_refs_in_fields_annotations(InstanceKlass* scratch_class);
   bool rewrite_cp_refs_in_nest_attributes(InstanceKlass* scratch_class);
-  bool rewrite_cp_refs_in_record_attribute(InstanceKlass* scratch_class, TRAPS);
+  bool rewrite_cp_refs_in_record_attribute(InstanceKlass* scratch_class);
   bool rewrite_cp_refs_in_permitted_subclasses_attribute(InstanceKlass* scratch_class);
+
   void rewrite_cp_refs_in_method(methodHandle method,
     methodHandle * new_method_p, TRAPS);
   bool rewrite_cp_refs_in_methods(InstanceKlass* scratch_class, TRAPS);
-  bool rewrite_cp_refs_in_methods_annotations(
-    InstanceKlass* scratch_class, TRAPS);
-  bool rewrite_cp_refs_in_methods_default_annotations(
-    InstanceKlass* scratch_class, TRAPS);
-  bool rewrite_cp_refs_in_methods_parameter_annotations(
-    InstanceKlass* scratch_class, TRAPS);
-  bool rewrite_cp_refs_in_class_type_annotations(
-    InstanceKlass* scratch_class, TRAPS);
-  bool rewrite_cp_refs_in_fields_type_annotations(
-    InstanceKlass* scratch_class, TRAPS);
-  bool rewrite_cp_refs_in_methods_type_annotations(
-    InstanceKlass* scratch_class, TRAPS);
-  void rewrite_cp_refs_in_stack_map_table(const methodHandle& method, TRAPS);
+
+  bool rewrite_cp_refs_in_methods_annotations(InstanceKlass* scratch_class);
+  bool rewrite_cp_refs_in_methods_default_annotations(InstanceKlass* scratch_class);
+  bool rewrite_cp_refs_in_methods_parameter_annotations(InstanceKlass* scratch_class);
+  bool rewrite_cp_refs_in_class_type_annotations(InstanceKlass* scratch_class);
+  bool rewrite_cp_refs_in_fields_type_annotations(InstanceKlass* scratch_class);
+  bool rewrite_cp_refs_in_methods_type_annotations(InstanceKlass* scratch_class);
+
+  void rewrite_cp_refs_in_stack_map_table(const methodHandle& method);
   void rewrite_cp_refs_in_verification_type_info(
          address& stackmap_addr_ref, address stackmap_end, u2 frame_i,
-         u1 frame_size, TRAPS);
+         u1 frame_size);
   void set_new_constant_pool(ClassLoaderData* loader_data,
          InstanceKlass* scratch_class,
          constantPoolHandle scratch_cp, int scratch_cp_length, TRAPS);
