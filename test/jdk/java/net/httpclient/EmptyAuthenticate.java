@@ -48,7 +48,8 @@ public class EmptyAuthenticate {
         port = server.getAddress().getPort();
         server.createContext("/", exchange -> {
             String response = "test body";
-            exchange.getResponseHeaders().add("www-authenticate", ""); //this empty header will make the HttpClient crash
+            //this empty header will make the HttpClient throw NPE
+            exchange.getResponseHeaders().add("www-authenticate", ""); 
             exchange.sendResponseHeaders(401, response.length());
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
