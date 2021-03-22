@@ -26,14 +26,16 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.Authenticator;
 import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.channels.*;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @test
@@ -64,20 +66,107 @@ public class AuthFilter {
     }
 
     public static void main(String[] args) throws Exception {
+        test(false);
+        test(true);
+    }
+
+    /**
+     *  Fake proxy. Just looks for Proxy-Authorization header
+     *  and returns error if seen. Returns 200 OK if not.
+     *  Does not actually forward the request
+     */
+    static class ProxyServer extends Thread {
+
+        final ServerSocketChannel server;
+        final int port;
+        volatile SocketChannel c;
+
+        ProxyServer() throws IOException {
+            server = ServerSocketChannel.open();
+            server.bind(new InetSocketAddress(0));
+            if (server.getLocalAddress() instanceof InetSocketAddress isa) {
+                port = isa.getPort();
+            } else {
+                port = -1;
+            }
+        }
+
+        int getPort() {
+            return port;
+        }
+
+        static String ok = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+        static String notok1 = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+        static String notok2 = "HTTP/1.1 501 Not Implemented\r\nContent-Length: 0\r\n\r\n";
+
+        static void reply(String msg, Writer writer) throws IOException {
+            writer.write(msg);
+            writer.flush();
+        }
+
+        public void run() {
+            try {
+                c = server.accept();
+                var cs = StandardCharsets.US_ASCII;
+                LineNumberReader reader = new LineNumberReader(Channels.newReader(c, cs));
+                Writer writer = Channels.newWriter(c, cs);
+
+                String line;
+                while ((line=reader.readLine()) != null) {
+                    if (line.indexOf("Proxy-Authorization") != -1) {
+                        reply(notok1, writer);
+                        return;
+                    }
+                    if (line.equals("")) {
+                        // end of headers
+                        reply(ok, writer);
+                        return;
+                    }
+                }
+                reply(notok2, writer);
+            } catch (IOException e) {
+            }
+            try {
+                server.close();
+                c.close();
+            } catch (IOException ee) {}
+        }
+    }
+
+    public static void test(boolean useProxy) throws Exception {
         HttpServer server = createServer();
         int port = server.getAddress().getPort();
+        ProxyServer proxy;
+
+        InetSocketAddress proxyAddr=null;
+        String authHdr;
+        if (useProxy) {
+            proxy = new ProxyServer();
+            proxyAddr = new InetSocketAddress("127.0.0.1", proxy.getPort());
+            proxy.start();
+            authHdr = "Proxy-Authorization";
+        } else {
+            authHdr = "Authorization";
+        }
+
         server.start();
 
-        HttpClient client = HttpClient.newBuilder()
-                .authenticator(new Auth())
-                .build();
+        HttpClient.Builder builder = HttpClient
+                .newBuilder()
+                .authenticator(new Auth());
+
+        if (useProxy) {
+            builder.proxy(ProxySelector.of(proxyAddr));
+        }
+        HttpClient client = builder.build();
 
         URI uri = new URI("http://127.0.0.1:" + Integer.toString(port));
 
         HttpRequest request = HttpRequest.newBuilder(uri)
-                .header("Authorization", "nonsense")
+                .header(authHdr, "nonsense")
                 .GET()
                 .build();
+
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         int r = response.statusCode();
         System.out.println(r);
