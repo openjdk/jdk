@@ -31,16 +31,13 @@
  * @run main MismatchedPathTriggerMemoryRelease
  */
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class MismatchedPathTriggerMemoryRelease {
     private static String ERR_MSGS[] = {
         "UseSharedSpaces: shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)",
         "UseSharedSpaces: Unable to map shared spaces"};
-    private static String RELEASE_SPACE_MATCH = Platform.is64bit() ?
-        "Released shared space\\s(\\(archive\\s*\\+\\s*class\\) | ?)0(x|X)[0-9a-fA-F]+$" :
-        "Released shared space\\s(\\(archive\\s*\\) | ?)0(x|X)[0-9a-fA-F]+$";
+    private static String RELEASE_SPACE_MATCH = "Released shared space .* 0(x|X)[0-9a-fA-F]+$";
     private static String OS_RELEASE_MSG = "os::release_memory failed";
 
     public static void main(String[] args) throws Exception {
