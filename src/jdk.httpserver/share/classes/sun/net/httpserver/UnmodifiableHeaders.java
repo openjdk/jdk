@@ -83,19 +83,13 @@ public class UnmodifiableHeaders extends Headers {
             throw new UnsupportedOperationException ("unsupported operation");
         }
 
-        public Set<String> keySet() {
-            return Collections.unmodifiableSet(map.keySet());
-        }
+        public Set<String> keySet() { return map.keySet(); }
 
-        public Collection<List<String>> values() {
-            return Collections.unmodifiableCollection(map.values());
-        }
+        public Collection<List<String>> values() { return map.values(); }
 
         /* TODO check that contents of set are not modifable : security */
 
-        public Set<Map.Entry<String, List<String>>> entrySet() {
-            return Collections.unmodifiableSet(map.entrySet());
-        }
+        public Set<Map.Entry<String, List<String>>> entrySet() { return map.entrySet(); }
 
         public List<String> replace(String key, List<String> value) {
             throw new UnsupportedOperationException("unsupported operation");
