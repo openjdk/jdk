@@ -290,7 +290,7 @@ DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
   for (DictionaryEntry* entry = bucket(index);
                         entry != NULL;
                         entry = entry->next()) {
-    if (entry->hash() == hash && entry->equals(class_name)) {
+    if (entry->hash() == hash && entry->instance_klass()->name() == class_name) {
       return entry;
     }
   }

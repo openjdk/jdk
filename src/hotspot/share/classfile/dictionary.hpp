@@ -144,10 +144,6 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   // Adds a protection domain to the approved set.
   void add_protection_domain(Dictionary* dict, Handle protection_domain);
 
-  // Tells whether the initiating class' protection domain can access the klass in this entry
-  inline bool is_valid_protection_domain(Handle protection_domain);
-  void verify_protection_domain_set();
-
   InstanceKlass* instance_klass() const { return literal(); }
   InstanceKlass** klass_addr() { return (InstanceKlass**)literal_addr(); }
 
@@ -162,10 +158,9 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   ProtectionDomainEntry* pd_set() const            { return _pd_set; }
   void set_pd_set(ProtectionDomainEntry* new_head) {  _pd_set = new_head; }
 
-  bool equals(const Symbol* class_name) const {
-    InstanceKlass* klass = (InstanceKlass*)literal();
-    return (klass->name() == class_name);
-  }
+  // Tells whether the initiating class' protection domain can access the klass in this entry
+  inline bool is_valid_protection_domain(Handle protection_domain);
+  void verify_protection_domain_set();
 
   void print_count(outputStream *st);
   void verify();
