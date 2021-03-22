@@ -229,7 +229,7 @@ void ContiguousSpaceDCTOC::walk_mem_region_with_cl(MemRegion mr,        \
       next_obj = bottom + cast_to_oop(bottom)->size();                  \
     }                                                                   \
     /* Last object. */                                                  \
-		cast_to_oop(bottom)->oop_iterate(cl, mr);                           \
+    cast_to_oop(bottom)->oop_iterate(cl, mr);                           \
   }                                                                     \
 }
 
