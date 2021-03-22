@@ -48,7 +48,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -216,13 +215,11 @@ public final class Utils {
         DAY("d", TimeUnit.DAYS, 1, TimeUnit.DAYS.toMillis(1));
 
         private final String text;
-        private final TimeUnit timeUnit;
         private final long factor;
         private final long millis;
 
         ThrottleUnit(String t, TimeUnit u, long factor, long millis) {
             this.text = t;
-            this.timeUnit = u;
             this.factor = factor;
             this.millis = millis;
         }
@@ -647,16 +644,6 @@ public final class Utils {
             throw new IllegalArgumentException("Only primitive types, java.lang.Thread, java.lang.String and java.lang.Class are allowed for value descriptors. " + type.getName());
         }
         return knownType;
-    }
-
-    public static <T> List<T> smallUnmodifiable(List<T> list) {
-        if (list.isEmpty()) {
-            return Collections.emptyList();
-        }
-        if (list.size() == 1) {
-            return Collections.singletonList(list.get(0));
-        }
-        return Collections.unmodifiableList(list);
     }
 
     public static String upgradeLegacyJDKEvent(String eventName) {

@@ -54,7 +54,6 @@ import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.WriteableUserPath;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.consumer.FileAccess;
-import jdk.jfr.internal.consumer.JdkJfrConsumer;
 import jdk.jfr.internal.instrument.JDKEvents;
 
 /**

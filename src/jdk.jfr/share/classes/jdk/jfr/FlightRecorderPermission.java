@@ -109,17 +109,17 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
 
         @Override
         public Type getType(Object o) {
-            if (o instanceof AnnotationElement) {
-                return ((AnnotationElement) o).getType();
+            if (o instanceof AnnotationElement ae) {
+                return ae.getType();
             }
-            if (o instanceof EventType) {
-                return ((EventType) o).getType();
+            if (o instanceof EventType et) {
+                return et.getType();
             }
-            if (o instanceof ValueDescriptor) {
-                return ((ValueDescriptor) o).getType();
+            if (o instanceof ValueDescriptor vd) {
+                return vd.getType();
             }
-            if (o instanceof SettingDescriptor) {
-                return ((SettingDescriptor) o).getType();
+            if (o instanceof SettingDescriptor sd) {
+                return sd.getType();
             }
             throw new Error("Unknown type " + o.getClass());
         }

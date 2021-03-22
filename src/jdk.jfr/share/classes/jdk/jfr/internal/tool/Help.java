@@ -42,6 +42,7 @@ final class Help extends Command {
         return Collections.singletonList("[<command>]");
     }
 
+    @Override
     protected List<String> getAliases() {
         return List.of("--help", "-h", "-?");
     }

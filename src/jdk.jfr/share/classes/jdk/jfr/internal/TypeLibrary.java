@@ -26,7 +26,6 @@
 package jdk.jfr.internal;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Field;
@@ -58,7 +57,6 @@ import jdk.jfr.SettingDescriptor;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.internal.tool.PrettyWriter;
 
 public final class TypeLibrary {
 
@@ -419,8 +417,8 @@ public final class TypeLibrary {
         Logger.log(LogTag.JFR_METADATA, LogLevel.TRACE, "Cleaning out obsolete metadata");
         List<Type> registered = new ArrayList<>();
         for (Type type : types.values()) {
-            if (type instanceof PlatformEventType) {
-                if (((PlatformEventType) type).isRegistered()) {
+            if (type instanceof PlatformEventType pType) {
+                if (pType.isRegistered()) {
                     registered.add(type);
                 }
             }
@@ -472,8 +470,7 @@ public final class TypeLibrary {
                     typeQ.add(PrivateAccess.getInstance().getType(v));
                     visitAnnotations(typeQ, v.getAnnotationElements());
                 }
-                if (type instanceof PlatformEventType) {
-                    PlatformEventType pe = (PlatformEventType) type;
+                if (type instanceof PlatformEventType pe) {
                     for (SettingDescriptor s : pe.getAllSettings()) {
                         typeQ.add(PrivateAccess.getInstance().getType(s));
                         visitAnnotations(typeQ, s.getAnnotationElements());
