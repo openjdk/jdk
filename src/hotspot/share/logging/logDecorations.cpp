@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,21 @@ void LogDecorations::create_decorations(const LogDecorators &decorators) {
   }
   DECORATOR_LIST
 #undef DECORATOR
+
+  assert(get_decorators() == decorators, "insanity check");
+}
+
+LogDecorators LogDecorations::get_decorators() const {
+  LogDecorators decorators(LogDecorators::None);
+
+#define DECORATOR(full_name, abbr)                                        \
+  if (_decoration_offset[LogDecorators::full_name##_decorator] != NULL) { \
+    decorators.combine_with(LogDecorators::full_name##_decorator);        \
+  }
+  DECORATOR_LIST
+#undef DECORATOR
+
+  return decorators;
 }
 
 #define ASSERT_AND_RETURN(written, pos) \

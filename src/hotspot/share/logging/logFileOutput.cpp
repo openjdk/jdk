@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "logging/logAsyncFlusher.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/allocation.inline.hpp"
@@ -284,12 +285,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   return true;
 }
 
-int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
-  if (_stream == NULL) {
-    // An error has occurred with this output, avoid writing to it.
-    return 0;
-  }
-
+int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
   _rotation_semaphore.wait();
   int written = LogFileStreamOutput::write(decorations, msg);
   if (written > 0) {
@@ -304,12 +300,28 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
   return written;
 }
 
+int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
+  if (_stream == NULL) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
+  if (AsyncLogging && flusher != NULL) {
+    flusher->enqueue(*this, decorations, msg);
+    return 0;
+  }
+
+  return write_blocking(decorations, msg);
+}
+
 int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
   if (_stream == NULL) {
     // An error has occurred with this output, avoid writing to it.
     return 0;
   }
 
+  assert(!AsyncLogging, "AsyncLogging is not supported yet");
   _rotation_semaphore.wait();
   int written = LogFileStreamOutput::write(msg_iterator);
   if (written > 0) {

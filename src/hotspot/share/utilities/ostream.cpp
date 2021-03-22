@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "classfile/classListWriter.hpp"
 #include "compiler/compileLog.hpp"
+#include "logging/logAsyncFlusher.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
@@ -957,6 +958,7 @@ void ostream_exit() {
   if (ostream_exit_called)  return;
   ostream_exit_called = true;
   ClassListWriter::delete_classlist();
+  LogAsyncFlusher::cleanup();
   if (tty != defaultStream::instance) {
     delete tty;
   }
@@ -970,6 +972,11 @@ void ostream_exit() {
 
 // ostream_abort() is called by os::abort() when VM is about to die.
 void ostream_abort() {
+  LogAsyncFlusher* async = LogAsyncFlusher::instance();
+  if (async != NULL) {
+    async->flush();
+  }
+
   // Here we can't delete tty, just flush its output
   if (tty) tty->flush();
 

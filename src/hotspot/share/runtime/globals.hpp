@@ -2027,6 +2027,16 @@ const intx ObjectAlignmentInBytes = 8;
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
+  product(intx, LogAsyncInterval, 300,                                      \
+          "Milliseconds between asynchronous log flushing")                 \
+                                                                            \
+  product(bool, AsyncLogging, false,                                        \
+          "Enble asynchronous GC logging")                                  \
+                                                                            \
+  product(size_t, GCLogBufferSize, 2*K,                                     \
+          "Entries of ringbuffer for GC log writing")                       \
+          range(100, 100*K)                                                 \
+                                                                            \
   product(bool, CheckIntrinsics, true, DIAGNOSTIC,                          \
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\

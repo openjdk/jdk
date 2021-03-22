@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,20 @@ class LogDecorations {
     _level = level;
   }
 
+  LogLevelType get_level() const { return _level; }
+
+  const LogTagSet& get_logTagSet() const {
+    return _tagset;
+  }
+
   const char* decoration(LogDecorators::Decorator decorator) const {
     if (decorator == LogDecorators::level_decorator) {
       return LogLevel::name(_level);
     }
     return _decoration_offset[decorator];
   }
+
+  LogDecorators get_decorators() const;
 };
 
 #endif // SHARE_LOGGING_LOGDECORATIONS_HPP
