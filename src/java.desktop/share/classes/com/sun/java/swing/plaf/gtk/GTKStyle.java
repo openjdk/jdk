@@ -166,8 +166,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
                 id == Region.TABBED_PANE_TAB ||
                 id == Region.TOGGLE_BUTTON ||
                 id == Region.TOOL_TIP ||
-                id == Region.MENU_ITEM_ACCELERATOR ||
-                id == Region.TABBED_PANE_TAB)) {
+                id == Region.MENU_ITEM_ACCELERATOR)) {
             type = ColorType.FOREGROUND;
         } else if (id == Region.TABLE ||
                    id == Region.LIST ||

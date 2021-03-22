@@ -249,7 +249,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                 region == Region.SPINNER ||
                 region == Region.TABLE ||
                 region == Region.TEXT_AREA ||
-                region == Region.TEXT_FIELD ||
                 region == Region.TEXT_PANE ||
                 region == Region.TREE);
     }
