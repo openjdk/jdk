@@ -47,9 +47,9 @@
 
 
 /*
- * Class:	MyMacCanvas
- * Method:	paint
- * SIgnature:	(Ljava/awt/Graphics;)V
+ * Class:        MyMacCanvas
+ * Method:       paint
+ * SIgnature:    (Ljava/awt/Graphics;)V
  */
 JNIEXPORT void JNICALL Java_MyMacCanvas_addNativeCoreAnimationLayer
 (JNIEnv* env, jobject canvas, jobject graphics)
