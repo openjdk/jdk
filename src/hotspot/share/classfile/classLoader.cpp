@@ -237,12 +237,11 @@ const char* ClassPathEntry::copy_path(const char* path) {
   return copy;
 }
 
-ClassFileStream* ClassPathDirEntry::open_stream(const char* name) {
+ClassFileStream* ClassPathDirEntry::open_stream(Thread* current, const char* name) {
   // construct full path name
   assert((_dir != NULL) && (name != NULL), "sanity");
   size_t path_len = strlen(_dir) + strlen(name) + strlen(os::file_separator()) + 1;
-  Thread* thread = Thread::current();
-  char* path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, path_len);
+  char* path = NEW_RESOURCE_ARRAY_IN_THREAD(current, char, path_len);
   int len = jio_snprintf(path, path_len, "%s%s%s", _dir, os::file_separator(), name);
   assert(len == (int)(path_len - 1), "sanity");
   // check if file exists
@@ -286,9 +285,9 @@ ClassPathZipEntry::~ClassPathZipEntry() {
   FREE_C_HEAP_ARRAY(char, _zip_name);
 }
 
-u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_terminate) {
+u1* ClassPathZipEntry::open_entry(Thread* current, const char* name, jint* filesize, bool nul_terminate) {
     // enable call to C land
-  JavaThread* thread = JavaThread::current();
+  JavaThread* thread = current->as_Java_thread();
   ThreadToNativeFromVM ttn(thread);
   // check whether zip archive contains name
   jint name_len;
@@ -315,9 +314,9 @@ u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_ter
   return buffer;
 }
 
-ClassFileStream* ClassPathZipEntry::open_stream(const char* name) {
+ClassFileStream* ClassPathZipEntry::open_stream(Thread* current, const char* name) {
   jint filesize;
-  u1* buffer = open_entry(name, &filesize, false);
+  u1* buffer = open_entry(current, name, &filesize, false);
   if (buffer == NULL) {
     return NULL;
   }
@@ -375,8 +374,8 @@ ClassPathImageEntry::~ClassPathImageEntry() {
   }
 }
 
-ClassFileStream* ClassPathImageEntry::open_stream(const char* name) {
-  return open_stream_for_loader(name, ClassLoaderData::the_null_class_loader_data());
+ClassFileStream* ClassPathImageEntry::open_stream(Thread* current, const char* name) {
+  return open_stream_for_loader(current, name, ClassLoaderData::the_null_class_loader_data());
 }
 
 // For a class in a named module, look it up in the jimage file using this syntax:
@@ -386,7 +385,7 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name) {
 //     1. There are no unnamed modules in the jimage file.
 //     2. A package is in at most one module in the jimage file.
 //
-ClassFileStream* ClassPathImageEntry::open_stream_for_loader(const char* name, ClassLoaderData* loader_data) {
+ClassFileStream* ClassPathImageEntry::open_stream_for_loader(Thread* current, const char* name, ClassLoaderData* loader_data) {
   jlong size;
   JImageLocationRef location = (*JImageFindResource)(_jimage, "", get_jimage_version_string(), name, &size);
 
@@ -400,7 +399,7 @@ ClassFileStream* ClassPathImageEntry::open_stream_for_loader(const char* name, C
       } else {
         PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
         if (package_entry != NULL) {
-          ResourceMark rm;
+          ResourceMark rm(current);
           // Get the module name
           ModuleEntry* module = package_entry->module();
           assert(module != NULL, "Boot classLoader package missing module");
@@ -1157,7 +1156,7 @@ ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleCl
 
   // Try to load the class from the module's ClassPathEntry list.
   while (e != NULL) {
-    stream = e->open_stream(file_name);
+    stream = e->open_stream(THREAD, file_name);
     // No context.check is required since CDS is not supported
     // for an exploded modules build or if --patch-module is specified.
     if (NULL != stream) {
@@ -1228,7 +1227,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
   if (!search_append_only && (NULL == stream)) {
     if (has_jrt_entry()) {
       e = _jrt_entry;
-      stream = _jrt_entry->open_stream(file_name);
+      stream = _jrt_entry->open_stream(THREAD, file_name);
     } else {
       // Exploded build - attempt to locate class in its defining module's location.
       assert(_exploded_entries != NULL, "No exploded build entries present");
@@ -1246,7 +1245,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
 
     e = first_append_entry();
     while (e != NULL) {
-      stream = e->open_stream(file_name);
+      stream = e->open_stream(THREAD, file_name);
       if (NULL != stream) {
         break;
       }

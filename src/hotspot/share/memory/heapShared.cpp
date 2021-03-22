@@ -700,14 +700,15 @@ void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[
 }
 
 void HeapShared::resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD) {
- const ArchivedKlassSubGraphInfoRecord* record =
+  ExceptionMark em(THREAD);
+  const ArchivedKlassSubGraphInfoRecord* record =
    resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
- if (HAS_PENDING_EXCEPTION) {
+  if (HAS_PENDING_EXCEPTION) {
    CLEAR_PENDING_EXCEPTION;
- }
- if (record == NULL) {
+  }
+  if (record == NULL) {
    clear_archived_roots_of(k);
- }
+  }
 }
 
 void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
@@ -715,6 +716,7 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
     return; // nothing to do
   }
 
+  ExceptionMark em(THREAD);
   const ArchivedKlassSubGraphInfoRecord* record =
     resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/true, THREAD);
 

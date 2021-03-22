@@ -173,15 +173,16 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   assert(loader_data != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
 
-  ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
+  JavaThread* current = THREAD->as_Java_thread();
+  ResourceMark rm(current);
+  HandleMark hm(current);
 
   JvmtiCachedClassFileData* cached_class_file = NULL;
 
   ClassFileStream* old_stream = stream;
 
   // increment counter
-  THREAD->statistical_info().incr_define_class_count();
+  current->statistical_info().incr_define_class_count();
 
   assert(!(cl_info.is_hidden() && (cl_info.unsafe_anonymous_host() != NULL)),
          "hidden class has an anonymous host");
@@ -216,7 +217,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
 #if INCLUDE_CDS
   if (Arguments::is_dumping_archive()) {
-    ClassLoader::record_result(THREAD, result, stream);
+    ClassLoader::record_result(current, result, stream);
   }
 #endif // INCLUDE_CDS
 
