@@ -1516,6 +1516,6 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         return rest;
     }
 
-    private final static Map<Type, Type> inProgress = newIdentityHashMap();
+    private static final Map<Type, Type> inProgress = newIdentityHashMap();
     // really an IdentityHashSet but that doesn't exist
 }
