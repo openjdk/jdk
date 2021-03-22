@@ -1692,7 +1692,6 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
     }
     assert (entry->_obj != NULL, "sanity check");
     Atomic::inc(&_length1);
-    // HeapDumpLargeObjectListElem* head_val = _head;
     while (true) {
       HeapDumpLargeObjectListElem* old_head = Atomic::load_acquire(&_head);
       HeapDumpLargeObjectListElem* new_head = entry;
@@ -1736,7 +1735,7 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
 
   uint length() { return _length; }
 
-  static const size_t LargeObjectSizeThreshold = 128 * (1 << 20); // 128 MB
+  static const size_t LargeObjectSizeThreshold = 1 << 20; // 1 MB
 };
 
 class VM_HeapDumper;
