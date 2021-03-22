@@ -408,10 +408,10 @@ public final class StackTraceElement implements java.io.Serializable {
             return true;
         return (obj instanceof StackTraceElement e)
                 && e.lineNumber == lineNumber
+                && e.declaringClass.equals(declaringClass)
                 && Objects.equals(classLoaderName, e.classLoaderName)
                 && Objects.equals(moduleName, e.moduleName)
                 && Objects.equals(moduleVersion, e.moduleVersion)
-                && e.declaringClass.equals(declaringClass)
                 && Objects.equals(methodName, e.methodName)
                 && Objects.equals(fileName, e.fileName);
     }
