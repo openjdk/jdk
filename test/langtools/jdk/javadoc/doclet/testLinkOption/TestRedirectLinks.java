@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,8 @@ public class TestRedirectLinks extends JavadocTester {
                 "--module", "mA,mB" );
 
         // start web servers
-        InetAddress localHost = InetAddress.getLocalHost();
+        // use explicit 127.0.0.1 to avoid any issues if proxy is in use
+        InetAddress localHost = InetAddress.getByAddress("localhost", new byte[] { 127, 0, 0, 1});
         try {
             oldServer = HttpServer.create(new InetSocketAddress(localHost, 0), 0);
             String oldURL = "http:/" + oldServer.getAddress();
