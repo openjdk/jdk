@@ -47,6 +47,20 @@ unsigned int  VM_Version::_nmsgdigest_features                      = 0;
 unsigned int  VM_Version::_Dcache_lineSize                          = DEFAULT_CACHE_LINE_SIZE;
 unsigned int  VM_Version::_Icache_lineSize                          = DEFAULT_CACHE_LINE_SIZE;
 
+// The following list contains the (approximate) announcement/availability
+// dates of the many System z generations in existence as of now.
+// Information compiled from https://www.ibm.com/support/techdocs/atsmastr.nsf/WebIndex/TD105503
+//   z900: 2000-10
+//   z990: 2003-06
+//   z9:   2005-09
+//   z10:  2007-04
+//   z10:  2008-02
+//   z196: 2010-08
+//   ec12: 2012-09
+//   z13:  2015-03
+//   z14:  2017-09
+//   z15:  2019-09
+
 static const char* z_gen[]     = {"  ", "G1",         "G2",         "G3",         "G4",         "G5",         "G6",         "G7",         "G8",         "G9"  };
 static const char* z_machine[] = {"  ", "2064",       "2084",       "2094",       "2097",       "2817",       "2827",       "2964",       "3906",       "8561" };
 static const char* z_name[]    = {"  ", "z900",       "z990",       "z9 EC",      "z10 EC",     "z196 EC",    "ec12",       "z13",        "z14",        "z15" };
@@ -274,74 +288,78 @@ void VM_Version::set_features_string() {
   //   Furthermore, use one, and only one, separator space between features.
   //   Multiple spaces are considered separate tokens, messing up everything.
   unsigned int ambiguity = 0;
-  _model_string = z_name[0];
+  unsigned int model_ix  = 0;
   if (is_z15()) {
     _features_string = "system-z g9-z15 ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, VEnh2 )";
-    _model_string = z_name[9];
+    model_ix = 9;
     ambiguity++;
   }
   if (is_z14()) {
     _features_string = "system-z g8-z14 ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1)";
-    _model_string = z_name[8];
+    model_ix = 8;
     ambiguity++;
   }
   if (is_z13()) {
     _features_string = "system-z, g7-z13, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr";
-    _model_string = z_name[7];
+    model_ix = 7;
     ambiguity++;
   }
   if (is_ec12()) {
     _features_string = "system-z, g6-ec12, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm";
-    _model_string = z_name[6];
+    model_ix = 6;
     ambiguity++;
   }
   if (is_z196()) {
-    _features_string = "system-z, g5-z196, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, out-of-support_as_of_2021-12-31";
-    _model_string = z_name[5];
+    _features_string = "system-z, g5-z196, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update";
+    model_ix = 5;
     ambiguity++;
   }
   if (is_z10()) {
-    _features_string = "system-z, g4-z10, ldisp_fast, extimm, pcrel_load/store, cmpb, out-of-support_as_of_2019-12-31";
-    _model_string = z_name[4];
+    _features_string = "system-z, g4-z10, ldisp_fast, extimm, pcrel_load/store, cmpb";
+    model_ix = 4;
     ambiguity++;
   }
   if (is_z9()) {
-    _features_string = "system-z, g3-z9, ldisp_fast, extimm, out-of-support_as_of_2016-04-01";
-    _model_string = z_name[3];
+    _features_string = "system-z, g3-z9, ldisp_fast, extimm";
+    model_ix = 3;
     ambiguity++;
   }
   if (is_z990()) {
-    _features_string = "system-z, g2-z990, ldisp_fast, out-of-support_as_of_2014-07-01";
-    _model_string = z_name[2];
+    _features_string = "system-z, g2-z990, ldisp_fast";
+    model_ix = 2;
     ambiguity++;
   }
   if (is_z900()) {
-    _features_string = "system-z, g1-z900, ldisp, out-of-support_as_of_2014-07-01";
-    _model_string = z_name[1];
+    _features_string = "system-z, g1-z900, ldisp";
+    model_ix = 1;
     ambiguity++;
   }
 
+  char buf[512];
   if (ambiguity == 0) {
-    _features_string = "z/Architecture (unknown generation)";
+    strcpy(buf, "z/Architecture (unknown generation)");
+  } else if (ambiguity == 1) {
+    _model_string = z_name[model_ix];
+    jio_snprintf(buf, sizeof(buf), "%s, out-of-support_as_of_", _features_string, z_EOS[model_ix]);
   } else if (ambiguity > 1) {
     tty->print_cr("*** WARNING *** Ambiguous z/Architecture detection, ambiguity = %d", ambiguity);
     tty->print_cr("                oldest detected generation is %s", _features_string);
-    _features_string = "z/Architecture (ambiguous detection)";
+    strcpy(buf, "z/Architecture (ambiguous detection)");
   }
+  _features_string = os::strdup(buf);
 
   if (has_Crypto_AES()) {
-    char buf[256];
     assert(strlen(_features_string) + 3*8 < sizeof(buf), "increase buffer size");
     jio_snprintf(buf, sizeof(buf), "%s%s%s%s",
                  _features_string,
                  has_Crypto_AES128() ? ", aes128" : "",
                  has_Crypto_AES192() ? ", aes192" : "",
                  has_Crypto_AES256() ? ", aes256" : "");
+    os::free((void *)_features_string);
     _features_string = os::strdup(buf);
   }
 
   if (has_Crypto_SHA()) {
-    char buf[256];
     assert(strlen(_features_string) + 6 + 2*8 + 7 < sizeof(buf), "increase buffer size");
     jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s",
                  _features_string,
@@ -349,7 +367,7 @@ void VM_Version::set_features_string() {
                  has_Crypto_SHA256() ? ", sha256" : "",
                  has_Crypto_SHA512() ? ", sha512" : "",
                  has_Crypto_GHASH()  ? ", ghash"  : "");
-    if (has_Crypto_AES()) { os::free((void *)_features_string); }
+    os::free((void *)_features_string);
     _features_string = os::strdup(buf);
   }
 }

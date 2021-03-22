@@ -33,23 +33,13 @@
 class VM_Version: public Abstract_VM_Version {
 
  protected:
-// The following list contains the (approximate) announcement/availability
-// dates of the many System z generations in existence as of now which
-// implement the z/Architecture.
-//   z900: 2000-10
-//   z990: 2003-06
-//   z9:   2005-09
-//   z10:  2007-04
-//   z10:  2008-02
-//   z196: 2010-08
-//   ec12: 2012-09
-//   z13:  2015-03
-//   z14:  2017-09
-//   z15:  2019-09
-//
 // z/Architecture is the name of the 64-bit extension of the 31-bit s390
 // architecture.
 //
+// For information concerning the life span of the individual
+// z/Architecture models, please check out the comments/tables
+// in vm_version_s390.cpp
+
 // ----------------------------------------------
 // --- FeatureBitString Bits   0.. 63 (DW[0]) ---
 // ----------------------------------------------
