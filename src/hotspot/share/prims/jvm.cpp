@@ -3763,7 +3763,7 @@ JVM_END
 
 JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
 #if INCLUDE_CDS
-  assert(UseSharedSpaces && RecordDynamicDumpInfo, "Sanity check");
+  assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp?");
   if (DynamicArchive::has_been_dumped_once()) {
     THROW_MSG(vmSymbols::java_lang_RuntimeException(),
         "Dynamic dump has been done, and should only be done once");
@@ -3771,7 +3771,7 @@ JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
     // prevent multiple dumps.
     DynamicArchive::set_has_been_dumped_once();
   }
-  assert(ArchiveClassesAtExit == nullptr, "Sanity check");
+  assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp?");
   Handle file_handle(THREAD, JNIHandles::resolve_non_null(archiveName));
   char* archive_name  = java_lang_String::as_utf8_string(file_handle());
   ArchiveClassesAtExit = archive_name;

@@ -47,7 +47,6 @@
 #include "memory/archiveBuilder.hpp"
 #include "memory/cppVtables.hpp"
 #include "memory/dumpAllocStats.hpp"
-#include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.hpp"
 #include "memory/metaspace.hpp"

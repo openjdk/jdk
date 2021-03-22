@@ -4257,54 +4257,50 @@ bool InstanceKlass::is_shareable() const {
 
 void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
 #if INCLUDE_CDS
+  ResourceMark rm;
   if (ClassListWriter::is_enabled()) {
     if (!ClassLoader::has_jrt_entry()) {
        warning("DumpLoadedClassList and CDS are not supported in exploded build");
        DumpLoadedClassList = NULL;
        return;
     }
-    ClassLoaderData* loader_data = class_loader_data();
-    if (!SystemDictionaryShared::is_sharing_possible(loader_data)) {
-      return;
-    }
-    bool skip = false;
-    if (is_shared()) {
-      assert(stream == NULL, "shared class with stream");
-      if (is_hidden()) {
-        // Don't include archived lambda proxy class in the classlist.
-        assert(!is_non_strong_hidden(), "unexpected non-strong hidden class");
-        return;
-      }
-    } else {
-      assert(stream != NULL, "non-shared class without stream");
-      // skip hidden class and unsafe anonymous class.
-      if ( is_hidden() || unsafe_anonymous_host() != NULL) {
-        return;
-      }
-      oop class_loader = loader_data->class_loader();
-      if (class_loader == NULL || SystemDictionary::is_platform_class_loader(class_loader)) {
-        // For the boot and platform class loaders, skip classes that are not found in the
-        // java runtime image, such as those found in the --patch-module entries.
-        // These classes can't be loaded from the archive during runtime.
-        if (!stream->from_boot_loader_modules_image() && strncmp(stream->source(), "jrt:", 4) != 0) {
-          skip = true;
+    if (is_shareable()) {
+      bool skip = false;
+      if (is_shared()) {
+        if (stream == nullptr) {
+          tty->print_cr("%s: shared class with stream?", name()->as_C_string());
+          return; // stream is nullptr will cause below operation fail.
         }
+      } else {
+        if (stream != nullptr) {
+          oop class_loader = class_loader_data()->class_loader();
+          if (class_loader == NULL || SystemDictionary::is_platform_class_loader(class_loader)) {
+            // For the boot and platform class loaders, skip classes that are not found in the
+            // java runtime image, such as those found in the --patch-module entries.
+            // These classes can't be loaded from the archive during runtime.
+            if (!stream->from_boot_loader_modules_image() && strncmp(stream->source(), "jrt:", 4) != 0) {
+              skip = true;
+            }
 
-        if (class_loader == NULL && ClassLoader::contains_append_entry(stream->source())) {
-          // .. but don't skip the boot classes that are loaded from -Xbootclasspath/a
-          // as they can be loaded from the archive during runtime.
-          skip = false;
+            if (class_loader == NULL && ClassLoader::contains_append_entry(stream->source())) {
+              // .. but don't skip the boot classes that are loaded from -Xbootclasspath/a
+              // as they can be loaded from the archive during runtime.
+              skip = false;
+            }
+          }
+        } else {
+          warning("non-shared class without stream, skipped");
+          return;
         }
       }
-    }
-    ResourceMark rm;
-    if (skip) {
-      tty->print_cr("skip writing class %s from source %s to classlist file",
-                    name()->as_C_string(), stream->source());
-    } else {
-      ClassListWriter w;
-      w.stream()->print_cr("%s", name()->as_C_string());
-      w.stream()->flush();
+      if (skip) {
+        tty->print_cr("skip writing class %s from source %s to classlist file",
+                      name()->as_C_string(), stream->source());
+      } else {
+        ClassListWriter w;
+        w.stream()->print_cr("%s", name()->as_C_string());
+        w.stream()->flush();
+      }
     }
   }
 #endif // INCLUDE_CDS

@@ -28,6 +28,7 @@ package jdk.internal.misc;
 import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Map;
@@ -207,13 +208,15 @@ public class CDS {
     private static native void dumpClassList(String listFileName);
     private static native void dumpDynamicArchive(String archiveFileName);
 
-    private static void outputStdStream(InputStream stream) {
+    private static void outputStdStream(InputStream stream, String fileName) {
         String line;
         InputStreamReader isr = new InputStreamReader(stream);
         BufferedReader rdr = new BufferedReader(isr);
+
         try {
+            PrintStream prt = new PrintStream(fileName);
             while((line = rdr.readLine()) != null) {
-                System.out.println(line);
+                prt.println(line);
             }
         } catch (IOException e) {
             throw new RuntimeException("IOExeption happens during drain stream " + e.getMessage());
@@ -246,9 +249,9 @@ public class CDS {
     * @param fileName user input archive name, can be null.
     */
     private static void dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
+        String currentPid = String.valueOf(ProcessHandle.current().pid());
         String archiveFile =  fileName != null ? fileName :
-            "java_pid" + ProcessHandle.current().pid() + (isStatic ? "_static.jsa" : "_dynamic.jsa");
-        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFile);
+            "java_pid" + currentPid + (isStatic ? "_static.jsa" : "_dynamic.jsa");
 
         // delete if archive file aready exists
         File fileArchive = new File(archiveFile);
@@ -290,26 +293,40 @@ public class CDS {
             Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[0]),
                                new String[] {"EnvP=null"});
 
-            // Drain stdout in a separate thread.
+            // Drain stdout to a file in a separate thread.
+            String stdOutFile = "java_pid" + proc.pid() + "_stdout.txt";
             new Thread( ()-> {
-                    System.out.println("Dumping process " + proc.pid() + " Stdout: ");
-                    outputStdStream(proc.getInputStream());
+                    outputStdStream(proc.getInputStream(), stdOutFile);
                 }).start();
 
-            // Drain stderr in a separate thread.
+            // Drain stderr to a file in a separate thread.
+            String stdErrFile = "java_pid" + proc.pid() + "_stderr.txt";
             new Thread( ()-> {
-                    System.out.println("Dumping process " + proc.pid() + " Stdout: ");
-                    outputStdStream(proc.getErrorStream());
+                    outputStdStream(proc.getErrorStream(), stdErrFile);
                 }).start();
 
             proc.waitFor();
+            // done, delete classlist file.
+            if (fileList.exists()) {
+                fileList.delete();
+            }
+            // Check if archive has been successfully dumped. We won't reach here if exception happens.
+            // Throw exception if file is not created.
+            if (!fileArchive.exists()) {
+                throw new RuntimeException("Archive file " + archiveFile +
+                                           " is not created, please check stdout file " +
+                                            stdOutFile + " or stderr file " +
+                                            stdErrFile + " for more detail");
+            }
         } else {
             dumpDynamicArchive(archiveFile);
+            if (!fileArchive.exists()) {
+                throw new RuntimeException("Archive file " + archiveFile +
+                                           " is not created, please check process " +
+                                           currentPid + " output for more detail");
+            }
         }
-        // Check if archive has been successfully dumped. We won't reach here if exception happens.
-        // Throw exception if file is not created.
-        if (!fileArchive.exists()) {
-            throw new RuntimeException("Archive file " + archiveFile + " is not created");
-        }
+        // Everyting goes well, print out the file name.
+        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFile);
     }
 }

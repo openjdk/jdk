@@ -1126,19 +1126,11 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   JavaCallArguments args;
   args.push_int(is_static);
   args.push_oop(fileh);
-  output()->print_cr("Call CDS.dumpSharedArchive(%s, %s)", scmd, (file == NULL ? "null" : file));
   JavaCalls::call_static(&result,
                          cds_klass,
                          vmSymbols::dumpSharedArchive(),
                          vmSymbols::dumpSharedArchive_signature(),
                          &args, THREAD);
-  // Upon exception, show stack trace.
-  if (HAS_PENDING_EXCEPTION) {
-    Handle throwable(THREAD, PENDING_EXCEPTION);
-    CLEAR_PENDING_EXCEPTION;
-    java_lang_Throwable::print_stack_trace(throwable, output());
-    output()->cr();
-  }
 }
 
 int DumpSharedArchiveDCmd::num_arguments() {

@@ -192,11 +192,11 @@ public class JCmdTest {
         }
         app.stopApp();
 
-        // 3. Test static dump with flags which no dump will happen.
+        // 3. Test static dump with flags with which dumping should fail
         //    This test will result classes.jsa in default server dir if -XX:SharedArchiveFile= not set.
-        print2ln("3. Test static dump with flags which will no dump will happen.");
+        print2ln("3. Test static dump with flags with which dumping should fail.");
         for (String flag : noDumpFlags) {
-            app  = createLingeredApp("-cp", jarFile, flag, "-XX:SharedArchiveFile=tmp.jsa");
+            app = createLingeredApp("-cp", jarFile, flag, "-XX:SharedArchiveFile=tmp.jsa");
             // Following should not be executed.
             if (app != null && app.getProcess().isAlive()) {
                 pid = app.getPid();
@@ -210,7 +210,7 @@ public class JCmdTest {
         // 4. Test static dump with flags which will be filtered before dumping.
         print2ln("4. Test static dump with flags which will be filtered before dumping.");
         for (String flag : excludeFlags) {
-            app  = createLingeredApp("-cp", jarFile, flag);
+            app = createLingeredApp("-cp", jarFile, flag);
             pid = app.getPid();
             test(SUBCMD_STATIC_DUMP, null, pid, EXPECT_PASS);
             app.stopApp();
@@ -219,37 +219,58 @@ public class JCmdTest {
 
         // 5. Test static with -Xshare:off will be OK to dump.
         print2ln("5. Test static with -Xshare:off will be OK to dump.");
-        app  = createLingeredApp("-Xshare:off", "-cp", jarFile);
+        app = createLingeredApp("-Xshare:off", "-cp", jarFile);
         pid = app.getPid();
         test(SUBCMD_STATIC_DUMP, null, pid, EXPECT_PASS);
         app.stopApp();
 
-        // 6. Test dynamic dump with -XX:+RecordDynamicDumpInfo.
-        print2ln("6. Test dynamic dump with -XX:+RecordDynamicDumpInfo.");
-        app  = createLingeredApp("-cp", jarFile, "-XX:+RecordDynamicDumpInfo");
+        // 6. Test static with --limit-modules java.base.
+        print2ln("6. Test static with --limit-modules java.base.");
+        app = createLingeredApp("--limit-modules", "java.base", "-cp", jarFile);
+        pid = app.getPid();
+        test(SUBCMD_STATIC_DUMP, null, pid, EXPECT_FAIL);
+
+        // 7. Test dynamic dump with -XX:+RecordDynamicDumpInfo.
+        print2ln("7. Test dynamic dump with -XX:+RecordDynamicDumpInfo.");
+        app = createLingeredApp("-cp", jarFile, "-XX:+RecordDynamicDumpInfo");
         pid = app.getPid();
         test(SUBCMD_DYNAMIC_DUMP, DYNAMIC_DUMP_FILE + "01", pid, EXPECT_PASS);
 
-        // 7. Test dynamic dump twice to same process.
-        print2ln("7. Test dynamic dump second time to the same process.");
+        // 8. Test dynamic dump twice to same process.
+        print2ln("8. Test dynamic dump second time to the same process.");
         test(SUBCMD_DYNAMIC_DUMP, DYNAMIC_DUMP_FILE + "02", pid, EXPECT_FAIL);
         app.stopApp();
 
-        // 8. Test dynamic dump with -XX:-RecordDynamicDumpInfo.
-        print2ln("8. Test dynamic dump with -XX:-RecordDynamicDumpInfo.");
-        app  = createLingeredApp("-cp", jarFile);
+        // 9. Test dynamic dump with -XX:-RecordDynamicDumpInfo.
+        print2ln("9. Test dynamic dump with -XX:-RecordDynamicDumpInfo.");
+        app = createLingeredApp("-cp", jarFile);
         pid = app.getPid();
         test(SUBCMD_DYNAMIC_DUMP, DYNAMIC_DUMP_FILE + "01", pid, EXPECT_FAIL);
         app.stopApp();
 
-        // 9. Test dynamic dump with default archive name (null).
-        print2ln("9. Test dynamic dump with default archive name (null).");
+        // 10. Test dynamic dump with default archive name (null).
+        print2ln("10. Test dynamic dump with default archive name (null).");
         app = createLingeredApp("-cp", jarFile, "-XX:+RecordDynamicDumpInfo");
         pid = app.getPid();
         test(SUBCMD_DYNAMIC_DUMP, null, pid, EXPECT_PASS);
+        app.stopApp();
 
-        // 10. Test dynamic dump with -XX:ArchiveClassAtExit will fail.
-        print2ln("10. Test dynamic dump with -XX:ArchiveClassAtExit will fail.");
+        // 11. Test dynamic dump with flags -XX:+RecordDynamicDumpInfo -XX:-DynamicDumpSharedSpaces.
+        print2ln("11. Test dynamic dump with flags -XX:+RecordDynamicDumpInfo -XX:-DynamicDumpSharedSpaces.");
+        app = createLingeredApp("-cp", jarFile, "-XX:+RecordDynamicDumpInfo", "-XX:-DynamicDumpSharedSpaces");
+        pid = app.getPid();
+        test(SUBCMD_DYNAMIC_DUMP, null, pid, EXPECT_PASS);
+        app.stopApp();
+
+        // 12. Test dynamic dump with flags -XX:-DynamicDumpSharedSpaces -XX:+RecordDynamicDumpInfo.
+        print2ln("12. Test dynamic dump with flags -XX:-DynamicDumpSharedSpaces -XX:+RecordDynamicDumpInfo.");
+        app = createLingeredApp("-cp", jarFile, "-XX:-DynamicDumpSharedSpaces", "-XX:+RecordDynamicDumpInfo");
+        pid = app.getPid();
+        test(SUBCMD_DYNAMIC_DUMP, null, pid, EXPECT_PASS);
+        app.stopApp();
+
+        // 13. Test dynamic dump with -XX:ArchiveClassAtExit will fail.
+        print2ln("13. Test dynamic dump with -XX:ArchiveClassAtExit will fail.");
         app = createLingeredApp("-cp", jarFile,
                                 "-Xshare:auto",
                                 "-XX:+RecordDynamicDumpInfo",
