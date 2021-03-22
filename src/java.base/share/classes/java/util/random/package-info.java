@@ -27,13 +27,13 @@
  * This package contains classes and interfaces that support a generic API
  * for random number generation.
  *
- * <p>These classes and interfaces that support the definition and use of "random
- * generators", a term that is meant to cover what have traditionally been
- * called "random number generators" as well as generators of other sorts of
- * randomly chosen values, and also to cover not only deterministic
- * (pseudorandom) algorithms but also generators of values that use some "truly
- * random" physical source (perhaps making use of thermal noise, for example, or
- * quantum-mechanical effects).
+ * <p>These classes and interfaces support the definition and use of "random
+ * generators", a term covering what have traditionally been called "random
+ * number generators" as well as generators of other sorts of randomly chosen
+ * values (eg. booleans). These classes and interfaces cover not only
+ * deterministic (pseudorandom) algorithms but also generators of values that
+ * use some "truly random" physical source (stochastic algorithms perhaps making
+ * use of thermal noise, for example, or quantum-mechanical effects).
  *
  * <p> The principal interface is {@link RandomGenerator}, which provides
  * methods for requesting individual values of type {@code int}, {@code long},
@@ -101,7 +101,7 @@
  * chosen values. The methods
  * {@link RandomGenerator#nextGaussian nextGaussian()} and
  * {@link RandomGenerator#nextExponential nextExponential()} draw floating-point
- * values from nonuniform distributions. The method
+ * values from nonuniform distributions.
  *
  * <p> For a multi-threaded application, one can repeat the preceding steps
  * to create additional {@linkplain RandomGenerator RandomGenerators}, but
@@ -194,7 +194,7 @@
  * a generator whose period is much larger than the total number of possible
  * permutations; otherwise it will be impossible to generate some of the
  * intended permutations. For example, if the goal is to shuffle a deck of 52
- * cards, the number of possible permutations is 52! (52 factorial), \ which is
+ * cards, the number of possible permutations is 52! (52 factorial), which is
  * larger than 2<sup>225</sup> (but smaller than 2<sup>226</sup>), so it may be
  * best to use a generator whose period at least 2<sup>256</sup>, such as
  * {@code L64X256MixRandom} or {@code L64X1024MixRandom}
@@ -205,7 +205,7 @@
  * permutations.)
  *
  *
- * <h2><a id="algorithms">Random Number Generator Algorithms Available.</a></h2>
+ * <h2><a id="algorithms">Random Number Generator Algorithms Available</a></h2>
  *
  * These algorithms [in the table below] must be found with the current version
  * of Java SE. A particular JDK implementation may recognize additional

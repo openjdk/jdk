@@ -374,9 +374,12 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @param <T>       {@link RandomGenerator} sub-interface return type
      *
      * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
-     * to locate implementations of the RandomGenerator interface.
+     * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
+     * as deprecated are not included in the result.
      *
      * @return Stream of matching {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
+     *
+     * @hidden
      */
     public static <T extends RandomGenerator> Stream<RandomGeneratorFactory<T>> all(Class<T> category) {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
@@ -389,11 +392,11 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Returns a a non-empty stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
+     * Returns a non-empty stream of available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
      * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
      * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
-     * as deprecated are not included in the result.
+     * as deprecated or are not properly configured are not included in the result.
      *
      * @return a non-empty stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
