@@ -343,7 +343,7 @@ class SharedRuntime: AllStatic {
 
   static void monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
 
-  static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
+  static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
  private:
   static Handle find_callee_info(JavaThread* thread,

@@ -2884,7 +2884,6 @@ void LIR_Assembler::align_call(LIR_Code code) {
   case lir_icvirtual_call:
     offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size;
     break;
-  case lir_virtual_call:  // currently, sparc-specific for niagara
   default: ShouldNotReachHere();
   }
   __ align(BytesPerWord, offset);
@@ -2904,12 +2903,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   add_call_info(code_offset(), op->info());
   assert((__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
-}
-
-
-/* Currently, vtable-dispatch is only enabled for sparc platforms */
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere();
 }
 
 
