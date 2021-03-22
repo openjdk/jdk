@@ -24,10 +24,10 @@
 /*
  * @test
  * @summary Tests WB::isMethodCompilable(m) in combination with compiler directives that prevent a compilation of m.
- * @bug 8059624 8064669
+ * @bug 8263582
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:CompileCommand=compileonly,compiler.whitebox.TestMethodCompilableCompilerDirectives::doesNotExist
  *      compiler.whitebox.TestMethodCompilableCompilerDirectives
