@@ -27,7 +27,6 @@ package gc;
  * @bug 8240696
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @modules java.base
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.

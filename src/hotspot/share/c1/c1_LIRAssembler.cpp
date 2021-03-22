@@ -468,9 +468,6 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   case lir_icvirtual_call:
     ic_call(op);
     break;
-  case lir_virtual_call:
-    vtable_call(op);
-    break;
   default:
     fatal("unexpected op code: %s", op->name());
     break;

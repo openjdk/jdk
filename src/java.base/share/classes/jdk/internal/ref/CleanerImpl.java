@@ -204,7 +204,7 @@ public final class CleanerImpl implements Runnable {
      * The factory is a singleton.
      */
     static final class InnocuousThreadFactory implements ThreadFactory {
-        final static ThreadFactory factory = new InnocuousThreadFactory();
+        static final ThreadFactory factory = new InnocuousThreadFactory();
 
         static ThreadFactory factory() {
             return factory;

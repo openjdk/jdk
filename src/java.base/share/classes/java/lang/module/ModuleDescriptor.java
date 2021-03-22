@@ -135,7 +135,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Requires
+    public static final class Requires
         implements Comparable<Requires>
     {
 
@@ -360,7 +360,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Exports
+    public static final class Exports
         implements Comparable<Exports>
     {
 
@@ -564,7 +564,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Opens
+    public static final class Opens
         implements Comparable<Opens>
     {
         /**
@@ -761,7 +761,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Provides
+    public static final class Provides
         implements Comparable<Provides>
     {
         private final String service;
@@ -932,7 +932,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Version
+    public static final class Version
         implements Comparable<Version>
     {
 

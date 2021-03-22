@@ -167,6 +167,11 @@ const char * os::Linux::_libc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
+#ifdef __GLIBC__
+os::Linux::mallinfo_func_t os::Linux::_mallinfo = NULL;
+os::Linux::mallinfo2_func_t os::Linux::_mallinfo2 = NULL;
+#endif // __GLIBC__
+
 static jlong initial_time_count=0;
 
 static int clock_tics_per_sec = 100;
@@ -2174,19 +2179,25 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // Print glibc outstanding allocations.
   // (note: there is no implementation of mallinfo for muslc)
 #ifdef __GLIBC__
-  struct mallinfo mi = ::mallinfo();
-
-  // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
-  // So values may have wrapped around. Still useful enough to see how much glibc thinks
-  // we allocated.
-  const size_t total_allocated = (size_t)(unsigned)mi.uordblks;
-  st->print("C-Heap outstanding allocations: " SIZE_FORMAT "K", total_allocated / K);
-  // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-  if ((vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX)) {
-    st->print(" (may have wrapped)");
+  size_t total_allocated = 0;
+  bool might_have_wrapped = false;
+  if (_mallinfo2 != NULL) {
+    struct glibc_mallinfo2 mi = _mallinfo2();
+    total_allocated = mi.uordblks;
+  } else if (_mallinfo != NULL) {
+    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
+    // So values may have wrapped around. Still useful enough to see how much glibc thinks
+    // we allocated.
+    struct glibc_mallinfo mi = _mallinfo();
+    total_allocated = (size_t)(unsigned)mi.uordblks;
+    // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
+    might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
   }
-  st->cr();
-
+  if (_mallinfo2 != NULL || _mallinfo != NULL) {
+    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K%s",
+                 total_allocated / K,
+                 might_have_wrapped ? " (may have wrapped)" : "");
+  }
 #endif // __GLIBC__
 
 }
@@ -4350,6 +4361,11 @@ void os::init(void) {
   _page_sizes.add(Linux::page_size());
 
   Linux::initialize_system_info();
+
+#ifdef __GLIBC__
+  Linux::_mallinfo = CAST_TO_FN_PTR(Linux::mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
+  Linux::_mallinfo2 = CAST_TO_FN_PTR(Linux::mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+#endif // __GLIBC__
 
   os::Linux::CPUPerfTicks pticks;
   bool res = os::Linux::get_tick_information(&pticks, -1);

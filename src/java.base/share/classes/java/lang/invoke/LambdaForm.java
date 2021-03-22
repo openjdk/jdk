@@ -212,26 +212,6 @@ class LambdaForm {
             if (!type.isPrimitive())  return L_TYPE;
             return basicType(Wrapper.forPrimitiveType(type));
         }
-        static BasicType[] basicTypes(String types) {
-            BasicType[] btypes = new BasicType[types.length()];
-            for (int i = 0; i < btypes.length; i++) {
-                btypes[i] = basicType(types.charAt(i));
-            }
-            return btypes;
-        }
-        static String basicTypeDesc(BasicType[] types) {
-            if (types == null) {
-                return null;
-            }
-            if (types.length == 0) {
-                return "";
-            }
-            StringBuilder sb = new StringBuilder();
-            for (BasicType bt : types) {
-                sb.append(bt.basicTypeChar());
-            }
-            return sb.toString();
-        }
         static int[] basicTypeOrds(BasicType[] types) {
             if (types == null) {
                 return null;
@@ -388,17 +368,8 @@ class LambdaForm {
     LambdaForm(int arity, Name[] names, Kind kind) {
         this(arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, kind);
     }
-    LambdaForm(int arity, Name[] names, boolean forceInline) {
-        this(arity, names, LAST_RESULT, forceInline, /*customized=*/null, Kind.GENERIC);
-    }
     LambdaForm(int arity, Name[] names, boolean forceInline, Kind kind) {
         this(arity, names, LAST_RESULT, forceInline, /*customized=*/null, kind);
-    }
-    LambdaForm(Name[] formals, Name[] temps, Name result) {
-        this(formals.length, buildNames(formals, temps, result), LAST_RESULT, /*forceInline=*/true, /*customized=*/null);
-    }
-    LambdaForm(Name[] formals, Name[] temps, Name result, boolean forceInline) {
-        this(formals.length, buildNames(formals, temps, result), LAST_RESULT, forceInline, /*customized=*/null);
     }
 
     private static Name[] buildNames(Name[] formals, Name[] temps, Name result) {
@@ -628,9 +599,8 @@ class LambdaForm {
 
     /** Report the N-th argument name. */
     Name parameter(int n) {
-        assert(n < arity);
         Name param = names[n];
-        assert(param.isParam());
+        assert(n < arity && param.isParam());
         return param;
     }
 
@@ -669,9 +639,6 @@ class LambdaForm {
         assert(isValidSignature(sig));
         return sig.indexOf('_');
     }
-    static BasicType signatureReturn(String sig) {
-        return basicType(sig.charAt(signatureArity(sig) + 1));
-    }
     static boolean isValidSignature(String sig) {
         int arity = sig.indexOf('_');
         if (arity < 0)  return false;  // must be of the form *_*
@@ -685,16 +652,6 @@ class LambdaForm {
             if (!isArgBasicTypeChar(c))  return false; // must be [LIJFD]
         }
         return true;  // [LIJFD]*_[LIJFDV]
-    }
-    static MethodType signatureType(String sig) {
-        Class<?>[] ptypes = new Class<?>[signatureArity(sig)];
-        for (int i = 0; i < ptypes.length; i++)
-            ptypes[i] = basicType(sig.charAt(i)).btClass;
-        Class<?> rtype = signatureReturn(sig).btClass;
-        return MethodType.makeImpl(rtype, ptypes, true);
-    }
-    static MethodType basicMethodType(MethodType mt) {
-        return signatureType(basicTypeSignature(mt));
     }
 
     /**
@@ -1326,7 +1283,7 @@ class LambdaForm {
             if (c1 != NO_CHAR && !('A' <= c1 && c1 <= 'Z')) {
                 // wrong kind of char; bail out here
                 if (buf != null) {
-                    buf.append(signature.substring(i - c1reps, len));
+                    buf.append(signature, i - c1reps, len);
                 }
                 break;
             }
@@ -1407,11 +1364,6 @@ class LambdaForm {
         }
         char typeChar() {
             return type.btChar;
-        }
-
-        void resolve() {
-            if (function != null)
-                function.resolve();
         }
 
         Name newIndex(int i) {
@@ -1595,16 +1547,15 @@ class LambdaForm {
          *  Return 0 if the name is not used.
          */
         int useCount(Name n) {
-            if (arguments == null)  return 0;
             int count = 0;
-            for (int i = arguments.length; --i >= 0; ) {
-                if (arguments[i] == n)  ++count;
+            if (arguments != null) {
+                for (Object argument : arguments) {
+                    if (argument == n) {
+                        count++;
+                    }
+                }
             }
             return count;
-        }
-
-        boolean contains(Name n) {
-            return this == n || lastUseIndex(n) >= 0;
         }
 
         public boolean equals(Name that) {
@@ -1646,15 +1597,10 @@ class LambdaForm {
 
     /** Return the number of times n is used as an argument or return value. */
     int useCount(Name n) {
-        int nmax = names.length;
-        int end = lastUseIndex(n);
-        if (end < 0)  return 0;
-        int count = 0;
-        if (end == nmax) { count++; end--; }
-        int beg = n.index() + 1;
-        if (beg < arity)  beg = arity;
-        for (int i = beg; i <= end; i++) {
-            count += names[i].useCount(n);
+        int count = (result == n.index) ? 1 : 0;
+        int i = Math.max(n.index + 1, arity);
+        while (i < names.length) {
+            count += names[i++].useCount(n);
         }
         return count;
     }
