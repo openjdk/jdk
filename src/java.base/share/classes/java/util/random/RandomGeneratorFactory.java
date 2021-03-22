@@ -375,7 +375,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *
      * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
      * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
-     * as deprecated are not included in the result.
+     * as deprecated or are not properly configured are not included in the result.
      *
      * @return Stream of matching {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
