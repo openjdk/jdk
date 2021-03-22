@@ -153,7 +153,7 @@ public final class ModuleLayer {
     private static @Stable ModuleLayer EMPTY_LAYER;
 
     static {
-	// Initialize EMPTY_LAYER from the archive.
+        // Initialize EMPTY_LAYER from the archive.
         CDS.initializeFromArchive(ModuleLayer.class);
         if (EMPTY_LAYER == null) {
             // create a new empty layer if there is no archived version.
