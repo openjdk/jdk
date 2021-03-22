@@ -92,8 +92,10 @@ public class MTLLayer extends CFRetainedResource {
         MTLGraphicsConfig gc = (MTLGraphicsConfig)getGraphicsConfiguration();
         surfaceData = gc.createSurfaceData(this);
         setScale(gc.getDevice().getScaleFactor());
-        Insets insets = peer.getInsets();
-        execute(ptr -> nativeSetInsets(ptr, insets.top, insets.left));
+        if (peer != null) {
+            Insets insets = peer.getInsets();
+            execute(ptr -> nativeSetInsets(ptr, insets.top, insets.left));
+        }
         // the layer holds a reference to the buffer, which in
         // turn has a reference back to this layer
         if (surfaceData instanceof MTLSurfaceData) {
