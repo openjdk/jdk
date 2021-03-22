@@ -43,7 +43,7 @@ import jdk.jfr.internal.Type;
 @Category({"Operating System", "Container", "I/O"})
 @Description("Container I/O usage related information.")
 public class ContainerIOUsageEvent extends AbstractJDKEvent {
-  
+
   @Label("BlkIO Request Count")
   @Description("Number of block I/O requests to the disk that have been issued by the container.")
   public long serviceRequests;

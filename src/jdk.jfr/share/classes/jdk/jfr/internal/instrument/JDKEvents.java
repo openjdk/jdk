@@ -210,7 +210,7 @@ public final class JDKEvents {
     private static void emitContainerIOUsage() {
         if (containerMetrics != null) {
             ContainerIOUsageEvent event = new ContainerIOUsageEvent();
-        
+
             event.serviceRequests = containerMetrics.getBlkIOServiceCount();
             event.dataTransferred = containerMetrics.getBlkIOServiced();
             event.commit();
@@ -244,7 +244,7 @@ public final class JDKEvents {
     public static void remove() {
         RequestEngine.removeHook(emitExceptionStatistics);
         RequestEngine.removeHook(emitDirectBufferStatistics);
-        
+
         RequestEngine.removeHook(emitContainerConfiguration);
         RequestEngine.removeHook(emitContainerCPUUsage);
         RequestEngine.removeHook(emitContainerMemoryUsage);
