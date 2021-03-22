@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,14 @@ const char* const LogFileOutput::TimestampFilenamePlaceholder = "%t";
 const char* const LogFileOutput::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
 const char* const LogFileOutput::FileSizeOptionKey = "filesize";
 const char* const LogFileOutput::FileCountOptionKey = "filecount";
+const char* const LogFileOutput::AsyncOptionKey = "async";
 char        LogFileOutput::_pid_str[PidBufferSize];
 char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 
 LogFileOutput::LogFileOutput(const char* name)
     : LogFileStreamOutput(NULL), _name(os::strdup_check_oom(name, mtLogging)),
       _file_name(NULL), _archive_name(NULL), _current_file(0),
-      _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
+      _file_count(DefaultFileCount), _is_default_file_count(true), _async_mode(AsyncLogging), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
   _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
@@ -216,6 +217,17 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
         break;
       }
       _rotate_size = static_cast<size_t>(value);
+    } else if (strcmp(AsyncOptionKey, key) == 0) {
+      if (strcasecmp(value_str, "true") == 0) {
+        _async_mode = true;
+      } else if (strcasecmp(value_str, "false") == 0) {
+        _async_mode =false;
+      } else {
+        errstream->print_cr("Invalid option: %s must be either true or false.",
+                            AsyncOptionKey);
+        success = false;
+        break;
+      }
     } else {
       errstream->print_cr("Invalid option '%s' for log file output.", key);
       success = false;
@@ -307,7 +319,7 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
   }
 
   LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
-  if (AsyncLogging && flusher != NULL) {
+  if (_async_mode && flusher != NULL) {
     flusher->enqueue(*this, decorations, msg);
     return 0;
   }

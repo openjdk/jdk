@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,6 +541,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr("   filecount=.. - Number of files to keep in rotation (not counting the active file)."
                                     " If set to 0, log rotation is disabled."
                                     " This will cause existing log files to be overwritten.");
+  out->print_cr("   async=true|false - write asynchronously or not.");
   out->cr();
 
   out->print_cr("Some examples:");

@@ -145,7 +145,7 @@ LOG_LEVEL_LIST
 };
 
 TEST_VM_F(AsyncLogTest, asynclog) {
-  set_log_config(TestLogFileName, "logging=debug");
+  set_log_config(TestLogFileName, "logging=debug", NULL, "async=true");
 
   VM_TestFlusher op;
   ThreadInVMfromNative invm(JavaThread::current());
