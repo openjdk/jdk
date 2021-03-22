@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -121,10 +121,6 @@ ifeq ($(BUILD_CDS_ARCHIVE), true)
   else
     CDS_ARCHIVE := lib/server/classes.jsa
     CDS_NOCOOPS_ARCHIVE := lib/server/classes_nocoops.jsa
-  endif
-
-  ifeq ($(call isTargetCpuBits, 32), true)
-    CDS_ARCHIVE := $(CDS_NOCOOPS_ARCHIVE)
   endif
 
   $(eval $(call SetupExecute, gen_cds_archive_jdk, \
