@@ -780,7 +780,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
   return true;
 }
 
-HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionManager* cm, bool use_block_table) const {
+HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionManager* cm) const {
   assert(addr != NULL, "Should detect NULL oop earlier");
   assert(ParallelScavengeHeap::heap()->is_in(addr), "not in heap");
   assert(PSParallelCompact::mark_bitmap()->is_marked(addr), "not marked");
@@ -801,39 +801,24 @@ HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionMan
     return result;
   }
 
-  // Otherwise, the new location is region->destination + #live words to left
-  // of addr in this region. Calculating #live words naively means walking the
-  // mark bitmap from the start of this region. Block table can be used to
-  // speed up this process, but it would incur some side-effect. In debug-only
-  // code (such as asserts), we prefer the slower but side-effect free version,
-  // to avoid side effects that would not occur for release code and could
-  // potentially affect future calculations.
-  if (use_block_table) {
-    // #live words = block offset + #live words in the Block that are
-    // (a) to the left of addr and (b) due to objects that start in the Block.
+  // Otherwise, the new location is region->destination + block offset + the
+  // number of live words in the Block that are (a) to the left of addr and (b)
+  // due to objects that start in the Block.
 
-    // Fill in the block table if necessary.  This is unsynchronized, so multiple
-    // threads may fill the block table for a region (harmless, since it is
-    // idempotent).
-    if (!region_ptr->blocks_filled()) {
-      PSParallelCompact::fill_blocks(addr_to_region_idx(addr));
-      region_ptr->set_blocks_filled();
-    }
-
-    HeapWord* const search_start = block_align_down(addr);
-    const size_t block_offset = addr_to_block_ptr(addr)->offset();
-
-    const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
-    const size_t live = bitmap->live_words_in_range(cm, search_start, cast_to_oop(addr));
-    result += block_offset + live;
-  } else {
-    guarantee(trueInDebug, "Only in debug build");
-
-    const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
-    const size_t live = bitmap->live_words_in_range(cm, region_align_down(addr), cast_to_oop(addr));
-    result += region_ptr->partial_obj_size() + live;
+  // Fill in the block table if necessary.  This is unsynchronized, so multiple
+  // threads may fill the block table for a region (harmless, since it is
+  // idempotent).
+  if (!region_ptr->blocks_filled()) {
+    PSParallelCompact::fill_blocks(addr_to_region_idx(addr));
+    region_ptr->set_blocks_filled();
   }
 
+  HeapWord* const search_start = block_align_down(addr);
+  const size_t block_offset = addr_to_block_ptr(addr)->offset();
+
+  const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
+  const size_t live = bitmap->live_words_in_range(cm, search_start, cast_to_oop(addr));
+  result += block_offset + live;
   DEBUG_ONLY(PSParallelCompact::check_new_location(addr, result));
   return result;
 }
@@ -3296,7 +3281,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   assert(bitmap()->obj_size(addr) == words, "bad size");
 
   _source = addr;
-  assert(PSParallelCompact::summary_data().calc_new_pointer(source(), compaction_manager(), false) ==
+  assert(PSParallelCompact::summary_data().calc_new_pointer(source(), compaction_manager()) ==
          destination(), "wrong destination");
 
   if (words > words_remaining()) {

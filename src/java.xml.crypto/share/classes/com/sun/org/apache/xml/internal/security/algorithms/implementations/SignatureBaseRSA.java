@@ -23,11 +23,10 @@
 package com.sun.org.apache.xml.internal.security.algorithms.implementations;
 
 import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -37,17 +36,22 @@ import com.sun.org.apache.xml.internal.security.algorithms.JCEMapper;
 import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithmSpi;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
+import com.sun.org.apache.xml.internal.security.utils.Constants;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
+
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 
 public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(SignatureBaseRSA.class);
 
-    /** {@inheritDoc} */
-    public abstract String engineGetURI();
-
     /** Field algorithm */
-    private Signature signatureAlgorithm;
+    private final Signature signatureAlgorithm;
 
     /**
      * Constructor SignatureRSA
@@ -55,23 +59,29 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
      * @throws XMLSignatureException
      */
     public SignatureBaseRSA() throws XMLSignatureException {
-        String algorithmID = JCEMapper.translateURItoJCEID(this.engineGetURI());
+        this(null);
+    }
 
+    public SignatureBaseRSA(Provider provider) throws XMLSignatureException {
+        String algorithmID = JCEMapper.translateURItoJCEID(this.engineGetURI());
         LOG.debug("Created SignatureRSA using {}", algorithmID);
-        String provider = JCEMapper.getProviderId();
+
         try {
             if (provider == null) {
-                this.signatureAlgorithm = Signature.getInstance(algorithmID);
+                String providerId = JCEMapper.getProviderId();
+                if (providerId == null) {
+                    this.signatureAlgorithm = Signature.getInstance(algorithmID);
+
+                } else {
+                    this.signatureAlgorithm = Signature.getInstance(algorithmID, providerId);
+                }
+
             } else {
                 this.signatureAlgorithm = Signature.getInstance(algorithmID, provider);
             }
-        } catch (java.security.NoSuchAlgorithmException ex) {
-            Object[] exArgs = { algorithmID, ex.getLocalizedMessage() };
 
-            throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
-        } catch (NoSuchProviderException ex) {
-            Object[] exArgs = { algorithmID, ex.getLocalizedMessage() };
-
+        } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
+            Object[] exArgs = {algorithmID, ex.getLocalizedMessage()};
             throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
         }
     }
@@ -97,33 +107,7 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
 
     /** {@inheritDoc} */
     protected void engineInitVerify(Key publicKey) throws XMLSignatureException {
-        if (!(publicKey instanceof PublicKey)) {
-            String supplied = null;
-            if (publicKey != null) {
-                supplied = publicKey.getClass().getName();
-            }
-            String needed = PublicKey.class.getName();
-            Object exArgs[] = { supplied, needed };
-
-            throw new XMLSignatureException("algorithms.WrongKeyForThisOperation", exArgs);
-        }
-
-        try {
-            this.signatureAlgorithm.initVerify((PublicKey) publicKey);
-        } catch (InvalidKeyException ex) {
-            // reinstantiate Signature object to work around bug in JDK
-            // see: http://bugs.java.com/view_bug.do?bug_id=4953555
-            Signature sig = this.signatureAlgorithm;
-            try {
-                this.signatureAlgorithm = Signature.getInstance(signatureAlgorithm.getAlgorithm());
-            } catch (Exception e) {
-                // this shouldn't occur, but if it does, restore previous
-                // Signature
-                LOG.debug("Exception when reinstantiating Signature: {}", e);
-                this.signatureAlgorithm = sig;
-            }
-            throw new XMLSignatureException(ex);
-        }
+        engineInitVerify(publicKey, this.signatureAlgorithm);
     }
 
     /** {@inheritDoc} */
@@ -138,26 +122,7 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
     /** {@inheritDoc} */
     protected void engineInitSign(Key privateKey, SecureRandom secureRandom)
         throws XMLSignatureException {
-        if (!(privateKey instanceof PrivateKey)) {
-            String supplied = null;
-            if (privateKey != null) {
-                supplied = privateKey.getClass().getName();
-            }
-            String needed = PrivateKey.class.getName();
-            Object exArgs[] = { supplied, needed };
-
-            throw new XMLSignatureException("algorithms.WrongKeyForThisOperation", exArgs);
-        }
-
-        try {
-            if (secureRandom == null) {
-                this.signatureAlgorithm.initSign((PrivateKey) privateKey);
-            } else {
-                this.signatureAlgorithm.initSign((PrivateKey) privateKey, secureRandom);
-            }
-        } catch (InvalidKeyException ex) {
-            throw new XMLSignatureException(ex);
-        }
+        engineInitSign(privateKey, secureRandom, this.signatureAlgorithm);
     }
 
     /** {@inheritDoc} */
@@ -184,7 +149,7 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
     }
 
     /** {@inheritDoc} */
-    protected void engineUpdate(byte buf[], int offset, int len) throws XMLSignatureException {
+    protected void engineUpdate(byte[] buf, int offset, int len) throws XMLSignatureException {
         try {
             this.signatureAlgorithm.update(buf, offset, len);
         } catch (SignatureException ex) {
@@ -229,7 +194,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA1;
         }
@@ -249,7 +219,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA224(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA224;
         }
@@ -269,7 +244,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA256(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256;
         }
@@ -289,7 +269,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA384(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA384;
         }
@@ -309,7 +294,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA512(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512;
         }
@@ -329,7 +319,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSARIPEMD160(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_RIPEMD160;
         }
@@ -349,7 +344,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSAMD5(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_NOT_RECOMMENDED_RSA_MD5;
         }
@@ -369,7 +369,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA1MGF1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA1_MGF1;
         }
@@ -389,7 +394,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA224MGF1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA224_MGF1;
         }
@@ -409,7 +419,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA256MGF1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256_MGF1;
         }
@@ -429,7 +444,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA384MGF1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA384_MGF1;
         }
@@ -449,7 +469,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA512MGF1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512_MGF1;
         }
@@ -469,7 +494,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA3_224MGF1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_224_MGF1;
         }
@@ -489,7 +519,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA3_256MGF1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_256_MGF1;
         }
@@ -509,7 +544,12 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA3_384MGF1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_384_MGF1;
         }
@@ -529,9 +569,155 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
             super();
         }
 
+        public SignatureRSASHA3_512MGF1(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
         /** {@inheritDoc} */
+        @Override
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_512_MGF1;
         }
+    }
+
+    public static class SignatureRSASSAPSS extends SignatureBaseRSA {
+        PSSParameterSpec pssParameterSpec;
+
+        public enum DigestAlgorithm {
+            SHA256("SHA-256", "http://www.w3.org/2001/04/xmlenc#sha256", 32),
+            SHA384("SHA-384", "http://www.w3.org/2001/04/xmldsig-more#sha384", 48),
+            SHA512("SHA-512", "http://www.w3.org/2001/04/xmlenc#sha512", 64);
+
+            private final String xmlDigestAlgorithm;
+            private final String digestAlgorithm;
+            private final int saltLength;
+
+            DigestAlgorithm(String digestAlgorithm, String xmlDigestAlgorithm, int saltLength) {
+                this.digestAlgorithm = digestAlgorithm;
+                this.xmlDigestAlgorithm = xmlDigestAlgorithm;
+                this.saltLength = saltLength;
+            }
+
+            public String getXmlDigestAlgorithm() {
+                return xmlDigestAlgorithm;
+            }
+
+            public String getDigestAlgorithm() {
+                return digestAlgorithm;
+            }
+
+            public int getSaltLength() {
+                return saltLength;
+            }
+
+            public static DigestAlgorithm fromXmlDigestAlgorithm(String xmlDigestAlgorithm) throws XMLSignatureException {
+                for (DigestAlgorithm value : DigestAlgorithm.values()) {
+                    if(value.getXmlDigestAlgorithm().equals(xmlDigestAlgorithm)) {
+                        return value;
+                    }
+                }
+                throw new XMLSignatureException();
+            }
+
+            public static DigestAlgorithm fromDigestAlgorithm(String digestAlgorithm) throws XMLSignatureException {
+                for (DigestAlgorithm value : DigestAlgorithm.values()) {
+                    if(value.getDigestAlgorithm().equals(digestAlgorithm)) {
+                        return value;
+                    }
+                }
+                throw new XMLSignatureException();
+
+            }
+
+        }
+
+        public SignatureRSASSAPSS() throws XMLSignatureException {
+            super();
+        }
+
+        public SignatureRSASSAPSS(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
+        @Override
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_RSA_PSS;
+        }
+
+        @Override
+        protected void engineAddContextToElement(Element element) throws XMLSignatureException {
+            if (element == null) {
+                throw new IllegalArgumentException("null element");
+            }
+
+            Document doc = element.getOwnerDocument();
+            Element rsaPssParamsElement = doc.createElementNS(Constants.XML_DSIG_NS_MORE_07_05, "pss" + ":" + Constants._TAG_RSAPSSPARAMS);
+            rsaPssParamsElement.setAttributeNS(Constants.NamespaceSpecNS, "xmlns:" + "pss", Constants.XML_DSIG_NS_MORE_07_05);
+
+            Element digestMethodElement = XMLUtils.createElementInSignatureSpace(rsaPssParamsElement.getOwnerDocument(), Constants._TAG_DIGESTMETHOD);
+            digestMethodElement.setAttributeNS(null, Constants._ATT_ALGORITHM, DigestAlgorithm.fromDigestAlgorithm(pssParameterSpec.getDigestAlgorithm()).getXmlDigestAlgorithm());
+            XMLUtils.addReturnToElement(rsaPssParamsElement);
+            rsaPssParamsElement.appendChild(digestMethodElement);
+            XMLUtils.addReturnToElement(rsaPssParamsElement);
+
+            Element saltLengthElement = rsaPssParamsElement.getOwnerDocument().createElementNS(Constants.XML_DSIG_NS_MORE_07_05, "pss" + ":" + Constants._TAG_SALTLENGTH);
+            Text saltLengthText = rsaPssParamsElement.getOwnerDocument().createTextNode(String.valueOf(pssParameterSpec.getSaltLength()));
+            saltLengthElement.appendChild(saltLengthText);
+
+            rsaPssParamsElement.appendChild(saltLengthElement);
+            XMLUtils.addReturnToElement(rsaPssParamsElement);
+
+            Element trailerFieldElement = rsaPssParamsElement.getOwnerDocument().createElementNS(Constants.XML_DSIG_NS_MORE_07_05, "pss" + ":" + Constants._TAG_TRAILERFIELD);
+            Text trailerFieldText = rsaPssParamsElement.getOwnerDocument().createTextNode(String.valueOf(pssParameterSpec.getTrailerField()));
+            trailerFieldElement.appendChild(trailerFieldText);
+
+            rsaPssParamsElement.appendChild(trailerFieldElement);
+            XMLUtils.addReturnToElement(rsaPssParamsElement);
+
+            XMLUtils.addReturnToElement(element);
+            element.appendChild(rsaPssParamsElement);
+            XMLUtils.addReturnToElement(element);
+        }
+
+        @Override
+        protected void engineGetContextFromElement(Element element) throws XMLSignatureException {
+            if (pssParameterSpec == null) {
+                super.engineGetContextFromElement(element);
+                Element rsaPssParams = XMLUtils.selectNode(element.getFirstChild(), Constants.XML_DSIG_NS_MORE_07_05, Constants._TAG_RSAPSSPARAMS, 0);
+                if (rsaPssParams == null) {
+                    throw new XMLSignatureException("algorithms.MissingRSAPSSParams");
+                }
+
+                Element saltLengthNode = XMLUtils.selectNode(rsaPssParams.getFirstChild(), Constants.XML_DSIG_NS_MORE_07_05, Constants._TAG_SALTLENGTH, 0);
+                Element trailerFieldNode = XMLUtils.selectNode(rsaPssParams.getFirstChild(), Constants.XML_DSIG_NS_MORE_07_05, Constants._TAG_TRAILERFIELD, 0);
+                int trailerField = 1;
+                if (trailerFieldNode != null) {
+                    try {
+                        trailerField = Integer.parseInt(trailerFieldNode.getTextContent());
+                    } catch (NumberFormatException ex) {
+                        throw new XMLSignatureException("empty", new Object[] {"Invalid trailer field value supplied"});
+                    }
+                }
+                String xmlAlgorithm = XMLUtils.selectDsNode(rsaPssParams.getFirstChild(), Constants._TAG_DIGESTMETHOD, 0).getAttribute(Constants._ATT_ALGORITHM);
+                DigestAlgorithm digestAlgorithm = DigestAlgorithm.fromXmlDigestAlgorithm(xmlAlgorithm);
+                String digestAlgorithmName = digestAlgorithm.getDigestAlgorithm();
+                int saltLength = digestAlgorithm.getSaltLength();
+                if (saltLengthNode != null) {
+                    try {
+                        saltLength = Integer.parseInt(saltLengthNode.getTextContent());
+                    } catch (NumberFormatException ex) {
+                        throw new XMLSignatureException("empty", new Object[] {"Invalid salt length value supplied"});
+                    }
+                }
+                engineSetParameter(new PSSParameterSpec(digestAlgorithmName, "MGF1", new MGF1ParameterSpec(digestAlgorithmName), saltLength, trailerField));
+            }
+        }
+
+        @Override
+        protected void engineSetParameter(AlgorithmParameterSpec params) throws XMLSignatureException {
+            pssParameterSpec = (PSSParameterSpec) params;
+            super.engineSetParameter(params);
+        }
+
     }
 }

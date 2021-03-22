@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -496,7 +496,6 @@ void LIR_Assembler::align_call(LIR_Code code) {
     case lir_dynamic_call:
       offset += NativeCall::call_far_pcrelative_displacement_offset;
       break;
-    case lir_virtual_call:   // currently, sparc-specific for niagara
     default: ShouldNotReachHere();
   }
   if ((offset & (NativeCall::call_far_pcrelative_displacement_alignment-1)) != 0) {
@@ -531,11 +530,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   // to determine who we intended to call.
   __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr));
   call(op, relocInfo::none);
-}
-
-// not supported
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere();
 }
 
 void LIR_Assembler::move_regs(Register from_reg, Register to_reg) {

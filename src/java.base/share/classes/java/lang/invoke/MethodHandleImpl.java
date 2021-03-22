@@ -664,7 +664,7 @@ abstract class MethodHandleImpl {
                                    DONT_INLINE_THRESHOLD);
     }
 
-    private final static class Makers {
+    private static final class Makers {
         /** Constructs reinvoker lambda form which block inlining during JIT-compilation for a particular method handle */
         static final Function<MethodHandle, LambdaForm> PRODUCE_BLOCK_INLINING_FORM = new Function<MethodHandle, LambdaForm>() {
             @Override
