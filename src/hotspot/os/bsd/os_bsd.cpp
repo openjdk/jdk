@@ -1400,7 +1400,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   if (sysctl(mib_machine, 2, machine, &size, NULL, 0) < 0) {
       strncpy(machine, "", sizeof(machine));
   }
-  
+
   char emulated[16] = "\0";
 #ifdef __APPLE__
   if (VM_Version::is_cpu_emulated()) {
