@@ -522,10 +522,11 @@ public final class SunJCE extends Provider {
         psA("AlgorithmParameters", "ChaCha20-Poly1305",
                 "com.sun.crypto.provider.ChaCha20Poly1305Parameters", null);
 
-        ps("AlgorithmParameters", "KW",
-                "com.sun.crypto.provider.KWParameters");
+        ps("AlgorithmParameters", "AES/KW/NoPadding",
+                "com.sun.crypto.provider.KWParameters",
+                List.of("AES/KW/PKCS5Padding", "AESWrap"), null);
 
-        ps("AlgorithmParameters", "KWP",
+        ps("AlgorithmParameters", "AES/KWP/NoPadding",
                 "com.sun.crypto.provider.KWPParameters");
 
         /*

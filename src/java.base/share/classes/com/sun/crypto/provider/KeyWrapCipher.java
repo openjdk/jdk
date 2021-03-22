@@ -600,7 +600,7 @@ abstract class KeyWrapCipher extends CipherSpi {
         AlgorithmParameters params = null;
 
         byte[] iv = cipher.getIV();
-        String algo = cipher.getFeedback();
+        String algo = "AES/" + cipher.getFeedback() + "/NoPadding";
         try {
             params = AlgorithmParameters.getInstance(algo,
                     SunJCE.getInstance());
