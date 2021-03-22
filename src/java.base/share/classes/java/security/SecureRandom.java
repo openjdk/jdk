@@ -733,7 +733,7 @@ public class SecureRandom extends java.util.Random {
          * Ignore call from super constructor (as well as any other calls
          * unfortunate enough to be passing 0).  It's critical that we
          * ignore call from superclass constructor. All SecureRandom
-         * constructors calls `super(0)` but we do not want  `setSeed(0)`
+         * constructors call `super(0)` but we do not want `setSeed(0)`
          * to actually do any seeding. We either keep the object unseeded
          * (in `new SecureRandom()`) or we seed the object explicitly
          * (in `new SecureRandom(byte[])`).
