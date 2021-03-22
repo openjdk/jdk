@@ -226,12 +226,12 @@ public interface ObjectInputFilter {
         /**
          * Lock object for system-wide filter.
          */
-        private final static Object serialFilterLock = new Object();
+        private static final Object serialFilterLock = new Object();
 
         /**
          * Debug: Logger
          */
-        private final static System.Logger configLog;
+        private static final System.Logger configLog;
 
         /**
          * Logger for debugging.
@@ -246,14 +246,14 @@ public interface ObjectInputFilter {
          * The name for the system-wide deserialization filter.
          * Used as a system property and a java.security.Security property.
          */
-        private final static String SERIAL_FILTER_PROPNAME = "jdk.serialFilter";
+        private static final String SERIAL_FILTER_PROPNAME = "jdk.serialFilter";
 
         /**
          * The system-wide filter; may be null.
          * Lookup the filter in java.security.Security or
          * the system property.
          */
-        private final static ObjectInputFilter configuredFilter;
+        private static final ObjectInputFilter configuredFilter;
 
         static {
             configuredFilter = AccessController
@@ -405,7 +405,7 @@ public interface ObjectInputFilter {
          * used for all ObjectInputStreams that do not set their own filters.
          *
          */
-        final static class Global implements ObjectInputFilter {
+        static final class Global implements ObjectInputFilter {
             /**
              * The pattern used to create the filter.
              */

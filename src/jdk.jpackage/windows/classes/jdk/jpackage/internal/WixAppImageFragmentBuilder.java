@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             launcherPaths = AppImageFile.getLauncherNames(appImageRoot, params).stream()
                     .map(name -> installedAppImage.launchersDirectory().resolve(name))
                     .map(WixAppImageFragmentBuilder::addExeSuffixToPath)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         programMenuFolderName = MENU_GROUP.fetchFrom(params);
@@ -162,7 +162,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         // Filter out empty extensions.
         fa.extensions = fa.extensions.stream().filter(Predicate.not(
-                String::isEmpty)).collect(Collectors.toList());
+                String::isEmpty)).toList();
     }
 
     private static Path addExeSuffixToPath(Path path) {
@@ -179,7 +179,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 .peek(this::normalizeFileAssociation)
                 // Filter out file associations without extensions.
                 .filter(fa -> !fa.extensions.isEmpty())
-                .collect(Collectors.toList());
+                .toList();
 
         associations.stream().filter(fa -> fa.iconPath != null).forEach(fa -> {
             // Need to add fa icon in the image.
@@ -600,7 +600,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             for (var dir : allDirs.stream()
                     .filter(Predicate.not(emptyDirs::contains))
                     .filter(Predicate.not(removeFolderItems::containsKey))
-                    .collect(Collectors.toList())) {
+                    .toList()) {
                 componentIds.add(addRemoveDirectoryComponent(xml, dir));
             }
         }
