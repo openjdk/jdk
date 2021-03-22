@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2038,7 +2038,6 @@ public class AquaFileChooserUI extends FileChooserUI {
         String getApproveButtonText(final JFileChooser fc, final String fallbackText) {
             final String buttonText = fc.getApproveButtonText();
             if (buttonText != null) {
-                buttonText.trim();
                 if (!buttonText.isEmpty()) return buttonText;
             }
             return fallbackText;
@@ -2057,7 +2056,6 @@ public class AquaFileChooserUI extends FileChooserUI {
         String getApproveButtonToolTipText(final JFileChooser fc, final String fallbackText) {
             final String tooltipText = fc.getApproveButtonToolTipText();
             if (tooltipText != null) {
-                tooltipText.trim();
                 if (!tooltipText.isEmpty()) return tooltipText;
             }
             return fallbackText;
