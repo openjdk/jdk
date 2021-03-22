@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @requires !vm.gc.Epsilon
+ * @bug 8263903
+ * @requires vm.gc != "Epsilon"
  * @summary Discarding a Timer causes the Timer thread to stop.
  */
 
@@ -33,7 +34,7 @@ import java.lang.ref.Reference;
 
 public class AutoStop {
     static final Object wakeup = new Object();
-    static volatile Thread tdThread = null;
+    static Thread tdThread = null;
     static volatile int counter = 0;
     static final int COUNTER_LIMIT = 10;
 
@@ -43,8 +44,8 @@ public class AutoStop {
         // Run an event that records the timer thread.
         t.schedule(new TimerTask() {
                 public void run() {
-                    tdThread = Thread.currentThread();
                     synchronized(wakeup) {
+                        tdThread = Thread.currentThread();
                         wakeup.notify();
                     }
                 }
