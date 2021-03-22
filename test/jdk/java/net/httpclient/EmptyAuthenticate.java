@@ -49,7 +49,7 @@ public class EmptyAuthenticate {
         server.createContext("/", exchange -> {
             String response = "test body";
             //this empty header will make the HttpClient throw NPE
-            exchange.getResponseHeaders().add("www-authenticate", ""); 
+            exchange.getResponseHeaders().add("www-authenticate", "");
             exchange.sendResponseHeaders(401, response.length());
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
