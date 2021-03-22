@@ -41,10 +41,11 @@ import java.net.http.HttpResponse;
 public class EmptyAuthenticate {
 
     public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException {
-        int port = 8000;
+        int port = 0;
 
         //start server:
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        port = server.getAddress().getPort();
         server.createContext("/", exchange -> {
             String response = "test body";
             exchange.getResponseHeaders().add("www-authenticate", ""); //this empty header will make the HttpClient crash
