@@ -4076,22 +4076,15 @@ public class Types {
             return buf.toList();
         }
 
-        private volatile Type arraySuperType;
+        private Type arraySuperType;
         private Type arraySuperType() {
             // initialized lazily to avoid problems during compiler startup
-            Type ast = arraySuperType;
-            if (ast == null) {
-                synchronized (this) {
-                    ast = arraySuperType;
-                    if (ast == null) {
-                        // JLS 10.8: all arrays implement Cloneable and Serializable.
-                        ast = makeIntersectionType(List.of(syms.serializableType,
-                                syms.cloneableType), true);
-                        arraySuperType = ast;
-                    }
-                }
+            if (arraySuperType == null) {
+                // JLS 10.8: all arrays implement Cloneable and Serializable.
+                arraySuperType = makeIntersectionType(List.of(syms.serializableType,
+                        syms.cloneableType), true);
             }
-            return ast;
+            return arraySuperType;
         }
     // </editor-fold>
 
