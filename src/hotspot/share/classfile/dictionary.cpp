@@ -359,7 +359,6 @@ void Dictionary::validate_protection_domain(unsigned int name_hash,
                                             Handle protection_domain,
                                             TRAPS) {
 
-  // Now we have to call back to java to check if the initating class has access
   assert(class_loader() != NULL, "Should not call this");
   assert(protection_domain() != NULL, "Should not call this");
 
@@ -376,6 +375,7 @@ void Dictionary::validate_protection_domain(unsigned int name_hash,
     // The class_loader handle passed in is the initiating loader.
     Handle mirror(THREAD, klass->java_mirror());
 
+    // Now we have to call back to java to check if the initating class has access
     InstanceKlass* system_loader = vmClasses::ClassLoader_klass();
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result,
