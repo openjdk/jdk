@@ -115,6 +115,26 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+class CastFFNode: public ConstraintCastNode {
+public:
+  CastFFNode(Node* n, const Type* t, bool carry_dependency = false)
+          : ConstraintCastNode(n, t, carry_dependency){
+    init_class_id(Class_CastFF);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegF; }
+};
+
+class CastDDNode: public ConstraintCastNode {
+public:
+  CastDDNode(Node* n, const Type* t, bool carry_dependency = false)
+          : ConstraintCastNode(n, t, carry_dependency){
+    init_class_id(Class_CastDD);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegD; }
+};
+
 //------------------------------CastPPNode-------------------------------------
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {

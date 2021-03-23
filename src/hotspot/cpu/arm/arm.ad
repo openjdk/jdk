@@ -5291,6 +5291,23 @@ instruct castLL( iRegL dst ) %{
   ins_pipe(empty);
 %}
 
+instruct castFF( regF dst ) %{
+  match(Set dst (CastFF dst));
+  format %{ "! castFF of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+instruct castDD( regD dst ) %{
+  match(Set dst (CastDD dst));
+  format %{ "! castDD of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+
 //----------Arithmetic Instructions--------------------------------------------
 // Addition Instructions
 // Register Addition

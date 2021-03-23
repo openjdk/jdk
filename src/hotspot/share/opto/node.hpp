@@ -56,6 +56,8 @@ class CallNode;
 class CallRuntimeNode;
 class CallNativeNode;
 class CallStaticJavaNode;
+class CastFFNode;
+class CastDDNode;
 class CastIINode;
 class CastLLNode;
 class CatchNode;
@@ -689,6 +691,8 @@ public:
         DEFINE_CLASS_ID(CastII, ConstraintCast, 0)
         DEFINE_CLASS_ID(CheckCastPP, ConstraintCast, 1)
         DEFINE_CLASS_ID(CastLL, ConstraintCast, 2)
+        DEFINE_CLASS_ID(CastFF, ConstraintCast, 3)
+        DEFINE_CLASS_ID(CastDD, ConstraintCast, 4)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
