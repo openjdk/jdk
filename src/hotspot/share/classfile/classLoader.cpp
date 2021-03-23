@@ -286,9 +286,8 @@ ClassPathZipEntry::~ClassPathZipEntry() {
 }
 
 u1* ClassPathZipEntry::open_entry(Thread* current, const char* name, jint* filesize, bool nul_terminate) {
-    // enable call to C land
-  JavaThread* thread = current->as_Java_thread();
-  ThreadToNativeFromVM ttn(thread);
+  // enable call to C land
+  ThreadToNativeFromVM ttn(current->as_Java_thread());
   // check whether zip archive contains name
   jint name_len;
   jzentry* entry = (*FindEntry)(_zip, name, filesize, &name_len);
