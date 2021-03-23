@@ -4031,6 +4031,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
                                             FreeRegionList* free_list) {
   assert(hr->is_humongous(), "this is only for humongous regions");
+  assert(free_list != NULL, "pre-condition");
   hr->clear_humongous();
   free_region(hr, free_list);
 }
@@ -4182,7 +4183,6 @@ class G1FreeCollectionSetTask : public AbstractGangTask {
 
       // Free the region and and its remembered set.
       _g1h->free_region(r, NULL);
-      _g1h->hr_printer()->cleanup(r);
     }
 
     void handle_failed_region(HeapRegion* r) {
@@ -4485,7 +4485,6 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
 
 void G1CollectedHeap::rebuild_free_region_list() {
   Ticks start = Ticks::now();
-  // Now rebuild the free region list.
   _hrm.rebuild_free_list(workers());
   phase_times()->record_total_rebuild_freelist_time_ms((Ticks::now() - start).seconds() * 1000.0);
 }

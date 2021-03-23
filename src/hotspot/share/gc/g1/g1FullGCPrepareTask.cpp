@@ -114,11 +114,14 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
 void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(HeapRegion* hr) {
   assert(hr->is_humongous(), "must be but region %u is %s", hr->hrm_index(), hr->get_short_type_str());
 
+  FreeRegionList dummy_free_list("Humongous Dummy Free List for G1MarkSweep");
+
   hr->set_containing_set(NULL);
   _regions_freed = true;
 
-  _g1h->free_humongous_region(hr, NULL);
+  _g1h->free_humongous_region(hr, &dummy_free_list);
   prepare_for_compaction(hr);
+  dummy_free_list.remove_all();
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::free_open_archive_region(HeapRegion* hr) {
