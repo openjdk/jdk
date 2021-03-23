@@ -1165,7 +1165,11 @@ public class JShellTool implements MessageHandler {
     //where
     private void startUpRun(String start) {
         try (IOContext suin = new ScannerIOContext(new StringReader(start))) {
-            run(suin);
+            while (run(suin)) {
+                if (!live) {
+                    resetState();
+                }
+            }
         } catch (Exception ex) {
             errormsg("jshell.err.startup.unexpected.exception", ex);
             ex.printStackTrace(cmderr);
@@ -1187,8 +1191,10 @@ public class JShellTool implements MessageHandler {
      * Main loop
      *
      * @param in the line input/editing context
+     * @return true iff something remains in the input after this method finishes
+     *              (e.g. due to live == false).
      */
-    private void run(IOContext in) {
+    private boolean run(IOContext in) {
         IOContext oldInput = input;
         input = in;
         try {
@@ -1202,11 +1208,13 @@ public class JShellTool implements MessageHandler {
             }
         } catch (EOFException ex) {
             // Just exit loop
+            return false;
         } catch (IOException ex) {
             errormsg("jshell.err.unexpected.exception", ex);
         } finally {
             input = oldInput;
         }
+        return true;
     }
 
     /**
