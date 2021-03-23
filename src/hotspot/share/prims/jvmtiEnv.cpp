@@ -2366,15 +2366,10 @@ JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
   if (!java_lang_Class::is_primitive(k_mirror)) {
     Klass* k = java_lang_Class::as_Klass(k_mirror);
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    result = k->compute_modifier_flags(current_thread);
-    JavaThread* THREAD = current_thread; // pass to macros
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-      return JVMTI_ERROR_INTERNAL;
-    };
+    result = k->compute_modifier_flags();
 
-    // Reset the deleted  ACC_SUPER bit ( deleted in compute_modifier_flags()).
-    if(k->is_super()) {
+    // Reset the deleted  ACC_SUPER bit (deleted in compute_modifier_flags()).
+    if (k->is_super()) {
       result |= JVM_ACC_SUPER;
     }
   } else {

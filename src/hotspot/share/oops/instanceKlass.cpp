@@ -393,8 +393,8 @@ void InstanceKlass::set_nest_host(InstanceKlass* host, TRAPS) {
   assert(is_hidden(), "must be a hidden class");
   assert(host != NULL, "NULL nest host specified");
   assert(_nest_host == NULL, "current class has resolved nest-host");
-  assert(nest_host_error(THREAD) == NULL, "unexpected nest host resolution error exists: %s",
-         nest_host_error(THREAD));
+  assert(nest_host_error(THREAD->as_Java_thread()) == NULL, "unexpected nest host resolution error exists: %s",
+         nest_host_error(THREAD->as_Java_thread()));
   assert((host->_nest_host == NULL && host->_nest_host_index == 0) ||
          (host->_nest_host == host), "proposed host is not a valid nest-host");
   // Can't assert this as package is not set yet:
@@ -452,11 +452,11 @@ bool InstanceKlass::has_nestmate_access_to(InstanceKlass* k, TRAPS) {
   return access;
 }
 
-const char* InstanceKlass::nest_host_error(TRAPS) {
+const char* InstanceKlass::nest_host_error(JavaThread* current) {
   if (_nest_host_index == 0) {
     return NULL;
   } else {
-    constantPoolHandle cph(THREAD, constants());
+    constantPoolHandle cph(current, constants());
     return SystemDictionary::find_nest_host_error(cph, (int)_nest_host_index);
   }
 }
@@ -3109,7 +3109,7 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
   return outer_klass;
 }
 
-jint InstanceKlass::compute_modifier_flags(TRAPS) const {
+jint InstanceKlass::compute_modifier_flags() const {
   jint access = access_flags().as_int();
 
   // But check if it happens to be member class.

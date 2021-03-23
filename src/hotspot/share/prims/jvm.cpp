@@ -1351,7 +1351,7 @@ JVM_ENTRY(jint, JVM_GetClassModifiers(JNIEnv *env, jclass cls))
   }
 
   Klass* k = java_lang_Class::as_Klass(mirror);
-  debug_only(int computed_modifiers = k->compute_modifier_flags(CHECK_0));
+  debug_only(int computed_modifiers = k->compute_modifier_flags());
   assert(k->modifier_flags() == computed_modifiers, "modifiers cache is OK");
   return k->modifier_flags();
 JVM_END
