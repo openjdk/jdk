@@ -534,6 +534,7 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
 {
   const size_t obj_ofs = pointer_delta(addr, _region_start);
   const size_t beg_region = obj_ofs >> Log2RegionSize;
+  // end_region is inclusive
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
 
   DEBUG_ONLY(Atomic::inc(&add_obj_count);)
@@ -557,8 +558,8 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   }
 
   // Last region.
-  const size_t end_ofs = region_offset(addr + len - 1);
-  _region_data[end_region].set_partial_obj_size(end_ofs + 1);
+  const size_t end_ofs = region_offset(addr + len);
+  _region_data[end_region].set_partial_obj_size(end_ofs);
   _region_data[end_region].set_partial_obj_addr(addr);
 }
 
