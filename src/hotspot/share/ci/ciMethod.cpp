@@ -45,7 +45,6 @@
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
-#include "prims/nativeLookup.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
