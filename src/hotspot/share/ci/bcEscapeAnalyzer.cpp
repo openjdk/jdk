@@ -302,8 +302,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   // determine actual method (use CHA if necessary)
   ciMethod* inline_target = NULL;
   if (target->is_loaded() && klass->is_loaded()
-      && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
-      && target->is_loaded()) {
+      && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))) {
     if (code == Bytecodes::_invokestatic
         || code == Bytecodes::_invokespecial
         || (code == Bytecodes::_invokevirtual && target->is_final_method())) {
