@@ -1765,7 +1765,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       ("after pass 1b: merge_cp_len=%d, scratch_i=%d, index_map_len=%d",
        *merge_cp_length_p, scratch_i, _index_map_count);
   }
-  finalize_operands_merge(*merge_cp_p, THREAD);
+  finalize_operands_merge(*merge_cp_p, CHECK_false);
 
   return true;
 } // end merge_constant_pools()
