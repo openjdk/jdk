@@ -5422,7 +5422,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   // can only set dynamic nest-host after static nest information is set
   if (cl_inst_info.dynamic_nest_host() != NULL) {
-    ik->set_nest_host(cl_inst_info.dynamic_nest_host(), THREAD);
+    ik->set_nest_host(cl_inst_info.dynamic_nest_host(), THREAD->as_Java_thread());
   }
 
   // note that is not safe to use the fields in the parser from this point on
