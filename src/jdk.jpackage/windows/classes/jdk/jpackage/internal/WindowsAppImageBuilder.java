@@ -42,7 +42,7 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.WinResources");
 
-    private static final String TEMPLATE_APP_ICON ="JavaApp.ico";
+    private static final String TEMPLATE_APP_ICON ="java48.ico";
 
     public static final BundlerParamInfo<Path> ICON_ICO =
             new StandardBundlerParam<>(
