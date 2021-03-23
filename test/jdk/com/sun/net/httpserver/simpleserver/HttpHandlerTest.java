@@ -68,7 +68,7 @@ public class HttpHandlerTest {
     @Test
     public void testAdaptRequest() throws Exception {
         var handler = ((HttpHandler) exchange ->  request = exchange );
-        var adaptedHandler = HttpHandler
+        var adaptedHandler = HttpHandlers
                 .adaptRequest(handler, r -> r.with("Foo", List.of("Bar")));
         adaptedHandler.handle(new TestHttpExchange(new Headers()));
         assertEquals(request.getRequestHeaders().size(), 1);
@@ -90,7 +90,7 @@ public class HttpHandlerTest {
                 exchange.sendResponseHeaders(400, -1);
             }
         });
-        var adaptedHandler = HttpHandler
+        var adaptedHandler = HttpHandlers
                 .adaptRequest(handler, r -> r.with("X-Bar", List.of("barValue")));
 
         var ss = HttpServer.create(WILDCARD_ADDR, 0);
@@ -110,11 +110,11 @@ public class HttpHandlerTest {
     @Test
     public void testNull() {
         final var handler = new TestHttpHandler();
-        assertThrows(NPE, () -> HttpHandler.newComposedHandler(handler, null, null));
-        assertThrows(NPE, () -> HttpHandler.newComposedHandler(handler, p -> true, null));
-        assertThrows(NPE, () -> HttpHandler.newComposedHandler(handler, null,  new TestHttpHandler()));
+        assertThrows(NPE, () -> HttpHandlers.handleOrElse(null, handler, null));
+        assertThrows(NPE, () -> HttpHandlers.handleOrElse(p -> true, handler, null));
+        assertThrows(NPE, () -> HttpHandlers.handleOrElse(null, handler,  new TestHttpHandler()));
 
-        assertThrows(NPE, () -> HttpHandler.adaptRequest(handler, null));
+        assertThrows(NPE, () -> HttpHandlers.adaptRequest(handler, null));
     }
 
     static class TestHttpHandler implements HttpHandler {
