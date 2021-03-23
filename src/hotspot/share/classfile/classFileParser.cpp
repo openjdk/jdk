@@ -30,7 +30,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/defaultMethods.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/fieldLayoutBuilder.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -3766,7 +3765,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
       }
       parse_classfile_synthetic_attribute(CHECK);
     } else if (tag == vmSymbols::tag_deprecated()) {
-      // Check for Deprecatd tag - 4276120
+      // Check for Deprecated tag - 4276120
       if (attribute_length != 0) {
         classfile_parse_error(
           "Invalid Deprecated classfile attribute length %u in class file %s",

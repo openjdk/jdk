@@ -2345,6 +2345,8 @@ void Compile::Optimize() {
   }
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
+ check_no_dead_use();
+
  process_print_inlining();
 
  // A method with only infinite loops has no edges entering loops from root
@@ -2359,6 +2361,25 @@ void Compile::Optimize() {
  print_method(PHASE_OPTIMIZE_FINISHED, 2);
  DEBUG_ONLY(set_phase_optimize_finished();)
 }
+
+#ifdef ASSERT
+void Compile::check_no_dead_use() const {
+  ResourceMark rm;
+  Unique_Node_List wq;
+  wq.push(root());
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      Node* u = n->fast_out(j);
+      if (u->outcnt() == 0 && !u->is_Con()) {
+        u->dump();
+        fatal("no reachable node should have no use");
+      }
+      wq.push(u);
+    }
+  }
+}
+#endif
 
 void Compile::inline_vector_reboxing_calls() {
   if (C->_vector_reboxing_late_inlines.length() > 0) {
@@ -3493,7 +3514,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   case Op_Loop:
-    assert(!n->as_Loop()->is_transformed_long_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
+    assert(!n->as_Loop()->is_transformed_long_inner_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
   case Op_CountedLoop:
   case Op_LongCountedLoop:
   case Op_OuterStripMinedLoop:
@@ -4776,7 +4797,7 @@ void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
     _debug_file_printer->update_compiled_method(C->method());
   }
   tty->print_cr("Method %s to %s", append ? "appended" : "printed", file_name);
-  _debug_file_printer->print_method(phase_name, 0);
+  _debug_file_printer->print(phase_name, (Node*)C->root());
 }
 
 void Compile::igv_print_method_to_network(const char* phase_name) {
@@ -4786,7 +4807,7 @@ void Compile::igv_print_method_to_network(const char* phase_name) {
     _debug_network_printer->update_compiled_method(C->method());
   }
   tty->print_cr("Method printed over network stream to IGV");
-  _debug_network_printer->print_method(phase_name, 0);
+  _debug_network_printer->print(phase_name, (Node*)C->root());
 }
 #endif
 

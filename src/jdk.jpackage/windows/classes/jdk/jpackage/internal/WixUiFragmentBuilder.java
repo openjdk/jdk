@@ -68,7 +68,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
                 ShortcutsFolder.values()).filter(shortcutFolder -> {
             return shortcutFolder.requested(params)
                     && SHORTCUT_PROMPT.fetchFrom(params);
-        }).collect(Collectors.toList());
+        }).toList();
 
         withShortcutPromptDlg = !shortcutFolders.isEmpty();
 
@@ -265,10 +265,10 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
             var pair = new DialogPair(firstId, secondId);
             return Map.of(pair, nextBuilders.stream().map(b -> {
                 return buildPublish(b.create()).next().create();
-            }).collect(Collectors.toList()), pair.flip(),
+            }).toList(), pair.flip(),
                     prevBuilders.stream().map(b -> {
                         return buildPublish(b.create()).back().create();
-                    }).collect(Collectors.toList()));
+                    }).toList());
         }
 
         static Map<DialogPair, List<Publish>> createPair(Dialog firstId,

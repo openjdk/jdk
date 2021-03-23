@@ -195,10 +195,10 @@ public class WinMsiBundler  extends AbstractBundler {
         wixFragments = Stream.of(
                 Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
                 Map.entry("ui.wxf", new WixUiFragmentBuilder())
-        ).map(e -> {
+        ).<WixFragmentBuilder>map(e -> {
             e.getValue().setOutputFileName(e.getKey());
             return e.getValue();
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Override
@@ -520,7 +520,7 @@ public class WinMsiBundler  extends AbstractBundler {
                     .filter(Files::isReadable)
                     .filter(pathMatcher::matches)
                     .sorted((a, b) -> a.getFileName().toString().compareToIgnoreCase(b.getFileName().toString()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 
