@@ -37,10 +37,13 @@ import java.net.http.HttpResponse;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 
+import jdk.test.lib.net.IPSupport;
+
 /**
  * @test
  * @bug 8263442
  * @summary Potential bug in jdk.internal.net.http.common.Utils.CONTEXT_RESTRICTED
+ * @library /test/lib
  * @run main/othervm AuthFilter
  */
 
@@ -133,32 +136,40 @@ public class AuthFilter {
         }
     }
 
+    private static InetSocketAddress getLoopback(int port) throws IOException {
+        if (IPSupport.hasIPv4()) {
+            return new InetSocketAddress("127.0.0.1", port);
+        } else {
+            return new InetSocketAddress("::1", port);
+        }
+    }
+
     public static void test(boolean useProxy) throws Exception {
         HttpServer server = createServer();
         int port = server.getAddress().getPort();
         ProxyServer proxy;
 
-        InetSocketAddress proxyAddr=null;
+        InetSocketAddress proxyAddr;
         String authHdr;
         if (useProxy) {
             proxy = new ProxyServer();
-            proxyAddr = new InetSocketAddress("127.0.0.1", proxy.getPort());
+            proxyAddr = getLoopback(proxy.getPort());
             proxy.start();
             authHdr = "Proxy-Authorization";
         } else {
             authHdr = "Authorization";
+            proxyAddr = null;
         }
 
         server.start();
 
-        HttpClient.Builder builder = HttpClient
+        // proxyAddr == null => proxying disabled
+        HttpClient client = HttpClient
                 .newBuilder()
-                .authenticator(new Auth());
+                .authenticator(new Auth())
+                .proxy(ProxySelector.of(proxyAddr))
+                .build();
 
-        if (useProxy) {
-            builder.proxy(ProxySelector.of(proxyAddr));
-        }
-        HttpClient client = builder.build();
 
         URI uri = new URI("http://127.0.0.1:" + Integer.toString(port));
 
