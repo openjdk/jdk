@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -77,6 +78,9 @@ public class HtmlIds {
     static final HtmlId FIELD_DETAIL = HtmlId.of("field-detail");
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
+    static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
+    static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
+    static final HtmlId HELP_SEARCH = HtmlId.of("help-search");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
@@ -441,11 +445,29 @@ public class HtmlIds {
     }
 
 
+    /**
+     * Returns an id for the "preview" section for an element.
+     *
+     * @param el the element
+     *
+     * @return the id
+     */
     public HtmlId forPreviewSection(Element el) {
         return HtmlId.of("preview-" + switch (el.getKind()) {
             case CONSTRUCTOR, METHOD -> forMember((ExecutableElement) el).name();
             case PACKAGE -> forPackage((PackageElement) el).name();
             default -> utils.getFullyQualifiedName(el, false);
         });
+    }
+
+    /**
+     * Returns an id for the entry on the HELP page for a kind of generated page.
+     *
+     * @param page the kind of page
+     *
+     * @return the id
+     */
+    public HtmlId forPage(Navigation.PageMode page) {
+        return HtmlId.of(page.name().toLowerCase(Locale.ROOT).replace("_", "-"));
     }
 }

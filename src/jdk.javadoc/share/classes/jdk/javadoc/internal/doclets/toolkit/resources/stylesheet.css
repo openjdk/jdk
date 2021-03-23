@@ -675,6 +675,18 @@ section.description {
 ul.help-section-list {
     margin: 0;
 }
+ul.help-subtoc > li {
+  display: inline-block;
+  padding-right: 5px;
+  font-size: smaller;
+}
+ul.help-subtoc > li::before {
+  content: "\2022" ;
+  padding-right:2px;
+}
+span.help-note {
+    font-style: italic;
+}
 /*
  * Indicator icon for external links.
  */
