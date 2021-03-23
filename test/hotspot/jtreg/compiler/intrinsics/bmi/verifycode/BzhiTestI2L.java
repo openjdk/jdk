@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
+ * @requires vm.simpleArch == "x64" & vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
