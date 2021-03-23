@@ -32,7 +32,7 @@
  * @library /test/lib /test/hotspot/jtreg
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run compile -g EATests.java
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
@@ -119,7 +119,7 @@
  * @library /test/lib /test/hotspot/jtreg
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run compile -g EATests.java
  *
  * @comment Test with Graal. Some testcases are expected to fail because Graal does not provide all information about non-escaping

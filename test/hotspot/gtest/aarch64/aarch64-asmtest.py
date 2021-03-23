@@ -1040,7 +1040,10 @@ class NEONReduceInstruction(Instruction):
 
     def cstr(self):
         buf = Instruction.cstr(self) + str(self.dstSIMDreg)
-        buf = '%s, __ T%s, %s);' % (buf, self.arrangement, self.srcSIMDreg)
+        if self._name == "fmaxp" or self._name == "fminp":
+            buf = '%s, %s, __ %s);' % (buf, self.srcSIMDreg, self.arrangement[1:])
+        else:
+            buf = '%s, __ T%s, %s);' % (buf, self.arrangement, self.srcSIMDreg)
         return buf
 
     def astr(self):
@@ -1401,6 +1404,8 @@ generate(NEONReduceInstruction,
           ["sminv", "sminv", "8B"], ["sminv", "sminv", "16B"],
           ["sminv", "sminv", "4H"], ["sminv", "sminv", "8H"],
           ["sminv", "sminv", "4S"], ["fminv", "fminv", "4S"],
+          ["fmaxp", "fmaxp", "2S"], ["fmaxp", "fmaxp", "2D"],
+          ["fminp", "fminp", "2S"], ["fminp", "fminp", "2D"],
           ])
 
 generate(TwoRegNEONOp,
@@ -1494,6 +1499,13 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["mov",    "__ mov(v1, __ T2S, 1, zr);",                         "mov\tv1.s[1], wzr"],
                         ["mov",    "__ mov(v1, __ T4H, 2, zr);",                         "mov\tv1.h[2], wzr"],
                         ["mov",    "__ mov(v1, __ T8B, 3, zr);",                         "mov\tv1.b[3], wzr"],
+                        ["smov",   "__ smov(r0, v1, __ S, 0);",                          "smov\tx0, v1.s[0]"],
+                        ["smov",   "__ smov(r0, v1, __ H, 1);",                          "smov\tx0, v1.h[1]"],
+                        ["smov",   "__ smov(r0, v1, __ B, 2);",                          "smov\tx0, v1.b[2]"],
+                        ["umov",   "__ umov(r0, v1, __ D, 0);",                          "umov\tx0, v1.d[0]"],
+                        ["umov",   "__ umov(r0, v1, __ S, 1);",                          "umov\tw0, v1.s[1]"],
+                        ["umov",   "__ umov(r0, v1, __ H, 2);",                          "umov\tw0, v1.h[2]"],
+                        ["umov",   "__ umov(r0, v1, __ B, 3);",                          "umov\tw0, v1.b[3]"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
                         # SVE instructions
                         ["cpy",    "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],

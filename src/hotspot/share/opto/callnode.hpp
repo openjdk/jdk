@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 
 // Optimization - Graph Style
 
-class Chaitin;
 class NamedCounter;
 class MultiNode;
 class  SafePointNode;
@@ -52,13 +51,9 @@ class         CallLeafNoFPNode;
 class     CallNativeNode;
 class     AllocateNode;
 class       AllocateArrayNode;
-class     BoxLockNode;
-class     LockNode;
-class     UnlockNode;
-class JVMState;
-class State;
-class StartNode;
-class MachCallNode;
+class     AbstractLockNode;
+class       LockNode;
+class       UnlockNode;
 class FastLockNode;
 
 //------------------------------StartNode--------------------------------------
@@ -294,7 +289,8 @@ public:
   void              set_offsets(uint off) {
     _locoff = _stkoff = _monoff = _scloff = _endoff = off;
   }
-  void              set_map(SafePointNode *map) { _map = map; }
+  void              set_map(SafePointNode* map) { _map = map; }
+  void              bind_map(SafePointNode* map); // set_map() and set_jvms() for the SafePointNode
   void              set_sp(uint sp) { _sp = sp; }
                     // _reexecute is initialized to "undefined" for a new bci
   void              set_bci(int bci) {if(_bci != bci)_reexecute=Reexecute_Undefined; _bci = bci; }
@@ -323,9 +319,26 @@ public:
 // potential code sharing) only - conceptually it is independent of
 // the Node semantics.
 class SafePointNode : public MultiNode {
+  friend JVMState;
+  friend class GraphKit;
+  friend class VMStructs;
+
   virtual bool           cmp( const Node &n ) const;
   virtual uint           size_of() const;       // Size is bigger
 
+protected:
+  JVMState* const _jvms;      // Pointer to list of JVM State objects
+  // Many calls take *all* of memory as input,
+  // but some produce a limited subset of that memory as output.
+  // The adr_type reports the call's behavior as a store, not a load.
+  const TypePtr*  _adr_type;  // What type of memory does this node produce?
+  ReplacedNodes   _replaced_nodes; // During parsing: list of pair of nodes from calls to GraphKit::replace_in_map()
+  bool            _has_ea_local_in_scope; // NoEscape or ArgEscape objects in JVM States
+
+  void set_jvms(JVMState* s) {
+  assert(s != nullptr, "assign NULL value to _jvms");
+    *(JVMState**)&_jvms = s;  // override const attribute in the accessor
+  }
 public:
   SafePointNode(uint edges, JVMState* jvms,
                 // A plain safepoint advertises no memory effects (NULL):
@@ -338,20 +351,7 @@ public:
     init_class_id(Class_SafePoint);
   }
 
-  JVMState* const _jvms;      // Pointer to list of JVM State objects
-  const TypePtr*  _adr_type;  // What type of memory does this node produce?
-  ReplacedNodes   _replaced_nodes; // During parsing: list of pair of nodes from calls to GraphKit::replace_in_map()
-  bool            _has_ea_local_in_scope; // NoEscape or ArgEscape objects in JVM States
-
-  // Many calls take *all* of memory as input,
-  // but some produce a limited subset of that memory as output.
-  // The adr_type reports the call's behavior as a store, not a load.
-
-  virtual JVMState* jvms() const { return _jvms; }
-  void set_jvms(JVMState* s) {
-    *(JVMState**)&_jvms = s;  // override const attribute in the accessor
-  }
-
+  JVMState* jvms() const { return _jvms; }
  private:
   void verify_input(JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
@@ -474,8 +474,9 @@ public:
   virtual int            Opcode() const;
   virtual bool           pinned() const { return true; }
   virtual const Type*    Value(PhaseGVN* phase) const;
-  virtual const Type    *bottom_type() const { return Type::CONTROL; }
-  virtual const TypePtr *adr_type() const { return _adr_type; }
+  virtual const Type*    bottom_type() const { return Type::CONTROL; }
+  virtual const TypePtr* adr_type() const { return _adr_type; }
+  void set_adr_type(const TypePtr* adr_type) { _adr_type = adr_type; }
   virtual Node          *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node*          Identity(PhaseGVN* phase);
   virtual uint           ideal_reg() const { return 0; }
@@ -581,8 +582,8 @@ public:
   CallGenerator*  _generator;   // corresponding CallGenerator for some late inline calls
   const char*     _name;        // Printable name, if _method is NULL
 
-  CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type)
-    : SafePointNode(tf->domain()->cnt(), NULL, adr_type),
+  CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type, JVMState* jvms = nullptr)
+    : SafePointNode(tf->domain()->cnt(), jvms, adr_type),
       _tf(tf),
       _entry_point(addr),
       _cnt(COUNT_UNKNOWN),
@@ -617,8 +618,9 @@ public:
   // For macro nodes, the JVMState gets modified during expansion. If calls
   // use MachConstantBase, it gets modified during matching. So when cloning
   // the node the JVMState must be cloned. Default is not to clone.
-  virtual void clone_jvms(Compile* C) {
-    if (C->needs_clone_jvms() && jvms() != NULL) {
+  virtual bool needs_clone_jvms(Compile* C) { return C->needs_clone_jvms(); }
+  void clone_jvms(Compile* C) {
+    if ((jvms() != NULL) && needs_clone_jvms(C)) {
       set_jvms(jvms()->clone_deep(C));
       jvms()->set_map_deep(this);
     }
@@ -738,11 +740,8 @@ public:
   }
   // Late inlining modifies the JVMState, so we need to clone it
   // when the call node is cloned (because it is macro node).
-  virtual void  clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && is_boxing_method()) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
+  virtual bool needs_clone_jvms(Compile* C) {
+    return is_boxing_method() || CallNode::needs_clone_jvms(C);
   }
 
   virtual int         Opcode() const;
@@ -767,11 +766,8 @@ public:
 
   // Late inlining modifies the JVMState, so we need to clone it
   // when the call node is cloned.
-  virtual void clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && IncrementalInlineVirtual) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
+  virtual bool needs_clone_jvms(Compile* C) {
+    return IncrementalInlineVirtual || CallNode::needs_clone_jvms(C);
   }
 
   int _vtable_index;
@@ -789,8 +785,8 @@ class CallRuntimeNode : public CallNode {
   virtual uint size_of() const; // Size is bigger
 public:
   CallRuntimeNode(const TypeFunc* tf, address addr, const char* name,
-                  const TypePtr* adr_type)
-    : CallNode(tf, addr, adr_type)
+                  const TypePtr* adr_type, JVMState* jvms = nullptr)
+    : CallNode(tf, addr, adr_type, jvms)
   {
     init_class_id(Class_CallRuntime);
     _name = name;
@@ -924,12 +920,7 @@ public:
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
                Node *size, Node *klass_node, Node *initial_test);
   // Expansion modifies the JVMState, so we need to clone it
-  virtual void  clone_jvms(Compile* C) {
-    if (jvms() != NULL) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
-  }
+  virtual bool needs_clone_jvms(Compile* C) { return true; }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual bool        guaranteed_safepoint()  { return false; }
@@ -1143,12 +1134,7 @@ public:
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   // Expansion modifies the JVMState, so we need to clone it
-  virtual void  clone_jvms(Compile* C) {
-    if (jvms() != NULL) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
-  }
+  virtual bool needs_clone_jvms(Compile* C) { return true; }
 
   bool is_nested_lock_region(); // Is this Lock nested?
   bool is_nested_lock_region(Compile * c); // Why isn't this Lock nested?

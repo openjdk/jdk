@@ -36,7 +36,7 @@ Each CLHSDB command can have zero or more arguments and optionally end with outp
 <code>
 Available commands:
   assert true | false <font color="red">turn on/off asserts in SA code</font>
-  attach pid | exec core  <font color="red">attach SA to a process or core</font>
+  attach pid | exec core | debugserver  <font color="red">attach SA to a process, core, or remote debug server</font>
   buildreplayjars [all | boot | app] <font color="red">build jars for replay, boot.jar for bootclasses, app.jar for application classes</font>
   class name <font color="red">find a Java class from debuggee and print oop</font>
   classes <font color="red">print all loaded Java classes with Klass*</font>
@@ -53,7 +53,8 @@ Available commands:
   echo [ true | false ] <font color="red">turn on/off command echo mode</font>
   examine [ address/count ] | [ address,address] <font color="red">show contents of memory from given address</font>
   field [ type [ name fieldtype isStatic offset address ] ] <font color="red">print info about a field of HotSpot type</font>
-  findpc address <font color="red">print info. about pointer location</font>
+  findpc address <font color="red">print info about pointer location</font>
+  findsym name <font color="red">print address of symbol in the executable or shared library</font>
   flags [ flag ] <font color="red">show all -XX flag name value pairs. or just show given flag</font>
   help [ command ] <font color="red">print help message for all commands or just given command</font>
   history <font color="red">show command history. usual !command-number syntax works.</font>

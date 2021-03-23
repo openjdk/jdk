@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ class Method : public Metadata {
   ConstMethod*      _constMethod;                // Method read-only data.
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
+  AdapterHandlerEntry* _adapter;
   AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
                                                  // note: can have vtables with >2**16 elements (because of inheritance)
@@ -98,7 +99,7 @@ class Method : public Metadata {
   JFR_ONLY(DEFINE_TRACE_FLAG;)
 
 #ifndef PRODUCT
-  int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
+  int64_t _compiled_invocation_count;
 #endif
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
@@ -113,7 +114,7 @@ class Method : public Metadata {
   CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
-#if INCLUDE_AOT && defined(TIERED)
+#if INCLUDE_AOT
   CompiledMethod* _aot_code;
 #endif
 
@@ -372,23 +373,17 @@ class Method : public Metadata {
 
   bool init_method_counters(MethodCounters* counters);
 
-#ifdef TIERED
-  // We are reusing interpreter_invocation_count as a holder for the previous event count!
-  // We can do that since interpreter_invocation_count is not used in tiered.
-  int prev_event_count() const                   {
-    if (method_counters() == NULL) {
-      return 0;
-    } else {
-      return method_counters()->interpreter_invocation_count();
-    }
+  int prev_event_count() const {
+    MethodCounters* mcs = method_counters();
+    return mcs == NULL ? 0 : mcs->prev_event_count();
   }
   void set_prev_event_count(int count) {
     MethodCounters* mcs = method_counters();
     if (mcs != NULL) {
-      mcs->set_interpreter_invocation_count(count);
+      mcs->set_prev_event_count(count);
     }
   }
-  jlong prev_time() const                        {
+  jlong prev_time() const {
     MethodCounters* mcs = method_counters();
     return mcs == NULL ? 0 : mcs->prev_time();
   }
@@ -398,7 +393,7 @@ class Method : public Metadata {
       mcs->set_prev_time(time);
     }
   }
-  float rate() const                             {
+  float rate() const {
     MethodCounters* mcs = method_counters();
     return mcs == NULL ? 0 : mcs->rate();
   }
@@ -420,7 +415,6 @@ class Method : public Metadata {
 #else
   CompiledMethod* aot_code() const { return NULL; }
 #endif // INCLUDE_AOT
-#endif // TIERED
 
   int nmethod_age() const {
     if (method_counters() == NULL) {
@@ -430,38 +424,24 @@ class Method : public Metadata {
     }
   }
 
-  int invocation_count();
-  int backedge_count();
+  int invocation_count() const;
+  int backedge_count() const;
 
   bool was_executed_more_than(int n);
-  bool was_never_executed()                      { return !was_executed_more_than(0); }
+  bool was_never_executed()                     { return !was_executed_more_than(0);  }
 
   static void build_interpreter_method_data(const methodHandle& method, TRAPS);
 
   static MethodCounters* build_method_counters(Method* m, TRAPS);
 
-  int interpreter_invocation_count() {
-    if (TieredCompilation) {
-      return invocation_count();
-    } else {
-      MethodCounters* mcs = method_counters();
-      return (mcs == NULL) ? 0 : mcs->interpreter_invocation_count();
-    }
-  }
-#if COMPILER2_OR_JVMCI
-  int increment_interpreter_invocation_count(TRAPS) {
-    if (TieredCompilation) ShouldNotReachHere();
-    MethodCounters* mcs = get_method_counters(CHECK_0);
-    return (mcs == NULL) ? 0 : mcs->increment_interpreter_invocation_count();
-  }
-#endif
+  int interpreter_invocation_count()            { return invocation_count();          }
 
 #ifndef PRODUCT
-  int  compiled_invocation_count() const         { return _compiled_invocation_count;  }
-  void set_compiled_invocation_count(int count)  { _compiled_invocation_count = count; }
+  int64_t  compiled_invocation_count() const    { return _compiled_invocation_count;}
+  void set_compiled_invocation_count(int count) { _compiled_invocation_count = (int64_t)count; }
 #else
   // for PrintMethodData in a product build
-  int  compiled_invocation_count() const         { return 0;  }
+  int64_t  compiled_invocation_count() const    { return 0; }
 #endif // not PRODUCT
 
   // Clear (non-shared space) pointers which could not be relevant
@@ -485,13 +465,7 @@ private:
 public:
   static void set_code(const methodHandle& mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
-    constMethod()->set_adapter_entry(adapter);
-  }
-  void set_adapter_trampoline(AdapterHandlerEntry** trampoline) {
-    constMethod()->set_adapter_trampoline(trampoline);
-  }
-  void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
-    constMethod()->update_adapter_trampoline(adapter);
+    _adapter = adapter;
   }
   void set_from_compiled_entry(address entry) {
     _from_compiled_entry =  entry;
@@ -502,7 +476,7 @@ public:
   address get_c2i_unverified_entry();
   address get_c2i_no_clinit_check_entry();
   AdapterHandlerEntry* adapter() const {
-    return constMethod()->adapter();
+    return _adapter;
   }
   // setup entry points
   void link_method(const methodHandle& method, TRAPS);
@@ -537,8 +511,6 @@ public:
   address interpreter_entry() const              { return _i2i_entry; }
   // Only used when first initialize so we can set _i2i_entry and _from_interpreted_entry
   void set_interpreter_entry(address entry) {
-    assert(!is_shared(),
-           "shared method's interpreter entry should not be changed at run time");
     if (_i2i_entry != entry) {
       _i2i_entry = entry;
     }
@@ -703,9 +675,7 @@ public:
   // simultaneously. Use with caution.
   bool has_compiled_code() const;
 
-#ifdef TIERED
   bool has_aot_code() const                      { return aot_code() != NULL; }
-#endif
 
   bool needs_clinit_barrier() const;
 

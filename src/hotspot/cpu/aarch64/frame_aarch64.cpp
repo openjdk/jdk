@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -355,10 +355,6 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
 
-  if (jfa->saved_fp_address()) {
-    update_map_with_saved_link(map, jfa->saved_fp_address());
-  }
-
   return fr;
 }
 
@@ -599,7 +595,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
         oop* obj_p = (oop*)tos_addr;
         obj = (obj_p == NULL) ? (oop)NULL : *obj_p;
       }
-      assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
+      assert(Universe::is_in_heap_or_null(obj), "sanity check");
       *oop_result = obj;
       break;
     }

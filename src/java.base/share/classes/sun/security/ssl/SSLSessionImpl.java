@@ -307,9 +307,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
-        int i = 0;
-        byte[] b;
-
         boundValues = new ConcurrentHashMap<>();
         this.protocolVersion =
                 ProtocolVersion.valueOf(Short.toUnsignedInt(buf.getShort()));
@@ -323,7 +320,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
         // Local Supported signature algorithms
         ArrayList<SignatureScheme> list = new ArrayList<>();
-        i = Byte.toUnsignedInt(buf.get());
+        int i = Byte.toUnsignedInt(buf.get());
         while (i-- > 0) {
             list.add(SignatureScheme.valueOf(
                     Short.toUnsignedInt(buf.getShort())));
@@ -340,6 +337,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.peerSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
         // PSK
+        byte[] b;
         i = Short.toUnsignedInt(buf.getShort());
         if (i > 0) {
             b = new byte[i];

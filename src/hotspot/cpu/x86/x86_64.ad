@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1648,7 +1648,7 @@ bool Matcher::const_oop_prefer_decode() {
 
 bool Matcher::const_klass_prefer_decode() {
   // Prefer ConP over ConNKlass+DecodeNKlass.
-  return true;
+  return false;
 }
 
 // Is it better to copy float constants, or load them directly from
@@ -3172,6 +3172,18 @@ operand immL_32bits()
   match(ConL);
   op_cost(20);
 
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Int Immediate: 2^n-1, postive
+operand immI_Pow2M1()
+%{
+  predicate((n->get_int() > 0)
+            && is_power_of_2(n->get_int() + 1));
+  match(ConI);
+
+  op_cost(20);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -9153,6 +9165,21 @@ instruct andI2L_rReg_imm65535(rRegL dst, rRegI src, immI_65535 mask)
   ins_pipe(ialu_reg);
 %}
 
+// Can skip int2long conversions after AND with small bitmask
+instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src,  immI_Pow2M1 mask, rRegI tmp, rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_bmi2());
+  ins_cost(125);
+  effect(TEMP tmp, KILL cr);
+  match(Set dst (ConvI2L (AndI src mask)));
+  format %{ "bzhiq $dst, $src, $mask \t# using $tmp as TEMP, int &  immI_Pow2M1 -> long" %}
+  ins_encode %{
+    __ movl($tmp$$Register, exact_log2($mask$$constant + 1));
+    __ bzhiq($dst$$Register, $src$$Register, $tmp$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 // And Register with Immediate
 instruct andI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
@@ -9600,7 +9627,7 @@ instruct btrL_mem_imm(memory dst, immL_NotPow2 con, rFlagsReg cr)
   ins_cost(125);
   format %{ "btrq    $dst, log2(not($con))\t# long" %}
   ins_encode %{
-    __ btrq($dst$$Address, log2i_exact(~$con$$constant));
+    __ btrq($dst$$Address, log2i_exact((julong)~$con$$constant));
   %}
   ins_pipe(ialu_mem_imm);
 %}
@@ -10747,7 +10774,7 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                   Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() && !n->in(2)->bottom_type()->is_long()->is_con());
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX <= 2 || !VM_Version::supports_avx512vlbw() || !n->in(2)->bottom_type()->is_long()->is_con()));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -10855,7 +10882,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
 
 instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rRegI zero, Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() && n->in(2)->bottom_type()->is_long()->is_con());
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX > 2 && VM_Version::supports_avx512vlbw() && n->in(2)->bottom_type()->is_long()->is_con()));
   match(Set dummy (ClearArray cnt base));
   effect(TEMP tmp, TEMP zero, KILL cr);
   format %{ "clear_mem_imm $base , $cnt  \n\t" %}

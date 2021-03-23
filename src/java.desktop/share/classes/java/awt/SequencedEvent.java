@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package java.awt;
 
+import java.io.Serial;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Iterator;
 import java.util.LinkedList;
+
 import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
@@ -45,9 +46,11 @@ import sun.awt.SunToolkit;
  * @author David Mendenhall
  */
 class SequencedEvent extends AWTEvent implements ActiveEvent {
-    /*
-     * serialVersionUID
+
+    /**
+     * Use serialVersionUID from JDK 1.6 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 547742659238625067L;
 
     private static final int ID =

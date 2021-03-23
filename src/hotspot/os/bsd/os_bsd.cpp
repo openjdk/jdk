@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -95,7 +93,6 @@
 # include <sys/time.h>
 # include <sys/times.h>
 # include <sys/types.h>
-# include <sys/wait.h>
 # include <time.h>
 # include <unistd.h>
 
@@ -123,8 +120,6 @@ julong os::Bsd::_physical_memory = 0;
 #ifdef __APPLE__
 mach_timebase_info_data_t os::Bsd::_timebase_info = {0, 0};
 volatile uint64_t         os::Bsd::_max_abstime   = 0;
-#else
-int (*os::Bsd::_clock_gettime)(clockid_t, struct timespec *) = NULL;
 #endif
 pthread_t os::Bsd::_main_thread;
 int os::Bsd::_page_size = -1;
@@ -789,40 +784,13 @@ double os::elapsedVTime() {
   return elapsedTime();
 }
 
-jlong os::javaTimeMillis() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "bsd error");
-  return jlong(time.tv_sec) * 1000  +  jlong(time.tv_usec / 1000);
-}
-
-void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "bsd error");
-  seconds = jlong(time.tv_sec);
-  nanos = jlong(time.tv_usec) * 1000;
-}
-
-#ifndef __APPLE__
-  #ifndef CLOCK_MONOTONIC
-    #define CLOCK_MONOTONIC (1)
-  #endif
-#endif
-
 #ifdef __APPLE__
 void os::Bsd::clock_init() {
   mach_timebase_info(&_timebase_info);
 }
 #else
 void os::Bsd::clock_init() {
-  struct timespec res;
-  struct timespec tp;
-  if (::clock_getres(CLOCK_MONOTONIC, &res) == 0 &&
-      ::clock_gettime(CLOCK_MONOTONIC, &tp)  == 0) {
-    // yes, monotonic clock is supported
-    _clock_gettime = ::clock_gettime;
-  }
+  // Nothing to do
 }
 #endif
 
@@ -854,44 +822,14 @@ jlong os::javaTimeNanos() {
   return (prev == obsv) ? now : obsv;
 }
 
-#else // __APPLE__
-
-jlong os::javaTimeNanos() {
-  if (os::supports_monotonic_clock()) {
-    struct timespec tp;
-    int status = Bsd::_clock_gettime(CLOCK_MONOTONIC, &tp);
-    assert(status == 0, "gettime error");
-    jlong result = jlong(tp.tv_sec) * (1000 * 1000 * 1000) + jlong(tp.tv_nsec);
-    return result;
-  } else {
-    timeval time;
-    int status = gettimeofday(&time, NULL);
-    assert(status != -1, "bsd error");
-    jlong usecs = jlong(time.tv_sec) * (1000 * 1000) + jlong(time.tv_usec);
-    return 1000 * usecs;
-  }
+void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
+  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
+  info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
+  info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
 }
 
 #endif // __APPLE__
-
-void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  if (os::supports_monotonic_clock()) {
-    info_ptr->max_value = ALL_64_BITS;
-
-    // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
-    info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
-    info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
-  } else {
-    // gettimeofday - based on time in seconds since the Epoch thus does not wrap
-    info_ptr->max_value = ALL_64_BITS;
-
-    // gettimeofday is a real time clock so it skips
-    info_ptr->may_skip_backward = true;
-    info_ptr->may_skip_forward = true;
-  }
-
-  info_ptr->kind = JVMTI_TIMER_ELAPSED;                // elapsed not CPU time
-}
 
 // Return the real, user, and system times in seconds from an
 // arbitrary fixed point in the past.
@@ -927,56 +865,6 @@ char * os::local_time_string(char *buf, size_t buflen) {
 
 struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
   return localtime_r(clock, res);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// runtime exit support
-
-// Note: os::shutdown() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::shutdown(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::shutdown() {
-
-  // allow PerfMemory to attempt cleanup of any persistent resources
-  perfMemory_exit();
-
-  // needs to remove object in file system
-  AttachListener::abort();
-
-  // flush buffered output, finish log files
-  ostream_abort();
-
-  // Check for abort hook
-  abort_hook_t abort_hook = Arguments::abort_hook();
-  if (abort_hook != NULL) {
-    abort_hook();
-  }
-
-}
-
-// Note: os::abort() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::abort(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
-  os::shutdown();
-  if (dump_core) {
-    ::abort(); // dump core
-  }
-
-  ::exit(1);
-}
-
-// Die immediately, no exit hook, no abort hook, no cleanup.
-// Dump a core file, if possible, for debugging.
-void os::die() {
-  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
-    // For TimeoutInErrorHandlingTest.java, we just kill the VM
-    // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
-  } else {
-    // _exit() on BsdThreads only kills current thread
-    ::abort();
-  }
 }
 
 // Information of current thread in variety of formats
@@ -1472,7 +1360,7 @@ void os::print_os_info_brief(outputStream* st) {
 }
 
 void os::print_os_info(outputStream* st) {
-  st->print("OS:");
+  st->print_cr("OS:");
 
   os::Posix::print_uname_info(st);
 
@@ -1557,6 +1445,7 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   char dli_fname[MAXPATHLEN];
+  dli_fname[0] = '\0';
   bool ret = dll_address_to_library_name(
                                          CAST_FROM_FN_PTR(address, os::jvm_path),
                                          dli_fname, sizeof(dli_fname), NULL);
@@ -2670,80 +2559,6 @@ void os::pause() {
   }
 }
 
-// Darwin has no "environ" in a dynamic library.
-#ifdef __APPLE__
-  #include <crt_externs.h>
-  #define environ (*_NSGetEnviron())
-#else
-extern char** environ;
-#endif
-
-// Run the specified command in a separate process. Return its exit value,
-// or -1 on failure (e.g. can't fork a new process).
-// Unlike system(), this function can be called from signal handler. It
-// doesn't block SIGINT et al.
-int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
-  const char * argv[4] = {"sh", "-c", cmd, NULL};
-
-  // fork() in BsdThreads/NPTL is not async-safe. It needs to run
-  // pthread_atfork handlers and reset pthread library. All we need is a
-  // separate process to execve. Make a direct syscall to fork process.
-  // On IA64 there's no fork syscall, we have to use fork() and hope for
-  // the best...
-  pid_t pid = fork();
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    // execve() in BsdThreads will call pthread_kill_other_threads_np()
-    // first to kill every thread on the thread list. Because this list is
-    // not reset by fork() (see notes above), execve() will instead kill
-    // every thread in the parent process. We know this is the only thread
-    // in the new process, so make a system call directly.
-    // IA64 should use normal execve() from glibc to match the glibc fork()
-    // above.
-    execve("/bin/sh", (char* const*)argv, environ);
-
-    // execve failed
-    _exit(-1);
-
-  } else  {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
-    int status;
-
-    // Wait for the child process to exit.  This returns immediately if
-    // the child has already exited. */
-    while (waitpid(pid, &status, 0) < 0) {
-      switch (errno) {
-      case ECHILD: return 0;
-      case EINTR: break;
-      default: return -1;
-      }
-    }
-
-    if (WIFEXITED(status)) {
-      // The child exited normally; get its exit code.
-      return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
-      // The child exited because of a signal
-      // The best value to return is 0x80 + signal number,
-      // because that is what all Unix shells do, and because
-      // it allows callers to distinguish between process exit and
-      // process death by signal.
-      return 0x80 + WTERMSIG(status);
-    } else {
-      // Unknown exit code; pass it through
-      return status;
-    }
-  }
-}
-
 // Get the kern.corefile setting, or otherwise the default path to the core file
 // Returns the length of the string
 int os::get_core_path(char* buffer, size_t bufferSize) {
@@ -2778,12 +2593,6 @@ bool os::supports_map_sync() {
   return false;
 }
 
-#ifndef PRODUCT
-void TestReserveMemorySpecial_test() {
-  // No tests available for this platform
-}
-#endif
-
 bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);
   char *p = &buf[len];
@@ -2811,4 +2620,3 @@ bool os::start_debugging(char *buf, int buflen) {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
-

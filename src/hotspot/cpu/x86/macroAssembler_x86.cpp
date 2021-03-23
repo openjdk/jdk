@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -41,6 +42,7 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -2486,7 +2488,6 @@ void MacroAssembler::movdqu(XMMRegister dst, Address src) {
 
 void MacroAssembler::movdqu(XMMRegister dst, XMMRegister src) {
     assert(((dst->encoding() < 16  && src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    if (dst->encoding() == src->encoding()) return;
     Assembler::movdqu(dst, src);
 }
 
@@ -2511,7 +2512,6 @@ void MacroAssembler::vmovdqu(XMMRegister dst, Address src) {
 
 void MacroAssembler::vmovdqu(XMMRegister dst, XMMRegister src) {
     assert(((dst->encoding() < 16  && src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    if (dst->encoding() == src->encoding()) return;
     Assembler::vmovdqu(dst, src);
 }
 
@@ -2732,7 +2732,6 @@ void MacroAssembler::reset_last_Java_frame(Register java_thread, bool clear_fp) 
   }
   // Always clear the pc because it could have been set by make_walkable()
   movptr(Address(java_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
-  movptr(Address(java_thread, JavaThread::saved_rbp_address_offset()), NULL_WORD);
   vzeroupper();
 }
 
@@ -3002,6 +3001,16 @@ void MacroAssembler::vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src
   } else {
     lea(rscratch1, src);
     vaddss(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vpaddb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(UseAVX > 0, "requires some form of AVX");
+  if (reachable(src)) {
+    Assembler::vpaddb(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpaddb(dst, nds, Address(rscratch, 0), vector_len);
   }
 }
 

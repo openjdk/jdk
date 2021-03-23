@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,8 +37,10 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
@@ -552,16 +554,6 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
         ShouldNotReachHere();
     }
   }
-}
-
-size_t SharedRuntime::trampoline_size() {
-  return MacroAssembler::load_const_size() + 2;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  // Think about using pc-relative branch.
-  __ load_const(Z_R1_scratch, destination);
-  __ z_br(Z_R1_scratch);
 }
 
 // ---------------------------------------------------------------------------
@@ -3466,10 +3458,12 @@ int SpinPause() {
   return 0;
 }
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
-                                               int shadow_space_bytes,
-                                               const GrowableArray<VMReg>& input_registers,
-                                               const GrowableArray<VMReg>& output_registers) {
+#ifdef COMPILER2
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
+                                                int shadow_space_bytes,
+                                                const GrowableArray<VMReg>& input_registers,
+                                                const GrowableArray<VMReg>& output_registers) {
   Unimplemented();
   return nullptr;
 }
+#endif

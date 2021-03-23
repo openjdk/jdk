@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.awt.geom;
 
+import java.io.Serial;
+
 /**
  * The {@code NoninvertibleTransformException} class represents
  * an exception that is thrown if an operation is performed requiring
@@ -33,6 +35,11 @@ package java.awt.geom;
  */
 
 public class NoninvertibleTransformException extends java.lang.Exception {
+
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 6137225240503990466L;
 
     /**

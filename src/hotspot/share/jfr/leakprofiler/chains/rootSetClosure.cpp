@@ -57,7 +57,7 @@ template <typename Delegate>
 void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
   assert(ref != NULL, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
-  if (CompressedOops::is_null(*ref)) {
+  if (!CompressedOops::is_null(*ref)) {
     _delegate->do_root(UnifiedOopRef::encode_in_native(ref));
   }
 }

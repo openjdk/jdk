@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@
 #include "ci/ciInstance.hpp"
 #include "code/compiledIC.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
@@ -2073,13 +2074,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   }
   add_call_info(code_offset(), op->info());
 }
-
-
-/* vtable-dispatch is not enabled for aarch64 platform*/
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere();
-}
-
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();

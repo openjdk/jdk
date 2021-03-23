@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 
 class ObjectMonitor;
 
@@ -46,14 +46,14 @@ class ObjectWaiter : public StackObj {
   enum TStates { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
   ObjectWaiter* volatile _next;
   ObjectWaiter* volatile _prev;
-  Thread*       _thread;
+  JavaThread*   _thread;
   jlong         _notifier_tid;
   ParkEvent *   _event;
   volatile int  _notified;
   volatile TStates TState;
   bool          _active;           // Contention monitoring is enabled
  public:
-  ObjectWaiter(Thread* thread);
+  ObjectWaiter(JavaThread* current);
 
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
@@ -162,8 +162,8 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
                                       // acting as proxies for Threads.
 
   ObjectWaiter* volatile _cxq;      // LL of recently-arrived threads blocked on entry.
-  Thread* volatile _succ;           // Heir presumptive thread - used for futile wakeup throttling
-  Thread* volatile _Responsible;
+  JavaThread* volatile _succ;       // Heir presumptive thread - used for futile wakeup throttling
+  JavaThread* volatile _Responsible;
 
   volatile int _Spinner;            // for exit->spinner handoff optimization
   volatile int _SpinDuration;
@@ -249,7 +249,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   }
   const char* is_busy_to_string(stringStream* ss);
 
-  intptr_t  is_entered(Thread* current) const;
+  intptr_t  is_entered(JavaThread* current) const;
 
   void*     owner() const;  // Returns NULL if DEFLATER_MARKER is observed.
   void*     owner_raw() const;
@@ -261,8 +261,8 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   void      release_clear_owner(void* old_value);
   // Simply set _owner field to new_value; current value must match old_value.
   void      set_owner_from(void* old_value, void* new_value);
-  // Simply set _owner field to self; current value must match basic_lock_p.
-  void      set_owner_from_BasicLock(void* basic_lock_p, Thread* self);
+  // Simply set _owner field to current; current value must match basic_lock_p.
+  void      set_owner_from_BasicLock(void* basic_lock_p, JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
@@ -290,7 +290,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   // JVM/TI GetObjectMonitorUsage() needs this:
   ObjectWaiter* first_waiter()                                         { return _WaitSet; }
   ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
-  Thread* thread_of_waiter(ObjectWaiter* o)                            { return o->_thread; }
+  JavaThread* thread_of_waiter(ObjectWaiter* o)                        { return o->_thread; }
 
   ObjectMonitor(oop object);
   ~ObjectMonitor();
@@ -300,11 +300,11 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   // Returns true if the specified thread owns the ObjectMonitor. Otherwise
   // returns false and throws IllegalMonitorStateException (IMSE).
-  bool      check_owner(Thread* THREAD);
+  bool      check_owner(TRAPS);
 
-  bool      enter(TRAPS);
-  void      exit(bool not_suspended, TRAPS);
-  void      wait(jlong millis, bool interruptable, TRAPS);
+  bool      enter(JavaThread* current);
+  void      exit(bool not_suspended, JavaThread* current);
+  void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
 
@@ -314,23 +314,22 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 #endif
   void      print_on(outputStream* st) const;
 
-// Use the following at your own risk
-  intx      complete_exit(TRAPS);
-  bool      reenter(intx recursions, TRAPS);
+  // Use the following at your own risk
+  intx      complete_exit(JavaThread* current);
+  bool      reenter(intx recursions, JavaThread* current);
 
  private:
   void      AddWaiter(ObjectWaiter* waiter);
-  void      INotify(Thread* self);
+  void      INotify(JavaThread* current);
   ObjectWaiter* DequeueWaiter();
   void      DequeueSpecificWaiter(ObjectWaiter* waiter);
-  void      EnterI(TRAPS);
-  void      ReenterI(Thread* self, ObjectWaiter* self_node);
-  void      UnlinkAfterAcquire(Thread* self, ObjectWaiter* self_node);
-  int       TryLock(Thread* self);
-  int       NotRunnable(Thread* self, Thread* Owner);
-  int       TrySpin(Thread* self);
-  void      ExitEpilog(Thread* self, ObjectWaiter* Wakee);
-  bool      ExitSuspendEquivalent(JavaThread* self);
+  void      EnterI(JavaThread* current);
+  void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
+  void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
+  int       TryLock(JavaThread* current);
+  int       NotRunnable(JavaThread* current, JavaThread* Owner);
+  int       TrySpin(JavaThread* current);
+  void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
 
   // Deflation support
   bool      deflate_monitor();

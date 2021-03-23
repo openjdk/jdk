@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 
@@ -408,6 +409,9 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (inheritedClass == typeElement) {
                 continue;
             }
+            if (utils.hasHiddenTag(inheritedClass)) {
+                continue;
+            }
 
             List<Element> members = inheritedMembersFromMap.stream()
                     .filter(e -> utils.getEnclosingTypeElement(e) == inheritedClass)
@@ -507,7 +511,10 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (null == propertyMethod || null == commentSource) {
                 return;
             }
-            DocCommentTree docTree = builder.utils.getDocCommentTree(propertyMethod);
+            Utils utils = builder.utils;
+            DocCommentTree docTree = utils.hasDocCommentTree(propertyMethod)
+                    ? utils.getDocCommentTree(propertyMethod)
+                    : null;
 
             /* The second condition is required for the property buckets. In
              * this case the comment is at the property method (not at the field)

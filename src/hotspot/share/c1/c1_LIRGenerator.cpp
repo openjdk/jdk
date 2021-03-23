@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,10 +459,10 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x) {
 
 
 void LIRGenerator::klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitInfo* info, bool need_resolve) {
-  /* C2 relies on constant pool entries being resolved (ciTypeFlow), so if TieredCompilation
+  /* C2 relies on constant pool entries being resolved (ciTypeFlow), so if tiered compilation
    * is active and the class hasn't yet been resolved we need to emit a patch that resolves
    * the class. */
-  if ((TieredCompilation && need_resolve) || !obj->is_loaded() || PatchALot) {
+  if ((!CompilerConfig::is_c1_only_no_aot_or_jvmci() && need_resolve) || !obj->is_loaded() || PatchALot) {
     assert(info != NULL, "info must be set if class is not loaded");
     __ klass2reg_patch(NULL, r, info);
   } else {
@@ -662,7 +662,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
 void LIRGenerator::print_if_not_loaded(const NewInstance* new_instance) {
   if (PrintNotLoaded && !new_instance->klass()->is_loaded()) {
     tty->print_cr("   ###class not loaded at new bci %d", new_instance->printable_bci());
-  } else if (PrintNotLoaded && (TieredCompilation && new_instance->is_unresolved())) {
+  } else if (PrintNotLoaded && (!CompilerConfig::is_c1_only_no_aot_or_jvmci() && new_instance->is_unresolved())) {
     tty->print_cr("   ###class not resolved at new bci %d", new_instance->printable_bci());
   }
 }
@@ -1049,20 +1049,21 @@ void LIRGenerator::move_to_phi(ValueStack* cur_state) {
 
 
 LIR_Opr LIRGenerator::new_register(BasicType type) {
-  int vreg = _virtual_register_number;
-  // add a little fudge factor for the bailout, since the bailout is
-  // only checked periodically.  This gives a few extra registers to
-  // hand out before we really run out, which helps us keep from
-  // tripping over assertions.
-  if (vreg + 20 >= LIR_OprDesc::vreg_max) {
-    bailout("out of virtual registers");
-    if (vreg + 2 >= LIR_OprDesc::vreg_max) {
-      // wrap it around
+  int vreg_num = _virtual_register_number;
+  // Add a little fudge factor for the bailout since the bailout is only checked periodically. This allows us to hand out
+  // a few extra registers before we really run out which helps to avoid to trip over assertions.
+  if (vreg_num + 20 >= LIR_OprDesc::vreg_max) {
+    bailout("out of virtual registers in LIR generator");
+    if (vreg_num + 2 >= LIR_OprDesc::vreg_max) {
+      // Wrap it around and continue until bailout really happens to avoid hitting assertions.
       _virtual_register_number = LIR_OprDesc::vreg_base;
+      vreg_num = LIR_OprDesc::vreg_base;
     }
   }
   _virtual_register_number += 1;
-  return LIR_OprFact::virtual_register(vreg, type);
+  LIR_Opr vreg = LIR_OprFact::virtual_register(vreg_num, type);
+  assert(vreg != LIR_OprFact::illegal(), "ran out of virtual registers");
+  return vreg;
 }
 
 
@@ -2957,14 +2958,10 @@ void LIRGenerator::do_Invoke(Invoke* x) {
         __ call_opt_virtual(target, receiver, result_register,
                             SharedRuntime::get_resolve_opt_virtual_call_stub(),
                             arg_list, info);
-      } else if (x->vtable_index() < 0) {
+      } else {
         __ call_icvirtual(target, receiver, result_register,
                           SharedRuntime::get_resolve_virtual_call_stub(),
                           arg_list, info);
-      } else {
-        int entry_offset = in_bytes(Klass::vtable_start_offset()) + x->vtable_index() * vtableEntry::size_in_bytes();
-        int vtable_offset = entry_offset + vtableEntry::method_offset_in_bytes();
-        __ call_virtual(target, receiver, result_register, vtable_offset, arg_list, info);
       }
       break;
     case Bytecodes::_invokedynamic: {
@@ -3204,10 +3201,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
-    break;
-
-  case vmIntrinsics::_blackhole:
-    do_blackhole(x);
     break;
 
   default: ShouldNotReachHere(); break;
@@ -3629,23 +3622,6 @@ void LIRGenerator::do_RangeCheckPredicate(RangeCheckPredicate *x) {
   }
 }
 
-void LIRGenerator::do_blackhole(Intrinsic *x) {
-  // If we have a receiver, then null-check and handle it separately
-  bool handle_receiver = x->needs_null_check();
-  if (handle_receiver) {
-    CodeEmitInfo* info = state_for(x);
-    LIRItem vitem(x->receiver(), this);
-    vitem.load_item();
-    __ null_check(vitem.result(), info);
-  }
-
-  for (int c = (handle_receiver ? 1 : 0); c < x->number_of_arguments(); c++) {
-    // Load the argument
-    LIRItem vitem(x->argument_at(c), this);
-    vitem.load_item();
-    // ...and leave it unused.
-  }
-}
 
 LIR_Opr LIRGenerator::call_runtime(Value arg1, address entry, ValueType* result_type, CodeEmitInfo* info) {
   LIRItemList args(1);

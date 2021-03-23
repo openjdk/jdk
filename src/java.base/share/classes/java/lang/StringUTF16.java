@@ -1065,7 +1065,7 @@ final class StringUTF16 {
         return (right != length) ? newString(value, 0, right) : null;
     }
 
-    private final static class LinesSpliterator implements Spliterator<String> {
+    private static final class LinesSpliterator implements Spliterator<String> {
         private byte[] value;
         private int index;        // current index, modified on advance/split
         private final int fence;  // one past last index

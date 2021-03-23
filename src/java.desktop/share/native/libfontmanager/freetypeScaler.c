@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1285,10 +1285,18 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
     }
 
     /* failure if any of mallocs failed */
-    if (gpdata->pointTypes == NULL ||  gpdata->pointCoords == NULL)
+    if (gpdata->pointTypes == NULL || gpdata->pointCoords == NULL) {
+        if (gpdata->pointTypes != NULL)  {
+            free(gpdata->pointTypes);
+            gpdata->pointTypes = NULL;
+        }
+        if (gpdata->pointCoords != NULL) {
+            free(gpdata->pointCoords);
+            gpdata->pointCoords = NULL;
+        }
         return 0;
-    else
-        return 1;
+    }
+    return 1;
 }
 
 static void addSeg(GPData *gp, jbyte type) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -214,7 +215,7 @@ void JvmtiTagMapTable::remove_dead_entries(JvmtiEnv* env, bool post_object_free)
 
       }
       // get next entry
-      entry = (JvmtiTagMapEntry*)HashtableEntry<WeakHandle, mtServiceability>::make_ptr(*p);
+      entry = *p;
     }
   }
 
@@ -251,7 +252,7 @@ void JvmtiTagMapTable::rehash() {
         p = entry->next_addr();
       }
       // get next entry
-      entry = (JvmtiTagMapEntry*)HashtableEntry<WeakHandle, mtServiceability>::make_ptr(*p);
+      entry = *p;
     }
   }
 

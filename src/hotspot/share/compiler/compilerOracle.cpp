@@ -101,6 +101,25 @@ class TypedMethodOptionMatcher;
 static TypedMethodOptionMatcher* option_list = NULL;
 static bool any_set = false;
 
+// A filter for quick lookup if an option is set
+static bool option_filter[static_cast<int>(CompileCommand::Unknown) + 1] = { 0 };
+
+void command_set_in_filter(enum CompileCommand option) {
+  assert(option != CompileCommand::Unknown, "sanity");
+  assert(option2type(option) != OptionType::Unknown, "sanity");
+
+  if ((option != CompileCommand::DontInline) &&
+      (option != CompileCommand::Inline) &&
+      (option != CompileCommand::Log)) {
+    any_set = true;
+  }
+  option_filter[static_cast<int>(option)] = true;
+}
+
+bool has_command(enum CompileCommand option) {
+  return option_filter[static_cast<int>(option)];
+}
+
 class TypedMethodOptionMatcher : public MethodMatcher {
  private:
   TypedMethodOptionMatcher* _next;
@@ -287,19 +306,11 @@ static void register_command(TypedMethodOptionMatcher* matcher,
   }
   assert(CompilerOracle::option_matches_type(option, value), "Value must match option type");
 
-  if (option == CompileCommand::Blackhole && !UnlockDiagnosticVMOptions) {
-    warning("Blackhole compile option is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions");
-    return;
-  }
-
   matcher->init(option, option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
-  if ((option != CompileCommand::DontInline) &&
-      (option != CompileCommand::Inline) &&
-      (option != CompileCommand::Log)) {
-    any_set = true;
-  }
+  command_set_in_filter(option);
+
   if (!CompilerOracle::be_quiet()) {
     // Print out the successful registration of a compile command
     ttyLocker ttyl;
@@ -312,6 +323,9 @@ static void register_command(TypedMethodOptionMatcher* matcher,
 template<typename T>
 bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value) {
   assert(option_matches_type(option, value), "Value must match option type");
+  if (!has_command(option)) {
+    return false;
+  }
   if (option_list != NULL) {
     TypedMethodOptionMatcher* m = option_list->match(method, option);
     if (m != NULL) {
@@ -326,18 +340,6 @@ static bool check_predicate(enum CompileCommand option, const methodHandle& meth
   bool value = false;
   if (CompilerOracle::has_option_value(method, option, value)) {
     return value;
-  }
-  return false;
-}
-
-static bool has_command(enum CompileCommand option) {
-  TypedMethodOptionMatcher* m = option_list;
-  while (m != NULL) {
-    if (m->option() == option) {
-      return true;
-    } else {
-      m = m->next();
-    }
   }
   return false;
 }
@@ -415,26 +417,13 @@ bool CompilerOracle::should_break_at(const methodHandle& method) {
   return check_predicate(CompileCommand::Break, method);
 }
 
-bool CompilerOracle::should_blackhole(const methodHandle& method) {
-  if (!check_predicate(CompileCommand::Blackhole, method)) {
-    return false;
-  }
-  guarantee(UnlockDiagnosticVMOptions, "Checked during initial parsing");
-  if (method->result_type() != T_VOID) {
-    warning("Blackhole compile option only works for methods with void type: %s",
-            method->name_and_sig_as_C_string());
-    return false;
-  }
-  return true;
-}
-
 static enum CompileCommand match_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {
   assert(ARRAY_SIZE(option_names) == static_cast<int>(CompileCommand::Count), "option_names size mismatch");
 
   *bytes_read = 0;
   char option_buf[256];
   int matches = sscanf(line, "%255[a-zA-Z0-9]%n", option_buf, bytes_read);
-  if (matches > 0) {
+  if (matches > 0 && strcasecmp(option_buf, "unknown") != 0) {
     for (uint i = 0; i < ARRAY_SIZE(option_names); i++) {
       if (strcasecmp(option_buf, option_names[i]) == 0) {
         return static_cast<enum CompileCommand>(i);
@@ -799,7 +788,14 @@ void CompilerOracle::parse_from_line(char* line) {
           print_parse_error(error_buf, original.get());
           return;
         }
-        register_command(typed_matcher, option, true);
+        if (option2type(option) == OptionType::Bool) {
+          register_command(typed_matcher, option, true);
+        } else {
+          jio_snprintf(error_buf, sizeof(error_buf), "  Missing type '%s' before option '%s'",
+                       optiontype2name(option2type(option)), option2name(option));
+          print_parse_error(error_buf, original.get());
+          return;
+        }
       }
       assert(typed_matcher != NULL, "sanity");
       assert(*error_buf == '\0', "No error here");

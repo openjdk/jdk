@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     // Abuse Z_method as scratch register for generic emitter.
     // It is loaded further down anyway before it is first used.
     // No dynamic code size variance here, increment is 1, always.
-    __ add2mem_32(Address(Z_R1_scratch), 1, Z_method);
+    __ add2mem_64(Address(Z_R1_scratch), 1, Z_method);
   }
 #endif
 
@@ -158,6 +158,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (s == NULL) {
     return NULL;
   }
+
   // Count unused bytes in instruction sequences of variable size.
   // We add them to the computed buffer size in order to avoid
   // overflow in subsequently generated stubs.
@@ -179,7 +180,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
     // Abuse Z_method as scratch register for generic emitter.
     // It is loaded further down anyway before it is first used.
     // No dynamic code size variance here, increment is 1, always.
-    __ add2mem_32(Address(Z_R1_scratch), 1, Z_method);
+    __ add2mem_64(Address(Z_R1_scratch), 1, Z_method);
   }
 #endif
 

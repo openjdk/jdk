@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ final class EphemeralKeyManager {
          * Return the KeyPair or null if it is invalid.
          */
         private KeyPair getKeyPair() {
-            if (isValid() == false) {
+            if (!isValid()) {
                 keyPair = null;
                 return null;
             }

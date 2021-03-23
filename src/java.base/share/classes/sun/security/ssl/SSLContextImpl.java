@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1023,9 +1023,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     passwd = defaultKeyStorePassword.toCharArray();
                 }
 
-                /**
-                 * Try to initialize key store.
-                 */
+                // Try to initialize key store.
                 if ((defaultKeyStoreType.length()) != 0) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
                         SSLLogger.finest("init keystore");
@@ -1304,7 +1302,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         private static final List<CipherSuite> clientDefaultCipherSuites;
         private static final List<CipherSuite> serverDefaultCipherSuites;
 
-        private static IllegalArgumentException reservedException = null;
+        private static IllegalArgumentException reservedException;
 
         // Don't want a java.lang.LinkageError for illegal system property.
         //

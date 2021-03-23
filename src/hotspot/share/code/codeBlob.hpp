@@ -441,6 +441,8 @@ class VtableBlob: public BufferBlob {
 private:
   VtableBlob(const char*, int);
 
+  void* operator new(size_t s, unsigned size) throw();
+
 public:
   // Creation
   static VtableBlob* create(const char* name, int buffer_size);

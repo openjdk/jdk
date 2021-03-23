@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1650,6 +1650,7 @@ public class Attr extends JCTree.Visitor {
         try {
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
+            boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
             if (!enumSwitch && !stringSwitch)
                 seltype = chk.checkType(selector.pos(), seltype, syms.intType);
 
@@ -1679,6 +1680,17 @@ public class Attr extends JCTree.Visitor {
                                 log.error(pat.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
                             } else if (!labels.add(sym)) {
                                 log.error(c.pos(), Errors.DuplicateCaseLabel);
+                            }
+                        } else if (errorEnumSwitch) {
+                            //error recovery: the selector is erroneous, and all the case labels
+                            //are identifiers. This could be an enum switch - don't report resolve
+                            //error for the case label:
+                            var prevResolveHelper = rs.basicLogResolveHelper;
+                            try {
+                                rs.basicLogResolveHelper = rs.silentLogResolveHelper;
+                                attribExpr(pat, switchEnv, seltype);
+                            } finally {
+                                rs.basicLogResolveHelper = prevResolveHelper;
                             }
                         } else {
                             Type pattype = attribExpr(pat, switchEnv, seltype);
@@ -2404,6 +2416,7 @@ public class Attr extends JCTree.Visitor {
                 } else if (tree.meth.hasTag(SELECT)) {
                     log.error(tree.meth.pos(),
                               Errors.IllegalQualNotIcls(site.tsym));
+                    attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
                 }
 
                 // if we're calling a java.lang.Enum constructor,
@@ -2429,6 +2442,8 @@ public class Attr extends JCTree.Visitor {
                 Type mpt = newMethodTemplate(resultInfo.pt, argtypes, typeargtypes);
                 checkId(tree.meth, site, sym, localEnv,
                         new ResultInfo(kind, mpt));
+            } else if (site.hasTag(ERROR) && tree.meth.hasTag(SELECT)) {
+                attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
             }
             // Otherwise, `site' is an error type and we do nothing
             result = tree.type = syms.voidType;
@@ -2962,7 +2977,6 @@ public class Attr extends JCTree.Visitor {
                 localEnv.info.isSerializable = true;
                 localEnv.info.isSerializableLambda = true;
             }
-            localEnv.info.isLambda = true;
             List<Type> explicitParamTypes = null;
             if (that.paramKind == JCLambda.ParameterKind.EXPLICIT) {
                 //attribute lambda parameters
@@ -3404,6 +3418,7 @@ public class Attr extends JCTree.Visitor {
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
             }
             lambdaEnv.info.yieldResult = null;
+            lambdaEnv.info.isLambda = true;
             return lambdaEnv;
         }
 
@@ -3793,7 +3808,7 @@ public class Attr extends JCTree.Visitor {
         Type owntype = attribTree(tree.expr, env, resultInfo);
         result = check(tree, owntype, pkind(), resultInfo);
         Symbol sym = TreeInfo.symbol(tree);
-        if (sym != null && sym.kind.matches(KindSelector.TYP_PCK))
+        if (sym != null && sym.kind.matches(KindSelector.TYP_PCK) && sym.kind != Kind.ERR)
             log.error(tree.pos(), Errors.IllegalParenthesizedExpression);
     }
 
@@ -3948,21 +3963,24 @@ public class Attr extends JCTree.Visitor {
                 tree.expr.pos(), attribExpr(tree.expr, env));
         Type clazztype;
         JCTree typeTree;
+        boolean checkRawTypes;
         if (tree.pattern.getTag() == BINDINGPATTERN) {
             attribTree(tree.pattern, env, unknownExprInfo);
             clazztype = tree.pattern.type;
             if (types.isSubtype(exprtype, clazztype) &&
                 !exprtype.isErroneous() && !clazztype.isErroneous()) {
-                log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(clazztype, exprtype));
+                log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(exprtype, clazztype));
             }
             JCBindingPattern pattern = (JCBindingPattern) tree.pattern;
             typeTree = pattern.var.vartype;
             if (!clazztype.hasTag(TYPEVAR)) {
                 clazztype = chk.checkClassOrArrayType(pattern.var.vartype.pos(), clazztype);
             }
+            checkRawTypes = true;
         } else {
             clazztype = attribType(tree.pattern, env);
             typeTree = tree.pattern;
+            checkRawTypes = false;
         }
         if (!clazztype.hasTag(TYPEVAR)) {
             clazztype = chk.checkClassOrArrayType(typeTree.pos(), clazztype);
@@ -3992,7 +4010,7 @@ public class Attr extends JCTree.Visitor {
                 clazztype = types.createErrorType(clazztype);
             }
         }
-        chk.validate(typeTree, env, false);
+        chk.validate(typeTree, env, checkRawTypes);
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         result = check(tree, syms.booleanType, KindSelector.VAL, resultInfo);
     }
@@ -4000,12 +4018,13 @@ public class Attr extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern tree) {
         ResultInfo varInfo = new ResultInfo(KindSelector.TYP, resultInfo.pt, resultInfo.checkContext);
         tree.type = tree.var.type = attribTree(tree.var.vartype, env, varInfo);
-        BindingSymbol v = new BindingSymbol(tree.var.name, tree.var.vartype.type, env.info.scope.owner);
+        BindingSymbol v = new BindingSymbol(tree.var.mods.flags, tree.var.name, tree.var.vartype.type, env.info.scope.owner);
         v.pos = tree.pos;
         tree.var.sym = v;
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
+        annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
         annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
         annotate.flush();
         result = tree.type;
@@ -4481,7 +4500,7 @@ public class Attr extends JCTree.Visitor {
                 chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
-                chk.checkPreview(tree.pos(), sym);
+                chk.checkPreview(tree.pos(), env.info.scope.owner, sym);
             }
 
             // If symbol is a variable, check that its type and
@@ -5768,7 +5787,7 @@ public class Attr extends JCTree.Visitor {
         @Override
         public void visitBindingPattern(JCBindingPattern that) {
             if (that.var.sym == null) {
-                that.var.sym = new BindingSymbol(that.var.name, that.var.type, syms.noSymbol);
+                that.var.sym = new BindingSymbol(0, that.var.name, that.var.type, syms.noSymbol);
                 that.var.sym.adr = 0;
             }
             super.visitBindingPattern(that);

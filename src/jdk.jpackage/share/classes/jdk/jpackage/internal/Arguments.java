@@ -100,12 +100,12 @@ public class Arguments {
     private String buildRoot = null;
     private String mainJarPath = null;
 
-    private static boolean runtimeInstaller = false;
+    private boolean runtimeInstaller = false;
 
     private List<AddLauncherArguments> addLaunchers = null;
 
-    private static Map<String, CLIOptions> argIds = new HashMap<>();
-    private static Map<String, CLIOptions> argShortIds = new HashMap<>();
+    private static final Map<String, CLIOptions> argIds = new HashMap<>();
+    private static final Map<String, CLIOptions> argShortIds = new HashMap<>();
 
     static {
         // init maps for parsing arguments
@@ -117,7 +117,12 @@ public class Arguments {
         });
     }
 
+    private static final InheritableThreadLocal<Arguments> instance =
+            new InheritableThreadLocal<Arguments>();
+
     public Arguments(String[] args) {
+        instance.set(this);
+
         argList = new ArrayList<String>(args.length);
         for (String arg : args) {
             argList.add(arg);
@@ -300,6 +305,12 @@ public class Arguments {
             setOptionValue("mac-sign", true);
         }),
 
+        MAC_APP_STORE ("mac-app-store", OptionCategories.PLATFORM_MAC, () -> {
+            setOptionValue("mac-app-store", true);
+        }),
+
+        MAC_CATEGORY ("mac-app-category", OptionCategories.PLATFORM_MAC),
+
         MAC_BUNDLE_NAME ("mac-package-name", OptionCategories.PLATFORM_MAC),
 
         MAC_BUNDLE_IDENTIFIER("mac-package-identifier",
@@ -314,6 +325,8 @@ public class Arguments {
         MAC_SIGNING_KEYCHAIN ("mac-signing-keychain",
                     OptionCategories.PLATFORM_MAC),
 
+        MAC_ENTITLEMENTS ("mac-entitlements", OptionCategories.PLATFORM_MAC),
+
         WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN, () -> {
             setOptionValue("win-menu", true);
         }),
@@ -323,6 +336,11 @@ public class Arguments {
         WIN_SHORTCUT_HINT ("win-shortcut",
                 OptionCategories.PLATFORM_WIN, () -> {
             setOptionValue("win-shortcut", true);
+        }),
+
+        WIN_SHORTCUT_PROMPT ("win-shortcut-prompt",
+                OptionCategories.PLATFORM_WIN, () -> {
+            setOptionValue("win-shortcut-prompt", true);
         }),
 
         WIN_PER_USER_INSTALLATION ("win-per-user-install",
@@ -392,16 +410,8 @@ public class Arguments {
             this.category = category;
         }
 
-        static void setContext(Arguments context) {
-            argContext = context;
-        }
-
         public static Arguments context() {
-            if (argContext != null) {
-                return argContext;
-            } else {
-                throw new RuntimeException("Argument context is not set.");
-            }
+            return instance.get();
         }
 
         public String getId() {
@@ -462,10 +472,6 @@ public class Arguments {
 
     public boolean processArguments() {
         try {
-
-            // init context of arguments
-            CLIOptions.setContext(this);
-
             // parse cmd line
             String arg;
             CLIOptions option;

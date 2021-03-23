@@ -39,14 +39,17 @@
 */
 class MemReporterBase : public StackObj {
  private:
-  size_t        _scale;  // report in this scale
-  outputStream* _output; // destination
+  const size_t  _scale;         // report in this scale
+  outputStream* const _output;  // destination
 
  public:
-  MemReporterBase(outputStream* out = NULL, size_t scale = K)
-    : _scale(scale) {
-    _output = (out == NULL) ? tty : out;
-  }
+
+  // Default scale to use if no scale given.
+  static const size_t default_scale = K;
+
+  MemReporterBase(outputStream* out, size_t scale = default_scale) :
+    _scale(scale), _output(out)
+  {}
 
  protected:
   inline outputStream* output() const {
@@ -74,7 +77,6 @@ class MemReporterBase : public StackObj {
   size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
   size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
 
-
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed) const;
   void print_malloc(size_t amount, size_t count, MEMFLAGS flag = mtNone) const;
@@ -100,7 +102,7 @@ class MemSummaryReporter : public MemReporterBase {
  public:
   // This constructor is for normal reporting from a recent baseline.
   MemSummaryReporter(MemBaseline& baseline, outputStream* output,
-    size_t scale = K) : MemReporterBase(output, scale),
+    size_t scale = default_scale) : MemReporterBase(output, scale),
     _malloc_snapshot(baseline.malloc_memory_snapshot()),
     _vm_snapshot(baseline.virtual_memory_snapshot()),
     _instance_class_count(baseline.instance_class_count()),
@@ -125,7 +127,7 @@ class MemDetailReporter : public MemSummaryReporter {
   MemBaseline&   _baseline;
 
  public:
-  MemDetailReporter(MemBaseline& baseline, outputStream* output, size_t scale = K) :
+  MemDetailReporter(MemBaseline& baseline, outputStream* output, size_t scale = default_scale) :
     MemSummaryReporter(baseline, output, scale),
      _baseline(baseline) { }
 
@@ -162,7 +164,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 
  public:
   MemSummaryDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
-    outputStream* output, size_t scale = K) : MemReporterBase(output, scale),
+    outputStream* output, size_t scale = default_scale) : MemReporterBase(output, scale),
     _early_baseline(early_baseline), _current_baseline(current_baseline) {
     assert(early_baseline.baseline_type()   != MemBaseline::Not_baselined, "Not baselined");
     assert(current_baseline.baseline_type() != MemBaseline::Not_baselined, "Not baselined");
@@ -201,7 +203,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 class MemDetailDiffReporter : public MemSummaryDiffReporter {
  public:
   MemDetailDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
-    outputStream* output, size_t scale = K) :
+    outputStream* output, size_t scale = default_scale) :
     MemSummaryDiffReporter(early_baseline, current_baseline, output, scale) { }
 
   // Generate detail comparison report

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 
 #include "standardHandlers.h"
 
+/* HandlerFunction - Invoked from event_callback() */
 static void
 handleClassPrepare(JNIEnv *env, EventInfo *evinfo,
                    HandlerNode *node,
@@ -75,6 +76,7 @@ handleClassPrepare(JNIEnv *env, EventInfo *evinfo,
                             node->suspendPolicy, eventBag);
 }
 
+/* HandlerFunction - Invoked from event_callback() */
 static void
 handleGarbageCollectionFinish(JNIEnv *env, EventInfo *evinfo,
                   HandlerNode *node,
@@ -83,6 +85,7 @@ handleGarbageCollectionFinish(JNIEnv *env, EventInfo *evinfo,
     JDI_ASSERT_MSG(JNI_FALSE, "Should never call handleGarbageCollectionFinish");
 }
 
+/* HandlerFunction - Invoked from event_callback() for METHOD_ENTRY and METHOD_EXIT. */
 static void
 handleFrameEvent(JNIEnv *env, EventInfo *evinfo,
                  HandlerNode *node,
@@ -122,6 +125,7 @@ handleFrameEvent(JNIEnv *env, EventInfo *evinfo,
                                  eventBag);
 }
 
+/* HandlerFunction - Invoked from event_callback() */
 static void
 genericHandler(JNIEnv *env, EventInfo *evinfo,
                HandlerNode *node,

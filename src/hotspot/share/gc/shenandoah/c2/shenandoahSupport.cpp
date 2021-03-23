@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,10 @@
 
 bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
   ShenandoahBarrierSetC2State* state = ShenandoahBarrierSetC2::bsc2()->state();
-  if ((state->enqueue_barriers_count() +
+  if ((state->iu_barriers_count() +
        state->load_reference_barriers_count()) > 0) {
+    assert(C->post_loop_opts_phase(), "no loop opts allowed");
+    C->reset_post_loop_opts_phase(); // ... but we know what we are doing
     bool attempt_more_loopopts = ShenandoahLoopOptsAfterExpansion;
     C->clear_major_progress();
     PhaseIdealLoop::optimize(igvn, LoopOptsShenandoahExpand);
@@ -59,7 +61,10 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
         return false;
       }
       C->clear_major_progress();
+
+      C->process_for_post_loop_opts_igvn(igvn);
     }
+    C->set_post_loop_opts_phase(); // now for real!
   }
   return true;
 }
@@ -186,7 +191,7 @@ bool ShenandoahBarrierC2Support::verify_helper(Node* in, Node_Stack& phis, Vecto
           uint i = 0;
           for (; i < phis.size(); i++) {
             Node* n = phis.node_at(i);
-            if (n->Opcode() == Op_ShenandoahEnqueueBarrier) {
+            if (n->Opcode() == Op_ShenandoahIUBarrier) {
               break;
             }
           }
@@ -196,7 +201,7 @@ bool ShenandoahBarrierC2Support::verify_helper(Node* in, Node_Stack& phis, Vecto
         }
         barriers_used.push(in);
         if (trace) {tty->print("Found barrier"); in->dump();}
-      } else if (in->Opcode() == Op_ShenandoahEnqueueBarrier) {
+      } else if (in->Opcode() == Op_ShenandoahIUBarrier) {
         if (t != ShenandoahOopStore) {
           in = in->in(1);
           continue;
@@ -323,7 +328,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
           }
         }
 
-        if (verify && !verify_helper(n->in(MemNode::ValueIn), phis, visited, ShenandoahStoreValEnqueueBarrier ? ShenandoahOopStore : ShenandoahValue, trace, barriers_used)) {
+        if (verify && !verify_helper(n->in(MemNode::ValueIn), phis, visited, ShenandoahIUBarrier ? ShenandoahOopStore : ShenandoahValue, trace, barriers_used)) {
           report_verify_failure("Shenandoah verification: Store should have barriers", n);
         }
       }
@@ -365,7 +370,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
       }
     } else if (n->is_LoadStore()) {
       if (n->in(MemNode::ValueIn)->bottom_type()->make_ptr() &&
-          !verify_helper(n->in(MemNode::ValueIn), phis, visited, ShenandoahStoreValEnqueueBarrier ? ShenandoahOopStore : ShenandoahValue, trace, barriers_used)) {
+          !verify_helper(n->in(MemNode::ValueIn), phis, visited, ShenandoahIUBarrier ? ShenandoahOopStore : ShenandoahValue, trace, barriers_used)) {
         report_verify_failure("Shenandoah verification: LoadStore (value) should have barriers", n);
       }
 
@@ -517,7 +522,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
           }
         }
       }
-    } else if (n->Opcode() == Op_ShenandoahEnqueueBarrier || n->Opcode() == Op_ShenandoahLoadReferenceBarrier) {
+    } else if (n->Opcode() == Op_ShenandoahIUBarrier || n->Opcode() == Op_ShenandoahLoadReferenceBarrier) {
       // skip
     } else if (n->is_AddP()
                || n->is_Phi()
@@ -1061,7 +1066,7 @@ void ShenandoahBarrierC2Support::fix_ctrl(Node* barrier, Node* region, const Mem
           is_dominator_same_ctrl(old_c, barrier, u, phase) ||
           ShenandoahBarrierSetC2::is_shenandoah_state_load(u)) {
         phase->igvn().rehash_node_delayed(u);
-        int nb = u->replace_edge(ctrl, region);
+        int nb = u->replace_edge(ctrl, region, &phase->igvn());
         if (u->is_CFG()) {
           if (phase->idom(u) == ctrl) {
             phase->set_idom(u, region, phase->dom_depth(region));
@@ -1105,8 +1110,8 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
   ShenandoahBarrierSetC2State* state = ShenandoahBarrierSetC2::bsc2()->state();
 
   Unique_Node_List uses;
-  for (int i = 0; i < state->enqueue_barriers_count(); i++) {
-    Node* barrier = state->enqueue_barrier(i);
+  for (int i = 0; i < state->iu_barriers_count(); i++) {
+    Node* barrier = state->iu_barrier(i);
     Node* ctrl = phase->get_ctrl(barrier);
     IdealLoopTree* loop = phase->get_loop(ctrl);
     Node* head = loop->head();
@@ -1243,7 +1248,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
             stack.push(u, 0);
             assert(!cloned.test_set(u->_idx), "only one clone");
             Node* u_clone = u->clone();
-            int nb = u_clone->replace_edge(n, n_clone);
+            int nb = u_clone->replace_edge(n, n_clone, &phase->igvn());
             assert(nb > 0, "should have replaced some uses");
             phase->register_new_node(u_clone, projs.catchall_catchproj);
             clones.push(u_clone);
@@ -1265,7 +1270,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
             } else {
               if (phase->is_dominator(projs.catchall_catchproj, c)) {
                 phase->igvn().rehash_node_delayed(u);
-                int nb = u->replace_edge(n, n_clone);
+                int nb = u->replace_edge(n, n_clone, &phase->igvn());
                 assert(nb > 0, "should have replaced some uses");
                 replaced = true;
               } else if (!phase->is_dominator(projs.fallthrough_catchproj, c)) {
@@ -1283,7 +1288,8 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
                   Node* nn_clone = clones.at(clones.size()-3);
                   assert(nn->Opcode() == nn_clone->Opcode(), "mismatch");
 
-                  int nb = cmp_clone->replace_edge(nn, create_phis_on_call_return(ctrl, c, nn, nn_clone, projs, phase));
+                  int nb = cmp_clone->replace_edge(nn, create_phis_on_call_return(ctrl, c, nn, nn_clone, projs, phase),
+                                                   &phase->igvn());
                   assert(nb > 0, "should have replaced some uses");
 
                   phase->register_new_node(bol_clone, u->in(0));
@@ -1293,7 +1299,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
                 } else {
                   phase->igvn().rehash_node_delayed(u);
-                  int nb = u->replace_edge(n, create_phis_on_call_return(ctrl, c, n, n_clone, projs, phase));
+                  int nb = u->replace_edge(n, create_phis_on_call_return(ctrl, c, n, n_clone, projs, phase), &phase->igvn());
                   assert(nb > 0, "should have replaced some uses");
                 }
                 replaced = true;
@@ -1356,7 +1362,11 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* raw_mem_phi = PhiNode::make(region, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     // Stable path.
-    test_gc_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::HAS_FORWARDED);
+    int flags = ShenandoahHeap::HAS_FORWARDED;
+    if (!ShenandoahBarrierSet::is_strong_access(lrb->decorators())) {
+      flags |= ShenandoahHeap::WEAK_ROOTS;
+    }
+    test_gc_state(ctrl, raw_mem, heap_stable_ctrl, phase, flags);
     IfNode* heap_stable_iff = heap_stable_ctrl->in(0)->as_If();
 
     // Heap stable case
@@ -1456,8 +1466,8 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
   // Done expanding load-reference-barriers.
   assert(ShenandoahBarrierSetC2::bsc2()->state()->load_reference_barriers_count() == 0, "all load reference barrier nodes should have been replaced");
 
-  for (int i = state->enqueue_barriers_count() - 1; i >= 0; i--) {
-    Node* barrier = state->enqueue_barrier(i);
+  for (int i = state->iu_barriers_count() - 1; i >= 0; i--) {
+    Node* barrier = state->iu_barrier(i);
     Node* pre_val = barrier->in(1);
 
     if (phase->igvn().type(pre_val)->higher_equal(TypePtr::NULL_PTR)) {
@@ -1604,7 +1614,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
     phase->igvn().replace_node(barrier, pre_val);
   }
-  assert(state->enqueue_barriers_count() == 0, "all enqueue barrier nodes should have been replaced");
+  assert(state->iu_barriers_count() == 0, "all enqueue barrier nodes should have been replaced");
 
 }
 
@@ -1658,7 +1668,7 @@ Node* ShenandoahBarrierC2Support::get_load_addr(PhaseIdealLoop* phase, VectorSet
     }
     case Op_ShenandoahLoadReferenceBarrier:
       return get_load_addr(phase, visited, in->in(ShenandoahLoadReferenceBarrierNode::ValueIn));
-    case Op_ShenandoahEnqueueBarrier:
+    case Op_ShenandoahIUBarrier:
       return get_load_addr(phase, visited, in->in(1));
     case Op_CallDynamicJava:
     case Op_CallLeaf:
@@ -1991,11 +2001,11 @@ void ShenandoahBarrierC2Support::verify_raw_mem(RootNode* root) {
 }
 #endif
 
-ShenandoahEnqueueBarrierNode::ShenandoahEnqueueBarrierNode(Node* val) : Node(NULL, val) {
-  ShenandoahBarrierSetC2::bsc2()->state()->add_enqueue_barrier(this);
+ShenandoahIUBarrierNode::ShenandoahIUBarrierNode(Node* val) : Node(NULL, val) {
+  ShenandoahBarrierSetC2::bsc2()->state()->add_iu_barrier(this);
 }
 
-const Type* ShenandoahEnqueueBarrierNode::bottom_type() const {
+const Type* ShenandoahIUBarrierNode::bottom_type() const {
   if (in(1) == NULL || in(1)->is_top()) {
     return Type::TOP;
   }
@@ -2006,7 +2016,7 @@ const Type* ShenandoahEnqueueBarrierNode::bottom_type() const {
   return t->is_oopptr();
 }
 
-const Type* ShenandoahEnqueueBarrierNode::Value(PhaseGVN* phase) const {
+const Type* ShenandoahIUBarrierNode::Value(PhaseGVN* phase) const {
   if (in(1) == NULL) {
     return Type::TOP;
   }
@@ -2020,10 +2030,10 @@ const Type* ShenandoahEnqueueBarrierNode::Value(PhaseGVN* phase) const {
   return t->is_oopptr();
 }
 
-int ShenandoahEnqueueBarrierNode::needed(Node* n) {
+int ShenandoahIUBarrierNode::needed(Node* n) {
   if (n == NULL ||
       n->is_Allocate() ||
-      n->Opcode() == Op_ShenandoahEnqueueBarrier ||
+      n->Opcode() == Op_ShenandoahIUBarrier ||
       n->bottom_type() == TypePtr::NULL_PTR ||
       (n->bottom_type()->make_oopptr() != NULL && n->bottom_type()->make_oopptr()->const_oop() != NULL)) {
     return NotNeeded;
@@ -2035,7 +2045,7 @@ int ShenandoahEnqueueBarrierNode::needed(Node* n) {
   return Needed;
 }
 
-Node* ShenandoahEnqueueBarrierNode::next(Node* n) {
+Node* ShenandoahIUBarrierNode::next(Node* n) {
   for (;;) {
     if (n == NULL) {
       return n;
@@ -2057,7 +2067,7 @@ Node* ShenandoahEnqueueBarrierNode::next(Node* n) {
   return NULL;
 }
 
-Node* ShenandoahEnqueueBarrierNode::Identity(PhaseGVN* phase) {
+Node* ShenandoahIUBarrierNode::Identity(PhaseGVN* phase) {
   PhaseIterGVN* igvn = phase->is_IterGVN();
 
   Node* n = next(in(1));
@@ -2280,7 +2290,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
   uint last = _phase->C->unique();
 
 #ifdef ASSERT
-  uint8_t max_depth = 0;
+  uint16_t max_depth = 0;
   for (LoopTreeIterator iter(_phase->ltree_root()); !iter.done(); iter.next()) {
     IdealLoopTree* lpt = iter.current();
     max_depth = MAX2(max_depth, lpt->_nest);
@@ -2459,6 +2469,21 @@ bool MemoryGraphFixer::mem_is_valid(Node* m, Node* c) const {
 
 Node* MemoryGraphFixer::find_mem(Node* ctrl, Node* n) const {
   assert(n == NULL || _phase->ctrl_or_self(n) == ctrl, "");
+  assert(!ctrl->is_Call() || ctrl == n, "projection expected");
+#ifdef ASSERT
+  if ((ctrl->is_Proj() && ctrl->in(0)->is_Call()) ||
+      (ctrl->is_Catch() && ctrl->in(0)->in(0)->is_Call())) {
+    CallNode* call = ctrl->is_Proj() ? ctrl->in(0)->as_Call() : ctrl->in(0)->in(0)->as_Call();
+    int mems = 0;
+    for (DUIterator_Fast imax, i = call->fast_outs(imax); i < imax; i++) {
+      Node* u = call->fast_out(i);
+      if (u->bottom_type() == Type::MEMORY) {
+        mems++;
+      }
+    }
+    assert(mems <= 1, "No node right after call if multiple mem projections");
+  }
+#endif
   Node* mem = _memory_nodes[ctrl->_idx];
   Node* c = ctrl;
   while (!mem_is_valid(mem, c) &&
@@ -3054,7 +3079,7 @@ bool ShenandoahLoadReferenceBarrierNode::needs_barrier_impl(PhaseGVN* phase, Nod
     case Op_CMoveP:
       return needs_barrier_impl(phase, n->in(2), visited) ||
              needs_barrier_impl(phase, n->in(3), visited);
-    case Op_ShenandoahEnqueueBarrier:
+    case Op_ShenandoahIUBarrier:
       return needs_barrier_impl(phase, n->in(1), visited);
     case Op_CreateEx:
       return false;

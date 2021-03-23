@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332
- *           8169819 8074407 8191030 8182765 8184205 8243533
+ *           8169819 8074407 8191030 8182765 8184205 8243533 8261976
  * @summary  test generated docs for deprecated items
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -172,22 +172,22 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>
                     </div>""",
                 """
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b6 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4 method-summary-table-tab6">
                     <div class="block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">class_test5 passes.</div>
                     </div>
                     </div>""",
                 """
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b6 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4 method-summary-table-tab6">
                     <div class="block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">class_test6 passes.</div>
                     </div>
                     </div>""",
                 """
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b6 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab4 method-summary-table-tab6">
                     <div class="block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">class_test7 passes.</div>
                     </div>
@@ -267,31 +267,31 @@ public class TestDeprecatedDocs extends JavadocTester {
         checkOutput("deprecated-list.html", true,
                 """
                     <ul>
-                    <li><a href="#forRemoval">For Removal</a></li>
+                    <li><a href="#for-removal">For Removal</a></li>
                     <li><a href="#class">Classes</a></li>
-                    <li><a href="#enum.class">Enum Classes</a></li>
+                    <li><a href="#enum-class">Enum Classes</a></li>
                     <li><a href="#exception">Exceptions</a></li>
                     <li><a href="#error">Errors</a></li>
-                    <li><a href="#annotation.interface">Annotation Interfaces</a></li>
+                    <li><a href="#annotation-interface">Annotation Interfaces</a></li>
                     <li><a href="#field">Fields</a></li>
                     <li><a href="#method">Methods</a></li>
                     <li><a href="#constructor">Constructors</a></li>
-                    <li><a href="#enum.constant">Enum Constants</a></li>
-                    <li><a href="#annotation.interface.member">Annotation Interface Elements</a></li>
+                    <li><a href="#enum-constant">Enum Constants</a></li>
+                    <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
                     </ul>""",
                 """
-                    <div id="forRemoval">
+                    <div id="for-removal">
                     <div class="caption"><span>For Removal</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Element</div>
                     <div class="table-header col-last">Description</div>""",
                 """
-                    <div id="enum.class">
+                    <div id="enum-class">
                     <div class="caption"><span>Enum Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Enum Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/TestEnum.html" title="enum class in pkg">pkg.TestEnum</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestEnum.html" title="enum class in pkg">pkg.TestEnum</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">enum_test1 passes.</div>
                     </div>""",
@@ -301,7 +301,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Exceptions</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/TestException.html" title="class in pkg">pkg.TestException</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestException.html" title="class in pkg">pkg.TestException</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">exception_test1 passes.</div>
                     </div>""",
@@ -311,25 +311,25 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Field</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/DeprecatedClassByAnnotation.html#field">pkg.DeprecatedClassByAnnotation.field</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/DeprecatedClassByAnnotation.html#field">pkg.DeprecatedClassByAnnotation.field</a></div>
                     <div class="col-last even-row-color"></div>
-                    <div class="col-deprecated-item-name odd-row-color"><a href="pkg/TestAnnotationType.html#field">pkg.TestAnnotationType.field</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestAnnotationType.html#field">pkg.TestAnnotationType.field</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">annotation_test4 passes.</div>
                     </div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/TestClass.html#field">pkg.TestClass.field</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#field">pkg.TestClass.field</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">class_test2 passes. This is the second sentence of deprecated description for a field.</div>
                     </div>
-                    <div class="col-deprecated-item-name odd-row-color"><a href="pkg/TestError.html#field">pkg.TestError.field</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestError.html#field">pkg.TestError.field</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">error_test2 passes.</div>
                     </div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/TestException.html#field">pkg.TestException.field</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestException.html#field">pkg.TestException.field</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">exception_test2 passes.</div>
                     </div>
-                    <div class="col-deprecated-item-name odd-row-color"><a href="pkg/TestInterface.html#field">pkg.TestInterface.field</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestInterface.html#field">pkg.TestInterface.field</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">interface_test2 passes.</div>
                     </div>
@@ -341,25 +341,25 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Method</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/DeprecatedClassByAnnotation.html#method()">pkg.DeprecatedClassByAnnotation.method()</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/DeprecatedClassByAnnotation.html#method()">pkg.DeprecatedClassByAnnotation.method()</a></div>
                     <div class="col-last even-row-color"></div>
-                    <div class="col-deprecated-item-name odd-row-color"><a href="pkg/TestAnnotationType.html#optional()">pkg.TestAnnotationType.optional()</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestAnnotationType.html#optional()">pkg.TestAnnotationType.optional()</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">annotation_test2 passes.</div>
                     </div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/TestAnnotationType.html#required()">pkg.TestAnnotationType.required()</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestAnnotationType.html#required()">pkg.TestAnnotationType.required()</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">annotation_test3 passes.</div>
                     </div>
-                    <div class="col-deprecated-item-name odd-row-color"><a href="pkg/TestClass.html#method()">pkg.TestClass.method()</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#method()">pkg.TestClass.method()</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test5 passes. This is the second sentence of deprecated description for a method.</div>
                     </div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/TestClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod&#8203;(int)</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod&#8203;(int)</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">class_test7 passes. Overloaded method 2.</div>
                     </div>
-                    <div class="col-deprecated-item-name odd-row-color"><a href="pkg/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod&#8203;(String)</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod&#8203;(String)</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test6 passes. Overloaded method 1.</div>
                     </div>""",
@@ -369,13 +369,13 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Constructor</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/DeprecatedClassByAnnotation.html#%3Cinit%3E()">pkg.DeprecatedClassByAnnotation()</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/DeprecatedClassByAnnotation.html#%3Cinit%3E()">pkg.DeprecatedClassByAnnotation()</a></div>
                     <div class="col-last even-row-color"></div>
-                    <div class="col-deprecated-item-name odd-row-color"><a href="pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test3 passes. This is the second sentence of deprecated description for a constructor.</div>
                     </div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass&#8203;(String)</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass&#8203;(String)</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">class_test4 passes. Overloaded constructor.</div>
                     </div>""");

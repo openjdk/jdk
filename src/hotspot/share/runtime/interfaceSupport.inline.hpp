@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 #define SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
@@ -34,7 +35,6 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -150,8 +150,9 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
 };
 
 class ThreadInVMfromJava : public ThreadStateTransition {
+  bool _check_asyncs;
  public:
-  ThreadInVMfromJava(JavaThread* thread) : ThreadStateTransition(thread) {
+  ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true) : ThreadStateTransition(thread), _check_asyncs(check_asyncs) {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
@@ -159,8 +160,9 @@ class ThreadInVMfromJava : public ThreadStateTransition {
       _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
-    // Check for pending. async. exceptions or suspends.
-    if (_thread->has_special_runtime_exit_condition()) _thread->handle_special_runtime_exit_condition();
+    // We prevent asynchronous exceptions from being installed on return to Java in situations
+    // where we can't tolerate them. See bugs: 4324348, 4854693, 4998314, 5040492, 5050705.
+    if (_thread->has_special_runtime_exit_condition()) _thread->handle_special_runtime_exit_condition(_check_asyncs);
   }
 };
 
@@ -191,6 +193,7 @@ class ThreadInVMfromUnknown {
 
 
 class ThreadInVMfromNative : public ThreadStateTransition {
+  ResetNoHandleMark __rnhm;
  public:
   ThreadInVMfromNative(JavaThread* thread) : ThreadStateTransition(thread) {
     trans_from_native(_thread_in_vm);
@@ -221,93 +224,45 @@ class ThreadToNativeFromVM : public ThreadStateTransition {
 };
 
 
+// Parameter in_flight_mutex_addr is only used by class Mutex to avoid certain deadlock
+// scenarios while making transitions that might block for a safepoint or handshake.
+// It's the address of a pointer to the mutex we are trying to acquire. This will be used to
+// access and release said mutex when transitioning back from blocked to vm (destructor) in
+// case we need to stop for a safepoint or handshake.
 class ThreadBlockInVM : public ThreadStateTransition {
- public:
-  ThreadBlockInVM(JavaThread *thread)
-  : ThreadStateTransition(thread) {
-    // Once we are blocked vm expects stack to be walkable
-    thread->frame_anchor()->make_walkable(thread);
-    trans(_thread_in_vm, _thread_blocked);
-  }
-  ~ThreadBlockInVM() {
-    trans(_thread_blocked, _thread_in_vm);
-    // We don't need to clear_walkable because it will happen automagically when we return to java
-  }
-};
-
-// Unlike ThreadBlockInVM, this class is designed to avoid certain deadlock scenarios while making
-// transitions inside class Mutex in cases where we need to block for a safepoint or handshake. It
-// receives an extra argument compared to ThreadBlockInVM, the address of a pointer to the mutex we
-// are trying to acquire. This will be used to access and release the mutex if needed to avoid
-// said deadlocks.
-// It works like ThreadBlockInVM but differs from it in two ways:
-// - When transitioning in (constructor), it checks for safepoints without blocking, i.e., calls
-//   back if needed to allow a pending safepoint to continue but does not block in it.
-// - When transitioning back (destructor), if there is a pending safepoint or handshake it releases
-//   the mutex that is only partially acquired.
-class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
  private:
   Mutex** _in_flight_mutex_addr;
 
-  void release_mutex() {
-    assert(_in_flight_mutex_addr != NULL, "_in_flight_mutex_addr should have been set on constructor");
-    Mutex* in_flight_mutex = *_in_flight_mutex_addr;
-    if (in_flight_mutex != NULL) {
-      in_flight_mutex->release_for_safepoint();
-      *_in_flight_mutex_addr = NULL;
-    }
-  }
  public:
-  ThreadBlockInVMWithDeadlockCheck(JavaThread* thread, Mutex** in_flight_mutex_addr)
+  ThreadBlockInVM(JavaThread* thread, Mutex** in_flight_mutex_addr = NULL)
   : ThreadStateTransition(thread), _in_flight_mutex_addr(in_flight_mutex_addr) {
+    assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
+    thread->check_possible_safepoint();
     // Once we are blocked vm expects stack to be walkable
     thread->frame_anchor()->make_walkable(thread);
-
-    // All unsafe states are treated the same by the VMThread
-    // so we can skip the _thread_in_vm_trans state here. Since
-    // we don't read poll, it's enough to order the stores.
-    OrderAccess::storestore();
-
     thread->set_thread_state(_thread_blocked);
   }
-  ~ThreadBlockInVMWithDeadlockCheck() {
+  ~ThreadBlockInVM() {
+    assert(_thread->thread_state() == _thread_blocked, "coming from wrong thread state");
     // Change to transition state and ensure it is seen by the VM thread.
-    _thread->set_thread_state_fence((JavaThreadState)(_thread_blocked_trans));
+    _thread->set_thread_state_fence(_thread_blocked_trans);
 
     if (SafepointMechanism::should_process(_thread)) {
-      release_mutex();
+      if (_in_flight_mutex_addr != NULL) {
+        release_mutex();
+      }
       SafepointMechanism::process_if_requested(_thread);
     }
 
     _thread->set_thread_state(_thread_in_vm);
   }
-};
 
-
-// This special transition class is only used to prevent asynchronous exceptions
-// from being installed on vm exit in situations where we can't tolerate them.
-// See bugs: 4324348, 4854693, 4998314, 5040492, 5050705.
-class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
- public:
-  ThreadInVMfromJavaNoAsyncException(JavaThread* thread) : ThreadStateTransition(thread) {
-    trans_from_java(_thread_in_vm);
-  }
-  ~ThreadInVMfromJavaNoAsyncException()  {
-    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
-      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
+  void release_mutex() {
+    Mutex* in_flight_mutex = *_in_flight_mutex_addr;
+    if (in_flight_mutex != NULL) {
+      in_flight_mutex->release_for_safepoint();
+      *_in_flight_mutex_addr = NULL;
     }
-    trans(_thread_in_vm, _thread_in_Java);
-    // NOTE: We do not check for pending. async. exceptions.
-    // If we did and moved the pending async exception over into the
-    // pending exception field, we would need to deopt (currently C2
-    // only). However, to do so would require that we transition back
-    // to the _thread_in_vm state. Instead we postpone the handling of
-    // the async exception.
-
-
-    // Check for pending. suspends only.
-    if (_thread->has_special_runtime_exit_condition())
-      _thread->handle_special_runtime_exit_condition(false);
   }
 };
 
@@ -328,34 +283,16 @@ class VMNativeEntryWrapper {
   ~VMNativeEntryWrapper();
 };
 
-class RuntimeHistogramElement : public HistogramElement {
-  public:
-   RuntimeHistogramElement(const char* name);
-};
 #endif // ASSERT
-
-#ifdef ASSERT
-#define TRACE_CALL(result_type, header)                            \
-  if (CountRuntimeCalls) {                                         \
-    static RuntimeHistogramElement* e = new RuntimeHistogramElement(#header); \
-    if (e != NULL) e->increment_count();                           \
-  }
-#else
-#define TRACE_CALL(result_type, header)                            \
-  /* do nothing */
-#endif // ASSERT
-
 
 // LEAF routines do not lock, GC or throw exceptions
 
 #define VM_LEAF_BASE(result_type, header)                            \
-  TRACE_CALL(result_type, header)                                    \
   debug_only(NoHandleMark __hm;)                                     \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
 #define VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)         \
-  TRACE_CALL(result_type, header)                                    \
   debug_only(ResetNoHandleMark __rnhm;)                              \
   HandleMarkCleaner __hm(thread);                                    \
   Thread* THREAD = thread;                                           \
@@ -366,7 +303,6 @@ class RuntimeHistogramElement : public HistogramElement {
 // ENTRY routines may lock, GC and throw exceptions
 
 #define VM_ENTRY_BASE(result_type, header, thread)                   \
-  TRACE_CALL(result_type, header)                                    \
   HandleMarkCleaner __hm(thread);                                    \
   Thread* THREAD = thread;                                           \
   os::verify_stack_alignment();                                      \
@@ -401,7 +337,7 @@ class RuntimeHistogramElement : public HistogramElement {
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
-    ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
+    ThreadInVMfromJava __tiv(thread, false /* check asyncs */);      \
     VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
 
@@ -409,7 +345,6 @@ class RuntimeHistogramElement : public HistogramElement {
 // to get back into Java from the VM
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
-    TRACE_CALL(result_type, header)                                  \
     HandleMarkCleaner __hm(thread);
 
 #define JRT_BLOCK                                                    \
@@ -420,7 +355,7 @@ class RuntimeHistogramElement : public HistogramElement {
 
 #define JRT_BLOCK_NO_ASYNC                                           \
     {                                                                \
-    ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
+    ThreadInVMfromJava __tiv(thread, false /* check asyncs */);      \
     Thread* THREAD = thread;                                         \
     debug_only(VMEntryWrapper __vew;)
 

@@ -150,7 +150,7 @@ bool ConstantTable::emit(CodeBuffer& cb) const {
              "must be: %d == %d", (int)(constant_addr - _masm.code()->consts()->start()), (int)(con.offset()));
 
       // Expand jump-table
-      address last_addr;
+      address last_addr = NULL;
       for (uint j = 1; j < n->outcnt(); j++) {
         last_addr = _masm.address_constant(dummy + j);
         if (last_addr == NULL) {

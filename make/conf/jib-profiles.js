@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ var getJibProfiles = function (input) {
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
     data.conf_bundle_includes = [
-        "make/autoconf/version-numbers",
+        "make/conf/version-numbers.conf",
     ];
 
     // Define some common values
@@ -440,7 +440,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
-                "--with-macosx-version-max=10.9.0",
+                "--with-macosx-version-max=10.12.00",
+                "--enable-compatible-cds-alignment",
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.
                 "SETFILE=/usr/bin/SetFile"),
@@ -477,7 +478,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
-		"--disable-jvm-feature-jvmci",
+		"--enable-compatible-cds-alignment",
             ],
         },
 
@@ -723,8 +724,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             configure_args: concat(
                 "--enable-full-docs",
                 versionArgs(input, common),
-                "--with-build-jdk=" + input.get(buildJdkDep, "home_path")
-                    + (input.build_os == "macosx" ? "/Contents/Home" : "")
+                "--with-build-jdk=" + input.get(buildJdkDep, "home_path"),
+                // Provide an explicit JDK for the docs-reference target to
+                // mimic the running conditions of when it's run for real as
+                // closely as possible.
+                "--with-docs-reference-jdk=" + input.get(buildJdkDep, "home_path")
             ),
             default_make_targets: ["all-docs-bundles"],
             artifacts: {
@@ -998,9 +1002,9 @@ var getJibProfilesProfiles = function (input, common, data) {
     // test tasks. Care must however be taken not to polute that work dir by
     // setting the appropriate make variables to control output directories.
     //
-    // Use the existance of the top level README as indication of if this is
+    // Use the existance of the top level README.md as indication of if this is
     // the full source or just src.conf.
-    if (!new java.io.File(__DIR__, "../../README").exists()) {
+    if (!new java.io.File(__DIR__, "../../README.md").exists()) {
         var runTestPrebuiltSrcFullExtra = {
             dependencies: "src.full",
             work_dir: input.get("src.full", "install_path"),
@@ -1112,7 +1116,7 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.21+1.0"
+            revision: "1.28+1.0"
         },
 
         jcov: {
@@ -1351,7 +1355,7 @@ var concatObjects = function (o1, o2) {
 
 /**
  * Constructs the numeric version string from reading the
- * make/autoconf/version-numbers file and removing all trailing ".0".
+ * make/conf/version-numbers.conf file and removing all trailing ".0".
  *
  * @param feature Override feature version
  * @param interim Override interim version
@@ -1359,15 +1363,15 @@ var concatObjects = function (o1, o2) {
  * @param patch Override patch version
  * @returns {String} The numeric version string
  */
-var getVersion = function (feature, interim, update, patch) {
+var getVersion = function (feature, interim, update, patch, extra1, extra2, extra3) {
     var version_numbers = getVersionNumbers();
     var version = (feature != null ? feature : version_numbers.get("DEFAULT_VERSION_FEATURE"))
         + "." + (interim != null ? interim : version_numbers.get("DEFAULT_VERSION_INTERIM"))
         + "." + (update != null ? update :  version_numbers.get("DEFAULT_VERSION_UPDATE"))
         + "." + (patch != null ? patch : version_numbers.get("DEFAULT_VERSION_PATCH"))
-        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA1")
-        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA2")
-        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA3");
+        + "." + (extra1 != null ? extra1 : version_numbers.get("DEFAULT_VERSION_EXTRA1"))
+        + "." + (extra2 != null ? extra2 : version_numbers.get("DEFAULT_VERSION_EXTRA2"))
+        + "." + (extra3 != null ? extra3 : version_numbers.get("DEFAULT_VERSION_EXTRA3"));
     while (version.match(".*\\.0$")) {
         version = version.substring(0, version.length - 2);
     }
@@ -1402,20 +1406,20 @@ var versionArgs = function(input, common) {
     return args;
 }
 
-// Properties representation of the make/autoconf/version-numbers file. Lazily
+// Properties representation of the make/conf/version-numbers.conf file. Lazily
 // initiated by the function below.
 var version_numbers;
 
 /**
- * Read the make/autoconf/version-numbers file into a Properties object.
+ * Read the make/conf/version-numbers.conf file into a Properties object.
  *
  * @returns {java.utilProperties}
  */
 var getVersionNumbers = function () {
-    // Read version information from make/autoconf/version-numbers
+    // Read version information from make/conf/version-numbers.conf
     if (version_numbers == null) {
         version_numbers = new java.util.Properties();
-        var stream = new java.io.FileInputStream(__DIR__ + "/../autoconf/version-numbers");
+        var stream = new java.io.FileInputStream(__DIR__ + "/version-numbers.conf");
         version_numbers.load(stream);
         stream.close();
     }

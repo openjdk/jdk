@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
  */
 
 // no precompiled headers
+#include "jvm_io.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -1634,46 +1636,74 @@ run:
             if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
               OrderAccess::fence();
             }
-            if (tos_type == atos) {
-              VERIFY_OOP(obj->obj_field_acquire(field_offset));
-              SET_STACK_OBJECT(obj->obj_field_acquire(field_offset), -1);
-            } else if (tos_type == itos) {
-              SET_STACK_INT(obj->int_field_acquire(field_offset), -1);
-            } else if (tos_type == ltos) {
-              SET_STACK_LONG(obj->long_field_acquire(field_offset), 0);
-              MORE_STACK(1);
-            } else if (tos_type == btos || tos_type == ztos) {
-              SET_STACK_INT(obj->byte_field_acquire(field_offset), -1);
-            } else if (tos_type == ctos) {
-              SET_STACK_INT(obj->char_field_acquire(field_offset), -1);
-            } else if (tos_type == stos) {
-              SET_STACK_INT(obj->short_field_acquire(field_offset), -1);
-            } else if (tos_type == ftos) {
-              SET_STACK_FLOAT(obj->float_field_acquire(field_offset), -1);
-            } else {
-              SET_STACK_DOUBLE(obj->double_field_acquire(field_offset), 0);
-              MORE_STACK(1);
+            switch (tos_type) {
+              case btos:
+              case ztos:
+                SET_STACK_INT(obj->byte_field_acquire(field_offset), -1);
+                break;
+              case ctos:
+                SET_STACK_INT(obj->char_field_acquire(field_offset), -1);
+                break;
+              case stos:
+                SET_STACK_INT(obj->short_field_acquire(field_offset), -1);
+                break;
+              case itos:
+                SET_STACK_INT(obj->int_field_acquire(field_offset), -1);
+                break;
+              case ftos:
+                SET_STACK_FLOAT(obj->float_field_acquire(field_offset), -1);
+                break;
+              case ltos:
+                SET_STACK_LONG(obj->long_field_acquire(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case dtos:
+                SET_STACK_DOUBLE(obj->double_field_acquire(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case atos: {
+                oop val = obj->obj_field_acquire(field_offset);
+                VERIFY_OOP(val);
+                SET_STACK_OBJECT(val, -1);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           } else {
-            if (tos_type == atos) {
-              VERIFY_OOP(obj->obj_field(field_offset));
-              SET_STACK_OBJECT(obj->obj_field(field_offset), -1);
-            } else if (tos_type == itos) {
-              SET_STACK_INT(obj->int_field(field_offset), -1);
-            } else if (tos_type == ltos) {
-              SET_STACK_LONG(obj->long_field(field_offset), 0);
-              MORE_STACK(1);
-            } else if (tos_type == btos || tos_type == ztos) {
-              SET_STACK_INT(obj->byte_field(field_offset), -1);
-            } else if (tos_type == ctos) {
-              SET_STACK_INT(obj->char_field(field_offset), -1);
-            } else if (tos_type == stos) {
-              SET_STACK_INT(obj->short_field(field_offset), -1);
-            } else if (tos_type == ftos) {
-              SET_STACK_FLOAT(obj->float_field(field_offset), -1);
-            } else {
-              SET_STACK_DOUBLE(obj->double_field(field_offset), 0);
-              MORE_STACK(1);
+            switch (tos_type) {
+              case btos:
+              case ztos:
+                SET_STACK_INT(obj->byte_field(field_offset), -1);
+                break;
+              case ctos:
+                SET_STACK_INT(obj->char_field(field_offset), -1);
+                break;
+              case stos:
+                SET_STACK_INT(obj->short_field(field_offset), -1);
+                break;
+              case itos:
+                SET_STACK_INT(obj->int_field(field_offset), -1);
+                break;
+              case ftos:
+                SET_STACK_FLOAT(obj->float_field(field_offset), -1);
+                break;
+              case ltos:
+                SET_STACK_LONG(obj->long_field(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case dtos:
+                SET_STACK_DOUBLE(obj->double_field(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case atos: {
+                oop val = obj->obj_field(field_offset);
+                VERIFY_OOP(val);
+                SET_STACK_OBJECT(val, -1);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           }
 
@@ -1743,49 +1773,75 @@ run:
           //
           int field_offset = cache->f2_as_index();
           if (cache->is_volatile()) {
-            if (tos_type == itos) {
-              obj->release_int_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == atos) {
-              VERIFY_OOP(STACK_OBJECT(-1));
-              obj->release_obj_field_put(field_offset, STACK_OBJECT(-1));
-            } else if (tos_type == btos) {
-              obj->release_byte_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ztos) {
-              int bool_field = STACK_INT(-1);  // only store LSB
-              obj->release_byte_field_put(field_offset, (bool_field & 1));
-            } else if (tos_type == ltos) {
-              obj->release_long_field_put(field_offset, STACK_LONG(-1));
-            } else if (tos_type == ctos) {
-              obj->release_char_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == stos) {
-              obj->release_short_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ftos) {
-              obj->release_float_field_put(field_offset, STACK_FLOAT(-1));
-            } else {
-              obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
+            switch (tos_type) {
+              case ztos:
+                obj->release_byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
+                break;
+              case btos:
+                obj->release_byte_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ctos:
+                obj->release_char_field_put(field_offset, STACK_INT(-1));
+                break;
+              case stos:
+                obj->release_short_field_put(field_offset, STACK_INT(-1));
+                break;
+              case itos:
+                obj->release_int_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ftos:
+                obj->release_float_field_put(field_offset, STACK_FLOAT(-1));
+                break;
+              case ltos:
+                obj->release_long_field_put(field_offset, STACK_LONG(-1));
+                break;
+              case dtos:
+                obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
+                break;
+              case atos: {
+                oop val = STACK_OBJECT(-1);
+                VERIFY_OOP(val);
+                obj->release_obj_field_put(field_offset, val);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
             OrderAccess::storeload();
           } else {
-            if (tos_type == itos) {
-              obj->int_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == atos) {
-              VERIFY_OOP(STACK_OBJECT(-1));
-              obj->obj_field_put(field_offset, STACK_OBJECT(-1));
-            } else if (tos_type == btos) {
-              obj->byte_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ztos) {
-              int bool_field = STACK_INT(-1);  // only store LSB
-              obj->byte_field_put(field_offset, (bool_field & 1));
-            } else if (tos_type == ltos) {
-              obj->long_field_put(field_offset, STACK_LONG(-1));
-            } else if (tos_type == ctos) {
-              obj->char_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == stos) {
-              obj->short_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ftos) {
-              obj->float_field_put(field_offset, STACK_FLOAT(-1));
-            } else {
-              obj->double_field_put(field_offset, STACK_DOUBLE(-1));
+            switch (tos_type) {
+              case ztos:
+                obj->byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
+                break;
+              case btos:
+                obj->byte_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ctos:
+                obj->char_field_put(field_offset, STACK_INT(-1));
+                break;
+              case stos:
+                obj->short_field_put(field_offset, STACK_INT(-1));
+                break;
+              case itos:
+                obj->int_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ftos:
+                obj->float_field_put(field_offset, STACK_FLOAT(-1));
+                break;
+              case ltos:
+                obj->long_field_put(field_offset, STACK_LONG(-1));
+                break;
+              case dtos:
+                obj->double_field_put(field_offset, STACK_DOUBLE(-1));
+                break;
+              case atos: {
+                oop val = STACK_OBJECT(-1);
+                VERIFY_OOP(val);
+                obj->obj_field_put(field_offset, val);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           }
 
@@ -1794,35 +1850,42 @@ run:
 
       CASE(_new): {
         u2 index = Bytes::get_Java_u2(pc+1);
+
+        // Attempt TLAB allocation first.
+        //
+        // To do this, we need to make sure:
+        //   - klass is initialized
+        //   - klass can be fastpath allocated (e.g. does not have finalizer)
+        //   - TLAB accepts the allocation
         ConstantPool* constants = istate->method()->constants();
-        if (!constants->tag_at(index).is_unresolved_klass()) {
-          // Make sure klass is initialized and doesn't have a finalizer
+        if (UseTLAB && !constants->tag_at(index).is_unresolved_klass()) {
           Klass* entry = constants->resolved_klass_at(index);
           InstanceKlass* ik = InstanceKlass::cast(entry);
-          if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
+          if (ik->is_initialized() && ik->can_be_fastpath_allocated()) {
             size_t obj_size = ik->size_helper();
-            oop result = NULL;
-            if (UseTLAB) {
-              result = (oop) THREAD->tlab().allocate(obj_size);
-            }
+            HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != NULL) {
-              // Initialize object (if nonzero size and need) and then the header.
-              // If the TLAB isn't pre-zeroed then we'll have to do it.
-              if (!ZeroTLAB) {
-                HeapWord* to_zero = cast_from_oop<HeapWord*>(result) + sizeof(oopDesc) / oopSize;
-                obj_size -= sizeof(oopDesc) / oopSize;
-                if (obj_size > 0 ) {
-                  memset(to_zero, 0, obj_size * HeapWordSize);
-                }
+              // Initialize object field block:
+              //   - if TLAB is pre-zeroed, we can skip this path
+              //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
+              //     this area, and we still need to initialize it
+              if (DEBUG_ONLY(true ||) !ZeroTLAB) {
+                size_t hdr_size = oopDesc::header_size();
+                Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
+
+              oop obj = cast_to_oop(result);
+
+              // Initialize header
               assert(!UseBiasedLocking, "Not implemented");
-              result->set_mark(markWord::prototype());
-              result->set_klass_gap(0);
-              result->set_klass(ik);
+              obj->set_mark(markWord::prototype());
+              obj->set_klass_gap(0);
+              obj->set_klass(ik);
+
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.
               OrderAccess::storestore();
-              SET_STACK_OBJECT(result, 0);
+              SET_STACK_OBJECT(obj, 0);
               UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
             }
           }

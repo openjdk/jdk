@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
@@ -787,6 +787,21 @@ OopStorage::~OopStorage() {
   os::free(const_cast<char*>(_name));
 }
 
+void OopStorage::register_num_dead_callback(NumDeadCallback f) {
+  assert(_num_dead_callback == NULL, "Only one callback function supported");
+  _num_dead_callback = f;
+}
+
+void OopStorage::report_num_dead(size_t num_dead) const {
+  if (_num_dead_callback != NULL) {
+    _num_dead_callback(num_dead);
+  }
+}
+
+bool OopStorage::should_report_num_dead() const {
+  return _num_dead_callback != NULL;
+}
+
 // Managing service thread notifications.
 //
 // We don't want cleanup work to linger indefinitely, but we also don't want
@@ -814,21 +829,6 @@ static jlong cleanup_trigger_permit_time = 0;
 // permitted.  The value of 500ms was an arbitrary choice; frequent, but not
 // too frequent.
 const jlong cleanup_trigger_defer_period = 500 * NANOSECS_PER_MILLISEC;
-
-void OopStorage::register_num_dead_callback(NumDeadCallback f) {
-  assert(_num_dead_callback == NULL, "Only one callback function supported");
-  _num_dead_callback = f;
-}
-
-void OopStorage::report_num_dead(size_t num_dead) const {
-  if (_num_dead_callback != NULL) {
-    _num_dead_callback(num_dead);
-  }
-}
-
-bool OopStorage::should_report_num_dead() const {
-  return _num_dead_callback != NULL;
-}
 
 void OopStorage::trigger_cleanup_if_needed() {
   MonitorLocker ml(Service_lock, Monitor::_no_safepoint_check_flag);

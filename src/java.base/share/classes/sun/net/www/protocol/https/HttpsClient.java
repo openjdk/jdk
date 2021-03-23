@@ -39,6 +39,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.Principal;
 import java.security.cert.*;
+import java.util.List;
 import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -426,7 +427,7 @@ final class HttpsClient extends HttpClient
             // unconnected sockets have not been implemented.
             //
             Throwable t = se.getCause();
-            if (t != null && t instanceof UnsupportedOperationException) {
+            if (t instanceof UnsupportedOperationException) {
                 return super.createSocket();
             } else {
                 throw se;
@@ -565,6 +566,10 @@ final class HttpsClient extends HttpClient
                     // will do the spoof checks in SSLSocket.
                     SSLParameters paramaters = s.getSSLParameters();
                     paramaters.setEndpointIdentificationAlgorithm("HTTPS");
+                    // host has been set previously for SSLSocketImpl
+                    if (!(s instanceof SSLSocketImpl)) {
+                        paramaters.setServerNames(List.of(new SNIHostName(host)));
+                    }
                     s.setSSLParameters(paramaters);
 
                     needToCheckSpoofing = false;
