@@ -200,7 +200,8 @@ public class CellRendererPane extends Container implements Accessible
 
 
     /**
-     * Calls this.paintComponent() with the rectangles x,y,width,height fields.
+     * Calls this.paintComponent(g, c, p, x, y, w, h) with the input parameter
+     * {@code Rectangle} x,y,width,height fields.
      *
      * @param g  the {@code Graphics} object to draw on
      * @param c  the {@code Component} to draw
