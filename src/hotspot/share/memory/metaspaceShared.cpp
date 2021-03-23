@@ -710,11 +710,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
     if (use_full_module_graph()) {
-      HeapShared::reset_archived_object_states(THREAD);
-      if (HAS_PENDING_EXCEPTION) {
-        java_lang_Throwable::print(PENDING_EXCEPTION, tty);
-        vm_exit_during_initialization("HeapShared::reset_archived_object_states() failed unexpectedly");
-      }
+      HeapShared::reset_archived_object_states(CHECK);
     }
 #endif
 
