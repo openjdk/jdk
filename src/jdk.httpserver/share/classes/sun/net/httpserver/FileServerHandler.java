@@ -38,6 +38,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpHandlers;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -69,8 +70,8 @@ public final class FileServerHandler implements HttpHandler {
     public static HttpHandler create(Path root, Function<String, String> mimeTable)
         throws IOException
     {
-        return HttpHandler.newComposedHandler(new FileServerHandler(root, mimeTable),
-                r -> !SUPPORTED_METHODS.contains(r.getRequestMethod()), FileServerHandler::handleNotAllowed);
+        return HttpHandlers.handleOrElse(r -> SUPPORTED_METHODS.contains(r.getRequestMethod()),
+                new FileServerHandler(root, mimeTable), FileServerHandler::handleNotAllowed);
     }
 
     static void handleNotAllowed(HttpExchange exchange) throws IOException {

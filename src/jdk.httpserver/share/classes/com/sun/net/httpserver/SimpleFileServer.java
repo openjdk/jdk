@@ -72,7 +72,7 @@ import sun.net.httpserver.OutputFilter;
  * methods; to handle other request methods, one can either a) add additional
  * handlers to the server, or b) complement the file handler by composing a
  * single handler via
- * {@link HttpHandler#newComposedHandler(HttpHandler, Predicate, HttpHandler)}.
+ * {@link HttpHandlers#handleOrElse(Predicate, HttpHandler, HttpHandler)}.
  *
  * <p> Example of adding multiple handlers to a server:
  * <pre>    {@code class PutHandler implements HttpHandler {
@@ -90,7 +90,7 @@ import sun.net.httpserver.OutputFilter;
  *
  * <p> Example of composing a single handler:
  * <pre>    {@code var h = SimpleFileServer.createFileHandler(Path.of("/some/path"));
- *    var handler = HttpHandler.newComposedHandler(h, request -> request.getRequestMethod().equals("PUT"), new PutHandler());
+ *    var handler = HttpHandler.handleOrElse(request -> request.getRequestMethod().equals("PUT"), new PutHandler(), h);
  *    var server = HttpServer.create(addr, 10, "/some/context/", handler);
  *    server.start();
  *    }</pre>

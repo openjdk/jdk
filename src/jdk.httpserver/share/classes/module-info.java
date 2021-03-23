@@ -34,7 +34,8 @@
  * <li>the {@link com.sun.net.httpserver.HttpExchange} class that describes a
  * request and response pair,</li>
  * <li>the {@link com.sun.net.httpserver.HttpHandler} interface to handle
- * incoming requests,</li>
+ * incoming requests, plus the {@link com.sun.net.httpserver.HttpHandlers} class
+ * for customization of existing handlers,</li>
  * <li>the {@link com.sun.net.httpserver.HttpContext} class that maps a URI path
  * to a {@code HttpHandler},</li>
  * <li>the {@link com.sun.net.httpserver.HttpServer} class to listen for
