@@ -42,22 +42,18 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
 
     private SortedSet<Element> forRemoval;
-    public final List<PerReleaseBuilder> releases = new ArrayList<>();
+    public final List<String> releases;
 
     /**
      * Constructor.
      *
      * @param configuration the current configuration of the doclet
+     * @param releases list of releases
      */
-    public DeprecatedAPIListBuilder(BaseConfiguration configuration, List<String> summaries) {
+    public DeprecatedAPIListBuilder(BaseConfiguration configuration, List<String> releases) {
         super(configuration, configuration.utils::isDeprecated);
+        this.releases = releases;
         buildSummaryAPIInfo();
-        summaries.forEach(release -> {
-            PerReleaseBuilder builder = new PerReleaseBuilder(configuration, release);
-            if (!builder.isEmpty()) {
-                releases.add(builder);
-            }
-        });
     }
 
     public SortedSet<Element> getForRemoval() {
@@ -73,47 +69,4 @@ public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
             getForRemoval().add(e);
         }
     }
-
-    public static class PerReleaseBuilder extends SummaryAPIListBuilder {
-
-        public final String release;
-        private SortedSet<Element> forRemoval;
-
-
-        /**
-         * Constructor.
-         *
-         * @param configuration the current configuration of the doclet
-         * @param release single release id to document new APIs for
-         */
-        public PerReleaseBuilder(BaseConfiguration configuration, String release) {
-            super(configuration, e -> isDeprecatedSince(e, release));
-            this.release = release;
-            buildSummaryAPIInfo();
-        }
-
-        private static boolean isDeprecatedSince(Element e, String release) {
-            Deprecated[] depr = e.getAnnotationsByType(Deprecated.class);
-            if (depr != null && depr.length > 0) {
-                return release.equals(depr[0].since());
-            }
-            return false;
-        }
-
-        public SortedSet<Element> getForRemoval() {
-            if (forRemoval == null) {
-                forRemoval = createSummarySet();
-            }
-            return forRemoval;
-        }
-
-        @Override
-        protected void handleElement(Element e) {
-            if (isDeprecatedSince(e, release) && utils.isDeprecatedForRemoval(e)) {
-                getForRemoval().add(e);
-            }
-        }
-
-    }
-
 }

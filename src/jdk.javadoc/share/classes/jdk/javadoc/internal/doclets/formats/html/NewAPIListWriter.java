@@ -27,17 +27,19 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import javax.lang.model.element.Element;
 
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+import static com.sun.source.doctree.DocTree.Kind.SINCE;
 
 /**
  * Generate File to list all the new API elements with the
@@ -49,22 +51,17 @@ import java.util.stream.Collectors;
  *  deletion without notice.</b>
  *
  */
-public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder.PerReleaseBuilder> {
-
-    NewAPIBuilder.PerReleaseBuilder builder;
+public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
 
     /**
      * Constructor.
      *
      * @param configuration the configuration for this doclet
-     * @param builder the builder
      */
-
-    public NewAPIListWriter(HtmlConfiguration configuration, DocPath filename, NewAPIBuilder.PerReleaseBuilder builder) {
+    public NewAPIListWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename, PageMode.NEW, "new elements",
-                Text.of(configuration.docResources.getText("doclet.New_API_In", builder.release)),
+                Text.of(configuration.docResources.getText("doclet.New_API")),
                 "doclet.Window_New_List");
-        this.builder = builder;
     }
 
     /**
@@ -76,40 +73,32 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder.PerRelease
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
-            List<NewAPIBuilder.PerReleaseBuilder> builders = configuration.newAPIPageBuilder.releases;
-            for (NewAPIBuilder.PerReleaseBuilder builder : builders) {
-                DocPath filename = getFilename(builders, builder);
-                NewAPIListWriter depr = new NewAPIListWriter(configuration, filename, builder);
-                depr.generateSummaryListFile(builder);
-            }
+            NewAPIListWriter writer = new NewAPIListWriter(configuration, DocPaths.NEW_LIST);
+            writer.generateSummaryListFile(configuration.newAPIPageBuilder);
         }
     }
 
     @Override
-    protected void addExtraPageLinks(NewAPIBuilder.PerReleaseBuilder list, Content target) {
-        List<NewAPIBuilder.PerReleaseBuilder> builders = configuration.newAPIPageBuilder.releases;
-        if (builders.size() > 1) {
-            target.add("Introduced in: ");
-            List<Content> pageLinks = builders.stream()
-                    .map(builder -> {
-                        if (builder == list) {
-                            return Text.of(builder.release);
-                        } else {
-                            DocPath filename = getFilename(builders, builder);
-                            return links.createLink(
-                                    pathToRoot.resolve(filename),
-                                    Text.of(builder.release));
-                        }
-                    })
-                    .collect(Collectors.toList());
-            target.add(contents.join(Text.of(", "), pageLinks));
+    protected void addTableTabs(Table table, String headingKey) {
+        if (!configuration.newAPIPageBuilder.releases.isEmpty()) {
+            table.setDefaultTab(getTableCaption(headingKey)).setAlwaysShowDefaultTab(true);
+            configuration.newAPIPageBuilder.releases.forEach(release -> {
+                table.addTab(
+                        configuration.docResources.getText("doclet.New_In_Release", release),
+                        element -> {
+                            if (!utils.hasDocCommentTree(element)) {
+                                return false;
+                            }
+                            List<? extends DocTree> since = utils.getBlockTags(element, SINCE);
+                            if (since.isEmpty()) {
+                                return false;
+                            }
+                            CommentHelper ch = utils.getCommentHelper(element);
+                            return since.stream().anyMatch(tree -> release.equals(ch.getBody(tree).toString()));
+                        });
+            });
+            getMainBodyScript().append(table.getScript());
         }
-    }
-
-    private static DocPath getFilename(List<NewAPIBuilder.PerReleaseBuilder> builders,
-                                       NewAPIBuilder.PerReleaseBuilder builder) {
-        return builders.indexOf(builder) == builders.size() - 1 ?
-                DocPaths.NEW_LIST : DocPaths.newInRelease(builder.release);
     }
 
     @Override
@@ -118,7 +107,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder.PerRelease
     }
 
     @Override
-    protected Content getCaption(String headingKey) {
-        return Text.of(super.getCaption(headingKey) + " Introduced in " + builder.release);
+    protected String getTableCaption(String headingKey) {
+        return resources.getText("doclet.New_Elements", super.getTableCaption(headingKey));
     }
 }

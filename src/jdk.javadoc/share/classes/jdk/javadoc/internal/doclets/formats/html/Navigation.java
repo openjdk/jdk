@@ -303,19 +303,13 @@ public class Navigation {
                     addPreviewLink(tree);
                 }
                 if (documentedPage == PageMode.NEW) {
-                    Content link = DocPaths.NEW_LIST.equals(path)
-                            ? contents.newLabel
-                            : links.createLink(pathToRoot.resolve(DocPaths.NEW_LIST), contents.newLabel);
-                    addActivePageLink(tree, link,
+                    addActivePageLink(tree, contents.newLabel,
                             configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW));
                 } else {
                     addNewLink(tree);
                 }
                 if (documentedPage == PageMode.DEPRECATED) {
-                    Content link = DocPaths.DEPRECATED_LIST.equals(path)
-                            ? contents.deprecatedLabel
-                            : links.createLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST), contents.deprecatedLabel);
-                    addActivePageLink(tree, link,
+                    addActivePageLink(tree, contents.deprecatedLabel,
                             configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED));
                 } else {
                     addDeprecatedLink(tree);

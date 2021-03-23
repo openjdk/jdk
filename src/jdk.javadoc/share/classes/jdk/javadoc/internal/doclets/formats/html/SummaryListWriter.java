@@ -166,7 +166,6 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        addExtraPageLinks(apiSummary, div);
         Content headingContent = contents.contentsHeading;
         div.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                 headingContent));
@@ -209,12 +208,12 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
             TableHeader tableHeader = new TableHeader(
                     contents.getContent(headerKey), contents.descriptionLabel);
 
-            Content caption = getCaption(headingKey);
             Table table = new Table(HtmlStyle.summaryTable)
-                    .setCaption(caption)
+                    .setCaption(Text.of(getTableCaption(headingKey)))
                     .setHeader(tableHeader)
                     .setId(id)
                     .setColumnStyles(HtmlStyle.colSummaryItemName, HtmlStyle.colLast);
+            addTableTabs(table, headingKey);
             for (Element e : apiList) {
                 Content link;
                 switch (e.getKind()) {
@@ -231,7 +230,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
                 }
                 Content desc = new ContentBuilder();
                 addComments(e, desc);
-                table.addRow(link, desc);
+                table.addRow(e, link, desc);
             }
             // note: singleton list
             contentTree.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
@@ -280,16 +279,15 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
     protected void addExtraIndexLink(L list, Content target) {
     }
 
-    /**
-     * Add optional links to other pages.
-     *
-     * @param list the element list
-     * @param target the target content to which the link should be added
-     */
-    protected void addExtraPageLinks(L list, Content target) {
+    protected String getTableCaption(String headingKey) {
+        return resources.getText(headingKey);
     }
 
-    protected Content getCaption(String headingKey) {
-        return contents.getContent(headingKey);
-    }
+    /**
+     * Allow subclasses to add extra tabs to the element tables.
+     *
+     * @param table the element table
+     * @param headingKey the key for the caption (default tab)
+     */
+    protected void addTableTabs(Table table, String headingKey) {}
 }

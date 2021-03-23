@@ -27,12 +27,10 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import com.sun.source.doctree.DeprecatedTree;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -49,6 +47,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  *  deletion without notice.</b>
  */
 public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBuilder> {
+
+    private final String TERMINALLY_DEPRECATED_KEY = "doclet.Terminally_Deprecated_Elements";
 
     /**
      * Constructor.
@@ -74,28 +74,19 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
             DocPath filename = DocPaths.DEPRECATED_LIST;
             DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
             depr.generateSummaryListFile(configuration.deprecatedAPIListBuilder);
-            depr.generatePerReleaseFiles(configuration.deprecatedAPIListBuilder);
-        }
-    }
-
-    private void generatePerReleaseFiles(DeprecatedAPIListBuilder builder) throws DocFileIOException {
-        for (DeprecatedAPIListBuilder.PerReleaseBuilder releaseBuilder : builder.releases) {
-            new DeprecatedInReleaseWriter(configuration, DocPaths.deprecatedInRelease(releaseBuilder.release),
-                    releaseBuilder.release)
-                    .generateSummaryListFile(releaseBuilder);
         }
     }
 
     @Override
     protected void addExtraSection(DeprecatedAPIListBuilder list, Content content) {
         addSummaryAPI(list.getForRemoval(), HtmlIds.FOR_REMOVAL,
-                    "doclet.For_Removal", "doclet.Element", content);
+                    TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
     }
 
     @Override
     protected void addExtraIndexLink(DeprecatedAPIListBuilder list, Content target) {
         if (!list.getForRemoval().isEmpty()) {
-            addIndexLink(HtmlIds.FOR_REMOVAL, "doclet.For_Removal", target);
+            addIndexLink(HtmlIds.FOR_REMOVAL, "doclet.Terminally_Deprecated", target);
         }
     }
 
@@ -110,82 +101,24 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     }
 
     @Override
-    protected void addExtraPageLinks(DeprecatedAPIListBuilder list, Content target) {
-        addExtraPageLinks(list, target, null);
-    }
-
-    void addExtraPageLinks(DeprecatedAPIListBuilder list, Content target, String release) {
-        List<DeprecatedAPIListBuilder.PerReleaseBuilder> builders = list.releases;
-        if (builders.size() > 1) {
-            target.add("First Deprecated in: ");
-            List<Content> pageLinks = builders.stream()
-                    .map(builder -> {
-                        if (builder.release.equals(release)) {
-                            return Text.of(builder.release);
-                        } else {
-                            DocPath filename = DocPaths.deprecatedInRelease(builder.release);
-                            return links.createLink(
-                                    pathToRoot.resolve(filename),
-                                    Text.of(builder.release));
-                        }
-                    })
-                    .collect(Collectors.toList());
-            target.add(contents.join(Text.of(", "), pageLinks));
+    protected void addTableTabs(Table table, String headingKey) {
+        if (!configuration.deprecatedAPIListBuilder.releases.isEmpty()) {
+            table.setDefaultTab(getTableCaption(headingKey)).setAlwaysShowDefaultTab(true);
+            configuration.deprecatedAPIListBuilder.releases.forEach(release -> {
+                String tab = TERMINALLY_DEPRECATED_KEY.equals(headingKey)
+                        ? resources.getText("doclet.Terminally_Deprecated_In_Release", release)
+                        : resources.getText("doclet.Deprecated_In_Release", release);
+                table.addTab(tab,
+                        element -> release.equals(utils.getDeprecatedSince(element)));
+            });
+            getMainBodyScript().append(table.getScript());
         }
     }
 
     @Override
-    protected Content getCaption(String headingKey) {
-        return "doclet.For_Removal".equals(headingKey)
-                ? Text.of("Terminally Deprecated Elements")
-                : Text.of("Deprecated " + super.getCaption(headingKey));
-    }
-
-    class DeprecatedInReleaseWriter extends SummaryListWriter<DeprecatedAPIListBuilder.PerReleaseBuilder> {
-
-        private final String release;
-
-        /**
-         * Constructor.
-         *
-         * @param configuration the configuration for this doclet
-         * @param filename the file to be generated
-         */
-        public DeprecatedInReleaseWriter(HtmlConfiguration configuration, DocPath filename, String release) {
-            super(configuration, filename, PageMode.DEPRECATED, "deprecated elements",
-                    Text.of(configuration.docResources.getText("doclet.Deprecated_API_In", release)),
-                    "doclet.Window_Deprecated_List");
-            this.release = release;
-        }
-
-        @Override
-        protected void addExtraSection(DeprecatedAPIListBuilder.PerReleaseBuilder list, Content content) {
-            addSummaryAPI(list.getForRemoval(), HtmlIds.FOR_REMOVAL,
-                    "doclet.For_Removal", "doclet.Element", content);
-        }
-
-        @Override
-        protected void addExtraIndexLink(DeprecatedAPIListBuilder.PerReleaseBuilder list, Content target) {
-            if (!list.getForRemoval().isEmpty()) {
-                addIndexLink(HtmlIds.FOR_REMOVAL, "doclet.For_Removal", target);
-            }
-        }
-
-        @Override
-        protected void addExtraPageLinks(DeprecatedAPIListBuilder.PerReleaseBuilder list, Content target) {
-            DeprecatedListWriter.this.addExtraPageLinks(configuration.deprecatedAPIListBuilder, target, list.release);
-        }
-
-        @Override
-        protected void addComments(Element e, Content desc) {
-            DeprecatedListWriter.this.addComments(e, desc);
-        }
-
-        @Override
-        protected Content getCaption(String headingKey) {
-            return "doclet.For_Removal".equals(headingKey)
-            ? Text.of("Elements First Terminally Deprecated in " + release)
-            : Text.of(super.getCaption(headingKey) + " First Deprecated in " + release);
-        }
+    protected String getTableCaption(String headingKey) {
+        String caption = resources.getText(headingKey);
+        return TERMINALLY_DEPRECATED_KEY.equals(headingKey)
+                ? caption : resources.getText("doclet.Deprecated_Elements", caption);
     }
 }
