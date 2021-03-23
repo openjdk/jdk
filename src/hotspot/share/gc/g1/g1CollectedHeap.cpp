@@ -436,7 +436,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       if (result != NULL) {
         return result;
       }
-  
+
       proactive_collection_required = policy()->proactive_collection_required(1);
       if (!proactive_collection_required) {
         // We've already attempted a lock-free allocation above, so we don't want to

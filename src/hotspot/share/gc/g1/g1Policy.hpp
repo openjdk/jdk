@@ -99,7 +99,7 @@ class G1Policy: public CHeapObj<mtGC> {
   uint _free_regions_at_end_of_collection;
 
   // These values are predictions of how much we think will survive in each
-  // section of the heap. They are used to determine XXXX
+  // section of the heap.
   size_t _predicted_surviving_bytes_from_survivor;
   size_t _predicted_surviving_bytes_from_old;
 
