@@ -58,7 +58,7 @@ LoaderConstraintEntry* LoaderConstraintTable::new_entry(
 void LoaderConstraintTable::free_entry(LoaderConstraintEntry *entry) {
   // decrement name refcount before freeing
   entry->name()->decrement_refcount();
-  Hashtable<InstanceKlass*, mtClass>::free_entry(entry);
+  BasicHashtable<mtClass>::free_entry(entry);
 }
 
 // The loaderConstraintTable must always be accessed with the

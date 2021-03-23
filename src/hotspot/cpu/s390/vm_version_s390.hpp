@@ -33,21 +33,13 @@
 class VM_Version: public Abstract_VM_Version {
 
  protected:
-// The following list contains the (approximate) announcement/availability
-// dates of the many System z generations in existence as of now which
-// implement the z/Architecture.
-//   z900: 2000-10
-//   z990: 2003-06
-//   z9:   2005-09
-//   z10:  2007-04
-//   z10:  2008-02
-//   z196: 2010-08
-//   ec12: 2012-09
-//   z13:  2015-03
-//
 // z/Architecture is the name of the 64-bit extension of the 31-bit s390
 // architecture.
 //
+// For information concerning the life span of the individual
+// z/Architecture models, please check out the comments/tables
+// in vm_version_s390.cpp
+
 // ----------------------------------------------
 // --- FeatureBitString Bits   0.. 63 (DW[0]) ---
 // ----------------------------------------------
@@ -94,11 +86,8 @@ class VM_Version: public Abstract_VM_Version {
 #define  LoadStoreConditional2Mask      0x0000000000000400UL  // z13
 #define  CryptoExtension5Mask           0x0000000000000040UL  // z13
 // z13 end
-// Feature-DW[0] starts to fill up. Use of these masks is risky.
-#define  TestFeature1ImplMask           0x0000000000000001UL
-#define  TestFeature2ImplMask           0x0000000000000002UL
-#define  TestFeature4ImplMask           0x0000000000000004UL
-#define  TestFeature8ImplMask           0x0000000000000008UL
+#define  MiscInstrExt2Mask              0x0000000000000020UL  // z14
+#define  MiscInstrExt3Mask              0x0000000000000004UL  // z15
 // ----------------------------------------------
 // --- FeatureBitString Bits  64..127 (DW[1]) ---
 // ----------------------------------------------
@@ -116,6 +105,15 @@ class VM_Version: public Abstract_VM_Version {
 //                                        23344455666778889
 //                                        82604826048260482
 #define  VectorFacilityMask             0x4000000000000000UL  // z13, not avail in VM guest mode!
+#define  ExecutionProtectionMask        0x2000000000000000UL  // z14
+#define  GuardedStorageMask             0x0400000000000000UL  // z14
+#define  VectorEnhancements1Mask        0x0100000000000000UL  // z14
+#define  VectorPackedDecimalMask        0x0200000000000000UL  // z14
+#define  CryptoExtension8Mask           0x0000200000000040UL  // z14
+#define  VectorEnhancements2Mask        0x0000080000000000UL  // z15
+#define  VectorPackedDecimalEnhMask     0x0000008000000000UL  // z15
+#define  CryptoExtension9Mask           0x0000001000000040UL  // z15
+#define  DeflateMask                    0x0000010000000040UL  // z15
 
   enum {
     _max_cache_levels = 8,    // As limited by ECAG instruction.
@@ -143,7 +141,7 @@ class VM_Version: public Abstract_VM_Version {
                                           unsigned int levelIndication,
                                           unsigned int typeIndication);
 
-  // Setting features via march=z900|z990|z9|z10|z196|ec12|z13|ztest commandline option.
+  // Setting features via march=z900|z990|z9|z10|z196|ec12|z13|z14|z15 commandline option.
   static void reset_features(bool reset);
   static void set_features_z900(bool reset = true);
   static void set_features_z990(bool reset = true);
@@ -152,7 +150,16 @@ class VM_Version: public Abstract_VM_Version {
   static void set_features_z196(bool reset = true);
   static void set_features_ec12(bool reset = true);
   static void set_features_z13(bool reset = true);
+  static void set_features_z14(bool reset = true);
+  static void set_features_z15(bool reset = true);
   static void set_features_from(const char* march);
+
+  // Get information about cache line sizes.
+  // As of now and the foreseeable future, line size of all levels will be the same and 256.
+  static unsigned int Dcache_lineSize(unsigned int level = 0) { return _Dcache_lineSize; }
+  static unsigned int Icache_lineSize(unsigned int level = 0) { return _Icache_lineSize; }
+
+ public:
 
   // Get the CPU type from feature bit settings.
   static bool is_z900() { return has_long_displacement()      && !has_long_displacement_fast(); }
@@ -161,14 +168,9 @@ class VM_Version: public Abstract_VM_Version {
   static bool is_z10()  { return has_GnrlInstrExtensions()    && !has_DistinctOpnds(); }
   static bool is_z196() { return has_DistinctOpnds()          && !has_MiscInstrExt(); }
   static bool is_ec12() { return has_MiscInstrExt()           && !has_CryptoExt5(); }
-  static bool is_z13()  { return has_CryptoExt5();}
-
-  // Get information about cache line sizes.
-  // As of now and the foreseeable future, line size of all levels will be the same and 256.
-  static unsigned int Dcache_lineSize(unsigned int level = 0) { return _Dcache_lineSize; }
-  static unsigned int Icache_lineSize(unsigned int level = 0) { return _Icache_lineSize; }
-
- public:
+  static bool is_z13()  { return has_CryptoExt5()             && !has_MiscInstrExt2();}
+  static bool is_z14()  { return has_MiscInstrExt2()          && !has_MiscInstrExt3();}
+  static bool is_z15()  { return has_MiscInstrExt3();}
 
   // Need to use nested class with unscoped enum.
   // C++11 declaration "enum class Cipher { ... } is not supported.
@@ -402,6 +404,8 @@ class VM_Version: public Abstract_VM_Version {
   static bool has_DFPZonedConversion()        { return  (_features[0] & DFPZonedConversionMask)        == DFPZonedConversionMask; }
   static bool has_DFPPackedConversion()       { return  (_features[1] & DFPPackedConversionMask)       == DFPPackedConversionMask; }
   static bool has_MiscInstrExt()              { return  (_features[0] & MiscInstrExtMask)              == MiscInstrExtMask; }
+  static bool has_MiscInstrExt2()             { return  (_features[0] & MiscInstrExt2Mask)             == MiscInstrExt2Mask; }
+  static bool has_MiscInstrExt3()             { return  (_features[0] & MiscInstrExt3Mask)             == MiscInstrExt3Mask; }
   static bool has_ExecutionHint()             { return  (_features[0] & ExecutionHintMask)             == ExecutionHintMask; }
   static bool has_LoadAndTrap()               { return  (_features[0] & LoadAndTrapMask)               == LoadAndTrapMask; }
   static bool has_ProcessorAssist()           { return  (_features[0] & ProcessorAssistMask)           == ProcessorAssistMask; }
@@ -410,15 +414,14 @@ class VM_Version: public Abstract_VM_Version {
   static bool has_TxMem()                     { return ((_features[1] & TransactionalExecutionMask)    == TransactionalExecutionMask) &&
                                                        ((_features[0] & ConstrainedTxExecutionMask)    == ConstrainedTxExecutionMask); }
   static bool has_CryptoExt5()                { return  (_features[0] & CryptoExtension5Mask)          == CryptoExtension5Mask; }
+  static bool has_CryptoExt8()                { return  (_features[2] & CryptoExtension8Mask)          == CryptoExtension8Mask; }
+  static bool has_CryptoExt9()                { return  (_features[2] & CryptoExtension9Mask)          == CryptoExtension9Mask; }
   static bool has_LoadStoreConditional2()     { return  (_features[0] & LoadStoreConditional2Mask)     == LoadStoreConditional2Mask; }
   static bool has_VectorFacility()            { return  (_features[2] & VectorFacilityMask)            == VectorFacilityMask; }
-
-  static bool has_TestFeatureImpl()           { return  (_features[0] & TestFeature1ImplMask)          == TestFeature1ImplMask; }
-  static bool has_TestFeature1Impl()          { return  (_features[0] & TestFeature1ImplMask)          == TestFeature1ImplMask; }
-  static bool has_TestFeature2Impl()          { return  (_features[0] & TestFeature2ImplMask)          == TestFeature2ImplMask; }
-  static bool has_TestFeature4Impl()          { return  (_features[0] & TestFeature4ImplMask)          == TestFeature4ImplMask; }
-  static bool has_TestFeature8Impl()          { return  (_features[0] & TestFeature8ImplMask)          == TestFeature8ImplMask; }
-  static bool has_TestFeaturesImpl()          { return  has_TestFeature1Impl() || has_TestFeature2Impl() || has_TestFeature4Impl() || has_TestFeature8Impl(); }
+  static bool has_VectorEnhancements1()       { return  (_features[2] & VectorEnhancements1Mask)       == VectorEnhancements1Mask; }
+  static bool has_VectorEnhancements2()       { return  (_features[2] & VectorEnhancements2Mask)       == VectorEnhancements2Mask; }
+  static bool has_VectorPackedDecimal()       { return  (_features[2] & VectorPackedDecimalMask)       == VectorPackedDecimalMask; }
+  static bool has_VectorPackedDecimalEnh()    { return  (_features[2] & VectorPackedDecimalEnhMask)    == VectorPackedDecimalEnhMask; }
 
   // Crypto features query functions.
   static bool has_Crypto_AES128()             { return has_Crypto() && test_feature_bit(&_cipher_features[0], Cipher::_AES128, Cipher::_featureBits); }
@@ -433,10 +436,6 @@ class VM_Version: public Abstract_VM_Version {
   static bool has_Crypto_SHA()                { return has_Crypto_SHA1() || has_Crypto_SHA256() || has_Crypto_SHA512() || has_Crypto_GHASH(); }
 
   // CPU feature setters (to force model-specific behaviour). Test/debugging only.
-  static void set_has_TestFeature1Impl()          { _features[0] |= TestFeature1ImplMask; }
-  static void set_has_TestFeature2Impl()          { _features[0] |= TestFeature2ImplMask; }
-  static void set_has_TestFeature4Impl()          { _features[0] |= TestFeature4ImplMask; }
-  static void set_has_TestFeature8Impl()          { _features[0] |= TestFeature8ImplMask; }
   static void set_has_DecimalFloatingPoint()      { _features[0] |= DecimalFloatingPointMask; }
   static void set_has_FPSupportEnhancements()     { _features[0] |= FPSupportEnhancementsMask; }
   static void set_has_ExecuteExtensions()         { _features[0] |= ExecuteExtensionsMask; }
@@ -471,6 +470,8 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_DistinctOpnds()             { _features[0] |= DistinctOpndsMask; }
   static void set_has_FPExtensions()              { _features[0] |= FPExtensionsMask; }
   static void set_has_MiscInstrExt()              { _features[0] |= MiscInstrExtMask; }
+  static void set_has_MiscInstrExt2()             { _features[0] |= MiscInstrExt2Mask; }
+  static void set_has_MiscInstrExt3()             { _features[0] |= MiscInstrExt3Mask; }
   static void set_has_ProcessorAssist()           { _features[0] |= ProcessorAssistMask; }
   static void set_has_InterlockedAccessV2()       { _features[0] |= InterlockedAccess2Mask; }
   static void set_has_LoadAndALUAtomicV2()        { _features[0] |= InterlockedAccess2Mask; }
@@ -479,7 +480,13 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_CryptoExt4()                { _features[1] |= CryptoExtension4Mask; }
   static void set_has_LoadStoreConditional2()     { _features[0] |= LoadStoreConditional2Mask; }
   static void set_has_CryptoExt5()                { _features[0] |= CryptoExtension5Mask; }
+  static void set_has_CryptoExt8()                { _features[2] |= CryptoExtension8Mask; }
+  static void set_has_CryptoExt9()                { _features[2] |= CryptoExtension9Mask; }
   static void set_has_VectorFacility()            { _features[2] |= VectorFacilityMask; }
+  static void set_has_VectorEnhancements1()       { _features[2] |= VectorEnhancements1Mask; }
+  static void set_has_VectorEnhancements2()       { _features[2] |= VectorEnhancements2Mask; }
+  static void set_has_VectorPackedDecimal()       { _features[2] |= VectorPackedDecimalMask; }
+  static void set_has_VectorPackedDecimalEnh()    { _features[2] |= VectorPackedDecimalEnhMask; }
 
   static void reset_has_VectorFacility()          { _features[2] &= ~VectorFacilityMask; }
 
