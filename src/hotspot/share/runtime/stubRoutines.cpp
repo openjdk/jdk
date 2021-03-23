@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER2
@@ -483,6 +483,7 @@ address StubRoutines::select_fill_function(BasicType t, bool aligned, const char
   case T_NARROWOOP:
   case T_NARROWKLASS:
   case T_ADDRESS:
+  case T_VOID:
     // Currently unsupported
     return NULL;
 
@@ -514,8 +515,8 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
   name = #xxx_arraycopy; \
   return StubRoutines::xxx_arraycopy(); }
 
-#define RETURN_STUB_PARM(xxx_arraycopy, parm) {           \
-  name = #xxx_arraycopy; \
+#define RETURN_STUB_PARM(xxx_arraycopy, parm) { \
+  name = parm ? #xxx_arraycopy "_uninit": #xxx_arraycopy; \
   return StubRoutines::xxx_arraycopy(parm); }
 
   switch (t) {

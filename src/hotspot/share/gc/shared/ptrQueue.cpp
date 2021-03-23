@@ -36,7 +36,6 @@
 #include <new>
 
 PtrQueue::PtrQueue(PtrQueueSet* qset) :
-  _qset(qset),
   _index(0),
   _capacity_in_bytes(index_to_byte_index(qset->buffer_size())),
   _buf(NULL)
@@ -198,6 +197,12 @@ PtrQueueSet::PtrQueueSet(BufferNode::Allocator* allocator) :
 {}
 
 PtrQueueSet::~PtrQueueSet() {}
+
+void PtrQueueSet::reset_queue(PtrQueue& queue) {
+  if (queue.buffer() != nullptr) {
+    queue.set_index(buffer_size());
+  }
+}
 
 void PtrQueueSet::flush_queue(PtrQueue& queue) {
   void** buffer = queue.buffer();

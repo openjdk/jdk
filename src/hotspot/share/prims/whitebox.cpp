@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,36 @@
  */
 
 #include "precompiled.hpp"
-
 #include <new>
-
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationPolicy.hpp"
-#include "compiler/methodMatcher.hpp"
 #include "compiler/directivesParser.hpp"
+#include "compiler/methodMatcher.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "memory/iterator.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspace/testHelpers.hpp"
-#include "memory/iterator.hpp"
+#include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "memory/oopFactory.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -250,21 +251,6 @@ WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
                 SpaceAlignment,
                 HeapAlignment);
 }
-WB_END
-
-#ifndef PRODUCT
-// Forward declaration
-void TestReservedSpace_test();
-void TestReserveMemorySpecial_test();
-void TestVirtualSpace_test();
-#endif
-
-WB_ENTRY(void, WB_RunMemoryUnitTests(JNIEnv* env, jobject o))
-#ifndef PRODUCT
-  TestReservedSpace_test();
-  TestReserveMemorySpecial_test();
-  TestVirtualSpace_test();
-#endif
 WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
@@ -761,10 +747,6 @@ static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobje
   return env->FromReflectedMethod(method);
 }
 
-static CompLevel highestCompLevel() {
-  return TieredCompilation ? MIN2((CompLevel) TieredStopAtLevel, CompLevel_highest_tier) : CompLevel_highest_tier;
-}
-
 // Deoptimizes all compiled frames and makes nmethods not entrant if it's requested
 class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
  private:
@@ -851,7 +833,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level, jboolean is_osr))
-  if (method == NULL || comp_level > highestCompLevel()) {
+  if (method == NULL || comp_level > CompilationPolicy::highest_compile_level()) {
     return false;
   }
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
@@ -874,7 +856,7 @@ WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobje
 WB_END
 
 WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject method, jobject compilation_context, jint compLevel))
-  if (compLevel < CompLevel_none || compLevel > highestCompLevel()) {
+  if (compLevel < CompLevel_none || compLevel > CompilationPolicy::highest_compile_level()) {
     return false; // Intrinsic is not available on a non-existent compilation level.
   }
   jmethodID method_id, compilation_context_id;
@@ -972,7 +954,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
     tty->print_cr("WB error: request to compile NULL method");
     return false;
   }
-  if (comp_level > highestCompLevel()) {
+  if (comp_level > CompilationPolicy::highest_compile_level()) {
     tty->print_cr("WB error: invalid compilation level %d", comp_level);
     return false;
   }
@@ -992,6 +974,15 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != NULL) {
+    return true;
+  }
+  // Check code again because compilation may be finished before Compile_lock is acquired.
+  if (bci == InvocationEntryBci) {
+    CompiledMethod* code = mh->code();
+    if (code != NULL && code->as_nmethod_or_null() != NULL) {
+      return true;
+    }
+  } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != NULL) {
     return true;
   }
   tty->print("WB error: failed to %s compile at level %d method ", is_blocking ? "blocking" : "", comp_level);
@@ -1098,7 +1089,7 @@ WB_ENTRY(void, WB_MarkMethodProfiled(JNIEnv* env, jobject o, jobject method))
   mdo->init();
   InvocationCounter* icnt = mdo->invocation_counter();
   InvocationCounter* bcnt = mdo->backedge_counter();
-  // set i-counter according to TieredThresholdPolicy::is_method_profiled
+  // set i-counter according to CompilationPolicy::is_method_profiled
   icnt->set(Tier4MinInvocationThreshold);
   bcnt->set(Tier4CompileThreshold);
 WB_END
@@ -1127,16 +1118,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   mh->clear_not_c2_osr_compilable();
   NOT_PRODUCT(mh->set_compiled_invocation_count(0));
   if (mcs != NULL) {
-    mcs->backedge_counter()->init();
-    mcs->invocation_counter()->init();
-    mcs->set_interpreter_invocation_count(0);
-    mcs->set_interpreter_throwout_count(0);
-
-#ifdef TIERED
-    mcs->set_rate(0.0F);
-    mh->set_prev_event_count(0);
-    mh->set_prev_time(0);
-#endif
+    mcs->clear_counters();
   }
 WB_END
 
@@ -1705,23 +1687,30 @@ WB_END
 
 WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jboolean is_open,
                                 jstring version, jstring location, jobjectArray packages))
-  Modules::define_module(module, is_open, version, location, packages, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::define_module(h_module, is_open, version, location, packages, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExports(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
-  Modules::add_module_exports_qualified(from_module, package, to_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_to_module (THREAD, JNIHandles::resolve(to_module));
+  Modules::add_module_exports_qualified(h_from_module, package, h_to_module, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAllUnnamed(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports_to_all_unnamed(module, package, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports_to_all_unnamed(h_module, package, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAll(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports(module, package, NULL, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports(h_module, package, Handle(), CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jobject source_module))
-  Modules::add_reads_module(from_module, source_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_source_module (THREAD, JNIHandles::resolve(source_module));
+  Modules::add_reads_module(h_from_module, h_source_module, CHECK);
 WB_END
 
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
@@ -2318,6 +2307,14 @@ WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   return info_string;
 WB_END
 
+WB_ENTRY(void, WB_LockCritical(JNIEnv* env, jobject wb))
+  GCLocker::lock_critical(thread);
+WB_END
+
+WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
+  GCLocker::unlock_critical(thread);
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2343,7 +2340,6 @@ static JNINativeMethod methods[] = {
   {CC"getCompressedOopsMaxHeapSize", CC"()J",
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
-  {CC"runMemoryUnitTests", CC"()V",                   (void*)&WB_RunMemoryUnitTests},
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
 #if INCLUDE_CDS
@@ -2581,6 +2577,9 @@ static JNINativeMethod methods[] = {
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
+
+  {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
+  {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
 };
 
 

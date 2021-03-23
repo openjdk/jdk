@@ -26,7 +26,6 @@
 #import "sun_lwawt_macosx_CDragSourceContextPeer.h"
 
 #import "JNIUtilities.h"
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "CDragSource.h"
 #import "ThreadUtilities.h"
@@ -50,12 +49,12 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_createNativ
 JNI_COCOA_ENTER(env);
 
     // Global references are disposed when the DragSource is removed
-    jobject gComponent = JNFNewGlobalRef(env, jcomponent);
-    jobject gDragSourceContextPeer = JNFNewGlobalRef(env, jthis);
-    jobject gTransferable = JNFNewGlobalRef(env, jtransferable);
-    jobject gTriggerEvent = JNFNewGlobalRef(env, jtrigger);
-    jlongArray gFormats = JNFNewGlobalRef(env, jformats);
-    jobject gFormatMap = JNFNewGlobalRef(env, jformatmap);
+    jobject gComponent = (*env)->NewGlobalRef(env, jcomponent);
+    jobject gDragSourceContextPeer = (*env)->NewGlobalRef(env, jthis);
+    jobject gTransferable = (*env)->NewGlobalRef(env, jtransferable);
+    jobject gTriggerEvent = (*env)->NewGlobalRef(env, jtrigger);
+    jlongArray gFormats = (*env)->NewGlobalRef(env, jformats);
+    jobject gFormatMap = (*env)->NewGlobalRef(env, jformatmap);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         dragSource = [[CDragSource alloc] init:gDragSourceContextPeer

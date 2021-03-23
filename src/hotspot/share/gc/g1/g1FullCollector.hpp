@@ -30,6 +30,7 @@
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -67,6 +68,7 @@ class G1FullCollector : StackObj {
   G1FullGCCompactionPoint   _serial_compaction_point;
   G1IsAliveClosure          _is_alive;
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
+  G1RegionMarkStats*        _live_stats;
 
   GrowableArray<HeapRegion*>**   _skipping_compaction_sets;
   G1RegionMarkStats*             _live_stats;

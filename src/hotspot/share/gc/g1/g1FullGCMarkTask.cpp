@@ -61,8 +61,8 @@ void G1FullGCMarkTask::work(uint worker_id) {
 
   // Mark stack is populated, now process and drain it.
   marker->complete_marking(collector()->oop_queue_set(), collector()->array_queue_set(), &_terminator);
-  // flush live bytes to regions
-  marker->flush_mark_region_cache();
+  marker->flush_mark_stats_cache();
+
   // This is the point where the entire marking should have completed.
   assert(marker->oop_stack()->is_empty(), "Marking should have completed");
   assert(marker->objarray_stack()->is_empty(), "Array marking should have completed");

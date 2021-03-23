@@ -28,7 +28,6 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
@@ -177,9 +176,9 @@ template <typename IsAlive, typename KeepAlive>
 void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive) {
   CodeBlobToOopClosure update_blobs(keep_alive, CodeBlobToOopClosure::FixRelocations);
   ShenandoahCodeBlobAndDisarmClosure blobs_and_disarm_Cl(keep_alive);
-  CodeBlobToOopClosure* codes_cl = ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() ?
-                                  static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
-                                  static_cast<CodeBlobToOopClosure*>(&update_blobs);
+  CodeBlobToOopClosure* codes_cl = (ClassUnloading && ShenandoahNMethodBarrier) ?
+                                   static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
+                                   static_cast<CodeBlobToOopClosure*>(&update_blobs);
 
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
 

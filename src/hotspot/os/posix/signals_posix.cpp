@@ -47,6 +47,17 @@ extern sigjmp_buf* get_jmp_buf_for_continuation();
 
 #include <signal.h>
 
+
+static const char* get_signal_name(int sig, char* out, size_t outlen);
+
+// Returns address of a handler associated with the given sigaction
+static address get_signal_handler(const struct sigaction* action);
+
+#define HANDLER_IS(handler, address)    ((handler) == CAST_FROM_FN_PTR(void*, (address)))
+#define HANDLER_IS_IGN(handler)         (HANDLER_IS(handler, SIG_IGN))
+#define HANDLER_IS_DFL(handler)         (HANDLER_IS(handler, SIG_DFL))
+#define HANDLER_IS_IGN_OR_DFL(handler)  (HANDLER_IS_IGN(handler) || HANDLER_IS_DFL(handler))
+
 // Various signal related mechanism are laid out in the following order:
 //
 // sun.misc.Signal
@@ -54,13 +65,25 @@ extern sigjmp_buf* get_jmp_buf_for_continuation();
 // signal handling (except suspend/resume)
 // suspend/resume
 
-// Glibc on Linux uses the SA_RESTORER flag to indicate
-// the use of a "signal trampoline". We have no interest
-// in this flag and need to ignore it when checking our
-// own flag settings.
-// Note: SA_RESTORER is not exposed through signal.h so we
-// have to hardwire its 0x04000000 value in the mask.
-LINUX_ONLY(const int SA_RESTORER_FLAG_MASK = ~0x04000000;)
+// Helper function to strip any flags from a sigaction sa_flag
+// which are not needed for semantic comparison (see remarks below
+// about SA_RESTORER on Linux).
+// Also to work around the fact that not all platforms define sa_flags
+// as signed int (looking at you, zlinux).
+static int get_sanitized_sa_flags(const struct sigaction* sa) {
+  int f = (int) sa->sa_flags;
+#ifdef LINUX
+  // Glibc on Linux uses the SA_RESTORER flag to indicate
+  // the use of a "signal trampoline". We have no interest
+  // in this flag and need to ignore it when checking our
+  // own flag settings.
+  // Note: SA_RESTORER is not exposed through signal.h so we
+  // have to hardcode its 0x04000000 value here.
+  const int sa_restorer_flag = 0x04000000;
+  f &= ~sa_restorer_flag;
+#endif // LINUX
+  return f;
+}
 
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
 // may have been configured, can be read more accurately from proc fs etc.
@@ -76,21 +99,67 @@ extern "C" {
   typedef void (*sa_sigaction_t)(int, siginfo_t *, void *);
 }
 
-// For diagnostics to print a message once. see run_periodic_checks
-static sigset_t check_signal_done;
-static bool check_signals = true;
+// At various places we store handler information for each installed handler.
+//  SavedSignalHandlers is a helper class for those cases, keeping an array of sigaction
+//  structures.
+class SavedSignalHandlers {
+  // Note: NSIG can be largish, depending on platform, and this array is expected
+  // to be sparsely populated. To save space the contained structures are
+  // C-heap allocated. Since they only get added outside of signal handling
+  // this is no problem.
+  struct sigaction* _sa[NSIG];
+
+  bool check_signal_number(int sig) const {
+    assert(sig > 0 && sig < NSIG, "invalid signal number %d", sig);
+    return sig > 0 && sig < NSIG;
+  }
+
+public:
+
+  SavedSignalHandlers() {
+    ::memset(_sa, 0, sizeof(_sa));
+  }
+
+  ~SavedSignalHandlers() {
+    for (int i = 0; i < NSIG; i ++) {
+      FREE_C_HEAP_OBJ(_sa[i]);
+    }
+  }
+
+  void set(int sig, const struct sigaction* act) {
+    if (check_signal_number(sig)) {
+      assert(_sa[sig] == NULL, "Overwriting signal handler?");
+      _sa[sig] = NEW_C_HEAP_OBJ(struct sigaction, mtInternal);
+      *_sa[sig] = *act;
+    }
+  }
+
+  const struct sigaction* get(int sig) const {
+    if (check_signal_number(sig)) {
+      return _sa[sig];
+    }
+    return NULL;
+  }
+};
+
 
 debug_only(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
-struct sigaction sigact[NSIG];
 
-// For signal-chaining
+// Our own signal handlers should never ever get replaced by a third party one.
+//  To check that, and to aid with diagnostics, store a copy of the handler setup
+//  and compare it periodically against reality (see os::run_periodic_checks()).
+static bool check_signals = true;
+static SavedSignalHandlers vm_handlers;
+static bool do_check_signal_periodically[NSIG] = { 0 };
+
+// For signal-chaining:
+//  if chaining is active, chained_handlers contains all handlers which we
+//  replaced with our own and to which we must delegate.
+static SavedSignalHandlers chained_handlers;
 static bool libjsig_is_loaded = false;
 typedef struct sigaction *(*get_signal_t)(int);
 static get_signal_t get_signal_action = NULL;
-
-// For diagnostic
-int sigflags[NSIG];
 
 // suspend/resume support
 #if defined(__APPLE__)
@@ -270,8 +339,6 @@ static const struct {
   { -1, NULL }
 };
 
-static const char* get_signal_name(int sig, char* out, size_t outlen);
-
 ////////////////////////////////////////////////////////////////////////////////
 // sun.misc.Signal support
 
@@ -335,19 +402,6 @@ int os::signal_wait() {
 ////////////////////////////////////////////////////////////////////////////////
 // signal chaining support
 
-static struct sigaction* get_preinstalled_handler(int sig) {
-  if (sigismember(&preinstalled_sigs, sig)) {
-    return &sigact[sig];
-  }
-  return NULL;
-}
-
-static void save_preinstalled_handler(int sig, struct sigaction& oldAct) {
-  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
-  sigact[sig] = oldAct;
-  sigaddset(&preinstalled_sigs, sig);
-}
-
 struct sigaction* get_chained_signal_action(int sig) {
   struct sigaction *actp = NULL;
 
@@ -357,7 +411,7 @@ struct sigaction* get_chained_signal_action(int sig) {
   }
   if (actp == NULL) {
     // Retrieve the preinstalled signal handler from jvm
-    actp = get_preinstalled_handler(sig);
+    actp = const_cast<struct sigaction*>(chained_handlers.get(sig));
   }
 
   return actp;
@@ -736,18 +790,6 @@ static void print_sa_flags(outputStream* st, int flags) {
   st->print("%s", buffer);
 }
 
-static int get_our_sigflags(int sig) {
-  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
-  return sigflags[sig];
-}
-
-static void set_our_sigflags(int sig, int flags) {
-  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
-  if (sig > 0 && sig < NSIG) {
-    sigflags[sig] = flags;
-  }
-}
-
 // Implementation may use the same storage for both the sa_sigaction field and the sa_handler field,
 // so check for "sigAct.sa_flags == SA_SIGINFO"
 static address get_signal_handler(const struct sigaction* action) {
@@ -763,10 +805,32 @@ typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *)
 
 static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
 
+// Semantically compare two sigaction structures. Return true if they are referring to
+// the same handler, using the same flags.
+static bool are_handlers_equal(const struct sigaction* sa,
+                               const struct sigaction* expected_sa) {
+  address this_handler = get_signal_handler(sa);
+  address expected_handler = get_signal_handler(expected_sa);
+  const int this_flags = get_sanitized_sa_flags(sa);
+  const int expected_flags = get_sanitized_sa_flags(expected_sa);
+  return (this_handler == expected_handler) &&
+         (this_flags == expected_flags);
+}
+
+// If we installed one of our signal handlers for sig, check that the current
+//  setup matches what we originally installed.
 static void check_signal_handler(int sig) {
   char buf[O_BUFLEN];
-  address jvmHandler = NULL;
+  bool mismatch = false;
 
+  if (!do_check_signal_periodically[sig]) {
+    return;
+  }
+
+  const struct sigaction* expected_act = vm_handlers.get(sig);
+  assert(expected_act != NULL, "Sanity");
+
+  // Retrieve current signal setup.
   struct sigaction act;
   static os_sigaction_t os_sigaction = NULL;
   if (os_sigaction == NULL) {
@@ -777,65 +841,22 @@ static void check_signal_handler(int sig) {
 
   os_sigaction(sig, (struct sigaction*)NULL, &act);
 
-  // See comment for SA_RESTORER_FLAG_MASK
-  LINUX_ONLY(act.sa_flags &= SA_RESTORER_FLAG_MASK;)
-
-  address thisHandler = get_signal_handler(&act);
-
-  switch (sig) {
-  case SIGSEGV:
-  case SIGBUS:
-  case SIGFPE:
-  case SIGPIPE:
-  case SIGILL:
-  case SIGXFSZ:
-    jvmHandler = CAST_FROM_FN_PTR(address, (sa_sigaction_t)javaSignalHandler);
-    break;
-
-  case SHUTDOWN1_SIGNAL:
-  case SHUTDOWN2_SIGNAL:
-  case SHUTDOWN3_SIGNAL:
-  case BREAK_SIGNAL:
-    jvmHandler = (address)os::user_handler();
-    break;
-
-  default:
-    if (sig == PosixSignals::SR_signum) {
-      jvmHandler = CAST_FROM_FN_PTR(address, (sa_sigaction_t)SR_handler);
-    } else {
-      return;
-    }
-    break;
-  }
-
-  if (thisHandler != jvmHandler) {
-    tty->print("Warning: %s handler ", os::exception_name(sig, buf, O_BUFLEN));
-    tty->print_raw("expected:");
-    print_signal_handler_name(tty, jvmHandler, buf, O_BUFLEN);
-    tty->print_raw("  found:");
-    print_signal_handler_name(tty, thisHandler, buf, O_BUFLEN);
-    // No need to check this sig any longer
-    sigaddset(&check_signal_done, sig);
+  // Compare both sigaction structures (intelligently; only the members we care about).
+  if (!are_handlers_equal(&act, expected_act)) {
+    tty->print_cr("Warning: %s handler modified!", os::exception_name(sig, buf, sizeof(buf)));
+    // If we had a mismatch:
+    // - print all signal handlers. As part of that printout, details will be printed
+    //   about any modified handlers.
+    // - Disable any further checks for this signal - we do not want to flood stdout. Though
+    //   depending on which signal had been overwritten, we may die very soon anyway.
+    os::print_signal_handlers(tty, buf, O_BUFLEN);
+    do_check_signal_periodically[sig] = false;
+    tty->print_cr("Consider using jsig library.");
     // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
     if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
-      tty->print_cr("Running in non-interactive shell, %s handler is replaced by shell",
+      tty->print_cr("Note: Running in non-interactive shell, %s handler is replaced by shell",
                     os::exception_name(sig, buf, O_BUFLEN));
     }
-  } else if (get_our_sigflags(sig) != 0 && (int)act.sa_flags != get_our_sigflags(sig)) {
-    tty->print("Warning: %s handler flags ", os::exception_name(sig, buf, O_BUFLEN));
-    tty->print("expected:");
-    print_sa_flags(tty, get_our_sigflags(sig));
-    tty->cr();
-    tty->print("  found:");
-    print_sa_flags(tty, act.sa_flags);
-    tty->cr();
-    // No need to check this sig any longer
-    sigaddset(&check_signal_done, sig);
-  }
-
-  // Dump all the signal
-  if (sigismember(&check_signal_done, sig)) {
-    os::print_signal_handlers(tty, buf, O_BUFLEN);
   }
 }
 
@@ -857,7 +878,7 @@ void* os::signal(int signal_number, void* handler) {
     return (void *)-1;
   }
 
-  return CAST_FROM_FN_PTR(void*, oldSigAct.sa_handler);
+  return get_signal_handler(&oldSigAct);
 }
 
 void os::signal_raise(int signal_number) {
@@ -869,15 +890,8 @@ int os::sigexitnum_pd() {
   return NSIG;
 }
 
-static void do_signal_check(int signal) {
-  if (!sigismember(&check_signal_done, signal)) {
-    check_signal_handler(signal);
-  }
-}
-
 // This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here
-
 void os::run_periodic_checks() {
 
   if (check_signals == false) return;
@@ -886,24 +900,24 @@ void os::run_periodic_checks() {
   // generation of hs*.log in the event of a crash, debugging
   // such a case can be very challenging, so we absolutely
   // check the following for a good measure:
-  do_signal_check(SIGSEGV);
-  do_signal_check(SIGILL);
-  do_signal_check(SIGFPE);
-  do_signal_check(SIGBUS);
-  do_signal_check(SIGPIPE);
-  do_signal_check(SIGXFSZ);
-  PPC64_ONLY(do_signal_check(SIGTRAP);)
+  check_signal_handler(SIGSEGV);
+  check_signal_handler(SIGILL);
+  check_signal_handler(SIGFPE);
+  check_signal_handler(SIGBUS);
+  check_signal_handler(SIGPIPE);
+  check_signal_handler(SIGXFSZ);
+  PPC64_ONLY(check_signal_handler(SIGTRAP);)
 
   // ReduceSignalUsage allows the user to override these handlers
   // see comments at the very top and jvm_md.h
   if (!ReduceSignalUsage) {
-    do_signal_check(SHUTDOWN1_SIGNAL);
-    do_signal_check(SHUTDOWN2_SIGNAL);
-    do_signal_check(SHUTDOWN3_SIGNAL);
-    do_signal_check(BREAK_SIGNAL);
+    check_signal_handler(SHUTDOWN1_SIGNAL);
+    check_signal_handler(SHUTDOWN2_SIGNAL);
+    check_signal_handler(SHUTDOWN3_SIGNAL);
+    check_signal_handler(BREAK_SIGNAL);
   }
 
-  do_signal_check(PosixSignals::SR_signum);
+  check_signal_handler(PosixSignals::SR_signum);
 }
 
 // Helper function for PosixSignals::print_siginfo_...():
@@ -1203,16 +1217,17 @@ void set_signal_handler(int sig) {
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
 
+  // Query the current signal handler. Needs to be a separate operation
+  // from installing a new handler since we need to honor AllowUserSignalHandlers.
   void* oldhand = get_signal_handler(&oldAct);
-  if (oldhand != CAST_FROM_FN_PTR(void*, SIG_DFL) &&
-      oldhand != CAST_FROM_FN_PTR(void*, SIG_IGN) &&
-      oldhand != CAST_FROM_FN_PTR(void*, (sa_sigaction_t)javaSignalHandler)) {
+  if (!HANDLER_IS_IGN_OR_DFL(oldhand) &&
+      !HANDLER_IS(oldhand, javaSignalHandler)) {
     if (AllowUserSignalHandlers) {
       // Do not overwrite; user takes responsibility to forward to us.
       return;
     } else if (UseSignalChaining) {
       // save the old handler in jvm
-      save_preinstalled_handler(sig, oldAct);
+      chained_handlers.set(sig, &oldAct);
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
@@ -1239,9 +1254,9 @@ void set_signal_handler(int sig) {
   }
 #endif
 
-  // Save flags, which are set by ours
-  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
-  sigflags[sig] = sigAct.sa_flags;
+  // Save handler setup for later checking
+  vm_handlers.set(sig, &sigAct);
+  do_check_signal_periodically[sig] = true;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
@@ -1346,53 +1361,67 @@ static void print_signal_set_short(outputStream* st, const sigset_t* set) {
   st->print("%s", buf);
 }
 
-void PosixSignals::print_signal_handler(outputStream* st, int sig,
-                                 char* buf, size_t buflen) {
-  struct sigaction sa;
-  sigaction(sig, NULL, &sa);
+static void print_single_signal_handler(outputStream* st,
+                                        const struct sigaction* act,
+                                        char* buf, size_t buflen) {
 
-  // See comment for SA_RESTORER_FLAG_MASK
-  LINUX_ONLY(sa.sa_flags &= SA_RESTORER_FLAG_MASK;)
+  address handler = get_signal_handler(act);
+  if (HANDLER_IS_DFL(handler)) {
+    st->print("SIG_DFL");
+  } else if (HANDLER_IS_IGN(handler)) {
+    st->print("SIG_IGN");
+  } else {
+    print_signal_handler_name(st, handler, buf, buflen);
+  }
+
+  st->print(", mask=");
+  print_signal_set_short(st, &(act->sa_mask));
+
+  st->print(", flags=");
+  int flags = get_sanitized_sa_flags(act);
+  print_sa_flags(st, flags);
+
+}
+
+// Print established signal handler for this signal.
+// - if this signal handler was installed by us and is chained to a pre-established user handler
+//    it replaced, print that one too.
+// - otherwise, if this signal handler was installed by us and replaced another handler to which we
+//    are not chained (e.g. if chaining is off), print that one too.
+void PosixSignals::print_signal_handler(outputStream* st, int sig,
+                                        char* buf, size_t buflen) {
 
   st->print("%10s: ", os::exception_name(sig, buf, buflen));
 
-  address handler = get_signal_handler(&sa);
+  struct sigaction current_act;
+  sigaction(sig, NULL, &current_act);
 
-  if (handler == CAST_FROM_FN_PTR(address, SIG_DFL)) {
-    st->print("SIG_DFL");
-  } else if (handler == CAST_FROM_FN_PTR(address, SIG_IGN)) {
-    st->print("SIG_IGN");
-  } else {
-    print_signal_handler_name(st, handler, buf, O_BUFLEN);
-  }
+  print_single_signal_handler(st, &current_act, buf, buflen);
+  st->cr();
 
-  st->print(", sa_mask[0]=");
-  print_signal_set_short(st, &sa.sa_mask);
-
-  address rh = VMError::get_resetted_sighandler(sig);
-  // May be, handler was resetted by VMError?
-  if (rh != NULL) {
-    handler = rh;
-    // See comment for SA_RESTORER_FLAG_MASK
-    sa.sa_flags = VMError::get_resetted_sigflags(sig) LINUX_ONLY(& SA_RESTORER_FLAG_MASK);
-  }
-
-  // Print textual representation of sa_flags.
-  st->print(", sa_flags=");
-  print_sa_flags(st, sa.sa_flags);
-
-  // Check: is it our handler?
-  if (handler == CAST_FROM_FN_PTR(address, (sa_sigaction_t)javaSignalHandler) ||
-      handler == CAST_FROM_FN_PTR(address, (sa_sigaction_t)SR_handler)) {
-    // It is our signal handler
-    // check for flags, reset system-used one!
-    if ((int)sa.sa_flags != get_our_sigflags(sig)) {
-      st->print(
-                ", flags was changed from " PTR32_FORMAT ", consider using jsig library",
-                get_our_sigflags(sig));
+  // If we expected to see our own hotspot signal handler but found a different one,
+  //  print a warning (unless the handler replacing it is our own crash handler, which can
+  //  happen if this function is called during error reporting).
+  const struct sigaction* expected_act = vm_handlers.get(sig);
+  if (expected_act != NULL) {
+    const address current_handler = get_signal_handler(&current_act);
+    if (!(HANDLER_IS(current_handler, VMError::crash_handler_address))) {
+      if (!are_handlers_equal(&current_act, expected_act)) {
+        st->print_cr("  *** Handler was modified!");
+        st->print   ("  *** Expected: ");
+        print_single_signal_handler(st, expected_act, buf, buflen);
+        st->cr();
+      }
     }
   }
-  st->cr();
+
+  // If there is a chained handler waiting behind the current one, print it too.
+  const struct sigaction* chained_act = get_chained_signal_action(sig);
+  if (chained_act != NULL) {
+    st->print("  chained to: ");
+    print_single_signal_handler(st, &current_act, buf, buflen);
+    st->cr();
+  }
 }
 
 void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
@@ -1421,8 +1450,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 bool PosixSignals::is_sig_ignored(int sig) {
   struct sigaction oact;
   sigaction(sig, (struct sigaction*)NULL, &oact);
-  void* ohlr = get_signal_handler(&oact);
-  if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN)) {
+  if (HANDLER_IS_IGN(get_signal_handler(&oact))) {
     return true;
   } else {
     return false;
@@ -1672,8 +1700,10 @@ int SR_initialize() {
     return -1;
   }
 
-  // Save signal flag
-  set_our_sigflags(PosixSignals::SR_signum, act.sa_flags);
+  // Save signal setup information for later checking.
+  vm_handlers.set(PosixSignals::SR_signum, &act);
+  do_check_signal_periodically[PosixSignals::SR_signum] = true;
+
   return 0;
 }
 

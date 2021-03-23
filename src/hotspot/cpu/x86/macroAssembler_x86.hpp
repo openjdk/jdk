@@ -169,6 +169,9 @@ class MacroAssembler: public Assembler {
   void movflt(XMMRegister dst, AddressLiteral src);
   void movflt(Address dst, XMMRegister src) { movss(dst, src); }
 
+  // Move with zero extension
+  void movfltz(XMMRegister dst, XMMRegister src) { movss(dst, src); }
+
   void movdbl(XMMRegister dst, XMMRegister src) {
     if (dst-> encoding() == src->encoding()) return;
     if (UseXmmRegToRegMoveAll) { movapd(dst, src); return; }
@@ -1242,6 +1245,7 @@ public:
 
   void vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vpaddb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch);
 
   void vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);

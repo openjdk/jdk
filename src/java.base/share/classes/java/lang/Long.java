@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,7 +299,7 @@ public final class Long extends Number
      * <blockquote>
      *  {@code Long.toHexString(n).toUpperCase()}
      * </blockquote>
-     * <p>
+     *
      * @apiNote
      * The {@link java.util.HexFormat} class provides formatting and parsing
      * of byte arrays and primitives to return a string or adding to an {@link Appendable}.
@@ -682,7 +682,7 @@ public final class Long extends Number
               throws NumberFormatException
     {
         if (s == null) {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         if (radix < Character.MIN_RADIX) {
@@ -893,7 +893,7 @@ public final class Long extends Number
     public static long parseUnsignedLong(String s, int radix)
                 throws NumberFormatException {
         if (s == null)  {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         int len = s.length();

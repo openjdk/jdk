@@ -31,6 +31,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -38,6 +39,7 @@
 #include "logging/logStream.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/os.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 
 static const char* indent(uint level) {
@@ -64,13 +66,14 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   AOT_ONLY(_gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>("AOTCodeRoots", "AOT Root Scan (ms):", max_gc_threads);)
   _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>("CMRefRoots", "CM RefProcessor Roots (ms):", max_gc_threads);
 
-  int index = G1GCPhaseTimes::StrongOopStorageSetRoots;
-  for (OopStorageSet::Iterator it = OopStorageSet::strong_iterator(); !it.is_end(); ++it, ++index) {
+  for (auto id : EnumRange<OopStorageSet::StrongId>()) {
+    GCParPhases phase = strong_oopstorage_phase(id);
     const char* phase_name_postfix = " Roots (ms):";
-    char* oop_storage_phase_name = NEW_C_HEAP_ARRAY(char, strlen(phase_name_postfix) + strlen(it->name()) + 1, mtGC);
-    strcpy(oop_storage_phase_name, it->name());
+    const char* storage_name = OopStorageSet::storage(id)->name();
+    char* oop_storage_phase_name = NEW_C_HEAP_ARRAY(char, strlen(phase_name_postfix) + strlen(storage_name) + 1, mtGC);
+    strcpy(oop_storage_phase_name, storage_name);
     strcat(oop_storage_phase_name, phase_name_postfix);
-    _gc_par_phases[index] = new WorkerDataArray<double>(it->name(), oop_storage_phase_name, max_gc_threads);
+    _gc_par_phases[phase] = new WorkerDataArray<double>(storage_name, oop_storage_phase_name, max_gc_threads);
   }
 
   _gc_par_phases[MergeER] = new WorkerDataArray<double>("MergeER", "Eager Reclaim (ms):", max_gc_threads);
@@ -487,7 +490,8 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
 
   debug_time_for_reference("Reference Processing", _cur_ref_proc_time_ms);
   _ref_phase_times.print_all_references(2, false);
-  _weak_phase_times.log_print(2);
+  _weak_phase_times.log_total(2);
+  _weak_phase_times.log_subtotals(3);
 
   if (G1StringDedup::is_enabled()) {
     debug_time("String Deduplication", _cur_string_deduplication_time_ms);

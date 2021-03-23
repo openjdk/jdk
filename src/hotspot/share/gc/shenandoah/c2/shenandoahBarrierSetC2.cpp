@@ -551,7 +551,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
     }
   }
 
-  // 3: apply keep-alive barrier if needed
+  // 3: apply keep-alive barrier for java.lang.ref.Reference if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     Node* top = Compile::current()->top();
     Node* adr = access.addr().node();

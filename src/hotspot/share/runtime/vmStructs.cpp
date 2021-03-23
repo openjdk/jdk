@@ -36,6 +36,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
@@ -88,9 +89,11 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/notificationThread.hpp"
 #include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -258,7 +261,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
   nonstatic_field(Klass,                       _super,                                        Klass*)                                \
-  volatile_nonstatic_field(Klass,              _subklass,                                     Klass*)                                 \
+  volatile_nonstatic_field(Klass,              _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
@@ -290,12 +293,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(DataLayout,                  _header._struct._traps,                        u4)                                    \
   nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
   nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_invocation_limit,                 int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_backward_branch_limit,            int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_profile_limit,                    int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
-  COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_invocation_count,   int))                                  \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
@@ -308,7 +307,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonstatic_field(Method,                      _flags,                                        u2)                                    \
-  nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
   volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
@@ -458,14 +456,14 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* SystemDictionary */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-     static_field(SystemDictionary,            WK_KLASS(Object_klass),                        InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(String_klass),                        InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Class_klass),                         InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(ClassLoader_klass),                   InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(System_klass),                        InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  InstanceKlass*)                        \
+     static_field(vmClasses,                   VM_CLASS_AT(Object_klass),                        InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(String_klass),                        InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(Class_klass),                         InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(ClassLoader_klass),                   InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(System_klass),                        InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(Thread_klass),                        InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(ThreadGroup_klass),                   InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(MethodHandle_klass),                  InstanceKlass*)                     \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* vmSymbols */                                                                                                                    \
@@ -892,6 +890,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
+  static_field(ObjectSynchronizer,             _in_use_list,                                  MonitorList)                           \
+  volatile_nonstatic_field(MonitorList,        _head,                                         ObjectMonitor*)                        \
                                                                                                                                      \
   /*********************/                                                                                                            \
   /* Matcher (C2 only) */                                                                                                            \
@@ -1324,6 +1324,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
     declare_type(DictionaryEntry, KlassHashtableEntry)                    \
   declare_toplevel_type(HashtableBucket<mtInternal>)                      \
   declare_toplevel_type(SystemDictionary)                                 \
+  declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \
                                                                           \
   declare_toplevel_type(GrowableArrayBase)                                \
@@ -1469,6 +1470,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /************/                                                          \
                                                                           \
   declare_toplevel_type(ObjectMonitor)                                    \
+  declare_toplevel_type(MonitorList)                                      \
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
@@ -2420,12 +2422,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(Deoptimization::Action_make_not_entrant)               \
   declare_constant(Deoptimization::Action_make_not_compilable)            \
   declare_constant(Deoptimization::Action_LIMIT)                          \
-                                                                          \
-  /***************************************************/                   \
-  /* DEFAULT_CACHE_LINE_SIZE (globalDefinitions.hpp) */                   \
-  /***************************************************/                   \
-                                                                          \
-  declare_preprocessor_constant("DEFAULT_CACHE_LINE_SIZE", DEFAULT_CACHE_LINE_SIZE) \
                                                                           \
   declare_constant(Deoptimization::Unpack_deopt)                          \
   declare_constant(Deoptimization::Unpack_exception)                      \

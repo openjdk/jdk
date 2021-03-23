@@ -1681,7 +1681,7 @@ public class MethodHandles {
          * (used during {@link #findClass} invocations)
          * are determined by the lookup class' loader,
          * which may change due to this operation.
-         * <p>
+         *
          * @param requestedLookupClass the desired lookup class for the new lookup object
          * @return a lookup object which reports the desired lookup class, or the same object
          * if there is no change
@@ -5748,6 +5748,10 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
         MethodType filterType = filter.type();
         Class<?> rtype = filterType.returnType();
         List<Class<?>> filterArgs = filterType.parameterList();
+        if (pos < 0 || (rtype == void.class && pos > targetType.parameterCount()) ||
+                       (rtype != void.class && pos >= targetType.parameterCount())) {
+            throw newIllegalArgumentException("position is out of range for target", target, pos);
+        }
         if (rtype == void.class) {
             return targetType.insertParameterTypes(pos, filterArgs);
         }

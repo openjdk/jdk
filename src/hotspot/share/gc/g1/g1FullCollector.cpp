@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
@@ -127,7 +128,6 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool c
   for (uint j = 0; j < heap->max_regions(); j++) {
     _live_stats[j].clear();
   }
-  _skipping_compaction_sets = NEW_C_HEAP_ARRAY(GrowableArray<HeapRegion*>*, _num_workers, mtGC);
 
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
@@ -147,7 +147,6 @@ G1FullCollector::~G1FullCollector() {
   }
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
-  FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _skipping_compaction_sets);
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 

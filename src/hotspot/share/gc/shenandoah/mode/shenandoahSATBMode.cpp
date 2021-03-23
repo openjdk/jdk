@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
@@ -35,7 +34,7 @@
 #include "runtime/java.hpp"
 
 void ShenandoahSATBMode::initialize_flags() const {
-  if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+  if (ClassUnloading) {
     FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
   }
@@ -49,6 +48,8 @@ void ShenandoahSATBMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
+  SHENANDOAH_CHECK_FLAG_SET(ShenandoahNMethodBarrier);
+  SHENANDOAH_CHECK_FLAG_SET(ShenandoahStackWatermarkBarrier);
 }
 
 ShenandoahHeuristics* ShenandoahSATBMode::initialize_heuristics() const {

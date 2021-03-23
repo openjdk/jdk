@@ -23,19 +23,23 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/filterQueue.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 
 class HandshakeOperation : public CHeapObj<mtThread> {
@@ -46,19 +50,23 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   // Once it reaches zero all handshake operations have been performed.
   int32_t             _pending_threads;
   JavaThread*         _target;
+  Thread*             _requester;
 
   // Must use AsyncHandshakeOperation when using AsyncHandshakeClosure.
-  HandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target) :
+  HandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target, Thread* requester) :
     _handshake_cl(cl),
     _pending_threads(1),
-    _target(target) {}
+    _target(target),
+    _requester(requester) {}
 
  public:
-  HandshakeOperation(HandshakeClosure* cl, JavaThread* target) :
+  HandshakeOperation(HandshakeClosure* cl, JavaThread* target, Thread* requester) :
     _handshake_cl(cl),
     _pending_threads(1),
-    _target(target) {}
+    _target(target),
+    _requester(requester) {}
   virtual ~HandshakeOperation() {}
+  void prepare(JavaThread* current_target, Thread* executing_thread);
   void do_handshake(JavaThread* thread);
   bool is_completed() {
     int32_t val = Atomic::load(&_pending_threads);
@@ -66,6 +74,7 @@ class HandshakeOperation : public CHeapObj<mtThread> {
     return val == 0;
   }
   void add_target_count(int count) { Atomic::add(&_pending_threads, count); }
+  int32_t pending_threads()        { return Atomic::load(&_pending_threads); }
   const char* name()               { return _handshake_cl->name(); }
   bool is_async()                  { return _handshake_cl->is_async(); }
 };
@@ -75,7 +84,7 @@ class AsyncHandshakeOperation : public HandshakeOperation {
   jlong _start_time_ns;
  public:
   AsyncHandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target, jlong start_ns)
-    : HandshakeOperation(cl, target), _start_time_ns(start_ns) {}
+    : HandshakeOperation(cl, target, NULL), _start_time_ns(start_ns) {}
   virtual ~AsyncHandshakeOperation() { delete _handshake_cl; }
   jlong start_time() const           { return _start_time_ns; }
 };
@@ -167,39 +176,43 @@ class HandshakeSpinYield : public StackObj {
   }
 };
 
-class VM_Handshake: public VM_Operation {
-  const jlong _handshake_timeout;
- public:
-  bool evaluate_at_safepoint() const { return false; }
+static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
+  JavaThreadIteratorWithHandle jtiwh;
 
- protected:
-  HandshakeOperation* const _op;
+  log_error(handshake)("Handshake timeout: %s(" INTPTR_FORMAT "), pending threads: " INT32_FORMAT,
+                       op->name(), p2i(op), op->pending_threads());
 
-  VM_Handshake(HandshakeOperation* op) :
-      _handshake_timeout(TimeHelper::millis_to_counter(HandshakeTimeout)), _op(op) {}
-
-  bool handshake_has_timed_out(jlong start_time);
-  static void handle_timeout();
-};
-
-bool VM_Handshake::handshake_has_timed_out(jlong start_time) {
-  // Check if handshake operation has timed out
-  if (_handshake_timeout > 0) {
-    return os::javaTimeNanos() >= (start_time + _handshake_timeout);
+  if (target == NULL) {
+    for ( ; JavaThread* thr = jtiwh.next(); ) {
+      if (thr->handshake_state()->operation_pending(op)) {
+        log_error(handshake)("JavaThread " INTPTR_FORMAT " has not cleared handshake op: " INTPTR_FORMAT, p2i(thr), p2i(op));
+        // Remember the last one found for more diagnostics below.
+        target = thr;
+      }
+    }
+  } else {
+    log_error(handshake)("JavaThread " INTPTR_FORMAT " has not cleared handshake op: " INTPTR_FORMAT, p2i(target), p2i(op));
   }
-  return false;
+
+  if (target != NULL) {
+    if (os::signal_thread(target, SIGILL, "cannot be handshaked")) {
+      // Give target a chance to report the error and terminate the VM.
+      os::naked_sleep(3000);
+    }
+  } else {
+    log_error(handshake)("No thread with an unfinished handshake op(" INTPTR_FORMAT ") found.", p2i(op));
+  }
+  fatal("Handshake timeout");
 }
 
-void VM_Handshake::handle_timeout() {
-  LogStreamHandle(Warning, handshake) log_stream;
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* thr = jtiwh.next(); ) {
-    if (thr->handshake_state()->has_operation()) {
-      log_stream.print("Thread " PTR_FORMAT " has not cleared its handshake op", p2i(thr));
-      thr->print_thread_state_on(&log_stream);
+static void check_handshake_timeout(jlong start_time, HandshakeOperation* op, JavaThread* target = NULL) {
+  // Check if handshake operation has timed out
+  jlong timeout_ns = millis_to_nanos(HandshakeTimeout);
+  if (timeout_ns > 0) {
+    if (os::javaTimeNanos() >= (start_time + timeout_ns)) {
+      handle_timeout(op, target);
     }
   }
-  log_stream.flush();
-  fatal("Handshake operation timed out");
 }
 
 static void log_handshake_info(jlong start_time_ns, const char* name, int targets, int emitted_handshakes_executed, const char* extra = NULL) {
@@ -214,9 +227,12 @@ static void log_handshake_info(jlong start_time_ns, const char* name, int target
   }
 }
 
-class VM_HandshakeAllThreads: public VM_Handshake {
+class VM_HandshakeAllThreads: public VM_Operation {
+  HandshakeOperation* const _op;
  public:
-  VM_HandshakeAllThreads(HandshakeOperation* op) : VM_Handshake(op) {}
+  VM_HandshakeAllThreads(HandshakeOperation* op) : _op(op) {}
+
+  bool evaluate_at_safepoint() const { return false; }
 
   void doit() {
     jlong start_time_ns = os::javaTimeNanos();
@@ -242,9 +258,7 @@ class VM_HandshakeAllThreads: public VM_Handshake {
     int emitted_handshakes_executed = 0;
     do {
       // Check if handshake operation has timed out
-      if (handshake_has_timed_out(start_time_ns)) {
-        handle_timeout();
-      }
+      check_handshake_timeout(start_time_ns, _op);
 
       // Have VM thread perform the handshake operation for blocked threads.
       // Observing a blocked state may of course be transient but the processing is guarded
@@ -273,6 +287,22 @@ class VM_HandshakeAllThreads: public VM_Handshake {
 
   VMOp_Type type() const { return VMOp_HandshakeAllThreads; }
 };
+
+void HandshakeOperation::prepare(JavaThread* current_target, Thread* executing_thread) {
+  if (current_target->is_terminated()) {
+    // Will never execute any handshakes on this thread.
+    return;
+  }
+  if (current_target != executing_thread) {
+    // Only when the target is not executing the handshake itself.
+    StackWatermarkSet::start_processing(current_target, StackWatermarkKind::gc);
+  }
+  if (_requester != NULL && _requester != executing_thread && _requester->is_Java_thread()) {
+    // The handshake closure may contain oop Handles from the _requester.
+    // We must make sure we can use them.
+    StackWatermarkSet::start_processing(_requester->as_Java_thread(), StackWatermarkKind::gc);
+  }
+}
 
 void HandshakeOperation::do_handshake(JavaThread* thread) {
   jlong start_time_ns = 0;
@@ -303,14 +333,14 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl) {
-  HandshakeOperation cto(hs_cl, NULL);
+  HandshakeOperation cto(hs_cl, NULL, Thread::current());
   VM_HandshakeAllThreads handshake(&cto);
   VMThread::execute(&handshake);
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
   JavaThread* self = JavaThread::current();
-  HandshakeOperation op(hs_cl, target);
+  HandshakeOperation op(hs_cl, target, Thread::current());
 
   jlong start_time_ns = os::javaTimeNanos();
 
@@ -336,6 +366,10 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
     if (op.is_completed()) {
       break;
     }
+
+    // Check if handshake operation has timed out
+    check_handshake_timeout(start_time_ns, &op, target);
+
     hsy.add_result(pr);
     // Check for pending handshakes to avoid possible deadlocks where our
     // target is trying to handshake us.
@@ -383,6 +417,20 @@ void HandshakeState::add_operation(HandshakeOperation* op) {
   SafepointMechanism::arm_local_poll_release(_handshakee);
 }
 
+bool HandshakeState::operation_pending(HandshakeOperation* op) {
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  class MatchOp {
+    HandshakeOperation* _op;
+   public:
+    MatchOp(HandshakeOperation* op) : _op(op) {}
+    bool operator()(HandshakeOperation* op) {
+      return op == _op;
+    }
+  };
+  MatchOp mo(op);
+  return _queue.contains(mo);
+}
+
 HandshakeOperation* HandshakeState::pop_for_self() {
   assert(_handshakee == Thread::current(), "Must be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
@@ -428,6 +476,7 @@ void HandshakeState::process_self_inner() {
       bool async = op->is_async();
       log_trace(handshake)("Proc handshake %s " INTPTR_FORMAT " on " INTPTR_FORMAT " by self",
                            async ? "asynchronous" : "synchronous", p2i(op), p2i(_handshakee));
+      op->prepare(_handshakee, _handshakee);
       op->do_handshake(_handshakee);
       if (async) {
         log_handshake_info(((AsyncHandshakeOperation*)op)->start_time(), op->name(), 1, 0, "asynchronous");
@@ -520,9 +569,7 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
         pr_ret = HandshakeState::_succeeded;
       }
 
-      if (!_handshakee->is_terminated()) {
-        StackWatermarkSet::start_processing(_handshakee, StackWatermarkKind::gc);
-      }
+      op->prepare(_handshakee, current_thread);
 
       _active_handshaker = current_thread;
       op->do_handshake(_handshakee);

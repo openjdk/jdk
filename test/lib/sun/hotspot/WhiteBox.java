@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,7 +509,6 @@ public class WhiteBox {
 
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
-  public native void runMemoryUnitTests();
   public native void readFromNoaccessArea();
   public native long getThreadStackSize();
   public native long getThreadRemainingStackSize();
@@ -643,4 +642,8 @@ public class WhiteBox {
   public native boolean isJVMTIIncluded();
 
   public native void waitUnsafe(int time_ms);
+
+  public native void lockCritical();
+
+  public native void unlockCritical();
 }

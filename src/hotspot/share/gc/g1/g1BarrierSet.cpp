@@ -142,8 +142,10 @@ void G1BarrierSet::on_thread_destroy(Thread* thread) {
 }
 
 void G1BarrierSet::on_thread_attach(Thread* thread) {
-  assert(!G1ThreadLocalData::satb_mark_queue(thread).is_active(), "SATB queue should not be active");
-  assert(G1ThreadLocalData::satb_mark_queue(thread).is_empty(), "SATB queue should be empty");
+  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
+  assert(!queue.is_active(), "SATB queue should not be active");
+  assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
+  assert(queue.index() == 0, "SATB queue index should be zero");
   // Can't assert that the DCQ is empty.  There is early execution on
   // the main thread, before it gets added to the threads list, which
   // is where this is called.  That execution may enqueue dirty cards.
@@ -151,8 +153,7 @@ void G1BarrierSet::on_thread_attach(Thread* thread) {
   // If we are creating the thread during a marking cycle, we should
   // set the active field of the SATB queue to true.  That involves
   // copying the global is_active value to this thread's queue.
-  bool is_satb_active = _satb_mark_queue_set.is_active();
-  G1ThreadLocalData::satb_mark_queue(thread).set_active(is_satb_active);
+  queue.set_active(_satb_mark_queue_set.is_active());
 }
 
 void G1BarrierSet::on_thread_detach(Thread* thread) {

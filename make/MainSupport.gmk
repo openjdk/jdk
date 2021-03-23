@@ -150,9 +150,7 @@ define DeclareRecipeForModuleMakefile
   $2-$$($1_TARGET_SUFFIX):
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
 	    -f ModuleWrapper.gmk -I $$(TOPDIR)/make/common/modules  \
-	    $$(addprefix -I, $$(PHASE_MAKEDIRS) \
-	        $$(addsuffix /modules/$2, $$(PHASE_MAKEDIRS)) \
-	    ) \
+	    $$(patsubst %,-I%/modules/$2,$$(PHASE_MAKEDIRS)) \
 	    MODULE=$2 MAKEFILE_PREFIX=$$($1_FILE_PREFIX) $$($1_EXTRA_ARGS))
 
 endef

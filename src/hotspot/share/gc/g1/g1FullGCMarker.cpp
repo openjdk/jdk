@@ -45,12 +45,8 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _verify_closure(VerifyOption_G1UseFullMarking),
     _stack_closure(this),
     _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
-    // cache size is big enough that not increase pause during marking
-    // by avoiding hit misses as so as possible
-    _mark_region_cache(mark_stats, round_up_power_of_2(G1CollectedHeap::heap()->max_regions())) {
-  if (MarkSweepDeadRatio > 0) {
-    _mark_region_cache.initialize();
-  }
+    _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {
+  _mark_stats_cache.reset();
   _oop_stack.initialize();
   _objarray_stack.initialize();
 }
@@ -74,4 +70,8 @@ void G1FullGCMarker::complete_marking(OopQueueSet* oop_stacks,
       }
     }
   } while (!is_empty() || !terminator->offer_termination());
+}
+
+void G1FullGCMarker::flush_mark_stats_cache() {
+  _mark_stats_cache.evict_all();
 }

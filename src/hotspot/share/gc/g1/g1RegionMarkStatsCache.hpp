@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1REGIONMARKSTATSCACHE_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/oop.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
@@ -69,13 +70,9 @@ private:
     uint _region_idx;
     G1RegionMarkStats _stats;
 
-    void clear() {
-      _region_idx = 0;
+    void clear(uint idx = 0) {
+      _region_idx = idx;
       _stats.clear();
-    }
-
-    bool is_clear() const {
-      return _region_idx == 0 && _stats.is_clear();
     }
   };
 
@@ -98,12 +95,15 @@ private:
 
   G1RegionMarkStatsCacheEntry* find_for_add(uint region_idx);
 public:
+  // Number of entries in the per-task stats entry. This value seems enough
+  // to have a very low cache miss rate.
+  static const uint RegionMarkStatsCacheSize = 1024;
+
   G1RegionMarkStatsCache(G1RegionMarkStats* target, uint num_cache_entries);
 
   ~G1RegionMarkStatsCache();
 
-  void initialize();
-
+  void add_live_words(oop obj);
   void add_live_words(uint region_idx, size_t live_words) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
     cur->_stats._live_words += live_words;
@@ -120,7 +120,8 @@ public:
   // Evict all remaining statistics, returning cache hits and misses.
   Pair<size_t, size_t> evict_all();
 
-  // Reset all cache entries to their default values.
+  // Reset liveness of all cache entries to their default values,
+  // initialize _region_idx to avoid initial cache miss.
   void reset();
 
   size_t hits() const { return _cache_hits; }

@@ -27,7 +27,7 @@
 
 #include "jimage.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
@@ -182,12 +182,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_app_classfile_bytes_read;
   static PerfCounter* _perf_sys_classfile_bytes_read;
 
-  static PerfCounter* _sync_systemLoaderLockContentionRate;
-  static PerfCounter* _sync_nonSystemLoaderLockContentionRate;
-  static PerfCounter* _sync_JVMFindLoadedClassLockFreeCounter;
-  static PerfCounter* _sync_JVMDefineClassLockFreeCounter;
-  static PerfCounter* _sync_JNIDefineClassLockFreeCounter;
-
   static PerfCounter* _unsafe_defineClassCallCounter;
 
   // The boot class path consists of 3 ordered pieces:
@@ -228,11 +222,12 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static ClassPathEntry* _last_app_classpath_entry;)
   CDS_ONLY(static ClassPathEntry* _module_path_entries;)
   CDS_ONLY(static ClassPathEntry* _last_module_path_entry;)
-  CDS_ONLY(static void setup_app_search_path(const char* class_path);)
+  CDS_ONLY(static void setup_app_search_path(const char* class_path, TRAPS);)
   CDS_ONLY(static void setup_module_search_path(const char* path, TRAPS);)
   static void add_to_app_classpath_entries(const char* path,
                                            ClassPathEntry* entry,
-                                           bool check_for_duplicates);
+                                           bool check_for_duplicates,
+                                           TRAPS);
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
                                            ClassPathEntry* entry);)
  public:
@@ -246,8 +241,8 @@ class ClassLoader: AllStatic {
   //   - setup the boot loader's system class path
   //   - setup the boot loader's patch mod entries, if present
   //   - create the ModuleEntry for java.base
-  static void setup_bootstrap_search_path();
-  static void setup_boot_search_path(const char *class_path);
+  static void setup_bootstrap_search_path(TRAPS);
+  static void setup_bootstrap_search_path_impl(const char *class_path, TRAPS);
   static void setup_patch_mod_entries();
   static void create_javabase();
 
@@ -260,6 +255,7 @@ class ClassLoader: AllStatic {
   static int  _libzip_loaded; // used to sync loading zip.
   static void release_load_zip_library();
   static inline void load_zip_library_if_needed();
+  static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
 
  public:
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
@@ -269,7 +265,7 @@ class ClassLoader: AllStatic {
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
-  static bool get_canonical_path(const char* orig, char* out, int len);
+  static char* get_canonical_path(const char* orig, Thread* thread);
   static const char* file_name_for_class_name(const char* class_name,
                                               int class_name_len);
   static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data);
@@ -278,8 +274,7 @@ class ClassLoader: AllStatic {
                                            bool check_for_duplicates,
                                            bool is_boot_append,
                                            bool from_class_path_attr,
-                                           bool throw_exception=true);
-  CDS_ONLY(static void update_module_path_entry_list(const char *path, TRAPS);)
+                                           TRAPS);
   static void print_bootclasspath();
 
   // Timing
@@ -304,31 +299,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_define_appclass_selftime() { return _perf_define_appclass_selftime; }
   static PerfCounter* perf_app_classfile_bytes_read() { return _perf_app_classfile_bytes_read; }
   static PerfCounter* perf_sys_classfile_bytes_read() { return _perf_sys_classfile_bytes_read; }
-
-  // Record how often system loader lock object is contended
-  static PerfCounter* sync_systemLoaderLockContentionRate() {
-    return _sync_systemLoaderLockContentionRate;
-  }
-
-  // Record how often non system loader lock object is contended
-  static PerfCounter* sync_nonSystemLoaderLockContentionRate() {
-    return _sync_nonSystemLoaderLockContentionRate;
-  }
-
-  // Record how many calls to JVM_FindLoadedClass w/o holding a lock
-  static PerfCounter* sync_JVMFindLoadedClassLockFreeCounter() {
-    return _sync_JVMFindLoadedClassLockFreeCounter;
-  }
-
-  // Record how many calls to JVM_DefineClass w/o holding a lock
-  static PerfCounter* sync_JVMDefineClassLockFreeCounter() {
-    return _sync_JVMDefineClassLockFreeCounter;
-  }
-
-  // Record how many calls to jni_DefineClass w/o holding a lock
-  static PerfCounter* sync_JNIDefineClassLockFreeCounter() {
-    return _sync_JNIDefineClassLockFreeCounter;
-  }
 
   // Record how many calls to Unsafe_DefineClass
   static PerfCounter* unsafe_defineClassCallCounter() {
@@ -366,9 +336,9 @@ class ClassLoader: AllStatic {
   static objArrayOop get_system_packages(TRAPS);
 
   // Initialization
-  static void initialize();
+  static void initialize(TRAPS);
   static void classLoader_init2(TRAPS);
-  CDS_ONLY(static void initialize_shared_path();)
+  CDS_ONLY(static void initialize_shared_path(TRAPS);)
   CDS_ONLY(static void initialize_module_path(TRAPS);)
 
   static int compute_Object_vtable();

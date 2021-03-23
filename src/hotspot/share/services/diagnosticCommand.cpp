@@ -27,6 +27,8 @@
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
@@ -42,7 +44,9 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
@@ -63,7 +67,7 @@ static void loadAgentModule(TRAPS) {
   JavaValue result(T_OBJECT);
   Handle h_module_name = java_lang_String::create_from_str("jdk.management.agent", CHECK);
   JavaCalls::call_static(&result,
-                         SystemDictionary::module_Modules_klass(),
+                         vmClasses::module_Modules_klass(),
                          vmSymbols::loadModule_name(),
                          vmSymbols::loadModule_signature(),
                          h_module_name,
@@ -403,7 +407,7 @@ void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   // The result should be a [B
-  oop res = (oop)result.get_jobject();
+  oop res = result.get_oop();
   assert(res->is_typeArray(), "just checking");
   assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
 
@@ -448,7 +452,7 @@ void SystemGCDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
-  Klass* k = SystemDictionary::System_klass();
+  Klass* k = vmClasses::System_klass();
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, k,
                          vmSymbols::run_finalization_name(),
@@ -475,7 +479,7 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
                          vmSymbols::get_finalizer_histogram_name(),
                          vmSymbols::void_finalizer_histogram_entry_array_signature(), CHECK);
 
-  objArrayOop result_oop = (objArrayOop) result.get_jobject();
+  objArrayOop result_oop = (objArrayOop) result.get_oop();
   if (result_oop->length() == 0) {
     output()->print_cr("No instances waiting for finalization found");
     return;

@@ -28,6 +28,8 @@
 #include "runtime/os.hpp"
 
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 // macros for restartable system calls
 
@@ -42,31 +44,67 @@
 } while(false)
 
 
+inline void os::dll_unload(void *lib) {
+  ::dlclose(lib);
+}
+
+inline jlong os::lseek(int fd, jlong offset, int whence) {
+  return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
+}
+
+inline int os::fsync(int fd) {
+  return ::fsync(fd);
+}
+
+inline int os::ftruncate(int fd, jlong length) {
+   return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
+}
+
+// Aix does not have NUMA support but need these for compilation.
+inline bool os::numa_has_static_binding()   { AIX_ONLY(ShouldNotReachHere();) return true; }
+inline bool os::numa_has_group_homing()     { AIX_ONLY(ShouldNotReachHere();) return false;  }
+
+inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  size_t res;
+  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+  return res;
+}
+
 inline int os::close(int fd) {
   return ::close(fd);
 }
 
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
-// Exported clock functionality
-
-inline bool os::Posix::supports_monotonic_clock() {
-  return _supports_monotonic_clock;
+inline int os::socket_close(int fd) {
+  return ::close(fd);
 }
 
-inline bool os::Posix::supports_clock_gettime() {
-  return _clock_gettime != NULL;
+inline int os::socket(int domain, int type, int protocol) {
+  return ::socket(domain, type, protocol);
 }
 
-inline int os::Posix::clock_gettime(clockid_t clock_id, struct timespec *tp) {
-  return _clock_gettime != NULL ? _clock_gettime(clock_id, tp) : -1;
+inline int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
 }
 
-inline int os::Posix::clock_getres(clockid_t clock_id, struct timespec *tp) {
-  return _clock_getres != NULL ? _clock_getres(clock_id, tp) : -1;
+inline int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
 }
 
-#endif // SUPPORTS_CLOCK_MONOTONIC
+inline int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+  return os::send(fd, buf, nBytes, flags);
+}
+
+inline int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+  RESTARTABLE_RETURN_INT(::connect(fd, him, len));
+}
+
+inline struct hostent* os::get_host_by_name(char* name) {
+  return ::gethostbyname(name);
+}
+
+inline void os::exit(int num) {
+  ::exit(num);
+}
 
 // Platform Mutex/Monitor implementation
 

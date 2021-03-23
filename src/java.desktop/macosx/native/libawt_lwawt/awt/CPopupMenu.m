@@ -24,7 +24,6 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "AWTWindow.h"
 #import "AWTView.h"
@@ -62,7 +61,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CPopupMenu_nativeCreatePopupMenu
 
 JNI_COCOA_ENTER(env);
 
-    jobject cPeerObjGlobal = JNFNewGlobalRef(env, peer);
+    jobject cPeerObjGlobal = (*env)->NewGlobalRef(env, peer);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         aCPopupMenu = [[CPopupMenu alloc] initWithPeer:cPeerObjGlobal];

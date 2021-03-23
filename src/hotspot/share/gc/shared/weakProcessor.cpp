@@ -30,7 +30,7 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
-#include "gc/shared/weakProcessorPhaseTimes.hpp"
+#include "gc/shared/weakProcessorTimes.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "prims/resolvedMethodTable.hpp"
@@ -62,23 +62,20 @@ void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_a
 
   notify_jvmti_tagmaps();
 
-  OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
-  for ( ; !it.is_end(); ++it) {
-    if (it->should_report_num_dead()) {
+  for (OopStorage* storage : OopStorageSet::Range<OopStorageSet::WeakId>()) {
+    if (storage->should_report_num_dead()) {
       CountingClosure<BoolObjectClosure, OopClosure> cl(is_alive, keep_alive);
-      it->oops_do(&cl);
-      it->report_num_dead(cl.dead());
+      storage->oops_do(&cl);
+      storage->report_num_dead(cl.dead());
     } else {
-      it->weak_oops_do(is_alive, keep_alive);
+      storage->weak_oops_do(is_alive, keep_alive);
     }
   }
 }
 
 void WeakProcessor::oops_do(OopClosure* closure) {
-
-  OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
-  for ( ; !it.is_end(); ++it) {
-    it->weak_oops_do(closure);
+  for (OopStorage* storage : OopStorageSet::Range<OopStorageSet::WeakId>()) {
+    storage->weak_oops_do(closure);
   }
 }
 
@@ -92,9 +89,8 @@ uint WeakProcessor::ergo_workers(uint max_workers) {
   // One thread per ReferencesPerThread references (or fraction thereof)
   // in the various OopStorage objects, bounded by max_threads.
   size_t ref_count = 0;
-  OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
-  for ( ; !it.is_end(); ++it) {
-    ref_count += it->allocation_count();
+  for (OopStorage* storage : OopStorageSet::Range<OopStorageSet::WeakId>()) {
+    ref_count += storage->allocation_count();
   }
 
   // +1 to (approx) round up the ref per thread division.
@@ -105,26 +101,20 @@ uint WeakProcessor::ergo_workers(uint max_workers) {
 
 void WeakProcessor::Task::initialize() {
   assert(_nworkers != 0, "must be");
-  assert(_phase_times == NULL || _nworkers <= _phase_times->max_threads(),
+  assert(_times == nullptr || _nworkers <= _times->max_threads(),
          "nworkers (%u) exceeds max threads (%u)",
-         _nworkers, _phase_times->max_threads());
+         _nworkers, _times->max_threads());
 
-  if (_phase_times) {
-    _phase_times->set_active_workers(_nworkers);
+  if (_times) {
+    _times->set_active_workers(_nworkers);
   }
   notify_jvmti_tagmaps();
 }
 
-WeakProcessor::Task::Task(uint nworkers) :
-  _phase_times(NULL),
-  _nworkers(nworkers),
-  _storage_states()
-{
-  initialize();
-}
+WeakProcessor::Task::Task(uint nworkers) : Task(nullptr, nworkers) {}
 
-WeakProcessor::Task::Task(WeakProcessorPhaseTimes* phase_times, uint nworkers) :
-  _phase_times(phase_times),
+WeakProcessor::Task::Task(WeakProcessorTimes* times, uint nworkers) :
+  _times(times),
   _nworkers(nworkers),
   _storage_states()
 {
@@ -132,10 +122,7 @@ WeakProcessor::Task::Task(WeakProcessorPhaseTimes* phase_times, uint nworkers) :
 }
 
 void WeakProcessor::Task::report_num_dead() {
-  for (int i = 0; i < _storage_states.par_state_count(); ++i) {
-    StorageState* state = _storage_states.par_state(i);
-    state->report_num_dead();
-  }
+  _storage_states.report_num_dead();
 }
 
 void WeakProcessor::GangTask::work(uint worker_id) {

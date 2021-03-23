@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,15 @@
 /*
  * @test
  * @bug 4748292
+ * @library /test/lib
  * @summary Prevent/Disable reverse name lookups with JSSE SSL sockets
- * @run main/othervm ReverseNameLookup
+ * @run main/othervm ReverseNameLookup -Djava.net.preferIPv4Stack
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
  */
+
+import jdk.test.lib.net.IPSupport;
 
 import java.io.*;
 import java.net.*;
@@ -86,8 +89,11 @@ public class ReverseNameLookup {
     void doServerSide() throws Exception {
         SSLServerSocketFactory sslssf =
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        InetSocketAddress socketAddress =
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort);
         SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket();
+        sslServerSocket.bind(socketAddress);
 
         serverPort = sslServerSocket.getLocalPort();
 
@@ -152,6 +158,7 @@ public class ReverseNameLookup {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;

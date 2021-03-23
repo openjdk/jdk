@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,30 +475,37 @@ void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
 }
 
 // Load object from cpool->resolved_references(index).
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Label *L_handle_null) {
-  assert_different_registers(result, index);
+// Kills:
+//   - index
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index,
+                                                                 Register tmp1, Register tmp2,
+                                                                 Label *L_handle_null) {
+  assert_different_registers(result, index, tmp1, tmp2);
+  assert(index->is_nonvolatile(), "needs to survive C-call in resolve_oop_handle");
   get_constant_pool(result);
 
   // Convert from field index to resolved_references() index and from
   // word index to byte offset. Since this is a java object, it can be compressed.
-  Register tmp = index;  // reuse
-  sldi(tmp, index, LogBytesPerHeapOop);
+  sldi(index, index, LogBytesPerHeapOop);
   // Load pointer for resolved_references[] objArray.
   ld(result, ConstantPool::cache_offset_in_bytes(), result);
   ld(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
-  resolve_oop_handle(result);
+  resolve_oop_handle(result, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
 #ifdef ASSERT
   Label index_ok;
   lwa(R0, arrayOopDesc::length_offset_in_bytes(), result);
   sldi(R0, R0, LogBytesPerHeapOop);
-  cmpd(CCR0, tmp, R0);
+  cmpd(CCR0, index, R0);
   blt(CCR0, index_ok);
   stop("resolved reference index out of bounds");
   bind(index_ok);
 #endif
   // Add in the index.
-  add(result, tmp, result);
-  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, tmp, R0, false, 0, L_handle_null);
+  add(result, index, result);
+  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result,
+                tmp1, tmp2,
+                MacroAssembler::PRESERVATION_NONE,
+                0, L_handle_null);
 }
 
 // load cpool->resolved_klass_at(index)
@@ -1194,95 +1201,6 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
 
   bind(verify_continue);
 #endif
-}
-
-void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocation_count,
-                                                                Register method_counters,
-                                                                Register Rscratch,
-                                                                Label &profile_continue) {
-  assert(ProfileInterpreter, "must be profiling interpreter");
-  // Control will flow to "profile_continue" if the counter is less than the
-  // limit or if we call profile_method().
-  Label done;
-
-  // If no method data exists, and the counter is high enough, make one.
-  lwz(Rscratch, in_bytes(MethodCounters::interpreter_profile_limit_offset()), method_counters);
-
-  cmpdi(CCR0, R28_mdx, 0);
-  // Test to see if we should create a method data oop.
-  cmpd(CCR1, Rscratch, invocation_count);
-  bne(CCR0, done);
-  bge(CCR1, profile_continue);
-
-  // Build it now.
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-  set_method_data_pointer_for_bcp();
-  b(profile_continue);
-
-  align(32, 12);
-  bind(done);
-}
-
-void InterpreterMacroAssembler::test_backedge_count_for_osr(Register backedge_count, Register method_counters,
-                                                            Register target_bcp, Register disp, Register Rtmp) {
-  assert_different_registers(backedge_count, target_bcp, disp, Rtmp, R4_ARG2);
-  assert(UseOnStackReplacement,"Must UseOnStackReplacement to test_backedge_count_for_osr");
-
-  Label did_not_overflow;
-  Label overflow_with_error;
-
-  lwz(Rtmp, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset()), method_counters);
-  cmpw(CCR0, backedge_count, Rtmp);
-
-  blt(CCR0, did_not_overflow);
-
-  // When ProfileInterpreter is on, the backedge_count comes from the
-  // methodDataOop, which value does not get reset on the call to
-  // frequency_counter_overflow(). To avoid excessive calls to the overflow
-  // routine while the method is being compiled, add a second test to make sure
-  // the overflow function is called only once every overflow_frequency.
-  if (ProfileInterpreter) {
-    const int overflow_frequency = 1024;
-    andi_(Rtmp, backedge_count, overflow_frequency-1);
-    bne(CCR0, did_not_overflow);
-  }
-
-  // Overflow in loop, pass branch bytecode.
-  subf(R4_ARG2, disp, target_bcp); // Compute branch bytecode (previous bcp).
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
-
-  // Was an OSR adapter generated?
-  cmpdi(CCR0, R3_RET, 0);
-  beq(CCR0, overflow_with_error);
-
-  // Has the nmethod been invalidated already?
-  lbz(Rtmp, nmethod::state_offset(), R3_RET);
-  cmpwi(CCR0, Rtmp, nmethod::in_use);
-  bne(CCR0, overflow_with_error);
-
-  // Migrate the interpreter frame off of the stack.
-  // We can use all registers because we will not return to interpreter from this point.
-
-  // Save nmethod.
-  const Register osr_nmethod = R31;
-  mr(osr_nmethod, R3_RET);
-  set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R11_scratch1);
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), R16_thread);
-  reset_last_Java_frame();
-  // OSR buffer is in ARG1
-
-  // Remove the interpreter frame.
-  merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
-
-  // Jump to the osr code.
-  ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
-  mtlr(R0);
-  mtctr(R11_scratch1);
-  bctr();
-
-  align(32, 12);
-  bind(overflow_with_error);
-  bind(did_not_overflow);
 }
 
 // Store a value at some constant offset from the method data pointer.

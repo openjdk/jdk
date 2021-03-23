@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 #ifndef SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 #define SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupQueue.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
@@ -65,12 +67,9 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
     G1StringDedup::enqueue_from_mark(obj, _worker_id);
   }
 
-  // Collect live bytes, which is used to tell
-  // whether to skip high live bytes heap regions.
-  if (MarkSweepDeadRatio > 0) {
-    uint hr_index = G1CollectedHeap::heap()->addr_to_region(cast_from_oop<HeapWord*>(obj));
-    _mark_region_cache.add_live_words(hr_index, (size_t)obj->size());
-  }
+  // Collect live words.
+  _mark_stats_cache.add_live_words(obj);
+
   return true;
 }
 

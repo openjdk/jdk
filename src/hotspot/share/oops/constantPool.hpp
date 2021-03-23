@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,13 +418,7 @@ class ConstantPool : public Metadata {
 
   Klass* klass_at(int which, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, true, THREAD);
-  }
-
-  // Version of klass_at that doesn't save the resolution error, called during deopt
-  Klass* klass_at_ignore_error(int which, TRAPS) {
-    constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, false, THREAD);
+    return klass_at_impl(h_this, which, THREAD);
   }
 
   CPKlassSlot klass_slot_at(int which) const {
@@ -739,7 +733,7 @@ class ConstantPool : public Metadata {
   }
 
   // CDS support
-  void archive_resolved_references(Thread *THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
   void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   void remove_unshareable_info();
@@ -886,8 +880,7 @@ class ConstantPool : public Metadata {
 
   // Implementation of methods that needs an exposed 'this' pointer, in order to
   // handle GC while executing the method
-  static Klass* klass_at_impl(const constantPoolHandle& this_cp, int which,
-                              bool save_resolution_error, TRAPS);
+  static Klass* klass_at_impl(const constantPoolHandle& this_cp, int which, TRAPS);
   static oop string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS);
 
   static void trace_class_resolution(const constantPoolHandle& this_cp, Klass* k);
@@ -903,7 +896,6 @@ class ConstantPool : public Metadata {
                                                bool must_resolve, Handle if_not_available, TRAPS);
 
   // Exception handling
-  static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception);
   static void save_and_throw_exception(const constantPoolHandle& this_cp, int which, constantTag tag, TRAPS);
 
  public:
@@ -967,9 +959,9 @@ class ConstantPool : public Metadata {
 
 class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
  private:
-  unsigned int        _hash;   // 32-bit hash for item
   SymbolHashMapEntry* _next;   // Next element in the linked list for this bucket
   Symbol*             _symbol; // 1-st part of the mapping: symbol => value
+  unsigned int        _hash;   // 32-bit hash for item
   u2                  _value;  // 2-nd part of the mapping: symbol => value
 
  public:
@@ -986,7 +978,7 @@ class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
   void       set_value(u2 value)          { _value = value; }
 
   SymbolHashMapEntry(unsigned int hash, Symbol* symbol, u2 value)
-    : _hash(hash), _next(NULL), _symbol(symbol), _value(value) {}
+    : _next(NULL), _symbol(symbol), _hash(hash), _value(value) {}
 
 }; // End SymbolHashMapEntry class
 

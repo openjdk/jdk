@@ -352,29 +352,22 @@ void WorkGangBarrierSync::abort() {
 // SubTasksDone functions.
 
 SubTasksDone::SubTasksDone(uint n) :
-  _tasks(NULL), _n_tasks(n), _threads_completed(0) {
-  _tasks = NEW_C_HEAP_ARRAY(uint, n, mtInternal);
-  clear();
-}
-
-bool SubTasksDone::valid() {
-  return _tasks != NULL;
-}
-
-void SubTasksDone::clear() {
+  _tasks(NULL), _n_tasks(n) {
+  _tasks = NEW_C_HEAP_ARRAY(bool, n, mtInternal);
   for (uint i = 0; i < _n_tasks; i++) {
-    _tasks[i] = 0;
+    _tasks[i] = false;
   }
-  _threads_completed = 0;
 }
 
-void SubTasksDone::all_tasks_completed_impl(uint n_threads,
-                                            uint skipped[],
-                                            size_t skipped_size) {
 #ifdef ASSERT
+void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
+  if (Atomic::cmpxchg(&_verification_done, false, true)) {
+    // another thread has done the verification
+    return;
+  }
   // all non-skipped tasks are claimed
   for (uint i = 0; i < _n_tasks; ++i) {
-    if (_tasks[i] == 0) {
+    if (!_tasks[i]) {
       auto is_skipped = false;
       for (size_t j = 0; j < skipped_size; ++j) {
         if (i == skipped[j]) {
@@ -389,35 +382,19 @@ void SubTasksDone::all_tasks_completed_impl(uint n_threads,
   for (size_t i = 0; i < skipped_size; ++i) {
     auto task_index = skipped[i];
     assert(task_index < _n_tasks, "Array in range.");
-    assert(_tasks[task_index] == 0, "%d is both claimed and skipped.", task_index);
-  }
-#endif
-  uint observed = _threads_completed;
-  uint old;
-  do {
-    old = observed;
-    observed = Atomic::cmpxchg(&_threads_completed, old, old+1);
-  } while (observed != old);
-  // If this was the last thread checking in, clear the tasks.
-  uint adjusted_thread_count = (n_threads == 0 ? 1 : n_threads);
-  if (observed + 1 == adjusted_thread_count) {
-    clear();
+    assert(!_tasks[task_index], "%d is both claimed and skipped.", task_index);
   }
 }
+#endif
 
 bool SubTasksDone::try_claim_task(uint t) {
   assert(t < _n_tasks, "bad task id.");
-  uint old = _tasks[t];
-  if (old == 0) {
-    old = Atomic::cmpxchg(&_tasks[t], 0u, 1u);
-  }
-  bool res = old == 0;
-  return res;
+  return !_tasks[t] && !Atomic::cmpxchg(&_tasks[t], false, true);
 }
 
-
 SubTasksDone::~SubTasksDone() {
-  FREE_C_HEAP_ARRAY(uint, _tasks);
+  assert(_verification_done, "all_tasks_claimed must have been called.");
+  FREE_C_HEAP_ARRAY(bool, _tasks);
 }
 
 // *** SequentialSubTasksDone

@@ -25,14 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 
-#include "gc/shared/taskqueue.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
-class ShenandoahStrDedupQueue;
-class ShenandoahReferenceProcessor;
+class ShenandoahConcurrentMarkingTask;
+class ShenandoahFinalMarkingTask;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
   friend class ShenandoahConcurrentMarkingTask;
@@ -40,22 +36,14 @@ class ShenandoahConcurrentMark: public ShenandoahMark {
 
 public:
   ShenandoahConcurrentMark();
-
-  // When concurrent stack processing is not supported
-  void mark_stw_roots();
+  // Concurrent mark roots
   void mark_concurrent_roots();
-
   // Concurrent mark
   void concurrent_mark();
   // Finish mark at a safepoint
   void finish_mark();
 
-
   static void cancel();
-
-  // TODO: where to put them
-  static void update_roots(ShenandoahPhaseTimings::Phase root_phase);
-  static void update_thread_roots(ShenandoahPhaseTimings::Phase root_phase);
 
 private:
   void finish_mark_work();

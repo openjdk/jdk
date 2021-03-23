@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -723,6 +723,32 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     UTIL_LOOKUP_PROGS(LIPO, lipo)
     UTIL_REQUIRE_PROGS(OTOOL, otool)
     UTIL_REQUIRE_PROGS(INSTALL_NAME_TOOL, install_name_tool)
+
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(METAL, metal)
+    if test "x$METAL" = x; then
+      AC_MSG_CHECKING([if metal can be run using xcrun])
+      METAL="xcrun -sdk macosx metal"
+      test_metal=`$METAL --version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([XCode tool 'metal' neither found in path nor with xcrun])
+      else
+        AC_MSG_RESULT([yes, will be using '$METAL'])
+      fi
+    fi
+
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(METALLIB, metallib)
+    if test "x$METALLIB" = x; then
+      AC_MSG_CHECKING([if metallib can be run using xcrun])
+      METALLIB="xcrun -sdk macosx metallib"
+      test_metallib=`$METALLIB --version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([XCode tool 'metallib' neither found in path nor with xcrun])
+      else
+        AC_MSG_RESULT([yes, will be using '$METALLIB'])
+      fi
+    fi
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
