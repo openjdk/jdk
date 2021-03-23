@@ -487,7 +487,7 @@ class ArgumentPusher : public SignatureIterator {
   Handle next_object() {
     guarantee(!_pushed, "one argument");
     _pushed = true;
-    return Handle(Thread::current(), (oop) (address) _argument);
+    return Handle(Thread::current(), cast_to_oop(_argument));
   }
 
  public:
@@ -536,7 +536,7 @@ JRT_ENTRY(jlong, JVMCIRuntime::invoke_static_method_one_arg(JavaThread* thread, 
   if (return_type == T_VOID) {
     return 0;
   } else if (return_type == T_OBJECT || return_type == T_ARRAY) {
-    thread->set_vm_result((oop) result.get_jobject());
+    thread->set_vm_result(result.get_oop());
     return 0;
   } else {
     jvalue *value = (jvalue *) result.get_value_addr();
