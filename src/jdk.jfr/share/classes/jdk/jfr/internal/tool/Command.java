@@ -325,7 +325,7 @@ abstract class Command {
         }
     }
 
-    protected final static char quoteCharacter() {
+    protected static final char quoteCharacter() {
         return File.pathSeparatorChar == ';' ? '"' : '\'';
     }
 
@@ -382,7 +382,7 @@ abstract class Command {
         return list;
     }
 
-    protected final static Predicate<EventType> addCategoryFilter(String filterText, Predicate<EventType> eventFilter) throws UserSyntaxException {
+    protected static final Predicate<EventType> addCategoryFilter(String filterText, Predicate<EventType> eventFilter) throws UserSyntaxException {
         List<String> filters = explodeFilter(filterText);
         Predicate<EventType> newFilter = recurseIfPossible(eventType -> {
             for (String category : eventType.getCategoryNames()) {
@@ -400,7 +400,7 @@ abstract class Command {
         return eventFilter == null ? newFilter : eventFilter.or(newFilter);
     }
 
-    protected final static Predicate<EventType> addEventFilter(String filterText, final Predicate<EventType> eventFilter) throws UserSyntaxException {
+    protected static final Predicate<EventType> addEventFilter(String filterText, final Predicate<EventType> eventFilter) throws UserSyntaxException {
         List<String> filters = explodeFilter(filterText);
         Predicate<EventType> newFilter = recurseIfPossible(eventType -> {
             for (String filter : filters) {
@@ -418,7 +418,7 @@ abstract class Command {
         return eventFilter == null ? newFilter : eventFilter.or(newFilter);
     }
 
-    protected final static <T, X> Predicate<T> addCache(final Predicate<T> filter, Function<T, X> cacheFunction) {
+    protected static final <T, X> Predicate<T> addCache(final Predicate<T> filter, Function<T, X> cacheFunction) {
         Map<X, Boolean> cache = new HashMap<>();
         return t -> cache.computeIfAbsent(cacheFunction.apply(t), x -> filter.test(t));
     }
