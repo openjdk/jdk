@@ -3487,7 +3487,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
 
   if (p != MAP_FAILED) {
-    // Mapping succeede, sanity check passed.
+    // Mapping succeeded, sanity check passed.
     munmap(p, page_size);
     return true;
   }
