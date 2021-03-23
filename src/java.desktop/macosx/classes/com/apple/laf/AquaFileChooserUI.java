@@ -2037,10 +2037,9 @@ public class AquaFileChooserUI extends FileChooserUI {
         // Try to get the custom text.  If none, use the fallback
         String getApproveButtonText(final JFileChooser fc, final String fallbackText) {
             final String buttonText = fc.getApproveButtonText();
-            if (buttonText != null) {
-                if (!buttonText.isEmpty()) return buttonText;
-            }
-            return fallbackText;
+            return buttonText != null
+                    ? buttonText
+                    : fallbackText;
         }
 
         int getApproveButtonMnemonic(final JFileChooser fc) {
@@ -2055,10 +2054,9 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         String getApproveButtonToolTipText(final JFileChooser fc, final String fallbackText) {
             final String tooltipText = fc.getApproveButtonToolTipText();
-            if (tooltipText != null) {
-                if (!tooltipText.isEmpty()) return tooltipText;
-            }
-            return fallbackText;
+            return tooltipText != null
+                    ? tooltipText
+                    : fallbackText;
         }
 
         String getCancelButtonToolTipText(final JFileChooser fc) {
