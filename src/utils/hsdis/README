@@ -1,6 +1,6 @@
 Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-  
+
 The Universal Permissive License (UPL), Version 1.0
 
 Subject to the condition set forth below, permission is hereby granted to
@@ -68,10 +68,10 @@ which don't have NLS by default.  It also avoids build problems on
 other configurations that don't include the full NLS support.
 
 The makefile looks for the sources in build/binutils or you can
-specify it's location to the makefile using BINUTILS=path.  It will
+specify its location to the makefile using BINUTILS=path.  It will
 configure binutils and build it first and then build and link the
-disasembly adapter.  Make all will build the default target for your
-platform.  If you platform support both 32 and 64 simultaneously then
+disassembly adapter.  Make all will build the default target for your
+platform.  If your platform supports both 32 and 64 simultaneously then
 "make both" will build them both at once.  "make all64" will
 explicitly build the 64 bit version.  By default this will build the
 disassembler library only.  If you build demo it will build a demo
@@ -101,9 +101,9 @@ http://sourceforge.net/projects/mingw-w64.  Grab a copy of the
 complete toolchain and unpack it somewhere.  Put the bin directory of
 the toolchain in your path.  The mingw installs contain cross compile
 versions of gcc that are named with a prefix to indicate what they are
-targetting and you must tell the Makefile which one to use.  This
+targeting and you must tell the Makefile which one to use.  This
 should either be i586-mingw32msvc or x86_64-pc-mingw32 depending on
-which on you are targetting and there should be a version of gcc in
+which one you are targeting and there should be a version of gcc in
 your path named i586-mingw32msvc-gcc or x86_64-pc-mingw32-gcc.  Tell
 the makefile what prefix to use to find the mingw tools by using
 MINGW=.  For example:
