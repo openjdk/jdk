@@ -94,6 +94,7 @@
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
