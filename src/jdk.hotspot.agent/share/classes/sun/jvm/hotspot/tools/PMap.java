@@ -78,7 +78,7 @@ public class PMap extends Tool {
          }
       } else {
           if (getDebugeeType() == DEBUGEE_REMOTE) {
-            out.print(((RemoteDebuggerClient)dbg).execCommandOnServer("pmap", null));
+              out.print(((RemoteDebuggerClient)dbg).execCommandOnServer("pmap", null));
           } else {
               out.println("not yet implemented (debugger does not support CDebugger)!");
           }
