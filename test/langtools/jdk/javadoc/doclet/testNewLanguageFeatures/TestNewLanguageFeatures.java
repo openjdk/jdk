@@ -73,7 +73,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                    <span class="extends-implements">extends java.lang.Enum&lt;<a href="Coin.html" ti\
                    tle="enum class in pkg">Coin</a>&gt;</span></div>""",
                 // Check for enum constant section
-                "<div class=\"caption\"><span>Enum Constants</span></div>",
+                """
+                    <div class="caption"><span>Enum Constants</span></div>""",
                 // Detail for enum constant
                 """
                     <a href="#Dime" class="member-name-link">Dime</a>""",
@@ -421,7 +422,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > that return types with arguments of type <a href="../Foo4.html" title="class\
                      in pkg2">Foo4</a></span></div>""",
                 """
-                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
+                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2\
+                    .html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a hr\
+                    ef="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../Para\
+                    mTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends\
+                     <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
         );
 
         // Type parameters in constructor and method args

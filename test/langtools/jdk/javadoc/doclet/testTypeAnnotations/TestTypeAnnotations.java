@@ -258,7 +258,8 @@ public class TestTypeAnnotations extends JavadocTester {
         // Test for type annotations on throws (Throws.java).
         checkOutput("typeannos/ThrDefaultUnmodified.html", true,
                 """
-                    <div class="member-signature"><span class="return-type">void</span>&nbsp;<span class="element-name">oneException</span>()
+                    <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
+                    lass="element-name">oneException</span>()
                                throws <span class="exceptions"><a href="ThrA.html" title="annotation interface\
                      in typeannos">@ThrA</a> java.lang.Exception</span></div>""",
 
@@ -287,7 +288,8 @@ public class TestTypeAnnotations extends JavadocTester {
 
         checkOutput("typeannos/ThrWithValue.html", true,
                 """
-                    <div class="member-signature"><span class="return-type">void</span>&nbsp;<span class="element-name">oneException</span>()
+                    <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
+                    lass="element-name">oneException</span>()
                                throws <span class="exceptions"><a href="ThrB.html" title="annotation interface\
                      in typeannos">@ThrB</a>("m") java.lang.Exception</span></div>""",
 
@@ -445,10 +447,10 @@ public class TestTypeAnnotations extends JavadocTester {
                     href="RcvrA.html" title="annotation interface in typeannos">@RcvrA</a> X&gt;&nbsp;this)</s\
                     pan></div>""",
                 """
-                   <div class="member-signature"><span class="return-type">void</span>&nbsp;<span cl\
-                   ass="element-name">test4</span>&#8203;<span class="parameters">(<a href="RcvrA.ht\
-                   ml" title="annotation interface in typeannos">@RcvrA</a> Generic2&lt;<a href="RcvrA.html" t\
-                   itle="annotation interface in typeannos">@RcvrA</a> X&gt;&nbsp;this)</span></div>""");
+                    <div class="member-signature"><span class="return-type">void</span>&nbsp;<span cl\
+                    ass="element-name">test4</span>&#8203;<span class="parameters">(<a href="RcvrA.ht\
+                    ml" title="annotation interface in typeannos">@RcvrA</a> Generic2&lt;<a href="RcvrA.html" t\
+                    itle="annotation interface in typeannos">@RcvrA</a> X&gt;&nbsp;this)</span></div>""");
 
 
         // Test for repeated type annotations (RepeatedAnnotations.java).
