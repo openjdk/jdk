@@ -82,7 +82,7 @@ public:
 
 private:
   // projections extracted from a call node
-  CallProjections _call_projects;
+  CallProjections _callprojs;
 
   // Additional data collected during macro expansion
   bool _has_locks;
