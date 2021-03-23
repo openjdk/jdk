@@ -208,7 +208,7 @@ bool VM_RedefineClasses::doit_prologue() {
   lock_classes();
   // We first load new class versions in the prologue, because somewhere down the
   // call chain it is required that the current thread is a Java thread.
-  _res = load_new_class_versions(Thread::current());
+  _res = load_new_class_versions();
   if (_res != JVMTI_ERROR_NONE) {
     // free any successfully created classes, since none are redefined
     for (int i = 0; i < _class_count; i++) {
@@ -1341,7 +1341,7 @@ class RedefineVerifyMark : public StackObj {
 };
 
 
-jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
+jvmtiError VM_RedefineClasses::load_new_class_versions() {
 
   // For consistency allocate memory using os::malloc wrapper.
   _scratch_classes = (InstanceKlass**)
@@ -1354,9 +1354,10 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     _scratch_classes[i] = NULL;
   }
 
-  ResourceMark rm(THREAD);
+  JavaThread* current = JavaThread::current();
+  ResourceMark rm(current);
 
-  JvmtiThreadState *state = JvmtiThreadState::state_for(JavaThread::current());
+  JvmtiThreadState *state = JvmtiThreadState::state_for(current);
   // state can only be NULL if the current thread is exiting which
   // should not happen since we're trying to do a RedefineClasses
   guarantee(state != NULL, "exiting thread calling load_new_class_versions");
@@ -1364,7 +1365,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     // Create HandleMark so that any handles created while loading new class
     // versions are deleted. Constant pools are deallocated while merging
     // constant pools
-    HandleMark hm(THREAD);
+    HandleMark hm(current);
     InstanceKlass* the_class = get_ik(_class_defs[i].klass);
     Symbol*  the_class_sym = the_class->name();
 
@@ -1378,13 +1379,14 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
                        ClassFileStream::verify);
 
     // Parse the stream.
-    Handle the_class_loader(THREAD, the_class->class_loader());
-    Handle protection_domain(THREAD, the_class->protection_domain());
+    Handle the_class_loader(current, the_class->class_loader());
+    Handle protection_domain(current, the_class->protection_domain());
     // Set redefined class handle in JvmtiThreadState class.
     // This redefined class is sent to agent event handler for class file
     // load hook event.
     state->set_class_being_redefined(the_class, _class_load_kind);
 
+    Thread* THREAD = current;  // for exception processing
     ClassLoadInfo cl_info(protection_domain);
     InstanceKlass* scratch_class = SystemDictionary::parse_stream(
                                                       the_class_sym,
@@ -1910,7 +1912,7 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
     // We have entries mapped between the new and merged constant pools
     // so we have to rewrite some constant pool references.
-    if (!rewrite_cp_refs(scratch_class, THREAD)) {
+    if (!rewrite_cp_refs(scratch_class)) {
       return JVMTI_ERROR_INTERNAL;
     }
 
@@ -1930,8 +1932,7 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
 
 // Rewrite constant pool references in klass scratch_class.
-bool VM_RedefineClasses::rewrite_cp_refs(InstanceKlass* scratch_class,
-       TRAPS) {
+bool VM_RedefineClasses::rewrite_cp_refs(InstanceKlass* scratch_class) {
 
   // rewrite constant pool references in the nest attributes:
   if (!rewrite_cp_refs_in_nest_attributes(scratch_class)) {
@@ -1952,7 +1953,7 @@ bool VM_RedefineClasses::rewrite_cp_refs(InstanceKlass* scratch_class,
   }
 
   // rewrite constant pool references in the methods:
-  if (!rewrite_cp_refs_in_methods(scratch_class, THREAD)) {
+  if (!rewrite_cp_refs_in_methods(scratch_class)) {
     // propagate failure back to caller
     return false;
   }
@@ -2100,8 +2101,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_permitted_subclasses_attribute(
 }
 
 // Rewrite constant pool references in the methods.
-bool VM_RedefineClasses::rewrite_cp_refs_in_methods(
-       InstanceKlass* scratch_class, TRAPS) {
+bool VM_RedefineClasses::rewrite_cp_refs_in_methods(InstanceKlass* scratch_class) {
 
   Array<Method*>* methods = scratch_class->methods();
 
@@ -2110,10 +2110,12 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods(
     return true;
   }
 
+  JavaThread* current = JavaThread::current();
   // rewrite constant pool references in the methods:
   for (int i = methods->length() - 1; i >= 0; i--) {
-    methodHandle method(THREAD, methods->at(i));
+    methodHandle method(current, methods->at(i));
     methodHandle new_method;
+    Thread* THREAD = current; // For exception handling
     rewrite_cp_refs_in_method(method, &new_method, THREAD);
     if (!new_method.is_null()) {
       // the method has been replaced so save the new method version

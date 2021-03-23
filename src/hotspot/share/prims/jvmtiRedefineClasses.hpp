@@ -400,7 +400,7 @@ class VM_RedefineClasses: public VM_Operation {
   // Constant pool merging work is done here as needed. Also calls
   // compare_and_normalize_class_versions() to verify the class
   // definition(s).
-  jvmtiError load_new_class_versions(TRAPS);
+  jvmtiError load_new_class_versions();
 
   // Verify that the caller provided class definition(s) that meet
   // the restrictions of RedefineClasses. Normalize the order of
@@ -455,7 +455,7 @@ class VM_RedefineClasses: public VM_Operation {
   u2 rewrite_cp_ref_in_annotation_data(
     AnnotationArray* annotations_typeArray, int &byte_i_ref,
     const char * trace_mesg);
-  bool rewrite_cp_refs(InstanceKlass* scratch_class, TRAPS);
+  bool rewrite_cp_refs(InstanceKlass* scratch_class);
   bool rewrite_cp_refs_in_annotation_struct(
     AnnotationArray* class_annotations, int &byte_i_ref);
   bool rewrite_cp_refs_in_annotations_typeArray(
@@ -481,7 +481,7 @@ class VM_RedefineClasses: public VM_Operation {
 
   void rewrite_cp_refs_in_method(methodHandle method,
     methodHandle * new_method_p, TRAPS);
-  bool rewrite_cp_refs_in_methods(InstanceKlass* scratch_class, TRAPS);
+  bool rewrite_cp_refs_in_methods(InstanceKlass* scratch_class);
 
   bool rewrite_cp_refs_in_methods_annotations(InstanceKlass* scratch_class);
   bool rewrite_cp_refs_in_methods_default_annotations(InstanceKlass* scratch_class);
