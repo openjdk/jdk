@@ -63,6 +63,9 @@ class ReservedSpace {
                   char* requested_address,
                   bool executable);
 
+  void reserve(size_t size, size_t alignment, bool large,
+               char* requested_address,
+               bool executable);
  public:
   // Constructor
   ReservedSpace();
