@@ -47,7 +47,7 @@ public class ObjectHistogramElement {
   }
 
   public int compare(ObjectHistogramElement other) {
-    return (int) (other.size - size);
+    return Long.compare(other.size, size);
   }
 
   /** Klass for this ObjectHistogramElement */
