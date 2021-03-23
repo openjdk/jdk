@@ -549,7 +549,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
       const TypeX*   ld_offs_t = phase->type(ld_offs)->isa_intptr_t();
       const TypeInt* sizetype  = ary_t->size();
 
-      if (ld_offs_t->_lo >= header && ld_offs_t->_hi < sizetype->_lo * elemsize + header) {
+      if (ld_offs_t->_lo >= header && ld_offs_t->_hi < (sizetype->_lo * elemsize + header)) {
         // The load is known to be within bounds. It receives its value from ac.
         return ac;
       }
