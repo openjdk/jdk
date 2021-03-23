@@ -38,7 +38,7 @@ dnl
 
 define(`CAS_INSN',
 `
-// This encoding class is generated automatically from cas.m4.
+// This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchange$1$6(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
   ifelse($1$6,PAcq,'predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));`,
@@ -59,7 +59,7 @@ instruct compareAndExchange$1$6(iReg$2NoSp res, indirect mem, iReg$2 oldval, iRe
 %}')dnl
 define(`CAS_INSN4',
 `
-// This encoding class is generated automatically from cas.m4.
+// This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchange$1$7(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
   ifelse($7,Acq,'predicate(needs_acquiring_load_exclusive(n));`)
@@ -93,7 +93,7 @@ CAS_INSN(P,P,ptr,xword,,Acq)
 dnl
 define(`CAS_INSN2',
 `
-// This encoding class is generated automatically from cas.m4.
+// This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
   ifelse($6,Acq,'  predicate(needs_acquiring_load_exclusive(n));`)
@@ -114,7 +114,7 @@ instruct weakCompareAndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg
 %}')dnl
 define(`CAS_INSN3',
 `
-// This encoding class is generated automatically from cas.m4.
+// This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
   ifelse($1$6,PAcq,'predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));`,
