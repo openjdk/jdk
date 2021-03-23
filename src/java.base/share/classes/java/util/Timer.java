@@ -112,7 +112,7 @@ public class Timer {
         private final TaskQueue queue;
         private final TimerThread thread;
 
-        public ThreadReaper(TaskQueue queue, TimerThread thread) {
+        ThreadReaper(TaskQueue queue, TimerThread thread) {
             this.queue = queue;
             this.thread = thread;
         }
