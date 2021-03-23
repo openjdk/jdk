@@ -67,7 +67,7 @@ public final class MetadataLoader {
     private final Type PERIOD_TYPE = TypeLibrary.createAnnotationType(Period.class);
 
     // <Event>, <Type> and <Relation>
-    private final static class TypeElement {
+    private static final class TypeElement {
         private final List<FieldElement> fields;
         private final String name;
         private final String label;

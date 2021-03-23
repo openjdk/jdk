@@ -75,7 +75,7 @@ public final class Utils {
     public static final String HANDLERS_PACKAGE_NAME = "jdk.jfr.internal.handlers";
     public static final String REGISTER_EVENT = "registerEvent";
     public static final String ACCESS_FLIGHT_RECORDER = "accessFlightRecorder";
-    private final static String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
+    private static final String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 
     private static Boolean SAVE_GENERATED;
 
