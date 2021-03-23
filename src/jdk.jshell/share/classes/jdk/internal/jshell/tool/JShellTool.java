@@ -1675,7 +1675,7 @@ public class JShellTool implements MessageHandler {
                         om.group("flag"), cursor - pastSpace, anchor);
                 if (!om.group("dd").isEmpty()) {
                     result = result.stream()
-                            .map(sug -> new Suggestion() {
+                            .<Suggestion>map(sug -> new Suggestion() {
                                 @Override
                                 public String continuation() {
                                     return "-" + sug.continuation();
@@ -1686,7 +1686,6 @@ public class JShellTool implements MessageHandler {
                                     return false;
                                 }
                             })
-                            .map(e -> (Suggestion) e)
                             .toList();
                     --pastSpace;
                 }
