@@ -247,11 +247,10 @@ void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
         (length = na->length()->as_Constant()) != NULL) {
       assert(length->type()->as_IntConstant() != NULL, "array length must be integer");
       set_constant(length->type()->as_IntConstant()->value());
-    } else if ((nma = x->array()->as_NewMultiArray()) != NULL) {
-      if ((length = nma->dims()->at(0)->as_Constant()) != NULL) {
-        assert(length->type()->as_IntConstant() != NULL, "array length must be integer");
-        set_constant(length->type()->as_IntConstant()->value());
-      }
+    } else if ((nma = x->array()->as_NewMultiArray()) != NULL &&
+               (length = nma->dims()->at(0)->as_Constant()) != NULL) {
+      assert(length->type()->as_IntConstant() != NULL, "array length must be integer");
+      set_constant(length->type()->as_IntConstant()->value());
     }
 
   } else if ((ct = x->array()->as_Constant()) != NULL) {
