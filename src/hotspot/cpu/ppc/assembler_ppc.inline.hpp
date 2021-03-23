@@ -34,19 +34,6 @@ inline void Assembler::emit_int32(int x) {
   AbstractAssembler::emit_int32(x);
 }
 
-inline void Assembler::emit_prefix(int x) {
-  assert((x & PREFIX_OPCODE_MASK) == PREFIX_PRIMARY_OPCODE || (x & PREFIX_OPCODE_MASK) == 0,
-         "Unexpected primary opcode for prefix word");
-
-  // Add nop if a prefixed (two-word) instruction is going to cross a 64-byte boundary.
-  // (See Section 1.6 of Power ISA Version 3.1)
-  if (is_aligned(reinterpret_cast<uintptr_t>(pc()) + sizeof(int32_t), 64) ||
-     Assembler::in_scratch_emit_size()) {
-    Assembler::nop();
-  }
-  emit_int32(PREFIX_PRIMARY_OPCODE | x);
-}
-
 inline void Assembler::emit_data(int x) {
   emit_int32(x);
 }
@@ -150,8 +137,8 @@ inline void Assembler::paddi(Register d, Register a, long si34, bool r = false) 
 }
 
 inline void Assembler::paddi_r0ok(Register d, Register a, long si34, bool r = false) {
-  emit_prefix(PADDI_PREFIX_OPCODE | r_eo(r) | d0_eo(si34));
-  emit_int32( PADDI_SUFFIX_OPCODE | rt(d)   | ra(a)   | d1_eo(si34));
+  emit_int32(PADDI_PREFIX_OPCODE | r_eo(r) | d0_eo(si34));
+  emit_int32(PADDI_SUFFIX_OPCODE | rt(d)   | ra(a)   | d1_eo(si34));
 }
 
 // Fixed-Point Arithmetic Instructions with Overflow detection
