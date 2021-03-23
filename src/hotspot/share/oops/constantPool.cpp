@@ -1298,8 +1298,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   {
     int recur1 = klass_index_at(index1);
     int recur2 = cp2->klass_index_at(index2);
-    bool match = compare_entry_to(recur1, cp2, recur2);
-    if (match) {
+    if (compare_entry_to(recur1, cp2, recur2)) {
       return true;
     }
   } break;
@@ -1323,8 +1322,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     if (match) {
       recur1 = uncached_name_and_type_ref_index_at(index1);
       recur2 = cp2->uncached_name_and_type_ref_index_at(index2);
-      match = compare_entry_to(recur1, cp2, recur2);
-      if (match) {
+      if (compare_entry_to(recur1, cp2, recur2)) {
         return true;
       }
     }
@@ -1361,12 +1359,10 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   {
     int recur1 = name_ref_index_at(index1);
     int recur2 = cp2->name_ref_index_at(index2);
-    bool match = compare_entry_to(recur1, cp2, recur2);
-    if (match) {
+    if (compare_entry_to(recur1, cp2, recur2)) {
       recur1 = signature_ref_index_at(index1);
       recur2 = cp2->signature_ref_index_at(index2);
-      match = compare_entry_to(recur1, cp2, recur2);
-      if (match) {
+      if (compare_entry_to(recur1, cp2, recur2)) {
         return true;
       }
     }
@@ -1376,8 +1372,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   {
     int recur1 = string_index_at(index1);
     int recur2 = cp2->string_index_at(index2);
-    bool match = compare_entry_to(recur1, cp2, recur2);
-    if (match) {
+    if (compare_entry_to(recur1, cp2, recur2)) {
       return true;
     }
   } break;
@@ -1395,8 +1390,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   {
     int k1 = method_type_index_at(index1);
     int k2 = cp2->method_type_index_at(index2);
-    bool match = compare_entry_to(k1, cp2, k2);
-    if (match) {
+    if (compare_entry_to(k1, cp2, k2)) {
       return true;
     }
   } break;
@@ -1408,8 +1402,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     if (k1 == k2) {
       int i1 = method_handle_index_at(index1);
       int i2 = cp2->method_handle_index_at(index2);
-      bool match = compare_entry_to(i1, cp2, i2);
-      if (match) {
+      if (compare_entry_to(i1, cp2, i2)) {
         return true;
       }
     }
