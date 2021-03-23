@@ -455,73 +455,6 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   return superk;
 }
 
-void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
-                                                  Handle class_loader,
-                                                  Handle protection_domain,
-                                                  TRAPS) {
-  // Now we have to call back to java to check if the initating class has access
-  assert(class_loader() != NULL, "Should not call this");
-  assert(protection_domain() != NULL, "Should not call this");
-
-  // We only have to call checkPackageAccess if there's a security manager installed.
-  if (java_lang_System::has_security_manager()) {
-
-    // This handle and the class_loader handle passed in keeps this class from
-    // being unloaded through several GC points.
-    // The class_loader handle passed in is the initiating loader.
-    Handle mirror(THREAD, klass->java_mirror());
-
-    InstanceKlass* system_loader = vmClasses::ClassLoader_klass();
-    JavaValue result(T_VOID);
-    JavaCalls::call_special(&result,
-                           class_loader,
-                           system_loader,
-                           vmSymbols::checkPackageAccess_name(),
-                           vmSymbols::class_protectiondomain_signature(),
-                           mirror,
-                           protection_domain,
-                           THREAD);
-
-    LogTarget(Debug, protectiondomain) lt;
-    if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
-      // Print out trace information
-      LogStream ls(lt);
-      ls.print_cr("Checking package access");
-      ls.print("class loader: ");
-      class_loader()->print_value_on(&ls);
-      ls.print(" protection domain: ");
-      protection_domain()->print_value_on(&ls);
-      ls.print(" loading: "); klass->print_value_on(&ls);
-      if (HAS_PENDING_EXCEPTION) {
-        ls.print_cr(" DENIED !!!!!!!!!!!!!!!!!!!!!");
-      } else {
-        ls.print_cr(" granted");
-      }
-    }
-
-    if (HAS_PENDING_EXCEPTION) return;
-  }
-
-  // If no exception has been thrown, we have validated the protection domain
-  // Insert the protection domain of the initiating class into the set.
-  // We still have to add the protection_domain to the dictionary in case a new
-  // security manager is installed later. Calls to load the same class with class loader
-  // and protection domain are expected to succeed.
-  {
-    ClassLoaderData* loader_data = class_loader_data(class_loader);
-    Dictionary* dictionary = loader_data->dictionary();
-
-    Symbol*  kn = klass->name();
-    unsigned int name_hash = dictionary->compute_hash(kn);
-
-    MutexLocker mu(THREAD, SystemDictionary_lock);
-    int d_index = dictionary->hash_to_index(name_hash);
-    dictionary->add_protection_domain(d_index, name_hash, klass,
-                                      protection_domain, THREAD);
-  }
-}
-
 // We only get here if this thread finds that another thread
 // has already claimed the placeholder token for the current operation,
 // but that other thread either never owned or gave up the
@@ -876,12 +809,9 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   DEBUG_ONLY(verify_dictionary_entry(name, loaded_class));
 
   // Check if the protection domain is present it has the right access
-  if (protection_domain() != NULL &&
-     java_lang_System::allow_security_manager() &&
-     !dictionary->is_valid_protection_domain(name_hash, name,
-                                             protection_domain)) {
+  if (protection_domain() != NULL) {
     // Verify protection domain. If it fails an exception is thrown
-    validate_protection_domain(loaded_class, class_loader, protection_domain, CHECK_NULL);
+    dictionary->validate_protection_domain(name_hash, loaded_class, class_loader, protection_domain, CHECK_NULL);
   }
 
   return loaded_class;
