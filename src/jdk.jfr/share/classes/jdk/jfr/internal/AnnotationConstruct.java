@@ -57,13 +57,14 @@ public final class AnnotationConstruct {
         }
     }
 
-    private List<AnnotationElement> annotationElements = List.of();
+    private List<AnnotationElement> annotationElements;
     private byte unsignedFlag = -1;
-    public AnnotationConstruct(List<AnnotationElement> ann) {
-        this.annotationElements = List.copyOf(ann);
+    public AnnotationConstruct(List<AnnotationElement> elements) {
+        this.annotationElements = List.copyOf(elements);
     }
 
     public AnnotationConstruct() {
+        this(List.of());
     }
 
     public void setAnnotationElements(List<AnnotationElement> elements) {
@@ -97,11 +98,6 @@ public final class AnnotationConstruct {
 
     public List<AnnotationElement> getUnmodifiableAnnotationElements() {
         return annotationElements;
-    }
-
-    // package private
-    boolean remove(AnnotationElement annotation) {
-        return annotationElements.remove(annotation);
     }
 
     private AnnotationElement getAnnotationElement(Class<? extends Annotation> clazz) {

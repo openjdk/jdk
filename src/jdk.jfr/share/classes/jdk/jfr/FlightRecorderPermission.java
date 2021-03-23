@@ -26,7 +26,6 @@
 package jdk.jfr;
 
 import java.security.AccessControlContext;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -176,7 +175,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
 
         @Override
         public ValueDescriptor newValueDescriptor(Class<?> type, String name) {
-            return new ValueDescriptor(type, name, Collections.emptyList(), true);
+            return new ValueDescriptor(type, name, List.of(), true);
         }
 
         @Override

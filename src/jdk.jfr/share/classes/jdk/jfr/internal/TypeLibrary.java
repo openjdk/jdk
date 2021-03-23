@@ -137,7 +137,6 @@ public final class TypeLibrary {
                         aes.add(ae);
                     }
                 }
-                aes.trimToSize();
                 type.setAnnotations(aes);
             }
             return getType(a);
