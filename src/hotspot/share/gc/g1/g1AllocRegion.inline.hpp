@@ -90,20 +90,22 @@ inline HeapWord* G1AllocRegion::attempt_allocation(size_t min_word_size,
   return NULL;
 }
 
-inline HeapWord* G1AllocRegion::attempt_allocation_locked(size_t word_size) {
+inline HeapWord* G1AllocRegion::attempt_allocation_locked(size_t word_size, bool attempt_lock_free_first) {
   size_t temp;
-  return attempt_allocation_locked(word_size, word_size, &temp);
+  return attempt_allocation_locked(word_size, word_size, &temp, attempt_lock_free_first);
 }
 
 inline HeapWord* G1AllocRegion::attempt_allocation_locked(size_t min_word_size,
                                                           size_t desired_word_size,
-                                                          size_t* actual_word_size) {
-  // First we have to redo the allocation, assuming we're holding the
-  // appropriate lock, in case another thread changed the region while
-  // we were waiting to get the lock.
-  HeapWord* result = attempt_allocation(min_word_size, desired_word_size, actual_word_size);
-  if (result != NULL) {
-    return result;
+                                                          size_t* actual_word_size,
+                                                          bool attempt_lock_free_first) {
+  HeapWord* result;
+
+  if (attempt_lock_free_first) {
+    result = attempt_allocation(min_word_size, desired_word_size, actual_word_size);
+    if (result != NULL) {
+      return result;
+    }
   }
 
   retire(true /* fill_up */);

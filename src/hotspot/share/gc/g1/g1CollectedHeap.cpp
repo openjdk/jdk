@@ -428,9 +428,20 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 
     {
       MutexLocker x(Heap_lock);
+
+      // Now that we have the lock, we first retry the allocation in case another
+      // thread changed the region while we were waiting to acquire the lock.
+      size_t actual_size;
+      result = _allocator->attempt_allocation(word_size, word_size, &actual_size, false);
+      if (result != NULL) {
+        return result;
+      }
+  
       proactive_collection_required = policy()->proactive_collection_required(1);
       if (!proactive_collection_required) {
-        result = _allocator->attempt_allocation_locked(word_size);
+        // We've already attempted a lock-free allocation above, so we don't want to
+        // do it again. Let's jump straight to replacing the active region.
+        result = _allocator->attempt_allocation_locked(word_size, false /* attempt_lock_free_first */);
         if (result != NULL) {
           return result;
         }
@@ -447,6 +458,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
           }
         }
       }
+
       // Only try a GC if the GCLocker does not signal the need for a GC. Wait until
       // the GCLocker initiated GC has been performed and then retry. This includes
       // the case when the GC Locker is not active but has not been performed.
@@ -500,7 +512,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     // follow-on attempt will be at the start of the next loop
     // iteration (after taking the Heap_lock).
     size_t dummy = 0;
-    result = _allocator->attempt_allocation(word_size, word_size, &dummy);
+    result = _allocator->attempt_allocation(word_size, word_size, &dummy, true);
     if (result != NULL) {
       return result;
     }
@@ -728,7 +740,7 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
   assert(!is_humongous(desired_word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
 
-  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
+  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size, true);
 
   if (result == NULL) {
     *actual_word_size = desired_word_size;
@@ -949,7 +961,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
          "the current alloc region was unexpectedly found to be non-NULL");
 
   if (!is_humongous(word_size)) {
-    return _allocator->attempt_allocation_locked(word_size);
+    return _allocator->attempt_allocation_locked(word_size, true /* attempt_lock_free_first */);
   } else {
     HeapWord* result = humongous_obj_allocate(word_size);
     if (result != NULL && policy()->need_to_start_conc_mark("STW humongous allocation")) {
@@ -1423,6 +1435,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _archive_set("Archive Region Set", new ArchiveRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(NULL),
+  zzinit_complete(false),
   _listener(),
   _numa(G1NUMA::create()),
   _hrm(),
@@ -1777,6 +1790,9 @@ void G1CollectedHeap::safepoint_synchronize_end() {
 void G1CollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
+
+  // TODO: temporary... is there a better way to do this?
+  zzinit_complete = true;
 }
 
 void G1CollectedHeap::ref_processing_init() {

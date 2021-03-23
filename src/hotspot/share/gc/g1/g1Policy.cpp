@@ -1406,39 +1406,43 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
                             num_optional_regions, max_optional_regions, prediction_ms);
 }
 
-static size_t adjust_for_plab_waste(size_t byte_count) {
-  return byte_count * (100 + TargetPLABWastePct) / 100.0;
+// Number of regions required to store the given number of bytes, taking
+// into account the target amount of wasted space in PLABs.
+static uint get_num_regions_adjust_for_plab_waste(size_t byte_count) {
+  size_t byte_count_adjusted = byte_count * (100 + TargetPLABWastePct) / 100.0;
+
+  // Round up the region count
+  return (byte_count_adjusted + HeapRegion::GrainBytes - 1) / HeapRegion::GrainBytes;
 }
 
 bool G1Policy::proactive_collection_required(uint alloc_region_count) {
-  // Returns whether a collection should be done proactively, taking into
-  // account the current number of free regions and the expected survival
-  // rates in each section of the heap.
-
-  uint eden_count = _g1h->eden_regions_count();
-  if (eden_count == 0) {
+  if (!_g1h->zzinit_complete) {
+    // Don't attempt any proactive GC's before initialization is complete.
+    // TODO: Is there a better way to do this without adding a new variable to hold
+    // init state?
     return false;
   }
 
+  if (_g1h->young_regions_count() == 0 && _collection_set->candidates() != NULL && _collection_set->candidates()->is_empty()) {
+    return false;
+  }
+
+  uint eden_count = _g1h->eden_regions_count();
   size_t const eden_surv_bytes_pred = _eden_surv_rate_group->accum_surv_rate_pred(eden_count) * HeapRegion::GrainBytes;
   size_t const total_young_predicted_surviving_bytes = eden_surv_bytes_pred + _predicted_surviving_bytes_from_survivor;
 
-  // Adjust the surviving bytes by the target amount of wasted space in PLABs.
-  size_t const adjusted_surviving_bytes_young = adjust_for_plab_waste(total_young_predicted_surviving_bytes);
-  size_t const adjusted_surviving_bytes_old = adjust_for_plab_waste(_predicted_surviving_bytes_from_old);
-
-  uint required_regions = ceil((double)adjusted_surviving_bytes_young / (double)HeapRegion::GrainBytes)
-                          + ceil((double)adjusted_surviving_bytes_old / (double)HeapRegion::GrainBytes);
+  uint required_regions = get_num_regions_adjust_for_plab_waste(total_young_predicted_surviving_bytes) +
+                          get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old);
 
   if (required_regions > _g1h->num_free_regions() - alloc_region_count) {
     log_debug(gc, ergo, cset)("Proactive GC, insufficient free regions. Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free %u Alloc %u",
             required_regions,
             eden_count,
-            (uint)(eden_surv_bytes_pred / HeapRegion::GrainBytes),
+            get_num_regions_adjust_for_plab_waste(eden_surv_bytes_pred),
             _g1h->survivor_regions_count(),
-            (uint)(_predicted_surviving_bytes_from_survivor / HeapRegion::GrainBytes),
+            get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_survivor),
             _g1h->old_regions_count(),
-            (uint)(_predicted_surviving_bytes_from_old / HeapRegion::GrainBytes),
+            get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old),
             _g1h->num_free_regions(),
             alloc_region_count);
 

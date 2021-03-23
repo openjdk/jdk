@@ -112,10 +112,21 @@ public:
 
   // Allocate blocks of memory during mutator time.
 
+  // Attempt allocation in the current alloc region. If use_retained_region_if_available
+  // is set and a retained region is available, the allocation will first be tried in the
+  // retained region.
   inline HeapWord* attempt_allocation(size_t min_word_size,
                                       size_t desired_word_size,
-                                      size_t* actual_word_size);
-  inline HeapWord* attempt_allocation_locked(size_t word_size);
+                                      size_t* actual_word_size,
+                                      bool use_retained_region_if_available);
+
+  // This is to be called when holding a lock. The attempt_lock_free_first parameter
+  // is provided as a convenience to callers who acquire the lock just before calling
+  // this method. Things may have changed while they were waiting for the lock such
+  // that they no longer need to go through the slow path. Setting this parameter
+  // to true will make this function optimistically try the normal attempt_allocation
+  // path first on entry.
+  inline HeapWord* attempt_allocation_locked(size_t word_size, bool attempt_lock_free_first);
   inline HeapWord* attempt_allocation_force(size_t word_size);
 
   size_t unsafe_max_tlab_alloc();

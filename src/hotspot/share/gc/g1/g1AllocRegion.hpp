@@ -165,19 +165,23 @@ public:
                                       size_t* actual_word_size);
 
   // Second-level allocation: Should be called while holding a
-  // lock. It will try to first allocate lock-free out of the active
-  // region or, if it's unable to, it will try to replace the active
-  // alloc region with a new one. We require that the caller takes the
-  // appropriate lock before calling this so that it is easier to make
-  // it conform to its locking protocol.
-  inline HeapWord* attempt_allocation_locked(size_t word_size);
+  // lock. We require that the caller takes the appropriate lock
+  // before calling this so that it is easier to make it conform
+  // to the locking protocol.
+  // If attempt_lock_free_first is set, it will try to first
+  // allocate lock-free out of the active region. If it's unable
+  // to (or if attempt_lock_free_first is false), it will try to
+  // replace the active alloc region with a new one.
+  inline HeapWord* attempt_allocation_locked(size_t word_size,
+                                             bool attempt_lock_free_first);
   // Same as attempt_allocation_locked(size_t, bool), but allowing specification
   // of minimum word size of the block in min_word_size, and the maximum word
   // size of the allocation in desired_word_size. The actual size of the block is
   // returned in actual_word_size.
   inline HeapWord* attempt_allocation_locked(size_t min_word_size,
                                              size_t desired_word_size,
-                                             size_t* actual_word_size);
+                                             size_t* actual_word_size,
+                                             bool attempt_lock_free_first);
 
   // Should be called to allocate a new region even if the max of this
   // type of regions has been reached. Should only be called if other
