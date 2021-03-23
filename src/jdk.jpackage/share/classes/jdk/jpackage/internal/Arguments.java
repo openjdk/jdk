@@ -305,12 +305,6 @@ public class Arguments {
             setOptionValue("mac-sign", true);
         }),
 
-        MAC_APP_STORE ("mac-app-store", OptionCategories.PLATFORM_MAC, () -> {
-            setOptionValue("mac-app-store", true);
-        }),
-
-        MAC_CATEGORY ("mac-app-category", OptionCategories.PLATFORM_MAC),
-
         MAC_BUNDLE_NAME ("mac-package-name", OptionCategories.PLATFORM_MAC),
 
         MAC_BUNDLE_IDENTIFIER("mac-package-identifier",
@@ -324,8 +318,6 @@ public class Arguments {
 
         MAC_SIGNING_KEYCHAIN ("mac-signing-keychain",
                     OptionCategories.PLATFORM_MAC),
-
-        MAC_ENTITLEMENTS ("mac-entitlements", OptionCategories.PLATFORM_MAC),
 
         WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN, () -> {
             setOptionValue("win-menu", true);
