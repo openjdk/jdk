@@ -876,31 +876,31 @@ public class RecordedObject {
      */
     public final Instant getInstant(String name) {
         Object o = getValue(name, true);
-        if (o instanceof Long) {
-            return getInstant(((Long) o).longValue(), name);
+        if (o instanceof Long l) {
+            return getInstant(l, name);
         }
-        if (o instanceof Integer) {
-            return getInstant(((Integer) o).longValue(), name);
+        if (o instanceof Integer i) {
+            return getInstant(i, name);
         }
-        if (o instanceof Short) {
-            return getInstant(((Short) o).longValue(), name);
+        if (o instanceof Short s) {
+            return getInstant(s, name);
         }
-        if (o instanceof Character) {
-            return getInstant(((Character) o).charValue(), name);
+        if (o instanceof Character c) {
+            return getInstant(c, name);
         }
-        if (o instanceof Byte) {
-            return getInstant(((Byte) o).longValue(), name);
+        if (o instanceof Byte b) {
+            return getInstant(b, name);
         }
-        if (o instanceof UnsignedValue) {
-            Object u = ((UnsignedValue) o).value();
-            if (u instanceof Integer) {
-                return getInstant(Integer.toUnsignedLong((Integer) u), name);
+        if (o instanceof UnsignedValue unsigned) {
+            Object u = unsigned.value();
+            if (u instanceof Integer i) {
+                return getInstant(Integer.toUnsignedLong(i), name);
             }
-            if (u instanceof Short) {
-                return getInstant(Short.toUnsignedLong((Short) u), name);
+            if (u instanceof Short s) {
+                return getInstant(Short.toUnsignedLong(s), name);
             }
-            if (u instanceof Byte) {
-                return getInstant(Short.toUnsignedLong((Byte) u), name);
+            if (u instanceof Byte b) {
+                return getInstant(Short.toUnsignedLong(b), name);
             }
         }
         throw newIllegalArgumentException(name, "java.time.Instant");

@@ -77,7 +77,7 @@ public final class TypeLibrary {
     }
 
     private static ValueDescriptor createStartTimeField() {
-        List<AnnotationElement> annos = createStandardAnnotations("Start Time", null);
+        var annos = createStandardAnnotations("Start Time", null);
         annos.add(new jdk.jfr.AnnotationElement(Timestamp.class, Timestamp.TICKS));
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_START_TIME, Type.LONG, annos, 0, false,
                 EventInstrumentation.FIELD_START_TIME);
@@ -85,22 +85,19 @@ public final class TypeLibrary {
     }
 
     private static ValueDescriptor createStackTraceField() {
-        List<AnnotationElement> annos = new ArrayList<>();
-        annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
+        var annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
                 EventInstrumentation.FIELD_STACK_TRACE);
     }
 
     private static ValueDescriptor createThreadField() {
-        List<AnnotationElement> annos = new ArrayList<>();
-        annos = createStandardAnnotations("Event Thread", "Thread in which event was committed in");
+        var annos = createStandardAnnotations("Event Thread", "Thread in which event was committed in");
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_EVENT_THREAD, Type.THREAD, annos, 0, true,
                 EventInstrumentation.FIELD_EVENT_THREAD);
     }
 
     private static ValueDescriptor createDurationField() {
-        List<AnnotationElement> annos = new ArrayList<>();
-        annos = createStandardAnnotations("Duration", null);
+        var annos = createStandardAnnotations("Duration", null);
         annos.add(new jdk.jfr.AnnotationElement(Timespan.class, Timespan.TICKS));
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_DURATION, Type.LONG, annos, 0, false, EventInstrumentation.FIELD_DURATION);
     }

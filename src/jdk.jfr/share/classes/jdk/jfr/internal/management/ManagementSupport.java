@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +82,7 @@ public final class ManagementSupport {
         // would normally be checked when a Flight Recorder instance is created
         Utils.checkAccessFlightRecorder();
         if (JVMSupport.isNotAvailable()) {
-            return new ArrayList<>();
+            return List.of();
         }
         JDKEvents.initialize(); // make sure JDK events are available
         return Collections.unmodifiableList(MetadataRepository.getInstance().getRegisteredEventTypes());
