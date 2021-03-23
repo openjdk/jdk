@@ -3493,7 +3493,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   }
 
   if (warn) {
-    warning("HugeTLBFS is not supported or configured by the operating system.");
+    warning("HugeTLBFS is not configured or not supported by the operating system.");
   }
 
   return false;
