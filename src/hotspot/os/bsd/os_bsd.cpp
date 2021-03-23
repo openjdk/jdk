@@ -1401,10 +1401,10 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
       strncpy(machine, "", sizeof(machine));
   }
 
-  char emulated[16] = "\0";
+  const char* emulated = "";
 #ifdef __APPLE__
   if (VM_Version::is_cpu_emulated()) {
-    strcpy(emulated, " (EMULATED)");
+    emulated = " (EMULATED)";
   }
 #endif
   snprintf(buf, buflen, "\"%s\" %s%s %d MHz", model, machine, emulated, mhz);
