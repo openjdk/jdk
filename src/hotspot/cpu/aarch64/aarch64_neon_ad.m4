@@ -70,7 +70,13 @@ instruct $3V$4`'(vec$5 $7, vmem$4 mem)
 %}')dnl
 dnl        $1    $2 $3     $4  $5 $6   $7   $8
 VLoadStore(ldrh, H, load,  2,  D, 16,  dst, )
+VLoadStore(ldrs, S, load,  4,  D, 32,  dst, )
+VLoadStore(ldrd, D, load,  8,  D, 64,  dst, )
+VLoadStore(ldrq, Q, load, 16,  X, 128, dst, UseSVE == 0 && )
 VLoadStore(strh, H, store, 2,  D, 16,  src, )
+VLoadStore(strs, S, store, 4,  D, 32,  src, )
+VLoadStore(strd, D, store, 8,  D, 64,  src, )
+VLoadStore(strq, Q, store, 16, X, 128, src, )
 dnl
 define(`REINTERPRET', `
 instruct reinterpret$1`'(vec$1 dst)
@@ -1498,13 +1504,6 @@ dnl   $1    $2    $3 $4 $5 $6 $7
 VFABD(fabd, fabd, 2, F, D, S, 64)
 VFABD(fabd, fabd, 4, F, X, S, 128)
 VFABD(fabd, fabd, 2, D, X, D, 128)
-dnl
-VLoadStore(ldrs, S, load,  4,  D, 32,  dst, )
-VLoadStore(ldrd, D, load,  8,  D, 64,  dst, )
-VLoadStore(ldrq, Q, load, 16,  X, 128, dst, UseSVE == 0 && )
-VLoadStore(strs, S, store, 4,  D, 32,  src, )
-VLoadStore(strd, D, store, 8,  D, 64,  src, )
-VLoadStore(strq, Q, store, 16, X, 128, src, )
 dnl
 define(`VREPLICATE', `
 instruct replicate$3$4$5`'(vec$6 dst, $7 ifelse($7, immI0, zero, $7, immI, con, src))

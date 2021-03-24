@@ -41,6 +41,39 @@ instruct loadV2(vecD dst, vmem2 mem)
   ins_pipe(vload_reg_mem64);
 %}
 
+// Load Vector (32 bits)
+instruct loadV4(vecD dst, vmem4 mem)
+%{
+  predicate(n->as_LoadVector()->memory_size() == 4);
+  match(Set dst (LoadVector mem));
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrs   $dst,$mem\t# vector (32 bits)" %}
+  ins_encode( aarch64_enc_ldrvS(dst, mem) );
+  ins_pipe(vload_reg_mem64);
+%}
+
+// Load Vector (64 bits)
+instruct loadV8(vecD dst, vmem8 mem)
+%{
+  predicate(n->as_LoadVector()->memory_size() == 8);
+  match(Set dst (LoadVector mem));
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrd   $dst,$mem\t# vector (64 bits)" %}
+  ins_encode( aarch64_enc_ldrvD(dst, mem) );
+  ins_pipe(vload_reg_mem64);
+%}
+
+// Load Vector (128 bits)
+instruct loadV16(vecX dst, vmem16 mem)
+%{
+  predicate(UseSVE == 0 && n->as_LoadVector()->memory_size() == 16);
+  match(Set dst (LoadVector mem));
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrq   $dst,$mem\t# vector (128 bits)" %}
+  ins_encode( aarch64_enc_ldrvQ(dst, mem) );
+  ins_pipe(vload_reg_mem128);
+%}
+
 // Store Vector (16 bits)
 instruct storeV2(vecD src, vmem2 mem)
 %{
@@ -50,6 +83,39 @@ instruct storeV2(vecD src, vmem2 mem)
   format %{ "strh   $mem,$src\t# vector (16 bits)" %}
   ins_encode( aarch64_enc_strvH(src, mem) );
   ins_pipe(vstore_reg_mem64);
+%}
+
+// Store Vector (32 bits)
+instruct storeV4(vecD src, vmem4 mem)
+%{
+  predicate(n->as_StoreVector()->memory_size() == 4);
+  match(Set mem (StoreVector mem src));
+  ins_cost(4 * INSN_COST);
+  format %{ "strs   $mem,$src\t# vector (32 bits)" %}
+  ins_encode( aarch64_enc_strvS(src, mem) );
+  ins_pipe(vstore_reg_mem64);
+%}
+
+// Store Vector (64 bits)
+instruct storeV8(vecD src, vmem8 mem)
+%{
+  predicate(n->as_StoreVector()->memory_size() == 8);
+  match(Set mem (StoreVector mem src));
+  ins_cost(4 * INSN_COST);
+  format %{ "strd   $mem,$src\t# vector (64 bits)" %}
+  ins_encode( aarch64_enc_strvD(src, mem) );
+  ins_pipe(vstore_reg_mem64);
+%}
+
+// Store Vector (128 bits)
+instruct storeV16(vecX src, vmem16 mem)
+%{
+  predicate(n->as_StoreVector()->memory_size() == 16);
+  match(Set mem (StoreVector mem src));
+  ins_cost(4 * INSN_COST);
+  format %{ "strq   $mem,$src\t# vector (128 bits)" %}
+  ins_encode( aarch64_enc_strvQ(src, mem) );
+  ins_pipe(vstore_reg_mem128);
 %}
 
 instruct reinterpretD(vecD dst)
@@ -3701,72 +3767,6 @@ instruct vabd2D(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
   ins_pipe(vunop_fp128);
-%}
-
-// Load Vector (32 bits)
-instruct loadV4(vecD dst, vmem4 mem)
-%{
-  predicate(n->as_LoadVector()->memory_size() == 4);
-  match(Set dst (LoadVector mem));
-  ins_cost(4 * INSN_COST);
-  format %{ "ldrs   $dst,$mem\t# vector (32 bits)" %}
-  ins_encode( aarch64_enc_ldrvS(dst, mem) );
-  ins_pipe(vload_reg_mem64);
-%}
-
-// Load Vector (64 bits)
-instruct loadV8(vecD dst, vmem8 mem)
-%{
-  predicate(n->as_LoadVector()->memory_size() == 8);
-  match(Set dst (LoadVector mem));
-  ins_cost(4 * INSN_COST);
-  format %{ "ldrd   $dst,$mem\t# vector (64 bits)" %}
-  ins_encode( aarch64_enc_ldrvD(dst, mem) );
-  ins_pipe(vload_reg_mem64);
-%}
-
-// Load Vector (128 bits)
-instruct loadV16(vecX dst, vmem16 mem)
-%{
-  predicate(UseSVE == 0 && n->as_LoadVector()->memory_size() == 16);
-  match(Set dst (LoadVector mem));
-  ins_cost(4 * INSN_COST);
-  format %{ "ldrq   $dst,$mem\t# vector (128 bits)" %}
-  ins_encode( aarch64_enc_ldrvQ(dst, mem) );
-  ins_pipe(vload_reg_mem128);
-%}
-
-// Store Vector (32 bits)
-instruct storeV4(vecD src, vmem4 mem)
-%{
-  predicate(n->as_StoreVector()->memory_size() == 4);
-  match(Set mem (StoreVector mem src));
-  ins_cost(4 * INSN_COST);
-  format %{ "strs   $mem,$src\t# vector (32 bits)" %}
-  ins_encode( aarch64_enc_strvS(src, mem) );
-  ins_pipe(vstore_reg_mem64);
-%}
-
-// Store Vector (64 bits)
-instruct storeV8(vecD src, vmem8 mem)
-%{
-  predicate(n->as_StoreVector()->memory_size() == 8);
-  match(Set mem (StoreVector mem src));
-  ins_cost(4 * INSN_COST);
-  format %{ "strd   $mem,$src\t# vector (64 bits)" %}
-  ins_encode( aarch64_enc_strvD(src, mem) );
-  ins_pipe(vstore_reg_mem64);
-%}
-
-// Store Vector (128 bits)
-instruct storeV16(vecX src, vmem16 mem)
-%{
-  predicate(n->as_StoreVector()->memory_size() == 16);
-  match(Set mem (StoreVector mem src));
-  ins_cost(4 * INSN_COST);
-  format %{ "strq   $mem,$src\t# vector (128 bits)" %}
-  ins_encode( aarch64_enc_strvQ(src, mem) );
-  ins_pipe(vstore_reg_mem128);
 %}
 
 instruct replicate8B(vecD dst, iRegIorL2I src)
