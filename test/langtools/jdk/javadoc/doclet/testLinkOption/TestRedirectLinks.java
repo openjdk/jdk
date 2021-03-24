@@ -87,7 +87,18 @@ public class TestRedirectLinks extends JavadocTester {
      */
     @Test
     public void testRedirects() throws Exception {
-        // first, test to see if access to external URLs is available
+        // This test relies on access to an external resource, which may or may not be
+        // reliably available, depending on the shost system configuration and other
+        // networking issues. Therefore, it is disabled by default, unless the system
+        // property "javadoc.dev" is set "true".
+        String property = "javadoc.dev";
+        if (!Boolean.getBoolean(property)) {
+            out.println("Test case disabled by default; "
+                    + "set system property \"" + property + "\" to true to enable it.");
+            return;
+        }
+
+        // test to see if access to external URLs is available, and that the URL uses a redirect
 
         URL testURL = new URL("http://docs.oracle.com/en/java/javase/11/docs/api/element-list");
         String testURLHost = testURL.getHost();
