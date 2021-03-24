@@ -28,8 +28,6 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameters;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.PackageType;
 
