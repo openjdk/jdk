@@ -25,6 +25,7 @@
 
 package jdk.jshell;
 
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.ScannerFactory;
@@ -49,11 +50,13 @@ class ReplParserFactory extends ParserFactory {
     }
 
     private final ScannerFactory scannerFactory;
+            final Source source;
 
     protected ReplParserFactory(Context context, boolean forceExpression) {
         super(context);
         this.forceExpression = forceExpression;
         this.scannerFactory = ScannerFactory.instance(context);
+        this.source = Source.instance(context);
     }
 
     @Override
