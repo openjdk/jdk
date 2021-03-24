@@ -35,6 +35,7 @@ import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.events.ContainerIOUsageEvent;
 import jdk.jfr.events.ContainerConfigurationEvent;
 import jdk.jfr.events.ContainerCPUUsageEvent;
+import jdk.jfr.events.ContainerCPUThrottlingEvent;
 import jdk.jfr.events.ContainerMemoryUsageEvent;
 import jdk.jfr.events.DirectBufferStatisticsEvent;
 import jdk.jfr.events.ErrorThrownEvent;
@@ -91,6 +92,7 @@ public final class JDKEvents {
 
         ContainerConfigurationEvent.class,
         ContainerCPUUsageEvent.class,
+        ContainerCPUThrottlingEvent.class,
         ContainerMemoryUsageEvent.class,
         ContainerIOUsageEvent.class,
         DirectBufferStatisticsEvent.class
@@ -113,6 +115,7 @@ public final class JDKEvents {
     private static final Runnable emitDirectBufferStatistics = JDKEvents::emitDirectBufferStatistics;
     private static final Runnable emitContainerConfiguration = JDKEvents::emitContainerConfiguration;
     private static final Runnable emitContainerCPUUsage = JDKEvents::emitContainerCPUUsage;
+    private static final Runnable emitContainerCPUThrottling = JDKEvents::emitContainerCPUThrottling;
     private static final Runnable emitContainerMemoryUsage = JDKEvents::emitContainerMemoryUsage;
     private static final Runnable emitContainerIOUsage = JDKEvents::emitContainerIOUsage;
     private static Metrics containerMetrics = null;
@@ -134,6 +137,7 @@ public final class JDKEvents {
                 RequestEngine.addTrustedJDKHook(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
                 RequestEngine.addTrustedJDKHook(ContainerConfigurationEvent.class, emitContainerConfiguration);
                 RequestEngine.addTrustedJDKHook(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
+                RequestEngine.addTrustedJDKHook(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
                 RequestEngine.addTrustedJDKHook(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
                 RequestEngine.addTrustedJDKHook(ContainerIOUsageEvent.class, emitContainerIOUsage);
             }
@@ -174,8 +178,6 @@ public final class JDKEvents {
             t.cpuSlicePeriod = containerMetrics.getCpuPeriod();
             t.cpuQuota = containerMetrics.getCpuQuota();
             t.cpuShares = containerMetrics.getCpuShares();
-            t.cpuThrottledSlices = containerMetrics.getCpuNumThrottled();
-            t.cpuThrottledTime = containerMetrics.getCpuThrottledTime();
             t.effectiveCpuCount = containerMetrics.getEffectiveCpuCount();
             t.memorySoftLimit = containerMetrics.getMemorySoftLimit();
             t.memoryLimit = containerMetrics.getMemoryLimit();
@@ -217,6 +219,17 @@ public final class JDKEvents {
         }
     }
 
+    private static void emitContainerCPUThrottling() {
+        if (containerMetrics != null) {
+            ContainerCPUThrottlingEvent event = new ContainerCPUThrottlingEvent();
+
+            event.cpuElapsedSlices = containerMetrics.getCpuNumPeriods();
+            event.cpuThrottledSlices = containerMetrics.getCpuNumThrottled();
+            event.cpuThrottledTime = containerMetrics.getCpuThrottledTime();
+            event.commit();
+        }
+    }
+
     @SuppressWarnings("deprecation")
     public static byte[] retransformCallback(Class<?> klass, byte[] oldBytes) throws Throwable {
         if (java.lang.Throwable.class == klass) {
@@ -247,6 +260,7 @@ public final class JDKEvents {
 
         RequestEngine.removeHook(emitContainerConfiguration);
         RequestEngine.removeHook(emitContainerCPUUsage);
+        RequestEngine.removeHook(emitContainerCPUThrottling);
         RequestEngine.removeHook(emitContainerMemoryUsage);
         RequestEngine.removeHook(emitContainerIOUsage);
     }
