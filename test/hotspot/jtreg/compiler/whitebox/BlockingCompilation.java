@@ -59,6 +59,9 @@ public class BlockingCompilation {
     }
 
     public static void main(String[] args) throws Exception {
+        // Needed to avoid Random.nextInt (and subsequent 'foo') deoptimizations
+        ClassLoader.getSystemClassLoader().loadClass("java.util.concurrent.ThreadLocalRandom");
+
         Method m = BlockingCompilation.class.getMethod("foo");
         int[] levels = CompilerUtils.getAvailableCompilationLevels();
         int highest_level = levels[levels.length-1];
