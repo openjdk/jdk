@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Negative tests for the SimpleFileServerToolProvider
+ * @summary Negative tests for SimpleFileServerToolProvider
  * @library /test/lib
  * @modules jdk.httpserver
  * @build jdk.test.lib.util.FileUtils
@@ -52,6 +52,18 @@ public class ToolProviderNegativeTest {
 
     static final ToolProvider SIMPLESERVER_TOOL = ToolProvider.findFirst("simpleserver")
         .orElseThrow(() -> new RuntimeException("simpleserver tool not found"));
+
+    static final Path CWD = Path.of(".").toAbsolutePath().normalize();
+    static final Path TEST_DIR = CWD.resolve("dir");
+    static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
+
+    @BeforeTest
+    public void makeTestDirectoryAndFile() throws IOException {
+        if (Files.exists(TEST_DIR))
+            FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+        Files.createDirectories(TEST_DIR);
+        Files.createFile(TEST_FILE);
+    }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testArgsNull() {
@@ -122,9 +134,8 @@ public class ToolProviderNegativeTest {
                 {"-b", "badhost"},
 
                 {"-d", "\u0000"},
-                // TODO
-                // expect failure at Path::of, not at actual file system access
-                // thus no need to be file system specific?
+                // TODO: expect failure at Path::of, not at actual file system access
+                //  need to be file system specific?
 
                 {"-o", ""},
                 {"-o", "bad-output-level"},
@@ -165,18 +176,6 @@ public class ToolProviderNegativeTest {
                         assertContains(r.output, "Error: server config failed: "
                                 + "Path is not absolute: " + root.toString())
                 );
-    }
-
-    static final Path CWD = Path.of(".").toAbsolutePath().normalize();
-    static final Path TEST_DIR = CWD.resolve("dir");
-    static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
-
-    @BeforeTest
-    public void makeTestDirectoryAndFile() throws IOException {
-        if (Files.exists(TEST_DIR))
-            FileUtils.deleteFileTreeWithRetry(TEST_DIR);
-        Files.createDirectories(TEST_DIR);
-        Files.createFile(TEST_FILE);
     }
 
     @Test
@@ -246,14 +245,7 @@ public class ToolProviderNegativeTest {
         SIMPLESERVER_TOOL.run(ps, ps, args);
     }
 
-    static class Result {
-        final int exitCode;
-        final String output;
-
-        Result(int exitValue, String output) {
-            this.exitCode = exitValue;
-            this.output = output;
-        }
+    static record Result(int exitCode, String output) {
         Result assertFailure() { assertTrue(exitCode != 0, output); return this; }
         Result resultChecker(Consumer<Result> r) { r.accept(this); return this; }
     }

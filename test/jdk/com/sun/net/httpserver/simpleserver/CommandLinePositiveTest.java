@@ -236,6 +236,7 @@ public class CommandLineNegativeTest {
         };
         t.start();
         Thread.sleep(5000);
+//        p.destroy(); // only needed for positive testing
         t.join();
         return new Result(out.toString(UTF_8));
     }
