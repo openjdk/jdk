@@ -658,13 +658,15 @@ public abstract class JComponent extends Container implements Serializable,
     /**
      * This method is called to update the UI property to a value from the
      * current look and feel.
-     * This base method is empty and therefore {@code JComponent} subclasses
-     * must override this method like this:
+     * {@code JComponent} subclasses must override this method
+     * like this:
      * <pre>
      *   public void updateUI() {
      *      setUI((SliderUI)UIManager.getUI(this);
      *   }
      *  </pre>
+     *
+     * @implSpec The default implementation of this method doesn't do anything.
      *
      * @see #setUI
      * @see UIManager#getLookAndFeel
