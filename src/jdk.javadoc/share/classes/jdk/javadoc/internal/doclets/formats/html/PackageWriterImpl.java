@@ -164,7 +164,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public void addRelatedPackagesSummary(List<PackageElement> relatedPackages, Content summaryContentTree) {
-        boolean showModules = hasRelatedPackagesInOtherModules(relatedPackages);
+        boolean showModules = configuration.showModules && hasRelatedPackagesInOtherModules(relatedPackages);
         TableHeader tableHeader= showModules
                 ? new TableHeader(contents.packageLabel, contents.moduleLabel, contents.descriptionLabel)
                 : new TableHeader(contents.packageLabel, contents.descriptionLabel);
