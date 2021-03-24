@@ -86,9 +86,9 @@ class oop {
   }
 
 public:
-  oop()             : _o(NULL) { register_if_checking(); }
-  oop(const oop& o) : _o(o._o) { register_if_checking(); }
-  oop(oopDesc* o)   : _o(o)    { register_if_checking(); }
+  oop()             : _o(nullptr) { register_if_checking(); }
+  oop(const oop& o) : _o(o._o)    { register_if_checking(); }
+  oop(oopDesc* o)   : _o(o)       { register_if_checking(); }
   ~oop() {
     if (CheckUnhandledOops) unregister_oop();
   }
