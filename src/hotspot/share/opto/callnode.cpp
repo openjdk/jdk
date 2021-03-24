@@ -1515,7 +1515,7 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
 
 SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
 #ifdef ASSERT
-                                                     AllocateNode* alloc,
+                                                     CallNode* alloc,
 #endif
                                                      uint first_index,
                                                      uint n_fields,
@@ -1528,6 +1528,11 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
   , _alloc(alloc)
 #endif
 {
+#ifdef ASSERT
+  if (alloc != nullptr) {
+    assert(alloc->is_Allocate() || alloc->as_CallStaticJava()->is_boxing_method(), "unexpected alloc");
+  }
+#endif
   init_class_id(Class_SafePointScalarObject);
 }
 

@@ -580,7 +580,7 @@ static void scalarize_debug_usages(CallNode* call, Node* resproj) {
     uint first_ind = sfpt->req() - sfpt->jvms()->scloff();
     Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
 #ifdef ASSERT
-                                                nullptr,
+                                                call,
 #endif // ASSERT
                                                 first_ind, n_fields, true);
     sobj->init_req(0, kit.root());
