@@ -564,6 +564,11 @@
       <setting name="period">30 s</setting>
     </event>
 
+    <event name="jdk.ContainerCPUThrottling">
+      <setting name="enabled" control="container-events-enabled">true</setting>
+      <setting name="period">30 s</setting>
+    </event>
+
     <event name="jdk.ContainerMemoryUsage">
       <setting name="enabled" control="container-events-enabled">true</setting>
       <setting name="period">30 s</setting>
