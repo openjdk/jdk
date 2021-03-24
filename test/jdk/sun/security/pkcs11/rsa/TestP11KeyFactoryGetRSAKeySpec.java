@@ -84,7 +84,7 @@ public class TestP11KeyFactoryGetRSAKeySpec extends PKCS11Test {
             }
             if (!(spec instanceof RSAPrivateCrtKeySpec)) {
                 throw new Exception("Spec should be an instance of RSAPrivateCrtKeySpec");
-            }            
+            }
         } catch (final InvalidKeySpecException ex) {
             if (testingSensitiveKeys) {
                 // Expected exception so swallow it
