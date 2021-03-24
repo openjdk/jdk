@@ -1231,8 +1231,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
   Symbol* class_name = ik->name();
 
-  bool visible = is_shared_class_visible(class_name, ik, pkg_entry, class_loader);
-  if (!visible) {
+  if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
     return NULL;
   }
 

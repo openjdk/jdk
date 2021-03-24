@@ -1861,17 +1861,20 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
     return;
   }
 
-  if (Thread::current()->is_VM_thread()) {
-    assert(DynamicDumpSharedSpaces, "must be");
-    // We are re-laying out the vtable/itables of the *copy* of
-    // a class during the final stage of dynamic dumping. The
-    // linking constraints for this class has already been recorded.
-    return;
-  }
-  Arguments::assert_is_dumping_archive();
-  DumpTimeSharedClassInfo* info = find_or_allocate_info_for(klass);
-  if (info != NULL) {
-    info->record_linking_constraint(name, loader1, loader2);
+  if (DynamicDumpSharedSpaces) {
+    if (Thread::current()->is_VM_thread()) {
+      // We are re-laying out the vtable/itables of the *copy* of
+      // a class during the final stage of dynamic dumping. The
+      // linking constraints for this class has already been recorded.
+      return;
+    }
+  } else {
+    assert(!Thread::current()->is_VM_thread(), "must not be");
+    Arguments::assert_is_dumping_archive();
+    DumpTimeSharedClassInfo* info = find_or_allocate_info_for(klass);
+    if (info != NULL) {
+      info->record_linking_constraint(name, loader1, loader2);
+    }
   }
 }
 

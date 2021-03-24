@@ -405,7 +405,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
                                        ciSymbol* name,
                                        bool require_local) {
   ASSERT_IN_VM;
-  EXCEPTION_CONTEXT;
+  Thread* current = Thread::current();
 
   // Now we need to check the SystemDictionary
   Symbol* sym = name->get_symbol();
@@ -428,8 +428,8 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   Handle loader;
   Handle domain;
   if (accessing_klass != NULL) {
-    loader = Handle(THREAD, accessing_klass->loader());
-    domain = Handle(THREAD, accessing_klass->protection_domain());
+    loader = Handle(current, accessing_klass->loader());
+    domain = Handle(current, accessing_klass->protection_domain());
   }
 
   // setup up the proper type to return on OOM
