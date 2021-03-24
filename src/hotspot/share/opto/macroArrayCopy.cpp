@@ -1074,7 +1074,7 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
   _igvn.replace_node(ac, call);
   transform_later(call);
 
-  call->extract_projections(&_callprojs, false/*separate_io_proj*/, false/*do_asserts*/);
+  call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
   *ctrl = _callprojs.fallthrough_catchproj->clone();
   transform_later(*ctrl);
 

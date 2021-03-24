@@ -942,7 +942,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
     // If Initialize node is eliminated first in the following code,
     // it will kill such stores and DUIterator_Last will assert.
     for (DUIterator_Fast jmax, j = _callprojs.resproj->fast_outs(jmax);  j < jmax; j++) {
-      Node *use = _callprojs.resproj->fast_out(j);
+      Node* use = _callprojs.resproj->fast_out(j);
       if (use->is_AddP()) {
         // raw memory addresses used only by the initialization
         _igvn.replace_node(use, C->top());
@@ -950,7 +950,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
       }
     }
     for (DUIterator_Last jmin, j = _callprojs.resproj->last_outs(jmin); j >= jmin; ) {
-      Node *use = _callprojs.resproj->last_out(j);
+      Node* use = _callprojs.resproj->last_out(j);
       uint oc1 = _callprojs.resproj->outcnt();
       if (use->is_Initialize()) {
         // Eliminate Initialize node.
@@ -1023,7 +1023,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     return false;
   }
 
-  alloc->extract_projections(&_callprojs, false/*separate_io_proj*/, false/*do_asserts*/);
+  alloc->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
   GrowableArray <SafePointNode *> safepoints;
   if (!can_eliminate_allocation(alloc, safepoints)) {
@@ -1078,7 +1078,7 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
 
   assert(boxing->result_cast() == NULL, "unexpected boxing node result");
 
-  boxing->extract_projections(&_callprojs, false/*separate_io_proj*/, false/*do_asserts*/);
+  boxing->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
   const TypeTuple* r = boxing->tf()->range();
   assert(r->cnt() > TypeFunc::Parms, "sanity");
@@ -1408,7 +1408,7 @@ void PhaseMacroExpand::expand_allocate_common(
   //
   //  We are interested in the CatchProj nodes.
   //
-  call->extract_projections(&_callprojs, false/*separate_io_proj*/, false/*do_asserts*/);
+  call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
   // An allocate node has separate memory projections for the uses on
   // the control and i_o paths. Replace the control memory projection with
@@ -1499,7 +1499,7 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
   Node* mem  = alloc->in(TypeFunc::Memory);
   Node* i_o  = alloc->in(TypeFunc::I_O);
 
-  alloc->extract_projections(&_callprojs, false/*separate_io_proj*/, false/*do_asserts*/);
+  alloc->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
   if (_callprojs.resproj != NULL) {
     for (DUIterator_Fast imax, i = _callprojs.resproj->fast_outs(imax); i < imax; i++) {
       Node* use = _callprojs.resproj->fast_out(i);
@@ -2096,7 +2096,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   Node* ctrl = alock->in(TypeFunc::Control);
   guarantee(ctrl != NULL, "missing control projection, cannot replace_node() with NULL");
 
-  alock->extract_projections(&_callprojs, false/*separate_io_proj*/, false/*do_asserts*/);
+  alock->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
   // There are 2 projections from the lock.  The lock node will
   // be deleted when its last use is subsumed below.
   assert(alock->outcnt() == 2 &&
@@ -2359,14 +2359,14 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
                                   OptoRuntime::complete_monitor_locking_Java(), NULL, slow_path,
                                   obj, box, NULL);
 
-  call->extract_projections(&_callprojs, false/*separate_io_proj*/, false/*do_asserts*/);
+  call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
   // Slow path can only throw asynchronous exceptions, which are always
   // de-opted.  So the compiler thinks the slow-call can never throw an
   // exception.  If it DOES throw an exception we would need the debug
   // info removed first (since if it throws there is no monitor).
-  assert ( _callprojs.fallthrough_ioproj == NULL && _callprojs.catchall_ioproj == NULL &&
-           _callprojs.catchall_memproj == NULL && _callprojs.catchall_catchproj == NULL, "Unexpected projection from Lock");
+  assert(_callprojs.fallthrough_ioproj == NULL && _callprojs.catchall_ioproj == NULL &&
+         _callprojs.catchall_memproj == NULL && _callprojs.catchall_catchproj == NULL, "Unexpected projection from Lock");
 
   // Capture slow path
   // disconnect fall-through projection from call and create a new one
@@ -2430,9 +2430,9 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
                                   CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C),
                                   "complete_monitor_unlocking_C", slow_path, obj, box, thread);
 
-  call->extract_projections(&_callprojs, false/*separate_io_proj*/, false/*do_asserts*/);
-  assert ( _callprojs.fallthrough_ioproj == NULL && _callprojs.catchall_ioproj == NULL &&
-           _callprojs.catchall_memproj == NULL && _callprojs.catchall_catchproj == NULL, "Unexpected projection from Lock");
+  call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
+  assert(_callprojs.fallthrough_ioproj == NULL && _callprojs.catchall_ioproj == NULL &&
+         _callprojs.catchall_memproj == NULL && _callprojs.catchall_catchproj == NULL, "Unexpected projection from Lock");
 
   // No exceptions for unlocking
   // Capture slow path
