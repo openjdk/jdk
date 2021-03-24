@@ -326,7 +326,7 @@ final class ProcessImpl extends Process {
                 return null;
             });
         } catch (PrivilegedActionException ex) {
-            throw (IOException) ex.getException();
+            throw (IOException) ex.getCause();
         }
     }
 

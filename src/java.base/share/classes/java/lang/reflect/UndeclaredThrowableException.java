@@ -48,15 +48,6 @@ import jdk.internal.access.SharedSecrets;
  * {@code RuntimeException}, so it is an unchecked exception
  * that wraps a checked exception.
  *
- * <p>As of release 1.4, this exception has been retrofitted to
- * conform to the general purpose exception-chaining mechanism.  The
- * "undeclared checked exception that was thrown by the invocation
- * handler" that may be provided at construction time and accessed via
- * the {@link #getUndeclaredThrowable()} method is now known as the
- * <i>cause</i>, and may be accessed via the {@link
- * Throwable#getCause()} method, as well as the aforementioned "legacy
- * method."
- *
  * @author      Peter Jones
  * @see         InvocationHandler
  * @since       1.3
@@ -94,12 +85,13 @@ public class UndeclaredThrowableException extends RuntimeException {
      * Returns the {@code Throwable} instance wrapped in this
      * {@code UndeclaredThrowableException}, which may be {@code null}.
      *
-     * <p>This method predates the general-purpose exception chaining facility.
+     * @deprecated This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *
      * @return the undeclared checked exception that was thrown
      */
+    @Deprecated
     public Throwable getUndeclaredThrowable() {
         return super.getCause();
     }

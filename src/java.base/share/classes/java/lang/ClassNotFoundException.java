@@ -42,13 +42,6 @@ import java.io.ObjectStreamField;
  * <p>
  * but no definition for the class with the specified name could be found.
  *
- * <p>As of release 1.4, this exception has been retrofitted to conform to
- * the general purpose exception-chaining mechanism.  The "optional exception
- * that was raised while loading the class" that may be provided at
- * construction time and accessed via the {@link #getException()} method is
- * now known as the <i>cause</i>, and may be accessed via the {@link
- * Throwable#getCause()} method, as well as the aforementioned "legacy method."
- *
  * @see     java.lang.Class#forName(java.lang.String)
  * @see     java.lang.ClassLoader#findSystemClass(java.lang.String)
  * @see     java.lang.ClassLoader#loadClass(java.lang.String, boolean)
@@ -95,13 +88,14 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      * Returns the exception that was raised if an error occurred while
      * attempting to load the class. Otherwise, returns {@code null}.
      *
-     * <p>This method predates the general-purpose exception chaining facility.
+     * @deprecated This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *
      * @return the {@code Exception} that was raised while loading a class
      * @since 1.2
      */
+    @Deprecated
     public Throwable getException() {
         return super.getCause();
     }
