@@ -1049,7 +1049,7 @@ InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
 bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                InstanceKlass* ik,
                                                PackageEntry* pkg_entry,
-                                               Handle class_loader, TRAPS) {
+                                               Handle class_loader) {
   assert(!ModuleEntryTable::javabase_moduleEntry()->is_patched(),
          "Cannot use sharing if java.base is patched");
 
@@ -1081,17 +1081,17 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
   if (MetaspaceShared::use_optimized_module_handling()) {
     // Class visibility has not changed between dump time and run time, so a class
     // that was visible (and thus archived) during dump time is always visible during runtime.
-    assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader, THREAD),
+    assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader),
            "visibility cannot change between dump time and runtime");
     return true;
   }
-  return is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader, THREAD);
+  return is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader);
 }
 
 bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
                                                     InstanceKlass* ik,
                                                     PackageEntry* pkg_entry,
-                                                    Handle class_loader, TRAPS) {
+                                                    Handle class_loader) {
   int scp_index = ik->shared_classpath_index();
   assert(!ik->is_shared_unregistered_class(), "this function should be called for built-in classes only");
   assert(scp_index >= 0, "must be");
@@ -1231,8 +1231,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
   Symbol* class_name = ik->name();
 
-  bool visible = is_shared_class_visible(
-                          class_name, ik, pkg_entry, class_loader, CHECK_NULL);
+  bool visible = is_shared_class_visible(class_name, ik, pkg_entry, class_loader);
   if (!visible) {
     return NULL;
   }
