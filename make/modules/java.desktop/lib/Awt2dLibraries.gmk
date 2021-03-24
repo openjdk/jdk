@@ -160,6 +160,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     LIBS_macosx := -lmlib_image \
         -framework Cocoa \
         -framework OpenGL \
+        -framework Metal \
         -framework JavaRuntimeSupport \
         -framework ApplicationServices \
         -framework AudioToolbox, \
@@ -431,92 +432,49 @@ endif
 
 ###########################################################################
 
+
 ifeq ($(USE_EXTERNAL_HARFBUZZ), true)
-  LIBHARFBUZZ_LIBS := $(HARFBUZZ_LIBS)
+   LIBFONTMANAGER_EXTRA_SRC =
+   BUILD_LIBFONTMANAGER_FONTLIB += $(LIBHARFBUZZ_LIBS)
 else
+   LIBFONTMANAGER_EXTRA_SRC = libharfbuzz
 
-  # This is better than adding EXPORT_ALL_SYMBOLS
-  ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
-    HARFBUZZ_CFLAGS += -DHB_EXTERN=__attribute__\(\(visibility\(\"default\"\)\)\)
-  else ifeq ($(TOOLCHAIN_TYPE), microsoft)
-    HARFBUZZ_CFLAGS += -DHB_EXTERN=__declspec\(dllexport\)
-  endif
+   ifeq ($(call isTargetOs, windows), false)
+     HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
+                        -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H \
+                        -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
+   endif
+   ifeq ($(call isTargetOs, linux macosx), true)
+     HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
+   endif
+   ifeq ($(call isTargetOs, macosx), true)
+     HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
+   endif
 
-  ifeq ($(call isTargetOs, windows), false)
-    HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
-                      -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H \
-                      -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
-  endif
-  ifeq ($(call isTargetOs, linux macosx), true)
-    HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
-  endif
-  ifeq ($(call isTargetOs, macosx), true)
-    HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
-  endif
-  ifeq ($(call isTargetOs, macosx), false)
-    LIBHARFBUZZ_EXCLUDE_FILES += libharfbuzz/hb-coretext.cc
-  endif
-  # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
-  LIBHARFBUZZ_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
+   # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
+   # when building libharfbuzz
+   ifeq ($(call isTargetOs, aix), true)
+     HARFBUZZ_CFLAGS += -qdebug=necan
+   endif
 
-  LIBHARFBUZZ_CFLAGS += $(HARFBUZZ_CFLAGS)
+   ifeq ($(call isTargetOs, macosx), false)
+     LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-coretext.cc
+   endif
+   # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
+   LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
-  # For use by libfontmanager:
-  ifeq ($(call isTargetOs, windows), true)
-    LIBHARFBUZZ_LIBS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libharfbuzz/harfbuzz.lib
-  else
-    LIBHARFBUZZ_LIBS := -lharfbuzz
-  endif
-
-  LIBHARFBUZZ_EXTRA_HEADER_DIRS := \
-    libharfbuzz/hb-ucdn \
-    #
-
-  LIBHARFBUZZ_OPTIMIZATION := HIGH
-  # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
-  # when building libharfbuzz
-  ifeq ($(call isTargetOs, aix), true)
-    LIBHARFBUZZ_CFLAGS += -qdebug=necan
-  endif
-
-  LIBHARFBUZZ_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
-
-  $(eval $(call SetupJdkLibrary, BUILD_LIBHARFBUZZ, \
-      NAME := harfbuzz, \
-      EXCLUDE_FILES := $(LIBHARFBUZZ_EXCLUDE_FILES), \
-      TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-      CFLAGS := $(CFLAGS_JDKLIB) $(LIBHARFBUZZ_CFLAGS), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBHARFBUZZ_CFLAGS), \
-      OPTIMIZATION := $(LIBHARFBUZZ_OPTIMIZATION), \
-      CFLAGS_windows = -DCC_NOEX, \
-      EXTRA_HEADER_DIRS := $(LIBHARFBUZZ_EXTRA_HEADER_DIRS), \
-      WARNINGS_AS_ERRORS_xlc := false, \
-      DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing, \
-      DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized class-memaccess, \
-      DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
+   HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
+   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
+        maybe-uninitialized class-memaccess
+   HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
-        undef missing-field-initializers range-loop-analysis, \
-      DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
-      LDFLAGS_aix := -Wl$(COMMA)-berok, \
-      LIBS := $(BUILD_LIBHARFBUZZ), \
-      LIBS_unix := $(LIBM) $(LIBCXX), \
-      LIBS_macosx := -framework CoreText -framework CoreFoundation -framework CoreGraphics, \
-      LIBS_windows := user32.lib, \
-  ))
+        undef missing-field-initializers range-loop-analysis
+   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138
 
-  ifeq ($(FREETYPE_TO_USE), bundled)
-    $(BUILD_LIBHARFBUZZ): $(BUILD_LIBFREETYPE)
-  endif
-
-  TARGETS += $(BUILD_LIBHARFBUZZ)
+   LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 
 endif
 
-###########################################################################
 
 LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libharfbuzz \
@@ -527,10 +485,10 @@ LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libawt/java2d/loops \
     #
 
-LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS) $(HARFBUZZ_FLAGS)
-BUILD_LIBFONTMANAGER_FONTLIB += $(LIBHARFBUZZ_LIBS) $(LIBFREETYPE_LIBS)
+LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
+BUILD_LIBFONTMANAGER_FONTLIB +=  $(LIBFREETYPE_LIBS)
 
-LIBFONTMANAGER_OPTIMIZATION := HIGH
+LIBFONTMANAGER_OPTIMIZATION := HIGHEST
 
 ifeq ($(call isTargetOs, windows), true)
   LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
@@ -548,12 +506,6 @@ endif
 
 LIBFONTMANAGER_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
 
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  # Turn off all warnings for sunFont.c. This is needed because the specific warning
-  # about discarding 'const' qualifier cannot be turned off individually.
-  BUILD_LIBFONTMANAGER_sunFont.c_CFLAGS := -w
-endif
-
 # LDFLAGS clarification:
 #   Filter relevant linker flags disallowing unresolved symbols as we cannot
 #   build-time decide to which library to link against (libawt_headless or
@@ -568,7 +520,12 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
     CFLAGS_windows = -DCC_NOEX, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \
+    EXTRA_SRC := $(LIBFONTMANAGER_EXTRA_SRC), \
     WARNINGS_AS_ERRORS_xlc := false, \
+    DISABLED_WARNINGS_gcc := $(HARFBUZZ_DISABLED_WARNINGS_gcc), \
+    DISABLED_WARNINGS_CXX_gcc := $(HARFBUZZ_DISABLED_WARNINGS_CXX_gcc), \
+    DISABLED_WARNINGS_clang := $(HARFBUZZ_DISABLED_WARNINGS_clang), \
+    DISABLED_WARNINGS_microsoft := $(HARFBUZZ_DISABLED_WARNINGS_microsoft), \
     LDFLAGS := $(subst -Xlinker -z -Xlinker defs,, \
         $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB))) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -576,16 +533,12 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
     LIBS := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LIBS_unix := -lawt -ljava -ljvm $(LIBM) $(LIBCXX), \
-    LIBS_macosx := -lawt_lwawt, \
+    LIBS_macosx := -lawt_lwawt -framework CoreText -framework CoreFoundation -framework CoreGraphics, \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
         $(WIN_AWT_LIB), \
 ))
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
-
-ifeq ($(USE_EXTERNAL_HARFBUZZ), false)
-  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBHARFBUZZ)
-endif
 
 ifeq ($(call isTargetOs, macosx), true)
   $(BUILD_LIBFONTMANAGER): $(call FindLib, $(MODULE), awt_lwawt)
@@ -766,7 +719,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
         -framework ApplicationServices \
         -framework Foundation \
         -framework Security \
-        -framework Cocoa
+        -framework Cocoa \
+        -framework Metal
   else ifeq ($(call isTargetOs, windows), true)
     LIBSPLASHSCREEN_LIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib $(WIN_JAVA_LIB) jvm.lib
   else
@@ -827,6 +781,7 @@ ifeq ($(call isTargetOs, macosx), true)
       libawt_lwawt/awt \
       libawt_lwawt/font \
       libawt_lwawt/java2d/opengl \
+      libawt_lwawt/java2d/metal \
       include \
       common/awt/debug \
       common/java2d/opengl \
@@ -862,6 +817,7 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework AudioToolbox \
           -framework Carbon \
           -framework Cocoa \
+          -framework Metal \
           -framework Security \
           -framework ExceptionHandling \
           -framework JavaRuntimeSupport \
@@ -884,6 +840,28 @@ endif
 ################################################################################
 
 ifeq ($(call isTargetOs, macosx), true)
+  SHADERS_SRC := $(TOPDIR)/src/java.desktop/macosx/native/libawt_lwawt/java2d/metal/shaders.metal
+  SHADERS_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/native/java.desktop/libosxui
+  SHADERS_AIR := $(SHADERS_SUPPORT_DIR)/shaders.air
+  SHADERS_LIB := $(INSTALL_LIBRARIES_HERE)/shaders.metallib
+
+  $(eval $(call SetupExecute, metal_shaders, \
+      INFO := Running metal on $(notdir $(SHADERS_SRC)) (for libosxui.dylib), \
+      DEPS := $(SHADERS_SRC), \
+      OUTPUT_FILE := $(SHADERS_AIR), \
+      SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
+      COMMAND := $(METAL) -c -std=osx-metal2.0 -o $(SHADERS_AIR) $(SHADERS_SRC), \
+  ))
+
+  $(eval $(call SetupExecute, metallib_shaders, \
+      INFO := Running metallib on $(notdir $(SHADERS_AIR)) (for libosxui.dylib), \
+      DEPS := $(SHADERS_AIR), \
+      OUTPUT_FILE := $(SHADERS_LIB), \
+      SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
+      COMMAND := $(METALLIB) -o $(SHADERS_LIB) $(SHADERS_AIR), \
+  ))
+
+  TARGETS += $(SHADERS_LIB)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSXUI, \
       NAME := osxui, \
@@ -899,6 +877,7 @@ ifeq ($(call isTargetOs, macosx), true)
           -L$(INSTALL_LIBRARIES_HERE), \
       LIBS := -lawt -losxapp -lawt_lwawt \
           -framework Cocoa \
+          -framework Metal \
           -framework Carbon \
           -framework ApplicationServices \
           -framework JavaRuntimeSupport \
@@ -906,6 +885,7 @@ ifeq ($(call isTargetOs, macosx), true)
   ))
 
   TARGETS += $(BUILD_LIBOSXUI)
+  $(BUILD_LIBOSXUI): $(SHADERS_LIB)
 
   $(BUILD_LIBOSXUI): $(BUILD_LIBAWT)
 

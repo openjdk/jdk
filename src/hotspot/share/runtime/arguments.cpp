@@ -3438,7 +3438,7 @@ char* Arguments::get_default_shared_archive_path() {
   const size_t len = jvm_path_len + file_sep_len + 20;
   default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
   jio_snprintf(default_archive_path, len,
-               UseCompressedOops ? "%s%sclasses.jsa": "%s%sclasses_nocoops.jsa",
+               LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
                jvm_path, os::file_separator());
   return default_archive_path;
 }

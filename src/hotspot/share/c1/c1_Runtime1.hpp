@@ -94,10 +94,6 @@ class Runtime1: public AllStatic {
 
   // statistics
 #ifndef PRODUCT
-  static int _resolve_invoke_cnt;
-  static int _handle_wrong_method_cnt;
-  static int _ic_miss_cnt;
-  static int _generic_arraycopy_cnt;
   static int _generic_arraycopystub_cnt;
   static int _arraycopy_slowcase_cnt;
   static int _arraycopy_checkcast_cnt;
@@ -115,7 +111,6 @@ class Runtime1: public AllStatic {
   static int _throw_null_pointer_exception_count;
   static int _throw_class_cast_exception_count;
   static int _throw_incompatible_class_change_error_count;
-  static int _throw_array_store_exception_count;
   static int _throw_count;
 #endif
 

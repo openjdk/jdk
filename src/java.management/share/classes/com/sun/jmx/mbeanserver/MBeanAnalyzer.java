@@ -225,7 +225,7 @@ class MBeanAnalyzer<M> {
                 return -1;
             return +1;      // could assert bret.isAssignableFrom(aret)
         }
-        public final static MethodOrder instance = new MethodOrder();
+        public static final MethodOrder instance = new MethodOrder();
     }
 
 

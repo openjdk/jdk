@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,8 +205,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         // Merge all package lists together.
         // Filter out empty names, sort and remove duplicates.
         List<String> result = Stream.of(xdgUtilsPackage, neededLibPackages).flatMap(
-                List::stream).filter(Predicate.not(String::isEmpty)).sorted().distinct().collect(
-                Collectors.toList());
+                List::stream).filter(Predicate.not(String::isEmpty)).sorted().distinct().toList();
 
         Log.verbose(String.format("Required packages: %s", result));
 
