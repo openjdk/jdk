@@ -164,8 +164,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public void addRelatedPackagesSummary(List<PackageElement> relatedPackages, Content summaryContentTree) {
-        TableHeader tableHeader= new TableHeader(contents.packageLabel, contents.descriptionLabel);
-        addPackageSummary(relatedPackages, contents.relatedPackages, tableHeader, summaryContentTree);
+        boolean showModules = hasRelatedPackagesInOtherModules(relatedPackages);
+        TableHeader tableHeader= showModules
+                ? new TableHeader(contents.packageLabel, contents.moduleLabel, contents.descriptionLabel)
+                : new TableHeader(contents.packageLabel, contents.descriptionLabel);
+        addPackageSummary(relatedPackages, contents.relatedPackages, tableHeader,
+                summaryContentTree, showModules);
     }
 
     @Override
@@ -242,15 +246,27 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     public void addPackageSummary(List<PackageElement> packages, Content label,
-                                  TableHeader tableHeader, Content summaryContentTree) {
+                                  TableHeader tableHeader, Content summaryContentTree,
+                                  boolean showModules) {
         if(!packages.isEmpty()) {
             Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(label)
-                    .setHeader(tableHeader)
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                    .setHeader(tableHeader);
+            if (showModules) {
+                table.setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colExtra, HtmlStyle.colLast);
+            } else {
+                table.setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+            }
 
             for (PackageElement pkg : packages) {
-                Content classLink = getPackageLink(pkg, Text.of(pkg.getQualifiedName()));
+                Content packageLink = getPackageLink(pkg, Text.of(pkg.getQualifiedName()));
+                Content moduleLink = HtmlTree.EMPTY;
+                if (showModules) {
+                    ModuleElement module = (ModuleElement) pkg.getEnclosingElement();
+                    if (module != null && !module.isUnnamed()) {
+                        moduleLink = getModuleLink(module, Text.of(module.getQualifiedName()));
+                    }
+                }
                 ContentBuilder description = new ContentBuilder();
                 addPreviewSummary(pkg, description);
                 if (utils.isDeprecated(pkg)) {
@@ -262,7 +278,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 } else {
                     addSummaryComment(pkg, description);
                 }
-                table.addRow(classLink, description);
+                if (showModules) {
+                    table.addRow(packageLink, moduleLink, description);
+                } else {
+                    table.addRow(packageLink, description);
+                }
             }
             summaryContentTree.add(HtmlTree.LI(table));
         }
@@ -314,5 +334,10 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public Content getPackageSummary(Content summaryContentTree) {
         return HtmlTree.SECTION(HtmlStyle.summary, summaryContentTree);
+    }
+
+    private boolean hasRelatedPackagesInOtherModules(List<PackageElement> relatedPackages) {
+        final ModuleElement module = (ModuleElement) packageElement.getEnclosingElement();
+        return relatedPackages.stream().anyMatch(pkg -> module != pkg.getEnclosingElement());
     }
 }

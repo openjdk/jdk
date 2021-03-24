@@ -31,6 +31,7 @@
  * @run main TestRelatedPackages
  */
 
+import toolbox.ModuleBuilder;
 import toolbox.ToolBox;
 import javadoc.tester.JavadocTester;
 
@@ -39,6 +40,8 @@ import java.nio.file.Paths;
 
 public class TestRelatedPackages extends JavadocTester {
 
+    ToolBox tb = new ToolBox();
+
     public static void main(String... args) throws Exception {
         TestRelatedPackages tester = new TestRelatedPackages();
         tester.runTests(m -> new Object[]{Paths.get(m.getName())});
@@ -46,16 +49,16 @@ public class TestRelatedPackages extends JavadocTester {
 
     @Test
     public void testRelatedPackages(Path base) throws Exception {
-        ToolBox tb = new ToolBox();
-        tb.writeFile(base.resolve("p1/package-info.java"), "package p1;\n");
-        tb.writeFile(base.resolve("p1/s1/A.java"), "package p1.s1; public class A {}\n");
-        tb.writeFile(base.resolve("p1/s2/package-info.java"), "package p1.s1;\n");
-        tb.writeFile(base.resolve("p1/s3/B.java"), "package p1.s3; public class B {}\n");
-        tb.writeFile(base.resolve("p1/s3/t1/package-info.java"), "package p1.s3.t1;\n");
-        tb.writeFile(base.resolve("p1/s3/t2/C.java"), "package p1.s3.t2; public class C {}\n");
+        Path src = base.resolve("src-packages");
+        tb.writeFile(src.resolve("p1/package-info.java"), "package p1;\n");
+        tb.writeFile(src.resolve("p1/s1/A.java"), "package p1.s1; public class A {}\n");
+        tb.writeFile(src.resolve("p1/s2/package-info.java"), "package p1.s1;\n");
+        tb.writeFile(src.resolve("p1/s3/B.java"), "package p1.s3; public class B {}\n");
+        tb.writeFile(src.resolve("p1/s3/t1/package-info.java"), "package p1.s3.t1;\n");
+        tb.writeFile(src.resolve("p1/s3/t2/C.java"), "package p1.s3.t2; public class C {}\n");
 
-        javadoc("-d", "out",
-                "-sourcepath", base.toString(),
+        javadoc("-d", "out-packages",
+                "-sourcepath", src.toString(),
                 "-subpackages", "p1");
         checkExit(Exit.OK);
         checkOutput("p1/package-summary.html", true,
@@ -136,6 +139,83 @@ public class TestRelatedPackages extends JavadocTester {
                     <div class="col-first odd-row-color"><a href="../t1/package-summary.html">p1.s3.t1</a></div>
                     <div class="col-last odd-row-color">&nbsp;</div>
                     </div>""");
+    }
+
+    @Test
+    public void testCrossModuleRelatedPackages(Path base) throws Exception {
+        Path src = base.resolve("src-modules");
+        new ModuleBuilder(tb, "m")
+                .exports("pkg")
+                .exports("pkg.sub1")
+                .classes("package pkg; public class A { }",
+                         "package pkg.sub1; public class B { }")
+                .write(src);
+        new ModuleBuilder(tb, "o")
+                .exports("pkg.sub2")
+                .exports("pkg.sub2.sub")
+                .classes("package pkg.sub2; public class C { }",
+                         "package pkg.sub2.sub; public class D { }")
+                .write(src);
+
+        javadoc("-d", "out-modules",
+                "-quiet",
+                "--module-source-path", src.toString(),
+                "--module", "m,o");
+        checkExit(Exit.OK);
+        checkOutput("m/pkg/package-summary.html", true,
+                """
+                        <div class="caption"><span>Related Packages</span></div>
+                        <div class="summary-table three-column-summary">
+                        <div class="table-header col-first">Package</div>
+                        <div class="table-header col-second">Module</div>
+                        <div class="table-header col-last">Description</div>
+                        <div class="col-first even-row-color"><a href="sub1/package-summary.html">pkg.sub1</a></div>
+                        <div class="col-extra even-row-color"><a href="../module-summary.html">m</a></div>
+                        <div class="col-last even-row-color">&nbsp;</div>
+                        <div class="col-first odd-row-color"><a href="../../o/pkg/sub2/package-summary.html">pkg.sub2</a></div>
+                        <div class="col-extra odd-row-color"><a href="../../o/module-summary.html">o</a></div>
+                        <div class="col-last odd-row-color">&nbsp;</div>
+                        </div>""");
+        checkOutput("m/pkg/sub1/package-summary.html", true,
+                """
+                        <div class="caption"><span>Related Packages</span></div>
+                        <div class="summary-table three-column-summary">
+                        <div class="table-header col-first">Package</div>
+                        <div class="table-header col-second">Module</div>
+                        <div class="table-header col-last">Description</div>
+                        <div class="col-first even-row-color"><a href="../package-summary.html">pkg</a></div>
+                        <div class="col-extra even-row-color"><a href="../../module-summary.html">m</a></div>
+                        <div class="col-last even-row-color">&nbsp;</div>
+                        <div class="col-first odd-row-color"><a href="../../../o/pkg/sub2/package-summary.html">pkg.sub2</a></div>
+                        <div class="col-extra odd-row-color"><a href="../../../o/module-summary.html">o</a></div>
+                        <div class="col-last odd-row-color">&nbsp;</div>
+                        </div>""");
+        checkOutput("o/pkg/sub2/package-summary.html", true,
+                """
+                        <div class="caption"><span>Related Packages</span></div>
+                        <div class="summary-table three-column-summary">
+                        <div class="table-header col-first">Package</div>
+                        <div class="table-header col-second">Module</div>
+                        <div class="table-header col-last">Description</div>
+                        <div class="col-first even-row-color"><a href="../../../m/pkg/package-summary.html">pkg</a></div>
+                        <div class="col-extra even-row-color"><a href="../../../m/module-summary.html">m</a></div>
+                        <div class="col-last even-row-color">&nbsp;</div>
+                        <div class="col-first odd-row-color"><a href="sub/package-summary.html">pkg.sub2.sub</a></div>
+                        <div class="col-extra odd-row-color"><a href="../../module-summary.html">o</a></div>
+                        <div class="col-last odd-row-color">&nbsp;</div>
+                        <div class="col-first even-row-color"><a href="../../../m/pkg/sub1/package-summary.html">pkg.sub1</a></div>
+                        <div class="col-extra even-row-color"><a href="../../../m/module-summary.html">m</a></div>
+                        <div class="col-last even-row-color">&nbsp;</div>
+                        </div>""");
+        checkOutput("o/pkg/sub2/sub/package-summary.html", true,
+                """
+                        <div class="caption"><span>Related Packages</span></div>
+                        <div class="summary-table two-column-summary">
+                        <div class="table-header col-first">Package</div>
+                        <div class="table-header col-last">Description</div>
+                        <div class="col-first even-row-color"><a href="../package-summary.html">pkg.sub2</a></div>
+                        <div class="col-last even-row-color">&nbsp;</div>
+                        </div>""");
     }
 
 }

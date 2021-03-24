@@ -442,6 +442,12 @@ public enum HtmlStyle {
     colSummaryItemName,
 
     /**
+     * The class of the cells in a table column used to display additional
+     * information without any particular style.
+     */
+    colExtra,
+
+    /**
      * The class of the second column of cells in a table.
      * This is typically the column that defines the name of a field or the
      * name and parameters of a method.
