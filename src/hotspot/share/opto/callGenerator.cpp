@@ -565,36 +565,22 @@ static bool has_non_debug_usages(Node* n) {
   return false;
 }
 
+// delay box in runtime, treat box as a scalarized object
 static void scalarize_debug_usages(CallNode* call, Node* resproj) {
-  Unique_Node_List safepoints;
-  for (DUIterator_Fast imax, i = resproj->fast_outs(imax); i < imax; i++) {
-    Node* m = resproj->fast_out(i);
-    safepoints.push(m);
-  }
-
-#ifndef PRODUCT
-  if (PrintEliminateAllocations && safepoints.size() > 0) {
-    tty->print("++++ Eliminated: %d ", call->_idx);
-    call->as_CallStaticJava()->method()->print_short_name(tty);
-    tty->cr();
-  }
-#endif
-
   GraphKit kit(call->jvms());
   PhaseGVN& gvn = kit.gvn();
-  // delay box in runtime, treat box as a scalarized object
-  while (safepoints.size() > 0) {
-    ProjNode* res = resproj->as_Proj();
-    Node* sfpt = safepoints.pop();
 
-    ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
-    int n_fields = klass->nof_nonstatic_fields();
-    assert(n_fields == 1, "the klass must be an auto-boxing klass");
+  ProjNode* res = resproj->as_Proj();
+  ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
+  int n_fields = klass->nof_nonstatic_fields();
+  assert(n_fields == 1, "the klass must be an auto-boxing klass");
 
+  for (DUIterator_Last imin, i = res->last_outs(imin); i >= imin;) {
+    SafePointNode* sfpt = res->last_out(i)->as_SafePoint();
     uint first_ind = sfpt->req() - sfpt->jvms()->scloff();
     Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
 #ifdef ASSERT
-                                                  call->isa_Allocate(),
+                                                nullptr,
 #endif // ASSERT
                                                 first_ind, n_fields, true);
     sobj->init_req(0, kit.root());
@@ -604,10 +590,19 @@ static void scalarize_debug_usages(CallNode* call, Node* resproj) {
     jvms->set_endoff(sfpt->req());
     int start = jvms->debug_start();
     int end   = jvms->debug_end();
-    sfpt->replace_edges_in_range(res, sobj, start, end);
+    int num_edges = sfpt->replace_edges_in_range(res, sobj, start, end, &gvn);
+    i -= num_edges;
   }
 
-  assert(resproj->outcnt() == 0, "the box must have no use after replace");
+  assert(res->outcnt() == 0, "the box must have no use after replace");
+
+#ifndef PRODUCT
+  if (PrintEliminateAllocations) {
+    tty->print("++++ Eliminated: %d ", call->_idx);
+    call->as_CallStaticJava()->method()->print_short_name(tty);
+    tty->cr();
+  }
+#endif
 }
 
 void CallGenerator::do_late_inline_helper() {
