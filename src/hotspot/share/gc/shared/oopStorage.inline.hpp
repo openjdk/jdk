@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_OOPSTORAGE_INLINE_HPP
 #define SHARE_GC_SHARED_OOPSTORAGE_INLINE_HPP
 
+#include "memory/allocation.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/isConst.hpp"
@@ -57,7 +58,9 @@ class OopStorage::ActiveArray {
   Block** block_ptr(size_t index);
 
 public:
-  static ActiveArray* create(size_t size, AllocFailType alloc_fail = AllocFailStrategy::EXIT_OOM);
+  static ActiveArray* create(size_t size,
+                             MEMFLAGS memflags = mtGC,
+                             AllocFailType alloc_fail = AllocFailStrategy::EXIT_OOM);
   static void destroy(ActiveArray* ba);
 
   inline Block* at(size_t i) const;
