@@ -71,12 +71,11 @@ public:
 
   // Protection domains
   InstanceKlass* find(unsigned int hash, Symbol* name, Handle protection_domain);
-  bool is_valid_protection_domain(unsigned int hash,
-                                  Symbol* name,
-                                  Handle protection_domain);
-  void add_protection_domain(int index, unsigned int hash,
-                             InstanceKlass* klass,
-                             Handle protection_domain, TRAPS);
+  void validate_protection_domain(unsigned int name_hash,
+                                  InstanceKlass* klass,
+                                  Handle class_loader,
+                                  Handle protection_domain,
+                                  TRAPS);
 
   void print_on(outputStream* st) const;
   void verify();
@@ -93,15 +92,14 @@ public:
     return (DictionaryEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
   }
 
-  void add_entry(int index, DictionaryEntry* new_entry) {
-    Hashtable<InstanceKlass*, mtClass>::add_entry(index, (HashtableEntry<InstanceKlass*, mtClass>*)new_entry);
-  }
-
-  void unlink_entry(DictionaryEntry* entry) {
-    Hashtable<InstanceKlass*, mtClass>::unlink_entry((HashtableEntry<InstanceKlass*, mtClass>*)entry);
-  }
-
   void free_entry(DictionaryEntry* entry);
+
+  bool is_valid_protection_domain(unsigned int hash,
+                                  Symbol* name,
+                                  Handle protection_domain);
+  void add_protection_domain(int index, unsigned int hash,
+                             InstanceKlass* klass,
+                             Handle protection_domain);
 };
 
 // An entry in the class loader data dictionaries, this describes a class as
@@ -155,11 +153,6 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   // Tells whether the initiating class' protection domain can access the klass in this entry
   inline bool is_valid_protection_domain(Handle protection_domain);
   void verify_protection_domain_set();
-
-  bool equals(const Symbol* class_name) const {
-    InstanceKlass* klass = (InstanceKlass*)literal();
-    return (klass->name() == class_name);
-  }
 
   void print_count(outputStream *st);
   void verify();

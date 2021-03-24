@@ -2851,6 +2851,8 @@ public abstract class JComponent extends Container implements Serializable,
      * potentially multiple lightweight applications running in a single VM)
      * can have their own setting. An applet can safely alter its default
      * locale because it will have no affect on other applets (or the browser).
+     * Passing {@code null} will reset the current locale back
+     * to VM's default locale.
      *
      * @param l the desired default <code>Locale</code> for new components.
      * @see #getDefaultLocale

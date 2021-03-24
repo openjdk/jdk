@@ -315,10 +315,6 @@ private:
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
 
-  static void validate_protection_domain(InstanceKlass* klass,
-                                         Handle class_loader,
-                                         Handle protection_domain, TRAPS);
-
   friend class VM_PopulateDumpSharedSpace;
   static LoaderConstraintTable* constraints() { return _loader_constraints; }
   static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }

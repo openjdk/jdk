@@ -2001,7 +2001,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if {@code divisor==0}
      * @throws ArithmeticException if the result is inexact but the
      *         rounding mode is {@code UNNECESSARY}, or {@code mc.precision}
-     *         {@literal >} 0 and the result of {@code this.divideToIntgralValue(divisor)} would
+     *         {@literal >} 0 and the result of {@code this.divideToIntegralValue(divisor)} would
      *         require a precision of more than {@code mc.precision} digits.
      * @see    #divideToIntegralValue(java.math.BigDecimal, java.math.MathContext)
      * @since  1.5
@@ -2060,7 +2060,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if {@code divisor==0}
      * @throws ArithmeticException if the result is inexact but the
      *         rounding mode is {@code UNNECESSARY}, or {@code mc.precision}
-     *         {@literal >} 0 and the result of {@code this.divideToIntgralValue(divisor)} would
+     *         {@literal >} 0 and the result of {@code this.divideToIntegralValue(divisor)} would
      *         require a precision of more than {@code mc.precision} digits.
      * @see    #divideToIntegralValue(java.math.BigDecimal, java.math.MathContext)
      * @see    #remainder(java.math.BigDecimal, java.math.MathContext)

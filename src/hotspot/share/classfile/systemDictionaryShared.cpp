@@ -736,7 +736,7 @@ Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TR
     // ByteArrayInputStream bais = new ByteArrayInputStream(buf);
     const char* src = ent->manifest();
     assert(src != NULL, "No Manifest data");
-    manifest = create_jar_manifest(src, size, THREAD);
+    manifest = create_jar_manifest(src, size, CHECK_NH);
     atomic_set_shared_jar_manifest(shared_path_index, manifest());
   }
   manifest = Handle(THREAD, shared_jar_manifest(shared_path_index));
@@ -896,7 +896,7 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
       // Modules::define_module().
       assert(pkg_entry != NULL, "archived class in module image cannot be from unnamed package");
       ModuleEntry* mod_entry = pkg_entry->module();
-      pd = get_shared_protection_domain(class_loader, mod_entry, THREAD);
+      pd = get_shared_protection_domain(class_loader, mod_entry, CHECK_(pd));
     } else {
       // For shared app/platform classes originated from JAR files on the class path:
       //   Each of the 3 SystemDictionaryShared::_shared_xxx arrays has the same length
@@ -1180,7 +1180,7 @@ class LoadedUnregisteredClassesTable : public ResourceHashtable<
 
 static LoadedUnregisteredClassesTable* _loaded_unregistered_classes = NULL;
 
-bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
+bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* k) {
   // We don't allow duplicated unregistered classes of the same name.
   assert(DumpSharedSpaces, "only when dumping");
   Symbol* name = k->name();
@@ -1190,7 +1190,7 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   bool created = false;
   _loaded_unregistered_classes->put_if_absent(name, true, &created);
   if (created) {
-    MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
+    MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k);
   }
   return created;
@@ -1602,7 +1602,8 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
 
   lambda_ik->assign_class_loader_type();
   lambda_ik->set_shared_classpath_index(caller_ik->shared_classpath_index());
-  InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
+  InstanceKlass* nest_host = caller_ik->nest_host(CHECK);
+  assert(nest_host != NULL, "unexpected NULL nest_host");
 
   DumpTimeSharedClassInfo* info = _dumptime_table->get(lambda_ik);
   if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)
@@ -2241,12 +2242,14 @@ public:
   SharedLambdaDictionaryPrinter(outputStream* st) : _st(st), _index(0) {}
 
   void do_value(const RunTimeLambdaProxyClassInfo* record) {
-    ResourceMark rm;
-    _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
-    Klass* k = record->proxy_klass_head()->next_link();
-    while (k != NULL) {
-      _st->print_cr("%4d:  %s", (_index++), k->external_name());
-      k = k->next_link();
+    if (record->proxy_klass_head()->lambda_proxy_is_available()) {
+      ResourceMark rm;
+      _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
+      Klass* k = record->proxy_klass_head()->next_link();
+      while (k != NULL) {
+        _st->print_cr("%4d:  %s", (_index++), k->external_name());
+        k = k->next_link();
+      }
     }
   }
 };

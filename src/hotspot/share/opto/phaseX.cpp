@@ -836,21 +836,25 @@ Node *PhaseGVN::transform( Node *n ) {
 //------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but
 // in a faster or cheaper fashion.
-Node *PhaseGVN::transform_no_reclaim( Node *n ) {
+Node *PhaseGVN::transform_no_reclaim(Node *n) {
   NOT_PRODUCT( set_transforms(); )
 
   // Apply the Ideal call in a loop until it no longer applies
-  Node *k = n;
-  NOT_PRODUCT( uint loop_count = 0; )
-  while( 1 ) {
-    Node *i = apply_ideal(k, /*can_reshape=*/false);
-    if( !i ) break;
-    assert( i->_idx >= k->_idx, "Idealize should return new nodes, use Identity to return old nodes" );
+  Node* k = n;
+  Node* i = apply_ideal(k, /*can_reshape=*/false);
+  NOT_PRODUCT(uint loop_count = 1;)
+  while (i != NULL) {
+    assert(i->_idx >= k->_idx, "Idealize should return new nodes, use Identity to return old nodes" );
     k = i;
-    assert(loop_count++ < K, "infinite loop in PhaseGVN::transform");
+#ifdef ASSERT
+    if (loop_count >= K + C->live_nodes()) {
+      dump_infinite_loop_info(i, "PhaseGVN::transform_no_reclaim");
+    }
+#endif
+    i = apply_ideal(k, /*can_reshape=*/false);
+    NOT_PRODUCT(loop_count++;)
   }
-  NOT_PRODUCT( if( loop_count != 0 ) { set_progress(); } )
-
+  NOT_PRODUCT(if (loop_count != 0) { set_progress(); })
 
   // If brand new node, make space in type array.
   ensure_type_or_null(k);
@@ -859,7 +863,7 @@ Node *PhaseGVN::transform_no_reclaim( Node *n ) {
   // for this Node, and 'Value' is non-local (and therefore expensive) I'll
   // cache Value.  Later requests for the local phase->type of this Node can
   // use the cached Value instead of suffering with 'bottom_type'.
-  const Type *t = k->Value(this); // Get runtime Value set
+  const Type* t = k->Value(this); // Get runtime Value set
   assert(t != NULL, "value sanity");
   if (type_or_null(k) != t) {
 #ifndef PRODUCT
@@ -874,23 +878,23 @@ Node *PhaseGVN::transform_no_reclaim( Node *n ) {
     k->raise_bottom_type(t);
   }
 
-  if( t->singleton() && !k->is_Con() ) {
-    NOT_PRODUCT( set_progress(); )
+  if (t->singleton() && !k->is_Con()) {
+    NOT_PRODUCT(set_progress();)
     return makecon(t);          // Turn into a constant
   }
 
   // Now check for Identities
-  Node *i = k->Identity(this);  // Look for a nearby replacement
-  if( i != k ) {                // Found? Return replacement!
-    NOT_PRODUCT( set_progress(); )
+  i = k->Identity(this);        // Look for a nearby replacement
+  if (i != k) {                 // Found? Return replacement!
+    NOT_PRODUCT(set_progress();)
     return i;
   }
 
   // Global Value Numbering
   i = hash_find_insert(k);      // Insert if new
-  if( i && (i != k) ) {
+  if (i && (i != k)) {
     // Return the pre-existing node
-    NOT_PRODUCT( set_progress(); )
+    NOT_PRODUCT(set_progress();)
     return i;
   }
 
@@ -942,6 +946,16 @@ void PhaseGVN::dead_loop_check( Node *n ) {
     if (!no_dead_loop) n->dump(3);
     assert(no_dead_loop, "dead loop detected");
   }
+}
+
+
+/**
+ * Dumps information that can help to debug the problem. A debug
+ * build fails with an assert.
+ */
+void PhaseGVN::dump_infinite_loop_info(Node* n, const char* where) {
+  n->dump(4);
+  assert(false, "infinite loop in %s", where);
 }
 #endif
 
@@ -1138,10 +1152,10 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
  * Dumps information that can help to debug the problem. A debug
  * build fails with an assert.
  */
-void PhaseIterGVN::dump_infinite_loop_info(Node* n) {
+void PhaseIterGVN::dump_infinite_loop_info(Node* n, const char* where) {
   n->dump(4);
   _worklist.dump();
-  assert(false, "infinite loop in PhaseIterGVN::optimize");
+  assert(false, "infinite loop in %s", where);
 }
 
 /**
@@ -1173,8 +1187,8 @@ void PhaseIterGVN::optimize() {
       return;
     }
     Node* n  = _worklist.pop();
-    if (++loop_count >= K * C->live_nodes()) {
-      DEBUG_ONLY(dump_infinite_loop_info(n);)
+    if (loop_count >= K * C->live_nodes()) {
+      DEBUG_ONLY(dump_infinite_loop_info(n, "PhaseIterGVN::optimize");)
       C->record_method_not_compilable("infinite loop in PhaseIterGVN::optimize");
       return;
     }
@@ -1187,6 +1201,7 @@ void PhaseIterGVN::optimize() {
     } else if (!n->is_top()) {
       remove_dead_node(n);
     }
+    loop_count++;
   }
   NOT_PRODUCT(verify_PhaseIterGVN();)
 }
@@ -1222,9 +1237,7 @@ Node *PhaseIterGVN::transform( Node *n ) {
 }
 
 Node *PhaseIterGVN::transform_old(Node* n) {
-  DEBUG_ONLY(uint loop_count = 0;);
   NOT_PRODUCT(set_transforms());
-
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
   if (VerifyIterativeGVN) {
@@ -1242,12 +1255,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   verify_step(k);
 #endif
 
+  DEBUG_ONLY(uint loop_count = 1;)
   while (i != NULL) {
 #ifdef ASSERT
-    if (loop_count >= K) {
-      dump_infinite_loop_info(i);
+    if (loop_count >= K + C->live_nodes()) {
+      dump_infinite_loop_info(i, "PhaseIterGVN::transform_old");
     }
-    loop_count++;
 #endif
     assert((i->_idx >= k->_idx) || i->is_top(), "Idealize should return new nodes, use Identity to return old nodes");
     // Made a change; put users of original Node on worklist
@@ -1267,6 +1280,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 #ifndef PRODUCT
     verify_step(k);
 #endif
+    DEBUG_ONLY(loop_count++;)
   }
 
   // If brand new node, make space in type array.
