@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -521,8 +521,15 @@ Java_sun_nio_fs_WindowsNativeDispatcher_SetEndOfFile(JNIEnv* env, jclass this,
 {
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
 
-    if (SetEndOfFile(h) == 0)
-        throwWindowsException(env, GetLastError());
+    if (SetEndOfFile(h) == 0) {
+        DWORD error = GetLastError();
+        LARGE_INTEGER size;
+        if (GetFileSizeEx(h, &size) == 0) {
+            throwWindowsException(env, GetLastError());
+        } else if (size.QuadPart != 0) {
+            throwWindowsException(env, error);
+        }
+    }
 }
 
 
