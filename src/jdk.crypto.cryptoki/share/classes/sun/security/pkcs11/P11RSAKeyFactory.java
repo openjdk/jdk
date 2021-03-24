@@ -282,12 +282,12 @@ final class P11RSAKeyFactory extends P11KeyFactory {
         }
         // If the key is both extractable and not sensitive, then when it was converted into a P11Key
         // it was also converted into subclass of RSAPrivateKey which encapsulates all of the logic
-        // necessary to retrive the attributes we need. This sub-class will also cache these attributes
+        // necessary to retrieve the attributes we need. This sub-class will also cache these attributes
         // so that we do not need to query them more than once.
         // Rather than rewrite this logic and make possibly slow calls to the token, we'll just use
         // that existing logic.
         if (keySpec.isAssignableFrom(RSAPrivateCrtKeySpec.class)) {
-            // All supported keyspecs (other than PKCS8_KEYSPEC_CLS) descend from RSA_PRIVCRT_KEYSPEC_CLS
+            // All supported keyspecs (other than PKCS8EncodedKeySpec) descend from RSAPrivateCrtKeySpec
             if (key instanceof RSAPrivateCrtKey) {
                 RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey)key;
                 return keySpec.cast(new RSAPrivateCrtKeySpec(

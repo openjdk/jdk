@@ -44,6 +44,8 @@ attributes(*,CKO_PRIVATE_KEY,CKK_DH) = {
   CKA_NETSCAPE_DB = 0h00
 }
 
+# Everything above this line (with the exception of the comment at the top) is copy/pasted from p11-nss.txt
+
 # Make all private keys sensitive
 attributes(*,CKO_PRIVATE_KEY,*) = {
   CKA_SENSITIVE = true
