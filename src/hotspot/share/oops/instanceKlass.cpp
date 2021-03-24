@@ -3638,7 +3638,7 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
                                              const ModuleEntry* module_entry,
                                              const ClassFileStream* cfs) const {
-  log_to_classlist(cfs);
+  log_to_classlist();
 
   if (!log_is_enabled(Info, class, load)) {
     return;
@@ -4237,17 +4237,18 @@ bool InstanceKlass::is_shareable() const {
   if (!SystemDictionaryShared::is_sharing_possible(loader_data)) {
     return false;
   }
-  if (is_shared()) {
-    if (is_hidden()) {
-      // Don't include archived lambda proxy class in the classlist.
-      assert(!is_non_strong_hidden(), "unexpected non-strong hidden class");
-      return false;
-    }
-  } else {
-    // skip hidden class and unsafe anonymous class.
-    if (is_hidden() || unsafe_anonymous_host() != NULL) {
-      return false;
-    }
+
+  if (is_hidden() || unsafe_anonymous_host() != NULL) {
+    tty->print_cr("skip writing %s class %s to classlist file",
+                  (is_hidden() ? "hidden" : "unsafe anonymous host"),
+                  name()->as_C_string());
+    return false;
+  }
+
+  if (module()->is_patched()) {
+    tty->print_cr("skip writing class %s to classlist file, module patched",
+                  name()->as_C_string());
+    return false;
   }
   return true;
 #else
@@ -4255,7 +4256,7 @@ bool InstanceKlass::is_shareable() const {
 #endif
 }
 
-void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
+void InstanceKlass::log_to_classlist() const {
 #if INCLUDE_CDS
   ResourceMark rm;
   if (ClassListWriter::is_enabled()) {
@@ -4265,42 +4266,9 @@ void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
        return;
     }
     if (is_shareable()) {
-      bool skip = false;
-      if (is_shared()) {
-        if (stream == nullptr) {
-          tty->print_cr("%s: shared class with stream?", name()->as_C_string());
-          return; // stream is nullptr will cause below operation fail.
-        }
-      } else {
-        if (stream != nullptr) {
-          oop class_loader = class_loader_data()->class_loader();
-          if (class_loader == NULL || SystemDictionary::is_platform_class_loader(class_loader)) {
-            // For the boot and platform class loaders, skip classes that are not found in the
-            // java runtime image, such as those found in the --patch-module entries.
-            // These classes can't be loaded from the archive during runtime.
-            if (!stream->from_boot_loader_modules_image() && strncmp(stream->source(), "jrt:", 4) != 0) {
-              skip = true;
-            }
-
-            if (class_loader == NULL && ClassLoader::contains_append_entry(stream->source())) {
-              // .. but don't skip the boot classes that are loaded from -Xbootclasspath/a
-              // as they can be loaded from the archive during runtime.
-              skip = false;
-            }
-          }
-        } else {
-          warning("non-shared class without stream, skipped");
-          return;
-        }
-      }
-      if (skip) {
-        tty->print_cr("skip writing class %s from source %s to classlist file",
-                      name()->as_C_string(), stream->source());
-      } else {
-        ClassListWriter w;
-        w.stream()->print_cr("%s", name()->as_C_string());
-        w.stream()->flush();
-      }
+      ClassListWriter w;
+      w.stream()->print_cr("%s", name()->as_C_string());
+      w.stream()->flush();
     }
   }
 #endif // INCLUDE_CDS
