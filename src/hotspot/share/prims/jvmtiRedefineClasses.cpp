@@ -1387,6 +1387,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     state->set_class_being_redefined(the_class, _class_load_kind);
 
     Thread* THREAD = current;  // for exception processing
+    ExceptionMark em(THREAD);
     ClassLoadInfo cl_info(protection_domain);
     InstanceKlass* scratch_class = SystemDictionary::parse_stream(
                                                       the_class_sym,
@@ -2110,12 +2111,13 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods(InstanceKlass* scratch_class
     return true;
   }
 
-  JavaThread* current = JavaThread::current();
+  Thread* THREAD = Thread::current();  // For exception processing
+  ExceptionMark em(THREAD);
+
   // rewrite constant pool references in the methods:
   for (int i = methods->length() - 1; i >= 0; i--) {
-    methodHandle method(current, methods->at(i));
+    methodHandle method(THREAD, methods->at(i));
     methodHandle new_method;
-    Thread* THREAD = current; // For exception handling
     rewrite_cp_refs_in_method(method, &new_method, THREAD);
     if (!new_method.is_null()) {
       // the method has been replaced so save the new method version
