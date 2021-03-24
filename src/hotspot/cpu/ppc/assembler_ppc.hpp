@@ -1305,22 +1305,6 @@ class Assembler : public AbstractAssembler {
   static inline int hi16_signed(  int x) { return (int)(int16_t)(x >> 16); }
   static inline int lo16_unsigned(int x) { return x & 0xffff; }
 
-  static void set_imm18(int* instr, int s) {
-    assert(PowerArchitecturePPC64 >= 10, "Prefixed instructions are supported only in Power 10 and up");
-    // imm18 is in the lower 18 bits of the prefix instruction,
-    // so this is endian-neutral. Same for the get_imm18 below.
-    uint32_t w = *(uint32_t *)instr;
-    *instr = (int)((w & ~0x0003FFFF) | (s & 0x0003FFFF));
-  }
-
-  static int get_imm18(address a, int instruction_number) {
-    assert(PowerArchitecturePPC64 >= 10, "Prefixed instructions are supported only in Power 10 and up");
-    return (((int *)a)[instruction_number] << 14) >> 14;
-  }
-
-  static inline int hi18_signed( int x) { return hi16_signed(x); }
-  static inline int hi18_signed(long x) { return (int)((x << 30) >> 46); }
-
  protected:
 
   // Extract the top 32 bits in a 64 bit word.
@@ -1344,7 +1328,6 @@ class Assembler : public AbstractAssembler {
   }
 
   inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32
-  inline void emit_prefix(int); // emit prefix word only (and a nop to skip 64-byte boundary)
   inline void emit_data(int);
   inline void emit_data(int, RelocationHolder const&);
   inline void emit_data(int, relocInfo::relocType rtype);
@@ -1506,28 +1489,6 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_lis(int x) {
      return is_addis(x) && inv_ra_field(x)==0;
-  }
-  static bool is_paddi_prefix(int x) {
-     return PADDI_PREFIX_OPCODE == (x & PADDI_PREFIX_OPCODE_MASK);
-  }
-  static bool is_paddi_suffix(int x) {
-     return PADDI_SUFFIX_OPCODE == (x & PADDI_SUFFIX_OPCODE_MASK);
-  }
-  // This function can skip a nop for 64-byte alignment and check the next word for a prefix.
-  // Since the alignement nop is uncommon case, we will keep callers of this function simple,
-  // as they which are often assertions and complex if-statement.
-  static int is_paddi(const int* p, bool is_pli = false) {
-     int32_t* p_inst = (int32_t*)p;
-
-     if (is_aligned(reinterpret_cast<uintptr_t>(p_inst+1), 64) && is_nop(*p_inst)) {
-        p_inst++;  // skip over nop
-     }
-     if (is_paddi_prefix(p_inst[0]) && is_paddi_suffix(p_inst[1])) {
-        return !is_pli ||
-               (inv_r_eo(p_inst[0]) == 0 && inv_ra_field(p_inst[1]) == 0);
-     } else {
-        return false;
-     }
   }
   static bool is_mtctr(int x) {
      return MTCTR_OPCODE == (x & MTCTR_OPCODE_MASK);
