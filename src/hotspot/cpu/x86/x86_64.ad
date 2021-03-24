@@ -426,13 +426,13 @@ void reg_mask_init() {
   _INT_NO_RCX_REG_mask.Remove(OptoReg::as_OptoReg(rcx->as_VMReg()));
 
   if (Matcher::has_predicated_vectors()) {
-    const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k0->as_VMReg()));
-    const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k0->as_VMReg()->next()));
     // Post-loop multi-versioning expects mask to be present in K1 register, till the time
     // its fixed, RA should not be allocting K1 register, this shall prevent any accidental
     // curruption of value held in K1 register.
-    const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()));
-    const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()->next()));
+    if (PostLoopMultiversioning) {
+      const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()));
+      const_cast<RegMask*>(&_OPMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()->next()));
+    }
   }
 }
 
@@ -3401,14 +3401,6 @@ operand immL_65535()
 operand kReg()
 %{
   constraint(ALLOC_IN_RC(opmask_reg));
-  match(RegVMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K0()
-%{
-  constraint(ALLOC_IN_RC(opmask_reg_K0));
   match(RegVMask);
   format %{%}
   interface(REG_INTER);
@@ -12196,7 +12188,7 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
 // post-loop multiversioning.
 instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, rFlagsReg cr, label labl)
 %{
-  predicate(n->has_vector_mask_set());
+  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
   match(CountedLoopEnd cop cr);
   effect(USE labl, TEMP ktmp);
 
@@ -12216,7 +12208,7 @@ instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, rFlagsReg cr, label
 // Bounded mask operand used in following patten is needed for
 // post-loop multiversioning.
 instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, rFlagsRegU cmp, label labl) %{
-  predicate(n->has_vector_mask_set());
+  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl, TEMP ktmp);
 
@@ -12235,7 +12227,7 @@ instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, rFlagsRegU cmp, l
 // Bounded mask operand used in following patten is needed for
 // post-loop multiversioning.
 instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, kReg_K1 ktmp, rFlagsRegUCF cmp, label labl) %{
-  predicate(n->has_vector_mask_set());
+  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl, TEMP ktmp);
 

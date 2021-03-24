@@ -629,9 +629,6 @@ reg_def RFLAGS(SOC, SOC, 0, 8, VMRegImpl::Bad());
 #endif // _LP64
 
 // AVX3 Mask Registers.
-reg_def K0   (SOC, SOC, Op_RegI,  0, k0->as_VMReg());
-reg_def K0_H (SOC, SOC, Op_RegI,  0, k0->as_VMReg()->next());
-
 reg_def K1   (SOC, SOC, Op_RegI,  1, k1->as_VMReg());
 reg_def K1_H (SOC, SOC, Op_RegI,  1, k1->as_VMReg()->next());
 
@@ -696,11 +693,9 @@ alloc_class chunk2(K7, K7_H,
                    K4, K4_H,
                    K3, K3_H,
                    K2, K2_H,
-                   K1, K1_H,
-                   K0, K0_H);
+                   K1, K1_H);
 
-reg_class  opmask_reg(K0, K0_H,
-                      K1, K1_H,
+reg_class  opmask_reg(K1, K1_H,
                       K2, K2_H,
                       K3, K3_H,
                       K4, K4_H,
@@ -708,7 +703,6 @@ reg_class  opmask_reg(K0, K0_H,
                       K6, K6_H,
                       K7, K7_H);
 
-reg_class opmask_reg_K0(K0, K0_H);
 reg_class opmask_reg_K1(K1, K1_H);
 reg_class opmask_reg_K2(K2, K2_H);
 reg_class opmask_reg_K3(K3, K3_H);
@@ -2623,7 +2617,7 @@ instruct ShouldNotReachHere() %{
 // TODO: Remove hard-coded K1 usage while fixing existing post-loop
 // multiversioning support.
 instruct setMask(rRegI dst, rRegI src, kReg_K1 mask) %{
-  predicate(Matcher::has_predicated_vectors());
+  predicate(PostLoopMultiversioning && Matcher::has_predicated_vectors());
   match(Set dst (SetVectMaskI  src));
   effect(TEMP dst);
   format %{ "setvectmask   $dst, $src" %}

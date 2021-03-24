@@ -2519,9 +2519,6 @@ void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
 #endif
 
 bool TypeVectMask::eq(const Type *t) const {
-  if (!t->isa_vectmask()) {
-    return false;
-  }
   const TypeVectMask *v = t->is_vectmask();
   return (element_type() == v->element_type()) && (length() == v->length());
 }

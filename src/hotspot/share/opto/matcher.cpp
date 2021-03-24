@@ -538,10 +538,8 @@ void Matcher::init_first_stack_mask() {
   *idealreg2spillmask[Op_RegD] = *idealreg2regmask[Op_RegD];
    idealreg2spillmask[Op_RegD]->OR(aligned_stack_mask);
 
-  if (Matcher::has_predicated_vectors()) {
-   *idealreg2spillmask[Op_RegVMask] = *idealreg2regmask[Op_RegVMask];
+  *idealreg2spillmask[Op_RegVMask] = *idealreg2regmask[Op_RegVMask];
    idealreg2spillmask[Op_RegVMask]->OR(aligned_stack_mask);
-  }
 
   if (Matcher::vector_size_supported(T_BYTE,4)) {
     *idealreg2spillmask[Op_VecS] = *idealreg2regmask[Op_VecS];
@@ -661,9 +659,7 @@ void Matcher::init_first_stack_mask() {
   *idealreg2debugmask  [Op_RegF] = *idealreg2spillmask[Op_RegF];
   *idealreg2debugmask  [Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2debugmask  [Op_RegP] = *idealreg2spillmask[Op_RegP];
-  if (Matcher::has_predicated_vectors()) {
-    *idealreg2debugmask  [Op_RegVMask] = *idealreg2spillmask[Op_RegVMask];
-  }
+  *idealreg2debugmask  [Op_RegVMask] = *idealreg2spillmask[Op_RegVMask];
 
   *idealreg2debugmask  [Op_VecA] = *idealreg2spillmask[Op_VecA];
   *idealreg2debugmask  [Op_VecS] = *idealreg2spillmask[Op_VecS];
@@ -678,9 +674,7 @@ void Matcher::init_first_stack_mask() {
   *idealreg2mhdebugmask[Op_RegF] = *idealreg2spillmask[Op_RegF];
   *idealreg2mhdebugmask[Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2mhdebugmask[Op_RegP] = *idealreg2spillmask[Op_RegP];
-  if (Matcher::has_predicated_vectors()) {
-    *idealreg2mhdebugmask[Op_RegVMask] = *idealreg2spillmask[Op_RegVMask];
-  }
+  *idealreg2mhdebugmask[Op_RegVMask] = *idealreg2spillmask[Op_RegVMask];
 
   *idealreg2mhdebugmask[Op_VecA] = *idealreg2spillmask[Op_VecA];
   *idealreg2mhdebugmask[Op_VecS] = *idealreg2spillmask[Op_VecS];

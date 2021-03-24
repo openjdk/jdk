@@ -410,7 +410,8 @@ uint PhaseChaitin::count_int_pressure(IndexSet* liveout) {
     if (lrg.mask_is_nonempty_and_up() &&
         !lrg.is_float_or_vector() &&
         (lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
-         lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegVMask]))) {
+         (Matcher::has_predicated_vectors() &&
+          lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegVMask])))) {
       cnt += lrg.reg_pressure();
     }
     lidx = elements.next();
@@ -447,7 +448,8 @@ void PhaseChaitin::lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* l
       // Do not count the SP and flag registers
       const RegMask& r = lrg.mask();
       if (r.overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
-          r.overlap(*Matcher::idealreg2regmask[Op_RegVMask])) {
+           (Matcher::has_predicated_vectors() &&
+            r.overlap(*Matcher::idealreg2regmask[Op_RegVMask]))) {
         int_pressure.lower(lrg, location);
       }
     }
@@ -503,7 +505,8 @@ void PhaseChaitin::raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pr
       // Do not count the SP and flag registers
       const RegMask& rm = lrg.mask();
       if (rm.overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
-          rm.overlap(*Matcher::idealreg2regmask[Op_RegVMask])) {
+           (Matcher::has_predicated_vectors() &&
+            rm.overlap(*Matcher::idealreg2regmask[Op_RegVMask]))) {
         int_pressure.raise(lrg);
       }
     }
