@@ -1427,11 +1427,8 @@ public class Runtime {
         public boolean equalsIgnoreOptional(Object obj) {
             if (this == obj)
                 return true;
-            if (!(obj instanceof Version))
-                return false;
-
-            Version that = (Version)obj;
-            return (this.version().equals(that.version())
+            return (obj instanceof Version that)
+                && (this.version().equals(that.version())
                 && this.pre().equals(that.pre())
                 && this.build().equals(that.build()));
         }
