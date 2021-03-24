@@ -193,6 +193,14 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> Path.of(s)
             );
 
+    static final StandardBundlerParam<String> ABOUT_URL =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.ABOUT_URL.getId(),
+                    String.class,
+                    params -> null,
+                    (s, p) -> s
+            );
+
     static final StandardBundlerParam<String> VENDOR =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.VENDOR.getId(),
