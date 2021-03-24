@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,6 +234,15 @@ public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
      * @since 11
      */
     String HMAC_SHA512 = "http://www.w3.org/2001/04/xmldsig-more#hmac-sha512";
+
+
+    /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#rsa-pss">
+     * RSASSA-PSS</a> signature method algorithm URI.
+     *
+     * @since 17
+     */
+    String RSA_PSS = "http://www.w3.org/2007/05/xmldsig-more#rsa-pss";
 
     /**
      * Returns the algorithm-specific input parameters of this

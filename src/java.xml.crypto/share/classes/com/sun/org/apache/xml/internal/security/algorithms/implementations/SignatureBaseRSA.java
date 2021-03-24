@@ -42,6 +42,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
+import javax.xml.crypto.dsig.DigestMethod;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 
@@ -584,9 +585,10 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
         PSSParameterSpec pssParameterSpec;
 
         public enum DigestAlgorithm {
-            SHA256("SHA-256", "http://www.w3.org/2001/04/xmlenc#sha256", 32),
-            SHA384("SHA-384", "http://www.w3.org/2001/04/xmldsig-more#sha384", 48),
-            SHA512("SHA-512", "http://www.w3.org/2001/04/xmlenc#sha512", 64);
+//            SHA1("SHA-1", DigestMethod.SHA1, 20),
+            SHA256("SHA-256", DigestMethod.SHA256, 32),
+            SHA384("SHA-384", DigestMethod.SHA384, 48),
+            SHA512("SHA-512", DigestMethod.SHA512, 64);
 
             private final String xmlDigestAlgorithm;
             private final String digestAlgorithm;
