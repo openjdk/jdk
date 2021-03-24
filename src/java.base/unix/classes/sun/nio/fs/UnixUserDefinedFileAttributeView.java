@@ -169,17 +169,27 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        NativeBuffer nb;
-        long address;
-        if (dst instanceof sun.nio.ch.DirectBuffer) {
-            nb = null;
-            address = ((sun.nio.ch.DirectBuffer)dst).address() + pos;
+        if (dst instanceof sun.nio.ch.DirectBuffer buf) {
+            long address = buf.address() + pos;
+            int n = read(name, address, rem);
+            dst.position(pos + n);
+            return n;
         } else {
-            // substitute with native buffer
-            nb = NativeBuffers.getNativeBuffer(rem);
-            address = nb.address();
-        }
+            try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
+                long address = nb.address();
+                int n = read(name, address, rem);
 
+                // copy from buffer into backing array
+                int off = dst.arrayOffset() + pos + Unsafe.ARRAY_BYTE_BASE_OFFSET;
+                unsafe.copyMemory(null, address, dst.array(), off, n);
+                dst.position(pos + n);
+
+                return n;
+            }
+        }
+    }
+
+    private int read(String name, long address, int rem) throws IOException {
         int fd = -1;
         try {
             fd = file.openForAttributeAccess(followLinks);
@@ -187,34 +197,22 @@ abstract class UnixUserDefinedFileAttributeView
             x.rethrowAsIOException(file);
         }
         try {
-            try {
-                int n = fgetxattr(fd, nameAsBytes(file,name), address, rem);
+            int n = fgetxattr(fd, nameAsBytes(file, name), address, rem);
 
-                // if remaining is zero then fgetxattr returns the size
-                if (rem == 0) {
-                    if (n > 0)
-                        throw new UnixException(ERANGE);
-                    return 0;
-                }
-
-                // copy from buffer into backing array if necessary
-                if (nb != null) {
-                    int off = dst.arrayOffset() + pos + Unsafe.ARRAY_BYTE_BASE_OFFSET;
-                    unsafe.copyMemory(null, address, dst.array(), off, n);
-                }
-                dst.position(pos + n);
-                return n;
-            } catch (UnixException x) {
-                String msg = (x.errno() == ERANGE) ?
-                    "Insufficient space in buffer" : x.getMessage();
-                throw new FileSystemException(file.getPathForExceptionMessage(),
-                    null, "Error reading extended attribute '" + name + "': " + msg);
-            } finally {
-                close(fd);
+            // if remaining is zero then fgetxattr returns the size
+            if (rem == 0) {
+                if (n > 0)
+                    throw new UnixException(ERANGE);
+                return 0;
             }
+            return n;
+        } catch (UnixException x) {
+            String msg = (x.errno() == ERANGE) ?
+                    "Insufficient space in buffer" : x.getMessage();
+            throw new FileSystemException(file.getPathForExceptionMessage(),
+                    null, "Error reading extended attribute '" + name + "': " + msg);
         } finally {
-            if (nb != null)
-                nb.release();
+            close(fd);
         }
     }
 
@@ -227,30 +225,36 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        NativeBuffer nb;
-        long address;
-        if (src instanceof sun.nio.ch.DirectBuffer) {
-            nb = null;
-            address = ((sun.nio.ch.DirectBuffer)src).address() + pos;
+        if (src instanceof sun.nio.ch.DirectBuffer buf) {
+            long address = buf.address() + pos;
+            write(name, address, rem);
+            src.position(pos + rem);
+            return rem;
         } else {
-            // substitute with native buffer
-            nb = NativeBuffers.getNativeBuffer(rem);
-            address = nb.address();
+            try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
+                long address = nb.address();
 
-            if (src.hasArray()) {
-                // copy from backing array into buffer
-                int off = src.arrayOffset() + pos + Unsafe.ARRAY_BYTE_BASE_OFFSET;
-                unsafe.copyMemory(src.array(), off, null, address, rem);
-            } else {
-                // backing array not accessible so transfer via temporary array
-                byte[] tmp = new byte[rem];
-                src.get(tmp);
-                src.position(pos);  // reset position as write may fail
-                unsafe.copyMemory(tmp, Unsafe.ARRAY_BYTE_BASE_OFFSET, null,
-                    address, rem);
+                if (src.hasArray()) {
+                    // copy from backing array into buffer
+                    int off = src.arrayOffset() + pos + Unsafe.ARRAY_BYTE_BASE_OFFSET;
+                    unsafe.copyMemory(src.array(), off, null, address, rem);
+                } else {
+                    // backing array not accessible so transfer via temporary array
+                    byte[] tmp = new byte[rem];
+                    src.get(tmp);
+                    src.position(pos);  // reset position as write may fail
+                    unsafe.copyMemory(tmp, Unsafe.ARRAY_BYTE_BASE_OFFSET, null,
+                            address, rem);
+                }
+
+                write(name, address, rem);
+                src.position(pos + rem);
+                return rem;
             }
         }
+    }
 
+    private void write(String name, long address, int rem) throws IOException {
         int fd = -1;
         try {
             fd = file.openForAttributeAccess(followLinks);
@@ -258,20 +262,13 @@ abstract class UnixUserDefinedFileAttributeView
             x.rethrowAsIOException(file);
         }
         try {
-            try {
-                fsetxattr(fd, nameAsBytes(file,name), address, rem);
-                src.position(pos + rem);
-                return rem;
-            } catch (UnixException x) {
-                throw new FileSystemException(file.getPathForExceptionMessage(),
+            fsetxattr(fd, nameAsBytes(file,name), address, rem);
+        } catch (UnixException x) {
+            throw new FileSystemException(file.getPathForExceptionMessage(),
                     null, "Error writing extended attribute '" + name + "': " +
                     x.getMessage());
-            } finally {
-                close(fd);
-            }
         } finally {
-            if (nb != null)
-                nb.release();
+            close(fd);
         }
     }
 
