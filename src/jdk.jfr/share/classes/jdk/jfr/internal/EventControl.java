@@ -95,14 +95,13 @@ public final class EventControl {
         }
         addControl(Enabled.NAME, defineEnabled(eventType));
 
-        ArrayList<AnnotationElement> aes = new ArrayList<>(eventType.getAnnotationElements());
+        List<AnnotationElement> aes = new ArrayList<>(eventType.getAnnotationElements());
         remove(eventType, aes, Threshold.class);
         remove(eventType, aes, Period.class);
         remove(eventType, aes, Enabled.class);
         remove(eventType, aes, StackTrace.class);
         remove(eventType, aes, Cutoff.class);
         remove(eventType, aes, Throttle.class);
-        aes.trimToSize();
         eventType.setAnnotations(aes);
         this.type = eventType;
         this.idName = String.valueOf(eventType.getId());

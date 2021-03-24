@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,8 +189,8 @@ public abstract class Collator
      * <p>
      * CANONICAL_DECOMPOSITION corresponds to Normalization Form D as
      * described in
-     * <a href="http://www.unicode.org/unicode/reports/tr15/tr15-23.html">Unicode
-     * Technical Report #15</a>.
+     * <a href="http://www.unicode.org/reports/tr15/">Unicode
+     * Standard Annex #15: Unicode Normalization Forms</a>.
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
      */
@@ -208,8 +208,8 @@ public abstract class Collator
      * <p>
      * FULL_DECOMPOSITION corresponds to Normalization Form KD as
      * described in
-     * <a href="http://www.unicode.org/unicode/reports/tr15/tr15-23.html">Unicode
-     * Technical Report #15</a>.
+     * <a href="http://www.unicode.org/reports/tr15/">Unicode
+     * Standard Annex #15: Unicode Normalization Forms</a>.
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
      */

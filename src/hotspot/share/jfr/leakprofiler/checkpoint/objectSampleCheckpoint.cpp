@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,27 +199,22 @@ static bool stack_trace_precondition(const ObjectSample* sample) {
 
 class StackTraceBlobInstaller {
  private:
-  const JfrStackTraceRepository& _stack_trace_repo;
   BlobCache _cache;
-  const JfrStackTrace* resolve(const ObjectSample* sample);
   void install(ObjectSample* sample);
+  const JfrStackTrace* resolve(const ObjectSample* sample) const;
  public:
-  StackTraceBlobInstaller(const JfrStackTraceRepository& stack_trace_repo);
+  StackTraceBlobInstaller() : _cache(JfrOptionSet::old_object_queue_size()) {
+    prepare_for_resolution();
+  }
+  ~StackTraceBlobInstaller() {
+    JfrStackTraceRepository::clear_leak_profiler();
+  }
   void sample_do(ObjectSample* sample) {
     if (stack_trace_precondition(sample)) {
       install(sample);
     }
   }
 };
-
-StackTraceBlobInstaller::StackTraceBlobInstaller(const JfrStackTraceRepository& stack_trace_repo) :
-  _stack_trace_repo(stack_trace_repo), _cache(JfrOptionSet::old_object_queue_size()) {
-  prepare_for_resolution();
-}
-
-const JfrStackTrace* StackTraceBlobInstaller::resolve(const ObjectSample* sample) {
-  return _stack_trace_repo.lookup(sample->stack_trace_hash(), sample->stack_trace_id());
-}
 
 #ifdef ASSERT
 static void validate_stack_trace(const ObjectSample* sample, const JfrStackTrace* stack_trace) {
@@ -229,6 +224,10 @@ static void validate_stack_trace(const ObjectSample* sample, const JfrStackTrace
   assert(stack_trace->id() == sample->stack_trace_id(), "invariant");
 }
 #endif
+
+inline const JfrStackTrace* StackTraceBlobInstaller::resolve(const ObjectSample* sample) const {
+  return JfrStackTraceRepository::lookup_for_leak_profiler(sample->stack_trace_hash(), sample->stack_trace_id());
+}
 
 void StackTraceBlobInstaller::install(ObjectSample* sample) {
   JfrBlobHandle blob = _cache.get(sample);
@@ -242,23 +241,23 @@ void StackTraceBlobInstaller::install(ObjectSample* sample) {
   writer.write_type(TYPE_STACKTRACE);
   writer.write_count(1);
   ObjectSampleCheckpoint::write_stacktrace(stack_trace, writer);
-  blob = writer.move();
+  blob = writer.copy();
   _cache.put(sample, blob);
   sample->set_stacktrace(blob);
 }
 
-static void install_stack_traces(const ObjectSampler* sampler, JfrStackTraceRepository& stack_trace_repo) {
+static void install_stack_traces(const ObjectSampler* sampler) {
   assert(sampler != NULL, "invariant");
   const ObjectSample* const last = sampler->last();
   if (last != sampler->last_resolved()) {
     ResourceMark rm;
     JfrKlassUnloading::sort();
-    StackTraceBlobInstaller installer(stack_trace_repo);
+    StackTraceBlobInstaller installer;
     iterate_samples(installer);
   }
 }
 
-void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler, JfrStackTraceRepository& stack_trace_repo) {
+void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler) {
   assert(sampler != NULL, "invariant");
   assert(LeakProfiler::is_running(), "invariant");
   JavaThread* const thread = JavaThread::current();
@@ -267,7 +266,7 @@ void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler, JfrStackT
   ThreadInVMfromNative transition(thread);
   MutexLocker lock(ClassLoaderDataGraph_lock);
   // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
-  install_stack_traces(sampler, stack_trace_repo);
+  install_stack_traces(sampler);
 }
 
 static bool is_klass_unloaded(traceid klass_id) {

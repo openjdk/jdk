@@ -2262,10 +2262,9 @@ public class MethodHandles {
                     // workaround to read `this_class` using readConst and validate the value
                     int thisClass = reader.readUnsignedShort(reader.header + 2);
                     Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
-                    if (!(constant instanceof Type)) {
+                    if (!(constant instanceof Type type)) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
-                    Type type = ((Type) constant);
                     if (!type.getDescriptor().startsWith("L")) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }

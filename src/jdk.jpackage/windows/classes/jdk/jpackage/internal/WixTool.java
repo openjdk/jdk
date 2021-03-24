@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ public enum WixTool {
         return Stream.of(programFiles, programFilesX86).map(path -> {
             List<Path> result;
             try (var paths = Files.walk(path, 1)) {
-                result = paths.collect(Collectors.toList());
+                result = paths.toList();
             } catch (IOException ex) {
                 Log.verbose(ex);
                 result = Collections.emptyList();
@@ -169,6 +169,6 @@ public enum WixTool {
         .filter(path -> wixInstallDirMatcher.matches(path.getFileName()))
         .sorted(Comparator.comparing(Path::getFileName).reversed())
         .map(path -> path.resolve("bin"))
-        .collect(Collectors.toList());
+        .toList();
     }
 }

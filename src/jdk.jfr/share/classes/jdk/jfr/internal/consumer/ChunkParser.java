@@ -165,8 +165,7 @@ public final class ChunkParser {
     void updateConfiguration(ParserConfiguration configuration, boolean resetEventCache) {
         this.configuration = configuration;
         parsers.forEach(p -> {
-            if (p instanceof EventParser) {
-                EventParser ep = (EventParser) p;
+            if (p instanceof EventParser ep) {
                 if (resetEventCache) {
                     ep.resetCache();
                 }
@@ -244,9 +243,8 @@ public final class ChunkParser {
             }
             long typeId = input.readLong();
             Parser p = parsers.get(typeId);
-            if (p instanceof EventParser) {
+            if (p instanceof EventParser ep) {
                 // Fast path
-                EventParser ep = (EventParser) p;
                 RecordedEvent event = ep.parse(input);
                 if (event != null) {
                     input.position(pos + size);
@@ -398,8 +396,8 @@ public final class ChunkParser {
         if (o == null) { // should not happen
             return "null";
         }
-        if (o instanceof String) {
-            return "\"" + String.valueOf(o) + "\"";
+        if (o instanceof String s) {
+            return "\"" + s + "\"";
         }
         if (o instanceof RecordedObject) {
             return o.getClass().getName();
@@ -484,8 +482,7 @@ public final class ChunkParser {
         LongMap<Parser> ps = this.parsers;
         if (ps != null) {
             ps.forEach(p -> {
-                if (p instanceof EventParser) {
-                    EventParser ep = (EventParser) p;
+                if (p instanceof EventParser ep) {
                     ep.resetCache();
                 }
             });

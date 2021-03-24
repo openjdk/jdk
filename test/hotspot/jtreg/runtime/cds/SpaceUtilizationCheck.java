@@ -27,7 +27,7 @@
  * @requires vm.cds
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SpaceUtilizationCheck
  */
 
@@ -43,7 +43,7 @@ import java.util.Hashtable;
 import java.lang.Integer;
 
 public class SpaceUtilizationCheck {
-    // For the MC/RW/RO regions:
+    // For the RW/RO regions:
     // [1] Each region must have strictly less than
     //     WhiteBox.metaspaceReserveAlignment() bytes of unused space.
     // [2] There must be no gap between two consecutive regions.
@@ -61,9 +61,8 @@ public class SpaceUtilizationCheck {
         long reserve_alignment = wb.metaspaceReserveAlignment();
         System.out.println("Metaspace::reserve_alignment() = " + reserve_alignment);
 
-        // Look for output like this. The pattern will only match the first 3 regions, which is what we need to check
+        // Look for output like this. The pattern will only match the first 2 regions, which is what we need to check
         //
-        // [4.682s][debug][cds] mc  space:     24912 [  0.2% of total] out of     28672 bytes [ 86.9% used] at 0x0000000800000000
         // [4.682s][debug][cds] rw  space:   4391632 [ 33.7% of total] out of   4395008 bytes [ 99.9% used] at 0x0000000800007000
         // [4.682s][debug][cds] ro  space:   7570632 [ 58.0% of total] out of   7573504 bytes [100.0% used] at 0x0000000800438000
         // [4.682s][debug][cds] bm  space:    213528 [  1.6% of total] out of    213528 bytes [100.0% used]
@@ -100,8 +99,8 @@ public class SpaceUtilizationCheck {
                 }
             }
         }
-        if (checked.size() != 3) {
-          throw new RuntimeException("Must have 3 consecutive, fully utilized regions"); // MC,RW,RO
+        if (checked.size() != 2) {
+          throw new RuntimeException("Must have 2 consecutive, fully utilized regions"); // RW,RO
         }
     }
 }
