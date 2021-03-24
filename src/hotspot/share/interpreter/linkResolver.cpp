@@ -544,13 +544,13 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
   return NULL;
 }
 
-static void print_nest_host_error_on(JavaThread* current, stringStream* ss, Klass* ref_klass, Klass* sel_klass) {
+static void print_nest_host_error_on(stringStream* ss, Klass* ref_klass, Klass* sel_klass) {
   assert(ref_klass->is_instance_klass(), "must be");
   assert(sel_klass->is_instance_klass(), "must be");
   InstanceKlass* ref_ik = InstanceKlass::cast(ref_klass);
   InstanceKlass* sel_ik = InstanceKlass::cast(sel_klass);
-  const char* nest_host_error_1 = ref_ik->nest_host_error(current);
-  const char* nest_host_error_2 = sel_ik->nest_host_error(current);
+  const char* nest_host_error_1 = ref_ik->nest_host_error();
+  const char* nest_host_error_2 = sel_ik->nest_host_error();
   if (nest_host_error_1 != NULL || nest_host_error_2 != NULL) {
     ss->print(", (%s%s%s)",
               (nest_host_error_1 != NULL) ? nest_host_error_1 : "",
@@ -611,7 +611,7 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
     // For private access see if there was a problem with nest host
     // resolution, and if so report that as part of the message.
     if (sel_method->is_private()) {
-      print_nest_host_error_on(THREAD->as_Java_thread(), &ss, ref_klass, sel_klass);
+      print_nest_host_error_on(&ss, ref_klass, sel_klass);
     }
 
     Exceptions::fthrow(THREAD_AND_LOCATION,
@@ -956,7 +956,7 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
     // For private access see if there was a problem with nest host
     // resolution, and if so report that as part of the message.
     if (fd.is_private()) {
-      print_nest_host_error_on(THREAD->as_Java_thread(), &ss, ref_klass, sel_klass);
+      print_nest_host_error_on(&ss, ref_klass, sel_klass);
     }
     Exceptions::fthrow(THREAD_AND_LOCATION,
                        vmSymbols::java_lang_IllegalAccessError(),

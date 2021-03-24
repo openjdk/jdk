@@ -1209,7 +1209,7 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
   // as verified in SystemDictionaryShared::add_lambda_proxy_class()
   assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
   assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
-  ik->set_nest_host(shared_nest_host, THREAD->as_Java_thread());
+  ik->set_nest_host(shared_nest_host);
 
   InstanceKlass* loaded_ik = load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, CHECK_NULL);
 
