@@ -27,10 +27,14 @@
  * @summary assert(use == polladr) failed: the use should be a safepoint polling
  * @requires vm.flavor == "server"
  *
- * @run main/othervm -XX:-BackgroundCompilation -XX:+OptimizeFill Test8263352
+ * @run main/othervm -XX:-BackgroundCompilation -XX:+OptimizeFill
+ *                   compiler.loopopts.TestOptimizeFillWithStripMinedLoop
  *
  */
-public class Test8263352 {
+
+package compiler.loopopts;
+
+public class TestOptimizeFillWithStripMinedLoop {
 
     class Wrap {
       public int value;
@@ -43,7 +47,7 @@ public class Test8263352 {
     public static int[] ia = new int[size];
 
     public static void main(String[] args) throws Exception {
-      Test8263352 m = new Test8263352();
+      TestOptimizeFillWithStripMinedLoop m = new TestOptimizeFillWithStripMinedLoop();
       m.test();
     }
 
