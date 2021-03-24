@@ -657,7 +657,7 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
   jint manifest_size;
 
   assert(cpe->is_jar_file() && ent->is_jar(), "the shared class path entry is not a JAR file");
-  char* manifest = ClassLoaderExt::read_manifest(cpe, &manifest_size, CHECK);
+  char* manifest = ClassLoaderExt::read_manifest(THREAD, cpe, &manifest_size);
   if (manifest != NULL) {
     ManifestStream* stream = new ManifestStream((u1*)manifest,
                                                 manifest_size);
@@ -665,7 +665,7 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
       ent->set_is_signed();
     } else {
       // Copy the manifest into the shared archive
-      manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
+      manifest = ClassLoaderExt::read_raw_manifest(THREAD, cpe, &manifest_size);
       Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
                                                       manifest_size,
                                                       CHECK);
@@ -2370,9 +2370,8 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
   const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
-  ClassFileStream* cfs = cpe->open_stream_for_loader(file_name, loader_data, THREAD);
-  assert(!HAS_PENDING_EXCEPTION &&
-         cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
+  ClassFileStream* cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
+  assert(cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
   log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
                         cfs->source(), cfs->length());
   return cfs;

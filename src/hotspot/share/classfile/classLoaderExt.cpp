@@ -103,13 +103,13 @@ void ClassLoaderExt::setup_module_paths(TRAPS) {
   process_module_table(met, CHECK);
 }
 
-char* ClassLoaderExt::read_manifest(ClassPathEntry* entry, jint *manifest_size, bool clean_text, TRAPS) {
+char* ClassLoaderExt::read_manifest(Thread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text) {
   const char* name = "META-INF/MANIFEST.MF";
   char* manifest;
   jint size;
 
   assert(entry->is_jar_file(), "must be");
-  manifest = (char*) ((ClassPathZipEntry*)entry )->open_entry(name, &size, true, CHECK_NULL);
+  manifest = (char*) ((ClassPathZipEntry*)entry )->open_entry(current, name, &size, true);
 
   if (manifest == NULL) { // No Manifest
     *manifest_size = 0;
@@ -167,7 +167,7 @@ void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
                                           bool check_for_duplicates, TRAPS) {
   ResourceMark rm(THREAD);
   jint manifest_size;
-  char* manifest = read_manifest(entry, &manifest_size, CHECK);
+  char* manifest = read_manifest(THREAD, entry, &manifest_size);
 
   if (manifest == NULL) {
     return;
@@ -230,9 +230,7 @@ void ClassLoaderExt::setup_search_paths(TRAPS) {
   ClassLoaderExt::setup_app_search_path(CHECK);
 }
 
-void ClassLoaderExt::record_result(const s2 classpath_index,
-                                   InstanceKlass* result,
-                                   TRAPS) {
+void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result) {
   Arguments::assert_is_dumping_archive();
 
   // We need to remember where the class comes from during dumping.
@@ -275,7 +273,7 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
     PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
                                THREAD->as_Java_thread()->get_thread_stat()->perf_timers_addr(),
                                PerfClassTraceTime::CLASS_LOAD);
-    stream = e->open_stream(file_name, CHECK_NULL);
+    stream = e->open_stream(THREAD, file_name);
   }
 
   if (stream == NULL) {

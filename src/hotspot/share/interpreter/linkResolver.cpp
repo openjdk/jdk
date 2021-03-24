@@ -51,7 +51,6 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
-#include "prims/nativeLookup.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1770,7 +1769,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // to CPCE state, including f1.
 
   // Log dynamic info to CDS classlist.
-  ArchiveUtils::log_to_classlist(&bootstrap_specifier, THREAD);
+  ArchiveUtils::log_to_classlist(&bootstrap_specifier, CHECK);
 }
 
 void LinkResolver::resolve_dynamic_call(CallInfo& result,
