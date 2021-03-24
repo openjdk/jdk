@@ -1390,7 +1390,7 @@ bool LibraryCallKit::inline_string_toBytesU() {
     Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
     newcopy = new_array(klass_node, size, 0);  // no arguments to push
     AllocateArrayNode* alloc = tightly_coupled_allocation(newcopy);
-    assert(alloc != NULL, "alloc above");
+    guarantee(alloc != NULL, "created above");
 
     // Calculate starting addresses.
     Node* src_start = array_element_address(value, offset, T_CHAR);
