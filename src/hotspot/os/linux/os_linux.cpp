@@ -3973,7 +3973,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   // We only end up here when at least 1 large page can be used.
   // If the size is not a multiple of the large page size, we
   // will mix the type of pages used, but in a decending order.
-  // Start of by reserving a range of the given size that is
+  // Start off by reserving a range of the given size that is
   // properly aligned. At this point no pages are committed. If
   // a requested address is given it will be used and it must be
   // aligned to both the large page size and the given alignment.
@@ -3984,7 +3984,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
     return NULL;
   }
 
-  // Start of by committing large pages.
+  // First commit using large pages.
   size_t large_bytes = align_down(bytes, os::large_page_size());
   char* large_mapping = commit_memory_special(large_bytes, os::large_page_size(), aligned_start, exec);
 
@@ -4004,7 +4004,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
     return NULL;
   }
 
-  // Commit the reminding bytes using small pages.
+  // Commit the remaining bytes using small pages.
   void* small_mapping = commit_memory_special(small_size, os::vm_page_size(), small_start, exec);
   if (small_mapping == NULL) {
     // Failed to commit the remaining size, need to unmap large.
