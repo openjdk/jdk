@@ -1446,7 +1446,7 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
 jvmtiError
 JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jthread** threads_ptr, jint* group_count_ptr, jthreadGroup** groups_ptr) {
   JavaThread* current_thread = JavaThread::current();
-  oop group_obj = (oop) JNIHandles::resolve_external_guard(group);
+  oop group_obj = JNIHandles::resolve_external_guard(group);
   NULL_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   Handle *thread_objs = NULL;

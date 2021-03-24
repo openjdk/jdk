@@ -787,7 +787,7 @@ oop InstanceKlass::init_lock() const {
   oop lock = java_lang_Class::init_lock(java_mirror());
   // Prevent reordering with any access of initialization state
   OrderAccess::loadload();
-  assert((oop)lock != NULL || !is_not_initialized(), // initialized or in_error state
+  assert(lock != NULL || !is_not_initialized(), // initialized or in_error state
          "only fully initialized state can have a null lock");
   return lock;
 }
