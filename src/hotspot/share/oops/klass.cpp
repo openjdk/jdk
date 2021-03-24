@@ -751,11 +751,6 @@ const char* Klass::external_kind() const {
   return "class";
 }
 
-// Unless overridden, modifier_flags is 0.
-jint Klass::compute_modifier_flags(TRAPS) const {
-  return 0;
-}
-
 int Klass::atomic_incr_biased_lock_revocation_count() {
   return (int) Atomic::add(&_biased_lock_revocation_count, 1);
 }
