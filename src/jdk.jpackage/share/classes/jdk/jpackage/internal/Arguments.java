@@ -198,6 +198,8 @@ public class Arguments {
 
         RELEASE ("linux-app-release", OptionCategories.PROPERTY),
 
+        ABOUT_URL ("about-url", OptionCategories.PROPERTY),
+
         JAVA_OPTIONS ("java-options", OptionCategories.PROPERTY, () -> {
             List<String> args = getArgumentList(popArg());
             args.forEach(a -> setOptionValue("java-options", a));
@@ -326,6 +328,10 @@ public class Arguments {
                     OptionCategories.PLATFORM_MAC),
 
         MAC_ENTITLEMENTS ("mac-entitlements", OptionCategories.PLATFORM_MAC),
+
+        WIN_HELP_URL ("win-help-url", OptionCategories.PLATFORM_WIN),
+
+        WIN_UPDATE_URL ("win-update-url", OptionCategories.PLATFORM_WIN),
 
         WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN, () -> {
             setOptionValue("win-menu", true);
