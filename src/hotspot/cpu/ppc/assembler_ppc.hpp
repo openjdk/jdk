@@ -1339,8 +1339,6 @@ class Assembler : public AbstractAssembler {
     return (0 == addr % a);
   }
 
-  static bool in_scratch_emit_size();
-
   void flush() {
     AbstractAssembler::flush();
   }

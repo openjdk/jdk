@@ -1160,7 +1160,7 @@ static int cc_to_biint(int cc, int flags_reg) {
 int loadConI32Node::compute_padding(int current_offset) const {
   assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
          "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64) || Assembler::in_scratch_emit_size()) {
+  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
     return BytesPerInstWord;
   }
   return 0;
@@ -1169,7 +1169,7 @@ int loadConI32Node::compute_padding(int current_offset) const {
 int loadConL34Node::compute_padding(int current_offset) const {
   assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
          "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64) || Assembler::in_scratch_emit_size()) {
+  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
     return BytesPerInstWord;
   }
   return 0;
@@ -1178,7 +1178,7 @@ int loadConL34Node::compute_padding(int current_offset) const {
 int addI_reg_imm32Node::compute_padding(int current_offset) const {
   assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
          "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64) || Assembler::in_scratch_emit_size()) {
+  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
     return BytesPerInstWord;
   }
   return 0;
@@ -1187,7 +1187,7 @@ int addI_reg_imm32Node::compute_padding(int current_offset) const {
 int addL_reg_imm34Node::compute_padding(int current_offset) const {
   assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
          "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64) || Assembler::in_scratch_emit_size()) {
+  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
     return BytesPerInstWord;
   }
   return 0;
@@ -1196,7 +1196,7 @@ int addL_reg_imm34Node::compute_padding(int current_offset) const {
 int addP_reg_imm34Node::compute_padding(int current_offset) const {
   assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
          "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64) || Assembler::in_scratch_emit_size()) {
+  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
     return BytesPerInstWord;
   }
   return 0;
@@ -1205,7 +1205,7 @@ int addP_reg_imm34Node::compute_padding(int current_offset) const {
 int cmprb_Whitespace_reg_reg_prefixedNode::compute_padding(int current_offset) const {
   assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
          "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64) || Assembler::in_scratch_emit_size()) {
+  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
     return BytesPerInstWord;
   }
   return 0;
@@ -5903,7 +5903,7 @@ instruct loadConI32(iRegIdst dst, immI32 src) %{
     __ pli($dst$$Register, $src$$constant);
   %}
   ins_pipe(pipe_class_default);
-  ins_alignment(4);
+  ins_alignment(2);
 %}
 
 instruct loadConI_Ex(iRegIdst dst, immI src) %{
@@ -5992,7 +5992,7 @@ instruct loadConL34(iRegLdst dst, immL34 src) %{
     __ pli($dst$$Register, $src$$constant);
   %}
   ins_pipe(pipe_class_default);
-  ins_alignment(4);
+  ins_alignment(2);
 %}
 
 // Load long constant 0x????000000000000.
@@ -6020,7 +6020,7 @@ instruct loadConL(iRegLdst dst, immL src, iRegLdst toc) %{
   ins_field_cbuf_insts_offset(int);
 
   format %{ "LD      $dst, offset, $toc \t// load long $src from TOC" %}
-  size(12);
+  size(4);
   ins_encode( enc_load_long_constL(dst, src, toc) );
   ins_pipe(pipe_class_memory);
 %}
@@ -8641,7 +8641,7 @@ instruct addI_reg_imm32(iRegIdst dst, iRegIsrc src1, immI32 src2) %{
     __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
-  ins_alignment(4);
+  ins_alignment(2);
 %}
 
 // Long Addition
@@ -8732,7 +8732,7 @@ instruct addL_reg_imm34(iRegLdst dst, iRegLsrc src1, immL34 src2) %{
     __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
-  ins_alignment(4);
+  ins_alignment(2);
 %}
 
 // Pointer Register Addition
@@ -8786,7 +8786,7 @@ instruct addP_reg_imm34(iRegPdst dst, iRegP_N2P src1, immL34 src2) %{
     __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
-  ins_alignment(4);
+  ins_alignment(2);
 %}
 
 //---------------------
@@ -12131,7 +12131,7 @@ instruct cmprb_Whitespace_reg_reg_prefixed(iRegIdst dst, iRegIsrc src1, iRegIsrc
     __ setb($dst$$Register, $crx$$CondRegister);
   %}
   ins_pipe(pipe_class_default);
-  ins_alignment(4);
+  ins_alignment(2);
 %}
 
 //----------Branches---------------------------------------------------------

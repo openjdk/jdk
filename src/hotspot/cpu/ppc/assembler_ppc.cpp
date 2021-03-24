@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,6 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
-#ifdef COMPILER2
-#include "opto/compile.hpp"
-#include "opto/node.hpp"
-#include "opto/output.hpp"
-#endif
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -54,24 +49,6 @@ int AbstractAssembler::code_fill_byte() {
   return 0x00;                  // illegal instruction 0x00000000
 }
 
-
-// Check if estimating generated code size
-bool Assembler::in_scratch_emit_size() {
-#ifdef COMPILER2
-  Thread* thread = Thread::current();
-
-  if (!thread->is_Compiler_thread()) {
-    return false;
-  }
-
-  AbstractCompiler* comp = ((CompilerThread *)thread)->compiler();
-
-  return comp->is_c2() && comp->is_initialized() &&
-      Compile::current()->output()->in_scratch_emit_size();
-#else
-  return false;
-#endif
-}
 
 // Patch instruction `inst' at offset `inst_pos' to refer to
 // `dest_pos' and return the resulting instruction.  We should have
