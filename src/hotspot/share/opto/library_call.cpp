@@ -1389,8 +1389,7 @@ bool LibraryCallKit::inline_string_toBytesU() {
     Node* size = _gvn.transform(new LShiftINode(length, intcon(1)));
     Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
     newcopy = new_array(klass_node, size, 0);  // no arguments to push
-    AllocateArrayNode* alloc = tightly_coupled_allocation(newcopy);
-    assert(alloc != NULL, "alloc created here");
+    assert(tightly_coupled_allocation(newcopy) != NULL, "sanity");
 
     // Calculate starting addresses.
     Node* src_start = array_element_address(value, offset, T_CHAR);
@@ -1407,27 +1406,7 @@ bool LibraryCallKit::inline_string_toBytesU() {
                       OptoRuntime::fast_arraycopy_Type(),
                       copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
                       src_start, dst_start, ConvI2X(length) XTOP);
-    // Do not let reads from the cloned object float above the arraycopy.
-    if (alloc != NULL) {
-      if (alloc->maybe_set_complete(&_gvn)) {
-        // "You break it, you buy it."
-        InitializeNode* init = alloc->initialization();
-        assert(init->is_complete(), "we just did this");
-        init->set_complete_with_arraycopy();
-        assert(newcopy->is_CheckCastPP(), "sanity");
-        assert(newcopy->in(0)->in(0) == init, "dest pinned");
-      }
-      // Do not let stores that initialize this object be reordered with
-      // a subsequent store that would make this object accessible by
-      // other threads.
-      // Record what AllocateNode this StoreStore protects so that
-      // escape analysis can go from the MemBarStoreStoreNode to the
-      // AllocateNode and eliminate the MemBarStoreStoreNode if possible
-      // based on the escape status of the AllocateNode.
-      insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
-    } else {
-      insert_mem_bar(Op_MemBarCPUOrder);
-    }
+    insert_mem_bar(Op_MemBarCPUOrder);
   } // original reexecute is set back here
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
