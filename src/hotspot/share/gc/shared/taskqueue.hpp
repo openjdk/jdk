@@ -614,7 +614,7 @@ public:
   }
 
   PartialArrayScanTask to_partial_array_task() const {
-    return PartialArrayScanTask(oop(decode(PartialArrayTag)));
+    return PartialArrayScanTask(cast_to_oop(decode(PartialArrayTag)));
   }
 };
 

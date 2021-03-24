@@ -1310,7 +1310,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else if (HeapShared::is_heap_region(region)) {
     assert(!DynamicDumpSharedSpaces, "must be");
     requested_base = base;
-    mapping_offset = (size_t)CompressedOops::encode_not_null((oop)base);
+    mapping_offset = (size_t)CompressedOops::encode_not_null(cast_to_oop(base));
     assert(mapping_offset == (size_t)(uint32_t)mapping_offset, "must be 32-bit only");
   } else {
     char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();

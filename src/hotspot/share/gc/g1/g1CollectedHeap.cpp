@@ -3514,7 +3514,7 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
     bool humongous_region_is_candidate(HeapRegion* region) const {
       assert(region->is_starts_humongous(), "Must start a humongous object");
 
-      oop obj = oop(region->bottom());
+      oop obj = cast_to_oop(region->bottom());
 
       // Dead objects cannot be eager reclaim candidates. Due to class
       // unloading it is unsafe to query their classes so we return early.
@@ -4357,7 +4357,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    oop obj = (oop)r->bottom();
+    oop obj = cast_to_oop(r->bottom());
     G1CMBitMap* next_bitmap = g1h->concurrent_mark()->next_mark_bitmap();
 
     // The following checks whether the humongous object is live are sufficient.

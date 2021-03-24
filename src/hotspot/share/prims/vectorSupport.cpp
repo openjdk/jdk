@@ -173,7 +173,7 @@ Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, Regi
     assert(payload->is_object(), "expected 'object' value for scalar-replaced boxed vector but got: %s", ss.as_string());
 #endif
   }
-  return Handle(THREAD, (oop)nullptr);
+  return Handle(THREAD, nullptr);
 }
 
 instanceOop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ObjectValue* ov, TRAPS) {
