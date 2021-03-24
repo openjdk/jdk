@@ -60,9 +60,6 @@ public enum HtmlStyle {
     deprecationComment,
     descfrmTypeLabel,
     externalLink,
-    helpFootnote,
-    helpSection,
-    helpSectionList,
     hierarchy,
     horizontal,
     implementationLabel,
@@ -716,7 +713,44 @@ public enum HtmlStyle {
     /**
      * The class of the {@code body} element for the page for the class hierarchy.
      */
-    treePage;
+    treePage,
+    //</editor-fold>
+
+    //<editor-fold desc="page styles for <body> elements">
+    //
+    // The following constants are used for the class of the {@code <body>} element
+    // for the corresponding pages.
+
+    /**
+     * The class of the footnote at the bottom of the page.
+     */
+    helpFootnote,
+
+    /**
+     * The class of the "Note:" prefix.
+     */
+    helpNote,
+
+    /**
+     * The class of each subsection in the page.
+     */
+    helpSection,
+
+    /**
+     * The class of lists in a subsection in the page.
+     */
+    helpSectionList,
+
+    /**
+     * The class of the top level list for the table of contents for the page.
+     */
+    helpTOC("help-toc"),
+
+    /**
+     * The class of the second-level lists in the table of contents for the page.
+     */
+    helpSubTOC("help-subtoc");
+
     //</editor-fold>
 
     private final String cssName;
