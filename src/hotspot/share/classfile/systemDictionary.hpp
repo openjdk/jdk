@@ -170,8 +170,7 @@ class SystemDictionary : AllStatic {
   // to manipulate strongly-typed values of the found class, subject
   // to local linkage and access checks.
   static Klass* find_constrained_instance_or_array_klass(Symbol* class_name,
-                                                           Handle class_loader,
-                                                           Thread* THREAD);
+                                                         Handle class_loader);
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
@@ -218,7 +217,7 @@ public:
 
 public:
   static Symbol* check_signature_loaders(Symbol* signature, Klass* klass_being_linked,
-                                         Handle loader1, Handle loader2, bool is_method, TRAPS);
+                                         Handle loader1, Handle loader2, bool is_method);
 
   // JSR 292
   // find a java.lang.invoke.MethodHandle.invoke* method for a given signature
@@ -366,7 +365,7 @@ protected:
   // Used by SystemDictionaryShared
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
-                                    Handle loader2, TRAPS);
+                                    Handle loader2);
   static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
   static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
                                                        Handle class_loader,

@@ -299,7 +299,7 @@ public:
                                                           InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(NULL);
   static bool check_linking_constraints(InstanceKlass* klass, TRAPS) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
-                                     Handle loader1, Handle loader2, TRAPS) NOT_CDS_RETURN;
+                                     Handle loader1, Handle loader2) NOT_CDS_RETURN;
   static bool is_builtin(InstanceKlass* k) {
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }

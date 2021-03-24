@@ -1818,7 +1818,7 @@ void SystemDictionary::update_dictionary(unsigned int hash,
 // loader constraints might know about a class that isn't fully loaded
 // yet and these will be ignored.
 Klass* SystemDictionary::find_constrained_instance_or_array_klass(
-                    Symbol* class_name, Handle class_loader, Thread* THREAD) {
+                    Symbol* class_name, Handle class_loader) {
 
   // First see if it has been loaded directly.
   // Force the protection domain to be null.  (This removes protection checks.)
@@ -1840,7 +1840,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
     if (t != T_OBJECT) {
       klass = Universe::typeArrayKlassObj(t);
     } else {
-      MutexLocker mu(THREAD, SystemDictionary_lock);
+      MutexLocker mu(SystemDictionary_lock);
       klass = constraints()->find_constrained_klass(ss.as_symbol(), class_loader);
     }
     // If element class already loaded, allocate array klass
@@ -1848,7 +1848,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
       klass = klass->array_klass_or_null(ndims);
     }
   } else {
-    MutexLocker mu(THREAD, SystemDictionary_lock);
+    MutexLocker mu(SystemDictionary_lock);
     // Non-array classes are easy: simply check the constraint table.
     klass = constraints()->find_constrained_klass(class_name, class_loader);
   }
@@ -1859,8 +1859,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
 bool SystemDictionary::add_loader_constraint(Symbol* class_name,
                                              Klass* klass_being_linked,
                                              Handle class_loader1,
-                                             Handle class_loader2,
-                                             Thread* THREAD) {
+                                             Handle class_loader2) {
   ClassLoaderData* loader_data1 = class_loader_data(class_loader1);
   ClassLoaderData* loader_data2 = class_loader_data(class_loader2);
 
@@ -1890,7 +1889,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
   unsigned int name_hash2 = dictionary2->compute_hash(constraint_name);
 
   {
-    MutexLocker mu_s(THREAD, SystemDictionary_lock);
+    MutexLocker mu_s(SystemDictionary_lock);
     InstanceKlass* klass1 = dictionary1->find_class(name_hash1, constraint_name);
     InstanceKlass* klass2 = dictionary2->find_class(name_hash2, constraint_name);
     bool result = constraints()->add_entry(constraint_name, klass1, class_loader1,
@@ -1900,7 +1899,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
         !klass_being_linked->is_shared()) {
          SystemDictionaryShared::record_linking_constraint(constraint_name,
                                      InstanceKlass::cast(klass_being_linked),
-                                     class_loader1, class_loader2, THREAD);
+                                     class_loader1, class_loader2);
     }
 #endif // INCLUDE_CDS
     if (Signature::is_array(class_name)) {
@@ -2038,9 +2037,9 @@ const char* SystemDictionary::find_nest_host_error(const constantPoolHandle& poo
 // NULL if no constraint failed.  No exception except OOME is thrown.
 // Arrays are not added to the loader constraint table, their elements are.
 Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
-                                               Klass* klass_being_linked,
-                                               Handle loader1, Handle loader2,
-                                               bool is_method, TRAPS)  {
+                                                  Klass* klass_being_linked,
+                                                  Handle loader1, Handle loader2,
+                                                  bool is_method)  {
   // Nothing to do if loaders are the same.
   if (loader1() == loader2()) {
     return NULL;
@@ -2052,7 +2051,7 @@ Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
       // Note: In the future, if template-like types can take
       // arguments, we will want to recognize them and dig out class
       // names hiding inside the argument lists.
-      if (!add_loader_constraint(sig, klass_being_linked, loader1, loader2, THREAD)) {
+      if (!add_loader_constraint(sig, klass_being_linked, loader1, loader2)) {
         return sig;
       }
     }

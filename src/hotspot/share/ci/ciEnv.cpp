@@ -425,8 +425,8 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     return unloaded_klass;
   }
 
-  Handle loader(THREAD, (oop)NULL);
-  Handle domain(THREAD, (oop)NULL);
+  Handle loader;
+  Handle domain;
   if (accessing_klass != NULL) {
     loader = Handle(THREAD, accessing_klass->loader());
     domain = Handle(THREAD, accessing_klass->protection_domain());
@@ -445,7 +445,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     MutexLocker ml(Compile_lock);
     Klass* kls;
     if (!require_local) {
-      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader, THREAD);
+      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader);
     } else {
       kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
