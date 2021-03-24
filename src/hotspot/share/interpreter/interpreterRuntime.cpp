@@ -1450,9 +1450,8 @@ JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* thread, Meth
   methodHandle m(thread, method);
   assert(m->is_native(), "sanity check");
   // lookup native function entry point if it doesn't exist
-  bool in_base_library;
   if (!m->has_native_function()) {
-    NativeLookup::lookup(m, in_base_library, CHECK);
+    NativeLookup::lookup(m, CHECK);
   }
   // make sure signature handler is installed
   SignatureHandlerLibrary::add(m);

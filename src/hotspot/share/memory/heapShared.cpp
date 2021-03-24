@@ -168,7 +168,7 @@ void HeapShared::reset_archived_object_states(TRAPS) {
   log_debug(cds)("Resetting platform loader");
   reset_states(SystemDictionary::java_platform_loader(), CHECK);
   log_debug(cds)("Resetting system loader");
-  reset_states(SystemDictionary::java_system_loader(), THREAD);
+  reset_states(SystemDictionary::java_system_loader(), CHECK);
 }
 
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = NULL;
@@ -360,7 +360,6 @@ void HeapShared::copy_closed_archive_heap_objects(
                                     GrowableArray<MemRegion> * closed_archive) {
   assert(is_heap_object_archiving_allowed(), "Cannot archive java heap objects");
 
-  Thread* THREAD = Thread::current();
   G1CollectedHeap::heap()->begin_archive_alloc_range();
 
   // Archive interned string objects
@@ -701,14 +700,15 @@ void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[
 }
 
 void HeapShared::resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD) {
- const ArchivedKlassSubGraphInfoRecord* record =
+  ExceptionMark em(THREAD);
+  const ArchivedKlassSubGraphInfoRecord* record =
    resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
- if (HAS_PENDING_EXCEPTION) {
+  if (HAS_PENDING_EXCEPTION) {
    CLEAR_PENDING_EXCEPTION;
- }
- if (record == NULL) {
+  }
+  if (record == NULL) {
    clear_archived_roots_of(k);
- }
+  }
 }
 
 void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
@@ -716,6 +716,7 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
     return; // nothing to do
   }
 
+  ExceptionMark em(THREAD);
   const ArchivedKlassSubGraphInfoRecord* record =
     resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/true, THREAD);
 
@@ -747,7 +748,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
   if (record != NULL) {
     if (record->is_full_module_graph() && !MetaspaceShared::use_full_module_graph()) {
       if (log_is_enabled(Info, cds, heap)) {
-        ResourceMark rm;
+        ResourceMark rm(THREAD);
         log_info(cds, heap)("subgraph %s cannot be used because full module graph is disabled",
                             k->external_name());
       }
@@ -756,7 +757,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
 
     if (record->has_non_early_klasses() && JvmtiExport::should_post_class_file_load_hook()) {
       if (log_is_enabled(Info, cds, heap)) {
-        ResourceMark rm;
+        ResourceMark rm(THREAD);
         log_info(cds, heap)("subgraph %s cannot be used because JVMTI ClassFileLoadHook is enabled",
                             k->external_name());
       }
@@ -1244,25 +1245,17 @@ public:
 };
 
 void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
-                                            int num, Thread* THREAD) {
+                                            int num, TRAPS) {
   for (int i = 0; i < num; i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name =  SymbolTable::new_symbol(info->klass_name);
     TempNewSymbol field_name =  SymbolTable::new_symbol(info->field_name);
 
-    Klass* k = SystemDictionary::resolve_or_null(klass_name, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      ResourceMark rm(THREAD);
-      ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
-      log_info(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
-                    java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
-      vm_direct_exit(-1, "VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
-    }
+    Klass* k = SystemDictionary::resolve_or_fail(klass_name, true, CHECK);
     InstanceKlass* ik = InstanceKlass::cast(k);
     assert(InstanceKlass::cast(ik)->is_shared_boot_class(),
            "Only support boot classes");
-    ik->initialize(THREAD);
-    guarantee(!HAS_PENDING_EXCEPTION, "exception in initialize");
+    ik->initialize(CHECK);
 
     ArchivableStaticFieldFinder finder(ik, field_name);
     ik->do_local_static_fields(&finder);
@@ -1273,26 +1266,26 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
   }
 }
 
-void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
+void HeapShared::init_subgraph_entry_fields(TRAPS) {
   assert(is_heap_object_archiving_allowed(), "Sanity check");
   _dump_time_subgraph_info_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeKlassSubGraphInfoTable();
   init_subgraph_entry_fields(closed_archive_subgraph_entry_fields,
                              num_closed_archive_subgraph_entry_fields,
-                             THREAD);
+                             CHECK);
   init_subgraph_entry_fields(open_archive_subgraph_entry_fields,
                              num_open_archive_subgraph_entry_fields,
-                             THREAD);
+                             CHECK);
   if (MetaspaceShared::use_full_module_graph()) {
     init_subgraph_entry_fields(fmg_open_archive_subgraph_entry_fields,
                                num_fmg_open_archive_subgraph_entry_fields,
-                               THREAD);
+                               CHECK);
   }
 }
 
-void HeapShared::init_for_dumping(Thread* THREAD) {
+void HeapShared::init_for_dumping(TRAPS) {
   if (is_heap_object_archiving_allowed()) {
     _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
-    init_subgraph_entry_fields(THREAD);
+    init_subgraph_entry_fields(CHECK);
   }
 }
 

@@ -71,7 +71,7 @@ size_t MetaspaceUtils::used_words() {
 }
 
 size_t MetaspaceUtils::used_words(Metaspace::MetadataType mdtype) {
-  return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::used_words_class() : RunningCounters::used_words_nonclass();
+  return mdtype == Metaspace::ClassType ? RunningCounters::used_words_class() : RunningCounters::used_words_nonclass();
 }
 
 size_t MetaspaceUtils::reserved_words() {
@@ -79,7 +79,7 @@ size_t MetaspaceUtils::reserved_words() {
 }
 
 size_t MetaspaceUtils::reserved_words(Metaspace::MetadataType mdtype) {
-  return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::reserved_words_class() : RunningCounters::reserved_words_nonclass();
+  return mdtype == Metaspace::ClassType ? RunningCounters::reserved_words_class() : RunningCounters::reserved_words_nonclass();
 }
 
 size_t MetaspaceUtils::committed_words() {
@@ -87,7 +87,7 @@ size_t MetaspaceUtils::committed_words() {
 }
 
 size_t MetaspaceUtils::committed_words(Metaspace::MetadataType mdtype) {
-  return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::committed_words_class() : RunningCounters::committed_words_nonclass();
+  return mdtype == Metaspace::ClassType ? RunningCounters::committed_words_class() : RunningCounters::committed_words_nonclass();
 }
 
 void MetaspaceUtils::print_metaspace_change(const metaspace::MetaspaceSizesSnapshot& pre_meta_values) {

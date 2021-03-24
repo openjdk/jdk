@@ -44,6 +44,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
+#include "logging/logStream.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/cppVtables.hpp"
 #include "memory/dumpAllocStats.hpp"
@@ -65,7 +66,6 @@
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/align.hpp"
@@ -218,7 +218,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
   if (UseSharedSpaces) {
     int size = FileMapInfo::get_number_of_shared_paths();
     if (size > 0) {
-      SystemDictionaryShared::allocate_shared_data_arrays(size, THREAD);
+      SystemDictionaryShared::allocate_shared_data_arrays(size, CHECK);
       if (!DynamicDumpSharedSpaces) {
         FileMapInfo* info;
         if (FileMapInfo::dynamic_info() == NULL) {
@@ -236,7 +236,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
 static GrowableArrayCHeap<OopHandle, mtClassShared>* _extra_interned_strings = NULL;
 static GrowableArrayCHeap<Symbol*, mtClassShared>* _extra_symbols = NULL;
 
-void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
+void MetaspaceShared::read_extra_data(Thread* current, const char* filename) {
   _extra_interned_strings = new GrowableArrayCHeap<OopHandle, mtClassShared>(10000);
   _extra_symbols = new GrowableArrayCHeap<Symbol*, mtClassShared>(1000);
 
@@ -246,7 +246,7 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
   while (reader.remain() > 0) {
     int utf8_length;
     int prefix_type = reader.scan_prefix(&utf8_length);
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     if (utf8_length == 0x7fffffff) {
       // buf_len will overflown 32-bit value.
       vm_exit_during_initialization(err_msg("string length too large: %d", utf8_length));
@@ -260,6 +260,8 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
       _extra_symbols->append(SymbolTable::new_permanent_symbol(utf8_buffer));
     } else{
       assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
+      ExceptionMark em(current);
+      Thread* THREAD = current; // For exception macros.
       oop str = StringTable::intern(utf8_buffer, THREAD);
 
       if (HAS_PENDING_EXCEPTION) {
@@ -452,8 +454,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   Metaspace::freeze();
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
-  Thread* THREAD = VMThread::vm_thread();
-
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
 
   NOT_PRODUCT(SystemDictionary::verify();)
@@ -552,14 +552,13 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   // Link the class to cause the bytecodes to be rewritten and the
   // cpcache to be created. Class verification is done according
   // to -Xverify setting.
-  bool res = MetaspaceShared::try_link_class(ik, THREAD);
-  guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
+  bool res = MetaspaceShared::try_link_class(THREAD, ik);
 
   if (DumpSharedSpaces) {
     // The following function is used to resolve all Strings in the statically
     // dumped classes to archive all the Strings. The archive heap is not supported
     // for the dynamic archive.
-    ik->constants()->resolve_class_constants(THREAD);
+    ik->constants()->resolve_class_constants(CHECK_(false)); // may throw OOM when interning strings.
   }
   return res;
 }
@@ -580,7 +579,7 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
         if (klass->is_instance_klass()) {
           InstanceKlass* ik = InstanceKlass::cast(klass);
           if (linking_required(ik)) {
-            has_linked |= link_class_for_cds(ik, THREAD);
+            has_linked |= link_class_for_cds(ik, CHECK);
           }
         }
       }
@@ -614,137 +613,121 @@ void MetaspaceShared::prepare_for_dumping() {
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
 void MetaspaceShared::preload_and_dump(TRAPS) {
-  { TraceTime timer("Dump Shared Spaces", TRACETIME_LOG(Info, startuptime));
-    ResourceMark rm(THREAD);
-    char class_list_path_str[JVM_MAXPATHLEN];
-    // Preload classes to be shared.
-    const char* class_list_path;
-    if (SharedClassListFile == NULL) {
-      // Construct the path to the class list (in jre/lib)
-      // Walk up two directories from the location of the VM and
-      // optionally tack on "lib" (depending on platform)
-      os::jvm_path(class_list_path_str, sizeof(class_list_path_str));
-      for (int i = 0; i < 3; i++) {
-        char *end = strrchr(class_list_path_str, *os::file_separator());
-        if (end != NULL) *end = '\0';
-      }
-      int class_list_path_len = (int)strlen(class_list_path_str);
-      if (class_list_path_len >= 3) {
-        if (strcmp(class_list_path_str + class_list_path_len - 3, "lib") != 0) {
-          if (class_list_path_len < JVM_MAXPATHLEN - 4) {
-            jio_snprintf(class_list_path_str + class_list_path_len,
-                         sizeof(class_list_path_str) - class_list_path_len,
-                         "%slib", os::file_separator());
-            class_list_path_len += 4;
-          }
+  ResourceMark rm(THREAD);
+  preload_and_dump_impl(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
+      vm_direct_exit(-1,  err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+                                  SIZE_FORMAT "M", MaxHeapSize/M));
+    } else {
+      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+      vm_direct_exit(-1, "VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
+    }
+  } else {
+    // On success, the VM_PopulateDumpSharedSpace op should have
+    // exited the VM.
+    ShouldNotReachHere();
+  }
+}
+
+void MetaspaceShared::preload_classes(TRAPS) {
+  char default_classlist[JVM_MAXPATHLEN];
+  const char* classlist_path;
+
+  if (SharedClassListFile == NULL) {
+    // Construct the path to the class list (in jre/lib)
+    // Walk up two directories from the location of the VM and
+    // optionally tack on "lib" (depending on platform)
+    os::jvm_path(default_classlist, sizeof(default_classlist));
+    for (int i = 0; i < 3; i++) {
+      char *end = strrchr(default_classlist, *os::file_separator());
+      if (end != NULL) *end = '\0';
+    }
+    int classlist_path_len = (int)strlen(default_classlist);
+    if (classlist_path_len >= 3) {
+      if (strcmp(default_classlist + classlist_path_len - 3, "lib") != 0) {
+        if (classlist_path_len < JVM_MAXPATHLEN - 4) {
+          jio_snprintf(default_classlist + classlist_path_len,
+                       sizeof(default_classlist) - classlist_path_len,
+                       "%slib", os::file_separator());
+          classlist_path_len += 4;
         }
       }
-      if (class_list_path_len < JVM_MAXPATHLEN - 10) {
-        jio_snprintf(class_list_path_str + class_list_path_len,
-                     sizeof(class_list_path_str) - class_list_path_len,
-                     "%sclasslist", os::file_separator());
-      }
-      class_list_path = class_list_path_str;
-    } else {
-      class_list_path = SharedClassListFile;
     }
-
-    log_info(cds)("Loading classes to share ...");
-    _has_error_classes = false;
-    int class_count = preload_classes(class_list_path, THREAD);
-    if (ExtraSharedClassListFile) {
-      class_count += preload_classes(ExtraSharedClassListFile, THREAD);
+    if (classlist_path_len < JVM_MAXPATHLEN - 10) {
+      jio_snprintf(default_classlist + classlist_path_len,
+                   sizeof(default_classlist) - classlist_path_len,
+                   "%sclasslist", os::file_separator());
     }
-    log_info(cds)("Loading classes to share: done.");
+    classlist_path = default_classlist;
+  } else {
+    classlist_path = SharedClassListFile;
+  }
 
-    log_info(cds)("Shared spaces: preloaded %d classes", class_count);
+  log_info(cds)("Loading classes to share ...");
+  _has_error_classes = false;
+  int class_count = parse_classlist(classlist_path, CHECK);
+  if (ExtraSharedClassListFile) {
+    class_count += parse_classlist(ExtraSharedClassListFile, CHECK);
+  }
 
-    if (SharedArchiveConfigFile) {
-      log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
-      read_extra_data(SharedArchiveConfigFile, THREAD);
-      log_info(cds)("Reading extra data: done.");
-    }
+  // Exercise the manifest processing code to ensure classes used by CDS at runtime
+  // are always archived
+  const char* dummy = "Manifest-Version: 1.0\n";
+  SystemDictionaryShared::create_jar_manifest(dummy, strlen(dummy), CHECK);
 
-    if (LambdaFormInvokers::lambdaform_lines() != NULL) {
-      log_info(cds)("Regenerate MethodHandle Holder classes...");
-      LambdaFormInvokers::regenerate_holder_classes(THREAD);
-      log_info(cds)("Regenerate MethodHandle Holder classes done.");
-    }
+  log_info(cds)("Loading classes to share: done.");
+  log_info(cds)("Shared spaces: preloaded %d classes", class_count);
+}
 
-    HeapShared::init_for_dumping(THREAD);
+void MetaspaceShared::preload_and_dump_impl(TRAPS) {
+  preload_classes(CHECK);
 
-    // exercise the manifest processing code to ensure classes used by CDS are always archived
-    SystemDictionaryShared::create_jar_manifest("Manifest-Version: 1.0\n", strlen("Manifest-Version: 1.0\n"), THREAD);
-    // Rewrite and link classes
-    log_info(cds)("Rewriting and linking classes ...");
+  if (SharedArchiveConfigFile) {
+    log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
+    read_extra_data(THREAD, SharedArchiveConfigFile);
+    log_info(cds)("Reading extra data: done.");
+  }
 
-    // Link any classes which got missed. This would happen if we have loaded classes that
-    // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
-    // fails verification, all other interfaces that were not specified in the classlist but
-    // are implemented by K are not verified.
-    link_and_cleanup_shared_classes(CATCH);
-    log_info(cds)("Rewriting and linking classes: done");
+  if (LambdaFormInvokers::lambdaform_lines() != NULL) {
+    log_info(cds)("Regenerate MethodHandle Holder classes...");
+    LambdaFormInvokers::regenerate_holder_classes(CHECK);
+    log_info(cds)("Regenerate MethodHandle Holder classes done.");
+  }
+
+  HeapShared::init_for_dumping(CHECK);
+
+  // Rewrite and link classes
+  log_info(cds)("Rewriting and linking classes ...");
+
+  // Link any classes which got missed. This would happen if we have loaded classes that
+  // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
+  // fails verification, all other interfaces that were not specified in the classlist but
+  // are implemented by K are not verified.
+  link_and_cleanup_shared_classes(CATCH);
+  log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
     if (use_full_module_graph()) {
-      HeapShared::reset_archived_object_states(THREAD);
+      HeapShared::reset_archived_object_states(CHECK);
     }
 #endif
 
-    VM_PopulateDumpSharedSpace op;
-    VMThread::execute(&op);
-  }
+  VM_PopulateDumpSharedSpace op;
+  VMThread::execute(&op);
 }
 
 
-int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
-  ClassListParser parser(class_list_path);
-  int class_count = 0;
-
-  while (parser.parse_one_line()) {
-    if (parser.lambda_form_line()) {
-      continue;
-    }
-    Klass* klass = parser.load_current_class(THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      if (klass == NULL) {
-        Symbol* exception_klass_name = PENDING_EXCEPTION->klass()->name();
-        if (exception_klass_name == vmSymbols::java_lang_ClassNotFoundException() ||
-            exception_klass_name == vmSymbols::java_lang_UnsupportedClassVersionError()) {
-          // print a warning only when the class is not found or has a version that's too old.
-          // Todo: the CDS test cases expect "Cannot find" in the log, but we should consider
-          // distinguishing the different failure modes.
-          log_warning(cds)("Preload Warning: Cannot find %s", parser.current_class_name());
-        }
-      }
-      CLEAR_PENDING_EXCEPTION;
-    }
-    if (klass != NULL) {
-      if (log_is_enabled(Trace, cds)) {
-        ResourceMark rm(THREAD);
-        log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
-      }
-
-      if (klass->is_instance_klass()) {
-        InstanceKlass* ik = InstanceKlass::cast(klass);
-
-        // Link the class to cause the bytecodes to be rewritten and the
-        // cpcache to be created. The linking is done as soon as classes
-        // are loaded in order that the related data structures (klass and
-        // cpCache) are located together.
-        try_link_class(ik, THREAD);
-        guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
-      }
-
-      class_count++;
-    }
-  }
-
-  return class_count;
+int MetaspaceShared::parse_classlist(const char* classlist_path, TRAPS) {
+  ClassListParser parser(classlist_path);
+  return parser.parse(THREAD); // returns the number of classes loaded.
 }
 
-// Returns true if the class's status has changed
-bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
+// Returns true if the class's status has changed.
+bool MetaspaceShared::try_link_class(Thread* current, InstanceKlass* ik) {
+  ExceptionMark em(current);
+  Thread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
   if (ik->is_loaded() && !ik->is_linked() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {

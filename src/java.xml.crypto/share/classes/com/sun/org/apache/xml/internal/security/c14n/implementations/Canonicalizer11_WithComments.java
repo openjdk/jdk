@@ -36,7 +36,4 @@ public class Canonicalizer11_WithComments extends Canonicalizer20010315 {
         return Canonicalizer.ALGO_ID_C14N11_WITH_COMMENTS;
     }
 
-    public final boolean engineGetIncludeComments() {
-        return true;
-    }
 }

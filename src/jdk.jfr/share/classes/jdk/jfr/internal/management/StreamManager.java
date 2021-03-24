@@ -35,8 +35,6 @@ import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 import jdk.jfr.Recording;
-import jdk.jfr.internal.consumer.FinishedStream;
-import jdk.jfr.internal.consumer.OngoingStream;
 
 // Exposes EventByteStreams to the FlightRecorderMXBean
 public final class StreamManager {

@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * Parse command arguments, derived from StreamTokenizer by
@@ -102,7 +101,7 @@ class ArgTokenizer {
                 options.entrySet()
                        .stream()
                        .filter(e -> e.getKey().startsWith(opt))
-                       .collect(toList());
+                       .toList();
         if (matches.size() == 1) {
             matches.get(0).setValue(true);
         } else {

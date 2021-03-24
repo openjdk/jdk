@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,13 +118,17 @@ jboolean setInet6Address_scopeifname(JNIEnv *env, jobject iaObj, jobject scopeif
     jobject holder = (*env)->GetObjectField(env, iaObj, ia6_holder6ID);
     CHECK_NULL_RETURN(holder, JNI_FALSE);
     (*env)->SetObjectField(env, holder, ia6_scopeifnameID, scopeifname);
+    (*env)->DeleteLocalRef(env, holder);
     return JNI_TRUE;
 }
 
 unsigned int getInet6Address_scopeid(JNIEnv *env, jobject iaObj) {
+    unsigned int id;
     jobject holder = (*env)->GetObjectField(env, iaObj, ia6_holder6ID);
     CHECK_NULL_RETURN(holder, 0);
-    return (unsigned int)(*env)->GetIntField(env, holder, ia6_scopeidID);
+    id = (unsigned int)(*env)->GetIntField(env, holder, ia6_scopeidID);
+    (*env)->DeleteLocalRef(env, holder);
+    return id;
 }
 
 jboolean setInet6Address_scopeid(JNIEnv *env, jobject iaObj, int scopeid) {
@@ -134,6 +138,7 @@ jboolean setInet6Address_scopeid(JNIEnv *env, jobject iaObj, int scopeid) {
     if (scopeid > 0) {
         (*env)->SetBooleanField(env, holder, ia6_scopeidsetID, JNI_TRUE);
     }
+    (*env)->DeleteLocalRef(env, holder);
     return JNI_TRUE;
 }
 
@@ -142,9 +147,11 @@ jboolean getInet6Address_ipaddress(JNIEnv *env, jobject iaObj, char *dest) {
 
     holder = (*env)->GetObjectField(env, iaObj, ia6_holder6ID);
     CHECK_NULL_RETURN(holder, JNI_FALSE);
-    addr =  (*env)->GetObjectField(env, holder, ia6_ipaddressID);
+    addr = (*env)->GetObjectField(env, holder, ia6_ipaddressID);
     CHECK_NULL_RETURN(addr, JNI_FALSE);
     (*env)->GetByteArrayRegion(env, addr, 0, 16, (jbyte *)dest);
+    (*env)->DeleteLocalRef(env, addr);
+    (*env)->DeleteLocalRef(env, holder);
     return JNI_TRUE;
 }
 
@@ -154,13 +161,15 @@ jboolean setInet6Address_ipaddress(JNIEnv *env, jobject iaObj, char *address) {
 
     holder = (*env)->GetObjectField(env, iaObj, ia6_holder6ID);
     CHECK_NULL_RETURN(holder, JNI_FALSE);
-    addr =  (jbyteArray)(*env)->GetObjectField(env, holder, ia6_ipaddressID);
+    addr = (jbyteArray)(*env)->GetObjectField(env, holder, ia6_ipaddressID);
     if (addr == NULL) {
         addr = (*env)->NewByteArray(env, 16);
         CHECK_NULL_RETURN(addr, JNI_FALSE);
         (*env)->SetObjectField(env, holder, ia6_ipaddressID, addr);
     }
     (*env)->SetByteArrayRegion(env, addr, 0, 16, (jbyte *)address);
+    (*env)->DeleteLocalRef(env, addr);
+    (*env)->DeleteLocalRef(env, holder);
     return JNI_TRUE;
 }
 
@@ -168,12 +177,14 @@ void setInetAddress_addr(JNIEnv *env, jobject iaObj, int address) {
     jobject holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
     CHECK_NULL_THROW_NPE(env, holder, "InetAddress holder is null");
     (*env)->SetIntField(env, holder, iac_addressID, address);
+    (*env)->DeleteLocalRef(env, holder);
 }
 
 void setInetAddress_family(JNIEnv *env, jobject iaObj, int family) {
     jobject holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
     CHECK_NULL_THROW_NPE(env, holder, "InetAddress holder is null");
     (*env)->SetIntField(env, holder, iac_familyID, family);
+    (*env)->DeleteLocalRef(env, holder);
 }
 
 void setInetAddress_hostName(JNIEnv *env, jobject iaObj, jobject host) {
@@ -181,18 +192,25 @@ void setInetAddress_hostName(JNIEnv *env, jobject iaObj, jobject host) {
     CHECK_NULL_THROW_NPE(env, holder, "InetAddress holder is null");
     (*env)->SetObjectField(env, holder, iac_hostNameID, host);
     (*env)->SetObjectField(env, holder, iac_origHostNameID, host);
+    (*env)->DeleteLocalRef(env, holder);
 }
 
 int getInetAddress_addr(JNIEnv *env, jobject iaObj) {
+    int addr;
     jobject holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
     CHECK_NULL_THROW_NPE_RETURN(env, holder, "InetAddress holder is null", -1);
-    return (*env)->GetIntField(env, holder, iac_addressID);
+    addr = (*env)->GetIntField(env, holder, iac_addressID);
+    (*env)->DeleteLocalRef(env, holder);
+    return addr;
 }
 
 int getInetAddress_family(JNIEnv *env, jobject iaObj) {
+    int family;
     jobject holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
     CHECK_NULL_THROW_NPE_RETURN(env, holder, "InetAddress holder is null", -1);
-    return (*env)->GetIntField(env, holder, iac_familyID);
+    family = (*env)->GetIntField(env, holder, iac_familyID);
+    (*env)->DeleteLocalRef(env, holder);
+    return family;
 }
 
 JNIEXPORT jobject JNICALL

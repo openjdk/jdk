@@ -54,7 +54,7 @@ public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
             },
             (s, p) -> Path.of(s));
 
-    final static String DEFAULT_ICON = "JavaApp.png";
+    final static String DEFAULT_ICON = "java32.png";
 
     LinuxAppImageBuilder(Path imageOutDir) {
         super(imageOutDir);

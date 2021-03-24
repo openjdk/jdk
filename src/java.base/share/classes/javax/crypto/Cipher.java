@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1233,7 +1233,7 @@ public class Cipher {
      * by the underlying {@code CipherSpi}.
      */
     public final void init(int opmode, Key key) throws InvalidKeyException {
-        init(opmode, key, JCAUtil.getSecureRandom());
+        init(opmode, key, JCAUtil.getDefSecureRandom());
     }
 
     /**
@@ -1372,7 +1372,7 @@ public class Cipher {
     public final void init(int opmode, Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        init(opmode, key, params, JCAUtil.getSecureRandom());
+        init(opmode, key, params, JCAUtil.getDefSecureRandom());
     }
 
     /**
@@ -1513,7 +1513,7 @@ public class Cipher {
     public final void init(int opmode, Key key, AlgorithmParameters params)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        init(opmode, key, params, JCAUtil.getSecureRandom());
+        init(opmode, key, params, JCAUtil.getDefSecureRandom());
     }
 
     /**
@@ -1659,7 +1659,7 @@ public class Cipher {
     public final void init(int opmode, Certificate certificate)
             throws InvalidKeyException
     {
-        init(opmode, certificate, JCAUtil.getSecureRandom());
+        init(opmode, certificate, JCAUtil.getDefSecureRandom());
     }
 
     /**

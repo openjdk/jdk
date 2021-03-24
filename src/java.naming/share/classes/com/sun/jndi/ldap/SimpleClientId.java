@@ -37,9 +37,9 @@ import javax.naming.ldap.Control;
  * @author Rosanna Lee
  */
 class SimpleClientId extends ClientId {
-    final private String username;
-    final private Object passwd;
-    final private int myHash;
+    private final String username;
+    private final Object passwd;
+    private final int myHash;
 
     SimpleClientId(int version, String hostname, int port,
         String protocol, Control[] bindCtls, OutputStream trace,

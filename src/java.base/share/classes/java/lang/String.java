@@ -1818,13 +1818,9 @@ public final class String
         if (this == anObject) {
             return true;
         }
-        if (anObject instanceof String) {
-            String aString = (String)anObject;
-            if (!COMPACT_STRINGS || this.coder == aString.coder) {
-                return StringLatin1.equals(value, aString.value);
-            }
-        }
-        return false;
+        return (anObject instanceof String aString)
+                && (!COMPACT_STRINGS || this.coder == aString.coder)
+                && StringLatin1.equals(value, aString.value);
     }
 
     /**

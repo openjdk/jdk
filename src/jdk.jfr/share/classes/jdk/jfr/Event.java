@@ -97,6 +97,7 @@ abstract public class Event extends jdk.internal.event.Event {
     /**
      * Starts the timing of this event.
      */
+    @Override
     final public void begin() {
     }
 
@@ -105,6 +106,7 @@ abstract public class Event extends jdk.internal.event.Event {
      *
      * The {@code end} method must be invoked after the {@code begin} method.
      */
+    @Override
     final public void end() {
     }
 
@@ -116,6 +118,7 @@ abstract public class Event extends jdk.internal.event.Event {
      * not end with an explicit invocation of the {@code end} method, then the event
      * ends when the {@code commit} method is invoked.
      */
+    @Override
     final public void commit() {
     }
 
@@ -126,6 +129,7 @@ abstract public class Event extends jdk.internal.event.Event {
      *
      * @return {@code true} if event is enabled, {@code false} otherwise
      */
+    @Override
     final public boolean isEnabled() {
         return false;
     }
@@ -139,6 +143,7 @@ abstract public class Event extends jdk.internal.event.Event {
      * @return {@code true} if the event can be written to the Flight Recorder
      *         system, {@code false} otherwise
      */
+    @Override
     final public boolean shouldCommit() {
         return false;
     }
@@ -164,6 +169,7 @@ abstract public class Event extends jdk.internal.event.Event {
      * @see EventType#getFields()
      * @see EventFactory
      */
+    @Override
     final public void set(int index, Object value) {
     }
 }
