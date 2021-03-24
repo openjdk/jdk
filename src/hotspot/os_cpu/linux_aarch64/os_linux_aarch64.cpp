@@ -249,14 +249,17 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       }
       else
 
-      if (sig == SIGFPE  &&
-          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
+      if (sig == SIGFPE && info->si_code == FPE_INTDIV) {
         stub =
           SharedRuntime::
           continuation_for_implicit_exception(thread,
                                               pc,
                                               SharedRuntime::
                                               IMPLICIT_DIVIDE_BY_ZERO);
+      } else if (sig == SIGFPE &&
+                  (info->si_code >= FPE_FLTDIV && info->si_code <= FPE_FLTSUB)) {
+        tty->print_cr("\nUnexpected si_code %d (of type FPE_FLT...) with SIGFPE.\n", info->si_code);
+        fatal("Unexpected FPE_FLT signal, this is probably a bug in the OS");
       } else if (sig == SIGSEGV &&
                  MacroAssembler::uses_implicit_null_check((void*)addr)) {
           // Determination of interpreter/vtable stub/compiled code null exception

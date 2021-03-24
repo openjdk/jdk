@@ -453,11 +453,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else
 
 #ifdef AMD64
-      if (sig == SIGFPE  &&
-          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV
+      if (sig == SIGFPE &&
+          (info->si_code == FPE_INTDIV
            // Workaround for macOS ARM incorrectly reporting FPE_FLTINV for "div by 0"
            // instead of the expected FPE_FLTDIV when running x86_64 binary under Rosetta emulation
-           MACOS_ONLY(|| (VM_Version::is_cpu_emulated() && info->si_code == FPE_FLTINV)))) {
+           MACOS_ONLY(|| (info->si_code == FPE_FLTINV && VM_Version::is_cpu_emulated())))) {
         stub =
           SharedRuntime::
           continuation_for_implicit_exception(thread,
@@ -485,6 +485,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           fatal("please update this code.");
         }
 #endif /* __APPLE__ */
+
+      } else if (sig == SIGFPE &&
+                  (info->si_code >= FPE_FLTDIV && info->si_code <= FPE_FLTSUB)) {
+        tty->print_cr("\nUnexpected si_code %d (of type FPE_FLT...) with SIGFPE.\n", info->si_code);
+        fatal("Unexpected FPE_FLT signal, this is probably a bug in the OS");
 
 #else
       if (sig == SIGFPE /* && info->si_code == FPE_INTDIV */) {
