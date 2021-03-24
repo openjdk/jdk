@@ -428,13 +428,16 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  * If neither shares or quotas have been specified, return the
  * number of active processors in the system.
  *
- * If both shares and quotas have been specified, the results are
- * based on the flag PreferContainerQuotaForCPUCount.  If true,
- * return the quota value.  If false return the smallest value
- * between shares or quotas.
+ * If the PreferContainerQuotaForCPUCount flag is set to true
+ * the result will be either the quota value (if quota is specified)
+ * or the number of active processors (if quota was not set).
+ * If the PreferContainerQuotaForCPUCount flag is set to false (or is unset)
+ * and both shares and quota are specified the smaller value will be
+ * chosen.
+ * If only one of shares or quota is specified than that value will
+ * be taken.
  *
- * If shares and/or quotas have been specified, the resulting number
- * returned will never exceed the number of active processors.
+ * The resulting number returned will never exceed the number of active processors.
  *
  * return:
  *    number of CPUs
@@ -469,20 +472,23 @@ int CgroupSubsystem::active_processor_count() {
     log_trace(os, container)("CPU Share count based on shares: %d", share_count);
   }
 
-  // If both shares and quotas are setup results depend
-  // on flag PreferContainerQuotaForCPUCount.
-  // If true, limit CPU count to quota
-  // If false, use minimum of shares and quotas
-  if (quota_count !=0 && share_count != 0) {
-    if (PreferContainerQuotaForCPUCount) {
-      limit_count = quota_count;
-    } else {
+  // 1. If the PreferContainerQuotaForCPUCount flag is specified
+  //    the CPU count will be limited by quota, if set.
+  //    If quota is not set the limit will be equal to number
+  //    of available CPUs derived from the cpu affinity information.
+  // 2. If the PreferContainerQuotaForCPUCount flag is not specified
+  //    the result will be the minimum of non-zero values of the number
+  //    of shares and quotas.
+  if (PreferContainerQuotaForCPUCount) {
+      limit_count = quota_count > 0 ? quota_count : cpu_count;
+  } else {
+    if (quota_count != 0 && share_count != 0) {
       limit_count = MIN2(quota_count, share_count);
+    } else if (quota_count != 0) {
+      limit_count = quota_count;
+    } else if (share_count != 0) {
+      limit_count = share_count;
     }
-  } else if (quota_count != 0) {
-    limit_count = quota_count;
-  } else if (share_count != 0) {
-    limit_count = share_count;
   }
 
   result = MIN2(cpu_count, limit_count);
