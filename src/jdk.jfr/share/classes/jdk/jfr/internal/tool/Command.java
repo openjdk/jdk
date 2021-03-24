@@ -31,7 +31,6 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;

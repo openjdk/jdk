@@ -172,6 +172,7 @@ public final class SecuritySupport {
             return path.toFile();
         }
 
+        @Override
         public String toString() {
             return text;
         }
@@ -183,8 +184,8 @@ public final class SecuritySupport {
 
         @Override
         public boolean equals(Object other) {
-            if(other != null && other instanceof SafePath){
-                return this.toPath().equals(((SafePath) other).toPath());
+            if(other != null && other instanceof SafePath s){
+                return this.toPath().equals(s.toPath());
             }
             return false;
         }

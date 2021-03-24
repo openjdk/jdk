@@ -28,7 +28,6 @@ package jdk.jfr.internal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -212,8 +211,8 @@ public class Type implements Comparable<Type> {
     }
 
     public List<ValueDescriptor> getFields() {
-        if (fields instanceof ArrayList) {
-            ((ArrayList<ValueDescriptor>) fields).trimToSize();
+        if (fields instanceof ArrayList<?> list) {
+            list.trimToSize();
             fields = Collections.unmodifiableList(fields);
         }
         return fields;
@@ -291,8 +290,7 @@ public class Type implements Comparable<Type> {
 
     @Override
     public boolean equals(Object object) {
-        if (object instanceof Type) {
-            Type that = (Type) object;
+        if (object instanceof Type that) {
             return that.id == this.id;
         }
         return false;
