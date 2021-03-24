@@ -121,8 +121,8 @@ abstract class UnixUserDefinedFileAttributeView
             x.rethrowAsIOException(file);
         }
         try {
-            List<String> rawList = list(fd, MIN_LISTXATTR_BUF_SIZE);
-            return rawList.stream()
+            List<String> attrNames = list(fd, MIN_LISTXATTR_BUF_SIZE);
+            return attrNames.stream()
                     .filter(s -> s.startsWith(USER_NAMESPACE))
                     .map(s -> s.substring(USER_NAMESPACE.length()))
                     .toList();
@@ -307,8 +307,8 @@ abstract class UnixUserDefinedFileAttributeView
      */
     static void copyExtendedAttributes(int ofd, int nfd) {
         try {
-            List<String> rawList = list(ofd, MIN_LISTXATTR_BUF_SIZE);
-            for (String name : rawList) {
+            List<String> attrNames = list(ofd, MIN_LISTXATTR_BUF_SIZE);
+            for (String name : attrNames) {
                 try {
                     copyExtendedAttribute(ofd, Util.toBytes(name), nfd);
                 } catch(UnixException ignore){
