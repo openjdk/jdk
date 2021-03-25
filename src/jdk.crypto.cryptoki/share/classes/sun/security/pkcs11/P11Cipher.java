@@ -169,6 +169,13 @@ final class P11Cipher extends CipherSpi {
     // specification mandates a fixed size of the key
     private int fixedKeySize = -1;
 
+    // Indicates whether the underlying PKCS#11 library requires block-sized
+    // updates during multi-part operations. This may be needed only if
+    // padding is applied on the Java side. An example of the previous is when
+    // the CKM_AES_ECB mechanism is used and the PKCS#11 library is NSS. See
+    // more on JDK-8261355.
+    private boolean reqBlockUpdates = false;
+
     P11Cipher(Token token, String algorithm, long mechanism)
             throws PKCS11Exception, NoSuchAlgorithmException {
         super();
@@ -252,6 +259,10 @@ final class P11Cipher extends CipherSpi {
                 // no native padding support; use our own padding impl
                 paddingObj = new PKCS5Padding(blockSize);
                 padBuffer = new byte[blockSize];
+                char[] tokenLabel = token.tokenInfo.label;
+                // NSS requires block-sized updates in multi-part operations.
+                reqBlockUpdates = ((tokenLabel[0] == 'N' && tokenLabel[1] == 'S'
+                        && tokenLabel[2] == 'S') ? true : false);
             }
         } else {
             throw new NoSuchPaddingException("Unsupported padding " + padding);
@@ -588,7 +599,7 @@ final class P11Cipher extends CipherSpi {
             ensureInitialized();
             int k = 0;
             int newPadBufferLen = 0;
-            if (paddingObj != null) {
+            if (paddingObj != null && (!encrypt || reqBlockUpdates)) {
                 if (padBufferLen != 0) {
                     // NSS throws up when called with data not in multiple
                     // of blocks. Try to work around this by holding the
