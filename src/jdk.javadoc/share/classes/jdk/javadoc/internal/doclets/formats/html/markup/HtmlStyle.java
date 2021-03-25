@@ -340,12 +340,6 @@ public enum HtmlStyle {
     propertyDetails,
 
     /**
-     * The class for a {@code section} element containing details of the
-     * serialized form of an element, on the "Serialized Form" page.
-     */
-    serializedClassDetails,
-
-    /**
      * The class for the list containing the {@code @see} tags of an element.
      */
     seeList,
@@ -355,6 +349,12 @@ public enum HtmlStyle {
      * when some of the tags have longer labels.
      */
     seeListLong,
+
+    /**
+     * The class for a {@code section} element containing details of the
+     * serialized form of an element, on the "Serialized Form" page.
+     */
+    serializedClassDetails,
 
     //</editor-fold>
 
