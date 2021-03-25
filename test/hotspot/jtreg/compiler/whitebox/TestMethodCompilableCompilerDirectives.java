@@ -61,7 +61,7 @@ public class TestMethodCompilableCompilerDirectives {
     // returns false regardless of any compiler directives if m was not yet tried to be compiled. The compiler directive ExcludeOption
     // to prevent a compilation is evaluated lazily and is only applied when a compilation for m is attempted.
     // Another problem is that Method::is_not_compilable() only returns true for CompLevel_any if C1 AND C2 cannot compile it.
-    // This means that a compilation of m must have been attempted for C1 and C2 before WB::isMethodCompilable(m, CompLevl_any) will
+    // This means that a compilation of m must have been attempted for C1 and C2 before WB::isMethodCompilable(m, CompLevel_any) will
     // ever return false. This disregards any compiler directives (e.g. compileonly, exclude) that prohibit a compilation of m completely.
     // WB::isMethodCompilable() should be aware of the ExcludeOption compiler directives at any point in time.
     public static void main(String[] args) throws NoSuchMethodException {
