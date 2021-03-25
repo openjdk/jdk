@@ -229,15 +229,15 @@ void MutableSpace::oop_iterate(OopIterateClosure* cl) {
   HeapWord* t = top();
   // Could call objects iterate, but this is easier.
   while (obj_addr < t) {
-    obj_addr += oop(obj_addr)->oop_iterate_size(cl);
+    obj_addr += cast_to_oop(obj_addr)->oop_iterate_size(cl);
   }
 }
 
 void MutableSpace::object_iterate(ObjectClosure* cl) {
   HeapWord* p = bottom();
   while (p < top()) {
-    cl->do_object(oop(p));
-    p += oop(p)->size();
+    cl->do_object(cast_to_oop(p));
+    p += cast_to_oop(p)->size();
   }
 }
 
@@ -259,9 +259,9 @@ void MutableSpace::verify() {
   HeapWord* t = top();
   HeapWord* prev_p = NULL;
   while (p < t) {
-    oopDesc::verify(oop(p));
+    oopDesc::verify(cast_to_oop(p));
     prev_p = p;
-    p += oop(p)->size();
+    p += cast_to_oop(p)->size();
   }
   guarantee(p == top(), "end of last object must match end of space");
 }

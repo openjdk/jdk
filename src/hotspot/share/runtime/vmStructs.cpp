@@ -307,7 +307,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonstatic_field(Method,                      _flags,                                        u2)                                    \
-  nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
   volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
@@ -492,10 +491,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
                                                                                                                                      \
   nonstatic_field(BasicHashtable<mtInternal>,  _table_size,                                   int)                                   \
   nonstatic_field(BasicHashtable<mtInternal>,  _buckets,                                      HashtableBucket<mtInternal>*)          \
-  volatile_nonstatic_field(BasicHashtable<mtInternal>,  _free_list,                           BasicHashtableEntry<mtInternal>*)      \
-  nonstatic_field(BasicHashtable<mtInternal>,  _first_free_entry,                             char*)                                 \
-  nonstatic_field(BasicHashtable<mtInternal>,  _end_block,                                    char*)                                 \
-  nonstatic_field(BasicHashtable<mtInternal>,  _entry_size,                                   int)                                   \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* ClassLoaderData */                                                                                                              \

@@ -455,8 +455,8 @@ protected:
     }
     return -1;
   }
-  int replace_edge(Node* old, Node* neww);
-  int replace_edges_in_range(Node* old, Node* neww, int start, int end);
+  int replace_edge(Node* old, Node* neww, PhaseGVN* gvn = NULL);
+  int replace_edges_in_range(Node* old, Node* neww, int start, int end, PhaseGVN* gvn);
   // NULL out all inputs to eliminate incoming Def-Use edges.
   void disconnect_inputs(Compile* C);
 
@@ -530,7 +530,8 @@ public:
     replace_by(new_node);
     disconnect_inputs(c);
   }
-  void set_req_X( uint i, Node *n, PhaseIterGVN *igvn );
+  void set_req_X(uint i, Node *n, PhaseIterGVN *igvn);
+  void set_req_X(uint i, Node *n, PhaseGVN *gvn);
   // Find the one non-null required input.  RegionNode only
   Node *nonnull_req() const;
   // Add or remove precedence edges

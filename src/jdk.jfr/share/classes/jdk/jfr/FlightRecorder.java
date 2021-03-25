@@ -38,7 +38,6 @@ import java.util.Objects;
 
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.JVMSupport;
-import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.Options;

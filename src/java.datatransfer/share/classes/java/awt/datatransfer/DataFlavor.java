@@ -185,10 +185,10 @@ public class DataFlavor implements Externalizable, Cloneable {
     /*
      * private initializer
      */
-    private static DataFlavor initHtmlDataFlavor(String htmlFlavorType) {
+    private static DataFlavor initHtml(String htmlFlavorType) {
         try {
-            return new DataFlavor ("text/html; class=java.lang.String;document=" +
-                                       htmlFlavorType + ";charset=Unicode");
+            return new DataFlavor("text/html; class=java.lang.String;document="
+                                      + htmlFlavorType + ";charset=Unicode");
         } catch (Exception e) {
             return null;
         }
@@ -292,7 +292,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      *
      * @since 1.8
      */
-    public static DataFlavor selectionHtmlFlavor = initHtmlDataFlavor("selection");
+    public static final DataFlavor selectionHtmlFlavor = initHtml("selection");
 
     /**
      * Represents a piece of an HTML markup. If possible, the markup received
@@ -306,7 +306,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      *
      * @since 1.8
      */
-    public static DataFlavor fragmentHtmlFlavor = initHtmlDataFlavor("fragment");
+    public static final DataFlavor fragmentHtmlFlavor = initHtml("fragment");
 
     /**
      * Represents a piece of an HTML markup. If possible, the markup received
@@ -320,7 +320,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      *
      * @since 1.8
      */
-    public static DataFlavor allHtmlFlavor = initHtmlDataFlavor("all");
+    public static final DataFlavor allHtmlFlavor = initHtml("all");
 
     /**
      * Constructs a new {@code DataFlavor}. This constructor is provided only

@@ -924,7 +924,7 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
             Node* hook = new Node(1);
             hook->init_req(0, n_ctrl); // Add an input to prevent hook from being dead
             _igvn.rehash_node_delayed(phi);
-            int count = phi->replace_edge(n, hook);
+            int count = phi->replace_edge(n, hook, &_igvn);
             assert(count > 0, "inconsistent phi");
 
             // Compute latest point this store can go
@@ -1043,7 +1043,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Do not clone the trip counter through on a CountedLoop
   // (messes up the canonical shape).
-  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_loop())) && n->Opcode() == Op_AddI) ||
+  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_inner_loop())) && n->Opcode() == Op_AddI) ||
       (n_blk->is_LongCountedLoop() && n->Opcode() == Op_AddL)) {
     return n;
   }

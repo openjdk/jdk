@@ -161,7 +161,7 @@ public class SALauncher {
                 return debugdHelp();
             case "hsdb":
             case "clhsdb":
-                return commonHelp(toolName);
+                return commonHelpWithConnect(toolName);
             default:
                 return launcherHelp();
         }
@@ -276,7 +276,8 @@ public class SALauncher {
     private static void runCLHSDB(String[] oldArgs) {
         Map<String, String> longOptsMap = Map.of("exe=", "exe",
                                                  "core=", "core",
-                                                 "pid=", "pid");
+                                                 "pid=", "pid",
+                                                 "connect=", "connect");
         Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
         CLHSDB.main(buildAttachArgs(newArgMap, true));
     }
@@ -284,7 +285,8 @@ public class SALauncher {
     private static void runHSDB(String[] oldArgs) {
         Map<String, String> longOptsMap = Map.of("exe=", "exe",
                                                  "core=", "core",
-                                                 "pid=", "pid");
+                                                 "pid=", "pid",
+                                                 "connect=", "connect");
         Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
         HSDB.main(buildAttachArgs(newArgMap, true));
     }

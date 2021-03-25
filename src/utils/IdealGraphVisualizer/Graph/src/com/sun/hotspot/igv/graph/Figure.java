@@ -279,7 +279,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
             // class NodeQuickSearch in the View module.
             for (InputNode n : getSource().getSourceNodes()) {
                 String label = resolveString(diagram.getNodeText(), n.getProperties());
-                n.getProperties().setProperty("label", label);
+                n.getProperties().setProperty("label", label.replaceAll("\\R", " "));
             }
         }
         return lines;

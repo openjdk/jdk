@@ -71,7 +71,6 @@ import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 import jdk.jshell.spi.ExecutionControl.ResolutionException;
 import jdk.jshell.spi.ExecutionControl.RunException;
 import jdk.jshell.spi.ExecutionControl.UserException;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.Collections.singletonList;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
@@ -1005,11 +1004,11 @@ class Eval {
                 .filter(u -> u != c)
                 .map(u -> u.event(null, null))
                 .filter(this::interestingEvent)
-                .collect(Collectors.toList()));
+                .toList());
         events.addAll(outs.stream()
                 .flatMap(u -> u.secondaryEvents().stream())
                 .filter(this::interestingEvent)
-                .collect(Collectors.toList()));
+                .toList());
         //System.err.printf("Events: %s\n", events);
         return events;
     }
@@ -1052,7 +1051,7 @@ class Eval {
             while (true) {
                 List<Unit> legit = ins.stream()
                         .filter(Unit::isDefined)
-                        .collect(toList());
+                        .toList();
                 state.debug(DBG_GEN, "compileAndLoad ins = %s -- legit = %s\n",
                         ins, legit);
                 if (legit.isEmpty()) {
@@ -1084,7 +1083,7 @@ class Eval {
                         // attempt to redefine the remaining classes
                         List<Unit> toReplace = legit.stream()
                                 .filter(u -> !u.doRedefines())
-                                .collect(toList());
+                                .toList();
 
                         // prevent alternating redefine/replace cyclic dependency
                         // loop by replacing all that have been replaced
@@ -1111,7 +1110,7 @@ class Eval {
             // add any new dependencies to the working set
             List<Unit> newDependencies = ins.stream()
                     .flatMap(Unit::effectedDependents)
-                    .collect(toList());
+                    .toList();
             state.debug(DBG_GEN, "compileAndLoad %s -- deps: %s  success: %s\n",
                     ins, newDependencies, success);
             if (!ins.addAll(newDependencies) && success) {

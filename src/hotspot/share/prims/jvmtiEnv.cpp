@@ -693,7 +693,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     // The phase is checked by the wrapper that called this function,
     // but this thread could be racing with the thread that is
     // terminating the VM so we check one more time.
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current();
     HandleMark hm(THREAD);
 
     // create the zip entry (which will open the zip file and hence
@@ -1446,7 +1446,7 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
 jvmtiError
 JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jthread** threads_ptr, jint* group_count_ptr, jthreadGroup** groups_ptr) {
   JavaThread* current_thread = JavaThread::current();
-  oop group_obj = (oop) JNIHandles::resolve_external_guard(group);
+  oop group_obj = JNIHandles::resolve_external_guard(group);
   NULL_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   Handle *thread_objs = NULL;
@@ -2366,15 +2366,10 @@ JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
   if (!java_lang_Class::is_primitive(k_mirror)) {
     Klass* k = java_lang_Class::as_Klass(k_mirror);
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    result = k->compute_modifier_flags(current_thread);
-    JavaThread* THREAD = current_thread; // pass to macros
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-      return JVMTI_ERROR_INTERNAL;
-    };
+    result = k->compute_modifier_flags();
 
-    // Reset the deleted  ACC_SUPER bit ( deleted in compute_modifier_flags()).
-    if(k->is_super()) {
+    // Reset the deleted  ACC_SUPER bit (deleted in compute_modifier_flags()).
+    if (k->is_super()) {
       result |= JVM_ACC_SUPER;
     }
   } else {

@@ -499,6 +499,7 @@ class java_lang_Throwable: AllStatic {
   static int _detailMessage_offset;
   static int _stackTrace_offset;
   static int _depth_offset;
+  static int _cause_offset;
   static int _static_unassigned_stacktrace_offset;
 
   // StackTrace (programmatic access, new since 1.4)
@@ -516,6 +517,7 @@ class java_lang_Throwable: AllStatic {
   static int get_detailMessage_offset() { CHECK_INIT(_detailMessage_offset); }
   // Message
   static oop message(oop throwable);
+  static oop cause(oop throwable);
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, Method* method, int bci);

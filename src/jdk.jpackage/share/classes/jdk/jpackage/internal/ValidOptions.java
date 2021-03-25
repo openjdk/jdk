@@ -87,15 +87,21 @@ class ValidOptions {
         options.put(CLIOptions.INSTALL_DIR.getId(), USE.INSTALL);
         options.put(CLIOptions.PREDEFINED_APP_IMAGE.getId(), USE.INSTALL);
 
+        options.put(CLIOptions.ABOUT_URL.getId(), USE.INSTALL);
+
         options.put(CLIOptions.FILE_ASSOCIATIONS.getId(),
             (Platform.getPlatform() == Platform.MAC) ?  USE.ALL : USE.INSTALL);
 
         if (Platform.getPlatform() == Platform.WINDOWS) {
             options.put(CLIOptions.WIN_CONSOLE_HINT.getId(), USE.LAUNCHER);
 
+            options.put(CLIOptions.WIN_HELP_URL.getId(), USE.INSTALL);
+            options.put(CLIOptions.WIN_UPDATE_URL.getId(), USE.INSTALL);
+
             options.put(CLIOptions.WIN_MENU_HINT.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_MENU_GROUP.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_SHORTCUT_HINT.getId(), USE.INSTALL);
+            options.put(CLIOptions.WIN_SHORTCUT_PROMPT.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_DIR_CHOOSER.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_UPGRADE_UUID.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_PER_USER_INSTALLATION.getId(),
@@ -109,6 +115,9 @@ class ValidOptions {
             options.put(CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId(), USE.ALL);
             options.put(CLIOptions.MAC_SIGNING_KEY_NAME.getId(), USE.ALL);
             options.put(CLIOptions.MAC_SIGNING_KEYCHAIN.getId(), USE.ALL);
+            options.put(CLIOptions.MAC_APP_STORE.getId(), USE.ALL);
+            options.put(CLIOptions.MAC_CATEGORY.getId(), USE.ALL);
+            options.put(CLIOptions.MAC_ENTITLEMENTS.getId(), USE.ALL);
         }
 
         if (Platform.getPlatform() == Platform.LINUX) {

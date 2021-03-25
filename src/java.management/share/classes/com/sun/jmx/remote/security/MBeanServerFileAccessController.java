@@ -398,7 +398,7 @@ public class MBeanServerFileAccessController
     }
 
     private static class Parser {
-        private final static int EOS = -1;  // pseudo-codepoint "end of string"
+        private static final int EOS = -1;  // pseudo-codepoint "end of string"
         static {
             assert !Character.isWhitespace(EOS);
         }

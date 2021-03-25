@@ -509,7 +509,6 @@ public class WhiteBox {
 
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
-  public native void runMemoryUnitTests();
   public native void readFromNoaccessArea();
   public native long getThreadStackSize();
   public native long getThreadRemainingStackSize();
