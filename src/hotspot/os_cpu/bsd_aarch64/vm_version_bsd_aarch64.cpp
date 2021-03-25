@@ -97,3 +97,11 @@ void VM_Version::get_compatible_board(char *buf, int buflen) {
   assert(buflen >= 1, "invalid argument");
   *buf = '\0';
 }
+
+#ifdef __APPLE__
+
+bool VM_Version::is_cpu_emulated() {
+  return false;
+}
+
+#endif
