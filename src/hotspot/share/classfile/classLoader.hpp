@@ -256,12 +256,19 @@ class ClassLoader: AllStatic {
   static void release_load_zip_library();
   static inline void load_zip_library_if_needed();
   static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
-
- public:
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
                                                  bool throw_exception,
                                                  bool is_boot_append,
                                                  bool from_class_path_attr, TRAPS);
+
+ public:
+  static ClassPathEntry* create_class_path_entry_or_fail(const char *path, const struct stat* st,
+                                                         bool is_boot_append,
+                                                         bool from_class_path_attr, TRAPS);
+  static ClassPathEntry* create_class_path_entry_or_null(Thread* current,
+                                                         const char *path, const struct stat* st,
+                                                         bool is_boot_append,
+                                                         bool from_class_path_attr);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
@@ -311,12 +318,13 @@ class ClassLoader: AllStatic {
   static void close_jrt_image();
 
   // Add a module's exploded directory to the boot loader's exploded module build list
-  static void add_to_exploded_build_list(Symbol* module_name, TRAPS);
+  static void add_to_exploded_build_list(Thread* current, Symbol* module_name);
 
   // Attempt load of individual class from either the patched or exploded modules build lists
-  static ClassFileStream* search_module_entries(const GrowableArray<ModuleClassPathList*>* const module_list,
+  static ClassFileStream* search_module_entries(Thread* current,
+                                                const GrowableArray<ModuleClassPathList*>* const module_list,
                                                 const char* const class_name,
-                                                const char* const file_name, TRAPS);
+                                                const char* const file_name);
 
   // Load individual .class file
   static InstanceKlass* load_class(Symbol* class_name, bool search_append_only, TRAPS);
@@ -337,7 +345,7 @@ class ClassLoader: AllStatic {
 
   // Initialization
   static void initialize(TRAPS);
-  static void classLoader_init2(TRAPS);
+  static void classLoader_init2(Thread* current);
   CDS_ONLY(static void initialize_shared_path(TRAPS);)
   CDS_ONLY(static void initialize_module_path(TRAPS);)
 

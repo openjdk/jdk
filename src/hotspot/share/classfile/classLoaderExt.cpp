@@ -327,10 +327,7 @@ ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(Thread* current,
   }
   ClassPathEntry* new_entry = NULL;
 
-  ExceptionMark em(current);
-  Thread* THREAD = current; // For exception macros.
-  new_entry = create_class_path_entry(path, &st, /*throw_exception=*/false,
-                                      false, false, CATCH); // will never throw
+  new_entry = create_class_path_entry_or_null(current, path, &st, false, false);
   if (new_entry == NULL) {
     return NULL;
   }
