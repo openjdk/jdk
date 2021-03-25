@@ -806,18 +806,6 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   // Try to allocate metadata.
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
-  if (result == NULL) {
-    tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
-
-    // Allocation failed.
-    if (is_init_completed()) {
-      // Only start a GC if the bootstrapping has completed.
-      // Try to clean out some heap memory and retry. This can prevent premature
-      // expansion of the metaspace.
-      result = Universe::heap()->satisfy_failed_metadata_allocation(loader_data, word_size, mdtype);
-    }
-  }
-
   if (result != NULL) {
     // Zero initialize.
     Copy::fill_to_words((HeapWord*)result, word_size, 0);
@@ -841,17 +829,34 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   MetaWord* result = allocate(loader_data, word_size, type);
 
   if (result == NULL) {
-    if (DumpSharedSpaces) {
-      // CDS dumping keeps loading classes, so if we hit an OOM we probably will keep hitting OOM.
-      // We should abort to avoid generating a potentially bad archive.
-      vm_exit_during_cds_dumping(err_msg("Failed allocating metaspace object type %s of size " SIZE_FORMAT ". CDS dump aborted.",
-          MetaspaceObj::type_name(type), word_size * BytesPerWord),
-        err_msg("Please increase MaxMetaspaceSize (currently " SIZE_FORMAT " bytes).", MaxMetaspaceSize));
-    }
     MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
-    report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
-    assert(HAS_PENDING_EXCEPTION, "sanity");
-    return NULL;
+    tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
+
+    // Allocation failed.
+    if (is_init_completed()) {
+      // Only start a GC if the bootstrapping has completed.
+      // Try to clean out some heap memory and retry. This can prevent premature
+      // expansion of the metaspace.
+      result = Universe::heap()->satisfy_failed_metadata_allocation(loader_data, word_size, mdtype);
+    }
+
+    if (result == NULL) {
+      if (DumpSharedSpaces) {
+        // CDS dumping keeps loading classes, so if we hit an OOM we probably will keep hitting OOM.
+        // We should abort to avoid generating a potentially bad archive.
+        vm_exit_during_cds_dumping(err_msg("Failed allocating metaspace object type %s of size " SIZE_FORMAT ". CDS dump aborted.",
+            MetaspaceObj::type_name(type), word_size * BytesPerWord),
+          err_msg("Please increase MaxMetaspaceSize (currently " SIZE_FORMAT " bytes).", MaxMetaspaceSize));
+      }
+      report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
+      assert(HAS_PENDING_EXCEPTION, "sanity");
+      return NULL;
+    }
+
+    // Zero initialize.
+    Copy::fill_to_words((HeapWord*)result, word_size, 0);
+
+    log_trace(metaspace)("Metaspace::allocate: type %d return " PTR_FORMAT ".", (int)type, p2i(result));
   }
 
   return result;
