@@ -52,15 +52,15 @@ import java.util.Objects;
  *
  * <p>The {@code BigDecimal} class gives its user complete control
  * over rounding behavior.  If no rounding mode is specified and the
- * exact result cannot be represented, an {@code ArithmeticException} is thrown;
- * otherwise, calculations can be carried out to a chosen precision
- * and rounding mode by supplying an appropriate {@link MathContext}
- * object to the operation.  In either case, eight <em>rounding
- * modes</em> are provided for the control of rounding.  Using the
- * integer fields in this class (such as {@link #ROUND_HALF_UP}) to
- * represent rounding mode is deprecated; the enumeration values
- * of the {@code RoundingMode} {@code enum}, (such as {@link
- * RoundingMode#HALF_UP}) should be used instead.
+ * exact result cannot be represented, an {@code ArithmeticException}
+ * is thrown; otherwise, calculations can be carried out to a chosen
+ * precision and rounding mode by supplying an appropriate {@link
+ * MathContext} object to the operation.  In either case, eight
+ * <em>rounding modes</em> are provided for the control of rounding.
+ * Using the integer fields in this class (such as {@link
+ * #ROUND_HALF_UP}) to represent rounding mode is deprecated; the
+ * enumeration values of the {@code RoundingMode} {@code enum}, (such
+ * as {@link RoundingMode#HALF_UP}) should be used instead.
  *
  * <p>When a {@code MathContext} object is supplied with a precision
  * setting of 0 (for example, {@link MathContext#UNLIMITED}),
@@ -103,8 +103,7 @@ import java.util.Objects;
  * the exact result has more digits (perhaps infinitely many in the
  * case of division and square root) than the number of digits returned.
  *
- * First, the
- * total number of digits to return is specified by the
+ * First, the total number of digits to return is specified by the
  * {@code MathContext}'s {@code precision} setting; this determines
  * the result's <i>precision</i>.  The digit count starts from the
  * leftmost nonzero digit of the exact result.  The rounding mode
@@ -197,7 +196,7 @@ import java.util.Objects;
  * <p>As a 32-bit integer, the set of values for the scale is large,
  * but bounded. If the scale of a result would exceed the range of a
  * 32-bit integer, either by overflow or underflow, the operation may
- * throw {@code ArithmeticException}.
+ * throw an {@code ArithmeticException}.
  *
  * <p>For the sake of brevity and clarity, pseudo-code is used
  * throughout the descriptions of {@code BigDecimal} methods.  The
