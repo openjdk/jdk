@@ -166,45 +166,45 @@ public class TestRelatedPackages extends JavadocTester {
                 """
                         <div class="caption"><span>Related Packages</span></div>
                         <div class="summary-table three-column-summary">
-                        <div class="table-header col-first">Package</div>
-                        <div class="table-header col-second">Module</div>
+                        <div class="table-header col-first">Module</div>
+                        <div class="table-header col-second">Package</div>
                         <div class="table-header col-last">Description</div>
+                        <div class="col-plain even-row-color"><a href="../module-summary.html">m</a></div>
                         <div class="col-first even-row-color"><a href="sub1/package-summary.html">pkg.sub1</a></div>
-                        <div class="col-extra even-row-color"><a href="../module-summary.html">m</a></div>
                         <div class="col-last even-row-color">&nbsp;</div>
+                        <div class="col-plain odd-row-color"><a href="../../o/module-summary.html">o</a></div>
                         <div class="col-first odd-row-color"><a href="../../o/pkg/sub2/package-summary.html">pkg.sub2</a></div>
-                        <div class="col-extra odd-row-color"><a href="../../o/module-summary.html">o</a></div>
                         <div class="col-last odd-row-color">&nbsp;</div>
                         </div>""");
         checkOutput("m/pkg/sub1/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
                         <div class="summary-table three-column-summary">
-                        <div class="table-header col-first">Package</div>
-                        <div class="table-header col-second">Module</div>
+                        <div class="table-header col-first">Module</div>
+                        <div class="table-header col-second">Package</div>
                         <div class="table-header col-last">Description</div>
+                        <div class="col-plain even-row-color"><a href="../../module-summary.html">m</a></div>
                         <div class="col-first even-row-color"><a href="../package-summary.html">pkg</a></div>
-                        <div class="col-extra even-row-color"><a href="../../module-summary.html">m</a></div>
                         <div class="col-last even-row-color">&nbsp;</div>
+                        <div class="col-plain odd-row-color"><a href="../../../o/module-summary.html">o</a></div>
                         <div class="col-first odd-row-color"><a href="../../../o/pkg/sub2/package-summary.html">pkg.sub2</a></div>
-                        <div class="col-extra odd-row-color"><a href="../../../o/module-summary.html">o</a></div>
                         <div class="col-last odd-row-color">&nbsp;</div>
                         </div>""");
         checkOutput("o/pkg/sub2/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
                         <div class="summary-table three-column-summary">
-                        <div class="table-header col-first">Package</div>
-                        <div class="table-header col-second">Module</div>
+                        <div class="table-header col-first">Module</div>
+                        <div class="table-header col-second">Package</div>
                         <div class="table-header col-last">Description</div>
+                        <div class="col-plain even-row-color"><a href="../../../m/module-summary.html">m</a></div>
                         <div class="col-first even-row-color"><a href="../../../m/pkg/package-summary.html">pkg</a></div>
-                        <div class="col-extra even-row-color"><a href="../../../m/module-summary.html">m</a></div>
                         <div class="col-last even-row-color">&nbsp;</div>
+                        <div class="col-plain odd-row-color"><a href="../../module-summary.html">o</a></div>
                         <div class="col-first odd-row-color"><a href="sub/package-summary.html">pkg.sub2.sub</a></div>
-                        <div class="col-extra odd-row-color"><a href="../../module-summary.html">o</a></div>
                         <div class="col-last odd-row-color">&nbsp;</div>
+                        <div class="col-plain even-row-color"><a href="../../../m/module-summary.html">m</a></div>
                         <div class="col-first even-row-color"><a href="../../../m/pkg/sub1/package-summary.html">pkg.sub1</a></div>
-                        <div class="col-extra even-row-color"><a href="../../../m/module-summary.html">m</a></div>
                         <div class="col-last even-row-color">&nbsp;</div>
                         </div>""");
         checkOutput("o/pkg/sub2/sub/package-summary.html", true,

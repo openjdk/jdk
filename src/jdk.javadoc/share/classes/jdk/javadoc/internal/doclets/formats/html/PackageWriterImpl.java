@@ -166,7 +166,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addRelatedPackagesSummary(List<PackageElement> relatedPackages, Content summaryContentTree) {
         boolean showModules = configuration.showModules && hasRelatedPackagesInOtherModules(relatedPackages);
         TableHeader tableHeader= showModules
-                ? new TableHeader(contents.packageLabel, contents.moduleLabel, contents.descriptionLabel)
+                ? new TableHeader(contents.moduleLabel, contents.packageLabel, contents.descriptionLabel)
                 : new TableHeader(contents.packageLabel, contents.descriptionLabel);
         addPackageSummary(relatedPackages, contents.relatedPackages, tableHeader,
                 summaryContentTree, showModules);
@@ -248,12 +248,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addPackageSummary(List<PackageElement> packages, Content label,
                                   TableHeader tableHeader, Content summaryContentTree,
                                   boolean showModules) {
-        if(!packages.isEmpty()) {
+        if (!packages.isEmpty()) {
             Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(label)
                     .setHeader(tableHeader);
             if (showModules) {
-                table.setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colExtra, HtmlStyle.colLast);
+                table.setColumnStyles(HtmlStyle.colPlain, HtmlStyle.colFirst, HtmlStyle.colLast);
             } else {
                 table.setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
             }
@@ -279,7 +279,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     addSummaryComment(pkg, description);
                 }
                 if (showModules) {
-                    table.addRow(packageLink, moduleLink, description);
+                    table.addRow(moduleLink, packageLink, description);
                 } else {
                     table.addRow(packageLink, description);
                 }

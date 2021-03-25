@@ -445,7 +445,7 @@ public enum HtmlStyle {
      * The class of the cells in a table column used to display additional
      * information without any particular style.
      */
-    colExtra,
+    colPlain,
 
     /**
      * The class of the second column of cells in a table.
