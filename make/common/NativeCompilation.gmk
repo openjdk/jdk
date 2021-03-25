@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -349,15 +349,20 @@ define SetupCompileNativeFileBody
       $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CFLAGS) \
           $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CC)
-      $1_DEP_FLAG := $(C_FLAG_DEPS)
+      $1_DEP_FLAG := $(GENDEPS_FLAGS)
     else ifneq ($$(filter %.m, $$($1_FILENAME)), )
       # Compile as an Objective-C file
       $1_FLAGS := -x objective-c $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) \
           $$($1_BASE_CFLAGS) $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CC)
-      $1_DEP_FLAG := $(C_FLAG_DEPS)
-    else ifneq ($$(filter %.s %.S, $$($1_FILENAME)), )
-      # Compile as assembler file
+      $1_DEP_FLAG := $(GENDEPS_FLAGS)
+    else ifneq ($$(filter %.S, $$($1_FILENAME)), )
+      # Compile as preprocessed assembler file
+      $1_FLAGS := $$($1_BASE_ASFLAGS)
+      $1_COMPILER := $(AS)
+      $1_DEP_FLAG := $(GENDEPS_FLAGS)
+    else ifneq ($$(filter %.s, $$($1_FILENAME)), )
+      # Compile as non-preprocessed assembler file
       $1_FLAGS := $$($1_BASE_ASFLAGS)
       $1_COMPILER := $(AS)
       $1_DEP_FLAG :=
@@ -366,12 +371,12 @@ define SetupCompileNativeFileBody
       $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CXXFLAGS) \
           $$($1_OPT_CXXFLAGS) $$($1_CXXFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CXX)
-      $1_DEP_FLAG := $(CXX_FLAG_DEPS)
+      $1_DEP_FLAG := $(GENDEPS_FLAGS)
     else
       $$(error Internal error in NativeCompilation.gmk: no compiler for file $$($1_FILENAME))
     endif
 
-    ifeq ($$(filter %.s %.S, $$($1_FILENAME)), )
+    ifeq ($$(filter %.s, $$($1_FILENAME)), )
       # And this is the dependency file for this obj file.
       $1_DEPS_FILE := $$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_OBJ))
       # The dependency target file lists all dependencies as empty targets to
@@ -424,15 +429,23 @@ define SetupCompileNativeFileBody
           # Keep as much as possible on one execution line for best performance
           # on Windows. No need to save exit code from compilation since
           # pipefail is always active on Windows.
-	  $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
-	      $$($1_COMPILER) -showIncludes $$($1_COMPILE_OPTIONS))) \
-	      | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
-	          -e "^$$($1_FILENAME)$$$$" || test "$$$$?" = "1" ; \
-	  $(ECHO) $$@: \\ > $$($1_DEPS_FILE) ; \
-	  $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_OBJ).log \
-	      | $(SORT) -u >> $$($1_DEPS_FILE) ; \
-	  $(ECHO) >> $$($1_DEPS_FILE) ; \
-	  $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) > $$($1_DEPS_TARGETS_FILE)
+          ifeq ($$(filter %.S, $$($1_FILENAME)), )
+	    $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+	        $$($1_COMPILER) -showIncludes $$($1_COMPILE_OPTIONS))) \
+	        | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
+	            -e "^$$($1_FILENAME)$$$$" || test "$$$$?" = "1" ; \
+	    $(ECHO) $$@: \\ > $$($1_DEPS_FILE) ; \
+	    $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_OBJ).log \
+	        | $(SORT) -u >> $$($1_DEPS_FILE) ; \
+	    $(ECHO) >> $$($1_DEPS_FILE) ; \
+	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) > $$($1_DEPS_TARGETS_FILE)
+          else
+            # For assembler calls, no need to build dependency list.
+	    $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+	        $$($1_COMPILER) $$($1_FLAGS) \
+	          $(CC_OUT_OPTION)$$($1_OBJ) -nologo -c -Ta $$($1_SRC_FILE) 2>&1 \
+	            | $(TR) -d '\r' | $(GREP) -v -e "Assembling:" || test "$$$$?" = "1" ;))
+          endif
         endif
   endif
 endef
@@ -814,7 +827,7 @@ define SetupNativeCompilationBody
         -include $$($1_PCH_DEPS_TARGETS_FILE)
 
         $1_PCH_COMMAND := $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
-            $$($1_OPT_CFLAGS) -x c++-header -c $(C_FLAG_DEPS) \
+            $$($1_OPT_CFLAGS) -x c++-header -c $(GENDEPS_FLAGS) \
             $$(addsuffix .tmp, $$($1_PCH_DEPS_FILE))
 
         $$($1_PCH_FILE): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
