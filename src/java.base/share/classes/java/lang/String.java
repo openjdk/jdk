@@ -4595,4 +4595,14 @@ public final class String
         return this;
     }
 
+    public String replace(Map<String, String> replacements) {
+        if (replacements.isEmpty()) {
+            return this;
+        }
+
+        return Pattern.compile(String.join("|", (Iterable<String>) replacements.keySet().stream().map(Pattern::quote)::iterator))
+            .matcher(this)
+            .replaceAll(matchResult -> Matcher.quoteReplacement(replacements.get(matchResult.group())));
+    }
+
 }
