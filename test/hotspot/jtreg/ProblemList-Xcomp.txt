@@ -28,9 +28,3 @@
 #############################################################################
 
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
-compiler/blackhole/BlackholeDiagnosticUnlockTest.java           8258101 generic-all
-compiler/blackhole/BlackholeNonVoidWarningTest.java             8258101 generic-all
-compiler/blackhole/BlackholeStaticTest.java#c1                  8258101 generic-all
-compiler/blackhole/BlackholeStaticTest.java#c1-no-coops         8258101 generic-all
-compiler/blackhole/BlackholeStaticTest.java#c2                  8258101 generic-all
-compiler/blackhole/BlackholeStaticTest.java#c2-no-coops         8258101 generic-all
