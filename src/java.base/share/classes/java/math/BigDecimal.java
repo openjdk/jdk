@@ -3090,6 +3090,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * @return a numerically equal {@code BigDecimal} with any
      * trailing zeros removed.
+     * @throws ArithmeticException (overflow) if the new scale is out of range.
      * @since 1.5
      */
     public BigDecimal stripTrailingZeros() {
@@ -4921,6 +4922,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * @return new {@code BigDecimal} with a scale possibly reduced
      * to be closed to the preferred scale.
+     * @throws ArithmeticException (overflow) if the new scale is out of range.
      */
     private static BigDecimal createAndStripZerosToMatchScale(BigInteger intVal, int scale, long preferredScale) {
         BigInteger qr[]; // quotient-remainder pair
@@ -4945,6 +4947,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * @return new {@code BigDecimal} with a scale possibly reduced
      * to be closed to the preferred scale.
+     * @throws ArithmeticException (overflow) if the new scale is out of range.
      */
     private static BigDecimal createAndStripZerosToMatchScale(long compactVal, int scale, long preferredScale) {
         while (Math.abs(compactVal) >= 10L && scale > preferredScale) {
