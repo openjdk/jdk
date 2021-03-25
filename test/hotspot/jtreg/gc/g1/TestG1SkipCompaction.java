@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm TestG1SkipCompaction
+ * @run main/othervm -Xms256m -Xmx256m TestG1SkipCompaction
  */
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,7 +74,7 @@ public class TestG1SkipCompaction {
             memory = new ArrayList<>();
             try {
                 while (true) {
-                    memory.add(new char[1024]);
+                    memory.add(new char[8 * 1024]);
                     System.gc();
                 }
             } catch (OutOfMemoryError e) {
@@ -82,6 +82,6 @@ public class TestG1SkipCompaction {
                 System.gc();
             }
         }
-     }
+    }
 }
 

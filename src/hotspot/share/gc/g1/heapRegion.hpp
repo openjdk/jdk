@@ -27,7 +27,6 @@
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
-#include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/g1/heapRegionType.hpp"
@@ -330,6 +329,7 @@ public:
   size_t live_bytes() {
     return (top() - prev_top_at_mark_start()) * HeapWordSize + marked_bytes();
   }
+
   // The number of bytes counted in the next marking.
   size_t next_marked_bytes() { return _next_marked_bytes; }
   // The number of bytes live wrt the next marking.
@@ -488,11 +488,6 @@ public:
   // to provide a dummy version of it.
 #endif // ASSERT
 
-  void reset_no_compaction_region_during_compaction() {
-    zero_marked_bytes();
-    init_top_at_mark_start();
-    reset_after_full_gc_common();
-  }
 
   // Reset the HeapRegion to default values and clear its remembered set.
   // If clear_space is true, clear the HeapRegion's memory.

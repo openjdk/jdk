@@ -33,6 +33,10 @@ bool G1FullCollector::is_in_pinned_or_closed(oop obj) const {
   return _region_attr_table.is_pinned_or_closed(cast_from_oop<HeapWord*>(obj));
 }
 
+bool G1FullCollector::is_in_pinned_or_closed(uint hr_index) const {
+  return _region_attr_table.is_pinned_or_closed(hr_index);
+}
+
 bool G1FullCollector::is_in_pinned(oop obj) const {
   return _region_attr_table.is_pinned(cast_from_oop<HeapWord*>(obj));
 }

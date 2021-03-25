@@ -26,6 +26,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -35,18 +36,25 @@
 #include "utilities/ticks.hpp"
 
 class G1ResetPinnedClosure : public HeapRegionClosure {
-  G1CMBitMap* _bitmap;
+  G1FullCollector* _collector;
 
 public:
-  G1ResetPinnedClosure(G1CMBitMap* bitmap) : _bitmap(bitmap) { }
+  G1ResetPinnedClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* r) {
-    if (!r->is_pinned()) {
+    uint hr_index = r->hrm_index();
+    // In the prepare phase, we "pin" the regions with high survival ratio
+    // by _region_attr_table, so here we use _region_attr_table rather than
+    // HeapRegion itself to tell whether a region is pinned.
+    if (!_collector->is_in_pinned_or_closed(hr_index)) {
       return false;
     }
-    assert(!r->is_starts_humongous() || _bitmap->is_marked((oop)r->bottom()),
+    assert(_collector->hr_live_words(hr_index) > _collector->scope()->hr_live_words_threshold() ||
+           !r->is_starts_humongous() ||
+           _collector->mark_bitmap()->is_marked(r->bottom()),
            "must be, otherwise reclaimed earlier");
     r->reset_pinned_after_full_gc();
+
     return false;
   }
 };
@@ -82,14 +90,6 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
   hr->reset_compacted_after_full_gc();
 }
 
-void G1FullGCCompactTask::process_skipping_compaction_region(HeapRegion* hr) {
-  if (G1VerifyBitmaps) {
-    collector()->mark_bitmap()->clear_region(hr);
-  }
-
-  hr->reset_no_compaction_region_during_compaction();
-}
-
 void G1FullGCCompactTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   GrowableArray<HeapRegion*>* compaction_queue = collector()->compaction_point(worker_id)->regions();
@@ -99,16 +99,7 @@ void G1FullGCCompactTask::work(uint worker_id) {
     compact_region(*it);
   }
 
-  if (MarkSweepDeadRatio > 0) {
-    GrowableArray<HeapRegion*>* skipping_compaction_queue = collector()->skipping_compaction_set(worker_id);
-    for (GrowableArrayIterator<HeapRegion*> it = skipping_compaction_queue->begin();
-         it != skipping_compaction_queue->end();
-         ++it) {
-      process_skipping_compaction_region(*it);
-    }
-  }
-
-  G1ResetPinnedClosure hc(collector()->mark_bitmap());
+  G1ResetPinnedClosure hc(collector());
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&hc, &_claimer, worker_id);
   log_task("Compaction task", worker_id, start);
 }

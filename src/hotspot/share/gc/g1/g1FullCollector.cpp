@@ -105,9 +105,12 @@ uint G1FullCollector::calc_active_workers() {
   return worker_count;
 }
 
-G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs) :
+G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
+                                 bool explicit_gc,
+                                 bool clear_soft_refs,
+                                 bool do_maximal_compaction) :
     _heap(heap),
-    _scope(heap->g1mm(), explicit_gc, clear_soft_refs),
+    _scope(heap->g1mm(), explicit_gc, clear_soft_refs, do_maximal_compaction),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
@@ -132,7 +135,6 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool c
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
     _compaction_points[i] = new G1FullGCCompactionPoint();
-    _skipping_compaction_sets[i] = new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(32, mtGC);
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
@@ -143,7 +145,6 @@ G1FullCollector::~G1FullCollector() {
   for (uint i = 0; i < _num_workers; i++) {
     delete _markers[i];
     delete _compaction_points[i];
-    delete _skipping_compaction_sets[i];
   }
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
@@ -227,15 +228,20 @@ void G1FullCollector::complete_collection() {
   _heap->print_heap_after_full_collection(scope()->heap_transition());
 }
 
-void G1FullCollector::update_attribute_table(HeapRegion* hr) {
-  if (hr->is_free()) {
+void G1FullCollector::update_attribute_table(HeapRegion* hr, bool force_pinned) {
+  if (force_pinned) {
+    // Pin high live ratio region
+    _region_attr_table.set_pinned(hr->hrm_index());
     return;
   }
+
   if (hr->is_closed_archive()) {
     _region_attr_table.set_closed_archive(hr->hrm_index());
   } else if (hr->is_pinned()) {
     _region_attr_table.set_pinned(hr->hrm_index());
   } else {
+    // Update _region_attr_table after free pinned regions,
+    // as the region can not be accessed in G1ResetPinnedClosure.
     _region_attr_table.set_normal(hr->hrm_index());
   }
 }

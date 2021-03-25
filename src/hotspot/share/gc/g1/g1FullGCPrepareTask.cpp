@@ -31,7 +31,6 @@
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1FullGCPrepareTask.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
-#include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -41,6 +40,7 @@
 #include "utilities/ticks.hpp"
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
+  bool force_pinned = false;
   if (hr->is_pinned()) {
     // There is no need to iterate and forward objects in pinned regions ie.
     // prepare them for compaction. The adjust pointers phase will skip
@@ -61,24 +61,26 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       assert(hr->is_closed_archive(), "Only closed archive regions can also be pinned.");
     }
   } else {
-    assert(!hr->is_humongous(), "humongous objects not supported.");
-    size_t live_bytes = _collector->live_bytes_after_full_gc_mark(hr->hrm_index());
-    if(live_bytes <= _hr_live_bytes_threshold) {
-      // low survivor ratio prepare compaction
+    assert(!hr->is_humongous(), "moving humongous objects not supported.");
+    size_t live_words = _collector->hr_live_words(hr->hrm_index());
+    size_t live_words_threshold = _collector->scope()->hr_live_words_threshold();
+
+    if(live_words <= live_words_threshold) {
       prepare_for_compaction(hr);
     } else {
       assert(MarkSweepDeadRatio > 0,
-             "it should not trigger skipping compaction, when MarkSweepDeadRatio == 0");
-      // deal with skipping compaction regions
-      prepare_for_skipping_compaction(hr);
-      log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live bytes: " SIZE_FORMAT, hr->hrm_index(), live_bytes);
+                "it should not trigger skipping compaction, when MarkSweepDeadRatio == 0");
+      // Force the high live ration region pinned,
+      // as we need skip these regions in the later compact step.
+      force_pinned = true;
+      log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
+                            hr->hrm_index(), live_words);
     }
   }
 
   // Reset data structures not valid after Full GC.
   reset_region_metadata(hr);
-
-  _collector->update_attribute_table(hr);
+  _collector->update_attribute_table(hr, force_pinned);
 
   return false;
 }
@@ -102,8 +104,7 @@ bool G1FullGCPrepareTask::has_freed_regions() {
 void G1FullGCPrepareTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   G1FullGCCompactionPoint* compaction_point = collector()->compaction_point(worker_id);
-  GrowableArray<HeapRegion*>* skipping_compaction_set = collector()->skipping_compaction_set(worker_id);
-  G1CalculatePointersClosure closure(collector(), compaction_point, skipping_compaction_set);
+  G1CalculatePointersClosure closure(collector(), compaction_point);
   G1CollectedHeap::heap()->heap_region_par_iterate_from_start(&closure, &_hrclaimer);
 
   compaction_point->update();
@@ -116,15 +117,12 @@ void G1FullGCPrepareTask::work(uint worker_id) {
 }
 
 G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1FullCollector* collector,
-                                                                            G1FullGCCompactionPoint* cp,
-                                                                            GrowableArray<HeapRegion*>* skipping_compaction_set) :
+                                                                            G1FullGCCompactionPoint* cp) :
     _g1h(G1CollectedHeap::heap()),
     _collector(collector),
     _bitmap(collector->mark_bitmap()),
     _cp(cp),
-    _skipping_compaction_set(skipping_compaction_set),
-    _regions_freed(false),
-    _hr_live_bytes_threshold((size_t)HeapRegion::GrainBytes * (100 - MarkSweepDeadRatio) / 100) { }
+    _regions_freed(false) { }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(HeapRegion* hr) {
   assert(hr->is_humongous(), "must be but region %u is %s", hr->hrm_index(), hr->get_short_type_str());
@@ -158,6 +156,7 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_open_archive_region(H
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
   hr->rem_set()->clear();
   hr->clear_cardtable();
+
   G1HotCardCache* hcc = _g1h->hot_card_cache();
   if (hcc->use_cache()) {
     hcc->reset_card_counts(hr);
@@ -203,50 +202,6 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(Hea
   // Add region to the compaction queue and prepare it.
   _cp->add(hr);
   prepare_for_compaction_work(_cp, hr);
-}
-
-void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_skipping_compaction(HeapRegion* hr) {
-  HeapRegion* current = hr;
-  HeapWord* limit = current->top();
-  HeapWord* next_addr = current->bottom();
-  HeapWord* live_end = current->bottom();
-  _skipping_compaction_set->append(current);
-  HeapWord* threshold = current->initialize_threshold();
-  HeapWord* pre_addr;
-
-  while (next_addr < limit) {
-    Prefetch::write(next_addr, PrefetchScanIntervalInBytes);
-    pre_addr = next_addr;
-
-    if (_bitmap->is_marked(next_addr)) {
-      oop obj = oop(next_addr);
-      size_t obj_size = obj->size();
-      // Object should not move but mark-word is used so it looks like the
-      // object is forwarded. Need to clear the mark and it's no problem
-      // since it will be restored by preserved marks. There is an exception
-      // with BiasedLocking, in this case forwardee() will return NULL
-      // even if the mark-word is used. This is no problem since
-      // forwardee() will return NULL in the compaction phase as well.
-      if (obj->forwardee() != NULL) {
-        obj->init_mark();
-      }
-
-      next_addr += obj_size;
-      // update live byte range end
-      live_end = next_addr;
-    } else {
-      next_addr = _bitmap->get_next_marked_addr(next_addr, limit);
-      assert(next_addr > live_end, "next_addr must be bigger than live_end");
-      assert(next_addr == limit || _bitmap->is_marked(next_addr), "next_addr is the limit or is marked");
-      // fill dummy object to replace dead range
-      Universe::heap()->fill_with_dummy_object(live_end, next_addr, true);
-    }
-
-    if (next_addr > threshold) {
-      threshold = current->cross_threshold(pre_addr, next_addr);
-    }
-  }
-  assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
 void G1FullGCPrepareTask::prepare_serial_compaction() {

@@ -62,6 +62,10 @@ public:
     return get_by_address(obj) >= Pinned;
   }
 
+  bool is_pinned_or_closed(uint hr_index) const {
+    return get_by_index(hr_index) >= Pinned;
+  }
+
   bool is_pinned(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
     return get_by_address(obj) == Pinned;

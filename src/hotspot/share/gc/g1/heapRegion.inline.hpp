@@ -200,7 +200,6 @@ inline void HeapRegion::reset_compacted_after_full_gc() {
 
 inline void HeapRegion::reset_pinned_after_full_gc() {
   assert(!is_free(), "should not have compacted free region");
-  assert(is_pinned(), "must be");
 
   assert(compaction_top() == bottom(),
          "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,

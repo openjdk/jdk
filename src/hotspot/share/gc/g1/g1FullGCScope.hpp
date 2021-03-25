@@ -53,9 +53,13 @@ class G1FullGCScope : public StackObj {
   ClearedAllSoftRefs      _soft_refs;
   G1MonitoringScope       _monitoring_scope;
   G1HeapTransition        _heap_transition;
+  size_t                  _hr_live_words_threshold;
 
 public:
-  G1FullGCScope(G1MonitoringSupport* monitoring_support, bool explicit_gc, bool clear_soft);
+  G1FullGCScope(G1MonitoringSupport* monitoring_support,
+                bool explicit_gc,
+                bool clear_soft,
+                bool do_maximal_compaction);
   ~G1FullGCScope();
 
   bool is_explicit_gc();
@@ -64,6 +68,7 @@ public:
   STWGCTimer* timer();
   G1FullGCTracer* tracer();
   G1HeapTransition* heap_transition();
+  size_t hr_live_words_threshold();
 };
 
 #endif // SHARE_GC_G1_G1FULLGCSCOPE_HPP
