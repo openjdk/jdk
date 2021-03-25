@@ -5633,8 +5633,7 @@ void ClassFileParser::update_class_name(Symbol* new_class_name) {
 // package by prepending its host class's package name to its class name and setting
 // its _class_name field.
 void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anonymous_host) {
-  JavaThread* current = JavaThread::current();
-  ResourceMark rm(current);
+  ResourceMark rm;
   assert(strrchr(_class_name->as_C_string(), JVM_SIGNATURE_SLASH) == NULL,
          "Unsafe anonymous class should not be in a package");
   TempNewSymbol host_pkg_name =
