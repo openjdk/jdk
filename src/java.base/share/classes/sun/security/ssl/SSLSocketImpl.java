@@ -1803,17 +1803,23 @@ public final class SSLSocketImpl
             SSLLogger.fine("wait for close_notify or alert");
         }
 
-        while (!conContext.isInboundClosed()) {
-            try {
-                Plaintext plainText = decode(null);
-                // discard and continue
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.finest(
-                        "discard plaintext while waiting for close", plainText);
+        appInput.readLock.lock();
+        try {
+            while (!conContext.isInboundClosed()) {
+                try {
+                    Plaintext plainText = decode(null);
+                    // discard and continue
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                        SSLLogger.finest(
+                                "discard plaintext while waiting for close",
+                                plainText);
+                    }
+                } catch (Exception e) {   // including RuntimeException
+                    handleException(e);
                 }
-            } catch (Exception e) {   // including RuntimeException
-                handleException(e);
             }
+        } finally {
+            appInput.readLock.unlock();
         }
     }
 }
