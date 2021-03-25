@@ -1157,58 +1157,37 @@ static int cc_to_biint(int cc, int flags_reg) {
 
 // Add nop if a prefixed (two-word) instruction is going to cross a 64-byte boundary.
 // (See Section 1.6 of Power ISA Version 3.1)
-int loadConI32Node::compute_padding(int current_offset) const {
+static int compute_prefix_padding(int current_offset) {
   assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
-         "Code buffer must be aligned to a multiple of 64 byte");
+         "Code buffer must be aligned to a multiple of 64 bytes");
   if (is_aligned(current_offset + BytesPerInstWord, 64)) {
     return BytesPerInstWord;
   }
   return 0;
+}
+
+int loadConI32Node::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
 }
 
 int loadConL34Node::compute_padding(int current_offset) const {
-  assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
-         "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
-    return BytesPerInstWord;
-  }
-  return 0;
+  return compute_prefix_padding(current_offset);
 }
 
 int addI_reg_imm32Node::compute_padding(int current_offset) const {
-  assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
-         "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
-    return BytesPerInstWord;
-  }
-  return 0;
+  return compute_prefix_padding(current_offset);
 }
 
 int addL_reg_imm34Node::compute_padding(int current_offset) const {
-  assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
-         "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
-    return BytesPerInstWord;
-  }
-  return 0;
+  return compute_prefix_padding(current_offset);
 }
 
 int addP_reg_imm34Node::compute_padding(int current_offset) const {
-  assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
-         "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
-    return BytesPerInstWord;
-  }
-  return 0;
+  return compute_prefix_padding(current_offset);
 }
 
 int cmprb_Whitespace_reg_reg_prefixedNode::compute_padding(int current_offset) const {
-  assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
-         "Code buffer must be aligned to a multiple of 64 byte");
-  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
-    return BytesPerInstWord;
-  }
-  return 0;
+  return compute_prefix_padding(current_offset);
 }
 
 
@@ -5892,7 +5871,7 @@ instruct loadConI32_lo16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
 instruct loadConI32(iRegIdst dst, immI32 src) %{
   match(Set dst src);
   // This macro is valid only in Power 10 and up, but adding the following predicate here
-  // caused build error. So we comment it out for now.
+  // caused a build error, so we comment it out for now.
   // predicate(PowerArchitecturePPC64 >= 10);
   ins_cost(DEFAULT_COST+1);
 
@@ -5981,7 +5960,7 @@ instruct loadConL32_Ex(iRegLdst dst, immL32 src) %{
 instruct loadConL34(iRegLdst dst, immL34 src) %{
   match(Set dst src);
   // This macro is valid only in Power 10 and up, but adding the following predicate here
-  // caused build error. So we comment it out for now.
+  // caused a build error, so we comment it out for now.
   // predicate(PowerArchitecturePPC64 >= 10);
   ins_cost(DEFAULT_COST+1);
 
