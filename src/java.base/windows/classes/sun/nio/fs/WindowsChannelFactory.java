@@ -332,7 +332,7 @@ class WindowsChannelFactory {
                 if (GetFileSizeEx(handle) != 0) {
                     CloseHandle(handle);
                     throw x;
-                } 
+                }
             }
         }
 
