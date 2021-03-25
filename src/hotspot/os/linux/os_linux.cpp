@@ -24,7 +24,6 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -65,7 +64,6 @@
 #include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "semaphore_posix.hpp"
-#include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/align.hpp"
@@ -97,7 +95,6 @@
 # include <sys/times.h>
 # include <sys/utsname.h>
 # include <sys/socket.h>
-# include <sys/wait.h>
 # include <pwd.h>
 # include <poll.h>
 # include <fcntl.h>
@@ -169,6 +166,11 @@ bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
+
+#ifdef __GLIBC__
+os::Linux::mallinfo_func_t os::Linux::_mallinfo = NULL;
+os::Linux::mallinfo2_func_t os::Linux::_mallinfo2 = NULL;
+#endif // __GLIBC__
 
 static jlong initial_time_count=0;
 
@@ -1357,58 +1359,6 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
   return localtime_r(clock, res);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// runtime exit support
-
-// Note: os::shutdown() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::shutdown(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::shutdown() {
-
-  // allow PerfMemory to attempt cleanup of any persistent resources
-  perfMemory_exit();
-
-  // needs to remove object in file system
-  AttachListener::abort();
-
-  // flush buffered output, finish log files
-  ostream_abort();
-
-  // Check for abort hook
-  abort_hook_t abort_hook = Arguments::abort_hook();
-  if (abort_hook != NULL) {
-    abort_hook();
-  }
-
-}
-
-// Note: os::abort() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::abort(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
-  os::shutdown();
-  if (dump_core) {
-    if (DumpPrivateMappingsInCore) {
-      ClassLoader::close_jrt_image();
-    }
-    ::abort(); // dump core
-  }
-
-  ::exit(1);
-}
-
-// Die immediately, no exit hook, no abort hook, no cleanup.
-// Dump a core file, if possible, for debugging.
-void os::die() {
-  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
-    // For TimeoutInErrorHandlingTest.java, we just kill the VM
-    // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
-  } else {
-    ::abort();
-  }
-}
-
 // thread_id is kernel thread id (similar to Solaris LWP id)
 intx os::current_thread_id() { return os::Linux::gettid(); }
 int os::current_process_id() {
@@ -2229,19 +2179,25 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // Print glibc outstanding allocations.
   // (note: there is no implementation of mallinfo for muslc)
 #ifdef __GLIBC__
-  struct mallinfo mi = ::mallinfo();
-
-  // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
-  // So values may have wrapped around. Still useful enough to see how much glibc thinks
-  // we allocated.
-  const size_t total_allocated = (size_t)(unsigned)mi.uordblks;
-  st->print("C-Heap outstanding allocations: " SIZE_FORMAT "K", total_allocated / K);
-  // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-  if ((vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX)) {
-    st->print(" (may have wrapped)");
+  size_t total_allocated = 0;
+  bool might_have_wrapped = false;
+  if (_mallinfo2 != NULL) {
+    struct glibc_mallinfo2 mi = _mallinfo2();
+    total_allocated = mi.uordblks;
+  } else if (_mallinfo != NULL) {
+    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
+    // So values may have wrapped around. Still useful enough to see how much glibc thinks
+    // we allocated.
+    struct glibc_mallinfo mi = _mallinfo();
+    total_allocated = (size_t)(unsigned)mi.uordblks;
+    // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
+    might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
   }
-  st->cr();
-
+  if (_mallinfo2 != NULL || _mallinfo != NULL) {
+    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K%s",
+                 total_allocated / K,
+                 might_have_wrapped ? " (may have wrapped)" : "");
+  }
 #endif // __GLIBC__
 
 }
@@ -3537,39 +3493,21 @@ int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
 }
 
 bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
-  bool result = false;
-
   // Include the page size flag to ensure we sanity check the correct page size.
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
   void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
 
   if (p != MAP_FAILED) {
-    // We don't know if this really is a huge page or not.
-    FILE *fp = fopen("/proc/self/maps", "r");
-    if (fp) {
-      while (!feof(fp)) {
-        char chars[257];
-        long x = 0;
-        if (fgets(chars, sizeof(chars), fp)) {
-          if (sscanf(chars, "%lx-%*x", &x) == 1
-              && x == (long)p) {
-            if (strstr (chars, "hugepage")) {
-              result = true;
-              break;
-            }
-          }
-        }
-      }
-      fclose(fp);
-    }
+    // Mapping succeeded, sanity check passed.
     munmap(p, page_size);
+    return true;
   }
 
-  if (warn && !result) {
-    warning("HugeTLBFS is not supported by the operating system.");
+  if (warn) {
+    warning("HugeTLBFS is not configured or not supported by the operating system.");
   }
 
-  return result;
+  return false;
 }
 
 bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
@@ -4406,6 +4344,11 @@ void os::init(void) {
 
   Linux::initialize_system_info();
 
+#ifdef __GLIBC__
+  Linux::_mallinfo = CAST_TO_FN_PTR(Linux::mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
+  Linux::_mallinfo2 = CAST_TO_FN_PTR(Linux::mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+#endif // __GLIBC__
+
   os::Linux::CPUPerfTicks pticks;
   bool res = os::Linux::get_tick_information(&pticks, -1);
 
@@ -5219,68 +5162,6 @@ void os::pause() {
   }
 }
 
-extern char** environ;
-
-// Run the specified command in a separate process. Return its exit value,
-// or -1 on failure (e.g. can't fork a new process).
-// Unlike system(), this function can be called from signal handler. It
-// doesn't block SIGINT et al.
-int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
-  const char * argv[4] = {"sh", "-c", cmd, NULL};
-
-  pid_t pid ;
-
-  if (use_vfork_if_available) {
-    pid = vfork();
-  } else {
-    pid = fork();
-  }
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    execve("/bin/sh", (char* const*)argv, environ);
-
-    // execve failed
-    _exit(-1);
-
-  } else  {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
-    int status;
-
-    // Wait for the child process to exit.  This returns immediately if
-    // the child has already exited. */
-    while (waitpid(pid, &status, 0) < 0) {
-      switch (errno) {
-      case ECHILD: return 0;
-      case EINTR: break;
-      default: return -1;
-      }
-    }
-
-    if (WIFEXITED(status)) {
-      // The child exited normally; get its exit code.
-      return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
-      // The child exited because of a signal
-      // The best value to return is 0x80 + signal number,
-      // because that is what all Unix shells do, and because
-      // it allows callers to distinguish between process exit and
-      // process death by signal.
-      return 0x80 + WTERMSIG(status);
-    } else {
-      // Unknown exit code; pass it through
-      return status;
-    }
-  }
-}
-
 // Get the default path to the core file
 // Returns the length of the string
 int os::get_core_path(char* buffer, size_t bufferSize) {
@@ -5535,172 +5416,3 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     st->cr();
   }
 }
-
-/////////////// Unit tests ///////////////
-
-#ifndef PRODUCT
-
-class TestReserveMemorySpecial : AllStatic {
- public:
-  static void small_page_write(void* addr, size_t size) {
-    size_t page_size = os::vm_page_size();
-
-    char* end = (char*)addr + size;
-    for (char* p = (char*)addr; p < end; p += page_size) {
-      *p = 1;
-    }
-  }
-
-  static void test_reserve_memory_special_huge_tlbfs_only(size_t size) {
-    if (!UseHugeTLBFS) {
-      return;
-    }
-
-    char* addr = os::Linux::reserve_memory_special_huge_tlbfs_only(size, NULL, false);
-
-    if (addr != NULL) {
-      small_page_write(addr, size);
-
-      os::Linux::release_memory_special_huge_tlbfs(addr, size);
-    }
-  }
-
-  static void test_reserve_memory_special_huge_tlbfs_only() {
-    if (!UseHugeTLBFS) {
-      return;
-    }
-
-    size_t lp = os::large_page_size();
-
-    for (size_t size = lp; size <= lp * 10; size += lp) {
-      test_reserve_memory_special_huge_tlbfs_only(size);
-    }
-  }
-
-  static void test_reserve_memory_special_huge_tlbfs_mixed() {
-    size_t lp = os::large_page_size();
-    size_t ag = os::vm_allocation_granularity();
-
-    // sizes to test
-    const size_t sizes[] = {
-      lp, lp + ag, lp + lp / 2, lp * 2,
-      lp * 2 + ag, lp * 2 - ag, lp * 2 + lp / 2,
-      lp * 10, lp * 10 + lp / 2
-    };
-    const int num_sizes = sizeof(sizes) / sizeof(size_t);
-
-    // For each size/alignment combination, we test three scenarios:
-    // 1) with req_addr == NULL
-    // 2) with a non-null req_addr at which we expect to successfully allocate
-    // 3) with a non-null req_addr which contains a pre-existing mapping, at which we
-    //    expect the allocation to either fail or to ignore req_addr
-
-    // Pre-allocate two areas; they shall be as large as the largest allocation
-    //  and aligned to the largest alignment we will be testing.
-    const size_t mapping_size = sizes[num_sizes - 1] * 2;
-    char* const mapping1 = (char*) ::mmap(NULL, mapping_size,
-      PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
-      -1, 0);
-    assert(mapping1 != MAP_FAILED, "should work");
-
-    char* const mapping2 = (char*) ::mmap(NULL, mapping_size,
-      PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
-      -1, 0);
-    assert(mapping2 != MAP_FAILED, "should work");
-
-    // Unmap the first mapping, but leave the second mapping intact: the first
-    // mapping will serve as a value for a "good" req_addr (case 2). The second
-    // mapping, still intact, as "bad" req_addr (case 3).
-    ::munmap(mapping1, mapping_size);
-
-    // Case 1
-    for (int i = 0; i < num_sizes; i++) {
-      const size_t size = sizes[i];
-      for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
-        char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, NULL, false);
-        if (p != NULL) {
-          assert(is_aligned(p, alignment), "must be");
-          small_page_write(p, size);
-          os::Linux::release_memory_special_huge_tlbfs(p, size);
-        }
-      }
-    }
-
-    // Case 2
-    for (int i = 0; i < num_sizes; i++) {
-      const size_t size = sizes[i];
-      for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
-        char* const req_addr = align_up(mapping1, alignment);
-        char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
-        if (p != NULL) {
-          assert(p == req_addr, "must be");
-          small_page_write(p, size);
-          os::Linux::release_memory_special_huge_tlbfs(p, size);
-        }
-      }
-    }
-
-    // Case 3
-    for (int i = 0; i < num_sizes; i++) {
-      const size_t size = sizes[i];
-      for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
-        char* const req_addr = align_up(mapping2, alignment);
-        char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
-        // as the area around req_addr contains already existing mappings, the API should always
-        // return NULL (as per contract, it cannot return another address)
-        assert(p == NULL, "must be");
-      }
-    }
-
-    ::munmap(mapping2, mapping_size);
-
-  }
-
-  static void test_reserve_memory_special_huge_tlbfs() {
-    if (!UseHugeTLBFS) {
-      return;
-    }
-
-    test_reserve_memory_special_huge_tlbfs_only();
-    test_reserve_memory_special_huge_tlbfs_mixed();
-  }
-
-  static void test_reserve_memory_special_shm(size_t size, size_t alignment) {
-    if (!UseSHM) {
-      return;
-    }
-
-    char* addr = os::Linux::reserve_memory_special_shm(size, alignment, NULL, false);
-
-    if (addr != NULL) {
-      assert(is_aligned(addr, alignment), "Check");
-      assert(is_aligned(addr, os::large_page_size()), "Check");
-
-      small_page_write(addr, size);
-
-      os::Linux::release_memory_special_shm(addr, size);
-    }
-  }
-
-  static void test_reserve_memory_special_shm() {
-    size_t lp = os::large_page_size();
-    size_t ag = os::vm_allocation_granularity();
-
-    for (size_t size = ag; size < lp * 3; size += ag) {
-      for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
-        test_reserve_memory_special_shm(size, alignment);
-      }
-    }
-  }
-
-  static void test() {
-    test_reserve_memory_special_huge_tlbfs();
-    test_reserve_memory_special_shm();
-  }
-};
-
-void TestReserveMemorySpecial_test() {
-  TestReserveMemorySpecial::test();
-}
-
-#endif

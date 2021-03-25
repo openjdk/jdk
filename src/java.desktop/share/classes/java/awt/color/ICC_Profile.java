@@ -91,7 +91,19 @@ public class ICC_Profile implements Serializable {
     @Serial
     private static final long serialVersionUID = -3938515861990936766L;
 
+    /**
+     * The implementation specific CMM profile, {@code null} if this
+     * {@code ICC_Profile} is not activated by the {@link #cmmProfile()} method.
+     * This field must not be used directly and only via {@link #cmmProfile()}.
+     */
     private transient volatile Profile cmmProfile;
+
+    /**
+     * Stores some information about {@code ICC_Profile} without causing a
+     * deferred profile to be loaded. Note that we can defer the loading of
+     * standard profiles only. If this field is null, then {@link #cmmProfile}
+     * should be used to access profile information.
+     */
     private transient volatile ProfileDeferralInfo deferralInfo;
 
     /**
@@ -108,7 +120,7 @@ public class ICC_Profile implements Serializable {
                "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
         ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-                "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+               "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
         ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
                "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
@@ -770,7 +782,7 @@ public class ICC_Profile implements Serializable {
      */
     @Deprecated(since = "9", forRemoval = true)
     @SuppressWarnings("removal")
-    protected void finalize () {
+    protected void finalize() {
     }
 
     /**
@@ -784,41 +796,33 @@ public class ICC_Profile implements Serializable {
      *         ICC Profile data
      */
     public static ICC_Profile getInstance(byte[] data) {
-    ICC_Profile thisProfile;
-
-        Profile p = null;
-
         ProfileDataVerifier.verify(data);
-
+        Profile p;
         try {
             p = CMSManager.getModule().loadProfile(data);
         } catch (CMMException c) {
             throw new IllegalArgumentException("Invalid ICC Profile Data");
         }
-
         try {
-            if ((getColorSpaceType (p) == ColorSpace.TYPE_GRAY) &&
-                (getData (p, icSigMediaWhitePointTag) != null) &&
-                (getData (p, icSigGrayTRCTag) != null)) {
-                thisProfile = new ICC_ProfileGray (p);
+            if (getColorSpaceType(p) == ColorSpace.TYPE_GRAY
+                    && getData(p, icSigMediaWhitePointTag) != null
+                    && getData(p, icSigGrayTRCTag) != null) {
+                return new ICC_ProfileGray(p);
             }
-            else if ((getColorSpaceType (p) == ColorSpace.TYPE_RGB) &&
-                (getData (p, icSigMediaWhitePointTag) != null) &&
-                (getData (p, icSigRedColorantTag) != null) &&
-                (getData (p, icSigGreenColorantTag) != null) &&
-                (getData (p, icSigBlueColorantTag) != null) &&
-                (getData (p, icSigRedTRCTag) != null) &&
-                (getData (p, icSigGreenTRCTag) != null) &&
-                (getData (p, icSigBlueTRCTag) != null)) {
-                thisProfile = new ICC_ProfileRGB (p);
-            }
-            else {
-                thisProfile = new ICC_Profile (p);
+            if (getColorSpaceType(p) == ColorSpace.TYPE_RGB
+                    && getData(p, icSigMediaWhitePointTag) != null
+                    && getData(p, icSigRedColorantTag) != null
+                    && getData(p, icSigGreenColorantTag) != null
+                    && getData(p, icSigBlueColorantTag) != null
+                    && getData(p, icSigRedTRCTag) != null
+                    && getData(p, icSigGreenTRCTag) != null
+                    && getData(p, icSigBlueTRCTag) != null) {
+                return new ICC_ProfileRGB(p);
             }
         } catch (CMMException c) {
-            thisProfile = new ICC_Profile (p);
+            // will try to create a general icc profile
         }
-        return thisProfile;
+        return new ICC_Profile(p);
     }
 
     /**
@@ -906,9 +910,7 @@ public class ICC_Profile implements Serializable {
         return getInstance(getProfileDataFromStream(s));
     }
 
-
     static byte[] getProfileDataFromStream(InputStream s) throws IOException {
-
         BufferedInputStream bis = new BufferedInputStream(s);
         bis.mark(128); // 128 is the length of the ICC profile header
 
@@ -917,10 +919,7 @@ public class ICC_Profile implements Serializable {
             header[38] != 0x73 || header[39] != 0x70) {
             return null;   /* not a valid profile */
         }
-        int profileSize = ((header[0] & 0xff) << 24) |
-                          ((header[1] & 0xff) << 16) |
-                          ((header[2] & 0xff) << 8) |
-                          (header[3] & 0xff);
+        int profileSize = intFromBigEndian(header, 0);
         bis.reset();
         try {
             return bis.readNBytes(profileSize);
@@ -930,32 +929,37 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Activates the deferred standard profiles. Implementation of this method
-     * mimics the old behaviour when the CMMException and IOException were
-     * wrapped by the ProfileDataException, and the ProfileDataException itself
-     * was ignored during activation.
+     * Activates and returns the deferred standard profiles. Implementation of
+     * this method mimics the old behaviour when the {@code CMMException} and
+     * {@code IOException} were wrapped by the {@code ProfileDataException}, and
+     * the {@code ProfileDataException} itself was ignored during activation.
+     *
+     * @return the implementation specific CMM profile, or {@code null}
      */
-    private void activate() {
-        if (cmmProfile == null) {
-            synchronized (this) {
-                if (cmmProfile != null) {
-                    return;
+    private Profile cmmProfile() {
+        Profile p = cmmProfile;
+        if (p != null) {
+            return p; // one volatile read on common path
+        }
+        synchronized (this) {
+            if (cmmProfile != null) {
+                return cmmProfile;
+            }
+            var is = getStandardProfileInputStream(deferralInfo.filename);
+            if (is == null) {
+                return null;
+            }
+            try (is) {
+                byte[] data = getProfileDataFromStream(is);
+                if (data != null) {
+                    p = cmmProfile = CMSManager.getModule().loadProfile(data);
+                    // from now we cannot use the deferred value, drop it
+                    deferralInfo = null;
                 }
-                var is = getStandardProfileInputStream(deferralInfo.filename);
-                if (is == null) {
-                    return;
-                }
-                try (is) {
-                    byte[] data = getProfileDataFromStream(is);
-                    if (data != null) {
-                        cmmProfile = CMSManager.getModule().loadProfile(data);
-                        // from now we cannot use the deferred value, drop it
-                        deferralInfo = null;
-                    }
-                } catch (CMMException | IOException ignore) {
-                }
+            } catch (CMMException | IOException ignore) {
             }
         }
+        return p;
     }
 
     /**
@@ -964,12 +968,7 @@ public class ICC_Profile implements Serializable {
      * @return the major version of the profile
      */
     public int getMajorVersion() {
-    byte[] theHeader;
-
-        theHeader = getData(icSigHead); /* getData will activate deferred
-                                           profiles if necessary */
-
-        return (int) theHeader[8];
+        return getData(icSigHead)[8];
     }
 
     /**
@@ -978,12 +977,7 @@ public class ICC_Profile implements Serializable {
      * @return the minor version of the profile
      */
     public int getMinorVersion() {
-    byte[] theHeader;
-
-        theHeader = getData(icSigHead); /* getData will activate deferred
-                                           profiles if necessary */
-
-        return (int) theHeader[9];
+        return getData(icSigHead)[9];
     }
 
     /**
@@ -992,52 +986,24 @@ public class ICC_Profile implements Serializable {
      * @return one of the predefined profile class constants
      */
     public int getProfileClass() {
-    byte[] theHeader;
-    int theClassSig, theClass;
-
         ProfileDeferralInfo info = deferralInfo;
         if (info != null) {
             return info.profileClass;
         }
-
-        theHeader = getData(icSigHead);
-
-        theClassSig = intFromBigEndian (theHeader, icHdrDeviceClass);
-
-        switch (theClassSig) {
-        case icSigInputClass:
-            theClass = CLASS_INPUT;
-            break;
-
-        case icSigDisplayClass:
-            theClass = CLASS_DISPLAY;
-            break;
-
-        case icSigOutputClass:
-            theClass = CLASS_OUTPUT;
-            break;
-
-        case icSigLinkClass:
-            theClass = CLASS_DEVICELINK;
-            break;
-
-        case icSigColorSpaceClass:
-            theClass = CLASS_COLORSPACECONVERSION;
-            break;
-
-        case icSigAbstractClass:
-            theClass = CLASS_ABSTRACT;
-            break;
-
-        case icSigNamedColorClass:
-            theClass = CLASS_NAMEDCOLOR;
-            break;
-
-        default:
-            throw new IllegalArgumentException("Unknown profile class");
-        }
-
-        return theClass;
+        byte[] theHeader = getData(icSigHead);
+        int theClassSig = intFromBigEndian(theHeader, icHdrDeviceClass);
+        return switch (theClassSig) {
+            case icSigInputClass -> CLASS_INPUT;
+            case icSigDisplayClass -> CLASS_DISPLAY;
+            case icSigOutputClass -> CLASS_OUTPUT;
+            case icSigLinkClass -> CLASS_DEVICELINK;
+            case icSigColorSpaceClass -> CLASS_COLORSPACECONVERSION;
+            case icSigAbstractClass -> CLASS_ABSTRACT;
+            case icSigNamedColorClass -> CLASS_NAMEDCOLOR;
+            default -> {
+                throw new IllegalArgumentException("Unknown profile class");
+            }
+        };
     }
 
     /**
@@ -1057,18 +1023,13 @@ public class ICC_Profile implements Serializable {
         if (info != null) {
             return info.colorSpaceType;
         }
-        activate();
-        return    getColorSpaceType(cmmProfile);
+        return getColorSpaceType(cmmProfile());
     }
 
-    static int getColorSpaceType(Profile p) {
-    byte[] theHeader;
-    int theColorSpaceSig, theColorSpace;
-
-        theHeader = getData(p, icSigHead);
-        theColorSpaceSig = intFromBigEndian(theHeader, icHdrColorSpace);
-        theColorSpace = iccCStoJCS (theColorSpaceSig);
-        return theColorSpace;
+    private static int getColorSpaceType(Profile p) {
+        byte[] theHeader = getData(p, icSigHead);
+        int theColorSpaceSig = intFromBigEndian(theHeader, icHdrColorSpace);
+        return iccCStoJCS(theColorSpaceSig);
     }
 
     /**
@@ -1085,19 +1046,9 @@ public class ICC_Profile implements Serializable {
      *         {@code ColorSpace} class
      */
     public int getPCSType() {
-        activate();
-        return getPCSType(cmmProfile);
-    }
-
-
-    static int getPCSType(Profile p) {
-    byte[] theHeader;
-    int thePCSSig, thePCS;
-
-        theHeader = getData(p, icSigHead);
-        thePCSSig = intFromBigEndian(theHeader, icHdrPcs);
-        thePCS = iccCStoJCS(thePCSSig);
-        return thePCS;
+        byte[] theHeader = getData(icSigHead);
+        int thePCSSig = intFromBigEndian(theHeader, icHdrPcs);
+        return iccCStoJCS(thePCSSig);
     }
 
     /**
@@ -1131,8 +1082,7 @@ public class ICC_Profile implements Serializable {
      * @see #setData(int, byte[])
      */
     public byte[] getData() {
-        activate();
-        return CMSManager.getModule().getProfileData(cmmProfile);
+        return CMSManager.getModule().getProfileData(cmmProfile());
     }
 
     /**
@@ -1149,12 +1099,9 @@ public class ICC_Profile implements Serializable {
      * @see #setData(int, byte[])
      */
     public byte[] getData(int tagSignature) {
-
-        activate();
-
-        return getData(cmmProfile, tagSignature);
+        byte[] t = getData(cmmProfile(), tagSignature);
+        return t != null ? t.clone() : null;
     }
-
 
     private static byte[] getData(Profile p, int tagSignature) {
         try {
@@ -1182,10 +1129,7 @@ public class ICC_Profile implements Serializable {
      * @see #getData
      */
     public void setData(int tagSignature, byte[] tagData) {
-
-        activate();
-
-        CMSManager.getModule().setTagData(cmmProfile, tagSignature, tagData);
+        CMSManager.getModule().setTagData(cmmProfile(), tagSignature, tagData);
     }
 
     /**
@@ -1197,93 +1141,34 @@ public class ICC_Profile implements Serializable {
      * @throws ProfileDataException if color space is in the profile is invalid
      */
     public int getNumComponents() {
-    byte[]    theHeader;
-    int    theColorSpaceSig, theNumComponents;
-
         ProfileDeferralInfo info = deferralInfo;
         if (info != null) {
             return info.numComponents;
         }
-        theHeader = getData(icSigHead);
-
-        theColorSpaceSig = intFromBigEndian (theHeader, icHdrColorSpace);
-
-        switch (theColorSpaceSig) {
-        case icSigGrayData:
-            theNumComponents = 1;
-            break;
-
-        case icSigSpace2CLR:
-            theNumComponents = 2;
-            break;
-
-        case icSigXYZData:
-        case icSigLabData:
-        case icSigLuvData:
-        case icSigYCbCrData:
-        case icSigYxyData:
-        case icSigRgbData:
-        case icSigHsvData:
-        case icSigHlsData:
-        case icSigCmyData:
-        case icSigSpace3CLR:
-            theNumComponents = 3;
-            break;
-
-        case icSigCmykData:
-        case icSigSpace4CLR:
-            theNumComponents = 4;
-            break;
-
-        case icSigSpace5CLR:
-            theNumComponents = 5;
-            break;
-
-        case icSigSpace6CLR:
-            theNumComponents = 6;
-            break;
-
-        case icSigSpace7CLR:
-            theNumComponents = 7;
-            break;
-
-        case icSigSpace8CLR:
-            theNumComponents = 8;
-            break;
-
-        case icSigSpace9CLR:
-            theNumComponents = 9;
-            break;
-
-        case icSigSpaceACLR:
-            theNumComponents = 10;
-            break;
-
-        case icSigSpaceBCLR:
-            theNumComponents = 11;
-            break;
-
-        case icSigSpaceCCLR:
-            theNumComponents = 12;
-            break;
-
-        case icSigSpaceDCLR:
-            theNumComponents = 13;
-            break;
-
-        case icSigSpaceECLR:
-            theNumComponents = 14;
-            break;
-
-        case icSigSpaceFCLR:
-            theNumComponents = 15;
-            break;
-
-        default:
-            throw new ProfileDataException ("invalid ICC color space");
-        }
-
-        return theNumComponents;
+        byte[] theHeader = getData(icSigHead);
+        int theColorSpaceSig = intFromBigEndian(theHeader, icHdrColorSpace);
+        return switch (theColorSpaceSig) {
+            case icSigGrayData -> 1;
+            case icSigSpace2CLR -> 2;
+            case icSigXYZData, icSigLabData, icSigLuvData, icSigYCbCrData,
+                    icSigYxyData, icSigRgbData, icSigHsvData, icSigHlsData,
+                    icSigCmyData, icSigSpace3CLR -> 3;
+            case icSigCmykData, icSigSpace4CLR -> 4;
+            case icSigSpace5CLR -> 5;
+            case icSigSpace6CLR -> 6;
+            case icSigSpace7CLR -> 7;
+            case icSigSpace8CLR -> 8;
+            case icSigSpace9CLR -> 9;
+            case icSigSpaceACLR -> 10;
+            case icSigSpaceBCLR -> 11;
+            case icSigSpaceCCLR -> 12;
+            case icSigSpaceDCLR -> 13;
+            case icSigSpaceECLR -> 14;
+            case icSigSpaceFCLR -> 15;
+            default -> {
+                throw new ProfileDataException("invalid ICC color space");
+            }
+        };
     }
 
     /**
@@ -1292,28 +1177,20 @@ public class ICC_Profile implements Serializable {
      */
     float[] getMediaWhitePoint() {
         return getXYZTag(icSigMediaWhitePointTag);
-                                           /* get the media white point tag */
     }
 
     /**
      * Returns a float array of length 3 containing the X, Y, and Z components
      * encoded in an XYZType tag.
      */
-    float[] getXYZTag(int theTagSignature) {
-    byte[] theData;
-    float[] theXYZNumber;
-    int i1, i2, theS15Fixed16;
-
-        theData = getData(theTagSignature); /* get the tag data */
-                                            /* getData will activate deferred
-                                               profiles if necessary */
-
-        theXYZNumber = new float [3];        /* array to return */
+    final float[] getXYZTag(int tagSignature) {
+        byte[] theData = getData(tagSignature);
+        float[] theXYZNumber = new float[3]; /* array to return */
 
         /* convert s15Fixed16Number to float */
-        for (i1 = 0, i2 = icXYZNumberX; i1 < 3; i1++, i2 += 4) {
-            theS15Fixed16 = intFromBigEndian(theData, i2);
-            theXYZNumber [i1] = ((float) theS15Fixed16) / 65536.0f;
+        for (int i1 = 0, i2 = icXYZNumberX; i1 < 3; i1++, i2 += 4) {
+            int theS15Fixed16 = intFromBigEndian(theData, i2);
+            theXYZNumber[i1] = ((float) theS15Fixed16) / 65536.0f;
         }
         return theXYZNumber;
     }
@@ -1322,7 +1199,7 @@ public class ICC_Profile implements Serializable {
      * Returns a gamma value representing a tone reproduction curve (TRC). If
      * the profile represents the TRC as a table rather than a single gamma
      * value, then an exception is thrown. In this case the actual table can be
-     * obtained via {@link #getTRC}. {@code theTagSignature} should be one of
+     * obtained via {@link #getTRC}. {@code tagSignature} should be one of
      * {@code icSigGrayTRCTag}, {@code icSigRedTRCTag},
      * {@code icSigGreenTRCTag}, or {@code icSigBlueTRCTag}.
      *
@@ -1330,25 +1207,15 @@ public class ICC_Profile implements Serializable {
      * @throws ProfileDataException if the profile does not specify the TRC as a
      *         single gamma value
      */
-    float getGamma(int theTagSignature) {
-    byte[] theTRCData;
-    float theGamma;
-    int theU8Fixed8;
-
-        theTRCData = getData(theTagSignature); /* get the TRC */
-                                               /* getData will activate deferred
-                                                  profiles if necessary */
-
-        if (intFromBigEndian (theTRCData, icCurveCount) != 1) {
-            throw new ProfileDataException ("TRC is not a gamma");
+    float getGamma(int tagSignature) {
+        byte[] theTRCData = getData(tagSignature);
+        if (intFromBigEndian(theTRCData, icCurveCount) != 1) {
+            throw new ProfileDataException("TRC is not a gamma");
         }
 
         /* convert u8Fixed8 to float */
-        theU8Fixed8 = (shortFromBigEndian(theTRCData, icCurveData)) & 0xffff;
-
-        theGamma = ((float) theU8Fixed8) / 256.0f;
-
-        return theGamma;
+        int theU8Fixed8 = shortFromBigEndian(theTRCData, icCurveData) & 0xffff;
+        return theU8Fixed8 / 256.0f;
     }
 
     /**
@@ -1363,7 +1230,7 @@ public class ICC_Profile implements Serializable {
      * values also map linearly to the range [0.0, 1.0]. Value 0.0 is
      * represented by an array value of 0x0000 and value 1.0 by 0xFFFF, i.e. the
      * values are really unsigned short values, although they are returned in a
-     * short array. {@code theTagSignature} should be one of
+     * short array. {@code tagSignature} should be one of
      * {@code icSigGrayTRCTag}, {@code icSigRedTRCTag},
      * {@code icSigGreenTRCTag}, or {@code icSigBlueTRCTag}.
      *
@@ -1371,142 +1238,54 @@ public class ICC_Profile implements Serializable {
      * @throws ProfileDataException if the profile does not specify the TRC as a
      *         table
      */
-    short[] getTRC(int theTagSignature) {
-    byte[] theTRCData;
-    short[] theTRC;
-    int i1, i2, nElements, theU8Fixed8;
-
-        theTRCData = getData(theTagSignature); /* get the TRC */
-                                               /* getData will activate deferred
-                                                  profiles if necessary */
-
-        nElements = intFromBigEndian(theTRCData, icCurveCount);
-
+    short[] getTRC(int tagSignature) {
+        byte[] theTRCData = getData(tagSignature);
+        int nElements = intFromBigEndian(theTRCData, icCurveCount);
         if (nElements == 1) {
             throw new ProfileDataException("TRC is not a table");
         }
 
-        /* make the short array */
-        theTRC = new short [nElements];
-
-        for (i1 = 0, i2 = icCurveData; i1 < nElements; i1++, i2 += 2) {
+        short[] theTRC = new short[nElements]; /* array to return */
+        for (int i1 = 0, i2 = icCurveData; i1 < nElements; i1++, i2 += 2) {
             theTRC[i1] = shortFromBigEndian(theTRCData, i2);
         }
-
         return theTRC;
     }
 
     /**
      * Convert an ICC color space signature into a Java color space type.
      */
-    static int iccCStoJCS(int theColorSpaceSig) {
-    int theColorSpace;
-
-        switch (theColorSpaceSig) {
-        case icSigXYZData:
-            theColorSpace = ColorSpace.TYPE_XYZ;
-            break;
-
-        case icSigLabData:
-            theColorSpace = ColorSpace.TYPE_Lab;
-            break;
-
-        case icSigLuvData:
-            theColorSpace = ColorSpace.TYPE_Luv;
-            break;
-
-        case icSigYCbCrData:
-            theColorSpace = ColorSpace.TYPE_YCbCr;
-            break;
-
-        case icSigYxyData:
-            theColorSpace = ColorSpace.TYPE_Yxy;
-            break;
-
-        case icSigRgbData:
-            theColorSpace = ColorSpace.TYPE_RGB;
-            break;
-
-        case icSigGrayData:
-            theColorSpace = ColorSpace.TYPE_GRAY;
-            break;
-
-        case icSigHsvData:
-            theColorSpace = ColorSpace.TYPE_HSV;
-            break;
-
-        case icSigHlsData:
-            theColorSpace = ColorSpace.TYPE_HLS;
-            break;
-
-        case icSigCmykData:
-            theColorSpace = ColorSpace.TYPE_CMYK;
-            break;
-
-        case icSigCmyData:
-            theColorSpace = ColorSpace.TYPE_CMY;
-            break;
-
-        case icSigSpace2CLR:
-            theColorSpace = ColorSpace.TYPE_2CLR;
-            break;
-
-        case icSigSpace3CLR:
-            theColorSpace = ColorSpace.TYPE_3CLR;
-            break;
-
-        case icSigSpace4CLR:
-            theColorSpace = ColorSpace.TYPE_4CLR;
-            break;
-
-        case icSigSpace5CLR:
-            theColorSpace = ColorSpace.TYPE_5CLR;
-            break;
-
-        case icSigSpace6CLR:
-            theColorSpace = ColorSpace.TYPE_6CLR;
-            break;
-
-        case icSigSpace7CLR:
-            theColorSpace = ColorSpace.TYPE_7CLR;
-            break;
-
-        case icSigSpace8CLR:
-            theColorSpace = ColorSpace.TYPE_8CLR;
-            break;
-
-        case icSigSpace9CLR:
-            theColorSpace = ColorSpace.TYPE_9CLR;
-            break;
-
-        case icSigSpaceACLR:
-            theColorSpace = ColorSpace.TYPE_ACLR;
-            break;
-
-        case icSigSpaceBCLR:
-            theColorSpace = ColorSpace.TYPE_BCLR;
-            break;
-
-        case icSigSpaceCCLR:
-            theColorSpace = ColorSpace.TYPE_CCLR;
-            break;
-
-        case icSigSpaceDCLR:
-            theColorSpace = ColorSpace.TYPE_DCLR;
-            break;
-
-        case icSigSpaceECLR:
-            theColorSpace = ColorSpace.TYPE_ECLR;
-            break;
-
-        case icSigSpaceFCLR:
-            theColorSpace = ColorSpace.TYPE_FCLR;
-            break;
-
-        default:
-            throw new IllegalArgumentException ("Unknown color space");
-        }
-        return theColorSpace;
+    private static int iccCStoJCS(int theColorSpaceSig) {
+        return switch (theColorSpaceSig) {
+            case icSigXYZData -> ColorSpace.TYPE_XYZ;
+            case icSigLabData -> ColorSpace.TYPE_Lab;
+            case icSigLuvData -> ColorSpace.TYPE_Luv;
+            case icSigYCbCrData -> ColorSpace.TYPE_YCbCr;
+            case icSigYxyData -> ColorSpace.TYPE_Yxy;
+            case icSigRgbData -> ColorSpace.TYPE_RGB;
+            case icSigGrayData -> ColorSpace.TYPE_GRAY;
+            case icSigHsvData -> ColorSpace.TYPE_HSV;
+            case icSigHlsData -> ColorSpace.TYPE_HLS;
+            case icSigCmykData -> ColorSpace.TYPE_CMYK;
+            case icSigCmyData -> ColorSpace.TYPE_CMY;
+            case icSigSpace2CLR -> ColorSpace.TYPE_2CLR;
+            case icSigSpace3CLR -> ColorSpace.TYPE_3CLR;
+            case icSigSpace4CLR -> ColorSpace.TYPE_4CLR;
+            case icSigSpace5CLR -> ColorSpace.TYPE_5CLR;
+            case icSigSpace6CLR -> ColorSpace.TYPE_6CLR;
+            case icSigSpace7CLR -> ColorSpace.TYPE_7CLR;
+            case icSigSpace8CLR -> ColorSpace.TYPE_8CLR;
+            case icSigSpace9CLR -> ColorSpace.TYPE_9CLR;
+            case icSigSpaceACLR -> ColorSpace.TYPE_ACLR;
+            case icSigSpaceBCLR -> ColorSpace.TYPE_BCLR;
+            case icSigSpaceCCLR -> ColorSpace.TYPE_CCLR;
+            case icSigSpaceDCLR -> ColorSpace.TYPE_DCLR;
+            case icSigSpaceECLR -> ColorSpace.TYPE_ECLR;
+            case icSigSpaceFCLR -> ColorSpace.TYPE_FCLR;
+            default -> {
+                throw new IllegalArgumentException("Unknown color space");
+            }
+        };
     }
 
     private static int intFromBigEndian(byte[] array, int index) {
@@ -1533,39 +1312,36 @@ public class ICC_Profile implements Serializable {
      * extension for profiles, e.g. {@code sRGB.pf}.
      */
     private static File getProfileFile(String fileName) {
-        String path, dir, fullPath;
-
         File f = new File(fileName); /* try absolute file name */
         if (f.isAbsolute()) {
             /* Rest of code has little sense for an absolute pathname,
                so return here. */
             return f.isFile() ? f : null;
         }
-        if ((!f.isFile()) &&
-                ((path = System.getProperty("java.iccprofile.path")) != null)){
-                                    /* try relative to java.iccprofile.path */
-                StringTokenizer st =
-                    new StringTokenizer(path, File.pathSeparator);
-                while (st.hasMoreTokens() && ((f == null) || (!f.isFile()))) {
-                    dir = st.nextToken();
-                        fullPath = dir + File.separatorChar + fileName;
-                    f = new File(fullPath);
-                    if (!isChildOf(f, dir)) {
-                        f = null;
-                    }
+        String path, dir, fullPath;
+        if (!f.isFile() &&
+                (path = System.getProperty("java.iccprofile.path")) != null) {
+            /* try relative to java.iccprofile.path */
+            StringTokenizer st = new StringTokenizer(path, File.pathSeparator);
+            while (st.hasMoreTokens() && ((f == null) || (!f.isFile()))) {
+                dir = st.nextToken();
+                fullPath = dir + File.separatorChar + fileName;
+                f = new File(fullPath);
+                if (!isChildOf(f, dir)) {
+                    f = null;
                 }
             }
+        }
 
-        if (((f == null) || (!f.isFile())) &&
-                ((path = System.getProperty("java.class.path")) != null)) {
-                                    /* try relative to java.class.path */
-                StringTokenizer st =
-                    new StringTokenizer(path, File.pathSeparator);
-                while (st.hasMoreTokens() && ((f == null) || (!f.isFile()))) {
-                    dir = st.nextToken();
-                        fullPath = dir + File.separatorChar + fileName;
-                    f = new File(fullPath);
-                }
+        if ((f == null || !f.isFile())
+                && (path = System.getProperty("java.class.path")) != null) {
+            /* try relative to java.class.path */
+            StringTokenizer st = new StringTokenizer(path, File.pathSeparator);
+            while (st.hasMoreTokens() && ((f == null) || (!f.isFile()))) {
+                dir = st.nextToken();
+                fullPath = dir + File.separatorChar + fileName;
+                f = new File(fullPath);
+            }
         }
 
         if (f != null && !f.isFile()) {
@@ -1581,11 +1357,8 @@ public class ICC_Profile implements Serializable {
      */
     private static InputStream getStandardProfileInputStream(String fileName) {
         return AccessController.doPrivileged(
-            new PrivilegedAction<InputStream>() {
-                public InputStream run () {
-                    return
-                        PCMM.class.getResourceAsStream("profiles/" + fileName);
-                }
+            (PrivilegedAction<InputStream>) () -> {
+                return PCMM.class.getResourceAsStream("profiles/" + fileName);
             }, null, new FilePermission("<<ALL FILES>>", "read"),
                      new RuntimePermission("accessSystemModules"));
     }
@@ -1664,9 +1437,7 @@ public class ICC_Profile implements Serializable {
      *         older versions could still deserialize the object.
      */
     @Serial
-    private void writeObject(ObjectOutputStream s)
-      throws IOException
-    {
+    private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
 
         String csName = null;
@@ -1721,8 +1492,7 @@ public class ICC_Profile implements Serializable {
      *         color space the object will be resolved into profile obtained
      *         with
      *         <code>getInstance(int&nbsp;cspace)</code> and the profile data
-     *         are
-     *         ignored. Otherwise the object will be resolved into profile
+     *         are ignored. Otherwise the object will be resolved into profile
      *         obtained with
      *         <code>getInstance(byte[]&nbsp;data)</code>.
      * @see #readResolve()
@@ -1731,12 +1501,11 @@ public class ICC_Profile implements Serializable {
      */
     @Serial
     private void readObject(ObjectInputStream s)
-      throws IOException, ClassNotFoundException
-    {
+            throws IOException, ClassNotFoundException {
         s.defaultReadObject();
 
-        String csName = (String)s.readObject();
-        byte[] data = (byte[])s.readObject();
+        String csName = (String) s.readObject();
+        byte[] data = (byte[]) s.readObject();
 
         int cspace = 0;         // ColorSpace.CS_* constant if known
         boolean isKnownPredefinedCS = false;

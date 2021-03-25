@@ -58,7 +58,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     static final String BACKGROUND_IMAGE_FOLDER =".background";
     static final String BACKGROUND_IMAGE = "background.tiff";
     static final String DEFAULT_DMG_SETUP_SCRIPT = "DMGsetup.scpt";
-    static final String TEMPLATE_BUNDLE_ICON = "java.icns";
+    static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
 
     static final String DEFAULT_LICENSE_PLIST="lic_template.plist";
 

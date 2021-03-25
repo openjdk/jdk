@@ -485,6 +485,9 @@ extern struct _CompositeTypes {
 #define PtrPixelsRow(p, y, scanStride)    PtrAddBytes(p, \
     ((intptr_t) (y)) * (scanStride))
 
+#define PtrPixelsBand(p, y, length, elemSize)    PtrAddBytes(p, \
+    ((intptr_t) (y)) * (length) * (elemSize))
+
 /*
  * The function to call with an array of NativePrimitive structures
  * to register them with the Java GraphicsPrimitiveMgr.

@@ -228,7 +228,11 @@ public class TestSingletonLists extends JavadocTester {
         private boolean inSeeList;
         private Stack<Map<String,Integer>> counts = new Stack<>();
         private String fileName;
-        private List<String> excludeFiles = List.of("overview-tree.html","package-tree.html","module-summary.html");
+        private List<String> excludeFiles = List.of(
+                "overview-tree.html",
+                "package-tree.html",
+                "module-summary.html",
+                "help-doc.html");
 
         ListChecker(PrintStream out, Function<Path,String> fileReader) {
             super(out, fileReader);

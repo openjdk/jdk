@@ -1116,6 +1116,7 @@ class Compile : public Phase {
   uint compute_truth_table(Unique_Node_List& partition, Unique_Node_List& inputs);
   uint eval_macro_logic_op(uint func, uint op1, uint op2, uint op3);
   Node* xform_to_MacroLogicV(PhaseIterGVN &igvn, const TypeVect* vt, Unique_Node_List& partitions, Unique_Node_List& inputs);
+  void check_no_dead_use() const NOT_DEBUG_RETURN;
 
  public:
 
@@ -1157,7 +1158,7 @@ class Compile : public Phase {
                               Node* ctrl = NULL);
 
   // Convert integer value to a narrowed long type dependent on ctrl (for example, a range check)
-  static Node* constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl);
+  static Node* constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl, bool carry_dependency = false);
 
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
@@ -1192,9 +1193,10 @@ class Compile : public Phase {
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif
 
-  static bool
-  push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
-                BasicType bt);
+  static bool push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
+                            BasicType bt);
+
+  static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

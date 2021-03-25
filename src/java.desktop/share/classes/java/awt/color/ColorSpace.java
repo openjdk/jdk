@@ -112,7 +112,7 @@ public abstract class ColorSpace implements Serializable {
     /**
      * Lazy-initialized names of components in the color space.
      */
-    private transient volatile String [] compName;
+    private transient volatile String[] compName;
 
     /**
      * The lazy cache of singletons for the predefined built-in color spaces.
@@ -327,7 +327,7 @@ public abstract class ColorSpace implements Serializable {
      * @return {@code true} if this is a {@code CS_sRGB} color space,
      *         {@code false} if it is not
      */
-    public boolean isCS_sRGB () {
+    public boolean isCS_sRGB() {
         return this == BuiltInSpace.SRGB;
     }
 

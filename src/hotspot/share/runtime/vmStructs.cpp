@@ -491,10 +491,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
                                                                                                                                      \
   nonstatic_field(BasicHashtable<mtInternal>,  _table_size,                                   int)                                   \
   nonstatic_field(BasicHashtable<mtInternal>,  _buckets,                                      HashtableBucket<mtInternal>*)          \
-  volatile_nonstatic_field(BasicHashtable<mtInternal>,  _free_list,                           BasicHashtableEntry<mtInternal>*)      \
-  nonstatic_field(BasicHashtable<mtInternal>,  _first_free_entry,                             char*)                                 \
-  nonstatic_field(BasicHashtable<mtInternal>,  _end_block,                                    char*)                                 \
-  nonstatic_field(BasicHashtable<mtInternal>,  _entry_size,                                   int)                                   \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* ClassLoaderData */                                                                                                              \

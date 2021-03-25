@@ -46,12 +46,6 @@ public final class NTLMException extends GeneralSecurityException {
     public static final int NO_DOMAIN_INFO = 2;
 
     /**
-     * If the domain provided by the client does not match the one received
-     * from server.
-     */
-    //public final static int DOMAIN_UNMATCH = 3;
-
-    /**
      * If the client name is not found on server's user database.
      */
     public static final int USER_UNKNOWN = 3;

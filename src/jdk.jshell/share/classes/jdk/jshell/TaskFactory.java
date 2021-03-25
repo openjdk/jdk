@@ -52,8 +52,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
 import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
@@ -201,7 +199,7 @@ class TaskFactory {
             allOptions.addAll(state.extraCompilerOptions);
             Iterable<? extends JavaFileObject> compilationUnits = inputs
                             .map(in -> sh.sourceToFileObject(fileManager, in))
-                            .collect(Collectors.toList());
+                            .toList();
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
             state.debug(DBG_FMGR, "Task (%s %s) Options: %s\n", this, compilationUnits, allOptions);
             return javacTaskPool.getTask(null, fileManager, diagnostics, allOptions, null,
@@ -351,7 +349,7 @@ class TaskFactory {
                         List<? extends ImportTree> imps = cut.getImports();
                         return (!imps.isEmpty() ? imps : cut.getTypeDecls()).stream();
                     })
-                    .collect(toList());
+                    .toList();
         }
 
         private Iterable<? extends CompilationUnitTree> parse() {

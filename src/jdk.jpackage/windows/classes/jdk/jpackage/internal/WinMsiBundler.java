@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -55,6 +56,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
@@ -82,7 +84,9 @@ import org.xml.sax.SAXException;
  * <li>main.wxs. Main source file with the installer description
  * <li>bundle.wxf. Source file with application and Java run-time directory tree
  * description.
+ * <li>ui.wxf. Source file with UI description of the installer.
  * </ul>
+ *
  * <p>
  * main.wxs file is a copy of main.wxs resource from
  * jdk.jpackage.internal.resources package. It is parametrized with the
@@ -104,14 +108,26 @@ import org.xml.sax.SAXException;
  * variable is set to the value of --win-upgrade-uuid command line option
  * <li>JpAllowDowngrades. Set to "yes" if --win-upgrade-uuid command line option
  * was specified. Undefined otherwise
- * <li>JpLicenseRtf. Set to the value of --license-file command line option.
- * Undefined is --license-file command line option was not specified
- * <li>JpInstallDirChooser. Set to "yes" if --win-dir-chooser command line
- * option was specified. Undefined otherwise
  * <li>JpConfigDir. Absolute path to the directory with generated WiX source
  * files.
  * <li>JpIsSystemWide. Set to "yes" if --win-per-user-install command line
  * option was not specified. Undefined otherwise
+ * <li>JpAppSizeKb. Set to estimated size of the application in kilobytes
+ * <li>JpHelpURL. Set to value of --win-help-url command line option if it
+ * was specified. Undefined otherwise
+ * <li>JpAboutURL. Set to value of --about-url command line option if it
+ * was specified. Undefined otherwise
+ * <li>JpUpdateURL. Set to value of --win-update-url command line option if it
+ * was specified. Undefined otherwise
+ * </ul>
+ *
+ * <p>
+ * ui.wxf file is generated based on --license-file, --win-shortcut-prompt,
+ * --win-dir-chooser command line options. It is parametrized with the following
+ * WiX variables:
+ * <ul>
+ * <li>JpLicenseRtf. Set to the value of --license-file command line option.
+ * Undefined if --license-file command line option was not specified
  * </ul>
  */
 public class WinMsiBundler  extends AbstractBundler {
@@ -151,7 +167,6 @@ public class WinMsiBundler  extends AbstractBundler {
                             : Boolean.valueOf(s)
             );
 
-
     public static final StandardBundlerParam<String> PRODUCT_VERSION =
             new StandardBundlerParam<>(
                     "win.msi.productVersion",
@@ -159,6 +174,20 @@ public class WinMsiBundler  extends AbstractBundler {
                     VERSION::fetchFrom,
                     (s, p) -> s
             );
+
+    private static final BundlerParamInfo<String> HELP_URL =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.WIN_HELP_URL.getId(),
+            String.class,
+            null,
+            (s, p) -> s);
+
+    private static final BundlerParamInfo<String> UPDATE_URL =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.WIN_UPDATE_URL.getId(),
+            String.class,
+            null,
+            (s, p) -> s);
 
     private static final BundlerParamInfo<String> UPGRADE_UUID =
             new StandardBundlerParam<>(
@@ -184,16 +213,15 @@ public class WinMsiBundler  extends AbstractBundler {
             },
             (s, p) -> s);
 
-    private static final BundlerParamInfo<Boolean> INSTALLDIR_CHOOSER =
-            new StandardBundlerParam<> (
-            Arguments.CLIOptions.WIN_DIR_CHOOSER.getId(),
-            Boolean.class,
-            params -> Boolean.FALSE,
-            (s, p) -> Boolean.valueOf(s)
-    );
-
     public WinMsiBundler() {
         appImageBundler = new WinAppBundler().setDependentTask(true);
+        wixFragments = Stream.of(
+                Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
+                Map.entry("ui.wxf", new WixUiFragmentBuilder())
+        ).<WixFragmentBuilder>map(e -> {
+            e.getValue().setOutputFileName(e.getKey());
+            return e.getValue();
+        }).toList();
     }
 
     @Override
@@ -277,9 +305,10 @@ public class WinMsiBundler  extends AbstractBundler {
                         toolInfo.version));
             }
 
-            wixSourcesBuilder.setWixVersion(wixToolset.get(WixTool.Light).version);
+            wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(
+                    wixToolset.get(WixTool.Light).version));
 
-            wixSourcesBuilder.logWixFeatures();
+            wixFragments.get(0).logWixFeatures();
 
             /********* validate bundle parameters *************/
 
@@ -369,10 +398,10 @@ public class WinMsiBundler  extends AbstractBundler {
 
             prepareProto(params);
 
-            wixSourcesBuilder
-            .initFromParams(WIN_APP_IMAGE.fetchFrom(params), params)
-            .createMainFragment(CONFIG_ROOT.fetchFrom(params).resolve(
-                    "bundle.wxf"));
+            for (var wixFragment : wixFragments) {
+                wixFragment.initFromParams(params);
+                wixFragment.addFilesToConfigRoot();
+            }
 
             Map<String, String> wixVars = prepareMainProjectFile(params);
 
@@ -388,6 +417,21 @@ public class WinMsiBundler  extends AbstractBundler {
             Log.verbose(ex);
             throw new PackagerException(ex);
         }
+    }
+
+    private long getAppImageSizeKb(Map<String, ? super Object> params) throws
+            IOException {
+        ApplicationLayout appLayout;
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            appLayout = ApplicationLayout.javaRuntime();
+        } else {
+            appLayout = ApplicationLayout.windowsAppImage();
+        }
+        appLayout = appLayout.resolveAt(WIN_APP_IMAGE.fetchFrom(params));
+
+        long size = appLayout.sizeInBytes() >> 10;
+
+        return size;
     }
 
     private Map<String, String> prepareMainProjectFile(
@@ -416,28 +460,26 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpIcon", installerIcon.toString());
         }
 
+        Optional.ofNullable(HELP_URL.fetchFrom(params)).ifPresent(value -> {
+            data.put("JpHelpURL", value);
+        });
+
+        Optional.ofNullable(UPDATE_URL.fetchFrom(params)).ifPresent(value -> {
+            data.put("JpUpdateURL", value);
+        });
+
+        Optional.ofNullable(ABOUT_URL.fetchFrom(params)).ifPresent(value -> {
+            data.put("JpAboutURL", value);
+        });
+
+        data.put("JpAppSizeKb", Long.toString(getAppImageSizeKb(params)));
+
         final Path configDir = CONFIG_ROOT.fetchFrom(params);
 
         data.put("JpConfigDir", configDir.toAbsolutePath().toString());
 
         if (MSI_SYSTEM_WIDE.fetchFrom(params)) {
             data.put("JpIsSystemWide", "yes");
-        }
-
-        String licenseFile = LICENSE_FILE.fetchFrom(params);
-        if (licenseFile != null) {
-            String lname = IOUtils.getFileName(Path.of(licenseFile)).toString();
-            Path destFile = CONFIG_ROOT.fetchFrom(params).resolve(lname);
-            data.put("JpLicenseRtf", destFile.toAbsolutePath().toString());
-        }
-
-        // Copy CA dll to include with installer
-        if (INSTALLDIR_CHOOSER.fetchFrom(params)) {
-            data.put("JpInstallDirChooser", "yes");
-            String fname = "wixhelper.dll";
-            try (InputStream is = OverridableResource.readDefault(fname)) {
-                Files.copy(is, CONFIG_ROOT.fetchFrom(params).resolve(fname));
-            }
         }
 
         // Copy standard l10n files.
@@ -476,22 +518,19 @@ public class WinMsiBundler  extends AbstractBundler {
                         entry -> entry.getValue().path)))
         .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
         .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
-        .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"), wixVars)
-        .addSource(CONFIG_ROOT.fetchFrom(params).resolve("bundle.wxf"), null);
+        .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"), wixVars);
+
+        for (var wixFragment : wixFragments) {
+            wixFragment.configureWixPipeline(wixPipeline);
+        }
 
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.generating-msi"), msiOut.toAbsolutePath().toString()));
-
-        boolean enableLicenseUI = (LICENSE_FILE.fetchFrom(params) != null);
-        boolean enableInstalldirUI = INSTALLDIR_CHOOSER.fetchFrom(params);
 
         wixPipeline.addLightOptions("-sice:ICE27");
 
         if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
             wixPipeline.addLightOptions("-sice:ICE91");
-        }
-        if (enableLicenseUI || enableInstalldirUI) {
-            wixPipeline.addLightOptions("-ext", "WixUIExtension");
         }
 
         final Path primaryWxlFile = CONFIG_ROOT.fetchFrom(params).resolve(
@@ -511,12 +550,6 @@ public class WinMsiBundler  extends AbstractBundler {
         uniqueCultures.addAll(cultures);
         wixPipeline.addLightOptions(uniqueCultures.stream().collect(
                 Collectors.joining(";", "-cultures:", "")));
-
-        // Only needed if we using CA dll, so Wix can find it
-        if (enableInstalldirUI) {
-            wixPipeline.addLightOptions("-b", CONFIG_ROOT.fetchFrom(params)
-                    .toAbsolutePath().toString());
-        }
 
         wixPipeline.buildMsi(msiOut.toAbsolutePath());
 
@@ -539,7 +572,7 @@ public class WinMsiBundler  extends AbstractBundler {
                     .filter(Files::isReadable)
                     .filter(pathMatcher::matches)
                     .sorted((a, b) -> a.getFileName().toString().compareToIgnoreCase(b.getFileName().toString()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 
@@ -643,6 +676,6 @@ public class WinMsiBundler  extends AbstractBundler {
     private Path installerIcon;
     private Map<WixTool, WixTool.ToolInfo> wixToolset;
     private AppImageBundler appImageBundler;
-    private WixSourcesBuilder wixSourcesBuilder = new WixSourcesBuilder();
+    private List<WixFragmentBuilder> wixFragments;
 
 }

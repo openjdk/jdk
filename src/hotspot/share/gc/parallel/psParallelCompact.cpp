@@ -549,7 +549,7 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t beg_ofs = region_offset(addr);
   _region_data[beg_region].add_live_obj(RegionSize - beg_ofs);
 
-  Klass* klass = ((oop)addr)->klass();
+  Klass* klass = cast_to_oop(addr)->klass();
   // Middle regions--completely spanned by this object.
   for (size_t region = beg_region + 1; region < end_region; ++region) {
     _region_data[region].set_partial_obj_size(RegionSize);
@@ -817,7 +817,7 @@ HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionMan
   const size_t block_offset = addr_to_block_ptr(addr)->offset();
 
   const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
-  const size_t live = bitmap->live_words_in_range(cm, search_start, oop(addr));
+  const size_t live = bitmap->live_words_in_range(cm, search_start, cast_to_oop(addr));
   result += block_offset + live;
   DEBUG_ONLY(PSParallelCompact::check_new_location(addr, result));
   return result;
@@ -1784,8 +1784,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
   // Get the compaction manager reserved for the VM thread.
-  ParCompactionManager* const vmthread_cm =
-    ParCompactionManager::manager_array(ParallelScavengeHeap::heap()->workers().total_workers());
+  ParCompactionManager* const vmthread_cm = ParCompactionManager::get_vmthread_cm();
 
   {
     const uint active_workers =
@@ -1836,6 +1835,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     compaction_start.update();
     compact();
+
+    ParCompactionManager::verify_all_region_stack_empty();
 
     // Reset the mark bitmap, summary data, and do other bookkeeping.  Must be
     // done before resizing.
@@ -1932,15 +1933,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     heap->post_full_gc_dump(&_gc_timer);
   }
-
-#ifdef ASSERT
-  for (size_t i = 0; i < ParallelGCThreads + 1; ++i) {
-    ParCompactionManager* const cm =
-      ParCompactionManager::manager_array(int(i));
-    assert(cm->marking_stack()->is_empty(),       "should be empty");
-    assert(cm->region_stack()->is_empty(), "Region stack " SIZE_FORMAT " is not empty", i);
-  }
-#endif // ASSERT
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     Universe::verify("After GC");
@@ -2181,7 +2173,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   }
 
   // This is the point where the entire marking should have completed.
-  assert(cm->marking_stacks_empty(), "Marking should have completed");
+  ParCompactionManager::verify_all_marking_stack_empty();
 
   {
     GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
@@ -2206,6 +2198,19 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
 }
+
+#ifdef ASSERT
+void PCAdjustPointerClosure::verify_cm(ParCompactionManager* cm) {
+  assert(cm != NULL, "associate ParCompactionManage should not be NULL");
+  auto vmthread_cm = ParCompactionManager::get_vmthread_cm();
+  if (Thread::current()->is_VM_thread()) {
+    assert(cm == vmthread_cm, "VM threads should use ParCompactionManager from get_vmthread_cm()");
+  } else {
+    assert(Thread::current()->is_GC_task_thread(), "Must be a GC thread");
+    assert(cm != vmthread_cm, "GC threads should use ParCompactionManager from gc_thread_compaction_manager()");
+  }
+}
+#endif
 
 class PSAdjustTask final : public AbstractGangTask {
   SubTasksDone                               _sub_tasks;
@@ -2614,9 +2619,11 @@ void PSParallelCompact::compact() {
   }
 
   {
-    // Update the deferred objects, if any.  Any compaction manager can be used.
     GCTraceTime(Trace, gc, phases) tm("Deferred Updates", &_gc_timer);
-    ParCompactionManager* cm = ParCompactionManager::manager_array(0);
+    // Update the deferred objects, if any. In principle, any compaction
+    // manager can be used. However, since the current thread is VM thread, we
+    // use the rightful one to keep the verification logic happy.
+    ParCompactionManager* cm = ParCompactionManager::get_vmthread_cm();
     for (unsigned int id = old_space_id; id < last_space_id; ++id) {
       update_deferred_objects(cm, SpaceId(id));
     }
@@ -2667,7 +2674,7 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
 
 inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
   _start_array->allocate_block(addr);
-  compaction_manager()->update_contents(oop(addr));
+  compaction_manager()->update_contents(cast_to_oop(addr));
 }
 
 // Update interior oops in the ranges of regions [beg_region, end_region).
@@ -2770,8 +2777,8 @@ void PSParallelCompact::update_deferred_objects(ParCompactionManager* cm,
       if (start_array != NULL) {
         start_array->allocate_block(addr);
       }
-      cm->update_contents(oop(addr));
-      assert(oopDesc::is_oop_or_null(oop(addr)), "Expected an oop or NULL at " PTR_FORMAT, p2i(oop(addr)));
+      cm->update_contents(cast_to_oop(addr));
+      assert(oopDesc::is_oop_or_null(cast_to_oop(addr)), "Expected an oop or NULL at " PTR_FORMAT, p2i(cast_to_oop(addr)));
     }
   }
 }
@@ -3291,7 +3298,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
     Copy::aligned_conjoint_words(source(), copy_destination(), words);
   }
 
-  oop moved_oop = (oop) copy_destination();
+  oop moved_oop = cast_to_oop(copy_destination());
   compaction_manager()->update_contents(moved_oop);
   assert(oopDesc::is_oop_or_null(moved_oop), "Expected an oop or NULL at " PTR_FORMAT, p2i(moved_oop));
 
@@ -3349,7 +3356,7 @@ FillClosure::do_addr(HeapWord* addr, size_t size) {
   HeapWord* const end = addr + size;
   do {
     _start_array->allocate_block(addr);
-    addr += oop(addr)->size();
+    addr += cast_to_oop(addr)->size();
   } while (addr < end);
   return ParMarkBitMap::incomplete;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,6 @@ void TemplateInterpreterGenerator::generate_all() {
 #define method_entry(kind)                                              \
   { CodeletMark cm(_masm, "method entry point (kind = " #kind ")"); \
     Interpreter::_entry_table[Interpreter::kind] = generate_method_entry(Interpreter::kind); \
-    Interpreter::generate_entry_for_cds_method(Interpreter::kind); \
   }
 
   // all non-native method kinds
