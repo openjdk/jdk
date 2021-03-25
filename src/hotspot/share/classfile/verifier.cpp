@@ -134,19 +134,19 @@ void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verif
 }
 
 // Prints the end-verification message to the appropriate output.
-void Verifier::log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name) {
+void Verifier::log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, oop pending_exception) {
    Thread* THREAD = Thread::current();
 
-  if (HAS_PENDING_EXCEPTION) {
+  if (pending_exception != NULL) {
     st->print("Verification for %s has", klassName);
     oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
     if (message != NULL) {
       char* ex_msg = java_lang_String::as_utf8_string(message);
       st->print_cr(" exception pending '%s %s'",
-                 PENDING_EXCEPTION->klass()->external_name(), ex_msg);
+                   pending_exception->klass()->external_name(), ex_msg);
     } else {
       st->print_cr(" exception pending %s ",
-                 PENDING_EXCEPTION->klass()->external_name());
+                   pending_exception->klass()->external_name());
     }
   } else if (exception_name != NULL) {
     st->print_cr("Verification for %s failed", klassName);
@@ -230,12 +230,12 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   LogTarget(Info, class, init) lt1;
   if (lt1.is_enabled()) {
     LogStream ls(lt1);
-    log_end_verification(&ls, klass->external_name(), exception_name);
+    log_end_verification(&ls, klass->external_name(), exception_name, PENDING_EXCEPTION);
   }
   LogTarget(Info, verification) lt2;
   if (lt2.is_enabled()) {
     LogStream ls(lt2);
-    log_end_verification(&ls, klass->external_name(), exception_name);
+    log_end_verification(&ls, klass->external_name(), exception_name, PENDING_EXCEPTION);
   }
 
   if (HAS_PENDING_EXCEPTION) {

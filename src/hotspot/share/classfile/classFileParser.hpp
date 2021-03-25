@@ -211,7 +211,7 @@ class ClassFileParser {
                                   ConstantPool* cp,
                                   TRAPS);
 
-  void prepend_host_package_name(const InstanceKlass* unsafe_anonymous_host);
+  void prepend_host_package_name(Thread* current, const InstanceKlass* unsafe_anonymous_host);
   void fix_unsafe_anonymous_class_name(TRAPS);
 
   void fill_instance_klass(InstanceKlass* ik, bool cf_changed_in_CFLH,

@@ -46,7 +46,8 @@ class Verifier : AllStatic {
   // Verify the bytecodes for a class.
   static bool verify(InstanceKlass* klass, bool should_verify_class, TRAPS);
 
-  static void log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name);
+  static void log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name,
+                                    oop pending_exception);
 
   // Return false if the class is loaded by the bootstrap loader,
   // or if defineClass was called requesting skipping verification

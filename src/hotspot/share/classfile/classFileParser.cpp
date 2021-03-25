@@ -5632,8 +5632,8 @@ void ClassFileParser::update_class_name(Symbol* new_class_name) {
 // For an unsafe anonymous class that is in the unnamed package, move it to its host class's
 // package by prepending its host class's package name to its class name and setting
 // its _class_name field.
-void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anonymous_host) {
-  ResourceMark rm;
+void ClassFileParser::prepend_host_package_name(Thread* current, const InstanceKlass* unsafe_anonymous_host) {
+  ResourceMark rm(current);
   assert(strrchr(_class_name->as_C_string(), JVM_SIGNATURE_SLASH) == NULL,
          "Unsafe anonymous class should not be in a package");
   TempNewSymbol host_pkg_name =
@@ -5669,7 +5669,7 @@ void ClassFileParser::fix_unsafe_anonymous_class_name(TRAPS) {
   const jbyte* anon_last_slash = UTF8::strrchr((const jbyte*)_class_name->base(),
                                                _class_name->utf8_length(), JVM_SIGNATURE_SLASH);
   if (anon_last_slash == NULL) {  // Unnamed package
-    prepend_host_package_name(_unsafe_anonymous_host);
+    prepend_host_package_name(THREAD, _unsafe_anonymous_host);
   } else {
     if (!_unsafe_anonymous_host->is_same_class_package(_unsafe_anonymous_host->class_loader(), _class_name)) {
       ResourceMark rm(THREAD);
