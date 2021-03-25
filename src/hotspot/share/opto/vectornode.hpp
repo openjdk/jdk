@@ -1224,6 +1224,17 @@ class VectorLoadMaskNode : public VectorNode {
 
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
+  virtual bool cmp( const Node &n ) const {
+    // The vector types for mask nodes can be treated equal if they are compatible.
+    return vect_type()->mask_compatible(((VectorLoadMaskNode&)n).vect_type());
+  }
+
+  virtual uint hash() const {
+    // Compute the hash value based on the vector length and element size
+    // for mask nodes. Note that the same element size can be verified with
+    // the same length and same length in bytes.
+    return Node::hash() + (intptr_t)length_in_bytes() + (intptr_t)length();
+  }
 };
 
 class VectorStoreMaskNode : public VectorNode {

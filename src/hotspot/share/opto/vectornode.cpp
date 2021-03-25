@@ -972,9 +972,20 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
 }
 
 Node* VectorLoadMaskNode::Identity(PhaseGVN* phase) {
-  BasicType out_bt = type()->is_vect()->element_basic_type();
+  const TypeVect* out_type = type()->is_vect();
+  BasicType out_bt = out_type->element_basic_type();
   if (out_bt == T_BOOLEAN) {
     return in(1); // redundant conversion
+  }
+
+  // "VectorLoadMask (VectorStoreMask vmask) ==> vmask" if:
+  // "vmask" has the same vector length and the same element size
+  // (i.e. T_FLOAT and T_INT have the same size) with current node.
+  if (in(1)->Opcode() == Op_VectorStoreMask) {
+    Node* mask = in(1)->in(1);
+    if (out_type->mask_compatible(mask->bottom_type()->is_vect())) {
+      return mask;
+    }
   }
   return this;
 }
