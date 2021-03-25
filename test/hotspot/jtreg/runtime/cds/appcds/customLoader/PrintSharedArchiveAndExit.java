@@ -82,6 +82,6 @@ public class PrintSharedArchiveAndExit {
               .shouldContain("Shared Builtin Dictionary")
               .shouldContain("Shared Unregistered Dictionary")
               .shouldMatch("Number of shared symbols: \\d+")
-              .shouldMatch("Number of shared strings: \\d+"); 
+              .shouldMatch("Number of shared strings: \\d+");
     }
 }
