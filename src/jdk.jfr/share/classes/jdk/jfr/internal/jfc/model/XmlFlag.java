@@ -22,8 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
+// Corresponds to <flag>
 final class XmlFlag extends XmlInput {
 
     @Override

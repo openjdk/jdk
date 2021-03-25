@@ -22,61 +22,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
+import java.text.ParseException;
 import java.util.List;
-import java.util.Optional;
 
-final class XmlSetting extends XmlElement {
+// Corresponds to <not>
+final class XmlNot extends XmlExpression {
 
     @Override
-    public boolean isEntity() {
+    boolean isEntity() {
         return false;
     }
 
     @Override
-    protected List<String> attributes() {
-        return List.of("name");
-    }
-
-    public String getName() {
-        return attribute("name");
-    }
-
-    public Optional<String> getControl() {
-        return optional("control");
-    }
-
-    @Override
-    public void onChange() {
-        String value = evaluate().value();
-        if (value != null) {
-            setContent(value);
-        }
-    }
-
-    final void setContent(String value) {
-        super.setContent(value);
-        if (getParent() instanceof XmlEvent event) {
-            SettingsLog.log(this, value);
+    protected void validateChildConstraints() throws ParseException {
+        if (getExpressions().size() != 1) {
+            throw new ParseException("Expected <not> to have a single child", 0);
         }
     }
 
     @Override
     protected Result evaluate() {
-        for (XmlElement producer : getProducers()) {
-            Result result = producer.evaluate();
-            if (!result.isNull()) {
-                return result;
+        List<XmlElement> producers = getProducers();
+        if (!producers.isEmpty()) {
+            Result r = producers.get(0).evaluate();
+            if (!r.isNull()) {
+                return r.isTrue() ? Result.FALSE : Result.TRUE;
             }
         }
         return Result.NULL;
-    }
-
-    public String getFullName() {
-        if (getParent() instanceof XmlEvent event) {
-            return event.getName() + "#" + getName();
-        }
-        return "unknown";
     }
 }

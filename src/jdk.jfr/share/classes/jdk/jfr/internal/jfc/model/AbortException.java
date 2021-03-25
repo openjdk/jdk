@@ -22,34 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
-import java.text.ParseException;
-import java.util.List;
-
-final class XmlNot extends XmlExpression {
-
-    @Override
-    boolean isEntity() {
-        return false;
-    }
-
-    @Override
-    protected void validateChildConstraints() throws ParseException {
-        if (getExpressions().size() != 1) {
-            throw new ParseException("Expected <not> to have a single child", 0);
-        }
-    }
-
-    @Override
-    protected Result evaluate() {
-        List<XmlElement> producers = getProducers();
-        if (!producers.isEmpty()) {
-            Result r = producers.get(0).evaluate();
-            if (!r.isNull()) {
-                return r.isTrue() ? Result.FALSE : Result.TRUE;
-            }
-        }
-        return Result.NULL;
-    }
+public final class AbortException extends Exception {
+    private static final long serialVersionUID = -2501519883611363246L;
 }

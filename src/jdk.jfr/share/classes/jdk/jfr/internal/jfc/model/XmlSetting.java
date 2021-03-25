@@ -22,40 +22,63 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
 import java.util.List;
+import java.util.Optional;
 
-final class XmlControl extends XmlElement {
+// Corresponds to <setting>
+final class XmlSetting extends XmlElement {
 
-    public List<XmlInput> getInputs() {
-        return elements(XmlInput.class);
-    }
-
-    public List<XmlCondition> getConditions() {
-        return elements(XmlCondition.class);
-    }
-
-    public List<XmlVariable> getVariables() {
-        return elements(XmlVariable.class);
+    @Override
+    public boolean isEntity() {
+        return false;
     }
 
     @Override
-    String comment() {
-        return """
-               Contents of the control element is not read by the JVM, it's used
-               by JDK Mission Control and the 'jfr'-tool to change settings that
-               carry the control attribute.
-               """;
+    protected List<String> attributes() {
+        return List.of("name");
+    }
+
+    public String getName() {
+        return attribute("name");
+    }
+
+    public Optional<String> getControl() {
+        return optional("control");
     }
 
     @Override
-    protected List<Constraint> constraints() {
-        return List.of(
-            Constraint.any(XmlCondition.class),
-            Constraint.any(XmlText.class),
-            Constraint.any(XmlSelection.class),
-            Constraint.any(XmlFlag.class)
-        );
+    public void onChange() {
+        String value = evaluate().value();
+        if (value != null) {
+            setContent(value);
+        }
+    }
+
+    @Override
+    final void setContent(String value) {
+        super.setContent(value);
+        if (getParent() instanceof XmlEvent event) {
+            SettingsLog.log(this, value);
+        }
+    }
+
+    @Override
+    protected Result evaluate() {
+        for (XmlElement producer : getProducers()) {
+            Result result = producer.evaluate();
+            if (!result.isNull()) {
+                return result;
+            }
+        }
+        return Result.NULL;
+    }
+
+    public String getFullName() {
+        if (getParent() instanceof XmlEvent event) {
+            return event.getName() + "#" + getName();
+        }
+        return "unknown";
     }
 }

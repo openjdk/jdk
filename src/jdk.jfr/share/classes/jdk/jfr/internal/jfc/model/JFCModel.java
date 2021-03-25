@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -36,32 +36,33 @@ import java.util.Map;
 
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
-public final class Parameters {
-    private final Map<String, List<XmlVariable>> variables = new LinkedHashMap<>();
+// Holds the structure of a .jfc file similar to an XML DOM.
+public final class JFCModel {
+    private final Map<String, List<ControlElement>> controls = new LinkedHashMap<>();
     private final XmlConfiguration configuration;
 
-    public Parameters(SafePath file) throws ParseException, IOException {
+    public JFCModel(SafePath file) throws ParseException, IOException {
         this.configuration = createConfiguration(file);
         this.configuration.validate();
-        addVariables();
+        addControls();
         wireConditions();
         wireSettings();
     }
 
-    public Parameters(List<SafePath> files) throws IOException, ParseException {
+    public JFCModel(List<SafePath> files) throws IOException, ParseException {
         this.configuration = new XmlConfiguration();
         this.configuration.setAttribute("version", "2.0");
         for (SafePath file : files) {
-            Parameters params = new Parameters(file);
-            for (var entry : params.variables.entrySet()) {
+            JFCModel model = new JFCModel(file);
+            for (var entry : model.controls.entrySet()) {
                 String name = entry.getKey();
                 // Fail-fast checks that prevents an ambiguous file to be written later
-                if (variables.containsKey(name)) {
+                if (controls.containsKey(name)) {
                     throw new ParseException("Control with '" + name + "' is declared in multiple files", 0);
                 }
-                variables.put(name, entry.getValue());
+                controls.put(name, entry.getValue());
             }
-            for (XmlElement child : params.configuration.getChildren()) {
+            for (XmlElement child : model.configuration.getChildren()) {
                 this.configuration.addChild(child);
             }
         }
@@ -129,14 +130,14 @@ public final class Parameters {
         }
     }
 
-    private List<XmlVariable> getVariables(String name) {
-        return variables.getOrDefault(name, Collections.emptyList());
+    private List<ControlElement> getControlElements(String name) {
+        return controls.getOrDefault(name, Collections.emptyList());
     }
 
-    private void addVariables() {
-        for (var control : configuration.getControls()) {
-            for (var variable : control.getVariables()) {
-                add(variable);
+    private void addControls() {
+        for (var controls : configuration.getControls()) {
+            for (var control : controls.getControlElements()) {
+                add(control);
             }
         }
     }
@@ -165,32 +166,32 @@ public final class Parameters {
 
     private void wireTest(XmlTest test) {
         String name = test.getName();
-        for (XmlVariable variable : getVariables(name)) {
-            XmlElement producer = (XmlElement) variable;
-            producer.addListener(test);
+        for (ControlElement ce : getControlElements(name)) {
+            XmlElement control = (XmlElement) ce;
+            control.addListener(test);
         }
     }
 
     private void wireSettings() {
         for (XmlEvent event : configuration.getEvents()) {
             for (XmlSetting setting : event.getSettings()) {
-                var control = setting.getControl();
-                if (control.isPresent()) {
-                    List<XmlVariable> variables = getVariables(control.get());
-                    if (variables.isEmpty()) { // dangling reference
-                        System.out.println("Warning! Setting '" + setting.getFullName() + "' refers to missing control '" + control.get() + "'");
+                var controlName = setting.getControl();
+                if (controlName.isPresent()) {
+                    List<ControlElement> controls = getControlElements(controlName.get());
+                    if (controls.isEmpty()) {
+                        System.out.println("Warning! Setting '" + setting.getFullName() + "' refers to missing control '" + controlName.get() + "'");
                     }
-                    for (XmlVariable variable : variables) {
-                        XmlElement producer = (XmlElement) variable;
-                        producer.addListener(setting);
+                    for (ControlElement ce : controls) {
+                        XmlElement control = (XmlElement) ce;
+                        control.addListener(setting);
                     }
                 }
             }
         }
     }
 
-    private void add(XmlVariable variable) {
-        variables.computeIfAbsent(variable.getName(), x -> new ArrayList<>()).add(variable);
+    private void add(ControlElement control) {
+        controls.computeIfAbsent(control.getName(), x -> new ArrayList<>()).add(control);
     }
 
     private XmlConfiguration createConfiguration(SafePath file) throws ParseException, IOException {

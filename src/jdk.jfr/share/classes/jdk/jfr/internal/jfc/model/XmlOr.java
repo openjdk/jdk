@@ -22,33 +22,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+// Corresponds to <or>
+final class XmlOr extends XmlExpression {
 
-public final class UserInterface {
-
-    public void println() {
-        System.out.println();
+    @Override
+    boolean isEntity() {
+        return false;
     }
 
-    public void println(String text) {
-        System.out.println(text);
-    }
-
-    public String readLine() throws AbortException {
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            String line = br.readLine();
-            if (line == null || line.equalsIgnoreCase("Q")) {
-                println();
-                throw new AbortException();
+    @Override
+    protected Result evaluate() {
+        Result result = Result.NULL;
+        for (XmlElement e : getProducers()) {
+            Result r = e.evaluate();
+            if (r.isFalse()) {
+                result = Result.FALSE;
             }
-            return line;
-        } catch (IOException e) {
-            throw new Error("Unable to read input", e);
+            if (r.isTrue()) {
+                return Result.TRUE;
+            }
+
         }
+        return result;
     }
 }

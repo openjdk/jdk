@@ -22,27 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
-final class XmlAnd extends XmlExpression {
+record Constraint(Class<? extends XmlElement> type, int min, int max) {
 
-    @Override
-    boolean isEntity() {
-        return false;
+    public static Constraint any(Class<? extends XmlElement> type) {
+        return new Constraint(type, 0, Integer.MAX_VALUE);
     }
 
-    @Override
-    protected Result evaluate() {
-        Result result = Result.NULL;
-        for (XmlElement e : getProducers()) {
-            Result r = e.evaluate();
-            if (r.isFalse()) {
-                return Result.FALSE;
-            }
-            if (r.isTrue()) {
-                result = Result.TRUE;
-            }
-        }
-        return result;
+    public static Constraint atLeast(Class<? extends XmlElement> type, int min) {
+        return new Constraint(type, min, Integer.MAX_VALUE);
     }
 }

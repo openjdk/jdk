@@ -22,31 +22,63 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
 import java.text.ParseException;
 import java.util.List;
 
-abstract class XmlExpression extends XmlElement {
+// Corresponds to <test>
+final class XmlTest extends XmlExpression {
 
-    public final List<XmlExpression> getExpressions() {
-        return elements(XmlExpression.class);
+    public String getName() {
+        return attribute("name");
+    }
+
+    public String getOperator() {
+        return attribute("operator");
+    }
+
+    public String getValue() {
+        return attribute("value");
     }
 
     @Override
-    protected List<Constraint> constraints() {
-        return List.of(
-            Constraint.any(XmlOr.class),
-            Constraint.any(XmlAnd.class),
-            Constraint.any(XmlTest.class),
-            Constraint.any(XmlNot.class)
-        );
+    boolean isEntity() {
+        return false;
+    }
+
+    @Override
+    protected List<String> attributes() {
+        return List.of("name", "operator", "value");
     }
 
     @Override
     protected void validateChildConstraints() throws ParseException {
-        if (getExpressions().size() < 2) {
-            throw new ParseException("Expected + <" + getElementName() + "> to have at least two children", 0);
+        if (!getExpressions().isEmpty()) {
+            throw new ParseException("Expected <test> to not have child elements", 0);
         }
+    }
+
+    @Override
+    protected void validateAttributes() throws ParseException {
+        super.validateAttributes();
+        if (!getOperator().equalsIgnoreCase("equal")) {
+            throw new ParseException("Unknown operator '" + getOperator() + "', only supported is 'equal'", 0);
+        }
+    }
+
+    @Override
+    protected Result evaluate() {
+        Result ret = Result.NULL;
+        List<XmlElement> producers = getProducers();
+        if (!producers.isEmpty()) {
+            XmlElement producer = producers.get(0);
+            Result r = producer.evaluate();
+            if (!r.isNull()) {
+                ret = getValue().equals(r.value()) ? Result.TRUE : Result.FALSE;
+            }
+
+        }
+        return ret;
     }
 }

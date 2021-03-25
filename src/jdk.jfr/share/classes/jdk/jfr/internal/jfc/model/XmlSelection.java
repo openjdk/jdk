@@ -22,11 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
 import java.util.List;
 import java.util.StringJoiner;
 
+// Corresponds to <selection>
 final class XmlSelection extends XmlInput {
 
     @Override

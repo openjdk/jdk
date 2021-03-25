@@ -22,62 +22,45 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
-import java.text.ParseException;
 import java.util.List;
 
-final class XmlTest extends XmlExpression {
+// Corresponds to <event>
+final class XmlEvent extends XmlElement {
 
     public String getName() {
         return attribute("name");
     }
 
-    public String getOperator() {
-        return attribute("operator");
+    public List<XmlSetting> getSettings() {
+        return elements(XmlSetting.class);
     }
 
-    public String getValue() {
-        return attribute("value");
-    }
-
-    @Override
-    boolean isEntity() {
-        return false;
+    XmlSetting getSetting(String settingName, boolean add) {
+        for (XmlSetting setting : getSettings()) {
+            if (settingName.equals(setting.getName())) {
+                return setting;
+            }
+        }
+        if (!add) {
+            String msg = "Could not find setting '" + settingName;
+            msg += "' for event '" + getName() + "'";
+            throw new IllegalArgumentException(msg);
+        }
+        XmlSetting setting = new XmlSetting();
+        setting.setAttribute("name", settingName);
+        addChild(setting);
+        return setting;
     }
 
     @Override
     protected List<String> attributes() {
-        return List.of("name", "operator", "value");
+        return List.of("name");
     }
 
     @Override
-    protected void validateChildConstraints() throws ParseException {
-        if (!getExpressions().isEmpty()) {
-            throw new ParseException("Expected <test> to not have child elements", 0);
-        }
-    }
-
-    @Override
-    protected void validateAttributes() throws ParseException {
-        super.validateAttributes();
-        if (!getOperator().equalsIgnoreCase("equal")) {
-            throw new ParseException("Unknown operator '" + getOperator() + "', only supported is 'equal'", 0);
-        }
-    }
-
-    @Override
-    protected Result evaluate() {
-        Result ret = Result.NULL;
-        List<XmlElement> producers = getProducers();
-        if (!producers.isEmpty()) {
-            XmlElement producer = producers.get(0);
-            Result r = producer.evaluate();
-            if (!r.isNull()) {
-                ret = getValue().equals(r.value()) ? Result.TRUE : Result.FALSE;
-            }
-
-        }
-        return ret;
+    protected List<Constraint> constraints() {
+        return List.of(Constraint.any(XmlSetting.class));
     }
 }

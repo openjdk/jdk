@@ -22,35 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.jfc.model;
 
-package jdk.jfr.internal.parameters;
+import java.text.ParseException;
+import java.util.List;
 
-import java.util.Map;
-import java.util.TreeMap;
+// Base class for <condition>, <or>, <not>, <and> and <test>
+abstract class XmlExpression extends XmlElement {
 
-public final class SettingsLog {
-    private static Map<String, String> settings = new TreeMap<>();
-    private static boolean enabled;
-
-    public static void enable() {
-        enabled = true;
+    public final List<XmlExpression> getExpressions() {
+        return elements(XmlExpression.class);
     }
 
-    public static void flush() {
-        if (!settings.isEmpty()) {
-            System.out.println();
-            System.out.println("Setting:");
-            for (var s : settings.entrySet()) {
-                System.out.println("\"" + s.getKey() + "=" + s.getValue() + "\"");
-            }
-            settings.clear();
-        }
+    @Override
+    protected List<Constraint> constraints() {
+        return List.of(
+            Constraint.any(XmlOr.class),
+            Constraint.any(XmlAnd.class),
+            Constraint.any(XmlTest.class),
+            Constraint.any(XmlNot.class)
+        );
     }
 
-    static void log(XmlSetting setting, String value) {
-        if (enabled) {
-            settings.put(setting.getFullName(), value);
-
+    @Override
+    protected void validateChildConstraints() throws ParseException {
+        if (getExpressions().size() < 2) {
+            throw new ParseException("Expected + <" + getElementName() + "> to have at least two children", 0);
         }
     }
 }

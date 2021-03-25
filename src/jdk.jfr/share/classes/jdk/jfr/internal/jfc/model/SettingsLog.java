@@ -22,15 +22,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
 
-record Constraint(Class<? extends XmlElement> type, int min, int max) {
+package jdk.jfr.internal.jfc.model;
 
-    public static Constraint any(Class<? extends XmlElement> type) {
-        return new Constraint(type, 0, Integer.MAX_VALUE);
+import java.util.Map;
+import java.util.TreeMap;
+
+public final class SettingsLog {
+    private static final Map<String, String> settings = new TreeMap<>();
+    private static boolean enabled;
+
+    public static void enable() {
+        enabled = true;
     }
 
-    public static Constraint atLeast(Class<? extends XmlElement> type, int min) {
-        return new Constraint(type, min, Integer.MAX_VALUE);
+    public static void flush() {
+        if (!settings.isEmpty()) {
+            System.out.println();
+            System.out.println("Setting:");
+            for (var s : settings.entrySet()) {
+                System.out.println("\"" + s.getKey() + "=" + s.getValue() + "\"");
+            }
+            settings.clear();
+        }
+    }
+
+    static void log(XmlSetting setting, String value) {
+        if (enabled) {
+            settings.put(setting.getFullName(), value);
+        }
     }
 }

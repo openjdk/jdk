@@ -22,52 +22,42 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
-import java.text.ParseException;
 import java.util.List;
-import java.util.Optional;
 
-final class XmlCondition extends XmlExpression implements XmlVariable {
+// Corresponds to <control>
+final class XmlControl extends XmlElement {
 
-    @Override
-    public String getName() {
-        return attribute("name");
+    public List<XmlInput> getInputs() {
+        return elements(XmlInput.class);
     }
 
-    public Result getTrueValue() {
-        return Result.of(attribute("true"));
+    public List<XmlCondition> getConditions() {
+        return elements(XmlCondition.class);
     }
 
-    public Result getFalseValue() {
-        return Result.of(attribute("false"));
-    }
-
-    @Override
-    protected void validateChildConstraints() throws ParseException {
-        if (getExpressions().size() > 1) {
-            throw new ParseException("Expected <condition> to not have more than one child", -1);
-        }
+    //  Returns list of all <selection>, <condition>, <flag> and <text>
+    public List<ControlElement> getControlElements() {
+        return elements(ControlElement.class);
     }
 
     @Override
-    protected List<String> attributes() {
-        return List.of("name");
+    String comment() {
+        return """
+               Contents of the control element is not read by the JVM, it's used
+               by JDK Mission Control and the 'jfr'-tool to change settings that
+               carry the control attribute.
+               """;
     }
 
     @Override
-    protected Result evaluate() {
-        Optional<String> trueValue = optional("true");
-        Optional<String> falseValue = optional("false");
-        for (XmlElement producer : getProducers()) {
-            Result r = producer.evaluate();
-            if (trueValue.isPresent() && r.isTrue()) {
-                return getTrueValue();
-            }
-            if (falseValue.isPresent() && r.isFalse()) {
-                return getFalseValue();
-            }
-        }
-        return Result.NULL;
+    protected List<Constraint> constraints() {
+        return List.of(
+            Constraint.any(XmlCondition.class),
+            Constraint.any(XmlText.class),
+            Constraint.any(XmlSelection.class),
+            Constraint.any(XmlFlag.class)
+        );
     }
 }

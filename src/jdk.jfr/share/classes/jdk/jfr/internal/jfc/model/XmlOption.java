@@ -22,10 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
 import java.util.List;
 
+// Corresponds to <option>
 final class XmlOption extends XmlElement {
 
     public String getLabel() {

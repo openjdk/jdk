@@ -22,32 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
-record Result(String value) {
-    public static final Result FALSE = new Result("false");
-    public static final Result TRUE = new Result("true");
-    public static final Result NULL = new Result(null);
-
-    public boolean isTrue() {
-        return "true".equalsIgnoreCase(value);
-    }
-
-    public boolean isNull() {
-        return value == null;
-    }
-
-    public boolean isFalse() {
-        return "false".equalsIgnoreCase(value);
-    }
-
-    public static Result of(String value) {
-        if ("true".equalsIgnoreCase(value)) {
-            return TRUE;
-        }
-        if ("false".equalsIgnoreCase(value)) {
-            return FALSE;
-        }
-        return new Result(value);
-    }
+// Interface for elements that can control a setting,
+// <condition>, <selection>, <text> and <flag>
+interface ControlElement {
+    String getName();
 }

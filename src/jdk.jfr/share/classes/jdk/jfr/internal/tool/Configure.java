@@ -40,11 +40,11 @@ import java.util.Map;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.jfc.JFC;
-import jdk.jfr.internal.parameters.AbortException;
-import jdk.jfr.internal.parameters.Parameters;
-import jdk.jfr.internal.parameters.SettingsLog;
-import jdk.jfr.internal.parameters.UserInterface;
-import jdk.jfr.internal.parameters.XmlInput;
+import jdk.jfr.internal.jfc.model.AbortException;
+import jdk.jfr.internal.jfc.model.JFCModel;
+import jdk.jfr.internal.jfc.model.SettingsLog;
+import jdk.jfr.internal.jfc.model.UserInterface;
+import jdk.jfr.internal.jfc.model.XmlInput;
 
 final class Configure extends Command {
     private final List<SafePath> inputFiles = new ArrayList<>();
@@ -127,7 +127,7 @@ final class Configure extends Command {
     }
 
     private void displayParameters(PrintStream stream, SafePath path, String name) throws ParseException, IOException {
-        Parameters parameters = new Parameters(path);
+        JFCModel parameters = new JFCModel(path);
         stream.println();
         stream.println("Options for " + name + ":");
         stream.println();
@@ -195,30 +195,30 @@ final class Configure extends Command {
                 output = new SafePath(Path.of("custom.jfc"));
             }
             UserInterface ui = new UserInterface();
-            Parameters params = new Parameters(inputFiles);
-            params.setLabel("Custom");
+            JFCModel model = new JFCModel(inputFiles);
+            model.setLabel("Custom");
             if (log) {
                 SettingsLog.enable();
             }
             for (var option : options.entrySet()) {
-                params.configure(option.getKey(), option.getValue());
+                model.configure(option.getKey(), option.getValue());
             }
             SettingsLog.flush();
             try {
                 if (interactive) {
-                    int q = params.getInputs().size() + 1;
+                    int q = model.getInputs().size() + 1;
                     ui.println("============== .jfc Configuration Wizard ============");
                     ui.println("This wizard will generate a JFR configuration file by");
                     ui.println("asking " + q + " questions. Press ENTER to use the default");
                     ui.println("value, or type Q to abort the wizard.");
-                    params.configure(ui);
+                    model.configure(ui);
                     output = filename(ui, output);
                 }
             } catch (AbortException e) {
                 ui.println("Abort.");
                 return;
             }
-            params.saveToFile(output);
+            model.saveToFile(output);
             ui.println("Configuration written successfully to:");
             ui.println(output.toPath().toAbsolutePath().toString());
         } catch (IllegalArgumentException iae) {

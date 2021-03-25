@@ -22,35 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
+import java.text.ParseException;
 import java.util.List;
+import java.util.Optional;
 
-final class XmlEvent extends XmlElement {
+// Corresponds <condition>
+final class XmlCondition extends XmlExpression implements ControlElement {
 
+    @Override
     public String getName() {
         return attribute("name");
     }
 
-    public List<XmlSetting> getSettings() {
-        return elements(XmlSetting.class);
+    public Result getTrueValue() {
+        return Result.of(attribute("true"));
     }
 
-    XmlSetting getSetting(String settingName, boolean add) {
-        for (XmlSetting setting : getSettings()) {
-            if (settingName.equals(setting.getName())) {
-                return setting;
-            }
+    public Result getFalseValue() {
+        return Result.of(attribute("false"));
+    }
+
+    @Override
+    protected void validateChildConstraints() throws ParseException {
+        if (getExpressions().size() > 1) {
+            throw new ParseException("Expected <condition> to not have more than one child", -1);
         }
-        if (!add) {
-            String msg = "Could not find setting '" + settingName;
-            msg += "' for event '" + getName() + "'";
-            throw new IllegalArgumentException(msg);
-        }
-        XmlSetting setting = new XmlSetting();
-        setting.setAttribute("name", settingName);
-        addChild(setting);
-        return setting;
     }
 
     @Override
@@ -59,7 +57,18 @@ final class XmlEvent extends XmlElement {
     }
 
     @Override
-    protected List<Constraint> constraints() {
-        return List.of(Constraint.any(XmlSetting.class));
+    protected Result evaluate() {
+        Optional<String> trueValue = optional("true");
+        Optional<String> falseValue = optional("false");
+        for (XmlElement producer : getProducers()) {
+            Result r = producer.evaluate();
+            if (trueValue.isPresent() && r.isTrue()) {
+                return getTrueValue();
+            }
+            if (falseValue.isPresent() && r.isFalse()) {
+                return getFalseValue();
+            }
+        }
+        return Result.NULL;
     }
 }

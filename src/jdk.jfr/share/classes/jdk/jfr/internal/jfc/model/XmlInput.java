@@ -22,28 +22,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
-final class XmlOr extends XmlExpression {
+import java.util.List;
+import java.util.Optional;
 
-    @Override
-    boolean isEntity() {
-        return false;
+// Base class for elements that the user can interact with,
+// <selection>, <text> and <flag>
+public abstract class XmlInput extends XmlElement implements ControlElement {
+
+    public abstract String getOptionSyntax();
+
+    abstract void configure(UserInterface ui) throws AbortException;
+
+    abstract void configure(String value);
+
+    public final Optional<String> getContentType() {
+        return optional("contentType");
     }
 
     @Override
-    protected Result evaluate() {
-        Result result = Result.NULL;
-        for (XmlElement e : getProducers()) {
-            Result r = e.evaluate();
-            if (r.isFalse()) {
-                result = Result.FALSE;
-            }
-            if (r.isTrue()) {
-                return Result.TRUE;
-            }
+    public final String getName() {
+        return attribute("name");
+    }
 
-        }
-        return result;
+    public final String getLabel() {
+        return attribute("label");
+    }
+
+    @Override
+    protected List<String> attributes() {
+        return List.of("name", "label");
     }
 }

@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+// Base class for XML-elements
 class XmlElement {
     private final Map<String, String> attributes = new HashMap<>();
     private final List<XmlElement> elements = new ArrayList<>();
@@ -112,6 +113,8 @@ class XmlElement {
         listener.addProducer(this);
     }
 
+    // If the element should be surrounded with an empty
+    // line when printed to file, for example, <event> but not <setting>
     boolean isEntity() {
         return true;
     }

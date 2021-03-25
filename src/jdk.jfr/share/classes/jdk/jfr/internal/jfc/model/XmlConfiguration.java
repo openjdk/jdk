@@ -22,12 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.parameters;
+package jdk.jfr.internal.jfc.model;
 
 import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 
+// Corresponds to <configuration>
 final class XmlConfiguration extends XmlElement {
 
     public List<XmlEvent> getEvents() {
