@@ -514,6 +514,11 @@ C2V_VMENTRY_0(jboolean, shouldInlineMethod,(JNIEnv* env, jobject, jobject jvmci_
   return CompilerOracle::should_inline(method) || method->force_inline();
 C2V_END
 
+C2V_VMENTRY_0(jboolean, shouldBlackholeMethod,(JNIEnv* env, jobject, jobject jvmci_method))
+  methodHandle method (THREAD, JVMCIENV->asMethod(jvmci_method));
+  return CompilerOracle::should_blackhole(method);
+C2V_END
+
 C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jclass accessing_class, jboolean resolve))
   JVMCIObject name = JVMCIENV->wrap(jname);
   const char* str = JVMCIENV->as_utf8_string(name);
@@ -2678,6 +2683,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "isCompilable",                                 CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(isCompilable)},
   {CC "hasNeverInlineDirective",                      CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(hasNeverInlineDirective)},
   {CC "shouldInlineMethod",                           CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(shouldInlineMethod)},
+  {CC "shouldBlackholeMethod",                        CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(shouldBlackholeMethod)},
   {CC "lookupType",                                   CC "(" STRING HS_RESOLVED_KLASS "Z)" HS_RESOLVED_TYPE,                                FN_PTR(lookupType)},
   {CC "getArrayType",                                 CC "(" HS_RESOLVED_TYPE ")" HS_RESOLVED_KLASS,                                        FN_PTR(getArrayType)},
   {CC "lookupClass",                                  CC "(" CLASS ")" HS_RESOLVED_TYPE,                                                    FN_PTR(lookupClass)},
