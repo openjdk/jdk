@@ -173,6 +173,16 @@ class WindowsNativeDispatcher {
         long bufferAddress, int bufferSize) throws WindowsException;
 
     /**
+     * Retrieves the size of the specified file.
+     *
+     * BOOL GetFileSizeEx(
+     *   HANDLE hFile,
+     *   PLARGE_INTEGER lpFileSize
+     * )
+     */
+    static native long GetFileSizeEx(long handle) throws WindowsException;
+
+    /**
      * HANDLE FindFirstFile(
      *   LPCTSTR lpFileName,
      *   LPWIN32_FIND_DATA lpFindFileData

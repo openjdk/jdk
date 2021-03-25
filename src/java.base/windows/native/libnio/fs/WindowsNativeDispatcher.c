@@ -309,6 +309,18 @@ Java_sun_nio_fs_WindowsNativeDispatcher_CloseHandle(JNIEnv* env, jclass this,
     CloseHandle(h);
 }
 
+JNIEXPORT jlong JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_GetFileSizeEx(JNIEnv *env,
+    jclass this, jlong handle)
+{
+    HANDLE h = (HANDLE)jlong_to_ptr(handle);
+    LARGE_INTEGER size;
+    if (GetFileSizeEx(h, &size) == 0) {
+        throwWindowsException(env, GetLastError());
+    }
+    return long_to_jlong(size.QuadPart);
+}
+
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstFile0(JNIEnv* env, jclass this,
     jlong address, jobject obj)
@@ -522,13 +534,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_SetEndOfFile(JNIEnv* env, jclass this,
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
 
     if (SetEndOfFile(h) == 0) {
-        DWORD error = GetLastError();
-        LARGE_INTEGER size;
-        if (GetFileSizeEx(h, &size) == 0) {
-            throwWindowsException(env, GetLastError());
-        } else if (size.QuadPart != 0) {
-            throwWindowsException(env, error);
-        }
+        throwWindowsException(env, GetLastError());
     }
 }
 

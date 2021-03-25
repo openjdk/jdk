@@ -328,8 +328,11 @@ class WindowsChannelFactory {
             try {
                 SetEndOfFile(handle);
             } catch (WindowsException x) {
-                CloseHandle(handle);
-                throw x;
+                // ignore exception if file size is zero
+                if (GetFileSizeEx(handle) != 0) {
+                    CloseHandle(handle);
+                    throw x;
+                } 
             }
         }
 

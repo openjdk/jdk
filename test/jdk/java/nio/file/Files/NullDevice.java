@@ -29,6 +29,7 @@ import java.nio.file.Files;
 /* @test
  * @bug 8263898
  * @summary Verify a byte can be written to the null device.
+ * @requires os.family == "windows"
  * @run main NullDevice
 */
 public class NullDevice {
