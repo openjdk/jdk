@@ -41,10 +41,10 @@ import com.sun.source.doctree.SpecTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
@@ -128,7 +128,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
      */
     protected void addExternalSpecs(Content content) {
         Map<String, List<IndexItem>> searchIndexMap = groupExternalSpecs();
-        Content separator = new StringContent(", ");
+        Content separator = Text.of(", ");
         Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.externalSpecifications)
                 .setHeader(new TableHeader(contents.specificationLabel, contents.referencedIn))
@@ -171,7 +171,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                 t = p.getFileName().toString();
             }
             ContentBuilder b = new ContentBuilder();
-            b.add(HtmlTree.CODE(new FixedStringContent(i.getHolder() + ": ")));
+            b.add(HtmlTree.CODE(Text.of(i.getHolder() + ": ")));
             // non-program elements should be displayed using a normal font
             b.add(t);
             return links.createLink(pathToRoot.resolve(i.getUrl()), b);
@@ -186,7 +186,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         assert i.getDocTree().getKind() == DocTree.Kind.SPEC : i;
         SpecTree specTree = (SpecTree) i.getDocTree();
 
-        Content label = new StringContent(i.getLabel());
+        Content label = Text.of(i.getLabel());
 
         URI specURI;
         try {

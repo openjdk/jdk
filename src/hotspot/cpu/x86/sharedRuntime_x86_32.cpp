@@ -38,6 +38,7 @@
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -368,14 +369,6 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
 // Note, MaxVectorSize == 0 with UseSSE < 2 and vectors are not generated.
 bool SharedRuntime::is_wide_vector(int size) {
   return size > 16;
-}
-
-size_t SharedRuntime::trampoline_size() {
-  return 16;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  __ jump(RuntimeAddress(destination));
 }
 
 // The java_calling_convention describes stack locations as ideal slots on
@@ -2979,10 +2972,12 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
+#ifdef COMPILER2
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
                                                 int shadow_space_bytes,
                                                 const GrowableArray<VMReg>& input_registers,
                                                 const GrowableArray<VMReg>& output_registers) {
   ShouldNotCallThis();
   return nullptr;
 }
+#endif

@@ -94,7 +94,6 @@ public final class ChunkParser {
     public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
 
     private static final long CONSTANT_POOL_TYPE_ID = 1;
-    private static final String CHUNKHEADER = "jdk.types.ChunkHeader";
     private final RecordingInput input;
     private final ChunkHeader chunkHeader;
     private final TimeConverter timeConverter;
@@ -166,8 +165,7 @@ public final class ChunkParser {
     void updateConfiguration(ParserConfiguration configuration, boolean resetEventCache) {
         this.configuration = configuration;
         parsers.forEach(p -> {
-            if (p instanceof EventParser) {
-                EventParser ep = (EventParser) p;
+            if (p instanceof EventParser ep) {
                 if (resetEventCache) {
                     ep.resetCache();
                 }
@@ -245,9 +243,8 @@ public final class ChunkParser {
             }
             long typeId = input.readLong();
             Parser p = parsers.get(typeId);
-            if (p instanceof EventParser) {
+            if (p instanceof EventParser ep) {
                 // Fast path
-                EventParser ep = (EventParser) p;
                 RecordedEvent event = ep.parse(input);
                 if (event != null) {
                     input.position(pos + size);
@@ -334,10 +331,7 @@ public final class ChunkParser {
                 if (lookup == null) {
                     if (type == null) {
                         throw new IOException(
-                                "Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + lastCP + size + "]");
-                    }
-                    if (type.getName() != CHUNKHEADER) {
-                        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found constant pool(" + id + ") that is never used");
+                                "Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + (lastCP + size) + "]");
                     }
                     ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type.getName());
                     lookup = new ConstantLookup(pool, type);
@@ -369,7 +363,7 @@ public final class ChunkParser {
                         }
                     }
                 } catch (Exception e) {
-                    throw new IOException("Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + lastCP + size + "]",
+                    throw new IOException("Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + (lastCP + size) + "]",
                             e);
                 }
             }
@@ -402,8 +396,8 @@ public final class ChunkParser {
         if (o == null) { // should not happen
             return "null";
         }
-        if (o instanceof String) {
-            return "\"" + String.valueOf(o) + "\"";
+        if (o instanceof String s) {
+            return "\"" + s + "\"";
         }
         if (o instanceof RecordedObject) {
             return o.getClass().getName();
@@ -488,8 +482,7 @@ public final class ChunkParser {
         LongMap<Parser> ps = this.parsers;
         if (ps != null) {
             ps.forEach(p -> {
-                if (p instanceof EventParser) {
-                    EventParser ep = (EventParser) p;
+                if (p instanceof EventParser ep) {
                     ep.resetCache();
                 }
             });

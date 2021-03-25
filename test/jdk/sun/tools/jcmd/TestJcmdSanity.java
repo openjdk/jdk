@@ -153,7 +153,7 @@ public class TestJcmdSanity {
      */
     private static void matchPerfCounters(OutputAnalyzer output) {
         output.stdoutShouldMatchByLine(PERF_COUNTER_REGEX, null, PERF_COUNTER_REGEX);
-        output.stderrShouldBeEmptyIgnoreVMWarnings();
+        output.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
     }
 
     private static void verifyOutputAgainstFile(OutputAnalyzer output) throws IOException {

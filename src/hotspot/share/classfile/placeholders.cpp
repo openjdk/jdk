@@ -104,13 +104,16 @@ void PlaceholderEntry::set_threadQ(SeenThread* seenthread, PlaceholderTable::cla
 
 // Doubly-linked list of Threads per action for class/classloader pair
 // Class circularity support: links in thread before loading superclass
-// bootstrapsearchpath support: links in a thread before load_instance_class
+// bootstrap loader support:  links in a thread before load_instance_class
 // definers: use as queue of define requestors, including owner of
 // define token. Appends for debugging of requestor order
 void PlaceholderEntry::add_seen_thread(Thread* thread, PlaceholderTable::classloadAction action) {
   assert_lock_strong(SystemDictionary_lock);
   SeenThread* threadEntry = new SeenThread(thread);
   SeenThread* seen = actionToQueue(action);
+
+  assert(action != PlaceholderTable::LOAD_INSTANCE || seen == NULL,
+         "Only one LOAD_INSTANCE allowed at a time");
 
   if (seen == NULL) {
     set_threadQ(threadEntry, action);
@@ -190,7 +193,7 @@ void PlaceholderTable::free_entry(PlaceholderEntry* entry) {
   // decrement Symbol refcount here because Hashtable doesn't.
   entry->literal()->decrement_refcount();
   if (entry->supername() != NULL) entry->supername()->decrement_refcount();
-  Hashtable<Symbol*, mtClass>::free_entry(entry);
+  BasicHashtable<mtClass>::free_entry(entry);
 }
 
 

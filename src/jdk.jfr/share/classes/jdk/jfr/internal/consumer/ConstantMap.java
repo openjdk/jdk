@@ -60,6 +60,7 @@ final class ConstantMap {
             return pool.get(key);
         }
 
+        @Override
         public String toString() {
             return "ref: " + pool.name + "[" + key + "]";
         }
@@ -137,8 +138,8 @@ final class ConstantMap {
     }
 
     private static Object resolve(Object o) {
-        if (o instanceof Reference) {
-            return resolve(((Reference) o).resolve());
+        if (o instanceof Reference r) {
+            return resolve(r.resolve());
         }
         if (o != null && o.getClass().isArray()) {
             final Object[] array = (Object[]) o;

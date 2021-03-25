@@ -1681,7 +1681,7 @@ public class MethodHandles {
          * (used during {@link #findClass} invocations)
          * are determined by the lookup class' loader,
          * which may change due to this operation.
-         * <p>
+         *
          * @param requestedLookupClass the desired lookup class for the new lookup object
          * @return a lookup object which reports the desired lookup class, or the same object
          * if there is no change
@@ -2262,10 +2262,9 @@ public class MethodHandles {
                     // workaround to read `this_class` using readConst and validate the value
                     int thisClass = reader.readUnsignedShort(reader.header + 2);
                     Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
-                    if (!(constant instanceof Type)) {
+                    if (!(constant instanceof Type type)) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
-                    Type type = ((Type) constant);
                     if (!type.getDescriptor().startsWith("L")) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }

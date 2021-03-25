@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -305,7 +305,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
       case T_OBJECT:
       case T_ARRAY: {
         oop obj = *(oop*)tos_addr;
-        assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
+        assert(Universe::is_in_heap_or_null(obj), "sanity check");
         *oop_result = obj;
       }
       case T_BOOLEAN : value_result->z = (jboolean) *(jint*)tos_addr; break;

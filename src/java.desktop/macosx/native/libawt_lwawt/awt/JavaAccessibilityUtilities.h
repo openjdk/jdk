@@ -23,7 +23,7 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import "JNIUtilities.h"
 
 extern NSString *const JavaAccessibilityIgnore;
 

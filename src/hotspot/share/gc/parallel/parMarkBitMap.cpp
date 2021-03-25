@@ -50,7 +50,8 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
   ReservedSpace rs(_reserved_byte_size, rs_align, rs_align > 0);
-  os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes, page_sz,
+  const size_t used_page_sz = ReservedSpace::actual_reserved_page_size(rs);
+  os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes, used_page_sz,
                        rs.base(), rs.size());
 
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
@@ -145,14 +146,14 @@ ParMarkBitMap::live_words_in_range_use_cache(ParCompactionManager* cm, HeapWord*
     // The cached value is for an object that is to the left (lower address) of the current
     // end_obj. Calculate back from that cached value.
     if (pointer_delta(end_obj, beg_addr) > pointer_delta(last_obj, end_obj)) {
-      last_ret = last_ret - live_words_in_range_helper(end_obj, (oop)last_obj);
+      last_ret = last_ret - live_words_in_range_helper(end_obj, cast_to_oop(last_obj));
     } else {
       last_ret = live_words_in_range_helper(beg_addr, end_oop);
     }
     last_obj = end_obj;
   }
 
-  update_live_words_in_range_cache(cm, last_beg, (oop)last_obj, last_ret);
+  update_live_words_in_range_cache(cm, last_beg, cast_to_oop(last_obj), last_ret);
   return last_ret;
 }
 

@@ -25,7 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -477,26 +476,6 @@ juint os::cpu_microcode_revision() {
     fclose(fp);
   }
   return result;
-}
-
-bool os::is_allocatable(size_t bytes) {
-#ifdef AMD64
-  // unused on amd64?
-  return true;
-#else
-
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // AMD64
 }
 
 ////////////////////////////////////////////////////////////////////////////////

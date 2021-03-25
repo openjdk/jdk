@@ -78,7 +78,7 @@ endif
 ifeq ($(call isTargetOs, macosx), true)
   BUILD_JDK_JTREG_EXCLUDE += exelauncher.c
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestMainKeyWindow := \
-      -framework Cocoa -framework JavaNativeFoundation
+      -framework Cocoa
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJniInvocationTest := -ljli
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestDynamicStore := \
       -framework Cocoa -framework SystemConfiguration

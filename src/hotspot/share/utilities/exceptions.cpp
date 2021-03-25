@@ -499,9 +499,18 @@ void Exceptions::print_exception_counts_on_error(outputStream* st) {
 
 // Implementation of ExceptionMark
 
-ExceptionMark::ExceptionMark(Thread*& thread) {
-  thread     = Thread::current();
-  _thread    = thread;
+ExceptionMark::ExceptionMark(Thread* thread) {
+  assert(thread == Thread::current(), "must be");
+  _thread  = thread;
+  check_no_pending_exception();
+}
+
+ExceptionMark::ExceptionMark() {
+  _thread = Thread::current();
+  check_no_pending_exception();
+}
+
+inline void ExceptionMark::check_no_pending_exception() {
   if (_thread->has_pending_exception()) {
     oop exception = _thread->pending_exception();
     _thread->clear_pending_exception(); // Needed to avoid infinite recursion

@@ -44,7 +44,9 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
@@ -405,7 +407,7 @@ void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   // The result should be a [B
-  oop res = (oop)result.get_jobject();
+  oop res = result.get_oop();
   assert(res->is_typeArray(), "just checking");
   assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
 
@@ -477,7 +479,7 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
                          vmSymbols::get_finalizer_histogram_name(),
                          vmSymbols::void_finalizer_histogram_entry_array_signature(), CHECK);
 
-  objArrayOop result_oop = (objArrayOop) result.get_jobject();
+  objArrayOop result_oop = (objArrayOop) result.get_oop();
   if (result_oop->length() == 0) {
     output()->print_cr("No instances waiting for finalization found");
     return;
@@ -868,7 +870,7 @@ void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
   JavaCalls::call_static(&result, k, vmSymbols::getAgentStatus_name(), vmSymbols::void_string_signature(), CHECK);
 
   jvalue* jv = (jvalue*) result.get_value_addr();
-  oop str = (oop) jv->l;
+  oop str = cast_to_oop(jv->l);
   if (str != NULL) {
       char* out = java_lang_String::as_utf8_string(str);
       if (out) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -158,11 +159,11 @@ void ObjectValue::read_object(DebugInfoReadStream* stream) {
 }
 
 void ObjectValue::write_on(DebugInfoWriteStream* stream) {
-  if (_visited) {
+  if (is_visited()) {
     stream->write_int(OBJECT_ID_CODE);
     stream->write_int(_id);
   } else {
-    _visited = true;
+    set_visited(true);
     stream->write_int(is_auto_box() ? AUTO_BOX_OBJECT_CODE : OBJECT_CODE);
     stream->write_int(_id);
     _klass->write_on(stream);

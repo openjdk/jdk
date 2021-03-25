@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,23 +61,24 @@ protected:
   uint _loop_flags;
   // Names for flag bitfields
   enum { Normal=0, Pre=1, Main=2, Post=3, PreMainPostFlagsMask=3,
-         MainHasNoPreLoop=4,
-         HasExactTripCount=8,
-         InnerLoop=16,
-         PartialPeelLoop=32,
-         PartialPeelFailed=64,
-         HasReductions=128,
-         WasSlpAnalyzed=256,
-         PassedSlpAnalysis=512,
-         DoUnrollOnly=1024,
-         VectorizedLoop=2048,
-         HasAtomicPostLoop=4096,
-         HasRangeChecks=8192,
-         IsMultiversioned=16384,
-         StripMined=32768,
-         SubwordLoop=65536,
-         ProfileTripFailed=131072,
-         TransformedLongLoop=262144};
+         MainHasNoPreLoop    = 1<<2,
+         HasExactTripCount   = 1<<3,
+         InnerLoop           = 1<<4,
+         PartialPeelLoop     = 1<<5,
+         PartialPeelFailed   = 1<<6,
+         HasReductions       = 1<<7,
+         WasSlpAnalyzed      = 1<<8,
+         PassedSlpAnalysis   = 1<<9,
+         DoUnrollOnly        = 1<<10,
+         VectorizedLoop      = 1<<11,
+         HasAtomicPostLoop   = 1<<12,
+         HasRangeChecks      = 1<<13,
+         IsMultiversioned    = 1<<14,
+         StripMined          = 1<<15,
+         SubwordLoop         = 1<<16,
+         ProfileTripFailed   = 1<<17,
+         TransformedLongInnerLoop = 1<<18,
+         TransformedLongOuterLoop = 1<<19};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
@@ -102,7 +103,8 @@ public:
   bool is_strip_mined() const { return _loop_flags & StripMined; }
   bool is_profile_trip_failed() const { return _loop_flags & ProfileTripFailed; }
   bool is_subword_loop() const { return _loop_flags & SubwordLoop; }
-  bool is_transformed_long_loop() const { return _loop_flags & TransformedLongLoop; }
+  bool is_transformed_long_inner_loop() const { return _loop_flags & TransformedLongInnerLoop; }
+  bool is_transformed_long_outer_loop() const { return _loop_flags & TransformedLongOuterLoop; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
@@ -117,7 +119,8 @@ public:
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
-  void mark_transformed_long_loop() { _loop_flags |= TransformedLongLoop; }
+  void mark_transformed_long_inner_loop() { _loop_flags |= TransformedLongInnerLoop; }
+  void mark_transformed_long_outer_loop() { _loop_flags |= TransformedLongOuterLoop; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -611,7 +614,7 @@ public:
 
   Node_List _body;              // Loop body for inner loops
 
-  uint8_t _nest;                // Nesting depth
+  uint16_t _nest;               // Nesting depth
   uint8_t _irreducible:1,       // True if irreducible
           _has_call:1,          // True if has call safepoint
           _has_sfpt:1,          // True if has non-call safepoint
@@ -1608,6 +1611,8 @@ public:
   void check_long_counted_loop(IdealLoopTree* loop, Node* x) NOT_DEBUG_RETURN;
 
   LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
+
+  bool is_safe_load_ctrl(Node* ctrl);
 };
 
 

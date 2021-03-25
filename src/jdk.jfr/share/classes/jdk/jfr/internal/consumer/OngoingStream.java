@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@ package jdk.jfr.internal.consumer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
-import java.time.Instant;
 
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
-import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.management.EventByteStream;
@@ -66,6 +64,7 @@ public final class OngoingStream extends EventByteStream {
         this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null);
     }
 
+    @Override
     public synchronized byte[] read() throws IOException {
         try {
             return readBytes();
@@ -119,8 +118,7 @@ public final class OngoingStream extends EventByteStream {
                     throw new IOException("No progress");
                 }
                 startTimeNanos += header.getDurationNanos();
-                Instant timestamp = Utils.epochNanosToInstant(startTimeNanos);
-                ManagementSupport.removeBefore(recording, timestamp);
+                ManagementSupport.removePath(recording, path);
                 closeInput();
             } else {
                 header.refresh();

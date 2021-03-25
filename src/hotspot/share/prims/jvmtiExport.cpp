@@ -1506,6 +1506,9 @@ void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const c
 
   JavaThread *thread  = JavaThread::current();
 
+  log_error(jvmti)("Posting Resource Exhausted event: %s",
+                   description != nullptr ? description : "unknown");
+
   // JDK-8213834: handlers of ResourceExhausted may attempt some analysis
   // which often requires running java.
   // This will cause problems on threads not able to run java, e.g. compiler
@@ -2044,7 +2047,7 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
   // convert oop to JNI handle.
   if (sig_type == JVM_SIGNATURE_CLASS) {
     handle_created = true;
-    value->l = (jobject)JNIHandles::make_local(thread, (oop)value->l);
+    value->l = (jobject)JNIHandles::make_local(thread, cast_to_oop(value->l));
   }
 
   post_field_modification(thread, method, location, field_klass, object, field, sig_type, value);

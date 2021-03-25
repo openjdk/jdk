@@ -30,7 +30,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/defaultMethods.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/fieldLayoutBuilder.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -77,6 +76,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -3765,7 +3765,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
       }
       parse_classfile_synthetic_attribute(CHECK);
     } else if (tag == vmSymbols::tag_deprecated()) {
-      // Check for Deprecatd tag - 4276120
+      // Check for Deprecated tag - 4276120
       if (attribute_length != 0) {
         classfile_parse_error(
           "Invalid Deprecated classfile attribute length %u in class file %s",
@@ -5422,7 +5422,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   // can only set dynamic nest-host after static nest information is set
   if (cl_inst_info.dynamic_nest_host() != NULL) {
-    ik->set_nest_host(cl_inst_info.dynamic_nest_host(), THREAD);
+    ik->set_nest_host(cl_inst_info.dynamic_nest_host());
   }
 
   // note that is not safe to use the fields in the parser from this point on

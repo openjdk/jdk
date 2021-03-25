@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -184,7 +183,7 @@ public final class Utils {
 
     // This method reduces the number of loaded classes
     // compared to DateTimeFormatter
-    static String formatDateTime(LocalDateTime time) {
+    public static String formatDateTime(LocalDateTime time) {
         StringBuilder sb = new StringBuilder(19);
         sb.append(time.getYear() / 100);
         appendPadded(sb, time.getYear() % 100, true);
@@ -207,22 +206,20 @@ public final class Utils {
     }
 
     enum ThrottleUnit {
-        NANOSECONDS("ns", TimeUnit.NANOSECONDS, TimeUnit.SECONDS.toNanos(1), TimeUnit.SECONDS.toMillis(1)),
-        MICROSECONDS("us", TimeUnit.MICROSECONDS, TimeUnit.SECONDS.toNanos(1) / 1000, TimeUnit.SECONDS.toMillis(1)),
-        MILLISECONDS("ms", TimeUnit.MILLISECONDS, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(1)),
-        SECONDS("s", TimeUnit.SECONDS, 1, TimeUnit.SECONDS.toMillis(1)),
-        MINUTES("m", TimeUnit.MINUTES, 1, TimeUnit.MINUTES.toMillis(1)),
-        HOUR("h", TimeUnit.HOURS, 1, TimeUnit.HOURS.toMillis(1)),
-        DAY("d", TimeUnit.DAYS, 1, TimeUnit.DAYS.toMillis(1));
+        NANOSECONDS("ns", TimeUnit.SECONDS.toNanos(1), TimeUnit.SECONDS.toMillis(1)),
+        MICROSECONDS("us", TimeUnit.SECONDS.toNanos(1) / 1000, TimeUnit.SECONDS.toMillis(1)),
+        MILLISECONDS("ms", TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(1)),
+        SECONDS("s", 1, TimeUnit.SECONDS.toMillis(1)),
+        MINUTES("m", 1, TimeUnit.MINUTES.toMillis(1)),
+        HOUR("h", 1, TimeUnit.HOURS.toMillis(1)),
+        DAY("d", 1, TimeUnit.DAYS.toMillis(1));
 
         private final String text;
-        private final TimeUnit timeUnit;
         private final long factor;
         private final long millis;
 
-        ThrottleUnit(String t, TimeUnit u, long factor, long millis) {
+        ThrottleUnit(String t, long factor, long millis) {
             this.text = t;
-            this.timeUnit = u;
             this.factor = factor;
             this.millis = millis;
         }
@@ -365,9 +362,7 @@ public final class Utils {
                 }
             }
         }
-        List<Annotation> annos = new ArrayList<>();
-        annos.add(a);
-        return annos;
+        return List.of(a);
     }
 
     static boolean isAfter(RecordingState stateToTest, RecordingState b) {
@@ -647,16 +642,6 @@ public final class Utils {
             throw new IllegalArgumentException("Only primitive types, java.lang.Thread, java.lang.String and java.lang.Class are allowed for value descriptors. " + type.getName());
         }
         return knownType;
-    }
-
-    public static <T> List<T> smallUnmodifiable(List<T> list) {
-        if (list.isEmpty()) {
-            return Collections.emptyList();
-        }
-        if (list.size() == 1) {
-            return Collections.singletonList(list.get(0));
-        }
-        return Collections.unmodifiableList(list);
     }
 
     public static String upgradeLegacyJDKEvent(String eventName) {

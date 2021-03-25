@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
-     Recommended way to edit .jfc files is to use Java Mission Control,
-     see Window -> Flight Recorder Template Manager.
+     Recommended way to edit .jfc files is to use the configure command of
+     the 'jfr' tool, i.e. jfr configure, or JDK Mission Control
+     see Window -> Flight Recorder Template Manager
 -->
 
 <configuration version="2.0" label="Continuous" description="Low overhead configuration safe for continuous use in production environments, typically less than 1 % overhead." provider="Oracle">
@@ -64,31 +64,31 @@
     <event name="jdk.ThreadSleep">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="synchronization-threshold">20 ms</setting>
+      <setting name="threshold" control="locking-threshold">20 ms</setting>
     </event>
 
     <event name="jdk.ThreadPark">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="synchronization-threshold">20 ms</setting>
+      <setting name="threshold" control="locking-threshold">20 ms</setting>
     </event>
 
     <event name="jdk.JavaMonitorEnter">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="synchronization-threshold">20 ms</setting>
+      <setting name="threshold" control="locking-threshold">20 ms</setting>
     </event>
 
     <event name="jdk.JavaMonitorWait">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="synchronization-threshold">20 ms</setting>
+      <setting name="threshold" control="locking-threshold">20 ms</setting>
     </event>
 
     <event name="jdk.JavaMonitorInflate">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="synchronization-threshold">20 ms</setting>
+      <setting name="threshold" control="locking-threshold">20 ms</setting>
     </event>
 
     <event name="jdk.SyncOnValueBasedClass">
@@ -120,13 +120,13 @@
     </event>
 
     <event name="jdk.ClassLoad">
-      <setting name="enabled" control="class-loading-enabled">false</setting>
+      <setting name="enabled" control="class-loading">false</setting>
       <setting name="stackTrace">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.ClassDefine">
-      <setting name="enabled" control="class-loading-enabled">false</setting>
+      <setting name="enabled" control="class-loading">false</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
@@ -143,11 +143,11 @@
     </event>
 
     <event name="jdk.ClassRedefinition">
-      <setting name="enabled" control="class-loading-enabled">true</setting>
+      <setting name="enabled" control="class-loading">true</setting>
     </event>
 
     <event name="jdk.ClassUnload">
-      <setting name="enabled" control="class-loading-enabled">false</setting>
+      <setting name="enabled" control="class-loading">false</setting>
     </event>
 
     <event name="jdk.JVMInformation">
@@ -207,7 +207,7 @@
 
     <event name="jdk.ThreadDump">
       <setting name="enabled" control="thread-dump-enabled">true</setting>
-      <setting name="period" control="thread-dump-interval">everyChunk</setting>
+      <setting name="period" control="thread-dump">everyChunk</setting>
     </event>
 
     <event name="jdk.IntFlag">
@@ -274,7 +274,7 @@
     </event>
 
     <event name="jdk.ObjectCount">
-      <setting name="enabled" control="heap-statistics-enabled">false</setting>
+      <setting name="enabled" control="gc-enabled-all">false</setting>
       <setting name="period">everyChunk</setting>
     </event>
 
@@ -382,22 +382,22 @@
     </event>
 
     <event name="jdk.GCPhasePauseLevel3">
-      <setting name="enabled" control="gc-enabled-all">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.GCPhasePauseLevel4">
-      <setting name="enabled" control="gc-enabled-all">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.GCPhaseConcurrent">
-      <setting name="enabled" control="gc-enabled-all">true</setting>
+      <setting name="enabled" control="gc-enabled-high">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.GCPhaseConcurrentLevel1">
-      <setting name="enabled" control="gc-enabled-all">true</setting>
+      <setting name="enabled" control="gc-enabled-high">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
@@ -443,11 +443,11 @@
     </event>
 
     <event name="jdk.PromoteObjectInNewPLAB">
-      <setting name="enabled" control="promotion-enabled">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
     <event name="jdk.PromoteObjectOutsidePLAB">
-      <setting name="enabled" control="promotion-enabled">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
     <event name="jdk.ConcurrentModeFailure">
@@ -455,7 +455,7 @@
     </event>
 
     <event name="jdk.AllocationRequiringGC">
-      <setting name="enabled" control="gc-enabled-all">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
@@ -464,27 +464,27 @@
     </event>
 
     <event name="jdk.G1HeapRegionInformation">
-      <setting name="enabled" control="gc-enabled-all">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="period">everyChunk</setting>
     </event>
 
     <event name="jdk.G1HeapRegionTypeChange">
-      <setting name="enabled" control="gc-enabled-all">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
     <event name="jdk.ShenandoahHeapRegionInformation">
-      <setting name="enabled" control="gc-enabled-all">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="period">everyChunk</setting>
     </event>
 
     <event name="jdk.ShenandoahHeapRegionStateChange">
-      <setting name="enabled" control="gc-enabled-all">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
     <event name="jdk.OldObjectSample">
-      <setting name="enabled" control="memory-leak-detection-enabled">true</setting>
-      <setting name="stackTrace" control="memory-leak-detection-stack-trace">false</setting>
-      <setting name="cutoff" control="memory-leak-detection-cutoff">0 ns</setting>
+      <setting name="enabled" control="old-objects-enabled">true</setting>
+      <setting name="stackTrace" control="old-objects-stack-trace">false</setting>
+      <setting name="cutoff" control="old-objects-cutoff">0 ns</setting>
     </event>
 
     <event name="jdk.CompilerConfiguration">
@@ -605,18 +605,18 @@
     </event>
 
     <event name="jdk.ObjectAllocationInNewTLAB">
-      <setting name="enabled">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.ObjectAllocationOutsideTLAB">
-      <setting name="enabled">false</setting>
+      <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.ObjectAllocationSample">
-      <setting name="enabled" control="enable-object-allocation">true</setting>
-      <setting name="throttle" control="object-allocation-rate">150/s</setting>
+      <setting name="enabled" control="object-allocation-enabled">true</setting>
+      <setting name="throttle" control="allocation-profiling">150/s</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
@@ -638,31 +638,36 @@
     <event name="jdk.FileForce">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="file-io-threshold">20 ms</setting>
+      <setting name="threshold" control="file-threshold">20 ms</setting>
     </event>
 
     <event name="jdk.FileRead">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="file-io-threshold">20 ms</setting>
+      <setting name="threshold" control="file-threshold">20 ms</setting>
     </event>
 
     <event name="jdk.FileWrite">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="file-io-threshold">20 ms</setting>
+      <setting name="threshold" control="file-threshold">20 ms</setting>
     </event>
 
     <event name="jdk.SocketRead">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="socket-io-threshold">20 ms</setting>
+      <setting name="threshold" control="socket-threshold">20 ms</setting>
     </event>
 
     <event name="jdk.SocketWrite">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="socket-io-threshold">20 ms</setting>
+      <setting name="threshold" control="socket-threshold">20 ms</setting>
+    </event>
+
+    <event name="jdk.Deserialization">
+       <setting name="enabled">false</setting>
+       <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.SecurityPropertyModification">
@@ -814,67 +819,63 @@
 
 
 
-
-    <!--
-        Contents of the control element is not read by the JVM, it's used
-        by Java Mission Control to change settings that carry the control attribute.
-    -->
+  <!--                                                                                                        
+  Contents of the control element is not read by the JVM, it's used                                           
+  by JDK Mission Control and the 'jfr' tool to change settings that                                           
+  carry the control attribute.                                                                                
+  -->
     <control>
-      <selection name="gc-level" default="detailed" label="Garbage Collector">
+     <selection name="gc" default="normal" label="Garbage Collector">
         <option label="Off" name="off">off</option>
-        <option label="Normal" name="detailed">normal</option>
-        <option label="All" name="all">all</option>
+        <option label="Normal" name="normal">normal</option>
+        <option label="Detailed" name="detailed">detailed</option>
+        <option label="High, incl. TLABs/PLABs (may cause many events)" name="high">high</option>
+        <option label="All, incl. Heap Statistics (may cause long GCs)" name="all">all</option>
       </selection>
 
       <condition name="gc-enabled-normal" true="true" false="false">
         <or>
-          <test name="gc-level" operator="equal" value="normal"/>
-          <test name="gc-level" operator="equal" value="all"/>
+          <test name="gc" operator="equal" value="normal"/>
+          <test name="gc" operator="equal" value="detailed"/>
+          <test name="gc" operator="equal" value="high"/>
+          <test name="gc" operator="equal" value="all"/>
+        </or>
+      </condition>
+
+      <condition name="gc-enabled-detailed" true="true" false="false">
+        <or>
+          <test name="gc" operator="equal" value="detailed"/>
+          <test name="gc" operator="equal" value="high"/>
+          <test name="gc" operator="equal" value="all"/>
+        </or>
+      </condition>
+
+      <condition name="gc-enabled-high" true="true" false="false">
+        <or>
+          <test name="gc" operator="equal" value="high"/>
+          <test name="gc" operator="equal" value="all"/>
         </or>
       </condition>
 
       <condition name="gc-enabled-all" true="true" false="false">
-        <test name="gc-level" operator="equal" value="all"/>
+        <test name="gc" operator="equal" value="all"/>
       </condition>
 
-      <selection name="memory-profiling" default="low" label="Memory Profiling">
-        <option label="Off" name="off">off</option>
-        <option label="Object Allocation" name="low">low</option>
-        <option label="Object Allocation and Promotion" name="medium">medium</option>
-        <option label="All, including Heap Statistics (May cause long full GCs)" name="all">all</option>
+      <selection name="allocation-profiling" default="low" label="Allocation Profiling">
+        <option label="Off" name="off">0/s</option>
+        <option label="Low" name="low">150/s</option>
+        <option label="Medium" name="medium">300/s</option>
+        <option label="High" name="high">1000/s</option>
+        <option label="Maximum" name="maximum">1000000000/s</option>
       </selection>
 
-     <condition name="memory-profiling-enabled-low" true="true" false="false">
-        <test name="memory-profiling" operator="equal" value="low"/>
-      </condition>
-
       <condition name="object-allocation-enabled" true="true" false="false">
-        <or>
-          <test name="memory-profiling" operator="equal" value="low"/>
-          <test name="memory-profiling" operator="equal" value="medium"/>
-          <test name="memory-profiling" operator="equal" value="all"/>
-        </or>
+	 <not>
+          <test name="allocation-profiling" operator="equal" value="off"/>
+        </not>
       </condition>
 
-      <condition name="object-allocation-rate" true="300/s" false="150/s">
-         <or>
-           <test name="memory-profiling" operator="equal" value="medium"/>
-           <test name="memory-profiling" operator="equal" value="all"/>
-         </or>
-       </condition>
-
-      <condition name="promotion-enabled" true="true" false="false">
-        <or>
-          <test name="memory-profiling" operator="equal" value="medium"/>
-          <test name="memory-profiling" operator="equal" value="all"/>
-        </or>
-      </condition>
-
-      <condition name="heap-statistics-enabled" true="true" false="false">
-          <test name="memory-profiling" operator="equal" value="all"/>
-      </condition>
-
-      <selection name="compiler-level" default="normal" label="Compiler">
+      <selection name="compiler" default="normal" label="Compiler">
         <option label="Off" name="off">off</option>
         <option label="Normal" name="normal">normal</option>
         <option label="Detailed" name="detailed">detailed</option>
@@ -882,96 +883,96 @@
       </selection>
 
       <condition name="compiler-enabled" true="false" false="true">
-        <test name="compiler-level" operator="equal" value="off"/>
+        <test name="compiler" operator="equal" value="off"/>
       </condition>
 
       <condition name="compiler-enabled-failure" true="true" false="false">
         <or>
-          <test name="compiler-level" operator="equal" value="detailed"/>
-          <test name="compiler-level" operator="equal" value="all"/>
+          <test name="compiler" operator="equal" value="detailed"/>
+          <test name="compiler" operator="equal" value="all"/>
         </or>
       </condition>
 
       <condition name="compiler-sweeper-threshold" true="0 ms" false="100 ms">
-        <test name="compiler-level" operator="equal" value="all"/>
+        <test name="compiler" operator="equal" value="all"/>
       </condition>
 
       <condition name="compiler-compilation-threshold" true="1000 ms">
-        <test name="compiler-level" operator="equal" value="normal"/>
+        <test name="compiler" operator="equal" value="normal"/>
       </condition>
 
       <condition name="compiler-compilation-threshold" true="100 ms">
-        <test name="compiler-level" operator="equal" value="detailed"/>
+        <test name="compiler" operator="equal" value="detailed"/>
       </condition>
 
       <condition name="compiler-compilation-threshold" true="0 ms">
-        <test name="compiler-level" operator="equal" value="all"/>
+        <test name="compiler" operator="equal" value="all"/>
       </condition>
 
       <condition name="compiler-phase-threshold" true="60 s">
-        <test name="compiler-level" operator="equal" value="normal"/>
+        <test name="compiler" operator="equal" value="normal"/>
       </condition>
 
       <condition name="compiler-phase-threshold" true="10 s">
-        <test name="compiler-level" operator="equal" value="detailed"/>
+        <test name="compiler" operator="equal" value="detailed"/>
       </condition>
 
       <condition name="compiler-phase-threshold" true="0 s">
-        <test name="compiler-level" operator="equal" value="all"/>
+        <test name="compiler" operator="equal" value="all"/>
       </condition>
 
-      <selection name="method-sampling-interval" default="normal" label="Method Sampling">
+      <selection name="method-profiling" default="normal" label="Method Profiling">
         <option label="Off" name="off">off</option>
         <option label="Normal" name="normal">normal</option>
         <option label="High" name="high">high</option>
-        <option label="Ludicrous (High Overhead)" name="ludicrous">ludicrous</option>
+        <option label="Maximum (High Overhead)" name="max">max</option>
       </selection>
 
       <condition name="method-sampling-java-interval" true="999 d">
-        <test name="method-sampling-interval" operator="equal" value="off"/>
+        <test name="method-profiling" operator="equal" value="off"/>
       </condition>
 
       <condition name="method-sampling-java-interval" true="20 ms">
-        <test name="method-sampling-interval" operator="equal" value="normal"/>
+        <test name="method-profiling" operator="equal" value="normal"/>
       </condition>
 
       <condition name="method-sampling-java-interval" true="10 ms">
-        <test name="method-sampling-interval" operator="equal" value="high"/>
+        <test name="method-profiling" operator="equal" value="high"/>
       </condition>
 
       <condition name="method-sampling-java-interval" true="1 ms">
-        <test name="method-sampling-interval" operator="equal" value="ludicrous"/>
+        <test name="method-profiling" operator="equal" value="max"/>
       </condition>
 
       <condition name="method-sampling-native-interval" true="999 d">
-        <test name="method-sampling-interval" operator="equal" value="off"/>
+        <test name="method-profiling" operator="equal" value="off"/>
       </condition>
 
       <condition name="method-sampling-native-interval" true="20 ms">
         <or>
-          <test name="method-sampling-interval" operator="equal" value="normal"/>
-          <test name="method-sampling-interval" operator="equal" value="high"/>
-          <test name="method-sampling-interval" operator="equal" value="ludicrous"/>
+          <test name="method-profiling" operator="equal" value="normal"/>
+          <test name="method-profiling" operator="equal" value="high"/>
+          <test name="method-profiling" operator="equal" value="max"/>
         </or>
       </condition>
 
       <condition name="method-sampling-enabled" true="false" false="true">
-        <test name="method-sampling-interval" operator="equal" value="off"/>
+        <test name="method-profiling" operator="equal" value="off"/>
       </condition>
 
-      <selection name="thread-dump-interval" default="normal" label="Thread Dump">
+      <selection name="thread-dump" default="once" label="Thread Dump">
         <option label="Off" name="off">999 d</option>
-        <option label="At least Once" name="normal">everyChunk</option>
-        <option label="Every 60 s" name="everyMinute">60 s</option>
-        <option label="Every 10 s" name="everyTenSecond">10 s</option>
-        <option label="Every 1 s" name="everySecond">1 s</option>
+        <option label="At least Once" name="once">everyChunk</option>
+        <option label="Every 60 s" name="60s">60 s</option>
+        <option label="Every 10 s" name="10s">10 s</option>
+        <option label="Every 1 s" name="1s">1 s</option>
       </selection>
 
       <condition name="thread-dump-enabled" true="false" false="true">
-        <test name="thread-dump-interval" operator="equal" value="999 d"/>
+        <test name="thread-dump" operator="equal" value="999 d"/>
       </condition>
 
-      <selection name="exception-level" default="errors" label="Exceptions">
+      <selection name="exceptions" default="errors" label="Exceptions">
         <option label="Off" name="off">off</option>
         <option label="Errors Only" name="errors">errors</option>
         <option label="All Exceptions, including Errors" name="all">all</option>
@@ -979,44 +980,44 @@
 
       <condition name="enable-errors" true="true" false="false">
         <or>
-          <test name="exception-level" operator="equal" value="errors"/>
-          <test name="exception-level" operator="equal" value="all"/>
+          <test name="exceptions" operator="equal" value="errors"/>
+          <test name="exceptions" operator="equal" value="all"/>
         </or>
       </condition>
 
       <condition name="enable-exceptions" true="true" false="false">
-        <test name="exception-level" operator="equal" value="all"/>
+        <test name="exceptions" operator="equal" value="all"/>
       </condition>
 
-      <selection name="memory-leak-detection" default="minimal" label="Memory Leak Detection">
+      <selection name="memory-leaks" default="types" label="Memory Leak Detection">
         <option label="Off" name="off">off</option>
-        <option label="Object Types" name="minimal">minimal</option>
-        <option label="Object Types + Allocation Stack Traces" name="medium">medium</option>
-        <option label="Object Types + Allocation Stack Traces + Path to GC Root" name="full">full</option>
+        <option label="Object Types" name="types">types</option>
+        <option label="Object Types + Allocation Stack Traces" name="stack-traces">stack-traces</option>
+        <option label="Object Types + Allocation Stack Traces + Path to GC Root" name="gc-roots">gc-roots</option>
       </selection>
 
-      <condition name="memory-leak-detection-enabled" true="false" false="true">
-        <test name="memory-leak-detection" operator="equal" value="off"/>
+      <condition name="old-objects-enabled" true="false" false="true">
+        <test name="memory-leaks" operator="equal" value="off"/>
       </condition>
 
-      <condition name="memory-leak-detection-stack-trace" true="true" false="false">
+      <condition name="old-objects-stack-trace" true="true" false="false">
         <or>
-          <test name="memory-leak-detection" operator="equal" value="medium"/>
-          <test name="memory-leak-detection" operator="equal" value="full"/>
+          <test name="memory-leaks" operator="equal" value="stack-traces"/>
+          <test name="memory-leaks" operator="equal" value="gc-roots"/>
         </or>
       </condition>
 
-      <condition name="memory-leak-detection-cutoff" true="1 h" false="0 ns">
-        <test name="memory-leak-detection" operator="equal" value="full"/>
+      <condition name="old-objects-cutoff" true="1 h" false="0 ns">
+        <test name="memory-leaks" operator="equal" value="gc-roots"/>
       </condition>
 
-      <text name="synchronization-threshold" label="Synchronization Threshold" contentType="timespan" minimum="0 s">20 ms</text>
+      <text name="locking-threshold" label="Locking Threshold" contentType="timespan" minimum="0 s">20 ms</text>
 
-      <text name="file-io-threshold" label="File I/O Threshold" contentType="timespan" minimum="0 s">20 ms</text>
+      <text name="file-threshold" label="File I/O Threshold" contentType="timespan" minimum="0 s">20 ms</text>
 
-      <text name="socket-io-threshold" label="Socket I/O Threshold" contentType="timespan" minimum="0 s">20 ms</text>
+      <text name="socket-threshold" label="Socket I/O Threshold" contentType="timespan" minimum="0 s">20 ms</text>
 
-      <flag name="class-loading-enabled" label="Class Loading">false</flag>
+      <flag name="class-loading" label="Class Loading">false</flag>
 
     </control>
 

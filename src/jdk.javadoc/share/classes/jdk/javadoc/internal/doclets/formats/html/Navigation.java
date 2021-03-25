@@ -388,6 +388,7 @@ public class Navigation {
                     addListToNav(listContents, tree);
                 }
                 break;
+
             case MODULE:
                 if (displaySummaryModuleDescLink) {
                     addContentToList(listContents,
@@ -420,6 +421,18 @@ public class Navigation {
                     addListToNav(listContents, tree);
                 }
                 break;
+
+            case HELP:
+                addContentToList(listContents,
+                        links.createLink(HtmlIds.HELP_NAVIGATION, contents.navHelpNavigation));
+                addContentToList(listContents,
+                        links.createLink(HtmlIds.HELP_PAGES, contents.navHelpPages));
+                Content li = HtmlTree.LI(contents.helpSubNavLabel);
+                li.add(Entity.NO_BREAK_SPACE);
+                tree.add(li);
+                addListToNav(listContents, tree);
+                break;
+
             default:
                 break;
         }
@@ -602,7 +615,7 @@ public class Navigation {
                     for (VisibleMemberTable.Kind kind : detailSet) {
                         AbstractMemberWriter writer
                                 = ((AbstractMemberWriter) memberSummaryBuilder.
-                                        getMemberSummaryWriter(kind));
+                                getMemberSummaryWriter(kind));
                         if (kind == ENUM_CONSTANTS && !configuration.utils.isEnum(typeElement)) {
                             continue;
                         }
@@ -885,7 +898,8 @@ public class Navigation {
                 DocFile file = DocFile.createFileForInput(configuration, helpfile);
                 helpfilenm = DocPath.create(file.getName());
             }
-            tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(helpfilenm),
+            tree.add(HtmlTree.LI(links.createLink(
+                    new DocLink(pathToRoot.resolve(helpfilenm), htmlIds.forPage(documentedPage).name()),
                     contents.helpLabel, "")));
         }
     }
@@ -893,8 +907,8 @@ public class Navigation {
     private void addSearch(Content tree) {
         String searchValueId = "search";
         String reset = "reset";
-        HtmlTree inputText = HtmlTree.INPUT("text", searchValueId, searchValueId);
-        HtmlTree inputReset = HtmlTree.INPUT(reset, reset, reset);
+        HtmlTree inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT, searchValueId);
+        HtmlTree inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON, reset);
         HtmlTree searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch, HtmlTree.LABEL(searchValueId, searchLabel));
         searchDiv.add(inputText);
         searchDiv.add(inputReset);

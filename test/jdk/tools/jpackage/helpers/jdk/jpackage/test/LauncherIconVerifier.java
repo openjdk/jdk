@@ -42,7 +42,7 @@ public final class LauncherIconVerifier {
     }
 
     public LauncherIconVerifier setExpectedDefaultIcon() {
-        expectedIcon = getDefaultIcon();
+        expectedDefault = true;
         return this;
     }
 
@@ -60,34 +60,20 @@ public final class LauncherIconVerifier {
         Path iconPath = cmd.appLayout().destktopIntegrationDirectory().resolve(
                 curLauncherName + TKit.ICON_SUFFIX);
 
-        if (expectedIcon == null) {
+        if (expectedDefault) {
+            TKit.assertPathExists(iconPath, true);
+        } else if (expectedIcon == null) {
             TKit.assertPathExists(iconPath, false);
-            return;
-        }
-
-        TKit.assertFileExists(iconPath);
-        TKit.assertTrue(-1 == Files.mismatch(expectedIcon, iconPath),
-                String.format(
-                        "Check icon file [%s] of %s launcher is a copy of source icon file [%s]",
-                        iconPath, label, expectedIcon));
-    }
-
-    public static Path getDefaultIcon() {
-        final String[] components;
-        if (TKit.isOSX()) {
-            components = new String[] { "macosx", "java.icns" };
-        } else if (TKit.isLinux()) {
-            components = new String[] { "linux", "java32.png" };
-        } else if (TKit.isWindows()) {
-            components = new String[] { "windows", "java48.ico" };
         } else {
-            throw TKit.throwUnknownPlatformError();
+            TKit.assertFileExists(iconPath);
+            TKit.assertTrue(-1 == Files.mismatch(expectedIcon, iconPath),
+                    String.format(
+                    "Check icon file [%s] of %s launcher is a copy of source icon file [%s]",
+                    iconPath, label, expectedIcon));
         }
-
-        return TKit.SRC_ROOT.resolve(Path.of(components[0],
-                "classes/jdk/jpackage/internal/resources", components[1]));
     }
 
     private String launcherName;
     private Path expectedIcon;
+    private boolean expectedDefault;
 }

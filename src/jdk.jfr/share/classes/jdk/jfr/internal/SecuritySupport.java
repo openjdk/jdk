@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,7 @@ public final class SecuritySupport {
             return path.toFile();
         }
 
+        @Override
         public String toString() {
             return text;
         }
@@ -183,8 +184,8 @@ public final class SecuritySupport {
 
         @Override
         public boolean equals(Object other) {
-            if(other != null && other instanceof SafePath){
-                return this.toPath().equals(((SafePath) other).toPath());
+            if(other != null && other instanceof SafePath s){
+                return this.toPath().equals(s.toPath());
             }
             return false;
         }
@@ -499,6 +500,11 @@ public final class SecuritySupport {
         @Override
         public  long fileSize(Path p) throws IOException {
             return doPrivilegedIOWithReturn( () -> Files.size(p));
+        }
+
+        @Override
+        public boolean exists(Path p) throws IOException {
+            return doPrivilegedIOWithReturn( () -> Files.exists(p));
         }
     }
 

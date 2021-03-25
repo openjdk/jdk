@@ -52,6 +52,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 
 static void trace_class_resolution(oop mirror) {
   if (mirror == NULL || java_lang_Class::is_primitive(mirror)) {
@@ -99,7 +100,7 @@ oop Reflection::box(jvalue* value, BasicType type, TRAPS) {
   }
   if (is_reference_type(type)) {
     // regular objects are not boxed
-    return (oop) value->l;
+    return cast_to_oop(value->l);
   }
   oop result = java_lang_boxing_object::create(type, value, CHECK_NULL);
   if (result == NULL) {
@@ -273,7 +274,7 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
   }
   if (a->is_objArray()) {
     if (value_type == T_OBJECT) {
-      oop obj = (oop) value->l;
+      oop obj = cast_to_oop(value->l);
       if (obj != NULL) {
         Klass* element_klass = ObjArrayKlass::cast(a->klass())->element_klass();
         if (!obj->is_a(element_klass)) {

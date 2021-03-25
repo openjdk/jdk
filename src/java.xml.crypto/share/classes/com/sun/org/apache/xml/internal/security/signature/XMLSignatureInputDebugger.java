@@ -56,7 +56,7 @@ public class XMLSignatureInputDebugger {
         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
         + "<html>\n"
         + "<head>\n"
-        + "<title>Caninical XML node set</title>\n"
+        + "<title>Canonical XML node set</title>\n"
         + "<style type=\"text/css\">\n"
         + "<!-- \n"
         + ".INCLUDED { \n"
@@ -295,7 +295,7 @@ public class XMLSignatureInputDebugger {
             }
 
             Arrays.sort(attrs2, ATTR_COMPARE);
-            Object attrs3[] = attrs2;
+            Object[] attrs3 = attrs2;
 
             for (int i = 0; i < attrsLength; i++) {
                 Attr a = (Attr) attrs3[i];
@@ -516,15 +516,10 @@ public class XMLSignatureInputDebugger {
             for (int i = 0; i < length; i++) {
                 char c = data.charAt(i);
 
-                switch (c) {
-
-                case 0x0D:
+                if (c == 0x0D) {
                     this.writer.write("&amp;#xD;");
-                    break;
-
-                default:
+                } else {
                     this.writer.write(c);
-                    break;
                 }
             }
         }

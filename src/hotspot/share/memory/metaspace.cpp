@@ -43,6 +43,7 @@
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceTracer.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
@@ -70,7 +71,7 @@ size_t MetaspaceUtils::used_words() {
 }
 
 size_t MetaspaceUtils::used_words(Metaspace::MetadataType mdtype) {
-  return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::used_words_class() : RunningCounters::used_words_nonclass();
+  return mdtype == Metaspace::ClassType ? RunningCounters::used_words_class() : RunningCounters::used_words_nonclass();
 }
 
 size_t MetaspaceUtils::reserved_words() {
@@ -78,7 +79,7 @@ size_t MetaspaceUtils::reserved_words() {
 }
 
 size_t MetaspaceUtils::reserved_words(Metaspace::MetadataType mdtype) {
-  return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::reserved_words_class() : RunningCounters::reserved_words_nonclass();
+  return mdtype == Metaspace::ClassType ? RunningCounters::reserved_words_class() : RunningCounters::reserved_words_nonclass();
 }
 
 size_t MetaspaceUtils::committed_words() {
@@ -86,7 +87,7 @@ size_t MetaspaceUtils::committed_words() {
 }
 
 size_t MetaspaceUtils::committed_words(Metaspace::MetadataType mdtype) {
-  return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::committed_words_class() : RunningCounters::committed_words_nonclass();
+  return mdtype == Metaspace::ClassType ? RunningCounters::committed_words_class() : RunningCounters::committed_words_nonclass();
 }
 
 void MetaspaceUtils::print_metaspace_change(const metaspace::MetaspaceSizesSnapshot& pre_meta_values) {
@@ -606,9 +607,8 @@ void Metaspace::ergo_initialize() {
   //  to commit for the Metaspace.
   //  It is just a number; a limit we compare against before committing. It
   //  does not have to be aligned to anything.
-  //  It gets used as compare value in class CommitLimiter.
-  //  It is set to max_uintx in globals.hpp by default, so by default it does
-  //  not limit anything.
+  //  It gets used as compare value before attempting to increase the metaspace
+  //  commit charge. It defaults to max_uintx (unlimited).
   //
   // CompressedClassSpaceSize is the size, in bytes, of the address range we
   //  pre-reserve for the compressed class space (if we use class space).
@@ -625,8 +625,7 @@ void Metaspace::ergo_initialize() {
   // We still adjust CompressedClassSpaceSize to reasonable limits, mainly to
   //  save on reserved space, and to make ergnonomics less confusing.
 
-  // (aligned just for cleanliness:)
-  MaxMetaspaceSize = MAX2(align_down(MaxMetaspaceSize, commit_alignment()), commit_alignment());
+  MaxMetaspaceSize = MAX2(MaxMetaspaceSize, commit_alignment());
 
   if (UseCompressedClassPointers) {
     // Let CCS size not be larger than 80% of MaxMetaspaceSize. Note that is
@@ -672,23 +671,27 @@ void Metaspace::global_initialize() {
 
   metaspace::ChunkHeaderPool::initialize();
 
+  if (DumpSharedSpaces) {
+    assert(!UseSharedSpaces, "sanity");
+    MetaspaceShared::initialize_for_static_dump();
+  }
+
   // If UseCompressedClassPointers=1, we have two cases:
-  // a) if CDS is active (either dump time or runtime), it will create the ccs
+  // a) if CDS is active (runtime, Xshare=on), it will create the class space
   //    for us, initialize it and set up CompressedKlassPointers encoding.
   //    Class space will be reserved above the mapped archives.
-  // b) if CDS is not active, we will create the ccs on our own. It will be
-  //    placed above the java heap, since we assume it has been placed in low
+  // b) if CDS either deactivated (Xshare=off) or a static dump is to be done (Xshare:dump),
+  //    we will create the class space on our own. It will be placed above the java heap,
+  //    since we assume it has been placed in low
   //    address regions. We may rethink this (see JDK-8244943). Failing that,
   //    it will be placed anywhere.
 
 #if INCLUDE_CDS
   // case (a)
-  if (DumpSharedSpaces) {
-    MetaspaceShared::initialize_dumptime_shared_and_meta_spaces();
-  } else if (UseSharedSpaces) {
+  if (UseSharedSpaces) {
+    MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
-    MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
   }
 
   if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
@@ -699,7 +702,7 @@ void Metaspace::global_initialize() {
 #ifdef _LP64
 
   if (using_class_space() && !class_space_is_initialized()) {
-    assert(!UseSharedSpaces && !DumpSharedSpaces, "CDS should be off at this point");
+    assert(!UseSharedSpaces, "CDS archive is not mapped at this point");
 
     // case (b)
     ReservedSpace rs;

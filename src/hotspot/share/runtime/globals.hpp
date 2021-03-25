@@ -677,9 +677,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, UsePrivilegedStack, true,                                   \
           "Enable the security JVM functions")                              \
                                                                             \
-  develop(bool, ProtectionDomainVerification, true,                         \
-          "Verify protection domain before resolution in system dictionary")\
-                                                                            \
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
@@ -1473,7 +1470,7 @@ const intx ObjectAlignmentInBytes = 8;
           "Force inlining of throwing methods smaller than this")           \
           range(0, max_jint)                                                \
                                                                             \
-  product_pd(size_t, MetaspaceSize,                                         \
+  product(size_t, MetaspaceSize, NOT_LP64(16 * M) LP64_ONLY(21 * M),        \
           "Initial threshold (in bytes) at which a garbage collection "     \
           "is done to reduce Metaspace usage")                              \
           constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \

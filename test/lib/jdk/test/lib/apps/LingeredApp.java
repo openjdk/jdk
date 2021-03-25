@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ public class LingeredApp {
     private ByteArrayOutputStream stdoutBuffer;
     private Thread outPumperThread;
     private Thread errPumperThread;
+    private boolean finishAppCalled = false;
 
     protected Process appProcess;
     protected OutputBuffer output;
@@ -367,6 +368,11 @@ public class LingeredApp {
 
     private void finishApp() {
         if (appProcess != null) {
+            if (finishAppCalled) {
+                return;
+            } else {
+                finishAppCalled = true;
+            }
             OutputBuffer output = getOutput();
             String msg =
                     " LingeredApp stdout: [" + output.getStdout() + "];\n" +
@@ -416,6 +422,8 @@ public class LingeredApp {
             theApp.runAppExactJvmOpts(jvmOpts);
             theApp.waitAppReady();
         } catch (Exception ex) {
+            System.out.println("LingeredApp failed to start: " + ex);
+            theApp.finishApp();
             theApp.deleteLock();
             throw ex;
         }
@@ -441,14 +449,7 @@ public class LingeredApp {
      */
     public static LingeredApp startApp(String... additionalJvmOpts) throws IOException {
         LingeredApp a = new LingeredApp();
-        try {
-            startApp(a, additionalJvmOpts);
-        } catch (Exception ex) {
-            System.out.println("LingeredApp failed to start: " + ex);
-            a.finishApp();
-            throw ex;
-        }
-
+        startApp(a, additionalJvmOpts);
         return a;
     }
 
@@ -496,6 +497,43 @@ public class LingeredApp {
     }
 
     /**
+     * Support for creating a thread whose stack trace is always readable. There are
+     * occassional isues trying to get the stack trace for LingeredApp.main() since
+     * it sometimes wakes up from sleep and may breifly have an unreadable thread
+     * stack trace. The code below is used to create "SteadyStateThread" whose
+     * stack trace is always readable.
+     */
+
+    private static volatile boolean steadyStateReached = false;
+
+    private static void steadyState(Object steadyStateObj) {
+        steadyStateReached = true;
+        synchronized(steadyStateObj) {
+        }
+    }
+
+    private static void startSteadyStateThread(Object steadyStateObj) {
+        Thread steadyStateThread = new Thread() {
+            public void run() {
+                steadyState(steadyStateObj);
+            }
+        };
+        steadyStateThread.setName("SteadyStateThread");
+        steadyStateThread.start();
+
+        // Wait until the thread has started running.
+        while (!steadyStateReached) {
+            Thread.onSpinWait();
+        }
+
+        // Now wait until we get into the synchronized block.
+        while (steadyStateThread.getState() != Thread.State.BLOCKED) {
+            Thread.onSpinWait();
+        }
+    }
+
+
+    /**
      * This part is the application itself. First arg is optional "forceCrash".
      * Following arg is the lock file name.
      */
@@ -523,14 +561,18 @@ public class LingeredApp {
         Path path = Paths.get(theLockFileName);
 
         try {
-            if (forceCrash) {
-                System.loadLibrary("LingeredApp"); // location of native crash() method
-                crash();
-            }
-            while (Files.exists(path)) {
-                // Touch the lock to indicate our readiness
-                setLastModified(theLockFileName, epoch());
-                Thread.sleep(spinDelay);
+            Object steadyStateObj = new Object();
+            synchronized(steadyStateObj) {
+                startSteadyStateThread(steadyStateObj);
+                if (forceCrash) {
+                    System.loadLibrary("LingeredApp"); // location of native crash() method
+                    crash();
+                }
+                while (Files.exists(path)) {
+                    // Touch the lock to indicate our readiness
+                    setLastModified(theLockFileName, epoch());
+                    Thread.sleep(spinDelay);
+                }
             }
         } catch (IOException ex) {
             // Lock deleted while we are setting last modified time.
