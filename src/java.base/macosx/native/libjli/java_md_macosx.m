@@ -829,7 +829,7 @@ SetMainClassForAWT(JNIEnv *env, jclass mainClass) {
     NULL_CHECK(getCanonicalNameMID = (*env)->GetMethodID(env, classClass, "getCanonicalName", "()Ljava/lang/String;"));
 
     jstring mainClassString = (*env)->CallObjectMethod(env, mainClass, getCanonicalNameMID);
-    if ((*env)->ExceptionCheck(env)) {
+    if ((*env)->ExceptionCheck(env) || NULL == mainClassString) {
         /*
          * Clears all errors caused by getCanonicalName() on the mainclass and
          * leaves the JAVA_MAIN_CLASS__<pid> empty.

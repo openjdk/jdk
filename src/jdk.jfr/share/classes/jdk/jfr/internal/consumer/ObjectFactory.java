@@ -143,8 +143,8 @@ public abstract class ObjectFactory<T> {
         if (value == null) {
             return null;
         }
-        if (value instanceof Object[]) {
-            return createTyped(objectContext, id, (Object[]) value);
+        if (value instanceof Object[] array) {
+            return createTyped(objectContext, id, array);
         }
         throw new InternalError("Object factory must have struct type. Type was " + value.getClass().getName());
     }

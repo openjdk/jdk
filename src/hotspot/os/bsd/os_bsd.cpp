@@ -1403,7 +1403,13 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
       strncpy(machine, "", sizeof(machine));
   }
 
-  snprintf(buf, buflen, "%s %s %d MHz", model, machine, mhz);
+  const char* emulated = "";
+#ifdef __APPLE__
+  if (VM_Version::is_cpu_emulated()) {
+    emulated = " (EMULATED)";
+  }
+#endif
+  snprintf(buf, buflen, "\"%s\" %s%s %d MHz", model, machine, emulated, mhz);
 }
 
 void os::print_memory_info(outputStream* st) {

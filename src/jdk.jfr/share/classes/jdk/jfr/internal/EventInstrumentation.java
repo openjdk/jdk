@@ -195,9 +195,8 @@ public final class EventInstrumentation {
                     if (values != null && values.size() == 2) {
                         Object key = values.get(0);
                         Object value = values.get(1);
-                        if (key instanceof String && value != null) {
+                        if (key instanceof String keyName && value != null) {
                             if (type == value.getClass()) {
-                                String keyName = (String) key;
                                 if ("value".equals(keyName)) {
                                    return (T) value;
                                 }
