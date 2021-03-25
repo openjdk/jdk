@@ -655,7 +655,7 @@ ul.ui-autocomplete  li {
 .inherited-list {
     margin: 10px 0 10px 0;
 }
-section.description {
+section.class-description {
     line-height: 1.4;
 }
 .summary section[class$="-summary"], .details section[class$="-details"],
