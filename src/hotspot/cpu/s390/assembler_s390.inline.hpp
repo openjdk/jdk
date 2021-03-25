@@ -90,15 +90,19 @@ inline void Assembler::z_llghrl(Register r1, int64_t i2){ emit_48( LLGHRL_ZOPC |
 inline void Assembler::z_llgfrl(Register r1, int64_t i2){ emit_48( LLGFRL_ZOPC | regt(r1, 8, 48) | simm32(i2, 16, 48)); }
 
 inline void Assembler::z_sthrl(Register r1, int64_t i2) { emit_48( STHRL_ZOPC  | regt(r1, 8, 48) | simm32(i2, 16, 48)); }
-inline void Assembler::z_strl(Register r1, int64_t i2)  { emit_48( STRL_ZOPC   | regt(r1, 8, 48) | simm32(i2, 16, 48)); }
+inline void Assembler::z_strl( Register r1, int64_t i2) { emit_48( STRL_ZOPC   | regt(r1, 8, 48) | simm32(i2, 16, 48)); }
 inline void Assembler::z_stgrl(Register r1, int64_t i2) { emit_48( STGRL_ZOPC  | regt(r1, 8, 48) | simm32(i2, 16, 48)); }
 
-inline void Assembler::z_cksm(Register r1, Register r2) { emit_32( CKSM_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
-inline void Assembler::z_km(  Register r1, Register r2) { emit_32( KM_ZOPC     | regt(r1, 24, 32) | regt(r2, 28, 32)); }
-inline void Assembler::z_kmc( Register r1, Register r2) { emit_32( KMC_ZOPC    | regt(r1, 24, 32) | regt(r2, 28, 32)); }
-inline void Assembler::z_kimd(Register r1, Register r2) { emit_32( KIMD_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
-inline void Assembler::z_klmd(Register r1, Register r2) { emit_32( KLMD_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
-inline void Assembler::z_kmac(Register r1, Register r2) { emit_32( KMAC_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_cksm( Register r1, Register r2) { emit_32( CKSM_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_km(   Register r1, Register r2) { emit_32( KM_ZOPC     | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_kmc(  Register r1, Register r2) { emit_32( KMC_ZOPC    | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_kma(  Register r1, Register r3, Register r2) { emit_32( KMA_ZOPC    | regt(r3, 16, 32) | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_kmf(  Register r1, Register r2) { emit_32( KMF_ZOPC    | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_kmctr(Register r1, Register r3, Register r2) { emit_32( KMCTR_ZOPC  | regt(r3, 16, 32) | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_kmo(  Register r1, Register r2) { emit_32( KMO_ZOPC    | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_kimd( Register r1, Register r2) { emit_32( KIMD_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_klmd( Register r1, Register r2) { emit_32( KLMD_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
+inline void Assembler::z_kmac( Register r1, Register r2) { emit_32( KMAC_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
 
 inline void Assembler::z_exrl(Register r1, int64_t i2)  { emit_48( EXRL_ZOPC   | regt(r1, 8, 48) | simm32(i2, 16, 48)); }                             // z10
 inline void Assembler::z_exrl(Register r1, address a2)  { emit_48( EXRL_ZOPC   | regt(r1, 8, 48) | simm32(RelAddr::pcrel_off32(a2, pc()), 16, 48)); } // z10

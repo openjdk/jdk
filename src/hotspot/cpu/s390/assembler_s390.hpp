@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1328,6 +1328,10 @@ class Assembler : public AbstractAssembler {
 #define CKSM_ZOPC   (unsigned  int)(0xb2 << 24 | 0x41 << 16)     // checksum. This is NOT CRC32
 #define KM_ZOPC     (unsigned  int)(0xb9 << 24 | 0x2e << 16)     // cipher
 #define KMC_ZOPC    (unsigned  int)(0xb9 << 24 | 0x2f << 16)     // cipher
+#define KMA_ZOPC    (unsigned  int)(0xb9 << 24 | 0x29 << 16)     // cipher
+#define KMF_ZOPC    (unsigned  int)(0xb9 << 24 | 0x2a << 16)     // cipher
+#define KMCTR_ZOPC  (unsigned  int)(0xb9 << 24 | 0x2d << 16)     // cipher
+#define KMO_ZOPC    (unsigned  int)(0xb9 << 24 | 0x2b << 16)     // cipher
 #define KIMD_ZOPC   (unsigned  int)(0xb9 << 24 | 0x3e << 16)     // SHA (msg digest)
 #define KLMD_ZOPC   (unsigned  int)(0xb9 << 24 | 0x3f << 16)     // SHA (msg digest)
 #define KMAC_ZOPC   (unsigned  int)(0xb9 << 24 | 0x1e << 16)     // Message Authentication Code
@@ -2376,12 +2380,16 @@ class Assembler : public AbstractAssembler {
   // Complex CISC instructions
   // ==========================
 
-  inline void z_cksm(Register r1, Register r2);                       // checksum. This is NOT CRC32
-  inline void z_km(  Register r1, Register r2);                       // cipher message
-  inline void z_kmc( Register r1, Register r2);                       // cipher message with chaining
-  inline void z_kimd(Register r1, Register r2);                       // msg digest (SHA)
-  inline void z_klmd(Register r1, Register r2);                       // msg digest (SHA)
-  inline void z_kmac(Register r1, Register r2);                       // msg authentication code
+  inline void z_cksm( Register r1, Register r2);                       // checksum. This is NOT CRC32
+  inline void z_km(   Register r1, Register r2);                       // cipher message
+  inline void z_kmc(  Register r1, Register r2);                       // cipher message with chaining
+  inline void z_kma(  Register r1, Register r3, Register r2);          // cipher message with authentication
+  inline void z_kmf(  Register r1, Register r2);                       // cipher message with cipher feedback
+  inline void z_kmctr(Register r1, Register r3, Register r2);          // cipher message with counter
+  inline void z_kmo(  Register r1, Register r2);                       // cipher message with output feedback
+  inline void z_kimd( Register r1, Register r2);                       // msg digest (SHA)
+  inline void z_klmd( Register r1, Register r2);                       // msg digest (SHA)
+  inline void z_kmac( Register r1, Register r2);                       // msg authentication code
 
   inline void z_ex(Register r1, int64_t d2, Register x2, Register b2);// execute
   inline void z_exrl(Register r1, int64_t i2);                        // execute relative long         -- z10
@@ -3017,8 +3025,8 @@ class Assembler : public AbstractAssembler {
   inline void z_bvat(Label& L);   // all true
   inline void z_bvnt(Label& L);   // not all true (mixed or all false)
   inline void z_bvmix(Label& L);  // mixed true and false
-  inline void z_bvaf(Label& L);   // not all false (mixed or all true)
-  inline void z_bvnf(Label& L);   // all false
+  inline void z_bvnf(Label& L);   // not all false (mixed or all true)
+  inline void z_bvaf(Label& L);   // all false
 
   inline void z_brno( Label& L);
 

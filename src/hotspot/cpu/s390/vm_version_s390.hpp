@@ -47,7 +47,7 @@ class VM_Version: public Abstract_VM_Version {
 //                                        04826048260482604
 #define  StoreFacilityListExtendedMask  0x0100000000000000UL  // z9
 #define  ETF2Mask                       0x0000800000000000UL  // z900
-#define  CryptoFacilityMask             0x0000400000000000UL  // z990
+#define  CryptoFacilityMask             0x0000400000000000UL  // z990 (aka message-security assist)
 #define  LongDispFacilityMask           0x0000200000000000UL  // z900 with microcode update
 #define  LongDispFacilityHighPerfMask   0x0000300000000000UL  // z990
 #define  HFPMultiplyAndAddMask          0x0000080000000000UL  // z990
@@ -96,7 +96,7 @@ class VM_Version: public Abstract_VM_Version {
 //                                        48260482604826048
 #define  TransactionalExecutionMask     0x0040000000000000UL  // ec12
 #define  CryptoExtension3Mask           0x0008000000000000UL  // z196
-#define  CryptoExtension4Mask           0x0004000000000000UL  // z196
+#define  CryptoExtension4Mask           0x0004000000000000UL  // z196 (aka message-security assist extension 4, for KMF, KMCTR, KMO)
 #define  DFPPackedConversionMask        0x0000800000000000UL  // z13
 // ----------------------------------------------
 // --- FeatureBitString Bits 128..192 (DW[2]) ---
@@ -109,11 +109,11 @@ class VM_Version: public Abstract_VM_Version {
 #define  GuardedStorageMask             0x0400000000000000UL  // z14
 #define  VectorEnhancements1Mask        0x0100000000000000UL  // z14
 #define  VectorPackedDecimalMask        0x0200000000000000UL  // z14
-#define  CryptoExtension8Mask           0x0000200000000040UL  // z14
+#define  CryptoExtension8Mask           0x0000200000000000UL  // z14 (aka message-security assist extension 8, for KMA)
 #define  VectorEnhancements2Mask        0x0000080000000000UL  // z15
 #define  VectorPackedDecimalEnhMask     0x0000008000000000UL  // z15
-#define  CryptoExtension9Mask           0x0000001000000040UL  // z15
-#define  DeflateMask                    0x0000010000000040UL  // z15
+#define  CryptoExtension9Mask           0x0000001000000000UL  // z15 (aka message-security assist extension 9)
+#define  DeflateMask                    0x0000010000000000UL  // z15
 
   enum {
     _max_cache_levels = 8,    // As limited by ECAG instruction.
@@ -121,10 +121,18 @@ class VM_Version: public Abstract_VM_Version {
     _code_buffer_len = 2*256  // For feature detection code.
   };
   static unsigned long _features[_features_buffer_len];
-  static unsigned long _cipher_features[_features_buffer_len];
+  static unsigned long _cipher_features_KM[_features_buffer_len];
+  static unsigned long _cipher_features_KMA[_features_buffer_len];
+  static unsigned long _cipher_features_KMF[_features_buffer_len];
+  static unsigned long _cipher_features_KMCTR[_features_buffer_len];
+  static unsigned long _cipher_features_KMO[_features_buffer_len];
   static unsigned long _msgdigest_features[_features_buffer_len];
   static unsigned int  _nfeatures;
-  static unsigned int  _ncipher_features;
+  static unsigned int  _ncipher_features_KM;
+  static unsigned int  _ncipher_features_KMA;
+  static unsigned int  _ncipher_features_KMF;
+  static unsigned int  _ncipher_features_KMCTR;
+  static unsigned int  _ncipher_features_KMO;
   static unsigned int  _nmsgdigest_features;
   static unsigned int  _Dcache_lineSize;
   static unsigned int  _Icache_lineSize;
@@ -132,11 +140,14 @@ class VM_Version: public Abstract_VM_Version {
   static const char*   _model_string;
 
   static bool test_feature_bit(unsigned long* featureBuffer, int featureNum, unsigned int bufLen);
+  static int  get_model_index();
   static void set_features_string();
   static void print_features_internal(const char* text, bool print_anyway=false);
   static void determine_features();
   static long call_getFeatures(unsigned long* buffer, int buflen, int functionCode);
   static void set_getFeatures(address entryPoint);
+  static void clear_buffer(unsigned long* buffer, unsigned int len);
+  static void copy_buffer(unsigned long* to, unsigned long* from, unsigned int len);
   static int  calculate_ECAG_functionCode(unsigned int attributeIndication,
                                           unsigned int levelIndication,
                                           unsigned int typeIndication);
@@ -267,32 +278,56 @@ class VM_Version: public Abstract_VM_Version {
   class MsgDigest {
     public:
       enum {
-        _Query            =   0,
-        _SHA1             =   1,
-        _SHA256           =   2,
-        _SHA512           =   3,
-        _GHASH            =  65,
-        _featureBits      = 128,
+        _Query                =   0,
+        _SHA1                 =   1,
+        _SHA256               =   2,
+        _SHA512               =   3,
+        _SHA3_224             =  32,
+        _SHA3_256             =  33,
+        _SHA3_384             =  34,
+        _SHA3_512             =  35,
+        _SHAKE_128            =  36,
+        _SHAKE_256            =  37,
+        _GHASH                =  65,
+        _featureBits          = 128,
 
         // Parameter block sizes (in bytes) for KIMD.
-        _Query_parmBlk_I  =  16,
-        _SHA1_parmBlk_I   =  20,
-        _SHA256_parmBlk_I =  32,
-        _SHA512_parmBlk_I =  64,
-        _GHASH_parmBlk_I  =  32,
+        _Query_parmBlk_I      =  16,
+        _SHA1_parmBlk_I       =  20,
+        _SHA256_parmBlk_I     =  32,
+        _SHA512_parmBlk_I     =  64,
+        _SHA3_224_parmBlk_I   = 200,
+        _SHA3_256_parmBlk_I   = 200,
+        _SHA3_384_parmBlk_I   = 200,
+        _SHA3_512_parmBlk_I   = 200,
+        _SHAKE_128_parmBlk_I  = 200,
+        _SHAKE_256_parmBlk_I  = 200,
+        _GHASH_parmBlk_I      =  32,
 
         // Parameter block sizes (in bytes) for KLMD.
-        _Query_parmBlk_L  =  16,
-        _SHA1_parmBlk_L   =  28,
-        _SHA256_parmBlk_L =  40,
-        _SHA512_parmBlk_L =  80,
+        _Query_parmBlk_L      =  16,
+        _SHA1_parmBlk_L       =  28,
+        _SHA256_parmBlk_L     =  40,
+        _SHA512_parmBlk_L     =  80,
+        _SHA3_224_parmBlk_L   = 200,
+        _SHA3_256_parmBlk_L   = 200,
+        _SHA3_384_parmBlk_L   = 200,
+        _SHA3_512_parmBlk_L   = 200,
+        _SHAKE_128_parmBlk_L  = 200,
+        _SHAKE_256_parmBlk_L  = 200,
 
         // Data block sizes (in bytes).
-        _Query_dataBlk    =   0,
-        _SHA1_dataBlk     =  64,
-        _SHA256_dataBlk   =  64,
-        _SHA512_dataBlk   = 128,
-        _GHASH_dataBlk    =  16
+        _Query_dataBlk        =   0,
+        _SHA1_dataBlk         =  64,
+        _SHA256_dataBlk       =  64,
+        _SHA512_dataBlk       = 128,
+        _SHA3_224_dataBlk     = 144,
+        _SHA3_256_dataBlk     = 136,
+        _SHA3_384_dataBlk     = 104,
+        _SHA3_512_dataBlk     =  72,
+        _SHAKE_128_dataBlk    = 168,
+        _SHAKE_256_dataBlk    = 136,
+        _GHASH_dataBlk        =  16
       };
   };
   class MsgAuthent {
@@ -399,8 +434,6 @@ class VM_Version: public Abstract_VM_Version {
   static bool has_HighWordInstr()             { return  (_features[0] & HighWordMask)                  == HighWordMask; }
   static bool has_FastSync()                  { return  (_features[0] & FastBCRSerializationMask)      == FastBCRSerializationMask; }
   static bool has_DistinctOpnds()             { return  (_features[0] & DistinctOpndsMask)             == DistinctOpndsMask; }
-  static bool has_CryptoExt3()                { return  (_features[1] & CryptoExtension3Mask)          == CryptoExtension3Mask; }
-  static bool has_CryptoExt4()                { return  (_features[1] & CryptoExtension4Mask)          == CryptoExtension4Mask; }
   static bool has_DFPZonedConversion()        { return  (_features[0] & DFPZonedConversionMask)        == DFPZonedConversionMask; }
   static bool has_DFPPackedConversion()       { return  (_features[1] & DFPPackedConversionMask)       == DFPPackedConversionMask; }
   static bool has_MiscInstrExt()              { return  (_features[0] & MiscInstrExtMask)              == MiscInstrExtMask; }
@@ -413,6 +446,8 @@ class VM_Version: public Abstract_VM_Version {
   static bool has_LoadAndALUAtomicV2()        { return  (_features[0] & InterlockedAccess2Mask)        == InterlockedAccess2Mask; }
   static bool has_TxMem()                     { return ((_features[1] & TransactionalExecutionMask)    == TransactionalExecutionMask) &&
                                                        ((_features[0] & ConstrainedTxExecutionMask)    == ConstrainedTxExecutionMask); }
+  static bool has_CryptoExt3()                { return  (_features[1] & CryptoExtension3Mask)          == CryptoExtension3Mask; }
+  static bool has_CryptoExt4()                { return  (_features[1] & CryptoExtension4Mask)          == CryptoExtension4Mask; }
   static bool has_CryptoExt5()                { return  (_features[0] & CryptoExtension5Mask)          == CryptoExtension5Mask; }
   static bool has_CryptoExt8()                { return  (_features[2] & CryptoExtension8Mask)          == CryptoExtension8Mask; }
   static bool has_CryptoExt9()                { return  (_features[2] & CryptoExtension9Mask)          == CryptoExtension9Mask; }
@@ -424,9 +459,9 @@ class VM_Version: public Abstract_VM_Version {
   static bool has_VectorPackedDecimalEnh()    { return  (_features[2] & VectorPackedDecimalEnhMask)    == VectorPackedDecimalEnhMask; }
 
   // Crypto features query functions.
-  static bool has_Crypto_AES128()             { return has_Crypto() && test_feature_bit(&_cipher_features[0], Cipher::_AES128, Cipher::_featureBits); }
-  static bool has_Crypto_AES192()             { return has_Crypto() && test_feature_bit(&_cipher_features[0], Cipher::_AES192, Cipher::_featureBits); }
-  static bool has_Crypto_AES256()             { return has_Crypto() && test_feature_bit(&_cipher_features[0], Cipher::_AES256, Cipher::_featureBits); }
+  static bool has_Crypto_AES128()             { return has_Crypto() && test_feature_bit(&_cipher_features_KM[0], Cipher::_AES128, Cipher::_featureBits); }
+  static bool has_Crypto_AES192()             { return has_Crypto() && test_feature_bit(&_cipher_features_KM[0], Cipher::_AES192, Cipher::_featureBits); }
+  static bool has_Crypto_AES256()             { return has_Crypto() && test_feature_bit(&_cipher_features_KM[0], Cipher::_AES256, Cipher::_featureBits); }
   static bool has_Crypto_AES()                { return has_Crypto_AES128() || has_Crypto_AES192() || has_Crypto_AES256(); }
 
   static bool has_Crypto_SHA1()               { return has_Crypto() && test_feature_bit(&_msgdigest_features[0], MsgDigest::_SHA1,   MsgDigest::_featureBits); }
@@ -476,9 +511,9 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_InterlockedAccessV2()       { _features[0] |= InterlockedAccess2Mask; }
   static void set_has_LoadAndALUAtomicV2()        { _features[0] |= InterlockedAccess2Mask; }
   static void set_has_TxMem()                     { _features[0] |= ConstrainedTxExecutionMask; _features[1] |= TransactionalExecutionMask; }
+  static void set_has_LoadStoreConditional2()     { _features[0] |= LoadStoreConditional2Mask; }
   static void set_has_CryptoExt3()                { _features[1] |= CryptoExtension3Mask; }
   static void set_has_CryptoExt4()                { _features[1] |= CryptoExtension4Mask; }
-  static void set_has_LoadStoreConditional2()     { _features[0] |= LoadStoreConditional2Mask; }
   static void set_has_CryptoExt5()                { _features[0] |= CryptoExtension5Mask; }
   static void set_has_CryptoExt8()                { _features[2] |= CryptoExtension8Mask; }
   static void set_has_CryptoExt9()                { _features[2] |= CryptoExtension9Mask; }
