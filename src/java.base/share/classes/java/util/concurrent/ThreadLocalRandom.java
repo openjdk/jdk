@@ -520,6 +520,7 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      */
+    @Override
     public float nextFloat() {
         return super.nextFloat();
     }
@@ -528,8 +529,8 @@ public class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
-     * @since 17
      */
+    @Override
     public float nextFloat(float bound) {
          return super.nextFloat(bound);
     }
@@ -538,8 +539,8 @@ public class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
-     * @since 17
      */
+    @Override
     public float nextFloat(float origin, float bound) {
         return super.nextFloat(origin, bound);
     }
@@ -547,6 +548,7 @@ public class ThreadLocalRandom extends Random {
     /**
      * {@inheritDoc}
      */
+    @Override
     public double nextDouble() {
         return super.nextDouble();
     }
@@ -556,6 +558,7 @@ public class ThreadLocalRandom extends Random {
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */
+    @Override
     public double nextDouble(double bound) {
         return super.nextDouble(bound);
     }
@@ -565,6 +568,7 @@ public class ThreadLocalRandom extends Random {
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
      */
+    @Override
     public double nextDouble(double origin, double bound) {
         return super.nextDouble(origin, bound);
     }

@@ -337,7 +337,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * {@link RandomGenerator} that utilize the {@code name}
      * <a href="package-summary.html#algorithms">algorithm</a>.
      *
-     * @implNote Availability is determined by RandomGeneratorFactory using the
+     * @implSpec Availability is determined by RandomGeneratorFactory using the
      * service provider API to locate implementations of the RandomGenerator interface.
      *
      * @param name  Name of random number generator
@@ -373,7 +373,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @param category  {@link RandomGenerator} sub-interface class to filter
      * @param <T>       {@link RandomGenerator} sub-interface return type
      *
-     * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
+     * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
      * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
      * as deprecated or are not properly configured are not included in the result.
      *
@@ -394,7 +394,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Returns a non-empty stream of available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
-     * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
+     * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
      * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
      * as deprecated or are not properly configured are not included in the result.
      *
@@ -413,7 +413,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * Return the name of the <a href="package-summary.html#algorithms">algorithm</a>
      * used by the random number generator.
      *
-     * @implNote Availability is determined by RandomGeneratorFactory using the service provider API
+     * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
      * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
      * as deprecated are not included in the result.
      *
