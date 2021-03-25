@@ -169,7 +169,8 @@ class SystemDictionary : AllStatic {
   // satisfied, and it is safe for classes in the given class loader
   // to manipulate strongly-typed values of the found class, subject
   // to local linkage and access checks.
-  static Klass* find_constrained_instance_or_array_klass(Symbol* class_name,
+  static Klass* find_constrained_instance_or_array_klass(Thread* current,
+                                                         Symbol* class_name,
                                                          Handle class_loader);
 
   static void classes_do(MetaspaceClosure* it);
