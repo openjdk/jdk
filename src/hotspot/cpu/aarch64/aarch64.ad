@@ -6260,6 +6260,7 @@ operand iRegL2I(iRegL reg) %{
   interface(REG_INTER)
 %}
 
+opclass vmem2(indirect, indIndex, indOffI2, indOffL2);
 opclass vmem4(indirect, indIndex, indOffI4, indOffL4);
 opclass vmem8(indirect, indIndex, indOffI8, indOffL8);
 opclass vmem16(indirect, indIndex, indOffI16, indOffL16);
