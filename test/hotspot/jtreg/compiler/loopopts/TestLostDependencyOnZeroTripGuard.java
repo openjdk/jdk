@@ -27,7 +27,7 @@
  * @summary C2 crashes with SIGFPE with -XX:+StressGCM and -XX:+StressIGVN
  *
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestLostDependencyOnZeroTripGuard -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+StressGCM -XX:StressSeed=886771365 TestLostDependencyOnZeroTripGuard
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM -XX:StressSeed=886771365 TestLostDependencyOnZeroTripGuard
  *
  */
 
