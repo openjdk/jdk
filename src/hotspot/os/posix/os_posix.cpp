@@ -556,7 +556,7 @@ static bool is_allocatable(size_t s) {
   // of our reservation layers. We will unmap right away.
   void* p = ::mmap(NULL, s, PROT_NONE,
                    MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS, -1, 0);
-  if (p == (void*)MAP_FAILED) {
+  if (p == MAP_FAILED) {
     return false;
   } else {
     ::munmap(p, s);
