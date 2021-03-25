@@ -27,13 +27,16 @@
  * @library /test/lib
  * @modules jdk.httpserver
  * @build jdk.test.lib.util.FileUtils
- * @run testng/othervm CommandLineNegativeTest
+ * @run testng/othervm CommandLinePositiveTest
  */
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -44,16 +47,16 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-public class CommandLineNegativeTest {
+public class CommandLinePositiveTest {
 
     static final String JAVA = System.getProperty("java.home") + "/bin/java";
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("dir");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
+    static final String TEST_DIR_STR = TEST_DIR.toString();
 
     @BeforeTest
     public void makeTestDirectoryAndFile() throws IOException {
@@ -63,143 +66,102 @@ public class CommandLineNegativeTest {
         Files.createFile(TEST_FILE);
     }
 
-    @DataProvider(name = "badOption")
-    public Object[][] badOption() {
+//    @Test
+    // TODO: which addresses do we expect to succeed?
+    public void testBindAddress() throws SocketException {
+        NetworkInterface.networkInterfaces()
+                .flatMap(NetworkInterface::inetAddresses)
+                .map(InetAddress::getHostAddress)
+                .forEach(addr -> {
+            try {
+                simpleserver(JAVA, "-m", "jdk.httpserver", "-b", addr)
+                        .resultChecker(r -> assertContains(r.output, "Serving " + TEST_DIR_STR + " and subdirectories on http://" + addr + ":8000/ ..."));
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        });
+    }
+
+    @Test
+    public void testDirectory() throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", TEST_DIR_STR)
+                .resultChecker(r -> {
+                    assertContains(r.output,
+                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:8000/ ...");
+                });
+    }
+
+    @DataProvider(name = "ports")
+    public Object[][] ports() {
         return new Object[][] {
-                {"--badOption"},
-                {"null"}
+                {"0"},
+                {"8000"},
+                {"65535"}
         };
     }
-
-    @Test(dataProvider = "badOption")
-    public void testBadOption(String option) throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", option)
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: unknown option(s): " + option)
-                );
-    }
-
-    @DataProvider(name = "tooManyOptionArgs")
-    public Object[][] tooManyOptionArgs() {
-        return new Object[][] {
-                {"-b", "localhost"},
-                {"-d", "/some/path"},
-                {"-o", "none"},
-                {"-p", "8001"}
-                // doesn't fail for -h option
-        };
-    }
-
-    @Test(dataProvider = "tooManyOptionArgs")
-    public void testTooManyOptionArgs(String option, String arg) throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", option, arg, arg)
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: unknown option(s): " + arg)
-                );
-    }
-
-    @DataProvider(name = "noArg")
-    public Object[][] noArg() {
-        return new Object[][] {
-                {"-b"},
-                {"-d"},
-                {"-o"},
-                {"-p"}
-                // doesn't fail for -h option
-        };
-    }
-
-    @Test(dataProvider = "noArg")
-    public void testNoArg(String option) throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", option)
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: no value given for " + option)
-                );
-    }
-
-    @DataProvider(name = "invalidValue")
-    public Object[][] invalidValue() {
-        return new Object[][] {
-                {"-b", "[127.0.0.1]"},
-                {"-b", "192.168.1.220..."},
-                {"-b", "badhost"},
-
-//                {"-d", ""},
-                // TODO: expect failure at Path::of, not at actual file system access
-                //  need to be file system specific?
-
-                {"-o", ""},
-                {"-o", "bad-output-level"},
-
-                {"-p", ""},
-                {"-p", "+-"},
-        };
-    }
-
-    @Test(dataProvider = "invalidValue")
-    public void testInvalidValue(String option, String value) throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", option, value)
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: invalid value given for "
-                                + option + ": " + value)
-                );
+    @Test(dataProvider = "ports")
+    public void testPort(String port) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", port)
+                .resultChecker(r -> {
+                    assertContains(r.output,
+                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:" + port + "/ ...");
+                });
     }
 
     @Test
-    public void testPortOutOfRange() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "65536")  // range 0 to 65535
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: server config failed: "
-                                + "port out of range:65536")
-                );
+    public void testHelp() throws Exception {
+        var usageText =
+                "Usage: java -m jdk.httpserver [-b bind address] [-d directory] [-o none|default|verbose] [-p port]";
+        var optionsText = """
+                Options:
+                bind address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
+                directory       - Directory to serve. Default: current directory.
+                output          - Output format. none|default|verbose. Default: default.
+                port            - Port to listen on. Default: 8000.
+                To stop the server, press Crtl + C.
+                """;
+
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-h")
+                .resultChecker(r -> {
+                    assertContains(r.output, usageText);
+                    assertContains(r.output, optionsText);
+                });
     }
 
     @Test
-    public void testRootNotAbsolute() throws Exception {
-        var root = Path.of("");
-        assertFalse(root.isAbsolute());
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: server config failed: "
-                                + "Path is not absolute: " + root.toString())
-                );
+    public void testlastOneWinsBindAddress() throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-b", "localhost", "-b", "127.0.0.1")
+                .resultChecker(r -> {
+                    assertContains(r.output,
+                            "Serving " + TEST_DIR_STR + " and subdirectories on http://127.0.0.1:8000/ ...");
+                });
     }
 
     @Test
-    public void testRootNotADirectory() throws Exception {
-        var file = TEST_FILE.toString();
-        assertFalse(Files.isDirectory(TEST_FILE));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", file)
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: server config failed: "
-                                + "Path not a directory: " + file)
-                );
+    public void testlastOneWinsDirectory() throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", TEST_DIR_STR, "-d", TEST_DIR_STR)
+                .resultChecker(r -> {
+                    assertContains(r.output,
+                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:8000/ ...");
+                });
     }
 
     @Test
-    public void testRootDoesNotExist() throws Exception {
-        Path root = TEST_DIR.resolve("not/existant/dir");
-        assertFalse(Files.exists(root));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: server config failed: "
-                                + "Path does not exist: " + root.toString())
-                );
+    public void testlastOneWinsOutput() throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-o", "none", "-o", "verbose")
+                .resultChecker(r -> {
+                    assertContains(r.output,
+                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:8000/ ...");
+                });
     }
 
     @Test
-    public void testRootNotReadable() throws Exception {
-        Path root = Files.createDirectories(TEST_DIR.resolve("not/readable/dir"));
-        try {
-            root.toFile().setReadable(false);
-            assertFalse(Files.isReadable(root));
-            simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
-                    .resultChecker(r ->
-                            assertContains(r.output, "Error: server config failed: "
-                                    + "Path is not readable: " + root.toString()));
-        } finally {
-            root.toFile().setReadable(true);
-        }
+    public void testlastOneWinsPort() throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "8001", "-p", "8002")
+                .resultChecker(r -> {
+                    assertContains(r.output,
+                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:8002/ ...");
+                });
     }
 
     @AfterTest
@@ -236,7 +198,7 @@ public class CommandLineNegativeTest {
         };
         t.start();
         Thread.sleep(5000);
-//        p.destroy(); // only needed for positive testing
+        p.destroy();
         t.join();
         return new Result(out.toString(UTF_8));
     }
