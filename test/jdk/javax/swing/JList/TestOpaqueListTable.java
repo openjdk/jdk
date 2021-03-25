@@ -42,13 +42,24 @@ public class TestOpaqueListTable {
                 UIManager.setLookAndFeel(LF.getClassName());
                 SwingUtilities.invokeAndWait(() -> {
                     JList list = new JList();
+                    if (list.isOpaque() == false) {
+                        throw new RuntimeException("Default value of " +
+                                "\"opaque\" property for JList is changed ");
+                    }
+
                     LookAndFeel.installProperty(list, "opaque", false);
                     if (list.isOpaque()) {
                         throw new RuntimeException(
                                 "setUIProperty failed to clear JList opaque" +
                                         " when opaque is not set by client");
                     }
+
                     JTable table = new JTable();
+                    if (table.isOpaque() == false) {
+                        throw new RuntimeException("Default value of " +
+                                "\"opaque\" property for JTable is changed ");
+                    }
+
                     LookAndFeel.installProperty(table, "opaque", false);
                     if (table.isOpaque()) {
                         throw new RuntimeException(
