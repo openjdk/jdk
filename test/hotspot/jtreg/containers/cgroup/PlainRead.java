@@ -35,6 +35,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
+import java.util.ArrayList;
 
 public class PlainRead {
 
@@ -49,9 +50,21 @@ public class PlainRead {
     static final String good_value = "(\\d+|-1|-2|Unlimited)";
     static final String bad_value = "(failed)";
 
-    static final String[] variables = {"Memory Limit is:", "CPU Shares is:", "CPU Quota is:", "CPU Period is:", "active_processor_count:"};
+    static ArrayList<String> variables = new ArrayList<>();
 
     static public void isContainer(OutputAnalyzer oa) {
+        variables.add("Memory Limit is:");
+        variables.add("CPU Shares is:");
+        variables.add("active_processor_count:");
+
+        // Kernel can be built without CONFIG_CFS_BANDWIDTH so
+        // both "cfs_quota_us" and "cfs_period_us" options of "cpu" controller can be unavailable
+        if (oa.getOutput().contains("CPU Quota is:")
+            || oa.getOutput().contains("CPU Period is:")) {
+                variables.add("CPU Quota is:");
+                variables.add("CPU Period is:");
+        }
+
         for (String v: variables) {
             match(oa, v, good_value);
         }
