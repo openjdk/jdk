@@ -1408,8 +1408,8 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
 
 // Number of regions required to store the given number of bytes, taking
 // into account the target amount of wasted space in PLABs.
-static uint get_num_regions_adjust_for_plab_waste(size_t byte_count) {
-  size_t byte_count_adjusted = byte_count * (100 + TargetPLABWastePct) / 100.0;
+static size_t get_num_regions_adjust_for_plab_waste(size_t byte_count) {
+  size_t byte_count_adjusted = byte_count * (size_t)(100 + TargetPLABWastePct) / 100.0;
 
   // Round up the region count
   return (byte_count_adjusted + HeapRegion::GrainBytes - 1) / HeapRegion::GrainBytes;
@@ -1431,11 +1431,11 @@ bool G1Policy::proactive_collection_required(uint alloc_region_count) {
   size_t const eden_surv_bytes_pred = _eden_surv_rate_group->accum_surv_rate_pred(eden_count) * HeapRegion::GrainBytes;
   size_t const total_young_predicted_surviving_bytes = eden_surv_bytes_pred + _predicted_surviving_bytes_from_survivor;
 
-  uint required_regions = get_num_regions_adjust_for_plab_waste(total_young_predicted_surviving_bytes) +
-                          get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old);
+  uint required_regions = (uint)(get_num_regions_adjust_for_plab_waste(total_young_predicted_surviving_bytes) +
+                                get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old));
 
   if (required_regions > _g1h->num_free_regions() - alloc_region_count) {
-    log_debug(gc, ergo, cset)("Proactive GC, insufficient free regions. Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free %u Alloc %u",
+    log_debug(gc, ergo, cset)("Proactive GC, insufficient free regions. Predicted need %u. Curr Eden %u (Pred %lu). Curr Survivor %u (Pred %lu). Curr Old %u (Pred %lu) Free %u Alloc %u",
             required_regions,
             eden_count,
             get_num_regions_adjust_for_plab_waste(eden_surv_bytes_pred),
@@ -1476,7 +1476,7 @@ void G1Policy::update_survival_estimates_for_next_collection() {
 
   // Use the minimum old gen collection set as conservative estimate for the number
   // of regions to take for this calculation.
-  uint iterate_count = MIN(candidates->num_remaining(), calc_min_old_cset_length());
+  uint iterate_count = MIN2(candidates->num_remaining(), calc_min_old_cset_length());
   uint current_index = candidates->cur_idx();
   size_t old_bytes = 0;
   for (uint i = 0; i < iterate_count; i++) {
