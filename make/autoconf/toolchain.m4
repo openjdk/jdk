@@ -696,8 +696,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     AS="$CC -c"
   else
-    # On windows, the assember is "ml.exe"
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
+    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+      # On 64 bit windows, the assember is "ml64.exe"
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml64)
+    else
+      # otherwise, the assember is "ml.exe"
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
+    fi
   fi
   AC_SUBST(AS)
 
@@ -879,7 +884,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
 
       # On windows, the assember is "ml.exe". We currently don't need this so
       # do not require.
-      UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
+      if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+        # On 64 bit windows, the assember is "ml64.exe"
+        UTIL_LOOKUP_PROGS(BUILD_AS, ml64, [$VS_PATH])
+      else
+        # otherwise the assember is "ml.exe"
+        UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
+      fi
 
       # On windows, the ar tool is lib.exe (used to create static libraries).
       # We currently don't need this so do not require.
