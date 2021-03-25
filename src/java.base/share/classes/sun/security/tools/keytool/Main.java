@@ -4573,7 +4573,6 @@ public final class Main {
                         break;
                     case -1:
                         ObjectIdentifier oid = ObjectIdentifier.of(name);
-                        HexFormat hexFmt = HexFormat.of();
                         byte[] data = null;
                         if (value != null) {
                             data = new byte[value.length() / 2 + 1];

@@ -250,7 +250,6 @@ public class AVA implements DerEncoder {
 
     private static DerValue parseHexString
         (Reader in, int format) throws IOException {
-        HexFormat hex = HexFormat.of();
         int c;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte b = 0;
@@ -501,7 +500,6 @@ public class AVA implements DerEncoder {
     private static Byte getEmbeddedHexPair(int c1, Reader in)
         throws IOException {
 
-        HexFormat hex = HexFormat.of();
         if (HexFormat.isHexDigit(c1)) {
             int c2 = readChar(in, "unexpected EOF - " +
                         "escaped hex value must include two valid digits");

@@ -164,7 +164,6 @@ public class HexFormatTest {
 
     @Test
     static void testIsHexDigit() {
-        HexFormat hex = HexFormat.of();
         for (int i = 0; i < 0x3ff; i++) {
             boolean actual = HexFormat.isHexDigit(i);
             boolean expected = Character.digit(i, 16) >= 0;
@@ -174,7 +173,6 @@ public class HexFormatTest {
 
     @Test
     static void testFromHexDigit() {
-        HexFormat hex = HexFormat.of();
         String chars = "0123456789ABCDEF0123456789abcdef";
         for (int i = 0; i < chars.length(); i++) {
             int v = HexFormat.fromHexDigit(chars.charAt(i));
@@ -184,7 +182,6 @@ public class HexFormatTest {
 
     @Test
     static void testFromHexInvalid() {
-        HexFormat hex = HexFormat.of();
         for (int i = 0; i < 65536; i++) {
             char ch = (char)i;
             if (ch > 0xff || Character.digit(ch, 16) < 0) {
