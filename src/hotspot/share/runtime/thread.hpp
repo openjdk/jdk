@@ -1828,9 +1828,6 @@ class Threads: AllStatic {
   // This version may be called by sequential or parallel code.
   static void possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf);
 
-  // Sweeper
-  static void nmethods_do(CodeBlobClosure* cf);
-
   // RedefineClasses support
   static void metadata_do(MetadataClosure* f);
   static void metadata_handles_do(void f(Metadata*));
