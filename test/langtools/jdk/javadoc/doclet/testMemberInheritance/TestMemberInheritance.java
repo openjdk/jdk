@@ -119,7 +119,7 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <section class="description">
+                    <section class="class-description" id="class-description">
                     <hr>
                     <div class="type-signature"><span class="modifiers">public abstract class </span\
                     ><span class="element-name type-name-label">DocumentedNonGenericChild</span>

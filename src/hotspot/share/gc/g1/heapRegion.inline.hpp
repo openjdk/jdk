@@ -142,7 +142,7 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
     return (p == humongous_start_region()->bottom());
   }
   if (ClassUnloadingWithConcurrentMark) {
-    return !g1h->is_obj_dead(oop(p), this);
+    return !g1h->is_obj_dead(cast_to_oop(p), this);
   }
   return p < top();
 }
@@ -175,7 +175,7 @@ inline size_t HeapRegion::block_size(const HeapWord *addr) const {
   }
 
   if (block_is_obj(addr)) {
-    return oop(addr)->size();
+    return cast_to_oop(addr)->size();
   }
 
   return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap());
@@ -235,7 +235,7 @@ inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarke
     // some extra work done by get_next_marked_addr for
     // the case where next_addr is marked.
     if (bitmap->is_marked(next_addr)) {
-      oop current = oop(next_addr);
+      oop current = cast_to_oop(next_addr);
       next_addr += closure->apply(current);
     } else {
       next_addr = bitmap->get_next_marked_addr(next_addr, limit);
@@ -287,7 +287,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
                                                         G1CollectedHeap* g1h) {
   assert(is_humongous(), "precondition");
   HeapRegion* sr = humongous_start_region();
-  oop obj = oop(sr->bottom());
+  oop obj = cast_to_oop(sr->bottom());
 
   // If concurrent and klass_or_null is NULL, then space has been
   // allocated but the object has not yet been published by setting
@@ -367,7 +367,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
 
   const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
   while (true) {
-    oop obj = oop(cur);
+    oop obj = cast_to_oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
     assert(obj->klass_or_null() != NULL,
            "Unparsable heap at " PTR_FORMAT, p2i(cur));

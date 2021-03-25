@@ -51,7 +51,7 @@ public:
     }
     assert(_collector->hr_live_words(hr_index) > _collector->scope()->hr_live_words_threshold() ||
            !r->is_starts_humongous() ||
-           _collector->mark_bitmap()->is_marked(r->bottom()),
+           _collector->mark_bitmap()->is_marked(cast_to_oop(r->bottom())),
            "must be, otherwise reclaimed earlier");
     r->reset_pinned_after_full_gc();
 
@@ -71,8 +71,8 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
   assert(obj_addr != destination, "everything in this pass should be moving");
   Copy::aligned_conjoint_words(obj_addr, destination, size);
-  oop(destination)->init_mark();
-  assert(oop(destination)->klass() != NULL, "should have a class");
+  cast_to_oop(destination)->init_mark();
+  assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
 
   return size;
 }

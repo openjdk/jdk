@@ -46,7 +46,7 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
     // prepare them for compaction. The adjust pointers phase will skip
     // work for them.
     if (hr->is_humongous()) {
-      oop obj = oop(hr->humongous_start_region()->bottom());
+      oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
       if (!_bitmap->is_marked(obj)) {
         free_humongous_region(hr);
       }

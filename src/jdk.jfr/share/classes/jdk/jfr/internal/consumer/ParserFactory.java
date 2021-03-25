@@ -35,8 +35,6 @@ import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.consumer.Parser;
-import jdk.jfr.internal.consumer.RecordingInput;
 
 /**
  * Class that create parsers suitable for reading events and constant pools
