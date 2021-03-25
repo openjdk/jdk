@@ -107,20 +107,20 @@ public class TestSpecTag extends JavadocTester {
         checkOutput("external-specs.html", true,
                 """
                     <!-- ========= START OF TOP NAVBAR ======= -->
-                    <div class="top-nav" id="navbar.top">
-                    <div class="skip-nav"><a href="#skip.navbar.top" title="Skip navigation links">Skip navigation links</a></div>
-                    <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
+                    <div class="top-nav" id="navbar-top">
+                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     <li><a href="p/package-summary.html">Package</a></li>
                     <li>Class</li>
                     <li><a href="p/package-tree.html">Tree</a></li>
                     <li><a href="index-all.html">Index</a></li>
-                    <li><a href="help-doc.html">Help</a></li>
+                    <li><a href="help-doc.html#external-specs">Help</a></li>
                     </ul>
                     </div>
                     <div class="sub-nav">
                     <div class="nav-list-search"><label for="search">SEARCH:</label>
-                    <input type="text" id="search" value="search" disabled="disabled">
-                    <input type="reset" id="reset" value="reset" disabled="disabled">
+                    <input type="text" id="search-input" value="search" disabled="disabled">
+                    <input type="reset" id="reset-button" value="reset" disabled="disabled">
                     </div>
                     </div>
                     <!-- ========= END OF TOP NAVBAR ========= -->
@@ -216,7 +216,7 @@ public class TestSpecTag extends JavadocTester {
                     <dt>External Specifications</dt>
                     <dd><a href="http://example.com/"><span id="example" class="search-tag-result">example</span></a></dd>
                     """,
-                "<section class=\"field-details\" id=\"field.detail\">",
+                "<section class=\"field-details\" id=\"field-detail\">",
                 """
                     <dt>External Specifications</dt>
                     <dd><a href="http://example.com/"><span id="example-1" class="search-tag-result">example</span></a></dd>
