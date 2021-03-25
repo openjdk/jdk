@@ -29,11 +29,16 @@
  */
 
 import java.nio.ByteBuffer;
+import java.security.Key;
 import java.security.Provider;
+import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
 public class EncryptionPadding extends PKCS11Test {
+
+    private static String transformation = "AES/ECB/PKCS5Padding";
+    private static Key key = new SecretKeySpec(new byte[16], "AES");
 
     public static void main(String[] args) throws Exception {
         main(new EncryptionPadding(), args);
@@ -41,14 +46,53 @@ public class EncryptionPadding extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
-
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding", p);
-        cipher.init(Cipher.ENCRYPT_MODE,
-                new SecretKeySpec(new byte[16], "AES"));
-
-        cipher.update(new byte[1], 0, 1);
-        cipher.update(ByteBuffer.allocate(1), ByteBuffer.allocate(16));
-
+        testWithInputSize(p, 1);
+        testWithInputSize(p, 15);
+        testWithInputSize(p, 16);
+        testWithInputSize(p, 17);
         System.out.println("TEST PASS - OK");
+    }
+
+    private static void testWithInputSize(Provider p, int inputSize)
+            throws Exception {
+        testWithInputSize(p, inputSize, false);
+        testWithInputSize(p, inputSize, true);
+    }
+
+    private static void testWithInputSize(Provider p, int inputSize,
+            boolean isByteBuffer) throws Exception {
+        byte[] plainText = new byte[inputSize];
+        Arrays.fill(plainText, (byte)(inputSize & 0xFF));
+        ByteBuffer cipherText =
+                ByteBuffer.allocate(((inputSize / 16 ) + 1) * 16);
+        byte[] tmp = new byte[16];
+
+        Cipher sunPKCS11cipher = Cipher.getInstance(transformation, p);
+        sunPKCS11cipher.init(Cipher.ENCRYPT_MODE, key);
+        for (int i = 0; i < ((inputSize - 1) / 16) + 1; i++) {
+            int updateLength = Math.min(inputSize - (16 * i), 16);
+            if (!isByteBuffer) {
+                tmp = sunPKCS11cipher.update(plainText, i * 16,
+                        updateLength);
+                if (tmp != null)
+                    cipherText.put(tmp);
+            } else {
+                ByteBuffer bb = ByteBuffer.allocate(updateLength);
+                bb.put(plainText, i * 16, updateLength);
+                bb.flip();
+                sunPKCS11cipher.update(bb, cipherText);
+            }
+        }
+        tmp = sunPKCS11cipher.doFinal();
+        if (tmp != null)
+            cipherText.put(tmp);
+
+        Cipher sunJCECipher = Cipher.getInstance(transformation, "SunJCE");
+        sunJCECipher.init(Cipher.DECRYPT_MODE, key);
+        byte[] sunJCEPlain = sunJCECipher.doFinal(cipherText.array());
+
+        if (!Arrays.equals(plainText, sunJCEPlain)) {
+            throw new Exception("Cross-provider cipher test failed.");
+        }
     }
 }

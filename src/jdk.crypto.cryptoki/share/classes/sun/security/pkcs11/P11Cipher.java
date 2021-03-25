@@ -70,7 +70,7 @@ final class P11Cipher extends CipherSpi {
     private static interface Padding {
         // ENC: format the specified buffer with padding bytes and return the
         // actual padding length
-        int setPaddingBytes(byte[] paddingBuffer, int padLen);
+        int setPaddingBytes(byte[] paddingBuffer, int startOff, int padLen);
 
         // DEC: return the length of trailing padding bytes given the specified
         // padded data
@@ -91,8 +91,8 @@ final class P11Cipher extends CipherSpi {
             this.blockSize = blockSize;
         }
 
-        public int setPaddingBytes(byte[] paddingBuffer, int padLen) {
-            Arrays.fill(paddingBuffer, 0, padLen, (byte) (padLen & 0x007f));
+        public int setPaddingBytes(byte[] paddingBuffer, int startOff, int padLen) {
+            Arrays.fill(paddingBuffer, startOff, startOff + padLen, (byte) (padLen & 0x007f));
             return padLen;
         }
 
@@ -714,7 +714,7 @@ final class P11Cipher extends CipherSpi {
 
             int k = 0;
             int newPadBufferLen = 0;
-            if (paddingObj != null) {
+            if (paddingObj != null  && (!encrypt || reqBlockUpdates)) {
                 if (padBufferLen != 0) {
                     // NSS throws up when called with data not in multiple
                     // of blocks. Try to work around this by holding the
@@ -814,10 +814,18 @@ final class P11Cipher extends CipherSpi {
             int k = 0;
             if (encrypt) {
                 if (paddingObj != null) {
+                    int startOff = 0;
+                    if (reqBlockUpdates) {
+                        startOff = bytesBuffered;
+                        assert(startOff >= 0 &&
+                                startOff < padBuffer.length);
+                        assert(requiredOutLen - bytesBuffered +
+                                startOff == padBuffer.length);
+                    }
                     int actualPadLen = paddingObj.setPaddingBytes(padBuffer,
-                            requiredOutLen - bytesBuffered);
+                            startOff, requiredOutLen - bytesBuffered);
                     k = token.p11.C_EncryptUpdate(session.id(),
-                            0, padBuffer, 0, actualPadLen,
+                            0, padBuffer, 0, startOff + actualPadLen,
                             0, out, outOfs, outLen);
                 }
                 // Some implementations such as the NSS Software Token do not
@@ -899,7 +907,7 @@ final class P11Cipher extends CipherSpi {
             if (encrypt) {
                 if (paddingObj != null) {
                     int actualPadLen = paddingObj.setPaddingBytes(padBuffer,
-                            requiredOutLen - bytesBuffered);
+                            0, requiredOutLen - bytesBuffered);
                     k = token.p11.C_EncryptUpdate(session.id(),
                             0, padBuffer, 0, actualPadLen,
                             outAddr, outArray, outOfs, outLen);
