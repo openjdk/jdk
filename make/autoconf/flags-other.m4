@@ -80,7 +80,7 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS],
     # Force preprocessor to run, just to make sure
     BASIC_ASFLAGS="-x assembler-with-cpp"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    BASIC_ASFLAGS="-nologo -c -Ta"
+    BASIC_ASFLAGS="-nologo -c"
   fi
   AC_SUBST(BASIC_ASFLAGS)
 
