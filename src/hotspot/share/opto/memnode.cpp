@@ -533,7 +533,30 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
 Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const {
   ArrayCopyNode* ac = find_array_copy_clone(phase, ld_alloc, mem);
   if (ac != NULL) {
-    return ac;
+    Node* ld_addp = in(MemNode::Address);
+    Node* src = ac->in(ArrayCopyNode::Src);
+    const TypeAryPtr* ary_t = phase->type(src)->isa_aryptr();
+
+    // This is a load from a cloned array. The corresponding arraycopy ac must
+    // have set the value for the load and we can return ac but only if the load
+    // is known to be within bounds. This is checked below.
+    if (ary_t != NULL && ld_addp->is_AddP()) {
+      Node* ld_offs = ld_addp->in(AddPNode::Offset);
+      BasicType ary_elem = ary_t->klass()->as_array_klass()->element_type()->basic_type();
+      jlong header = arrayOopDesc::base_offset_in_bytes(ary_elem);
+      jlong elemsize = type2aelembytes(ary_elem);
+
+      const TypeX*   ld_offs_t = phase->type(ld_offs)->isa_intptr_t();
+      const TypeInt* sizetype  = ary_t->size();
+
+      if (ld_offs_t->_lo >= header && ld_offs_t->_hi < (sizetype->_lo * elemsize + header)) {
+        // The load is known to be within bounds. It receives its value from ac.
+        return ac;
+      }
+      // The load is known to be out-of-bounds.
+    }
+    // The load could be out-of-bounds. It must not be hoisted but must remain
+    // dependent on the runtime range check. This is achieved by returning NULL.
   } else if (mem->is_Proj() && mem->in(0) != NULL && mem->in(0)->is_ArrayCopy()) {
     ArrayCopyNode* ac = mem->in(0)->as_ArrayCopy();
 
