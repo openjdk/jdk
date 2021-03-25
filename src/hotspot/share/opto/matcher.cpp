@@ -538,8 +538,10 @@ void Matcher::init_first_stack_mask() {
   *idealreg2spillmask[Op_RegD] = *idealreg2regmask[Op_RegD];
    idealreg2spillmask[Op_RegD]->OR(aligned_stack_mask);
 
-  *idealreg2spillmask[Op_RegVMask] = *idealreg2regmask[Op_RegVMask];
-   idealreg2spillmask[Op_RegVMask]->OR(aligned_stack_mask);
+  if (Matcher::has_predicated_vectors()) {
+    *idealreg2spillmask[Op_RegVMask] = *idealreg2regmask[Op_RegVMask];
+     idealreg2spillmask[Op_RegVMask]->OR(aligned_stack_mask);
+  }
 
   if (Matcher::vector_size_supported(T_BYTE,4)) {
     *idealreg2spillmask[Op_VecS] = *idealreg2regmask[Op_VecS];
