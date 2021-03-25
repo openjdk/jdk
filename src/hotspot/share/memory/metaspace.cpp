@@ -789,17 +789,14 @@ size_t Metaspace::max_allocation_word_size() {
   return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE - max_overhead_words;
 }
 
+// This version of Metaspace::allocate does not throw OOM but simply returns NULL, and
+// is suitable for calling from non-Java threads.
+// Callers are responsible for checking null.
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
-                              MetaspaceObj::Type type, TRAPS) {
+                              MetaspaceObj::Type type) {
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (" SIZE_FORMAT ")", word_size);
   assert(!_frozen, "sanity");
-  assert(!(DumpSharedSpaces && THREAD->is_VM_thread()), "sanity");
-
-  if (HAS_PENDING_EXCEPTION) {
-    assert(false, "Should not allocate with exception pending");
-    return NULL;  // caller does a CHECK_NULL too
-  }
 
   assert(loader_data != NULL, "Should never pass around a NULL loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
@@ -821,6 +818,28 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     }
   }
 
+  if (result != NULL) {
+    // Zero initialize.
+    Copy::fill_to_words((HeapWord*)result, word_size, 0);
+
+    log_trace(metaspace)("Metaspace::allocate: type %d return " PTR_FORMAT ".", (int)type, p2i(result));
+  }
+
+  return result;
+}
+
+MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
+                              MetaspaceObj::Type type, TRAPS) {
+
+  assert(THREAD->is_Java_thread(), "can't allocate in non-Java thread because we cannot throw exception");
+
+  if (HAS_PENDING_EXCEPTION) {
+    assert(false, "Should not allocate with exception pending");
+    return NULL;  // caller does a CHECK_NULL too
+  }
+
+  MetaWord* result = allocate(loader_data, word_size, type);
+
   if (result == NULL) {
     if (DumpSharedSpaces) {
       // CDS dumping keeps loading classes, so if we hit an OOM we probably will keep hitting OOM.
@@ -829,15 +848,11 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
           MetaspaceObj::type_name(type), word_size * BytesPerWord),
         err_msg("Please increase MaxMetaspaceSize (currently " SIZE_FORMAT " bytes).", MaxMetaspaceSize));
     }
+    MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
     report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
     assert(HAS_PENDING_EXCEPTION, "sanity");
     return NULL;
   }
-
-  // Zero initialize.
-  Copy::fill_to_words((HeapWord*)result, word_size, 0);
-
-  log_trace(metaspace)("Metaspace::allocate: type %d return " PTR_FORMAT ".", (int)type, p2i(result));
 
   return result;
 }

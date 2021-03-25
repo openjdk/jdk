@@ -55,9 +55,9 @@ MethodCounters::MethodCounters(const methodHandle& mh) :
   _backedge_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
 }
 
-MethodCounters* MethodCounters::allocate(const methodHandle& mh, TRAPS) {
+MethodCounters* MethodCounters::allocate(const methodHandle& mh) {
   ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
-  return new(loader_data, method_counters_size(), MetaspaceObj::MethodCountersType, THREAD) MethodCounters(mh);
+  return new(loader_data, method_counters_size(), MetaspaceObj::MethodCountersType) MethodCounters(mh);
 }
 
 void MethodCounters::clear_counters() {

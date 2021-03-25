@@ -124,6 +124,10 @@ public:
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type, TRAPS);
 
+  // Nothrow version of allocate which can be called by a non-Java thread.
+  static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
+                            MetaspaceObj::Type type);
+
   static bool contains(const void* ptr);
   static bool contains_non_shared(const void* ptr);
 

@@ -83,6 +83,13 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
   return Metaspace::allocate(loader_data, word_size, type, THREAD);
 }
 
+void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
+                                 size_t word_size,
+                                 MetaspaceObj::Type type) throw() {
+  // Klass has it's own operator new
+  return Metaspace::allocate(loader_data, word_size, type);
+}
+
 bool MetaspaceObj::is_valid(const MetaspaceObj* p) {
   // Weed out obvious bogus values first without traversing metaspace
   if ((size_t)p < os::min_page_size()) {
