@@ -2223,6 +2223,24 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   info->_id = id;
 }
 
+const char* class_loader_name_for_shared(Klass* k) {
+  assert(k != nullptr, "Sanity");
+  assert(k->is_shared(), "Must be");
+  assert(k->is_instance_klass(), "Must be");
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->is_shared_boot_class()) {
+    return "boot_loader";
+  } else if (ik->is_shared_platform_class()) {
+    return "platform_loader";
+  } else if (ik->is_shared_app_class()) {
+    return "app_loader";
+  } else if (ik->is_shared_unregistered_class()) {
+    return "unregistered_loader";
+  } else {
+    return "unknown loader";
+  }
+}
+
 class SharedDictionaryPrinter : StackObj {
   outputStream* _st;
   int _index;
@@ -2231,7 +2249,8 @@ public:
 
   void do_value(const RunTimeSharedClassInfo* record) {
     ResourceMark rm;
-    _st->print_cr("%4d:  %s", (_index++), record->_klass->external_name());
+    _st->print_cr("%4d: %s loaded by: %s", (_index++), record->_klass->external_name(),
+        class_loader_name_for_shared(record->_klass));
   }
 };
 
@@ -2244,10 +2263,10 @@ public:
   void do_value(const RunTimeLambdaProxyClassInfo* record) {
     if (record->proxy_klass_head()->lambda_proxy_is_available()) {
       ResourceMark rm;
-      _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
-      Klass* k = record->proxy_klass_head()->next_link();
-      while (k != NULL) {
-        _st->print_cr("%4d:  %s", (_index++), k->external_name());
+      Klass* k = record->proxy_klass_head();
+      while (k != nullptr) {
+        _st->print_cr("%4d: %s loaded by: %s", (++_index), k->external_name(),
+                      class_loader_name_for_shared(k));
         k = k->next_link();
       }
     }
@@ -2261,7 +2280,9 @@ void SystemDictionaryShared::print_on(const char* prefix,
                                       outputStream* st) {
   st->print_cr("%sShared Dictionary", prefix);
   SharedDictionaryPrinter p(st);
+  st->print_cr("%sShared Builtin Dictionary", prefix);
   builtin_dictionary->iterate(&p);
+  st->print_cr("%sShared Unregistered Dictionary", prefix);
   unregistered_dictionary->iterate(&p);
   if (!lambda_dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
