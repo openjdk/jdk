@@ -666,7 +666,7 @@ public abstract class JComponent extends Container implements Serializable,
      *   }
      *  </pre>
      *
-     * @implSpec The default implementation of this method doesn't do anything.
+     * @implSpec The default implementation of this method does nothing.
      *
      * @see #setUI
      * @see UIManager#getLookAndFeel
