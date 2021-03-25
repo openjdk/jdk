@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -753,7 +753,9 @@ public interface ModuleMXBean {
       {@code CompositeType} is determined by the <a href="#type-names">
       type name rules</a> below.</p>
 
-    <p>The class is examined for getters using the conventions
+    <p>If the class is a {@link Record}, its getters are the
+      accessors for the record components. Otherwise, the
+      class is examined for getters using the conventions
       <a href="#naming-conv">above</a>.  (Getters must be public
       instance methods.)  If there are no getters, or if
       any getter has a type that is not convertible, then <em>J</em> is
@@ -784,7 +786,13 @@ public interface ModuleMXBean {
     then the item in the {@code CompositeType} is called {@code name}
     and has type {@code SimpleType.BOOLEAN}.
 
-    <p>Notice that the first character (or code point) is converted to
+    <p>If the class is a {@link Record} and the getter is a component
+       accessor for a record component {@code name} of type <em>T</em>,
+       then the item in the {@code CompositeType} has the same name
+       than the record component, and has type <em>opentype(T)</em>.</p>
+
+    <p>Notice that unless the class is a {@code Record}, the
+      first character (or code point) is converted to
       lower case.  This follows the Java Beans convention, which for
       historical reasons is different from the Standard MBean
       convention.  In a Standard MBean or MXBean interface, a method
@@ -845,6 +853,17 @@ public interface ModuleMXBean {
         {@code public static }<em>J </em>{@code from(CompositeData cd)}<br>
         then that method is called to reconstruct an instance of
         <em>J</em>.</p></li>
+
+      <li><p>Otherwise, if <em>J</em> is a {@link Record} class,
+        and the record canonical constructor is applicable,
+        an instance of <em>J</em> is reconstructed by calling
+        the record canonical constructor.
+        The canonical constructor, if applicable, is called
+        with the appropriate reconstructed items from the
+        {@code CompositeData}. The canonical constructor
+        is <em>applicable</em> if all the properties named
+        by the record components are present in the
+        {@code CompositeData}.</p></li>
 
       <li><p>Otherwise, if <em>J</em> has at least one public
         constructor with either {@link javax.management.ConstructorParameters
@@ -940,6 +959,15 @@ public interface ModuleMXBean {
     </blockquote>
 
     <ol>
+      <li>Record:
+
+        <blockquote>
+          <pre>
+ public record NamedNumber(int number, String name) {}
+          </pre>
+        </blockquote>
+      </li>
+
       <li>Static {@code from} method:
 
         <blockquote>
