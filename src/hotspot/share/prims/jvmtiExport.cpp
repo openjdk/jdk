@@ -2047,7 +2047,7 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
   // convert oop to JNI handle.
   if (sig_type == JVM_SIGNATURE_CLASS) {
     handle_created = true;
-    value->l = (jobject)JNIHandles::make_local(thread, (oop)value->l);
+    value->l = (jobject)JNIHandles::make_local(thread, cast_to_oop(value->l));
   }
 
   post_field_modification(thread, method, location, field_klass, object, field, sig_type, value);

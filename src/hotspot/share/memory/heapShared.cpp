@@ -93,6 +93,7 @@ static ArchivableStaticFieldInfo closed_archive_subgraph_entry_fields[] = {
 static ArchivableStaticFieldInfo open_archive_subgraph_entry_fields[] = {
   {"jdk/internal/module/ArchivedModuleGraph",     "archivedModuleGraph"},
   {"java/util/ImmutableCollections",              "archivedObjects"},
+  {"java/lang/ModuleLayer",                       "EMPTY_LAYER"},
   {"java/lang/module/Configuration",              "EMPTY_CONFIGURATION"},
   {"jdk/internal/math/FDBigInteger",              "archivedCaches"},
 };
@@ -263,7 +264,7 @@ oop HeapShared::archive_heap_object(oop obj) {
     return NULL;
   }
 
-  oop archived_oop = (oop)G1CollectedHeap::heap()->archive_mem_allocate(len);
+  oop archived_oop = cast_to_oop(G1CollectedHeap::heap()->archive_mem_allocate(len));
   if (archived_oop != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
     // Reinitialize markword to remove age/marking/locking/etc.
@@ -424,7 +425,7 @@ void HeapShared::copy_roots() {
     arrayOopDesc::set_length(mem, length);
   }
 
-  _roots = OopHandle(Universe::vm_global(), (oop)mem);
+  _roots = OopHandle(Universe::vm_global(), cast_to_oop(mem));
   for (int i = 0; i < length; i++) {
     roots()->obj_at_put(i, _pending_roots->at(i));
   }
@@ -1395,7 +1396,7 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
 
   int num_objs = 0;
   while (p < end) {
-    oop o = (oop)p;
+    oop o = cast_to_oop(p);
     o->oop_iterate(&finder);
     p += o->size();
     if (DumpSharedSpaces) {

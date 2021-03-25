@@ -1026,7 +1026,7 @@ inline void nmethod::initialize_immediate_oop(oop* dest, jobject handle) {
   if (handle == NULL ||
       // As a special case, IC oops are initialized to 1 or -1.
       handle == (jobject) Universe::non_oop_word()) {
-    (*dest) = (oop) handle;
+    (*dest) = cast_to_oop(handle);
   } else {
     (*dest) = JNIHandles::resolve_non_null(handle);
   }
@@ -2721,7 +2721,7 @@ void nmethod::print_recorded_oops() {
     for (int i = 0; i < n; i++) {
       oop o = oop_at(i);
       tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(o));
-      if (o == (oop)Universe::non_oop_word()) {
+      if ((void*)o == Universe::non_oop_word()) {
         tty->print("non-oop word");
       } else if (o == NULL) {
         tty->print("NULL-oop");

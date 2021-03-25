@@ -720,7 +720,7 @@ void DerivedPointerTable::add(oop *derived_loc, oop *base_loc) {
     );
   }
   // Set derived oop location to point to base.
-  *derived_loc = (oop)base_loc;
+  *derived_loc = cast_to_oop(base_loc);
   Entry* entry = new Entry(derived_loc, offset);
   Entry::_list->push(*entry);
 }
@@ -737,7 +737,7 @@ void DerivedPointerTable::update_pointers() {
     oop base = **(oop**)derived_loc;
     assert(Universe::heap()->is_in_or_null(base), "must be an oop");
 
-    *derived_loc = (oop)(cast_from_oop<address>(base) + offset);
+    *derived_loc = cast_to_oop(cast_from_oop<address>(base) + offset);
     assert(value_of_loc(derived_loc) - value_of_loc(&base) == offset, "sanity check");
 
     if (TraceDerivedPointers) {

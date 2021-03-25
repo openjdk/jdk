@@ -25,8 +25,6 @@
 
 package jdk.jfr.internal;
 
-import java.util.function.Supplier;
-
 /**
  * JFR logger
  *
