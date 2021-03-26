@@ -38,7 +38,7 @@ import sun.management.spi.PlatformMBeanProvider;
 
 public final class FlightRecorderMXBeanProvider extends PlatformMBeanProvider {
 
-    private final static class SingleMBeanComponent
+    private static final class SingleMBeanComponent
             implements PlatformComponent<FlightRecorderMXBean> {
         private final String objectName;
         private final Class<FlightRecorderMXBean> mbeanInterface;
