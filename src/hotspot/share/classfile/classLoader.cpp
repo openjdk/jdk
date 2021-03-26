@@ -516,7 +516,7 @@ void ClassLoader::setup_bootstrap_search_path(Thread* current) {
 void ClassLoader::setup_app_search_path(Thread* current, const char *class_path) {
   Arguments::assert_is_dumping_archive();
 
-  ResourceMark rm;
+  ResourceMark rm(current);
   ClasspathStream cp_stream(class_path);
 
   while (cp_stream.has_next()) {
