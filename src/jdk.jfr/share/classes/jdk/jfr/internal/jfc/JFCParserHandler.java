@@ -98,8 +98,4 @@ final class JFCParserHandler extends DefaultHandler {
             break;
         }
     }
-
-    public Map<String, String> getSettings() {
-        return settings;
-    }
 }
