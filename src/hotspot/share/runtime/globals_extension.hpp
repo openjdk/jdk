@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,12 @@ enum JVMFlagsEnum : int {
   NUM_JVMFlagsEnum
 };
 
-// Construct set functions for all flags
+// Set functions for all flags -- use a template so we can do static_assert
+// at individual call sites of FLAG_SET_{CMDLINE,ERGO,MGMT}
 
 #define FLAG_MEMBER_SETTER(name) Flag_##name##_set
 #define FLAG_MEMBER_SETTER_(type, name) \
+  template <int dummy> \
   inline JVMFlag::Error FLAG_MEMBER_SETTER(name)(type value, JVMFlagOrigin origin) { \
     return JVMFlagAccess::set<JVM_FLAG_TYPE(type)>(FLAG_MEMBER_ENUM(name), value, origin); \
   }
@@ -75,9 +77,9 @@ ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
 #define FLAG_SET_DEFAULT(name, value) ((name) = (value))
 
 #define FLAG_SET_CMDLINE(name, value) (JVMFlag::setOnCmdLine(FLAG_MEMBER_ENUM(name)), \
-                                       FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::COMMAND_LINE))
-#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::ERGONOMIC))
-#define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::MANAGEMENT))
+                                       FLAG_MEMBER_SETTER(name)<0>((value), JVMFlagOrigin::COMMAND_LINE))
+#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SETTER(name)<0>((value), JVMFlagOrigin::ERGONOMIC))
+#define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SETTER(name)<0>((value), JVMFlagOrigin::MANAGEMENT))
 
 #define FLAG_SET_ERGO_IF_DEFAULT(name, value) \
   do {                                        \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ class JVMFlagAccess : AllStatic {
   inline static const FlagAccessImpl* access_impl(const JVMFlag* flag);
   static JVMFlag::Error set_impl(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin);
   static JVMFlag::Error set_impl(JVMFlag* flag, int type_enum, void* value, JVMFlagOrigin origin);
-  static JVMFlag::Error ccstrAtPut(JVMFlagsEnum flag, ccstr value, JVMFlagOrigin origin);
 
 public:
   static JVMFlag::Error check_range(const JVMFlag* flag, bool verbose);
@@ -86,6 +85,7 @@ public:
   // type_enum will result in an assert.
   template <typename T, int type_enum>
   static JVMFlag::Error set(JVMFlagsEnum flag_enum, T value, JVMFlagOrigin origin) {
+    static_assert(type_enum != JVMFlag::TYPE_ccstr && type_enum != JVMFlag::TYPE_ccstrlist, "not supported");
     return set_impl(flag_enum, type_enum, &value, origin);
   }
 

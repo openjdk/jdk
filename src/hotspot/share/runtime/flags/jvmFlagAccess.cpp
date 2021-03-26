@@ -29,6 +29,7 @@
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -328,29 +329,16 @@ JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlagOri
 
 // This is called by the FLAG_SET_XXX macros.
 JVMFlag::Error JVMFlagAccess::set_impl(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin) {
-  if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
-    return ccstrAtPut((JVMFlagsEnum)flag_enum, *((ccstr*)value), origin);
-  }
+  // The FLAG_SET_XXX macros should have caused an static_assert to fail if you try to use them on
+  // ccstr/ccstrlist options.
+  //
+  // Uncomment the following and verify that the C++ compilation will fail.
+  // FLAG_SET_ERGO(LogFile, "");
+  assert(type_enum != JVMFlag::TYPE_ccstr && type_enum != JVMFlag::TYPE_ccstrlist, "sanity");
 
   JVMFlag* flag = JVMFlag::flag_from_enum(flag_enum);
   assert(flag->type() == type_enum, "wrong flag type");
   return set_impl(flag, type_enum, value, origin);
-}
-
-// This is called by the FLAG_SET_XXX macros.
-JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlagsEnum flag, ccstr value, JVMFlagOrigin origin) {
-  JVMFlag* faddr = JVMFlag::flag_from_enum(flag);
-  assert(faddr->is_ccstr(), "wrong flag type");
-  ccstr old_value = faddr->get_ccstr();
-  trace_flag_changed<ccstr, EventStringFlagChanged>(faddr, old_value, value, origin);
-  char* new_value = os::strdup_check_oom(value);
-  faddr->set_ccstr(new_value);
-  if (!faddr->is_default() && old_value != NULL) {
-    // Prior value is heap allocated so free it.
-    FREE_C_HEAP_ARRAY(char, old_value);
-  }
-  faddr->set_origin(origin);
-  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagAccess::check_range(const JVMFlag* flag, bool verbose) {
