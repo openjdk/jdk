@@ -3955,17 +3955,6 @@ void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClos
   possibly_parallel_threads_do(is_par, &tc);
 }
 
-void Threads::nmethods_do(CodeBlobClosure* cf) {
-  ALL_JAVA_THREADS(p) {
-    // This is used by the code cache sweeper to mark nmethods that are active
-    // on the stack of a Java thread. Ignore the sweeper thread itself to avoid
-    // marking CodeCacheSweeperThread::_scanned_compiled_method as active.
-    if(!p->is_Code_cache_sweeper_thread()) {
-      p->nmethods_do(cf);
-    }
-  }
-}
-
 void Threads::metadata_do(MetadataClosure* f) {
   ALL_JAVA_THREADS(p) {
     p->metadata_do(f);
