@@ -303,7 +303,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   bool      check_owner(TRAPS);
 
   bool      enter(JavaThread* current);
-  void      exit(JavaThread* current);
+  void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);

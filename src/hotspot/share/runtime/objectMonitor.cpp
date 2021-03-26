@@ -422,10 +422,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
       //
       _recursions = 0;
       _succ = NULL;
-      // make sure 'this' is still set as pending monitor so that exit()
-      // doesn't set _previous_owner_tid for this special case.
-      assert(current->current_pending_monitor() == this, "invariant");
-      exit(current);
+      exit(current, false /* not_suspended */);
 
       current->java_suspend_self();
     }
@@ -1143,7 +1140,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 // structured the code so the windows are short and the frequency
 // of such futile wakups is low.
 
-void ObjectMonitor::exit(JavaThread* current) {
+void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
   void* cur = owner_raw();
   if (current != cur) {
     if (current->is_lock_owned((address)cur)) {
@@ -1182,11 +1179,9 @@ void ObjectMonitor::exit(JavaThread* current) {
   _Responsible = NULL;
 
 #if INCLUDE_JFR
-  // Set _previous_owner_tid for the MonitorEnter event if it is enabled and
-  // we legitimately owned this monitor. We can also get here if we need to self-suspend
-  // in enter(), in which case we never really owned this monitor and so should not record
-  // our thread id. In that case current_pending_monitor() is non-NULL.
-  if (current->current_pending_monitor() == NULL && EventJavaMonitorEnter::is_enabled()) {
+  // get the owner's thread id for the MonitorEnter event
+  // if it is enabled and the thread isn't suspended
+  if (not_suspended && EventJavaMonitorEnter::is_enabled()) {
     _previous_owner_tid = JFR_THREAD_ID(current);
   }
 #endif
