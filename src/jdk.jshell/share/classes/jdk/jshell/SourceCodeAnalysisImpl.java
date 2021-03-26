@@ -1088,7 +1088,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         //TODO: should reflect the type of site!
         return switch (el.getKind()) {
             case METHOD -> ((ExecutableElement) el).getReturnType();
-            case CONSTRUCTOR, INSTANCE_INIT, STATIC_INIT -> //TODO: should be filtered out
+            case CONSTRUCTOR -> el.getEnclosingElement().asType();
+            case INSTANCE_INIT, STATIC_INIT -> //TODO: should be filtered out
                 el.getEnclosingElement().asType();
             default -> el.asType();
         };
