@@ -789,7 +789,7 @@ public interface ModuleMXBean {
     <p>If the class is a {@link Record} and the getter is a component
        accessor for a record component {@code name} of type <em>T</em>,
        then the item in the {@code CompositeType} has the same name
-       than the record component, and has type <em>opentype(T)</em>.</p>
+       as the record component, and has type <em>opentype(T)</em>.</p>
 
     <p>Notice that unless the class is a {@code Record}, the
       first character (or code point) is converted to
@@ -959,15 +959,6 @@ public interface ModuleMXBean {
     </blockquote>
 
     <ol>
-      <li>Record:
-
-        <blockquote>
-          <pre>
- public record NamedNumber(int number, String name) {}
-          </pre>
-        </blockquote>
-      </li>
-
       <li>Static {@code from} method:
 
         <blockquote>
@@ -986,6 +977,15 @@ public class NamedNumber {
     private final int number;
     private final String name;
 }
+          </pre>
+        </blockquote>
+      </li>
+
+      <li>Record:
+
+        <blockquote>
+          <pre>
+ public record NamedNumber(int number, String name) {}
           </pre>
         </blockquote>
       </li>
