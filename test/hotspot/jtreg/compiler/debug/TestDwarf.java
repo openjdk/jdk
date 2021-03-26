@@ -25,11 +25,13 @@
  * @test
  * @bug 8242181
  * @library / /test/lib
- * @summary Test DWARF parser with various crashes.
+ * @summary Test DWARF parser with various crashes if debug symbols are available. If the libjvm debug symbols are not
+ *          in the same directory as the libjvm.so file, in a subdirectory called .debug, or in the path specified
+ *          by the environment variable JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
  * @requires vm.debug == true & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      compiler.debug.TestDwarf
  */
@@ -118,7 +120,7 @@ public class TestDwarf {
         OutputAnalyzer crashOut;
         crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(flags.getFlags()));
         String crashOutputString = crashOut.getOutput();
-        Asserts.assertNotEquals(crashOut.getExitValue(), 0, "Crash JVM exits gracefully");
+        Asserts.assertNotEquals(crashOut.getExitValue(), 0, "Crash JVM should not exit gracefully");
         Pattern pattern = Pattern.compile("hs_err_pid[0-9]*.log");
         Matcher matcher = pattern.matcher(crashOutputString);
         System.out.println(crashOutputString);
@@ -149,15 +151,17 @@ public class TestDwarf {
                             pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x");
                             matcher = pattern.matcher(line);
                             Asserts.assertTrue(matcher.find(), "Must find library in \"" + line + "\"");
-                            // Check if there are symbols available for library. If not, then we cannot have find any source information for this library.
-                            // This happens, for example, for libpthread.so which usually has no symbols available.
+                            // Check if there are symbols available for library. If not, then we cannot find any source information for this library.
+                            // This can happen if this test is run without any JDK debug symbols at all but also for some libraries like libpthread.so
+                            // which usually has no symbols available.
                             String library = matcher.group(1);
-                            System.out.println(library);
-                            // We should always find symbols for libjvm.so.
-                            Asserts.assertFalse(library.equals("libjvm.so"), "Could not find filename or line number in \"" + line + "\"");
+                            // We should always find symbols for libTestDwarf.so.
+                            Asserts.assertFalse(library.equals("libTestDwarf.so"), "Could not find filename or line number in \"" + line + "\" for libTestDwarf.so");
                             pattern = Pattern.compile("Failed to load DWARF file or find DWARF sections directly inside library.*" + library);
                             matcher = pattern.matcher(crashOutputString);
                             Asserts.assertTrue(matcher.find(), "Could not find filename or line number in \"" + line + "\"");
+                            System.out.println("Did not find symbols for " + library + ". If they are not in the same directory as " + library + " consider setting " +
+                                               "the environmental variable JVM_DWARF_PATH to point to the debug symbols directory.");
                         }
 
                         // Check additional DWARF constraints
