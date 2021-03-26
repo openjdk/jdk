@@ -533,9 +533,8 @@ Java_sun_nio_fs_WindowsNativeDispatcher_SetEndOfFile(JNIEnv* env, jclass this,
 {
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
 
-    if (SetEndOfFile(h) == 0) {
+    if (SetEndOfFile(h) == 0)
         throwWindowsException(env, GetLastError());
-    }
 }
 
 
