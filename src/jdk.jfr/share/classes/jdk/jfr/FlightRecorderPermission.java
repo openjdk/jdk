@@ -104,7 +104,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
         PrivateAccess.setPrivateAccess(new InternalAccess());
     }
 
-    private final static class InternalAccess extends PrivateAccess {
+    private static final class InternalAccess extends PrivateAccess {
 
         @Override
         public Type getType(Object o) {
