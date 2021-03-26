@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +34,14 @@
 #include "ps_core_common.h"
 
 #ifdef __APPLE__
+#if defined(amd64)
 #include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
+#elif defined(aarch64)
+#include "sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext.h"
+#else
+#error UNSUPPORTED_ARCH
 #endif
+#endif /* __APPLE__ */
 
 // This file has the libproc implementation to read core files.
 // For live processes, refer to ps_proc.c. Portions of this is adapted
@@ -195,6 +202,8 @@ static ps_prochandle_ops core_ops = {
 void print_thread(sa_thread_info *threadinfo) {
   print_debug("thread added: %d\n", threadinfo->lwp_id);
   print_debug("registers:\n");
+
+#if defined(amd64)
   print_debug("  r_r15: 0x%" PRIx64 "\n", threadinfo->regs.r_r15);
   print_debug("  r_r14: 0x%" PRIx64 "\n", threadinfo->regs.r_r14);
   print_debug("  r_r13: 0x%" PRIx64 "\n", threadinfo->regs.r_r13);
@@ -216,6 +225,45 @@ void print_thread(sa_thread_info *threadinfo) {
   print_debug("  r_cs:  0x%" PRIx64 "\n", threadinfo->regs.r_cs);
   print_debug("  r_rsp: 0x%" PRIx64 "\n", threadinfo->regs.r_rsp);
   print_debug("  r_rflags: 0x%" PRIx64 "\n", threadinfo->regs.r_rflags);
+
+#elif defined(aarch64)
+  print_debug(" r_r0:  0x%" PRIx64 "\n", threadinfo->regs.r_r0);
+  print_debug(" r_r1:  0x%" PRIx64 "\n", threadinfo->regs.r_r1);
+  print_debug(" r_r2:  0x%" PRIx64 "\n", threadinfo->regs.r_r2);
+  print_debug(" r_r3:  0x%" PRIx64 "\n", threadinfo->regs.r_r3);
+  print_debug(" r_r4:  0x%" PRIx64 "\n", threadinfo->regs.r_r4);
+  print_debug(" r_r5:  0x%" PRIx64 "\n", threadinfo->regs.r_r5);
+  print_debug(" r_r6:  0x%" PRIx64 "\n", threadinfo->regs.r_r6);
+  print_debug(" r_r7:  0x%" PRIx64 "\n", threadinfo->regs.r_r7);
+  print_debug(" r_r8:  0x%" PRIx64 "\n", threadinfo->regs.r_r8);
+  print_debug(" r_r9:  0x%" PRIx64 "\n", threadinfo->regs.r_r9);
+  print_debug(" r_r10: 0x%" PRIx64 "\n", threadinfo->regs.r_r10);
+  print_debug(" r_r11: 0x%" PRIx64 "\n", threadinfo->regs.r_r11);
+  print_debug(" r_r12: 0x%" PRIx64 "\n", threadinfo->regs.r_r12);
+  print_debug(" r_r13: 0x%" PRIx64 "\n", threadinfo->regs.r_r13);
+  print_debug(" r_r14: 0x%" PRIx64 "\n", threadinfo->regs.r_r14);
+  print_debug(" r_r15: 0x%" PRIx64 "\n", threadinfo->regs.r_r15);
+  print_debug(" r_r16: 0x%" PRIx64 "\n", threadinfo->regs.r_r16);
+  print_debug(" r_r17: 0x%" PRIx64 "\n", threadinfo->regs.r_r17);
+  print_debug(" r_r18: 0x%" PRIx64 "\n", threadinfo->regs.r_r18);
+  print_debug(" r_r19: 0x%" PRIx64 "\n", threadinfo->regs.r_r19);
+  print_debug(" r_r20: 0x%" PRIx64 "\n", threadinfo->regs.r_r20);
+  print_debug(" r_r21: 0x%" PRIx64 "\n", threadinfo->regs.r_r21);
+  print_debug(" r_r22: 0x%" PRIx64 "\n", threadinfo->regs.r_r22);
+  print_debug(" r_r23: 0x%" PRIx64 "\n", threadinfo->regs.r_r23);
+  print_debug(" r_r24: 0x%" PRIx64 "\n", threadinfo->regs.r_r24);
+  print_debug(" r_r25: 0x%" PRIx64 "\n", threadinfo->regs.r_r25);
+  print_debug(" r_r26: 0x%" PRIx64 "\n", threadinfo->regs.r_r26);
+  print_debug(" r_r27: 0x%" PRIx64 "\n", threadinfo->regs.r_r27);
+  print_debug(" r_r28: 0x%" PRIx64 "\n", threadinfo->regs.r_r28);
+  print_debug(" r_fp:  0x%" PRIx64 "\n", threadinfo->regs.r_fp);
+  print_debug(" r_lr:  0x%" PRIx64 "\n", threadinfo->regs.r_lr);
+  print_debug(" r_sp:  0x%" PRIx64 "\n", threadinfo->regs.r_sp);
+  print_debug(" r_pc:  0x%" PRIx64 "\n", threadinfo->regs.r_pc);
+
+#else
+#error UNSUPPORTED_ARCH
+#endif
 }
 
 // read all segments64 commands from core file
@@ -269,6 +317,7 @@ static bool read_core_segments(struct ps_prochandle* ph) {
           goto err;
         }
         size += sizeof(thread_fc);
+#if defined(amd64)
         if (fc.flavor == x86_THREAD_STATE) {
           x86_thread_state_t thrstate;
           if (read(fd, (void *)&thrstate, sizeof(x86_thread_state_t)) != sizeof(x86_thread_state_t)) {
@@ -328,6 +377,90 @@ static bool read_core_segments(struct ps_prochandle* ph) {
           }
           size += sizeof(x86_exception_state_t);
         }
+
+#elif defined(aarch64)
+        if (fc.flavor == ARM_THREAD_STATE64) {
+          arm_thread_state64_t thrstate;
+          if (read(fd, (void *)&thrstate, sizeof(arm_thread_state64_t)) != sizeof(arm_thread_state64_t)) {
+            printf("Reading flavor, count failed.\n");
+            goto err;
+          }
+          size += sizeof(arm_thread_state64_t);
+          // create thread info list, update lwp_id later
+          sa_thread_info* newthr = add_thread_info(ph, (pthread_t) -1, (lwpid_t) num_threads++);
+          if (newthr == NULL) {
+            printf("create thread_info failed\n");
+            goto err;
+          }
+
+          // note __DARWIN_UNIX03 depengs on other definitions
+#if __DARWIN_UNIX03
+#define get_register_v(regst, regname) \
+  regst.__##regname
+#else
+#define get_register_v(regst, regname) \
+  regst.##regname
+#endif // __DARWIN_UNIX03
+          newthr->regs.r_r0  = get_register_v(thrstate, x[0]);
+          newthr->regs.r_r1  = get_register_v(thrstate, x[1]);
+          newthr->regs.r_r2  = get_register_v(thrstate, x[2]);
+          newthr->regs.r_r3  = get_register_v(thrstate, x[3]);
+          newthr->regs.r_r4  = get_register_v(thrstate, x[4]);
+          newthr->regs.r_r5  = get_register_v(thrstate, x[5]);
+          newthr->regs.r_r6  = get_register_v(thrstate, x[6]);
+          newthr->regs.r_r7  = get_register_v(thrstate, x[7]);
+          newthr->regs.r_r8  = get_register_v(thrstate, x[8]);
+          newthr->regs.r_r9  = get_register_v(thrstate, x[9]);
+          newthr->regs.r_r10 = get_register_v(thrstate, x[10]);
+          newthr->regs.r_r11 = get_register_v(thrstate, x[11]);
+          newthr->regs.r_r12 = get_register_v(thrstate, x[12]);
+          newthr->regs.r_r13 = get_register_v(thrstate, x[13]);
+          newthr->regs.r_r14 = get_register_v(thrstate, x[14]);
+          newthr->regs.r_r15 = get_register_v(thrstate, x[15]);
+          newthr->regs.r_r16 = get_register_v(thrstate, x[16]);
+          newthr->regs.r_r17 = get_register_v(thrstate, x[17]);
+          newthr->regs.r_r18 = get_register_v(thrstate, x[18]);
+          newthr->regs.r_r19 = get_register_v(thrstate, x[19]);
+          newthr->regs.r_r20 = get_register_v(thrstate, x[20]);
+          newthr->regs.r_r21 = get_register_v(thrstate, x[21]);
+          newthr->regs.r_r22 = get_register_v(thrstate, x[22]);
+          newthr->regs.r_r23 = get_register_v(thrstate, x[23]);
+          newthr->regs.r_r24 = get_register_v(thrstate, x[24]);
+          newthr->regs.r_r25 = get_register_v(thrstate, x[25]);
+          newthr->regs.r_r26 = get_register_v(thrstate, x[26]);
+          newthr->regs.r_r27 = get_register_v(thrstate, x[27]);
+          newthr->regs.r_r28 = get_register_v(thrstate, x[28]);
+          newthr->regs.r_fp  = get_register_v(thrstate, fp);
+          newthr->regs.r_lr  = get_register_v(thrstate, lr);
+          newthr->regs.r_sp  = get_register_v(thrstate, sp);
+          newthr->regs.r_pc  = get_register_v(thrstate, pc);
+          print_thread(newthr);
+        } else if (fc.flavor == ARM_NEON_STATE64) {
+          arm_neon_state64_t flstate;
+          if (read(fd, (void *)&flstate, sizeof(arm_neon_state64_t)) != sizeof(arm_neon_state64_t)) {
+            printf("Reading flavor, count failed.\n");
+            goto err;
+          }
+          size += sizeof(arm_neon_state64_t);
+        } else if (fc.flavor == ARM_EXCEPTION_STATE64) {
+          arm_exception_state64_t excpstate;
+          if (read(fd, (void *)&excpstate, sizeof(arm_exception_state64_t)) != sizeof(arm_exception_state64_t)) {
+            printf("Reading flavor, count failed.\n");
+            goto err;
+          }
+          size += sizeof(arm_exception_state64_t);
+        } else if (fc.flavor == ARM_DEBUG_STATE64) {
+          arm_debug_state64_t dbgstate;
+          if (read(fd, (void *)&dbgstate, sizeof(arm_debug_state64_t)) != sizeof(arm_debug_state64_t)) {
+            printf("Reading flavor, count failed.\n");
+            goto err;
+          }
+          size += sizeof(arm_debug_state64_t);
+        }
+
+#else
+#error UNSUPPORTED_ARCH
+#endif
       }
     }
   }

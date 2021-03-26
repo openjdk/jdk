@@ -47,13 +47,14 @@ import java.util.function.Predicate;
 import jdk.jfr.EventType;
 
 abstract class Command {
-    public final static String title = "Tool for working with Flight Recorder files (.jfr)";
+    public final static String title = "Tool for working with Flight Recorder files";
     private final static Command HELP = new Help();
     private final static List<Command> COMMANDS = createCommands();
 
     private static List<Command> createCommands() {
         List<Command> commands = new ArrayList<>();
         commands.add(new Print());
+        commands.add(new Configure());
         commands.add(new Metadata());
         commands.add(new Summary());
         commands.add(new Assemble());
@@ -155,6 +156,14 @@ abstract class Command {
     public void displayOptionUsage(PrintStream stream) {
     }
 
+    protected boolean acceptSwitch(Deque<String> options, String expected) throws UserSyntaxException {
+        if (!options.isEmpty() && options.peek().equals(expected)) {
+            options.remove();
+            return true;
+        }
+        return false;
+    }
+
     protected boolean acceptOption(Deque<String> options, String expected) throws UserSyntaxException {
         if (expected.equals(options.peek())) {
             if (options.size() < 2) {
@@ -233,7 +242,7 @@ abstract class Command {
         try {
             Path path = Paths.get(file).toAbsolutePath();
             ensureAccess(path);
-            ensureJFRFile(path);
+            ensureFileExtension(path, ".jfr");
             return path;
         } catch (IOError ioe) {
             throw new UserDataException("i/o error reading file '" + file + "', " + ioe.getMessage());
@@ -266,9 +275,9 @@ abstract class Command {
         return file;
     }
 
-    final protected void ensureJFRFile(Path path) throws UserDataException {
-        if (!path.toString().endsWith(".jfr")) {
-            throw new UserDataException("filename must end with '.jfr'");
+    final protected void ensureFileExtension(Path path, String extension) throws UserDataException {
+        if (!path.toString().endsWith(extension)) {
+            throw new UserDataException("filename must end with '" + extension + "'");
         }
     }
 

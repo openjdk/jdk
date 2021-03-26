@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -822,6 +823,15 @@ protected:
   // Not for general synchronization use.
   static void SpinAcquire(volatile int * Lock, const char * Name);
   static void SpinRelease(volatile int * Lock);
+
+#if defined(__APPLE__) && defined(AARCH64)
+ private:
+  DEBUG_ONLY(bool _wx_init);
+  WXMode _wx_state;
+ public:
+  void init_wx();
+  WXMode enable_wx(WXMode new_state);
+#endif // __APPLE__ && AARCH64
 };
 
 // Inline implementation of Thread::current()
