@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8258393
+ * @bug 8258393 8263376
  * @summary Shenandoah: "graph should be schedulable" assert failure
  * @requires vm.flavor == "server"
  * @requires vm.gc.Shenandoah
