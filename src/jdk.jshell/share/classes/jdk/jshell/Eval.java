@@ -76,7 +76,6 @@ import static java.util.Collections.singletonList;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
-import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
 import static jdk.jshell.Util.PREFIX_PATTERN;
@@ -370,32 +369,15 @@ class Eval {
                 winit = winit == null ? Wrap.rangeWrap(compileSource, rinit) : winit;
                 nameMax = rinit.begin - 1;
             } else {
-                String sinit;
-                switch (typeName) {
-                    case "byte":
-                    case "short":
-                    case "int":
-                        sinit = "0";
-                        break;
-                    case "long":
-                        sinit = "0L";
-                        break;
-                    case "float":
-                        sinit = "0.0f";
-                        break;
-                    case "double":
-                        sinit = "0.0d";
-                        break;
-                    case "boolean":
-                        sinit = "false";
-                        break;
-                    case "char":
-                        sinit = "'\\u0000'";
-                        break;
-                    default:
-                        sinit = "null";
-                        break;
-                }
+                String sinit = switch (typeName) {
+                    case "byte", "short", "int" -> "0";
+                    case "long" -> "0L";
+                    case "float" -> "0.0f";
+                    case "double" -> "0.0d";
+                    case "boolean" -> "false";
+                    case "char" -> "'\\u0000'";
+                    default -> "null";
+                };
                 winit = Wrap.simpleWrap(sinit);
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
             }
@@ -862,23 +844,12 @@ class Eval {
 
         // Install  wrapper for query by SourceCodeAnalysis.wrapper
         String compileSource = Util.trimEnd(new MaskCommentsAndModifiers(userSource, true).cleared());
-        OuterWrap outer;
-        switch (probableKind) {
-            case IMPORT:
-                outer = state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
-                break;
-            case EXPRESSION:
-                outer = state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(compileSource));
-                break;
-            case VAR:
-            case TYPE_DECL:
-            case METHOD:
-                outer = state.outerMap.wrapInTrialClass(Wrap.classMemberWrap(compileSource));
-                break;
-            default:
-                outer = state.outerMap.wrapInTrialClass(Wrap.methodWrap(compileSource));
-                break;
-        }
+        OuterWrap outer = switch (probableKind) {
+            case IMPORT -> state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
+            case EXPRESSION -> state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(compileSource));
+            case VAR, TYPE_DECL, METHOD -> state.outerMap.wrapInTrialClass(Wrap.classMemberWrap(compileSource));
+            default -> state.outerMap.wrapInTrialClass(Wrap.methodWrap(compileSource));
+        };
         snip.setOuterWrap(outer);
 
         return singletonList(snip);
