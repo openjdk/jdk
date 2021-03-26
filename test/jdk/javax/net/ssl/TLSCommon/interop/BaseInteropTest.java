@@ -169,8 +169,7 @@ public abstract class BaseInteropTest<U extends UseCase> {
         ExecutorService executor = Executors.newFixedThreadPool(1);
         AbstractServer server = null;
         try {
-            server = createServer(testCase.serverCase);
-            executor.submit(new ServerTask(server));
+            server = startAndGetServer(testCase.serverCase, executor);
             int port = server.getPort();
             System.out.println("Server is listening " + port);
             serverStatus = Status.PASS;
@@ -226,6 +225,23 @@ public abstract class BaseInteropTest<U extends UseCase> {
     }
 
     /*
+     * Return a server once it is properly started to avoid client connection issues.
+     */
+    protected AbstractServer startAndGetServer(U useCase, ExecutorService executor)
+            throws Exception {
+        AbstractServer server = createServer(useCase, executor);
+        if (!Utilities.waitFor(Server::isAlive, server)) {
+            // Retry operation, server might have failed to bind a port
+            server.signalStop();
+            server = createServer(useCase, executor);
+            if (!Utilities.waitFor(Server::isAlive, server))
+                throw new RuntimeException("Server failed to start");
+        }
+
+        return server;
+    }
+
+    /*
      * Handles server side exception, and determines the status.
      */
     protected Status handleServerException(Exception exception) {
@@ -251,8 +267,10 @@ public abstract class BaseInteropTest<U extends UseCase> {
     /*
      * Creates server.
      */
-    protected AbstractServer createServer(U useCase) throws Exception {
-        return createServerBuilder(useCase).build();
+    protected AbstractServer createServer(U useCase, ExecutorService executor) throws Exception {
+        AbstractServer server = createServerBuilder(useCase).build();
+        executor.submit(new ServerTask(server));
+        return server;
     }
 
     protected AbstractServer.Builder createServerBuilder(U useCase)

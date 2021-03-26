@@ -377,14 +377,14 @@ public class Utilities {
      */
     public static boolean isSessionResumed(ResumptionMode mode,
             byte[] firstSessionId, byte[] secondSessionId,
-            long secondConnStartTime, long secondSessionCreationTime) {
+            long firstSessionCreationTime, long secondSessionCreationTime) {
         System.out.println("ResumptionMode: " + mode);
         System.out.println("firstSessionId: " + Arrays.toString(firstSessionId));
         System.out.println("secondSessionId: " + Arrays.toString(secondSessionId));
-        System.out.println("secondConnStartTime: " + secondConnStartTime);
+        System.out.println("firstSessionCreationTime: " + firstSessionCreationTime);
         System.out.println("secondSessionCreationTime: " + secondSessionCreationTime);
 
-        boolean resumed = secondConnStartTime > secondSessionCreationTime;
+        boolean resumed = firstSessionCreationTime == secondSessionCreationTime;
         if (mode == ResumptionMode.ID) {
             resumed = resumed && firstSessionId.length > 0
                     && Arrays.equals(firstSessionId, secondSessionId);
