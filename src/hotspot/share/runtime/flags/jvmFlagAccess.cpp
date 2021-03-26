@@ -29,6 +29,7 @@
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -322,7 +323,12 @@ JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrig
 // This is called by the FLAG_SET_XXX macros.
 JVMFlag::Error JVMFlagAccess::set_or_assert(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin) {
   if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
-    // FIXME -- change the FLAG_SET_XXX macros to templates this can be checked using static_assert at compile time.
+    // The FLAG_SET_XXX macros should have caused an static_assert to fail if you try to use them on
+    // ccstr options, so we should never come to here.
+    //
+    // Uncomment the following and verify that the C++ compilation will fail.
+    // FLAG_SET_ERGO(LogFile, "");
+
     fatal("FLAG_SET_XXX macros should not be used on ccstr options");
   }
 
