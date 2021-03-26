@@ -28,11 +28,14 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.text.Collator;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.function.Predicate;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
@@ -149,7 +152,48 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
 
     private Map<String, List<IndexItem>> groupExternalSpecs() {
         return configuration.mainIndex.getItems(DocTree.Kind.SPEC).stream()
-                .collect(groupingBy(IndexItem::getLabel, TreeMap::new, toList()));
+                .collect(groupingBy(IndexItem::getLabel, () -> new TreeMap<>(getTitleComparator()), toList()));
+    }
+
+    Comparator<String> getTitleComparator() {
+        Collator collator = Collator.getInstance();
+        return new Comparator<>() {
+            @Override
+            public int compare(String s1, String s2) {
+                int i1 = 0;
+                int i2 = 0;
+                while (i1 < s1.length() && i2 < s2.length()) {
+                    int j1 = find(s1, i1, Character::isDigit);
+                    int j2 = find(s2, i2, Character::isDigit);
+                    int cmp = collator.compare(s1.substring(i1, j1), s2.substring(i2, j2));
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    if (j1 == s1.length() || j2 == s2.length()) {
+                        i1 = j1;
+                        i2 = j2;
+                        break;
+                    }
+                    int k1 = find(s1, j1, ch -> !Character.isDigit(ch));
+                    int k2 = find(s2, j2, ch -> !Character.isDigit(ch));
+                    cmp = Integer.compare(Integer.parseInt(s1.substring(j1, k1)), Integer.parseInt(s2.substring(j2, k2)));
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    i1 = k1;
+                    i2 = k2;
+                }
+                return i1 < s1.length() ? 1 : i2 < s2.length() ? -1 : 0;
+            }
+        };
+    }
+
+    private static int find(String s, int start, Predicate<Character> p) {
+        int i = start;
+        while (i < s.length() && !p.test(s.charAt(i))) {
+            i++;
+        }
+        return i;
     }
 
     private Content createLink(IndexItem i) {
