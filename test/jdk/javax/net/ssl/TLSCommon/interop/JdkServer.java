@@ -106,7 +106,7 @@ public class JdkServer extends AbstractServer {
 
     @Override
     public void accept() throws IOException {
-        while (isAlive()) {
+        while (true) {
             try (SSLSocket socket = (SSLSocket) serverSocket.accept()) {
                 this.socket = socket;
                 System.out.println("Server accepted connection");
