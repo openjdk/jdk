@@ -50,7 +50,7 @@ import sun.tools.jconsole.Messages;
 @SuppressWarnings("serial")
 public class XMBeanNotifications extends JTable implements NotificationListener {
 
-    private final static String[] columnNames = {
+    private static final String[] columnNames = {
         Messages.TIME_STAMP,
         Messages.TYPE,
         Messages.USER_DATA,
@@ -63,7 +63,7 @@ public class XMBeanNotifications extends JTable implements NotificationListener 
             new HashMap<ObjectName, XMBeanNotificationsListener>();
     private volatile boolean subscribed;
     private XMBeanNotificationsListener currentListener;
-    public final static String NOTIFICATION_RECEIVED_EVENT =
+    public static final String NOTIFICATION_RECEIVED_EVENT =
             "jconsole.xnotification.received";
     private List<NotificationListener> notificationListenersList;
     private volatile boolean enabled;
