@@ -25,6 +25,7 @@
 
 package sun.nio.fs;
 
+import java.lang.ref.Reference;
 import java.nio.file.*;
 import java.nio.ByteBuffer;
 import java.io.IOException;
