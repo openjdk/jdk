@@ -29,6 +29,14 @@
  * @run main/othervm -Xcomp compiler.codegen.Test6935535
  */
 
+/**
+ * @test
+ * @bug 8264223
+ * @summary add CodeHeap verification
+ *
+ * @requires vm.debug
+ * @run main/othervm -Xcomp -XX:+VerifyCodeCache compiler.codegen.Test6935535
+ */
 package compiler.codegen;
 
 public class Test6935535 {
