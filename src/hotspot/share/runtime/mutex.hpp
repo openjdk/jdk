@@ -39,11 +39,6 @@
 // The underlying PlatformMutex may support recursive locking but this is not exposed
 // and we account for that possibility in try_lock.
 
-// The default length of mutex name was originally chosen to be 64 to avoid
-// false sharing. Now, PaddedMutex and PaddedMonitor are available for this purpose.
-// TODO: Check if _name[MUTEX_NAME_LEN] should better get replaced by const char*.
-static const int MUTEX_NAME_LEN = 64;
-
 class Mutex : public CHeapObj<mtSynchronizer> {
 
  public:
@@ -91,7 +86,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
  protected:                              // Monitor-Mutex metadata
   os::PlatformMonitor _lock;             // Native monitor implementation
-  char _name[MUTEX_NAME_LEN];            // Name of mutex/monitor
+  const char* _name;                     // Name of mutex/monitor
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
 #ifndef PRODUCT

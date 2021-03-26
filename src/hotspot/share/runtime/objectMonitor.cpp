@@ -2195,7 +2195,7 @@ void ObjectMonitor::Initialize() {
 #undef NEWPERFVARIABLE
   }
 
-  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak");
+  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak", mtSynchronizer);
 
   DEBUG_ONLY(InitDone = true;)
 }

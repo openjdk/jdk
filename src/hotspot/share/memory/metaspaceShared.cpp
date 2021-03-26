@@ -612,7 +612,8 @@ void MetaspaceShared::prepare_for_dumping() {
 
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
-void MetaspaceShared::preload_and_dump(TRAPS) {
+void MetaspaceShared::preload_and_dump() {
+  EXCEPTION_MARK;
   ResourceMark rm(THREAD);
   preload_and_dump_impl(THREAD);
   if (HAS_PENDING_EXCEPTION) {
