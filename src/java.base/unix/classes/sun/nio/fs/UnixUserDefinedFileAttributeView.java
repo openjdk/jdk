@@ -184,10 +184,17 @@ abstract class UnixUserDefinedFileAttributeView
                 long address = nb.address();
                 int n = read(name, address, rem);
 
-                // copy from buffer into backing array
-                int off = dst.arrayOffset() + pos + Unsafe.ARRAY_BYTE_BASE_OFFSET;
-                unsafe.copyMemory(null, address, dst.array(), off, n);
-                dst.position(pos + n);
+                if (dst.hasArray()) {
+                    // copy from buffer into backing array
+                    int off = dst.arrayOffset() + pos + Unsafe.ARRAY_BYTE_BASE_OFFSET;
+                    unsafe.copyMemory(null, address, dst.array(), off, n);
+                    dst.position(pos + n);
+                } else {
+                    // backing array not accessible so transfer via temporary array
+                    byte[] tmp = new byte[n];
+                    unsafe.copyMemory(null, address, tmp, 0, n);
+                    dst.put(tmp);
+                }
 
                 return n;
             }
