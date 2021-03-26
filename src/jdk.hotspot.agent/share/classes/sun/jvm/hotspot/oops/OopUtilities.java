@@ -64,7 +64,7 @@ public class OopUtilities {
   private static IntField threadPriorityField;
   private static BooleanField threadDaemonField;
 
-  // possible values of java_lang_Thread::ThreadStatus
+  // possible values of JavaThreadStatus
   public static int THREAD_STATUS_NEW;
 
   public static int THREAD_STATUS_RUNNABLE;
@@ -234,16 +234,16 @@ public class OopUtilities {
       threadPriorityField = (IntField) k.findField("priority", "I");
       threadDaemonField = (BooleanField) k.findField("daemon", "Z");
       TypeDataBase db = VM.getVM().getTypeDataBase();
-      THREAD_STATUS_NEW = db.lookupIntConstant("java_lang_Thread::NEW").intValue();
+      THREAD_STATUS_NEW = db.lookupIntConstant("JavaThreadStatus::NEW").intValue();
 
-      THREAD_STATUS_RUNNABLE = db.lookupIntConstant("java_lang_Thread::RUNNABLE").intValue();
-      THREAD_STATUS_SLEEPING = db.lookupIntConstant("java_lang_Thread::SLEEPING").intValue();
-      THREAD_STATUS_IN_OBJECT_WAIT = db.lookupIntConstant("java_lang_Thread::IN_OBJECT_WAIT").intValue();
-      THREAD_STATUS_IN_OBJECT_WAIT_TIMED = db.lookupIntConstant("java_lang_Thread::IN_OBJECT_WAIT_TIMED").intValue();
-      THREAD_STATUS_PARKED = db.lookupIntConstant("java_lang_Thread::PARKED").intValue();
-      THREAD_STATUS_PARKED_TIMED = db.lookupIntConstant("java_lang_Thread::PARKED_TIMED").intValue();
-      THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER = db.lookupIntConstant("java_lang_Thread::BLOCKED_ON_MONITOR_ENTER").intValue();
-      THREAD_STATUS_TERMINATED = db.lookupIntConstant("java_lang_Thread::TERMINATED").intValue();
+      THREAD_STATUS_RUNNABLE = db.lookupIntConstant("JavaThreadStatus::RUNNABLE").intValue();
+      THREAD_STATUS_SLEEPING = db.lookupIntConstant("JavaThreadStatus::SLEEPING").intValue();
+      THREAD_STATUS_IN_OBJECT_WAIT = db.lookupIntConstant("JavaThreadStatus::IN_OBJECT_WAIT").intValue();
+      THREAD_STATUS_IN_OBJECT_WAIT_TIMED = db.lookupIntConstant("JavaThreadStatus::IN_OBJECT_WAIT_TIMED").intValue();
+      THREAD_STATUS_PARKED = db.lookupIntConstant("JavaThreadStatus::PARKED").intValue();
+      THREAD_STATUS_PARKED_TIMED = db.lookupIntConstant("JavaThreadStatus::PARKED_TIMED").intValue();
+      THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER = db.lookupIntConstant("JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER").intValue();
+      THREAD_STATUS_TERMINATED = db.lookupIntConstant("JavaThreadStatus::TERMINATED").intValue();
 
       if (Assert.ASSERTS_ENABLED) {
         // it is okay to miss threadStatusField, because this was

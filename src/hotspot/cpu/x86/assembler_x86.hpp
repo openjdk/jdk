@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define CPU_X86_ASSEMBLER_X86_HPP
 
 #include "asm/register.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class BiasedLockingCounters;
@@ -41,9 +40,13 @@ class Argument {
 #ifdef _WIN64
     n_int_register_parameters_c   = 4, // rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
     n_float_register_parameters_c = 4,  // xmm0 - xmm3 (c_farg0, c_farg1, ... )
+    n_int_register_returns_c = 1, // rax
+    n_float_register_returns_c = 1, // xmm0
 #else
     n_int_register_parameters_c   = 6, // rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
     n_float_register_parameters_c = 8,  // xmm0 - xmm7 (c_farg0, c_farg1, ... )
+    n_int_register_returns_c = 2, // rax, rdx
+    n_float_register_returns_c = 2, // xmm0, xmm1
 #endif // _WIN64
     n_int_register_parameters_j   = 6, // j_rarg0, j_rarg1, ...
     n_float_register_parameters_j = 8  // j_farg0, j_farg1, ...
@@ -892,14 +895,7 @@ private:
   // Does 32bit or 64bit as needed for the platform. In some sense these
   // belong in macro assembler but there is no need for both varieties to exist
 
-  void init_attributes(void) {
-    _legacy_mode_bw = (VM_Version::supports_avx512bw() == false);
-    _legacy_mode_dq = (VM_Version::supports_avx512dq() == false);
-    _legacy_mode_vl = (VM_Version::supports_avx512vl() == false);
-    _legacy_mode_vlbw = (VM_Version::supports_avx512vlbw() == false);
-    NOT_LP64(_is_managed = false;)
-    _attributes = NULL;
-  }
+  void init_attributes(void);
 
   void set_attributes(InstructionAttr *attributes) { _attributes = attributes; }
   void clear_attributes(void) { _attributes = NULL; }
@@ -1201,8 +1197,6 @@ private:
 
 #ifndef _LP64
  private:
-  // operands that only take the original 32bit registers
-  void emit_operand32(Register reg, Address adr);
 
   void emit_farith(int b1, int b2, int i);
 
@@ -1268,7 +1262,6 @@ private:
   void fld_d(Address adr);
   void fld_s(Address adr);
   void fld_s(int index);
-  void fld_x(Address adr);  // extended-precision (80-bit) format
 
   void fldcw(Address src);
 
@@ -1313,7 +1306,6 @@ private:
   void fstp_d(Address adr);
   void fstp_d(int index);
   void fstp_s(Address adr);
-  void fstp_x(Address adr); // extended-precision (80-bit) format
 
   void fsub(int i);
   void fsub_d(Address src);
@@ -1348,6 +1340,11 @@ private:
   void fldl2e();
 #endif // !_LP64
 
+  // operands that only take the original 32bit registers
+  void emit_operand32(Register reg, Address adr);
+
+  void fld_x(Address adr);  // extended-precision (80-bit) format
+  void fstp_x(Address adr); // extended-precision (80-bit) format
   void fxrstor(Address src);
   void xrstor(Address src);
 
@@ -1442,41 +1439,7 @@ private:
   };
 
   // Serializes memory and blows flags
-  void membar(Membar_mask_bits order_constraint) {
-    // We only have to handle StoreLoad
-    if (order_constraint & StoreLoad) {
-      // All usable chips support "locked" instructions which suffice
-      // as barriers, and are much faster than the alternative of
-      // using cpuid instruction. We use here a locked add [esp-C],0.
-      // This is conveniently otherwise a no-op except for blowing
-      // flags, and introducing a false dependency on target memory
-      // location. We can't do anything with flags, but we can avoid
-      // memory dependencies in the current method by locked-adding
-      // somewhere else on the stack. Doing [esp+C] will collide with
-      // something on stack in current method, hence we go for [esp-C].
-      // It is convenient since it is almost always in data cache, for
-      // any small C.  We need to step back from SP to avoid data
-      // dependencies with other things on below SP (callee-saves, for
-      // example). Without a clear way to figure out the minimal safe
-      // distance from SP, it makes sense to step back the complete
-      // cache line, as this will also avoid possible second-order effects
-      // with locked ops against the cache line. Our choice of offset
-      // is bounded by x86 operand encoding, which should stay within
-      // [-128; +127] to have the 8-byte displacement encoding.
-      //
-      // Any change to this code may need to revisit other places in
-      // the code where this idiom is used, in particular the
-      // orderAccess code.
-
-      int offset = -VM_Version::L1_line_size();
-      if (offset < -128) {
-        offset = -128;
-      }
-
-      lock();
-      addl(Address(rsp, offset), 0);// Assert the lock# signal here
-    }
-  }
+  void membar(Membar_mask_bits order_constraint);
 
   void mfence();
   void sfence();
@@ -1544,6 +1507,7 @@ private:
   void evmovdqub(XMMRegister dst, Address src, bool merge, int vector_len);
   void evmovdqub(XMMRegister dst, XMMRegister src, bool merge, int vector_len);
   void evmovdqub(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+  void evmovdqub(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(Address dst, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(XMMRegister dst, Address src, bool merge, int vector_len);
@@ -1560,10 +1524,6 @@ private:
   void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
-
-  // Generic move instructions.
-  void evmovdqu(Address dst, KRegister mask, XMMRegister src, int vector_len, int type);
-  void evmovdqu(XMMRegister dst, KRegister mask, Address src, int vector_len, int type);
 
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);
@@ -2132,6 +2092,7 @@ private:
   void shlxq(Register dst, Register src1, Register src2);
   void shrxq(Register dst, Register src1, Register src2);
 
+  void bzhiq(Register dst, Register src1, Register src2);
 
   //====================VECTOR ARITHMETIC=====================================
   void evpmovd2m(KRegister kdst, XMMRegister src, int vector_len);
@@ -2623,12 +2584,7 @@ public:
   void set_current_assembler(Assembler *current_assembler) { _current_assembler = current_assembler; }
 
   // Address modifiers used for compressed displacement calculation
-  void set_address_attributes(int tuple_type, int input_size_in_bits) {
-    if (VM_Version::supports_evex()) {
-      _tuple_type = tuple_type;
-      _input_size_in_bits = input_size_in_bits;
-    }
-  }
+  void set_address_attributes(int tuple_type, int input_size_in_bits);
 
   // Set embedded opmask register specifier.
   void set_embedded_opmask_register_specifier(KRegister mask) {

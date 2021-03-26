@@ -24,8 +24,6 @@
  */
 package jdk.internal.module;
 
-import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
@@ -33,7 +31,7 @@ import jdk.internal.misc.CDS;
 
 /**
  * Used by ModuleBootstrap for archiving the configuration for the boot layer,
- * the system module finder, and the maps used to create the IllegalAccessLogger.
+ * and the system module finder.
  */
 class ArchivedModuleGraph {
     private static ArchivedModuleGraph archivedModuleGraph;
@@ -43,23 +41,17 @@ class ArchivedModuleGraph {
     private final ModuleFinder finder;
     private final Configuration configuration;
     private final Function<String, ClassLoader> classLoaderFunction;
-    private final Map<String, Set<String>> concealedPackagesToOpen;
-    private final Map<String, Set<String>> exportedPackagesToOpen;
 
     private ArchivedModuleGraph(boolean hasSplitPackages,
                                 boolean hasIncubatorModules,
                                 ModuleFinder finder,
                                 Configuration configuration,
-                                Function<String, ClassLoader> classLoaderFunction,
-                                Map<String, Set<String>> concealedPackagesToOpen,
-                                Map<String, Set<String>> exportedPackagesToOpen) {
+                                Function<String, ClassLoader> classLoaderFunction) {
         this.hasSplitPackages = hasSplitPackages;
         this.hasIncubatorModules = hasIncubatorModules;
         this.finder = finder;
         this.configuration = configuration;
         this.classLoaderFunction = classLoaderFunction;
-        this.concealedPackagesToOpen = concealedPackagesToOpen;
-        this.exportedPackagesToOpen = exportedPackagesToOpen;
     }
 
     ModuleFinder finder() {
@@ -72,14 +64,6 @@ class ArchivedModuleGraph {
 
     Function<String, ClassLoader> classLoaderFunction() {
         return classLoaderFunction;
-    }
-
-    Map<String, Set<String>> concealedPackagesToOpen() {
-        return concealedPackagesToOpen;
-    }
-
-    Map<String, Set<String>> exportedPackagesToOpen() {
-        return exportedPackagesToOpen;
     }
 
     boolean hasSplitPackages() {
@@ -110,16 +94,12 @@ class ArchivedModuleGraph {
                         boolean hasIncubatorModules,
                         ModuleFinder finder,
                         Configuration configuration,
-                        Function<String, ClassLoader> classLoaderFunction,
-                        Map<String, Set<String>> concealedPackagesToOpen,
-                        Map<String, Set<String>> exportedPackagesToOpen) {
+                        Function<String, ClassLoader> classLoaderFunction) {
         archivedModuleGraph = new ArchivedModuleGraph(hasSplitPackages,
                                                       hasIncubatorModules,
                                                       finder,
                                                       configuration,
-                                                      classLoaderFunction,
-                                                      concealedPackagesToOpen,
-                                                      exportedPackagesToOpen);
+                                                      classLoaderFunction);
     }
 
     static {

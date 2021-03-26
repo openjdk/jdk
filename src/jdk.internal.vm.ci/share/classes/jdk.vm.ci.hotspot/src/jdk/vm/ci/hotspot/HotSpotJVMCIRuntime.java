@@ -35,6 +35,8 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Formatter;
@@ -45,6 +47,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Predicate;
 
+import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompilationRequestResult;
@@ -63,7 +66,6 @@ import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 import jdk.vm.ci.services.JVMCIServiceLocator;
-import jdk.vm.ci.services.Services;
 
 /**
  * HotSpot implementation of a JVMCI runtime.
@@ -379,8 +381,10 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         /**
          * Parses all system properties starting with {@value #JVMCI_OPTION_PROPERTY_PREFIX} and
          * initializes the options based on their values.
+         *
+         * @param runtime
          */
-        static void parse() {
+        static void parse(HotSpotJVMCIRuntime runtime) {
             Map<String, String> savedProps = jdk.vm.ci.services.Services.getSavedProperties();
             for (Map.Entry<String, String> e : savedProps.entrySet()) {
                 String name = e.getKey();
@@ -395,14 +399,15 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                             }
                         }
                         Formatter msg = new Formatter();
-                        msg.format("Could not find option %s", name);
+                        msg.format("Error parsing JVMCI options: Could not find option %s", name);
                         if (!matches.isEmpty()) {
                             msg.format("%nDid you mean one of the following?");
                             for (String match : matches) {
                                 msg.format("%n    %s=<value>", match);
                             }
                         }
-                        throw new IllegalArgumentException(msg.toString());
+                        msg.format("%nError: A fatal exception has occurred. Program will exit.%n");
+                        runtime.exitHotSpotWithMessage(1, msg.toString());
                     } else if (value instanceof Option) {
                         Option option = (Option) value;
                         option.init(e.getValue());
@@ -531,7 +536,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
 
         // Initialize the Option values.
-        Option.parse();
+        Option.parse(this);
 
         String hostArchitecture = config.getHostArchitectureName();
 
@@ -544,7 +549,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             hostBackend = registerBackend(factory.createJVMCIBackend(this, null));
         }
 
-        compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory();
+        compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory(this);
         if (compilerFactory instanceof HotSpotJVMCICompilerFactory) {
             hsCompilerFactory = (HotSpotJVMCICompilerFactory) compilerFactory;
             if (hsCompilerFactory.getCompilationLevelAdjustment() != None) {
@@ -567,7 +572,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
 
         if (Option.PrintConfig.getBoolean()) {
-            configStore.printConfig();
+            configStore.printConfig(this);
         }
     }
 
@@ -710,6 +715,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         public CompilationRequestResult compileMethod(CompilationRequest request) {
             throw t;
         }
+
+        @Override
+        public boolean isGCSupported(int gcIdentifier) {
+            return false;
+        }
     }
 
     @Override
@@ -812,6 +822,12 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return hsResult;
     }
 
+    @SuppressWarnings("try")
+    @VMEntryPoint
+    private boolean isGCSupported(int gcIdentifier) {
+        return getCompiler().isGCSupported(gcIdentifier);
+    }
+
     /**
      * Guard to ensure shut down actions are performed at most once.
      */
@@ -871,7 +887,46 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * @throws IndexOutOfBoundsException if copying would cause access of data outside array bounds
      */
     public int writeDebugOutput(byte[] bytes, int offset, int length, boolean flush, boolean canThrow) {
-        return compilerToVm.writeDebugOutput(bytes, offset, length, flush, canThrow);
+        return writeDebugOutput0(compilerToVm, bytes, offset, length, flush, canThrow);
+    }
+
+    /**
+     * @see #writeDebugOutput
+     */
+    static int writeDebugOutput0(CompilerToVM vm, byte[] bytes, int offset, int length, boolean flush, boolean canThrow) {
+        if (bytes == null) {
+            if (!canThrow) {
+                return -1;
+            }
+            throw new NullPointerException();
+        }
+        if (offset < 0 || length < 0 || offset + length > bytes.length) {
+            if (!canThrow) {
+                return -2;
+            }
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        if (length <= 8) {
+            ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
+            if (length != 8) {
+                ByteBuffer buffer8 = ByteBuffer.allocate(8);
+                buffer8.put(buffer);
+                buffer8.position(8);
+                buffer = buffer8;
+            }
+            buffer.order(ByteOrder.nativeOrder());
+            vm.writeDebugOutput(buffer.getLong(0), length, flush);
+        } else {
+            Unsafe unsafe = UnsafeAccess.UNSAFE;
+            long buffer = unsafe.allocateMemory(length);
+            try {
+                unsafe.copyMemory(bytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, buffer, length);
+                vm.writeDebugOutput(buffer, length, flush);
+            } finally {
+                unsafe.freeMemory(buffer);
+            }
+        }
+        return 0;
     }
 
     /**
@@ -889,7 +944,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                 } else if (len == 0) {
                     return;
                 }
-                compilerToVm.writeDebugOutput(b, off, len, false, true);
+                writeDebugOutput(b, off, len, false, true);
             }
 
             @Override
@@ -1156,12 +1211,12 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Informs HotSpot that no method whose module is in {@code modules} is to be compiled
-     * with {@link #compileMethod}.
+     * Informs HotSpot that no method whose module is in {@code modules} is to be compiled with
+     * {@link #compileMethod}.
      *
      * @param modules the set of modules containing JVMCI compiler classes
      */
-    public void excludeFromJVMCICompilation(Module...modules) {
+    public void excludeFromJVMCICompilation(Module... modules) {
         this.excludeFromJVMCICompilation = modules.clone();
     }
 
@@ -1173,5 +1228,16 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             System.exit(status);
         }
         compilerToVm.callSystemExit(status);
+    }
+
+    /**
+     * Writes a message to HotSpot's log stream and then calls {@link System#exit(int)} in HotSpot's
+     * runtime.
+     */
+    JVMCIError exitHotSpotWithMessage(int status, String format, Object... args) {
+        byte[] messageBytes = String.format(format, args).getBytes();
+        writeDebugOutput(messageBytes, 0, messageBytes.length, true, true);
+        exitHotSpot(status);
+        throw JVMCIError.shouldNotReachHere();
     }
 }

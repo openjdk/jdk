@@ -398,7 +398,7 @@ public final class RequestPublishers {
 //            return error;
 //        }
 
-        private int read() {
+        private int read() throws IOException {
             if (eof)
                 return -1;
             nextBuffer = bufSupplier.get();
@@ -406,30 +406,46 @@ public final class RequestPublishers {
             byte[] buf = nextBuffer.array();
             int offset = nextBuffer.arrayOffset();
             int cap = nextBuffer.capacity();
-            try {
-                int n = is.read(buf, offset, cap);
-                if (n == -1) {
-                    eof = true;
-                    is.close();
-                    return -1;
-                }
-                //flip
-                nextBuffer.limit(n);
-                nextBuffer.position(0);
-                return n;
-            } catch (IOException ex) {
+            int n = is.read(buf, offset, cap);
+            if (n == -1) {
+                eof = true;
                 return -1;
+            }
+            //flip
+            nextBuffer.limit(n);
+            nextBuffer.position(0);
+            return n;
+        }
+
+        /**
+         * Close stream in this instance.
+         * UncheckedIOException may be thrown if IOE happens at InputStream::close.
+         */
+        private void closeStream() {
+            try {
+                is.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         }
 
         @Override
         public synchronized boolean hasNext() {
             if (need2Read) {
-                haveNext = read() != -1;
-                if (haveNext) {
+                try {
+                    haveNext = read() != -1;
+                    if (haveNext) {
+                        need2Read = false;
+                    }
+                } catch (IOException e) {
+                    haveNext = false;
                     need2Read = false;
+                    throw new UncheckedIOException(e);
+                } finally {
+                    if (!haveNext) {
+                        closeStream();
+                    }
                 }
-                return haveNext;
             }
             return haveNext;
         }

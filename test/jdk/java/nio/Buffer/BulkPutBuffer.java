@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8245121
+ * @bug 8219014 8245121
  * @summary Ensure that a bulk put of a buffer into another is correct.
  * @compile --enable-preview -source ${jdk.version} BulkPutBuffer.java
  * @run testng/othervm --enable-preview BulkPutBuffer
@@ -142,9 +142,11 @@ public class BulkPutBuffer {
         MethodHandle alloc;
         MethodHandle allocBB;
         MethodHandle allocDirect;
+        MethodHandle asReadOnlyBuffer;
         MethodHandle asTypeBuffer;
         MethodHandle putAbs;
         MethodHandle getAbs;
+        MethodHandle putBufAbs;
         MethodHandle putBufRel;
         MethodHandle equals;
 
@@ -168,6 +170,9 @@ public class BulkPutBuffer {
                     MethodType.methodType(ByteBuffer.class, int.class));
                 allocDirect = lookup.findStatic(ByteBuffer.class, "allocateDirect",
                     MethodType.methodType(ByteBuffer.class, int.class));
+
+                asReadOnlyBuffer = lookup.findVirtual(bufferType,
+                        "asReadOnlyBuffer", MethodType.methodType(bufferType));
                 if (elementType != byte.class) {
                     asTypeBuffer = lookup.findVirtual(ByteBuffer.class,
                         "as" + name + "Buffer", MethodType.methodType(bufferType));
@@ -177,8 +182,13 @@ public class BulkPutBuffer {
                     MethodType.methodType(bufferType, int.class, elementType));
                 getAbs = lookup.findVirtual(bufferType, "get",
                     MethodType.methodType(elementType, int.class));
+
+                putBufAbs = lookup.findVirtual(bufferType, "put",
+                    MethodType.methodType(bufferType, int.class, bufferType,
+                        int.class, int.class));
                 putBufRel = lookup.findVirtual(bufferType, "put",
                     MethodType.methodType(bufferType, bufferType));
+
                 equals = lookup.findVirtual(bufferType, "equals",
                     MethodType.methodType(boolean.class, Object.class));
 
@@ -232,6 +242,25 @@ public class BulkPutBuffer {
                 for (int i = 0; i < length; i++) {
                     putAbs.invoke(dst, dstOff + i, getAbs.invoke(src, srcOff + i));
                 }
+            } catch (ReadOnlyBufferException ro) {
+                throw ro;
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        Buffer asReadOnlyBuffer(Buffer buf) throws Throwable {
+            try {
+                return (Buffer)asReadOnlyBuffer.invoke(buf);
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        void put(Buffer src, int srcOff, Buffer dst, int dstOff, int length)
+            throws Throwable {
+            try {
+                putBufAbs.invoke(dst, dstOff, src, srcOff, length);
             } catch (ReadOnlyBufferException ro) {
                 throw ro;
             } catch (Exception e) {
@@ -294,6 +323,40 @@ public class BulkPutBuffer {
         return args.toArray(Object[][]::new);
     }
 
+    private static void expectThrows(Class<?> exClass, Assert.ThrowingRunnable r) {
+        try {
+            r.run();
+        } catch(Throwable e) {
+            if (e.getClass() != exClass && e.getCause().getClass() != exClass) {
+                throw new RuntimeException("Expected " + exClass +
+                "; got " + e.getCause().getClass(), e);
+            }
+        }
+    }
+
+    @Test(dataProvider = "proxies")
+    public static void testExceptions(BufferProxy bp) throws Throwable {
+        int cap = 27;
+        Buffer buf = bp.create(cap);
+
+        expectThrows(IndexOutOfBoundsException.class,
+            () -> bp.put(buf, -1, buf, 0, 1));
+        expectThrows(IndexOutOfBoundsException.class,
+            () -> bp.put(buf, 0, buf, -1, 1));
+        expectThrows(IndexOutOfBoundsException.class,
+            () -> bp.put(buf, 1, buf, 0, cap));
+        expectThrows(IndexOutOfBoundsException.class,
+            () -> bp.put(buf, 0, buf, 1, cap));
+        expectThrows(IndexOutOfBoundsException.class,
+            () -> bp.put(buf, 0, buf, 0, cap + 1));
+        expectThrows(IndexOutOfBoundsException.class,
+            () -> bp.put(buf, 0, buf, 0, Integer.MAX_VALUE));
+
+        Buffer rob = buf.isReadOnly() ? buf : bp.asReadOnlyBuffer(buf);
+        expectThrows(ReadOnlyBufferException.class,
+            () -> bp.put(buf, 0, rob, 0, cap));
+    }
+
     @Test(dataProvider = "proxies")
     public static void testSelf(BufferProxy bp) throws Throwable {
         for (int i = 0; i < ITERATIONS; i++) {
@@ -311,21 +374,26 @@ public class BulkPutBuffer {
                 Assert.expectThrows(ReadOnlyBufferException.class,
                     () -> bp.copy(lower, 0, lowerCopy, 0, lowerLength));
                 break;
-            } else {
-                bp.copy(lower, 0, lowerCopy, 0, lowerLength);
             }
+            bp.copy(lower, 0, lowerCopy, 0, lowerLength);
 
             int middleOffset = RND.nextInt(1 + cap/2);
             Buffer middle = buf.slice(middleOffset, lowerLength);
+            Buffer middleCopy = bp.create(lowerLength);
+            bp.copy(middle, 0, middleCopy, 0, lowerLength);
 
-            if (middle.isReadOnly()) {
-                Assert.expectThrows(ReadOnlyBufferException.class,
-                    () -> bp.put(lower, middle));
-                break;
-            } else {
-                bp.put(lower, middle);
-            }
+            bp.put(lower, middle);
             middle.flip();
+
+            Assert.assertTrue(bp.equals(lowerCopy, middle),
+                String.format("%d %s %d %d %d %d%n", SEED,
+                    buf.getClass().getName(), cap,
+                    lowerOffset, lowerLength, middleOffset));
+
+            bp.copy(lowerCopy, 0, buf, lowerOffset, lowerLength);
+            bp.copy(middleCopy, 0, buf, middleOffset, lowerLength);
+
+            bp.put(buf, lowerOffset, buf, middleOffset, lowerLength);
 
             Assert.assertTrue(bp.equals(lowerCopy, middle),
                 String.format("%d %s %d %d %d %d%n", SEED,
@@ -361,12 +429,28 @@ public class BulkPutBuffer {
                 Assert.expectThrows(ReadOnlyBufferException.class,
                     () -> bp.put(src, buf));
                 break;
-            } else {
-                bp.put(src, buf);
             }
+
+            Buffer backup = bp.create(slim - spos);
+            bp.copy(buf, pos, backup, 0, backup.capacity());
+            bp.put(src, buf);
 
             buf.reset();
             src.reset();
+
+            Assert.assertTrue(bp.equals(src, buf),
+                String.format("%d %s %d %d %d %s %d %d %d%n", SEED,
+                    buf.getClass().getName(), cap, pos, lim,
+                    src.getClass().getName(), scap, spos, slim));
+
+            src.clear();
+            buf.clear();
+            bp.copy(backup, 0, buf, pos, backup.capacity());
+            bp.put(src, spos, buf, pos, backup.capacity());
+            src.position(spos);
+            src.limit(slim);
+            buf.position(pos);
+            buf.limit(lim);
 
             Assert.assertTrue(bp.equals(src, buf),
                 String.format("%d %s %d %d %d %s %d %d %d%n", SEED,

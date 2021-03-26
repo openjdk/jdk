@@ -47,7 +47,6 @@ public:
 
   void set_boost(bool boost);
 
-  void run_serial(ZTask* task);
   void run_parallel(ZTask* task);
   void run_concurrent(ZTask* task);
 

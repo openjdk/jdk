@@ -52,8 +52,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
 import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
@@ -70,6 +68,7 @@ import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -200,7 +199,7 @@ class TaskFactory {
             allOptions.addAll(state.extraCompilerOptions);
             Iterable<? extends JavaFileObject> compilationUnits = inputs
                             .map(in -> sh.sourceToFileObject(fileManager, in))
-                            .collect(Collectors.toList());
+                            .toList();
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
             state.debug(DBG_FMGR, "Task (%s %s) Options: %s\n", this, compilationUnits, allOptions);
             return javacTaskPool.getTask(null, fileManager, diagnostics, allOptions, null,
@@ -215,11 +214,13 @@ class TaskFactory {
                      //additional cleanup: purge the REPL package:
                      Symtab syms = Symtab.instance(context);
                      Names names = Names.instance(context);
-                     PackageSymbol repl = syms.getPackage(syms.unnamedModule, names.fromString(Util.REPL_PACKAGE));
+                     ModuleSymbol replModule = syms.java_base == syms.noModule ? syms.noModule
+                                                                               : syms.unnamedModule;
+                     PackageSymbol repl = syms.getPackage(replModule, names.fromString(Util.REPL_PACKAGE));
                      if (repl != null) {
                          for (ClassSymbol clazz : syms.getAllClasses()) {
                              if (clazz.packge() == repl) {
-                                 syms.removeClass(syms.unnamedModule, clazz.flatName());
+                                 syms.removeClass(replModule, clazz.flatName());
                              }
                          }
                          repl.members_field = null;
@@ -348,7 +349,7 @@ class TaskFactory {
                         List<? extends ImportTree> imps = cut.getImports();
                         return (!imps.isEmpty() ? imps : cut.getTypeDecls()).stream();
                     })
-                    .collect(toList());
+                    .toList();
         }
 
         private Iterable<? extends CompilationUnitTree> parse() {

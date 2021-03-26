@@ -50,6 +50,9 @@ HB_BEGIN_DECLS
 /**
  * hb_ot_math_constant_t:
  *
+ * The 'MATH' table constants specified at
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/math
+ *
  * Since: 1.3.3
  */
 typedef enum {
@@ -114,6 +117,9 @@ typedef enum {
 /**
  * hb_ot_math_kern_t:
  *
+ * The math kerning-table types defined for the four corners
+ * of a glyph.
+ *
  * Since: 1.3.3
  */
 typedef enum {
@@ -125,6 +131,10 @@ typedef enum {
 
 /**
  * hb_ot_math_glyph_variant_t:
+ * @glyph: The glyph index of the variant
+ * @advance: The advance width of the variant
+ *
+ * Data type to hold math-variant information for a glyph.
  *
  * Since: 1.3.3
  */
@@ -136,14 +146,25 @@ typedef struct hb_ot_math_glyph_variant_t {
 /**
  * hb_ot_math_glyph_part_flags_t:
  *
+ * Flags for math glyph parts.
+ *
  * Since: 1.3.3
  */
 typedef enum { /*< flags >*/
-  HB_MATH_GLYPH_PART_FLAG_EXTENDER      = 0x00000001u  /* Extender glyph */
+  HB_OT_MATH_GLYPH_PART_FLAG_EXTENDER   = 0x00000001u  /* Extender glyph */
 } hb_ot_math_glyph_part_flags_t;
 
 /**
  * hb_ot_math_glyph_part_t:
+ * @glyph: The glyph index of the variant part
+ * @start_connector_length: The length of the connector on the starting side of the variant part
+ * @end_connector_length: The length of the connector on the ending side of the variant part
+ * @full_advance: The total advance of the part
+ * @flags: #hb_ot_math_glyph_part_flags_t flags for the part
+ *
+ * Data type to hold information for a "part" component of a math-variant glyph.
+ * Large variants for stretchable math glyphs (such as parentheses) can be constructed
+ * on the fly from parts.
  *
  * Since: 1.3.3
  */

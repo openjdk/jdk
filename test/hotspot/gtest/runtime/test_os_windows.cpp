@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
+#include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
 namespace {
@@ -51,7 +52,7 @@ namespace {
 // that is reported is when the test tries to allocate at a particular location but gets a
 // different valid one. A NULL return value at this point is not considered an error but may
 // be legitimate.
-TEST_VM(os_windows, reserve_memory_special) {
+void TestReserveMemorySpecial_test() {
   if (!UseLargePages) {
     return;
   }
@@ -135,8 +136,20 @@ static void create_rel_directory_w(const wchar_t* path) {
 static void delete_empty_rel_directory_w(const wchar_t* path) {
   WITH_ABS_PATH(path);
   EXPECT_TRUE(file_exists_w(abs_path)) << "Can't delete directory: \"" << path << "\" does not exists";
-  BOOL result = RemoveDirectoryW(abs_path);
-  EXPECT_TRUE(result) << "Failed to delete directory \"" << path << "\": " << GetLastError();
+  const int retry_count = 20;
+
+  // If the directory cannot be deleted directly, a file in it might be kept
+  // open by a virus scanner. Try a few times, since this should be temporary.
+  for (int i = 0; i <= retry_count; ++i) {
+    BOOL result = RemoveDirectoryW(abs_path);
+
+    if (!result && (i < retry_count)) {
+      Sleep(1);
+    } else {
+      EXPECT_TRUE(result) << "Failed to delete directory \"" << path << "\": " << GetLastError();
+      return;
+    }
+  }
 }
 
 static void create_rel_file_w(const wchar_t* path) {
@@ -674,6 +687,23 @@ TEST_VM(os_windows, handle_long_paths) {
   delete_empty_rel_directory_w(empty_dir_rel_path);
   delete_empty_rel_directory_w(long_rel_path);
   delete_empty_rel_directory_w(nearly_long_rel_path);
+}
+
+TEST_VM(os_windows, reserve_memory_special) {
+  TestReserveMemorySpecial_test();
+}
+
+class ReserveMemorySpecialRunnable : public TestRunnable {
+public:
+  void runUnitTest() const {
+    TestReserveMemorySpecial_test();
+  }
+};
+
+TEST_VM(os_windows, reserve_memory_special_concurrent) {
+  ReserveMemorySpecialRunnable runnable;
+  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
+  testRunner.run();
 }
 
 #endif

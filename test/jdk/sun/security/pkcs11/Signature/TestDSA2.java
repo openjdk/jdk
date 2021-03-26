@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8080462
+ * @bug 8080462 8242332
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm/timeout=250 TestDSA2
@@ -40,8 +40,12 @@ public class TestDSA2 extends PKCS11Test {
     private static final String[] SIG_ALGOS = {
         "SHA224withDSA",
         "SHA256withDSA",
-        //"SHA384withDSA",
-        //"SHA512withDSA",
+        "SHA3-224withDSA",
+        "SHA3-256withDSA",
+        "SHA384withDSA",
+        "SHA512withDSA",
+        "SHA3-384withDSA",
+        "SHA3-512withDSA",
     };
 
     private static final int KEYSIZE = 2048;
@@ -59,25 +63,33 @@ public class TestDSA2 extends PKCS11Test {
             kp = kpg.generateKeyPair();
         } catch (Exception ex) {
             System.out.println("Skip due to no 2048-bit DSA support: " + ex);
-            ex.printStackTrace();
             return;
         }
 
+        boolean allPass = true;
         for (String sigAlg : SIG_ALGOS) {
-            test(sigAlg, kp, p);
+            System.out.println("Testing " + sigAlg);
+            try {
+                Signature sig = Signature.getInstance(sigAlg, p);
+                test(sig, kp, p);
+            } catch (NoSuchAlgorithmException nsae) {
+                System.out.println("=>Skip due to no support");
+            } catch (Exception ex) {
+                System.out.println("Unexpected exception when testing " +
+                    sigAlg);
+                ex.printStackTrace();
+                allPass = false;
+            }
+        }
+        if (allPass) {
+            System.out.println("Tests Passed");
+        } else {
+            throw new RuntimeException("One or more tests failed");
         }
     }
 
-    private static void test(String sigAlg, KeyPair kp, Provider p)
+    private static void test(Signature sig, KeyPair kp, Provider p)
             throws Exception {
-        Signature sig;
-        try {
-            sig = Signature.getInstance(sigAlg, p);
-        } catch (Exception ex) {
-            System.out.println("Skip due to no support: " + sigAlg);
-            ex.printStackTrace();
-            return;
-        }
 
         byte[] data = "anything will do".getBytes();
 
@@ -85,9 +97,10 @@ public class TestDSA2 extends PKCS11Test {
         sig.update(data);
         byte[] signature = sig.sign();
 
-        sig.initVerify(kp.getPublic());
-        sig.update(data);
-        boolean verifies = sig.verify(signature);
-        System.out.println(sigAlg + ": Passed");
+        Signature sigV = Signature.getInstance(sig.getAlgorithm() , p);
+        sigV.initVerify(kp.getPublic());
+        sigV.update(data);
+        boolean verifies = sigV.verify(signature);
+        System.out.println("=> Passed");
     }
 }

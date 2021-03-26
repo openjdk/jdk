@@ -95,6 +95,9 @@ void VM_Version::initialize() {
     SoftwarePrefetchHintDistance &= ~7;
   }
 
+  if (FLAG_IS_DEFAULT(ContendedPaddingWidth) && (dcache_line > ContendedPaddingWidth)) {
+      ContendedPaddingWidth = dcache_line;
+  }
 
   if (os::supports_map_sync()) {
     // if dcpop is available publish data cache line flush size via
@@ -174,6 +177,13 @@ void VM_Version::initialize() {
     }
   }
 
+  // Neoverse N1
+  if (_cpu == CPU_ARM && (_model == 0xd0c || _model2 == 0xd0c)) {
+    if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
+      FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
+    }
+  }
+
   if (_cpu == CPU_ARM) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
@@ -181,10 +191,6 @@ void VM_Version::initialize() {
   }
 
   if (_cpu == CPU_ARM && (_model == 0xd07 || _model2 == 0xd07)) _features |= CPU_STXR_PREFETCH;
-  // If an olde style /proc/cpuinfo (cores == 1) then if _model is an A57 (0xd07)
-  // we assume the worst and assume we could be on a big little system and have
-  // undisclosed A53 cores which we could be swapped to at any stage
-  if (_cpu == CPU_ARM && os::processor_count() == 1 && _model == 0xd07) _features |= CPU_A53MAC;
 
   char buf[512];
   sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
@@ -334,6 +340,10 @@ void VM_Version::initialize() {
   } else if (UseGHASHIntrinsics) {
     warning("GHASH intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
+  if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+    UseBASE64Intrinsics = true;
   }
 
   if (is_zva_enabled()) {

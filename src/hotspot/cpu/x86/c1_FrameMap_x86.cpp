@@ -299,7 +299,7 @@ void FrameMap::initialize() {
 
   VMRegPair regs;
   BasicType sig_bt = T_OBJECT;
-  SharedRuntime::java_calling_convention(&sig_bt, &regs, 1, true);
+  SharedRuntime::java_calling_convention(&sig_bt, &regs, 1);
   receiver_opr = as_oop_opr(regs.first()->as_Register());
 
 }

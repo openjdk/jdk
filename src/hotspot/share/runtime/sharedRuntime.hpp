@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_SHAREDRUNTIME_HPP
 #define SHARE_RUNTIME_SHAREDRUNTIME_HPP
 
+#include "code/codeBlob.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -77,7 +78,7 @@ class SharedRuntime: AllStatic {
 
 #ifndef PRODUCT
   // Counters
-  static int     _nof_megamorphic_calls;         // total # of megamorphic calls (through vtable)
+  static int64_t _nof_megamorphic_calls;         // total # of megamorphic calls (through vtable)
 #endif // !PRODUCT
 
  private:
@@ -342,7 +343,7 @@ class SharedRuntime: AllStatic {
 
   static void monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
 
-  static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
+  static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
  private:
   static Handle find_callee_info(JavaThread* thread,
@@ -368,11 +369,9 @@ class SharedRuntime: AllStatic {
   // registers, those above refer to 4-byte stack slots.  All stack slots are
   // based off of the window top.  SharedInfo::stack0 refers to the first usable
   // slot in the bottom of the frame. SharedInfo::stack0+1 refers to the memory word
-  // 4-bytes higher. So for sparc because the register window save area is at
-  // the bottom of the frame the first 16 words will be skipped and SharedInfo::stack0
-  // will be just above it. (
+  // 4-bytes higher.
   // return value is the maximum number of VMReg stack slots the convention will use.
-  static int java_calling_convention(const BasicType* sig_bt, VMRegPair* regs, int total_args_passed, int is_outgoing);
+  static int java_calling_convention(const BasicType* sig_bt, VMRegPair* regs, int total_args_passed);
 
   static void check_member_name_argument_is_last_argument(const methodHandle& method,
                                                           const BasicType* sig_bt,
@@ -390,8 +389,6 @@ class SharedRuntime: AllStatic {
                                   int total_args_passed);
 
   static size_t trampoline_size();
-
-  static void generate_trampoline(MacroAssembler *masm, address destination);
 
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
   // blobs. Unlike adapters in the tiger and earlier releases the code in these
@@ -461,6 +458,11 @@ class SharedRuntime: AllStatic {
   // when an interrupt occurs.
   static uint out_preserve_stack_slots();
 
+  // Stack slots that may be unused by the calling convention but must
+  // otherwise be preserved.  On Intel this includes the return address.
+  // On PowerPC it includes the 4 words holding the old TOC & LR glue.
+  static uint in_preserve_stack_slots();
+
   // Is vector's size (in bytes) bigger than a size saved by default?
   // For example, on x86 16 bytes XMM registers are saved by default.
   static bool is_wide_vector(int size);
@@ -513,6 +515,13 @@ class SharedRuntime: AllStatic {
 
   static address handle_unsafe_access(JavaThread* thread, address next_pc);
 
+#ifdef COMPILER2
+  static RuntimeStub* make_native_invoker(address call_target,
+                                          int shadow_space_bytes,
+                                          const GrowableArray<VMReg>& input_registers,
+                                          const GrowableArray<VMReg>& output_registers);
+#endif
+
 #ifndef PRODUCT
 
   // Collect and print inline cache miss statistics
@@ -556,18 +565,16 @@ class SharedRuntime: AllStatic {
 
   // Statistics code
   // stats for "normal" compiled calls (non-interface)
-  static int     _nof_normal_calls;              // total # of calls
-  static int     _nof_optimized_calls;           // total # of statically-bound calls
-  static int     _nof_inlined_calls;             // total # of inlined normal calls
-  static int     _nof_static_calls;              // total # of calls to static methods or super methods (invokespecial)
-  static int     _nof_inlined_static_calls;      // total # of inlined static calls
+  static int64_t _nof_normal_calls;               // total # of calls
+  static int64_t _nof_optimized_calls;            // total # of statically-bound calls
+  static int64_t _nof_inlined_calls;              // total # of inlined normal calls
+  static int64_t _nof_static_calls;               // total # of calls to static methods or super methods (invokespecial)
+  static int64_t _nof_inlined_static_calls;       // total # of inlined static calls
   // stats for compiled interface calls
-  static int     _nof_interface_calls;           // total # of compiled calls
-  static int     _nof_optimized_interface_calls; // total # of statically-bound interface calls
-  static int     _nof_inlined_interface_calls;   // total # of inlined interface calls
-  static int     _nof_megamorphic_interface_calls;// total # of megamorphic interface calls
-  // stats for runtime exceptions
-  static int     _nof_removable_exceptions;      // total # of exceptions that could be replaced by branches due to inlining
+  static int64_t _nof_interface_calls;            // total # of compiled calls
+  static int64_t _nof_optimized_interface_calls;  // total # of statically-bound interface calls
+  static int64_t _nof_inlined_interface_calls;    // total # of inlined interface calls
+  static int64_t _nof_megamorphic_interface_calls;// total # of megamorphic interface calls
 
  public: // for compiler
   static address nof_normal_calls_addr()                { return (address)&_nof_normal_calls; }
@@ -579,7 +586,7 @@ class SharedRuntime: AllStatic {
   static address nof_optimized_interface_calls_addr()   { return (address)&_nof_optimized_interface_calls; }
   static address nof_inlined_interface_calls_addr()     { return (address)&_nof_inlined_interface_calls; }
   static address nof_megamorphic_interface_calls_addr() { return (address)&_nof_megamorphic_interface_calls; }
-  static void print_call_statistics(int comp_total);
+  static void print_call_statistics(uint64_t comp_total);
   static void print_statistics();
   static void print_ic_miss_histogram();
 
@@ -686,7 +693,6 @@ class AdapterHandlerLibrary: public AllStatic {
   static AdapterHandlerEntry* _abstract_method_handler;
   static BufferBlob* buffer_blob();
   static void initialize();
-  static AdapterHandlerEntry* get_adapter0(const methodHandle& method);
 
  public:
 

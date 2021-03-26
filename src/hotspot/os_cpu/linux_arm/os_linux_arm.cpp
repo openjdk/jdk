@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "assembler_arm.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -108,11 +106,11 @@ char* os::non_memory_address_word() {
 #define ARM_REGS_IN_CONTEXT  16
 
 
-address os::Linux::ucontext_get_pc(const ucontext_t* uc) {
+address os::Posix::ucontext_get_pc(const ucontext_t* uc) {
   return (address)uc->uc_mcontext.arm_pc;
 }
 
-void os::Linux::ucontext_set_pc(ucontext_t* uc, address pc) {
+void os::Posix::ucontext_set_pc(ucontext_t* uc, address pc) {
   uc->uc_mcontext.arm_pc = (uintx)pc;
 }
 
@@ -149,7 +147,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = os::Linux::ucontext_get_pc(uc);
+    epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Linux::ucontext_get_sp(uc);
     if (ret_fp) {
       intptr_t* fp = os::Linux::ucontext_get_fp(uc);
@@ -241,18 +239,9 @@ address check_vfp3_32_fault_instr = NULL;
 address check_simd_fault_instr = NULL;
 address check_mp_ext_fault_instr = NULL;
 
-// Utility functions
 
-extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
-                                       void* ucVoid, int abort_if_unrecognized) {
-  ucontext_t* uc = (ucontext_t*) ucVoid;
-
-  Thread* t = Thread::current_or_null_safe();
-
-  // If crash protection is installed we may longjmp away and no destructors
-  // for objects in this scope will be run.
-  // So don't use any RAII utilities before crash protection is checked.
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
 
   if (sig == SIGILL &&
       ((info->si_addr == (caddr_t)check_simd_fault_instr)
@@ -261,47 +250,9 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
        || info->si_addr == (caddr_t)check_mp_ext_fault_instr)) {
     // skip faulty instruction + instruction that sets return value to
     // success and set return value to failure.
-    os::Linux::ucontext_set_pc(uc, (address)info->si_addr + 8);
+    os::Posix::ucontext_set_pc(uc, (address)info->si_addr + 8);
     uc->uc_mcontext.arm_r0 = 0;
     return true;
-  }
-
-  // Note: it's not uncommon that JNI code uses signal/sigset to install
-  // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
-  // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_linux_signal() might be invoked with junk info/ucVoid. To
-  // avoid unnecessary crash when libjsig is not preloaded, try handle signals
-  // that do not require siginfo/ucontext first.
-
-  if (sig == SIGPIPE || sig == SIGXFSZ) {
-    // allow chained handler to go first
-    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-      return true;
-    } else {
-      // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
-      return true;
-    }
-  }
-
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(ucVoid, info->si_addr)) {
-      return 1;
-    }
-  }
-#endif
-
-  JavaThread* thread = NULL;
-  VMThread* vmthread = NULL;
-  if (PosixSignals::are_signal_handlers_installed()) {
-    if (t != NULL ){
-      if(t->is_Java_thread()) {
-        thread = t->as_Java_thread();
-      }
-      else if(t->is_VM_thread()){
-        vmthread = (VMThread *)t;
-      }
-    }
   }
 
   address stub = NULL;
@@ -309,16 +260,12 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
   bool unsafe_access = false;
 
   if (info != NULL && uc != NULL && thread != NULL) {
-    pc = (address) os::Linux::ucontext_get_pc(uc);
+    pc = (address) os::Posix::ucontext_get_pc(uc);
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {
       address addr = (address) info->si_addr;
 
-      if (StubRoutines::is_safefetch_fault(pc)) {
-        os::Linux::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-        return 1;
-      }
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
@@ -331,7 +278,7 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
             stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
           } else {
             // Thread was in the vm or native code.  Return and try to finish.
-            return 1;
+            return true;
           }
         } else if (overflow_state->in_stack_red_zone(addr)) {
           // Fatal red zone violation.  Disable the guard pages and fall through
@@ -347,7 +294,7 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
              thread->osthread()->set_expanding_stack();
              if (os::Linux::manually_expand_stack(thread, addr)) {
                thread->osthread()->clear_expanding_stack();
-               return 1;
+               return true;
              }
              thread->osthread()->clear_expanding_stack();
           } else {
@@ -436,33 +383,10 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
     // save all thread context in case we need to restore it
     if (thread != NULL) thread->set_saved_exception_pc(pc);
 
-    os::Linux::ucontext_set_pc(uc, stub);
+    os::Posix::ucontext_set_pc(uc, stub);
     return true;
   }
 
-  // signal-chaining
-  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-     return true;
-  }
-
-  if (!abort_if_unrecognized) {
-    // caller wants another chance, so give it to him
-    return false;
-  }
-
-  if (pc == NULL && uc != NULL) {
-    pc = os::Linux::ucontext_get_pc(uc);
-  }
-
-  // unmask current signal
-  sigset_t newset;
-  sigemptyset(&newset);
-  sigaddset(&newset, sig);
-  sigprocmask(SIG_UNBLOCK, &newset, NULL);
-
-  VMError::report_and_die(t, sig, pc, info, ucVoid);
-
-  ShouldNotReachHere();
   return false;
 }
 
@@ -487,10 +411,6 @@ void os::setup_fpu() {
     : /* no output */ : /* no input */ : "r0"
   );
 #endif
-}
-
-bool os::is_allocatable(size_t bytes) {
-  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -534,7 +454,7 @@ void os::print_context(outputStream *st, const void *context) {
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Linux::ucontext_get_pc(uc);
+  address pc = os::Posix::ucontext_get_pc(uc);
   print_instructions(st, pc, Assembler::InstructionSize);
   st->cr();
 }

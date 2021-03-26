@@ -223,39 +223,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="contributed">EEEE d MMMM y G</pattern>
+							<pattern>EEEE d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="contributed">d MMMM, y G</pattern>
+							<pattern>d MMMM, y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern draft="contributed">dd-MMM-y G</pattern>
+							<pattern>dd-MMM-y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern draft="contributed">d/M/y/ GGGGG</pattern>
+							<pattern>d/M/y/ GGGGG</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="GyMMM" draft="contributed">MMM, y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd" draft="contributed">d MMM, y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd" draft="contributed">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="Md" draft="contributed">d/M</dateFormatItem>
-						<dateFormatItem id="MEd" draft="contributed">E, d/M</dateFormatItem>
-						<dateFormatItem id="yyyyM" draft="contributed">M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd" draft="contributed">d/M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd" draft="contributed">E d/M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMM" draft="contributed">MMM, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd" draft="contributed">d MMM, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM" draft="contributed">MMMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM, y G</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -327,6 +327,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
+			<currency type="USD">
+				<symbol>$</symbol>
+			</currency>
 			<currency type="VEF">
 				<displayName draft="contributed">Venezuelan Bolívar</displayName>
 				<displayName count="one" draft="contributed">Venezuelan bolívar</displayName>
@@ -345,35 +348,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<units>
 		<unitLength type="long">
 			<unit type="temperature-generic">
-				<displayName draft="contributed">°</displayName>
-				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="speed-kilometer-per-hour">
-				<unitPattern count="one" draft="contributed">{0} kph</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kph</unitPattern>
+				<unitPattern count="one">{0} kph</unitPattern>
+				<unitPattern count="other">{0} kph</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<displayName draft="contributed">°</displayName>
-				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
-				<perUnitPattern draft="contributed">{0}/cm³</perUnitPattern>
+				<perUnitPattern>{0}/cm³</perUnitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="speed-kilometer-per-hour">
-				<unitPattern count="one" draft="contributed">{0}kph</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}kph</unitPattern>
+				<unitPattern count="one">{0}kph</unitPattern>
+				<unitPattern count="other">{0}kph</unitPattern>
 			</unit>
 		</unitLength>
 	</units>
 	<listPatterns>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="end" draft="contributed">{0}, and {1}</listPatternPart>
+			<listPatternPart type="end">{0}, and {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 </ldml>

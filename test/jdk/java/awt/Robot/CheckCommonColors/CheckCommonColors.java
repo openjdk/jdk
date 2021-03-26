@@ -24,6 +24,8 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -38,7 +40,7 @@ import javax.imageio.ImageIO;
 /**
  * @test
  * @key headful
- * @bug 8215105
+ * @bug 8215105 8211999
  * @summary tests that Robot can capture the common colors without artifacts
  */
 public final class CheckCommonColors {
@@ -48,16 +50,20 @@ public final class CheckCommonColors {
 
     public static void main(final String[] args) throws Exception {
         robot = new Robot();
-        try {
-            test();
-        } finally {
-            frame.dispose();
+        var ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        for (GraphicsDevice gd : ge.getScreenDevices()) {
+            try {
+                test(gd.getDefaultConfiguration().getBounds());
+            } finally {
+                frame.dispose();
+            }
         }
     }
 
-    private static void test() {
+    private static void test(Rectangle screen) {
         frame.setSize(400, 400);
-        frame.setLocationRelativeTo(null);
+        frame.setLocation((int)screen.getCenterX() - 200,
+                          (int)screen.getCenterY() - 200);
         frame.setUndecorated(true);
         for (final Color color : List.of(Color.WHITE, Color.LIGHT_GRAY,
                                          Color.GRAY, Color.DARK_GRAY,
@@ -69,16 +75,25 @@ public final class CheckCommonColors {
             robot.waitForIdle();
             frame.setBackground(color);
             frame.setVisible(true);
-            checkPixels(color);
+            checkPixels(color, true);
+            checkPixels(color, false);
         }
     }
 
-    private static void checkPixels(final Color color) {
+    private static void checkPixels(final Color color, boolean useRect) {
+        System.out.println("color = " + color + ", useRect = " + useRect);
         int attempt = 0;
         while (true) {
             Point p = frame.getLocationOnScreen();
             p.translate(frame.getWidth() / 2, frame.getHeight() / 2);
-            Color pixel = robot.getPixelColor(p.x, p.y);
+            Color pixel;
+            Rectangle rect = new Rectangle(p.x, p.y, 1, 1);
+            if (useRect) {
+                BufferedImage bi = robot.createScreenCapture(rect);
+                pixel = new Color(bi.getRGB(0, 0));
+            } else {
+                pixel = robot.getPixelColor(rect.x, rect.y);
+            }
             if (color.equals(pixel)) {
                 return;
             }

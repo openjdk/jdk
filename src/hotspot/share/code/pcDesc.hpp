@@ -39,12 +39,13 @@ class PcDesc {
   int _obj_decode_offset;
 
   enum {
-    PCDESC_reexecute               = 1 << 0,
-    PCDESC_is_method_handle_invoke = 1 << 1,
-    PCDESC_return_oop              = 1 << 2,
-    PCDESC_rethrow_exception       = 1 << 3,
-    PCDESC_has_ea_local_in_scope   = 1 << 4,
-    PCDESC_arg_escape              = 1 << 5
+    PCDESC_reexecute                 = 1 << 0,
+    PCDESC_is_method_handle_invoke   = 1 << 1,
+    PCDESC_return_oop                = 1 << 2,
+    PCDESC_rethrow_exception         = 1 << 3,
+    PCDESC_has_ea_local_in_scope     = 1 << 4,
+    PCDESC_arg_escape                = 1 << 5,
+    PCDESC_is_optimized_linkToNative = 1 << 6
   };
 
   int _flags;
@@ -87,6 +88,9 @@ class PcDesc {
 
   bool     is_method_handle_invoke()       const { return (_flags & PCDESC_is_method_handle_invoke) != 0;     }
   void set_is_method_handle_invoke(bool z)       { set_flag(PCDESC_is_method_handle_invoke, z); }
+
+  bool     is_optimized_linkToNative()     const { return (_flags & PCDESC_is_optimized_linkToNative) != 0;     }
+  void set_is_optimized_linkToNative(bool z)     { set_flag(PCDESC_is_optimized_linkToNative, z); }
 
   bool     return_oop()                    const { return (_flags & PCDESC_return_oop) != 0;     }
   void set_return_oop(bool z)                    { set_flag(PCDESC_return_oop, z); }

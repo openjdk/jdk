@@ -708,7 +708,7 @@ static int gtk3_unload()
  */
 static void flush_gtk_event_loop()
 {
-    while((*fp_g_main_context_iteration)(NULL));
+    while((*fp_g_main_context_iteration)(NULL, FALSE));
 }
 
 /*

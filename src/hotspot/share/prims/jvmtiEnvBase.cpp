@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -48,6 +49,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -256,11 +258,11 @@ JvmtiEnvBase::env_dispose() {
   // Same situation as with events (see above)
   set_native_method_prefixes(0, NULL);
 
-  JvmtiTagMap* tag_map_to_deallocate = _tag_map;
-  set_tag_map(NULL);
-  // A tag map can be big, deallocate it now
-  if (tag_map_to_deallocate != NULL) {
-    delete tag_map_to_deallocate;
+  JvmtiTagMap* tag_map_to_clear = tag_map_acquire();
+  // A tag map can be big, clear it now to save memory until
+  // the destructor runs.
+  if (tag_map_to_clear != NULL) {
+    tag_map_to_clear->clear();
   }
 
   _needs_clean_up = true;
@@ -1077,13 +1079,12 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
             nWait = j;
             break;
           }
-          Thread *t = mon->thread_of_waiter(waiter);
-          if (t != NULL && t->is_Java_thread()) {
-            JavaThread *wjava_thread = t->as_Java_thread();
+          JavaThread *w = mon->thread_of_waiter(waiter);
+          if (w != NULL) {
             // If the thread was found on the ObjectWaiter list, then
             // it has not been notified. This thread can't change the
             // state of the monitor so it doesn't need to be suspended.
-            Handle th(current_thread, wjava_thread->threadObj());
+            Handle th(current_thread, w->threadObj());
             ret.waiters[offset + j] = (jthread)jni_reference(calling_thread, th);
             ret.notify_waiters[j++] = (jthread)jni_reference(calling_thread, th);
           }

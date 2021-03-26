@@ -93,26 +93,27 @@ class ImmutableCollections {
     private static Object[] archivedObjects;
 
     private static final Object EMPTY;
-
     static final ListN<?> EMPTY_LIST;
-
+    static final ListN<?> EMPTY_LIST_NULLS;
     static final SetN<?> EMPTY_SET;
-
     static final MapN<?,?> EMPTY_MAP;
 
     static {
         CDS.initializeFromArchive(ImmutableCollections.class);
         if (archivedObjects == null) {
             EMPTY = new Object();
-            EMPTY_LIST = new ListN<>(new Object[0]);
+            EMPTY_LIST = new ListN<>(new Object[0], false);
+            EMPTY_LIST_NULLS = new ListN<>(new Object[0], true);
             EMPTY_SET = new SetN<>();
             EMPTY_MAP = new MapN<>();
-            archivedObjects = new Object[] { EMPTY, EMPTY_LIST, EMPTY_SET, EMPTY_MAP };
+            archivedObjects =
+                new Object[] { EMPTY, EMPTY_LIST, EMPTY_LIST_NULLS, EMPTY_SET, EMPTY_MAP };
         } else {
             EMPTY = archivedObjects[0];
             EMPTY_LIST = (ListN)archivedObjects[1];
-            EMPTY_SET = (SetN)archivedObjects[2];
-            EMPTY_MAP = (MapN)archivedObjects[3];
+            EMPTY_LIST_NULLS = (ListN)archivedObjects[2];
+            EMPTY_SET = (SetN)archivedObjects[3];
+            EMPTY_MAP = (MapN)archivedObjects[4];
         }
     }
 
@@ -120,7 +121,10 @@ class ImmutableCollections {
         static {
             SharedSecrets.setJavaUtilCollectionAccess(new JavaUtilCollectionAccess() {
                 public <E> List<E> listFromTrustedArray(Object[] array) {
-                    return ImmutableCollections.ListN.fromTrustedArray(array);
+                    return ImmutableCollections.listFromTrustedArray(array);
+                }
+                public <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array) {
+                    return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
             });
         }
@@ -137,6 +141,7 @@ class ImmutableCollections {
 
     static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
 
+    @jdk.internal.ValueBased
     static abstract class AbstractImmutableCollection<E> extends AbstractCollection<E> {
         // all mutating methods throw UnsupportedOperationException
         @Override public boolean add(E e) { throw uoe(); }
@@ -148,18 +153,102 @@ class ImmutableCollections {
         @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
     }
 
-    // ---------- List Implementations ----------
+    // ---------- List Static Factory Methods ----------
 
-    // make a copy, short-circuiting based on implementation class
+    /**
+     * Copies a collection into a new List, unless the arg is already a safe,
+     * null-prohibiting unmodifiable list, in which case the arg itself is returned.
+     * Null argument or null elements in the argument will result in NPE.
+     *
+     * @param <E> the List's element type
+     * @param input the input array
+     * @return the new list
+     */
     @SuppressWarnings("unchecked")
     static <E> List<E> listCopy(Collection<? extends E> coll) {
-        if (coll instanceof AbstractImmutableList && coll.getClass() != SubList.class) {
+        if (coll instanceof List12 || (coll instanceof ListN && ! ((ListN<?>)coll).allowNulls)) {
             return (List<E>)coll;
         } else {
-            return (List<E>)List.of(coll.toArray());
+            return (List<E>)List.of(coll.toArray()); // implicit nullcheck of coll
         }
     }
 
+    /**
+     * Creates a new List from an untrusted array, creating a new array for internal
+     * storage, and checking for and rejecting null elements.
+     *
+     * @param <E> the List's element type
+     * @param input the input array
+     * @return the new list
+     */
+    @SafeVarargs
+    static <E> List<E> listFromArray(E... input) {
+        // copy and check manually to avoid TOCTOU
+        @SuppressWarnings("unchecked")
+        E[] tmp = (E[])new Object[input.length]; // implicit nullcheck of input
+        for (int i = 0; i < input.length; i++) {
+            tmp[i] = Objects.requireNonNull(input[i]);
+        }
+        return new ListN<>(tmp, false);
+    }
+
+    /**
+     * Creates a new List from a trusted array, checking for and rejecting null
+     * elements.
+     *
+     * <p>A trusted array has no references retained by the caller. It can therefore be
+     * safely reused as the List's internal storage, avoiding a defensive copy. The array's
+     * class must be Object[].class. This method is declared with a parameter type of
+     * Object... instead of E... so that a varargs call doesn't accidentally create an array
+     * of some class other than Object[].class.
+     *
+     * @param <E> the List's element type
+     * @param input the input array
+     * @return the new list
+     */
+    @SuppressWarnings("unchecked")
+    static <E> List<E> listFromTrustedArray(Object... input) {
+        assert input.getClass() == Object[].class;
+        for (Object o : input) { // implicit null check of 'input' array
+            Objects.requireNonNull(o);
+        }
+
+        return switch (input.length) {
+            case 0  -> (List<E>) ImmutableCollections.EMPTY_LIST;
+            case 1  -> (List<E>) new List12<>(input[0]);
+            case 2  -> (List<E>) new List12<>(input[0], input[1]);
+            default -> (List<E>) new ListN<>(input, false);
+        };
+    }
+
+    /**
+     * Creates a new List from a trusted array, allowing null elements.
+     *
+     * <p>A trusted array has no references retained by the caller. It can therefore be
+     * safely reused as the List's internal storage, avoiding a defensive copy. The array's
+     * class must be Object[].class. This method is declared with a parameter type of
+     * Object... instead of E... so that a varargs call doesn't accidentally create an array
+     * of some class other than Object[].class.
+     *
+     * <p>Avoids creating a List12 instance, as it cannot accommodate null elements.
+     *
+     * @param <E> the List's element type
+     * @param input the input array
+     * @return the new list
+     */
+    @SuppressWarnings("unchecked")
+    static <E> List<E> listFromTrustedArrayNullsAllowed(Object... input) {
+        assert input.getClass() == Object[].class;
+        if (input.length == 0) {
+            return (List<E>) EMPTY_LIST_NULLS;
+        } else {
+            return new ListN<>((E[])input, true);
+        }
+    }
+
+    // ---------- List Implementations ----------
+
+    @jdk.internal.ValueBased
     static abstract class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
             implements List<E>, RandomAccess {
 
@@ -219,7 +308,7 @@ class ImmutableCollections {
 
             Iterator<?> oit = ((List<?>) o).iterator();
             for (int i = 0, s = size(); i < s; i++) {
-                if (!oit.hasNext() || !get(i).equals(oit.next())) {
+                if (!oit.hasNext() || !Objects.equals(get(i), oit.next())) {
                     return false;
                 }
             }
@@ -227,32 +316,10 @@ class ImmutableCollections {
         }
 
         @Override
-        public int indexOf(Object o) {
-            Objects.requireNonNull(o);
-            for (int i = 0, s = size(); i < s; i++) {
-                if (o.equals(get(i))) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        @Override
-        public int lastIndexOf(Object o) {
-            Objects.requireNonNull(o);
-            for (int i = size() - 1; i >= 0; i--) {
-                if (o.equals(get(i))) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        @Override
         public int hashCode() {
             int hash = 1;
             for (int i = 0, s = size(); i < s; i++) {
-                hash = 31 * hash + get(i).hashCode();
+                hash = 31 * hash + Objects.hashCode(get(i));
             }
             return hash;
         }
@@ -361,7 +428,7 @@ class ImmutableCollections {
             implements RandomAccess {
 
         @Stable
-        private final List<E> root;
+        private final AbstractImmutableList<E> root;
 
         @Stable
         private final int offset;
@@ -369,7 +436,8 @@ class ImmutableCollections {
         @Stable
         private final int size;
 
-        private SubList(List<E> root, int offset, int size) {
+        private SubList(AbstractImmutableList<E> root, int offset, int size) {
+            assert root instanceof List12 || root instanceof ListN;
             this.root = root;
             this.offset = offset;
             this.size = size;
@@ -386,7 +454,7 @@ class ImmutableCollections {
          * Constructs a sublist of an arbitrary AbstractImmutableList, which is
          * not a SubList itself.
          */
-        static <E> SubList<E> fromList(List<E> list, int fromIndex, int toIndex) {
+        static <E> SubList<E> fromList(AbstractImmutableList<E> list, int fromIndex, int toIndex) {
             return new SubList<>(list, fromIndex, toIndex - fromIndex);
         }
 
@@ -419,6 +487,36 @@ class ImmutableCollections {
             }
         }
 
+        private boolean allowNulls() {
+            return root instanceof ListN && ((ListN<?>)root).allowNulls;
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            if (!allowNulls() && o == null) {
+                throw new NullPointerException();
+            }
+            for (int i = 0, s = size(); i < s; i++) {
+                if (Objects.equals(o, get(i))) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            if (!allowNulls() && o == null) {
+                throw new NullPointerException();
+            }
+            for (int i = size() - 1; i >= 0; i--) {
+                if (Objects.equals(o, get(i))) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
         @Override
         public Object[] toArray() {
             Object[] array = new Object[size];
@@ -444,6 +542,7 @@ class ImmutableCollections {
         }
     }
 
+    @jdk.internal.ValueBased
     static final class List12<E> extends AbstractImmutableList<E>
             implements Serializable {
 
@@ -456,7 +555,7 @@ class ImmutableCollections {
         List12(E e0) {
             this.e0 = Objects.requireNonNull(e0);
             // Use EMPTY as a sentinel for an unused element: not using null
-            // enable constant folding optimizations over single-element lists
+            // enables constant folding optimizations over single-element lists
             this.e1 = EMPTY;
         }
 
@@ -484,6 +583,30 @@ class ImmutableCollections {
                 return (E)e1;
             }
             throw outOfBounds(index);
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            Objects.requireNonNull(o);
+            if (o.equals(e0)) {
+                return 0;
+            } else if (e1 != EMPTY && o.equals(e1)) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            Objects.requireNonNull(o);
+            if (e1 != EMPTY && o.equals(e1)) {
+                return 1;
+            } else if (o.equals(e0)) {
+                return 0;
+            } else {
+                return -1;
+            }
         }
 
         @java.io.Serial
@@ -526,37 +649,20 @@ class ImmutableCollections {
         }
     }
 
+    @jdk.internal.ValueBased
     static final class ListN<E> extends AbstractImmutableList<E>
             implements Serializable {
 
         @Stable
         private final E[] elements;
 
-        private ListN(E[] array) {
-            elements = array;
-        }
+        @Stable
+        private final boolean allowNulls;
 
-        // creates a new internal array, and checks and rejects null elements
-        @SafeVarargs
-        static <E> List<E> fromArray(E... input) {
-            // copy and check manually to avoid TOCTOU
-            @SuppressWarnings("unchecked")
-            E[] tmp = (E[])new Object[input.length]; // implicit nullcheck of input
-            for (int i = 0; i < input.length; i++) {
-                tmp[i] = Objects.requireNonNull(input[i]);
-            }
-            return new ListN<>(tmp);
-        }
-
-        // Avoids creating a new array, but checks and rejects null elements.
-        // Declared with Object... arg so that varargs calls don't accidentally
-        // create an array of a subtype.
-        @SuppressWarnings("unchecked")
-        static <E> List<E> fromTrustedArray(Object... input) {
-            for (Object o : input) {
-                Objects.requireNonNull(o);
-            }
-            return new ListN<>((E[])input);
+        // caller must ensure that elements has no nulls if allowNulls is false
+        private ListN(E[] elements, boolean allowNulls) {
+            this.elements = elements;
+            this.allowNulls = allowNulls;
         }
 
         @Override
@@ -581,7 +687,7 @@ class ImmutableCollections {
 
         @java.io.Serial
         private Object writeReplace() {
-            return new CollSer(CollSer.IMM_LIST, elements);
+            return new CollSer(allowNulls ? CollSer.IMM_LIST_NULLS : CollSer.IMM_LIST, elements);
         }
 
         @Override
@@ -603,10 +709,39 @@ class ImmutableCollections {
             }
             return a;
         }
+
+        @Override
+        public int indexOf(Object o) {
+            if (!allowNulls && o == null) {
+                throw new NullPointerException();
+            }
+            Object[] es = elements;
+            for (int i = 0; i < es.length; i++) {
+                if (Objects.equals(o, es[i])) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            if (!allowNulls && o == null) {
+                throw new NullPointerException();
+            }
+            Object[] es = elements;
+            for (int i = es.length - 1; i >= 0; i--) {
+                if (Objects.equals(o, es[i])) {
+                    return i;
+                }
+            }
+            return -1;
+        }
     }
 
     // ---------- Set Implementations ----------
 
+    @jdk.internal.ValueBased
     static abstract class AbstractImmutableSet<E> extends AbstractImmutableCollection<E>
             implements Set<E> {
 
@@ -634,6 +769,7 @@ class ImmutableCollections {
         public abstract int hashCode();
     }
 
+    @jdk.internal.ValueBased
     static final class Set12<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
@@ -759,6 +895,7 @@ class ImmutableCollections {
      * least one null is always present.
      * @param <E> the element type
      */
+    @jdk.internal.ValueBased
     static final class SetN<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
@@ -925,6 +1062,7 @@ class ImmutableCollections {
 
     // ---------- Map Implementations ----------
 
+    @jdk.internal.ValueBased
     abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
         @Override public void clear() { throw uoe(); }
         @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
@@ -955,6 +1093,7 @@ class ImmutableCollections {
         }
     }
 
+    @jdk.internal.ValueBased
     static final class Map1<K,V> extends AbstractImmutableMap<K,V> {
         @Stable
         private final K k0;
@@ -1021,6 +1160,7 @@ class ImmutableCollections {
      * @param <K> the key type
      * @param <V> the value type
      */
+    @jdk.internal.ValueBased
     static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
 
         @Stable
@@ -1225,15 +1365,19 @@ final class CollSer implements Serializable {
     @java.io.Serial
     private static final long serialVersionUID = 6309168927139932177L;
 
-    static final int IMM_LIST = 1;
-    static final int IMM_SET = 2;
-    static final int IMM_MAP = 3;
+    static final int IMM_LIST       = 1;
+    static final int IMM_SET        = 2;
+    static final int IMM_MAP        = 3;
+    static final int IMM_LIST_NULLS = 4;
 
     /**
      * Indicates the type of collection that is serialized.
      * The low order 8 bits have the value 1 for an immutable
-     * {@code List}, 2 for an immutable {@code Set}, and 3 for
-     * an immutable {@code Map}. Any other value causes an
+     * {@code List}, 2 for an immutable {@code Set}, 3 for
+     * an immutable {@code Map}, and 4 for an immutable
+     * {@code List} that allows null elements.
+     *
+     * Any other value causes an
      * {@link InvalidObjectException} to be thrown. The high
      * order 24 bits are zero when an instance is serialized,
      * and they are ignored when an instance is deserialized.
@@ -1340,7 +1484,7 @@ final class CollSer implements Serializable {
      * @throws ObjectStreamException if another serialization error has occurred
      * @since 9
      */
-   @java.io.Serial
+    @java.io.Serial
     private Object readResolve() throws ObjectStreamException {
         try {
             if (array == null) {
@@ -1352,6 +1496,9 @@ final class CollSer implements Serializable {
             switch (tag & 0xff) {
                 case IMM_LIST:
                     return List.of(array);
+                case IMM_LIST_NULLS:
+                    return ImmutableCollections.listFromTrustedArrayNullsAllowed(
+                            Arrays.copyOf(array, array.length, Object[].class));
                 case IMM_SET:
                     return Set.of(array);
                 case IMM_MAP:

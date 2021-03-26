@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,11 @@ final class MethodTypeForm {
             LF_TF                      = 18,  // tryFinally
             LF_LOOP                    = 19,  // loop
             LF_INVSPECIAL_IFC          = 20,  // DMH invokeSpecial of (private) interface method
-            LF_LIMIT                   = 21;
+            LF_INVNATIVE               = 21,  // NMH invokeNative
+            LF_VH_EX_INVOKER           = 22,  // VarHandle exact invoker
+            LF_VH_GEN_INVOKER          = 23,  // VarHandle generic invoker
+            LF_VH_GEN_LINKER           = 24,  // VarHandle generic linker
+            LF_LIMIT                   = 25;
 
     /** Return the type corresponding uniquely (1-1) to this MT-form.
      *  It might have any primitive returns or arguments, but will have no references except Object.
@@ -212,7 +216,7 @@ final class MethodTypeForm {
     }
 
     static MethodTypeForm findForm(MethodType mt) {
-        MethodType erased = canonicalize(mt, ERASE, ERASE);
+        MethodType erased = canonicalize(mt, ERASE);
         if (erased == null) {
             // It is already erased.  Make a new MethodTypeForm.
             return new MethodTypeForm(mt);
@@ -226,23 +230,18 @@ final class MethodTypeForm {
      * ERASE means change every reference to {@code Object}.
      * WRAP means convert primitives (including {@code void} to their
      * corresponding wrapper types.  UNWRAP means the reverse of WRAP.
-     * INTS means convert all non-void primitive types to int or long,
-     * according to size.  LONGS means convert all non-void primitives
-     * to long, regardless of size.  RAW_RETURN means convert a type
-     * (assumed to be a return type) to int if it is smaller than an int,
-     * or if it is void.
      */
-    public static final int ERASE = 1, WRAP = 2, UNWRAP = 3, INTS = 4, LONGS = 5, RAW_RETURN = 6;
+    public static final int ERASE = 1, WRAP = 2, UNWRAP = 3;
 
     /** Canonicalize the types in the given method type.
      * If any types change, intern the new type, and return it.
      * Otherwise return null.
      */
-    public static MethodType canonicalize(MethodType mt, int howRet, int howArgs) {
+    public static MethodType canonicalize(MethodType mt, int how) {
         Class<?>[] ptypes = mt.ptypes();
-        Class<?>[] ptypesCanonical = canonicalizeAll(ptypes, howArgs);
+        Class<?>[] ptypesCanonical = canonicalizeAll(ptypes, how);
         Class<?> rtype = mt.returnType();
-        Class<?> rtypeCanonical = canonicalize(rtype, howRet);
+        Class<?> rtypeCanonical = canonicalize(rtype, how);
         if (ptypesCanonical == null && rtypeCanonical == null) {
             // It is already canonical.
             return null;
@@ -257,49 +256,19 @@ final class MethodTypeForm {
      *  Return null if the type is already canonicalized.
      */
     static Class<?> canonicalize(Class<?> t, int how) {
-        Class<?> ct;
         if (t == Object.class) {
             // no change, ever
         } else if (!t.isPrimitive()) {
             switch (how) {
                 case UNWRAP:
-                    ct = Wrapper.asPrimitiveType(t);
+                    Class<?> ct = Wrapper.asPrimitiveType(t);
                     if (ct != t)  return ct;
                     break;
-                case RAW_RETURN:
                 case ERASE:
                     return Object.class;
             }
-        } else if (t == void.class) {
-            // no change, usually
-            switch (how) {
-                case RAW_RETURN:
-                    return int.class;
-                case WRAP:
-                    return Void.class;
-            }
-        } else {
-            // non-void primitive
-            switch (how) {
-                case WRAP:
-                    return Wrapper.asWrapperType(t);
-                case INTS:
-                    if (t == int.class || t == long.class)
-                        return null;  // no change
-                    if (t == double.class)
-                        return long.class;
-                    return int.class;
-                case LONGS:
-                    if (t == long.class)
-                        return null;  // no change
-                    return long.class;
-                case RAW_RETURN:
-                    if (t == int.class || t == long.class ||
-                        t == float.class || t == double.class)
-                        return null;  // no change
-                    // everything else returns as an int
-                    return int.class;
-            }
+        } else if (how == WRAP) {
+            return Wrapper.asWrapperType(t);
         }
         // no change; return null to signify
         return null;

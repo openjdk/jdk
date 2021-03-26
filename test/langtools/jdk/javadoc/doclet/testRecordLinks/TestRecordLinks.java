@@ -87,7 +87,7 @@ public class TestRecordLinks  extends JavadocTester {
 
         checkOutput("example/JavadocTest.Bar.html", true,
                 """
-                    <h1 title="Record JavadocTest.Bar" class="title">Record JavadocTest.Bar</h1>
+                    <h1 title="Record Class JavadocTest.Bar" class="title">Record Class JavadocTest.Bar</h1>
                     """,
                 """
                     <div class="block"><a href="#bar()"><code>bar()</code></a>

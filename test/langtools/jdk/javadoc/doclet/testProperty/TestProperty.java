@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class TestProperty extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="ObjectProperty.html" title="class in pkg">Obje\
                     ctProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>&gt;</span>\
-                    &nbsp;<span class="member-name">goodProperty</span></div>
+                    &nbsp;<span class="element-name">goodProperty</span></div>
                     <div class="block">This is an Object property where the Object is a single Object.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
@@ -67,7 +67,7 @@ public class TestProperty extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="ObjectProperty.html" title="class in pkg">Obje\
                     ctProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&gt;</spa\
-                    n>&nbsp;<span class="member-name">badProperty</span></div>
+                    n>&nbsp;<span class="element-name">badProperty</span></div>
                     <div class="block">This is an Object property where the Object is an array.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
@@ -80,19 +80,19 @@ public class TestProperty extends JavadocTester {
                     <div class="col-first even-row-color"><code><a href="ObjectProperty.html" title="clas\
                     s in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj<\
                     /a>[]&gt;</code></div>
-                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
-                    #badProperty">bad</a></span></code></div>
+                    <div class="col-second even-row-color"><code><a href="#badProperty" class="membe\
+                    r-name-link">bad</a></code></div>
                     <div class="col-last even-row-color">""",
 
                 // tab classes should be used in the method table
                 """
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code><a href="ObjectProperty.html" title="class in pk\
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><a href="ObjectProperty.html" title="class in pk\
                     g">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&g\
                     t;</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#badPro\
-                    perty()">badProperty</a></span>()</code></div>"""
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><a href="#badProperty()" class="member-nam\
+                    e-link">badProperty</a>()</code></div>"""
         );
 
         checkOutput("pkg/MyClassT.html", true,
@@ -100,8 +100,8 @@ public class TestProperty extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="ObjectProperty.html" title="class in pkg">Obje\
                     ctProperty</a>&lt;java.util.List&lt;<a href="MyClassT.html" title="type paramete\
-                    r in MyClassT">T</a>&gt;&gt;</span>&nbsp;<span class="member-name">listProperty<\
-                    /span></div>
+                    r in MyClassT">T</a>&gt;&gt;</span>&nbsp;<span class="element-name">listProperty</span><\
+                    /div>
                     <div class="block">This is an Object property where the Object is a single <code>List&lt;T&gt;</code>.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>

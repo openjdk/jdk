@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
-#include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/iterator.hpp"
@@ -520,11 +520,10 @@ bool PSScavenge::invoke_no_policy() {
 
     assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
 
-    PSScavengeRootsClosure root_closure(promotion_manager);
-
     {
       GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
-      WeakProcessor::weak_oops_do(&_is_alive_closure, &root_closure);
+      PSAdjustWeakRootsClosure root_closure;
+      WeakProcessor::weak_oops_do(&ParallelScavengeHeap::heap()->workers(), &_is_alive_closure, &root_closure, 1);
     }
 
     // Verify that usage of root_closure didn't copy any objects.
@@ -792,7 +791,7 @@ bool PSScavenge::should_attempt_scavenge() {
 void PSScavenge::set_young_generation_boundary(HeapWord* v) {
   _young_generation_boundary = v;
   if (UseCompressedOops) {
-    _young_generation_boundary_compressed = (uintptr_t)CompressedOops::encode((oop)v);
+    _young_generation_boundary_compressed = (uintptr_t)CompressedOops::encode(cast_to_oop(v));
   }
 }
 
@@ -822,7 +821,6 @@ void PSScavenge::initialize() {
   _span_based_discoverer.set_span(young_gen->reserved());
   _ref_processor =
     new ReferenceProcessor(&_span_based_discoverer,
-                           ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
                            ParallelGCThreads,          // mt processing degree
                            true,                       // mt discovery
                            ParallelGCThreads,          // mt discovery degree

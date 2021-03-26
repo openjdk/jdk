@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,30 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @requires vm.debug == true
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstrlist,MyListOption,_foo,_bar
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstr,MyStrOption,_foo
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,bool,MyBoolOption,false
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,intx,MyIntxOption,-1
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,uintx,MyUintxOption,1
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,MyFlag
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,double,MyDoubleOption1,1.123
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,double,MyDoubleOption2,1.123
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,bool,MyBoolOptionX,false,intx,MyIntxOptionX,-1,uintx,MyUintxOptionX,1,MyFlagX,double,MyDoubleOptionX,1.123
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstrlist,TestOptionList,_foo,_bar
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstr,TestOptionStr,_foo
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,bool,TestOptionBool,false
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,intx,TestOptionInt,-1
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,uintx,TestOptionUint,1
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,TestOptionBool2
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,double,TestOptionDouble,1.123
+ *                   compiler.oracle.GetMethodOptionTest
+ *
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,bool,TestOptionBool,false,intx,TestOptionInt,-1,uintx,TestOptionUint,1,bool,TestOptionBool2,true,ccstr,TestOptionStr,_foo,double,TestOptionDouble,1.123,ccstrlist,TestOptionList,_foo,_bar
+ *                   compiler.oracle.GetMethodOptionTest
+ *
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=TestOptionList,compiler.oracle.GetMethodOptionTest::test,_foo,_bar
+ *                   -XX:CompileCommand=TestOptionStr,compiler.oracle.GetMethodOptionTest::test,_foo
+ *                   -XX:CompileCommand=TestOptionBool,compiler.oracle.GetMethodOptionTest::test,false
+                     -XX:CompileCommand=TestOptionBool2,compiler.oracle.GetMethodOptionTest::test
+ *                   -XX:CompileCommand=TestOptionInt,compiler.oracle.GetMethodOptionTest::test,-1
+ *                   -XX:CompileCommand=TestOptionUint,compiler.oracle.GetMethodOptionTest::test,1
+ *                   -XX:CompileCommand=TestOptionDouble,compiler.oracle.GetMethodOptionTest::test,1.123
  *                   compiler.oracle.GetMethodOptionTest
  */
 
@@ -72,19 +85,13 @@ public class GetMethodOptionTest {
     private static void test2() { }
 
     private static enum TestCase {
-        MyListOption("_foo _bar", WB::getMethodStringOption),
-        MyStrOption("_foo", WB::getMethodStringOption),
-        MyBoolOption(false, WB::getMethodBooleanOption),
-        MyIntxOption(-1L, WB::getMethodIntxOption),
-        MyUintxOption(1L, WB::getMethodUintxOption),
-        MyFlag(true, WB::getMethodBooleanOption),
-        MyDoubleOption1(1.123d, WB::getMethodDoubleOption),
-        MyDoubleOption2(1.123d, WB::getMethodDoubleOption),
-        MyBoolOptionX(false, WB::getMethodBooleanOption),
-        MyIntxOptionX(-1L, WB::getMethodIntxOption),
-        MyUintxOptionX(1L, WB::getMethodUintxOption),
-        MyFlagX(true, WB::getMethodBooleanOption),
-        MyDoubleOptionX(1.123d, WB::getMethodDoubleOption);
+        TestOptionBool(false, WB::getMethodBooleanOption),
+        TestOptionStr("_foo", WB::getMethodStringOption),
+        TestOptionInt(-1L, WB::getMethodIntxOption),
+        TestOptionUint(1L, WB::getMethodUintxOption),
+        TestOptionBool2(true, WB::getMethodBooleanOption),
+        TestOptionDouble(1.123d, WB::getMethodDoubleOption),
+        TestOptionList("_foo _bar", WB::getMethodStringOption);
 
         public final Object value;
         public final BiFunction<Executable, String, Object> getter;

@@ -29,6 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/ad.hpp"
+#include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
@@ -554,9 +555,15 @@ Node *Node::clone() const {
       to[i] = from[i]->clone();
     }
   }
-  // cloning CallNode may need to clone JVMState
   if (n->is_Call()) {
+    // cloning CallNode may need to clone JVMState
     n->as_Call()->clone_jvms(C);
+    // CallGenerator is linked to the original node.
+    CallGenerator* cg = n->as_Call()->generator();
+    if (cg != NULL) {
+      CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
+      n->as_Call()->set_generator(cloned_cg);
+    }
   }
   if (n->is_SafePoint()) {
     n->as_SafePoint()->clone_replaced_nodes();
@@ -637,6 +644,9 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
+  if (Opcode() == Op_Opaque4) {
+    compile->remove_skeleton_predicate_opaq(this);
+  }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
   }
@@ -657,7 +667,7 @@ void Node::destruct(PhaseValues* phase) {
 
 //------------------------------grow-------------------------------------------
 // Grow the input array, making space for more edges
-void Node::grow( uint len ) {
+void Node::grow(uint len) {
   Arena* arena = Compile::current()->node_arena();
   uint new_max = _max;
   if( new_max == 0 ) {
@@ -858,14 +868,19 @@ int Node::find_edge(Node* n) {
 }
 
 //----------------------------replace_edge-------------------------------------
-int Node::replace_edge(Node* old, Node* neww) {
+int Node::replace_edge(Node* old, Node* neww, PhaseGVN* gvn) {
   if (old == neww)  return 0;  // nothing to do
   uint nrep = 0;
   for (uint i = 0; i < len(); i++) {
     if (in(i) == old) {
       if (i < req()) {
-        set_req(i, neww);
+        if (gvn != NULL) {
+          set_req_X(i, neww, gvn);
+        } else {
+          set_req(i, neww);
+        }
       } else {
+        assert(gvn == NULL || gvn->is_IterGVN() == NULL, "no support for igvn here");
         assert(find_prec_edge(neww) == -1, "spec violation: duplicated prec edge (node %d -> %d)", _idx, neww->_idx);
         set_prec(i, neww);
       }
@@ -878,12 +893,12 @@ int Node::replace_edge(Node* old, Node* neww) {
 /**
  * Replace input edges in the range pointing to 'old' node.
  */
-int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end) {
+int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end, PhaseGVN* gvn) {
   if (old == neww)  return 0;  // nothing to do
   uint nrep = 0;
   for (int i = start; i < end; i++) {
     if (in(i) == old) {
-      set_req(i, neww);
+      set_req_X(i, neww, gvn);
       nrep++;
     }
   }
@@ -1403,18 +1418,6 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       igvn->hash_delete(dead);
       igvn->_worklist.remove(dead);
       igvn->set_type(dead, Type::TOP);
-      if (dead->is_macro()) {
-        igvn->C->remove_macro_node(dead);
-      }
-      if (dead->is_expensive()) {
-        igvn->C->remove_expensive_node(dead);
-      }
-      if (dead->for_post_loop_opts_igvn()) {
-        igvn->C->remove_from_post_loop_opts_igvn(dead);
-      }
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      bs->unregister_potential_barrier_node(dead);
-      igvn->C->record_dead_node(dead->_idx);
       // Kill all inputs to the dead guy
       for (uint i=0; i < dead->req(); i++) {
         Node *n = dead->in(i);      // Get input to dead guy
@@ -1437,7 +1440,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           }
         }
       }
-      igvn->C->remove_modified_node(dead);
+      igvn->C->remove_useless_node(dead);
     } // (dead->outcnt() == 0)
   }   // while (nstack.size() > 0) for outputs
   return;
@@ -1503,6 +1506,16 @@ const TypeInt* Node::find_int_type() const {
   } else if (this->is_Con()) {
     assert(is_Mach(), "should be ConNode(TypeNode) or else a MachNode");
     return this->bottom_type()->isa_int();
+  }
+  return NULL;
+}
+
+const TypeInteger* Node::find_integer_type(BasicType bt) const {
+  if (this->is_Type()) {
+    return this->as_Type()->type()->isa_integer(bt);
+  } else if (this->is_Con()) {
+    assert(is_Mach(), "should be ConNode(TypeNode) or else a MachNode");
+    return this->bottom_type()->isa_integer(bt);
   }
   return NULL;
 }
@@ -2263,24 +2276,6 @@ void Node::verify(Node* n, int verify_depth) {
 }
 #endif // not PRODUCT
 
-//------------------------------walk-------------------------------------------
-// Graph walk, with both pre-order and post-order functions
-void Node::walk(NFunc pre, NFunc post, void *env) {
-  VectorSet visited; // Setup for local walk
-  walk_(pre, post, env, visited);
-}
-
-void Node::walk_(NFunc pre, NFunc post, void *env, VectorSet &visited) {
-  if( visited.test_set(_idx) ) return;
-  pre(*this,env);               // Call the pre-order walk function
-  for( uint i=0; i<_max; i++ )
-    if( in(i) )                 // Input exists and is not walked?
-      in(i)->walk_(pre,post,env,visited); // Walk it with pre & post functions
-  post(*this,env);              // Call the post-order walk function
-}
-
-void Node::nop(Node &, void*) {}
-
 //------------------------------Registers--------------------------------------
 // Do we Match on this edge index or not?  Generally false for Control
 // and true for everything else.  Weird for calls & returns.
@@ -2288,70 +2283,43 @@ uint Node::match_edge(uint idx) const {
   return idx;                   // True for other than index 0 (control)
 }
 
-static RegMask _not_used_at_all;
 // Register classes are defined for specific machines
 const RegMask &Node::out_RegMask() const {
   ShouldNotCallThis();
-  return _not_used_at_all;
+  return RegMask::Empty;
 }
 
 const RegMask &Node::in_RegMask(uint) const {
   ShouldNotCallThis();
-  return _not_used_at_all;
+  return RegMask::Empty;
 }
 
-//=============================================================================
-//-----------------------------------------------------------------------------
-void Node_Array::reset( Arena *new_arena ) {
-  _a->Afree(_nodes,_max*sizeof(Node*));
-  _max   = 0;
-  _nodes = NULL;
-  _a     = new_arena;
-}
-
-//------------------------------clear------------------------------------------
-// Clear all entries in _nodes to NULL but keep storage
-void Node_Array::clear() {
-  Copy::zero_to_bytes( _nodes, _max*sizeof(Node*) );
-}
-
-//-----------------------------------------------------------------------------
-void Node_Array::grow( uint i ) {
-  if( !_max ) {
-    _max = 1;
-    _nodes = (Node**)_a->Amalloc( _max * sizeof(Node*) );
-    _nodes[0] = NULL;
-  }
+void Node_Array::grow(uint i) {
+  assert(_max > 0, "invariant");
   uint old = _max;
   _max = next_power_of_2(i);
   _nodes = (Node**)_a->Arealloc( _nodes, old*sizeof(Node*),_max*sizeof(Node*));
   Copy::zero_to_bytes( &_nodes[old], (_max-old)*sizeof(Node*) );
 }
 
-//-----------------------------------------------------------------------------
-void Node_Array::insert( uint i, Node *n ) {
-  if( _nodes[_max-1] ) grow(_max);      // Get more space if full
-  Copy::conjoint_words_to_higher((HeapWord*)&_nodes[i], (HeapWord*)&_nodes[i+1], ((_max-i-1)*sizeof(Node*)));
+void Node_Array::insert(uint i, Node* n) {
+  if (_nodes[_max - 1]) {
+    grow(_max);
+  }
+  Copy::conjoint_words_to_higher((HeapWord*)&_nodes[i], (HeapWord*)&_nodes[i + 1], ((_max - i - 1) * sizeof(Node*)));
   _nodes[i] = n;
 }
 
-//-----------------------------------------------------------------------------
-void Node_Array::remove( uint i ) {
-  Copy::conjoint_words_to_lower((HeapWord*)&_nodes[i+1], (HeapWord*)&_nodes[i], ((_max-i-1)*sizeof(Node*)));
-  _nodes[_max-1] = NULL;
+void Node_Array::remove(uint i) {
+  Copy::conjoint_words_to_lower((HeapWord*)&_nodes[i + 1], (HeapWord*)&_nodes[i], ((_max - i - 1) * sizeof(Node*)));
+  _nodes[_max - 1] = NULL;
 }
 
-//-----------------------------------------------------------------------------
-void Node_Array::sort( C_sort_func_t func) {
-  qsort( _nodes, _max, sizeof( Node* ), func );
-}
-
-//-----------------------------------------------------------------------------
 void Node_Array::dump() const {
 #ifndef PRODUCT
-  for( uint i = 0; i < _max; i++ ) {
-    Node *nn = _nodes[i];
-    if( nn != NULL ) {
+  for (uint i = 0; i < _max; i++) {
+    Node* nn = _nodes[i];
+    if (nn != NULL) {
       tty->print("%5d--> ",i); nn->dump();
     }
   }
@@ -2414,7 +2382,9 @@ Node* Node::unique_ctrl_out() const {
   for (uint i = 0; i < outcnt(); i++) {
     Node* use = raw_out(i);
     if (use->is_CFG() && use != this) {
-      if (found != NULL) return NULL;
+      if (found != NULL) {
+        return NULL;
+      }
       found = use;
     }
   }
@@ -2457,33 +2427,38 @@ bool Node::is_dead_loop_safe() const {
 // Find and remove
 void Node_List::yank( Node *n ) {
   uint i;
-  for( i = 0; i < _cnt; i++ )
-    if( _nodes[i] == n )
+  for (i = 0; i < _cnt; i++) {
+    if (_nodes[i] == n) {
       break;
+    }
+  }
 
-  if( i < _cnt )
+  if (i < _cnt) {
     _nodes[i] = _nodes[--_cnt];
+  }
 }
 
 //------------------------------dump-------------------------------------------
 void Node_List::dump() const {
 #ifndef PRODUCT
-  for( uint i = 0; i < _cnt; i++ )
-    if( _nodes[i] ) {
-      tty->print("%5d--> ",i);
+  for (uint i = 0; i < _cnt; i++) {
+    if (_nodes[i]) {
+      tty->print("%5d--> ", i);
       _nodes[i]->dump();
     }
+  }
 #endif
 }
 
 void Node_List::dump_simple() const {
 #ifndef PRODUCT
-  for( uint i = 0; i < _cnt; i++ )
+  for (uint i = 0; i < _cnt; i++) {
     if( _nodes[i] ) {
       tty->print(" %d", _nodes[i]->_idx);
     } else {
       tty->print(" NULL");
     }
+  }
 #endif
 }
 
@@ -2505,17 +2480,12 @@ void Unique_Node_List::remove(Node* n) {
 //-----------------------remove_useless_nodes----------------------------------
 // Remove useless nodes from worklist
 void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
-
   for (uint i = 0; i < size(); ++i) {
     Node *n = at(i);
     assert( n != NULL, "Did not expect null entries in worklist");
     if (!useful.test(n->_idx)) {
       _in_worklist.remove(n->_idx);
-      map(i,Node_List::pop());
-      // Node *replacement = Node_List::pop();
-      // if( i != size() ) { // Check if removing last entry
-      //   _nodes[i] = replacement;
-      // }
+      map(i, Node_List::pop());
       --i;  // Visit popped node
       // If it was last entry, loop terminates since size() was also reduced
     }
@@ -2535,9 +2505,10 @@ void Node_Stack::grow() {
 // Node_Stack is used to map nodes.
 Node* Node_Stack::find(uint idx) const {
   uint sz = size();
-  for (uint i=0; i < sz; i++) {
-    if (idx == index_at(i) )
+  for (uint i = 0; i < sz; i++) {
+    if (idx == index_at(i)) {
       return node_at(i);
+    }
   }
   return NULL;
 }
@@ -2546,7 +2517,7 @@ Node* Node_Stack::find(uint idx) const {
 uint TypeNode::size_of() const { return sizeof(*this); }
 #ifndef PRODUCT
 void TypeNode::dump_spec(outputStream *st) const {
-  if( !Verbose && !WizardMode ) {
+  if (!Verbose && !WizardMode) {
     // standard dump does this in Verbose and WizardMode
     st->print(" #"); _type->dump_on(st);
   }
@@ -2560,9 +2531,10 @@ void TypeNode::dump_compact_spec(outputStream *st) const {
 uint TypeNode::hash() const {
   return Node::hash() + _type->hash();
 }
-bool TypeNode::cmp( const Node &n ) const
-{ return !Type::cmp( _type, ((TypeNode&)n)._type ); }
-const Type *TypeNode::bottom_type() const { return _type; }
+bool TypeNode::cmp(const Node& n) const {
+  return !Type::cmp(_type, ((TypeNode&)n)._type);
+}
+const Type* TypeNode::bottom_type() const { return _type; }
 const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
 
 //------------------------------ideal_reg--------------------------------------

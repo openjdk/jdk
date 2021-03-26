@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,7 +509,7 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
     current->obj()->print_value_on(st);
     st->print_cr("]");
     st->print(" - lock   [");
-    current->lock()->print_on(st);
+    current->lock()->print_on(st, current->obj());
     st->print_cr("]");
   }
   // monitor
@@ -540,9 +540,11 @@ void frame::print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
   int offset;
   bool found;
 
+  if (buf == NULL || buflen < 1) return;
   // libname
+  buf[0] = '\0';
   found = os::dll_address_to_library_name(pc, buf, buflen, &offset);
-  if (found) {
+  if (found && buf[0] != '\0') {
     // skip directory names
     const char *p1, *p2;
     p1 = buf;
@@ -941,6 +943,7 @@ class CompiledArgumentOopFinder: public SignatureIterator {
     // In LP64-land, the high-order bits are valid but unhelpful.
     VMReg reg = _regs[_offset].first();
     oop *loc = _fr.oopmapreg_to_location(reg, _reg_map);
+    assert(loc != NULL, "missing register map entry");
     _f->do_oop(loc);
   }
 
@@ -1287,7 +1290,7 @@ void FrameValues::validate() {
 }
 #endif // ASSERT
 
-void FrameValues::print(JavaThread* thread) {
+void FrameValues::print_on(JavaThread* thread, outputStream* st) {
   _values.sort(compare);
 
   // Sometimes values like the fp can be invalid values if the
@@ -1320,14 +1323,14 @@ void FrameValues::print(JavaThread* thread) {
   for (int i = max_index; i >= min_index; i--) {
     FrameValue fv = _values.at(i);
     while (cur > fv.location) {
-      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT, p2i(cur), *cur);
+      st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT, p2i(cur), *cur);
       cur--;
     }
     if (last == fv.location) {
       const char* spacer = "          " LP64_ONLY("        ");
-      tty->print_cr(" %s  %s %s", spacer, spacer, fv.description);
+      st->print_cr(" %s  %s %s", spacer, spacer, fv.description);
     } else {
-      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
+      st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
       last = fv.location;
       cur--;
     }

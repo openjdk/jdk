@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,19 +97,19 @@ void VM_Version::get_os_cpu_info() {
   uint64_t auxv = getauxval(AT_HWCAP);
   uint64_t auxv2 = getauxval(AT_HWCAP2);
 
-  static_assert(CPU_FP      == HWCAP_FP);
-  static_assert(CPU_ASIMD   == HWCAP_ASIMD);
-  static_assert(CPU_EVTSTRM == HWCAP_EVTSTRM);
-  static_assert(CPU_AES     == HWCAP_AES);
-  static_assert(CPU_PMULL   == HWCAP_PMULL);
-  static_assert(CPU_SHA1    == HWCAP_SHA1);
-  static_assert(CPU_SHA2    == HWCAP_SHA2);
-  static_assert(CPU_CRC32   == HWCAP_CRC32);
-  static_assert(CPU_LSE     == HWCAP_ATOMICS);
-  static_assert(CPU_DCPOP   == HWCAP_DCPOP);
-  static_assert(CPU_SHA3    == HWCAP_SHA3);
-  static_assert(CPU_SHA512  == HWCAP_SHA512);
-  static_assert(CPU_SVE     == HWCAP_SVE);
+  static_assert(CPU_FP      == HWCAP_FP,      "Flag CPU_FP must follow Linux HWCAP");
+  static_assert(CPU_ASIMD   == HWCAP_ASIMD,   "Flag CPU_ASIMD must follow Linux HWCAP");
+  static_assert(CPU_EVTSTRM == HWCAP_EVTSTRM, "Flag CPU_EVTSTRM must follow Linux HWCAP");
+  static_assert(CPU_AES     == HWCAP_AES,     "Flag CPU_AES must follow Linux HWCAP");
+  static_assert(CPU_PMULL   == HWCAP_PMULL,   "Flag CPU_PMULL must follow Linux HWCAP");
+  static_assert(CPU_SHA1    == HWCAP_SHA1,    "Flag CPU_SHA1 must follow Linux HWCAP");
+  static_assert(CPU_SHA2    == HWCAP_SHA2,    "Flag CPU_SHA2 must follow Linux HWCAP");
+  static_assert(CPU_CRC32   == HWCAP_CRC32,   "Flag CPU_CRC32 must follow Linux HWCAP");
+  static_assert(CPU_LSE     == HWCAP_ATOMICS, "Flag CPU_LSE must follow Linux HWCAP");
+  static_assert(CPU_DCPOP   == HWCAP_DCPOP,   "Flag CPU_DCPOP must follow Linux HWCAP");
+  static_assert(CPU_SHA3    == HWCAP_SHA3,    "Flag CPU_SHA3 must follow Linux HWCAP");
+  static_assert(CPU_SHA512  == HWCAP_SHA512,  "Flag CPU_SHA512 must follow Linux HWCAP");
+  static_assert(CPU_SVE     == HWCAP_SVE,     "Flag CPU_SVE must follow Linux HWCAP");
   _features = auxv & (
       HWCAP_FP      |
       HWCAP_ASIMD   |
@@ -165,5 +165,27 @@ void VM_Version::get_os_cpu_info() {
       }
     }
     fclose(f);
+  }
+}
+
+void VM_Version::get_compatible_board(char *buf, int buflen) {
+  assert(buf != NULL, "invalid argument");
+  assert(buflen >= 1, "invalid argument");
+  *buf = '\0';
+  int fd = open("/proc/device-tree/compatible", O_RDONLY);
+  if (fd != -1) {
+    ssize_t read_sz = read(fd, buf, buflen - 1);
+    if (read_sz > 0) {
+      buf[read_sz] = '\0';
+      // Replace '\0' to ' '
+      for (char *ch = buf; ch < buf + read_sz; ch++) {
+        if (*ch == '\0') {
+          *ch = ' ';
+        }
+      }
+    } else {
+      *buf = '\0';
+    }
+    close(fd);
   }
 }

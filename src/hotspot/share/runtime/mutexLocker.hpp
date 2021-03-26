@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,9 +108,11 @@ extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_m
 
 extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
 extern Mutex*   OldSets_lock;                    // protects the old region sets
+extern Mutex*   Uncommit_lock;                   // protects the uncommit list when not at safepoints
 extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
+extern Monitor* MonitorDeflation_lock;           // a lock used for monitor deflation thread operation
 extern Monitor* Service_lock;                    // a lock used for service thread operation
 extern Monitor* Notification_lock;               // a lock used for notification thread operation
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure
@@ -145,7 +147,7 @@ extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR t
 extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updates to jlongs on platforms that don't support cx8
 #endif
 
-extern Mutex*   MetaspaceExpand_lock;            // protects Metaspace virtualspace and chunk expansions
+extern Mutex*   Metaspace_lock;            // protects Metaspace virtualspace and chunk expansions
 extern Mutex*   ClassLoaderDataGraph_lock;       // protects CLDG list, needed for concurrent unloading
 
 
@@ -155,6 +157,8 @@ extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against
 #if INCLUDE_JVMCI
 extern Monitor* JVMCI_lock;                      // Monitor to control initialization of JVMCI
 #endif
+
+extern Mutex*   Bootclasspath_lock;
 
 extern Mutex* tty_lock;                          // lock to synchronize output.
 

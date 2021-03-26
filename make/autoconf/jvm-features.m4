@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_PARSE_OPTIONS],
   # Likewise, check for deprecated arguments.
   m4_foreach(FEATURE, m4_split(jvm_features_deprecated), [
     AC_ARG_ENABLE(jvm-feature-FEATURE, AS_HELP_STRING(
-        [--enable-jvm-feature-FEATURE], 
+        [--enable-jvm-feature-FEATURE],
         [Deprecated. Option is kept for backwards compatibility and is ignored]))
 
     m4_define(FEATURE_SHELL, [enable_jvm_feature_]m4_translit(FEATURE, -, _))
@@ -242,7 +242,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_AOT],
     elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-aarch64"; then
       AC_MSG_RESULT([yes])
     else
-      AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
+      AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
       AVAILABLE=false
     fi
 
@@ -264,11 +264,13 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_CDS],
 [
   JVM_FEATURES_CHECK_AVAILABILITY(cds, [
     AC_MSG_CHECKING([if platform is supported by CDS])
-    if test "x$OPENJDK_TARGET_OS" != xaix; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no, $OPENJDK_TARGET_OS])
+    if test "x$OPENJDK_TARGET_OS" = xaix || \
+        ( test "x$OPENJDK_TARGET_OS" = "xmacosx" && \
+        test "x$OPENJDK_TARGET_CPU" = "xaarch64" ) ; then
+      AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
       AVAILABLE=false
+    else
+      AC_MSG_RESULT([yes])
     fi
   ])
 ])
@@ -476,7 +478,7 @@ AC_DEFUN([JVM_FEATURES_PREPARE_VARIANT],
     JVM_FEATURES_VARIANT_UNAVAILABLE="cds minimal zero"
   elif test "x$variant" = "xzero"; then
     JVM_FEATURES_VARIANT_UNAVAILABLE="aot cds compiler1 compiler2 \
-        epsilongc g1gc graal jvmci minimal shenandoahgc zgc"
+        graal jvmci minimal zgc"
   else
     JVM_FEATURES_VARIANT_UNAVAILABLE="minimal zero"
   fi

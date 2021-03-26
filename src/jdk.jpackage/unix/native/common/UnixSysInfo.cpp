@@ -56,15 +56,6 @@ bool isEnvVariableSet(const tstring& name) {
 }
 
 
-tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
-    tstring_array result;
-    for (int i = progNameMode == ExcludeProgramName ? 1 : 0; i < argc; i++) {
-        result.push_back(argv[i]);
-    }
-    return result;
-}
-
-
 int argc = 0;
 char** argv = 0;
 

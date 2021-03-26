@@ -647,6 +647,11 @@ JNIEXPORT jint JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterIm
             LOCALE_IFIRSTDAYOFWEEK | LOCALE_RETURN_NUMBER,
             (LPWSTR)&num, sizeof(num));
         break;
+    case sun_util_locale_provider_HostLocaleProviderAdapterImpl_CD_FIRSTWEEKOFYEAR:
+        got = getLocaleInfoWrapper(langtag,
+            LOCALE_IFIRSTWEEKOFYEAR | LOCALE_RETURN_NUMBER,
+            (LPWSTR)&num, sizeof(num));
+        break;
     }
 
     (*env)->ReleaseStringChars(env, jlangtag, langtag);

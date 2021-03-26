@@ -111,16 +111,17 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
             || ((r = doubleToRawLongBits
                 (function.applyAsDouble(longBitsToDouble(b = base), x))) != b
                 && !casBase(b, r))) {
+            int index = getProbe();
             boolean uncontended = true;
             if (cs == null
                 || (m = cs.length - 1) < 0
-                || (c = cs[getProbe() & m]) == null
+                || (c = cs[index & m]) == null
                 || !(uncontended =
                      ((r = doubleToRawLongBits
                        (function.applyAsDouble
                         (longBitsToDouble(v = c.value), x))) == v)
                      || c.cas(v, r)))
-                doubleAccumulate(x, function, uncontended);
+                doubleAccumulate(x, function, uncontended, index);
         }
     }
 

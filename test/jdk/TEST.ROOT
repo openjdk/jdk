@@ -13,8 +13,9 @@
 # run. Tests that are not headful are "headless".
 # A test flagged with key "printer" requires a printer to succeed, else
 # throws a PrinterException or the like.
+# A test flagged with cgroups uses cgroups.
 
-keys=2d dnd headful i18n intermittent printer randomness jfr
+keys=2d dnd headful i18n intermittent printer randomness jfr cgroups
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \
@@ -46,8 +47,12 @@ requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
-    vm.gc.Z \
+    vm.gc.G1 \
+    vm.gc.Serial \
+    vm.gc.Parallel \
     vm.gc.Shenandoah \
+    vm.gc.Epsilon \
+    vm.gc.Z \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \

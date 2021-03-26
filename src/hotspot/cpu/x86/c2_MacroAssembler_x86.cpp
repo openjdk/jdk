@@ -29,6 +29,7 @@
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/subnode.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -485,10 +486,10 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   Label IsInflated, DONE_LABEL;
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmpReg, objReg, cx1Reg);
     movl(tmpReg, Address(tmpReg, Klass::access_flags_offset()));
-    testl(tmpReg, JVM_ACC_IS_BOX_CLASS);
+    testl(tmpReg, JVM_ACC_IS_VALUE_BASED_CLASS);
     jcc(Assembler::notZero, DONE_LABEL);
   }
 
@@ -878,6 +879,7 @@ void C2_MacroAssembler::vabsnegf(int opcode, XMMRegister dst, XMMRegister src, i
 
 void C2_MacroAssembler::pminmax(int opcode, BasicType elem_bt, XMMRegister dst, XMMRegister src, XMMRegister tmp) {
   assert(opcode == Op_MinV || opcode == Op_MaxV, "sanity");
+  assert(tmp == xnoreg || elem_bt == T_LONG, "unused");
 
   if (opcode == Op_MinV) {
     if (elem_bt == T_BYTE) {
@@ -889,6 +891,7 @@ void C2_MacroAssembler::pminmax(int opcode, BasicType elem_bt, XMMRegister dst, 
     } else {
       assert(elem_bt == T_LONG, "required");
       assert(tmp == xmm0, "required");
+      assert_different_registers(dst, src, tmp);
       movdqu(xmm0, dst);
       pcmpgtq(xmm0, src);
       blendvpd(dst, src);  // xmm0 as mask
@@ -903,6 +906,7 @@ void C2_MacroAssembler::pminmax(int opcode, BasicType elem_bt, XMMRegister dst, 
     } else {
       assert(elem_bt == T_LONG, "required");
       assert(tmp == xmm0, "required");
+      assert_different_registers(dst, src, tmp);
       movdqu(xmm0, src);
       pcmpgtq(xmm0, dst);
       blendvpd(dst, src);  // xmm0 as mask
@@ -927,6 +931,7 @@ void C2_MacroAssembler::vpminmax(int opcode, BasicType elem_bt,
       if (UseAVX > 2 && (vlen_enc == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
         vpminsq(dst, src1, src2, vlen_enc);
       } else {
+        assert_different_registers(dst, src1, src2);
         vpcmpgtq(dst, src1, src2, vlen_enc);
         vblendvpd(dst, src1, src2, dst, vlen_enc);
       }
@@ -943,6 +948,7 @@ void C2_MacroAssembler::vpminmax(int opcode, BasicType elem_bt,
       if (UseAVX > 2 && (vlen_enc == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
         vpmaxsq(dst, src1, src2, vlen_enc);
       } else {
+        assert_different_registers(dst, src1, src2);
         vpcmpgtq(dst, src1, src2, vlen_enc);
         vblendvpd(dst, src2, src1, dst, vlen_enc);
       }
@@ -960,6 +966,7 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
   assert(opcode == Op_MinV || opcode == Op_MinReductionV ||
          opcode == Op_MaxV || opcode == Op_MaxReductionV, "sanity");
   assert(elem_bt == T_FLOAT || elem_bt == T_DOUBLE, "sanity");
+  assert_different_registers(a, b, tmp, atmp, btmp);
 
   bool is_min = (opcode == Op_MinV || opcode == Op_MinReductionV);
   bool is_double_word = is_double_word_type(elem_bt);
@@ -1000,6 +1007,7 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
   assert(opcode == Op_MinV || opcode == Op_MinReductionV ||
          opcode == Op_MaxV || opcode == Op_MaxReductionV, "sanity");
   assert(elem_bt == T_FLOAT || elem_bt == T_DOUBLE, "sanity");
+  assert_different_registers(dst, a, b, atmp, btmp);
 
   bool is_min = (opcode == Op_MinV || opcode == Op_MinReductionV);
   bool is_double_word = is_double_word_type(elem_bt);
@@ -1884,6 +1892,12 @@ void C2_MacroAssembler::reduce8L(int opcode, Register dst, Register src1, XMMReg
   reduce_operation_256(T_LONG, opcode, vtmp2, vtmp2, src2);
   reduce4L(opcode, dst, src1, vtmp2, vtmp1, vtmp2);
 }
+
+void C2_MacroAssembler::genmask(Register dst, Register len, Register temp) {
+  assert(ArrayCopyPartialInlineSize <= 64,"");
+  mov64(dst, -1L);
+  bzhiq(dst, dst, len);
+}
 #endif // _LP64
 
 void C2_MacroAssembler::reduce2F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp) {
@@ -1929,6 +1943,15 @@ void C2_MacroAssembler::reduce8D(int opcode, XMMRegister dst, XMMRegister src, X
   vextracti64x4_high(vtmp1, src);
   reduce4D(opcode, dst, vtmp1, vtmp1, vtmp2);
 }
+
+void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len) {
+  MacroAssembler::evmovdqu(type, kmask, dst, src, vector_len);
+}
+
+void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len) {
+  MacroAssembler::evmovdqu(type, kmask, dst, src, vector_len);
+}
+
 
 void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_valid,
                                           XMMRegister dst, XMMRegister src,
@@ -2124,6 +2147,61 @@ void C2_MacroAssembler::evpblend(BasicType typ, XMMRegister dst, KRegister kmask
     case T_LONG:
     case T_DOUBLE:
       evpblendmq(dst, kmask, src1, src2, merge, vector_len);
+      break;
+    default:
+      assert(false,"Should not reach here.");
+      break;
+  }
+}
+
+void C2_MacroAssembler::vectortest(int bt, int vlen, XMMRegister src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch(vlen) {
+    case 4:
+      assert(vtmp1 != xnoreg, "required.");
+      // Broadcast lower 32 bits to 128 bits before ptest
+      pshufd(vtmp1, src1, 0x0);
+      if (bt == BoolTest::overflow) {
+        assert(vtmp2 != xnoreg, "required.");
+        pshufd(vtmp2, src2, 0x0);
+      } else {
+        assert(vtmp2 == xnoreg, "required.");
+        vtmp2 = src2;
+      }
+      ptest(vtmp1, vtmp2);
+     break;
+    case 8:
+      assert(vtmp1 != xnoreg, "required.");
+      // Broadcast lower 64 bits to 128 bits before ptest
+      pshufd(vtmp1, src1, 0x4);
+      if (bt == BoolTest::overflow) {
+        assert(vtmp2 != xnoreg, "required.");
+        pshufd(vtmp2, src2, 0x4);
+      } else {
+        assert(vtmp2 == xnoreg, "required.");
+        vtmp2 = src2;
+      }
+      ptest(vtmp1, vtmp2);
+     break;
+    case 16:
+      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
+      ptest(src1, src2);
+      break;
+    case 32:
+      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
+      vptest(src1, src2, Assembler::AVX_256bit);
+      break;
+    case 64:
+      {
+        KRegister ktemp = k2; // Use a hardcoded temp due to no k register allocation.
+        assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
+        evpcmpeqb(ktemp, src1, src2, Assembler::AVX_512bit);
+        if (bt == BoolTest::ne) {
+          ktestql(ktemp, ktemp);
+        } else {
+          assert(bt == BoolTest::overflow, "required");
+          kortestql(ktemp, ktemp);
+        }
+      }
       break;
     default:
       assert(false,"Should not reach here.");

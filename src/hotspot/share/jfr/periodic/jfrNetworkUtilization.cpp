@@ -159,11 +159,10 @@ void JfrNetworkUtilization::send_events() {
   log_trace(jfr, event)("Reporting network utilization");
   static JfrTicks last_sample_instant;
   const JfrTicks cur_time = JfrTicks::now();
-  const JfrTickspan interval = last_sample_instant == 0 ? cur_time - cur_time : cur_time - last_sample_instant;
-  last_sample_instant = cur_time;
-  for (NetworkInterface *cur = network_interfaces; cur != NULL; cur = cur->next()) {
-    InterfaceEntry& entry = get_entry(cur);
-    if (interval.value() > 0) {
+  if (cur_time > last_sample_instant) {
+    const JfrTickspan interval = cur_time - last_sample_instant;
+    for (NetworkInterface *cur = network_interfaces; cur != NULL; cur = cur->next()) {
+      InterfaceEntry& entry = get_entry(cur);
       const uint64_t current_bytes_in = cur->get_bytes_in();
       const uint64_t current_bytes_out = cur->get_bytes_out();
       const uint64_t read_rate = rate_per_second(current_bytes_in, entry.bytes_in, interval);
@@ -183,6 +182,7 @@ void JfrNetworkUtilization::send_events() {
       entry.bytes_out = current_bytes_out;
     }
   }
+  last_sample_instant = cur_time;
 
   static bool is_serializer_registered = false;
   if (!is_serializer_registered) {

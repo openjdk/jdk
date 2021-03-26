@@ -72,7 +72,7 @@ CallingConvention* FrameMap::java_calling_convention(const BasicTypeArray* signa
     }
   }
 
-  intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs, outgoing);
+  intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
   LIR_OprList* args = new LIR_OprList(signature->length());
   for (i = 0; i < sizeargs;) {
     BasicType t = sig_bt[i];

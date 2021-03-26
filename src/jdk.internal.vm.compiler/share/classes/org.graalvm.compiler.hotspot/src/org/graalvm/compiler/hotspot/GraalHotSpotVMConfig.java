@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
 
     public final int stackShadowPages = getFlag("StackShadowPages", Integer.class);
     public final int stackReservedPages = getFlag("StackReservedPages", Integer.class, 0, JDK >= 9);
-    public final boolean useStackBanging = getFlag("UseStackBanging", Boolean.class);
+    public final boolean useStackBanging = getFlag("UseStackBanging", Boolean.class, true, JDK < 17);
     public final int stackBias = getConstant("STACK_BIAS", Integer.class, 0, JDK < 15);
     public final int vmPageSize = getFieldValue("CompilerToVM::Data::vm_page_size", Integer.class, "int");
 
@@ -513,7 +513,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     public final int objectMonitorRecursions = getFieldOffset("ObjectMonitor::_recursions", Integer.class, "intptr_t", -1, gr21761);
     public final int objectMonitorCxq = getFieldOffset("ObjectMonitor::_cxq", Integer.class, "ObjectWaiter*", -1, jdk13Backport);
     public final int objectMonitorEntryList = getFieldOffset("ObjectMonitor::_EntryList", Integer.class, "ObjectWaiter*", -1, jdk13Backport);
-    public final int objectMonitorSucc = getFieldOffset("ObjectMonitor::_succ", Integer.class, "Thread*", -1, jdk13Backport);
+    public final int objectMonitorSucc = getFieldOffset("ObjectMonitor::_succ", Integer.class, JDK < 17 ? "Thread*" : "JavaThread*", -1, jdk13Backport);
 
     public final int markWordNoHashInPlace = getConstant(markWordField("no_hash_in_place"), Integer.class);
     public final int markWordNoLockInPlace = getConstant(markWordField("no_lock_in_place"), Integer.class);

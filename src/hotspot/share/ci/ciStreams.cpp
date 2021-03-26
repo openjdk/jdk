@@ -27,6 +27,7 @@
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciStreams.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
@@ -476,7 +477,7 @@ ciKlass* ciBytecodeStream::get_declared_method_holder() {
   bool ignore;
   // report as MethodHandle for invokedynamic, which is syntactically classless
   if (cur_bc() == Bytecodes::_invokedynamic)
-    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbol::java_lang_invoke_MethodHandle(), false);
+    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbols::java_lang_invoke_MethodHandle(), false);
   return CURRENT_ENV->get_klass_by_index(cpool, get_method_holder_index(), ignore, _holder);
 }
 

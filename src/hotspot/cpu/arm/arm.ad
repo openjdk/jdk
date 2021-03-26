@@ -997,6 +997,10 @@ bool Matcher::supports_vector_variable_shifts(void) {
   return VM_Version::has_simd();
 }
 
+bool Matcher::supports_vector_variable_rotates(void) {
+  return false; // not supported
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -1038,11 +1042,6 @@ const int Matcher::min_vector_size(const BasicType bt) {
 
 // ARM doesn't support misaligned vectors store/load.
 const bool Matcher::misaligned_vectors_ok() {
-  return false;
-}
-
-// ARM doesn't support AES intrinsics
-const bool Matcher::pass_original_key_for_aes() {
   return false;
 }
 
@@ -1678,12 +1677,6 @@ frame %{
   //  LP64: Alignment size in bytes (128-bit -> 16 bytes)
   // !LP64: Alignment size in bytes (64-bit  ->  8 bytes)
 
-  // Number of stack slots between incoming argument block and the start of
-  // a new frame.  The PROLOG must add this many slots to the stack.  The
-  // EPILOG must remove this many slots.
-  // FP + LR
-  in_preserve_stack_slots(2 * VMRegImpl::slots_per_word);
-
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
   // ADLC doesn't support parsing expressions, so I folded the math by hand.
@@ -1699,22 +1692,6 @@ frame %{
               align_up((Compile::current()->in_preserve_stack_slots() +
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
-
-  // Body of function which returns an OptoRegs array locating
-  // arguments either in registers or in stack slots for calling
-  // java
-  calling_convention %{
-    (void) SharedRuntime::java_calling_convention(sig_bt, regs, length, is_outgoing);
-
-  %}
-
-  // Body of function which returns an OptoRegs array locating
-  // arguments either in registers or in stack slots for callin
-  // C.
-  c_calling_convention %{
-    // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
-  %}
 
   // Location of compiled Java return values.  Same as C
   return_value %{
@@ -5304,6 +5281,14 @@ instruct castII( iRegI dst ) %{
   ins_pipe(empty);
 %}
 
+instruct castLL( iRegL dst ) %{
+  match(Set dst (CastLL dst));
+  format %{ "! castLL of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
 //----------Arithmetic Instructions--------------------------------------------
 // Addition Instructions
 // Register Addition
@@ -8467,6 +8452,21 @@ instruct cmovLL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegL dst, iRegL src) %
   ins_pipe(ialu_reg);
 %}
 
+instruct cmovLL_reg_LTGE_U(cmpOpL cmp, flagsRegUL_LTGE xcc, iRegL dst, iRegL src) %{
+  match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+
+  ins_cost(150);
+  size(8);
+  format %{ "MOV$cmp  $dst.lo,$src.lo\t! long\n\t"
+            "MOV$cmp  $dst,$src.hi" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$Register, (AsmCondition)($cmp$$cmpcode));
+    __ mov($dst$$Register->successor(), $src$$Register->successor(), (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 instruct cmovLL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegL dst, iRegL src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
   predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
@@ -8497,7 +8497,36 @@ instruct cmovLL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegL dst, iReg
   ins_pipe(ialu_reg);
 %}
 
+instruct cmovLL_reg_LEGT_U(cmpOpL_commute cmp, flagsRegUL_LEGT xcc, iRegL dst, iRegL src) %{
+  match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+
+  ins_cost(150);
+  size(8);
+  format %{ "MOV$cmp  $dst.lo,$src.lo\t! long\n\t"
+            "MOV$cmp  $dst,$src.hi" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$Register, (AsmCondition)($cmp$$cmpcode));
+    __ mov($dst$$Register->successor(), $src$$Register->successor(), (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 instruct cmovLL_imm_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegL dst, immL0 src) %{
+  match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  ins_cost(140);
+  size(8);
+  format %{ "MOV$cmp  $dst.lo,0\t! long\n\t"
+            "MOV$cmp  $dst,0" %}
+  ins_encode %{
+    __ mov($dst$$Register, 0, (AsmCondition)($cmp$$cmpcode));
+    __ mov($dst$$Register->successor(), 0, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovLL_imm_LTGE_U(cmpOpL cmp, flagsRegUL_LTGE xcc, iRegL dst, immL0 src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
   predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
   ins_cost(140);

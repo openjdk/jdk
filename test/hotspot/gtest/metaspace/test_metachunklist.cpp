@@ -112,7 +112,7 @@ TEST_VM(metaspace, freechunklist) {
 
     EXPECT_EQ(lst.num_chunks(), (int)cnt.count());
     EXPECT_EQ(lst.word_size(), cnt.total_size());
-    EXPECT_EQ(lst.committed_word_size(), committed_cnt.total_size());
+    EXPECT_EQ(lst.calc_committed_word_size(), committed_cnt.total_size());
   }
 
   // Drain each list separately, front to back. While draining observe the order
@@ -137,7 +137,7 @@ TEST_VM(metaspace, freechunklist) {
 
       EXPECT_EQ(lst.num_chunks(), (int)cnt.count());
       EXPECT_EQ(lst.word_size(), cnt.total_size());
-      EXPECT_EQ(lst.committed_word_size(), committed_cnt.total_size());
+      EXPECT_EQ(lst.calc_committed_word_size(), committed_cnt.total_size());
 
       context.return_chunk(c);
 

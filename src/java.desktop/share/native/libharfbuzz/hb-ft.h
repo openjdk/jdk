@@ -110,6 +110,12 @@ hb_ft_font_create_referenced (FT_Face ft_face);
 HB_EXTERN FT_Face
 hb_ft_font_get_face (hb_font_t *font);
 
+HB_EXTERN FT_Face
+hb_ft_font_lock_face (hb_font_t *font);
+
+HB_EXTERN void
+hb_ft_font_unlock_face (hb_font_t *font);
+
 HB_EXTERN void
 hb_ft_font_set_load_flags (hb_font_t *font, int load_flags);
 

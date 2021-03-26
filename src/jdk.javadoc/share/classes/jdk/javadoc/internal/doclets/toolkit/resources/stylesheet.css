@@ -101,15 +101,15 @@ button {
  */
 .clear {
     clear:both;
-    height:0px;
+    height:0;
     overflow:hidden;
 }
 .about-language {
     float:right;
-    padding:0px 21px;
+    padding:0 21px 8px 8px;
     font-size:11px;
-    z-index:200;
     margin-top:-9px;
+    height:2.9em;
 }
 .legal-copy {
     margin-left:.5em;
@@ -147,7 +147,7 @@ button {
     padding:0;
     width:100%;
     clear:right;
-    height:2.8em;
+    min-height:2.8em;
     padding-top:10px;
     overflow:hidden;
     font-size:12px;
@@ -168,12 +168,17 @@ button {
 .sub-nav .nav-list {
     padding-top:5px;
 }
-ul.nav-list, ul.sub-nav-list {
+ul.nav-list {
+    display:block;
+    margin:0 25px 0 0;
+    padding:0;
+}
+ul.sub-nav-list {
     float:left;
     margin:0 25px 0 0;
     padding:0;
 }
-ul.nav-list li{
+ul.nav-list li {
     list-style:none;
     float:left;
     padding: 5px 6px;
@@ -426,7 +431,7 @@ div.table-tabs > button.table-tab {
     text-align:left;
     padding: 8px 3px 3px 7px;
 }
-.col-first, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name {
+.col-first, .col-second, .col-last, .col-constructor-name, .col-summary-item-name {
     vertical-align:top;
     padding-right:0;
     padding-top:8px;
@@ -439,7 +444,7 @@ div.table-tabs > button.table-tab {
 .col-first, .col-first {
     font-size:13px;
 }
-.col-second, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name, .col-last {
+.col-second, .col-second, .col-last, .col-constructor-name, .col-summary-item-name, .col-last {
     font-size:13px;
 }
 .col-first, .col-second, .col-constructor-name {
@@ -454,7 +459,7 @@ div.table-tabs > button.table-tab {
 .col-first a:link, .col-first a:visited,
 .col-second a:link, .col-second a:visited,
 .col-constructor-name a:link, .col-constructor-name a:visited,
-.col-deprecated-item-name a:link, .col-deprecated-item-name a:visited,
+.col-summary-item-name a:link, .col-summary-item-name a:visited,
 .constant-values-container a:link, .constant-values-container a:visited,
 .all-classes-container a:link, .all-classes-container a:visited,
 .all-packages-container a:link, .all-packages-container a:visited {
@@ -472,9 +477,6 @@ div.table-tabs > button.table-tab {
 /*
  * Styles for contents.
  */
-.description pre {
-    margin-top:0;
-}
 .deprecated-content {
     margin:0;
     padding:10px 0;
@@ -489,23 +491,28 @@ div.block {
 .col-last a {
     padding-bottom:3px;
 }
-div.member-signature {
+.module-signature,
+.package-signature,
+.type-signature,
+.member-signature {
     font-family:'DejaVu Sans Mono', monospace;
     font-size:14px;
     margin:14px 0;
     white-space: pre-wrap;
 }
-div.member-signature span.annotations {
-    white-space: pre-wrap;
+.module-signature,
+.package-signature,
+.type-signature {
+    margin-top: 0;
 }
-div.member-signature span.type-parameters-long,
-div.member-signature span.parameters,
-div.member-signature span.exceptions {
+.member-signature .type-parameters-long,
+.member-signature .parameters,
+.member-signature .exceptions {
     display: inline-block;
     vertical-align: top;
     white-space: pre;
 }
-div.member-signature span.type-parameters {
+.member-signature .type-parameters {
     white-space: normal;
 }
 /*
@@ -527,13 +534,24 @@ h1.hidden {
 }
 .deprecated-label, .descfrm-type-label, .implementation-label, .member-name-label, .member-name-link,
 .module-label-in-package, .module-label-in-type, .override-specify-label, .package-label-in-type,
-.package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link {
+.package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label {
     font-weight:bold;
 }
-.deprecation-comment, .help-footnote, .interface-name {
+.deprecation-comment, .help-footnote, .interface-name, .preview-comment {
     font-style:italic;
 }
 .deprecation-block {
+    font-size:14px;
+    font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+    border-style:solid;
+    border-width:thin;
+    border-radius:10px;
+    padding:10px;
+    margin-bottom:10px;
+    margin-right:10px;
+    display:inline-block;
+}
+.preview-block {
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
     border-style:solid;
@@ -587,7 +605,7 @@ ul.ui-autocomplete  li {
 .result-highlight {
     font-weight:bold;
 }
-#search {
+#search-input {
     background-image:url('resources/glass.png');
     background-size:13px;
     background-repeat:no-repeat;
@@ -597,7 +615,7 @@ ul.ui-autocomplete  li {
     right:-18px;
     width:400px;
 }
-#reset {
+#reset-button {
     background-color: rgb(255,255,255);
     background-image:url('resources/x.png');
     background-position:center;
@@ -637,7 +655,7 @@ ul.ui-autocomplete  li {
 .inherited-list {
     margin: 10px 0 10px 0;
 }
-section.description {
+section.class-description {
     line-height: 1.4;
 }
 .summary section[class$="-summary"], .details section[class$="-details"],
@@ -656,6 +674,18 @@ section.description {
 }
 ul.help-section-list {
     margin: 0;
+}
+ul.help-subtoc > li {
+  display: inline-block;
+  padding-right: 5px;
+  font-size: smaller;
+}
+ul.help-subtoc > li::before {
+  content: "\2022" ;
+  padding-right:2px;
+}
+span.help-note {
+    font-style: italic;
 }
 /*
  * Indicator icon for external links.
@@ -760,4 +790,61 @@ table.striped > tbody > tr > th, table.striped > tbody > tr > td {
 }
 table.striped > tbody > tr > th {
     font-weight: normal;
+}
+/**
+ * Tweak font sizes and paddings for small screens.
+ */
+@media screen and (max-width: 1050px) {
+    #search-input {
+        width: 300px;
+    }
+}
+@media screen and (max-width: 800px) {
+    #search-input {
+        width: 200px;
+    }
+    .top-nav,
+    .bottom-nav {
+        font-size: 11px;
+        padding-top: 6px;
+    }
+    .sub-nav {
+        font-size: 11px;
+    }
+    .about-language {
+        padding-right: 16px;
+    }
+    ul.nav-list li,
+    .sub-nav .nav-list-search {
+        padding: 6px;
+    }
+    ul.sub-nav-list li {
+        padding-top: 5px;
+    }
+    main {
+        padding: 10px;
+    }
+    .summary section[class$="-summary"], .details section[class$="-details"],
+    .class-uses .detail, .serialized-class-details {
+        padding: 0 8px 5px 8px;
+    }
+    body {
+        -webkit-text-size-adjust: none;
+    }
+}
+@media screen and (max-width: 500px) {
+    #search-input {
+        width: 150px;
+    }
+    .top-nav,
+    .bottom-nav {
+        font-size: 10px;
+    }
+    .sub-nav {
+        font-size: 10px;
+    }
+    .about-language {
+        font-size: 10px;
+        padding-right: 12px;
+    }
 }

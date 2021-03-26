@@ -85,6 +85,9 @@ class BinListImpl {
     {}
   };
 
+#define BLOCK_FORMAT          "Block @" PTR_FORMAT ": size: " SIZE_FORMAT ", next: " PTR_FORMAT
+#define BLOCK_FORMAT_ARGS(b)  p2i(b), (b)->_word_size, p2i((b)->_next)
+
   // Smallest block size must be large enough to hold a Block structure.
   STATIC_ASSERT(smallest_word_size * sizeof(MetaWord) >= sizeof(Block));
   STATIC_ASSERT(num_lists > 0);
@@ -150,19 +153,16 @@ public:
     int index = index_for_word_size(word_size);
     index = index_for_next_non_empty_list(index);
     if (index != -1) {
-      assert(_blocks[index] != NULL &&
-             _blocks[index]->_word_size >= word_size, "sanity");
-
-      MetaWord* const p = (MetaWord*)_blocks[index];
+      Block* b = _blocks[index];
       const size_t real_word_size = word_size_for_index(index);
-
-      _blocks[index] = _blocks[index]->_next;
-
+      assert(b != NULL, "Sanity");
+      assert(b->_word_size >= word_size &&
+             b->_word_size == real_word_size,
+             "bad block size in list[%d] (" BLOCK_FORMAT ")", index, BLOCK_FORMAT_ARGS(b));
+      _blocks[index] = b->_next;
       _counter.sub(real_word_size);
       *p_real_word_size = real_word_size;
-
-      return p;
-
+      return (MetaWord*)b;
     } else {
       *p_real_word_size = 0;
       return NULL;
@@ -182,8 +182,11 @@ public:
     MemRangeCounter local_counter;
     for (int i = 0; i < num_lists; i++) {
       const size_t s = MinWordSize + i;
-      for (Block* b = _blocks[i]; b != NULL; b = b->_next) {
-        assert(b->_word_size == s, "bad block size");
+      int pos = 0;
+      for (Block* b = _blocks[i]; b != NULL; b = b->_next, pos++) {
+        assert(b->_word_size == s,
+               "bad block size in list[%d] at pos %d (" BLOCK_FORMAT ")",
+               i, pos, BLOCK_FORMAT_ARGS(b));
         local_counter.add(s);
       }
     }

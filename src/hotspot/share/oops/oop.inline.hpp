@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,21 @@
 #ifndef SHARE_OOPS_OOP_INLINE_HPP
 #define SHARE_OOPS_OOP_INLINE_HPP
 
-#include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/klass.inline.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/oop.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
@@ -186,7 +188,7 @@ int oopDesc::size_given_klass(Klass* klass)  {
       // disjunct below to fail if the two comparands are computed across such
       // a concurrent change.
       assert((s == klass->oop_size(this)) ||
-             (Universe::heap()->is_gc_active() && is_objArray() && is_forwarded() && (UseParallelGC || UseG1GC)),
+             (Universe::is_gc_active() && is_objArray() && is_forwarded() && (get_UseParallelGC() || get_UseG1GC())),
              "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.
@@ -292,7 +294,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
   if (old_mark == compare) {
     return NULL;
   } else {
-    return (oop)old_mark.decode_pointer();
+    return cast_to_oop(old_mark.decode_pointer());
   }
 }
 
@@ -300,14 +302,14 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  return (oop) mark().decode_pointer();
+  return cast_to_oop(mark().decode_pointer());
 }
 
 // Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee_acquire() const {
-  return (oop) Atomic::load_acquire(&_mark).decode_pointer();
+  return cast_to_oop(Atomic::load_acquire(&_mark).decode_pointer());
 }
 
 // The following method needs to be MT safe.

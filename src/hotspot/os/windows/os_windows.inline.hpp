@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,10 +69,6 @@ inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
 
 inline int os::close(int fd) {
   return ::close(fd);
-}
-
-inline bool os::supports_monotonic_clock() {
-  return true;
 }
 
 inline void os::exit(int num) {

@@ -26,7 +26,6 @@
 package jdk.jfr;
 
 import java.security.AccessControlContext;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,6 +36,7 @@ import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.management.EventSettingsModifier;
 
 /**
  * Permission for controlling access to Flight Recorder.
@@ -104,21 +104,21 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
         PrivateAccess.setPrivateAccess(new InternalAccess());
     }
 
-    private final static class InternalAccess extends PrivateAccess {
+    private static final class InternalAccess extends PrivateAccess {
 
         @Override
         public Type getType(Object o) {
-            if (o instanceof AnnotationElement) {
-                return ((AnnotationElement) o).getType();
+            if (o instanceof AnnotationElement ae) {
+                return ae.getType();
             }
-            if (o instanceof EventType) {
-                return ((EventType) o).getType();
+            if (o instanceof EventType et) {
+                return et.getType();
             }
-            if (o instanceof ValueDescriptor) {
-                return ((ValueDescriptor) o).getType();
+            if (o instanceof ValueDescriptor vd) {
+                return vd.getType();
             }
-            if (o instanceof SettingDescriptor) {
-                return ((SettingDescriptor) o).getType();
+            if (o instanceof SettingDescriptor sd) {
+                return sd.getType();
             }
             throw new Error("Unknown type " + o.getClass());
         }
@@ -175,7 +175,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
 
         @Override
         public ValueDescriptor newValueDescriptor(Class<?> type, String name) {
-            return new ValueDescriptor(type, name, Collections.emptyList(), true);
+            return new ValueDescriptor(type, name, List.of(), true);
         }
 
         @Override
@@ -196,6 +196,11 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
         @Override
         public AccessControlContext getContext(SettingControl settingControl) {
             return settingControl.getContext();
+        }
+
+        @Override
+        public EventSettings newEventSettings(EventSettingsModifier esm) {
+            return new EventSettings.DelegatedEventSettings(esm);
         }
     }
 

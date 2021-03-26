@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_DUMPALLOCSTATS_HPP
 
 #include "memory/allocation.hpp"
+#include "classfile/compactHashtable.hpp"
 
 // This is for dumping detailed statistics for the allocations
 // in the shared spaces.
@@ -40,6 +41,7 @@ public:
   f(StringHashentry) \
   f(StringBucket) \
   f(ModulesNatives) \
+  f(CppVTables) \
   f(Other)
 
   enum Type {
@@ -57,16 +59,22 @@ public:
     }
   }
 
-public:
-  enum { RO = 0, RW = 1 };
+  CompactHashtableStats _symbol_stats;
+  CompactHashtableStats _string_stats;
 
   int _counts[2][_number_of_types];
   int _bytes [2][_number_of_types];
+
+public:
+  enum { RO = 0, RW = 1 };
 
   DumpAllocStats() {
     memset(_counts, 0, sizeof(_counts));
     memset(_bytes,  0, sizeof(_bytes));
   };
+
+  CompactHashtableStats* symbol_stats() { return &_symbol_stats; }
+  CompactHashtableStats* string_stats() { return &_string_stats; }
 
   void record(MetaspaceObj::Type type, int byte_size, bool read_only) {
     assert(int(type) >= 0 && type < MetaspaceObj::_number_of_types, "sanity");
@@ -84,7 +92,12 @@ public:
     int which = (read_only) ? RO : RW;
     _bytes [which][OtherType] += byte_size;
   }
-  void print_stats(int ro_all, int rw_all, int mc_all);
+
+  void record_cpp_vtables(int byte_size) {
+    _bytes[RW][CppVTablesType] += byte_size;
+  }
+
+  void print_stats(int ro_all, int rw_all);
 };
 
 #endif // SHARE_MEMORY_DUMPALLOCSTATS_HPP

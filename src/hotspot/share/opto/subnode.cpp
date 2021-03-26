@@ -115,6 +115,18 @@ const Type* SubNode::Value(PhaseGVN* phase) const {
 
 }
 
+SubNode* SubNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new SubINode(in1, in2);
+    case T_LONG:
+      return new SubLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return NULL;
+}
+
 //=============================================================================
 //------------------------------Helper function--------------------------------
 
@@ -563,7 +575,26 @@ void CmpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_re
     }
   }
 }
+
 #endif
+
+CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
+  switch (bt) {
+    case T_INT:
+      if (unsigned_comp) {
+        return new CmpUNode(in1, in2);
+      }
+      return new CmpINode(in1, in2);
+    case T_LONG:
+      if (unsigned_comp) {
+        return new CmpULNode(in1, in2);
+      }
+      return new CmpLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return NULL;
+}
 
 //=============================================================================
 //------------------------------cmp--------------------------------------------
@@ -1026,14 +1057,8 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
     if (k1 && (k2 || conk2)) {
       Node* lhs = k1;
       Node* rhs = (k2 != NULL) ? k2 : conk2;
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn != NULL) {
-        set_req_X(1, lhs, igvn);
-        set_req_X(2, rhs, igvn);
-      } else {
-        set_req(1, lhs);
-        set_req(2, rhs);
-      }
+      set_req_X(1, lhs, phase);
+      set_req_X(2, rhs, phase);
       return this;
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,9 +161,8 @@ public enum TypeKind {
     MODULE;
 
     /**
-     * Returns {@code true} if this kind corresponds to a primitive
-     * type and {@code false} otherwise.
-     * @return {@code true} if this kind corresponds to a primitive type
+     * {@return {@code true} if this kind corresponds to a primitive
+     * type and {@code false} otherwise}
      */
     public boolean isPrimitive() {
         switch(this) {

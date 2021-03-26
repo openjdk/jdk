@@ -130,22 +130,20 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     }
 
     public $type$ get() {
-        checkSegment();
-        $memtype$ x = UNSAFE.get$Memtype$Unaligned(bb.hb, byteOffset(nextGetIndex()),
+        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(scope(), bb.hb, byteOffset(nextGetIndex()),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
 
     public $type$ get(int i) {
-        checkSegment();
-        $memtype$ x = UNSAFE.get$Memtype$Unaligned(bb.hb, byteOffset(checkIndex(i)),
+        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(scope(), bb.hb, byteOffset(checkIndex(i)),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
 
 #if[streamableType]
    $type$ getUnchecked(int i) {
-        $memtype$ x = UNSAFE.get$Memtype$Unaligned(bb.hb, byteOffset(i),
+        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(null, bb.hb, byteOffset(i),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
@@ -155,9 +153,8 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     public $Type$Buffer put($type$ x) {
 #if[rw]
-        checkSegment();
         $memtype$ y = $toBits$(x);
-        UNSAFE.put$Memtype$Unaligned(bb.hb, byteOffset(nextPutIndex()), y,
+        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(scope(), bb.hb, byteOffset(nextPutIndex()), y,
             {#if[boB]?true:false});
         return this;
 #else[rw]
@@ -167,9 +164,8 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     public $Type$Buffer put(int i, $type$ x) {
 #if[rw]
-        checkSegment();
         $memtype$ y = $toBits$(x);
-        UNSAFE.put$Memtype$Unaligned(bb.hb, byteOffset(checkIndex(i)), y,
+        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(scope(), bb.hb, byteOffset(checkIndex(i)), y,
             {#if[boB]?true:false});
         return this;
 #else[rw]

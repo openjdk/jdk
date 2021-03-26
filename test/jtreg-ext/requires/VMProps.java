@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package requires;
 
 import java.io.BufferedInputStream;
@@ -31,10 +32,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -117,8 +120,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("docker.support", this::dockerSupport);
         map.put("vm.musl", this::isMusl);
         map.put("release.implementor", this::implementor);
-        map.put("test.vm.gc.nvdimm", this::isNvdimmTestEnabled);
         map.put("jdk.containerized", this::jdkContainerized);
+        map.put("vm.flagless", this::isFlagless);
         vmGC(map); // vm.gc.X = true/false
         vmOptFinalFlags(map);
 
@@ -240,18 +243,17 @@ public class VMProps implements Callable<Map<String, String>> {
             return "false";
         }
 
-        switch (GC.selected()) {
-            case Serial:
-            case Parallel:
-            case G1:
-                // These GCs are supported with JVMCI
-                return "true";
-            default:
-                break;
+        // Not all GCs have full JVMCI support
+        if (!WB.isJVMCISupportedByGC()) {
+          return "false";
         }
 
-        // Every other GC is not supported
-        return "false";
+        // Interpreted mode cannot enable JVMCI
+        if (vmCompMode().equals("Xint")) {
+          return "false";
+        }
+
+        return "true";
     }
 
     /**
@@ -272,21 +274,6 @@ public class VMProps implements Callable<Map<String, String>> {
         return CPUInfo.getFeatures().toString();
     }
 
-    private boolean isGcSupportedByGraal(GC gc) {
-        switch (gc) {
-            case Serial:
-            case Parallel:
-            case G1:
-                return true;
-            case Epsilon:
-            case Z:
-            case Shenandoah:
-                return false;
-            default:
-                throw new IllegalStateException("Unknown GC " + gc.name());
-        }
-    }
-
     /**
      * For all existing GC sets vm.gc.X property.
      * Example vm.gc.G1=true means:
@@ -297,11 +284,11 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param map - property-value pairs
      */
     protected void vmGC(SafeMap map) {
-        var isGraalEnabled = Compiler.isGraalEnabled();
+        var isJVMCIEnabled = Compiler.isJVMCIEnabled();
         for (GC gc: GC.values()) {
             map.put("vm.gc." + gc.name(),
                     () -> "" + (gc.isSupported()
-                            && (!isGraalEnabled || isGcSupportedByGraal(gc))
+                            && (!isJVMCIEnabled || gc.isSupportedByJVMCICompiler())
                             && (gc.isSelected() || GC.isSelectedErgonomically())));
         }
     }
@@ -541,14 +528,68 @@ public class VMProps implements Callable<Map<String, String>> {
         }
     }
 
-    private String isNvdimmTestEnabled() {
-        String isEnabled = System.getenv("TEST_VM_GC_NVDIMM");
-        return "" + "true".equalsIgnoreCase(isEnabled);
-    }
-
     private String jdkContainerized() {
         String isEnabled = System.getenv("TEST_JDK_CONTAINERIZED");
         return "" + "true".equalsIgnoreCase(isEnabled);
+    }
+
+    /**
+     * Checks if we are in <i>almost</i> out-of-box configuration, i.e. the flags
+     * which JVM is started with don't affect its behavior "significantly".
+     * {@code TEST_VM_FLAGLESS} enviroment variable can be used to force this
+     * method to return true and allow any flags.
+     *
+     * @return true if there are no JVM flags
+     */
+    private String isFlagless() {
+        boolean result = true;
+        if (System.getenv("TEST_VM_FLAGLESS") != null) {
+            return "" + result;
+        }
+
+        List<String> allFlags = new ArrayList<String>();
+        Collections.addAll(allFlags, System.getProperty("test.vm.opts", "").trim().split("\\s+"));
+        Collections.addAll(allFlags, System.getProperty("test.java.opts", "").trim().split("\\s+"));
+
+        // check -XX flags
+        var ignoredXXFlags = Set.of(
+                // added by run-test framework
+                "MaxRAMPercentage",
+                // added by test environment
+                "CreateCoredumpOnCrash"
+        );
+        result &= allFlags.stream()
+                          .filter(s -> s.startsWith("-XX:"))
+                          // map to names:
+                              // remove -XX:
+                              .map(s -> s.substring(4))
+                              // remove +/- from bool flags
+                              .map(s -> s.charAt(0) == '+' || s.charAt(0) == '-' ? s.substring(1) : s)
+                              // remove =.* from others
+                              .map(s -> s.contains("=") ? s.substring(0, s.indexOf('=')) : s)
+                          // skip known-to-be-there flags
+                          .filter(s -> !ignoredXXFlags.contains(s))
+                          .findAny()
+                          .isEmpty();
+
+        // check -X flags
+        var ignoredXFlags = Set.of(
+                // default, yet still seen to be explicitly set
+                "mixed"
+        );
+        result &= allFlags.stream()
+                          .filter(s -> s.startsWith("-X") && !s.startsWith("-XX:"))
+                          // map to names:
+                              // remove -X
+                              .map(s -> s.substring(2))
+                              // remove :.* from flags with values
+                              .map(s -> s.contains(":") ? s.substring(0, s.indexOf(':')) : s)
+                          // skip known-to-be-there flags
+                          .filter(s -> !ignoredXFlags.contains(s))
+                          .findAny()
+                          .isEmpty();
+
+        return "" + result;
     }
 
     /**

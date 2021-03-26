@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
@@ -75,12 +76,12 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             params -> "",
             null);
 
-    public static final BundlerParamInfo<String> INSTALLER_NAME =
+    public static final BundlerParamInfo<String> MAC_INSTALLER_NAME =
             new StandardBundlerParam<> (
             "mac.installerName",
             String.class,
             params -> {
-                String nm = APP_NAME.fetchFrom(params);
+                String nm = INSTALLER_NAME.fetchFrom(params);
                 if (nm == null) return null;
 
                 String version = VERSION.fetchFrom(params);
@@ -151,19 +152,18 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         return "INSTALLER";
     }
 
-    public static String findKey(String keyPrefix, String teamName, String keychainName,
-            boolean verbose) {
-        String key = (teamName.startsWith(keyPrefix)
-                || teamName.startsWith("3rd Party Mac Developer"))
-                ? teamName : (keyPrefix + teamName);
-        if (Platform.getPlatform() != Platform.MAC) {
-            return null;
-        }
+    public static String findKey(String keyPrefix, String teamName, String keychainName) {
+
+        boolean useAsIs = teamName.startsWith(keyPrefix)
+                || teamName.startsWith("Developer ID")
+                || teamName.startsWith("3rd Party Mac");
+
+        String key = (useAsIs) ? teamName : (keyPrefix + teamName);
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 PrintStream ps = new PrintStream(baos)) {
             List<String> searchOptions = new ArrayList<>();
-            searchOptions.add("security");
+            searchOptions.add("/usr/bin/security");
             searchOptions.add("find-certificate");
             searchOptions.add("-c");
             searchOptions.add(key);

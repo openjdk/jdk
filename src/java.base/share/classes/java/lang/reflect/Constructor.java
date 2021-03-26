@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,6 +223,7 @@ public final class Constructor<T> extends Executable {
 
     /**
      * {@inheritDoc}
+     * @jls 8.8.3 Constructor Modifiers
      */
     @Override
     public int getModifiers() {
@@ -308,8 +309,7 @@ public final class Constructor<T> extends Executable {
      * same formal parameter types.
      */
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof Constructor) {
-            Constructor<?> other = (Constructor<?>)obj;
+        if (obj instanceof Constructor<?> other) {
             if (getDeclaringClass() == other.getDeclaringClass()) {
                 return equalParamTypes(parameterTypes, other.parameterTypes);
             }
@@ -333,7 +333,7 @@ public final class Constructor<T> extends Executable {
      * followed by a parenthesized, comma-separated list of the
      * constructor's formal parameter types.  For example:
      * <pre>{@code
-     *    public java.util.Hashtable(int,float)
+     *    public java.util.HashMap(int,float)
      * }</pre>
      *
      * <p>If the constructor is declared to throw exceptions, the
@@ -462,7 +462,7 @@ public final class Constructor<T> extends Executable {
      *              after possible unwrapping, a parameter value
      *              cannot be converted to the corresponding formal
      *              parameter type by a method invocation conversion; if
-     *              this constructor pertains to an enum type.
+     *              this constructor pertains to an enum class.
      * @throws    InstantiationException    if the class that declares the
      *              underlying constructor represents an abstract class.
      * @throws    InvocationTargetException if the underlying constructor
@@ -503,6 +503,7 @@ public final class Constructor<T> extends Executable {
     /**
      * {@inheritDoc}
      * @since 1.5
+     * @jls 8.4.1 Formal Parameters
      */
     @Override
     public boolean isVarArgs() {
@@ -512,6 +513,7 @@ public final class Constructor<T> extends Executable {
     /**
      * {@inheritDoc}
      * @jls 13.1 The Form of a Binary
+     * @jvms 4.6 Methods
      * @since 1.5
      */
     @Override
@@ -662,7 +664,7 @@ public final class Constructor<T> extends Executable {
                     getConstantPool(thisDeclClass),
                 this,
                 thisDeclClass,
-                enclosingClass,
+                parameterize(enclosingClass),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
     }
 }

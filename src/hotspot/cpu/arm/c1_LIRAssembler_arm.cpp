@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_arm.inline.hpp"
 
@@ -847,7 +848,7 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
       __ add_32(dest, left, AsmOperand(left, lsr, 31));
       __ asr_32(dest, dest, 1);
     } else if (c != (int) 0x80000000) {
-      int power = log2_intptr(c);
+      int power = log2i_exact(c);
       __ asr_32(Rtemp, left, 31);
       __ add_32(dest, left, AsmOperand(Rtemp, lsr, 32-power)); // dest = left + (left < 0 ? 2^power - 1 : 0);
       __ asr_32(dest, dest, power);                            // dest = dest >>> power;
@@ -1938,12 +1939,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall *op) {
     __ bind(call_return);
   }
   add_call_info(code_offset(), op->info());
-}
-
-
-/* vtable-dispatch is not enabled for arm platforms */
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere();
 }
 
 void LIR_Assembler::emit_static_call_stub() {

@@ -33,7 +33,6 @@ package java.io;
  * indicates how many bytes were successfully transferred before
  * the interruption occurred.
  *
- * @author  unascribed
  * @see     java.io.InputStream
  * @see     java.io.OutputStream
  * @see     java.lang.Thread#interrupt()

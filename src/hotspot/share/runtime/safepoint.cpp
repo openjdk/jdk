@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
@@ -65,6 +64,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
@@ -381,6 +381,14 @@ void SafepointSynchronize::begin() {
   assert(_waiting_to_block == 0, "No thread should be running");
 
 #ifndef PRODUCT
+  // Mark all threads
+  if (VerifyCrossModifyFence) {
+    JavaThreadIteratorWithHandle jtiwh;
+    for (; JavaThread *cur = jtiwh.next(); ) {
+      cur->set_requires_cross_modify_fence(true);
+    }
+  }
+
   if (safepoint_limit_time != 0) {
     jlong current_time = os::javaTimeNanos();
     if (safepoint_limit_time < current_time) {
@@ -538,15 +546,12 @@ public:
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
   void work(uint worker_id) {
-    if (_do_lazy_roots && _subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
-      Tracer t("lazy partial thread root processing");
-      ParallelSPCleanupThreadClosure cl;
-      Threads::threads_do(&cl);
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
-      Tracer t("deflating idle monitors");
-      ObjectSynchronizer::do_safepoint_work();
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
+      if (_do_lazy_roots) {
+        Tracer t("lazy partial thread root processing");
+        ParallelSPCleanupThreadClosure cl;
+        Threads::threads_do(&cl);
+      }
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
@@ -556,7 +561,7 @@ public:
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
       Tracer t("compilation policy safepoint handler");
-      CompilationPolicy::policy()->do_safepoint_work();
+      CompilationPolicy::do_safepoint_work();
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
@@ -586,7 +591,7 @@ public:
       OopStorage::trigger_cleanup_if_needed();
     }
 
-    _subtasks.all_tasks_completed(_num_workers);
+    _subtasks.all_tasks_claimed();
   }
 };
 
@@ -610,6 +615,12 @@ void SafepointSynchronize::do_cleanup_tasks() {
   }
 
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
+
+  if (log_is_enabled(Debug, monitorinflation)) {
+    // The VMThread calls do_final_audit_and_print_stats() which calls
+    // audit_and_print_stats() at the Info level at VM exit time.
+    ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
+  }
 }
 
 // Methods for determining if a JavaThread is safepoint safe.
@@ -736,29 +747,6 @@ void SafepointSynchronize::block(JavaThread *thread) {
   guarantee(thread->safepoint_state()->get_safepoint_id() == InactiveSafepointCounter,
             "The safepoint id should be set only in block path");
 
-  // Check for pending. async. exceptions or suspends - except if the
-  // thread was blocked inside the VM. has_special_runtime_exit_condition()
-  // is called last since it grabs a lock and we only want to do that when
-  // we must.
-  //
-  // Note: we never deliver an async exception at a polling point as the
-  // compiler may not have an exception handler for it. The polling
-  // code will notice the async and deoptimize and the exception will
-  // be delivered. (Polling at a return point is ok though). Sure is
-  // a lot of bother for a deprecated feature...
-  //
-  // We don't deliver an async exception if the thread state is
-  // _thread_in_native_trans so JNI functions won't be called with
-  // a surprising pending exception. If the thread state is going back to java,
-  // async exception is checked in check_special_condition_for_native_trans().
-
-  if (state != _thread_blocked_trans &&
-      state != _thread_in_vm_trans &&
-      thread->has_special_runtime_exit_condition()) {
-    thread->handle_special_runtime_exit_condition(
-      !thread->is_at_poll_safepoint() && (state != _thread_in_native_trans));
-  }
-
   // cross_modify_fence is done by SafepointMechanism::process_if_requested
   // which is the only caller here.
 }
@@ -769,6 +757,9 @@ void SafepointSynchronize::block(JavaThread *thread) {
 
 void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   assert(thread->thread_state() == _thread_in_Java, "should come from Java code");
+
+  // Enable WXWrite: the function is called implicitly from java code.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   if (log_is_enabled(Info, safepoint, stats)) {
     Atomic::inc(&_nof_threads_hit_polling_page);
@@ -954,12 +945,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     StackWatermarkSet::after_unwind(self);
 
     // Process pending operation
-    SafepointMechanism::process_if_requested(self);
-    // We have to wait if we are here because of a handshake for object deoptimization.
-    if (self->is_obj_deopt_suspend()) {
-      self->wait_for_object_deoptimization();
-    }
-    self->check_and_handle_async_exceptions();
+    SafepointMechanism::process_if_requested_with_exit_check(self, true /* check asyncs */);
 
     // restore oop result, if any
     if (return_oop) {
@@ -969,23 +955,24 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
   // This is a safepoint poll. Verify the return address and block.
   else {
-    set_at_poll_safepoint(true);
 
     // verify the blob built the "return address" correctly
     assert(real_return_addr == caller_fr.pc(), "must match");
 
+    set_at_poll_safepoint(true);
     // Process pending operation
-    SafepointMechanism::process_if_requested(self);
-    // We have to wait if we are here because of a handshake for object deoptimization.
-    if (self->is_obj_deopt_suspend()) {
-      self->wait_for_object_deoptimization();
-    }
+    // We never deliver an async exception at a polling point as the
+    // compiler may not have an exception handler for it. The polling
+    // code will notice the pending async exception, deoptimize and
+    // the exception will be delivered. (Polling at a return point
+    // is ok though). Sure is a lot of bother for a deprecated feature...
+    SafepointMechanism::process_if_requested_with_exit_check(self, false /* check asyncs */);
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame
     // as otherwise we may never deliver it.
     if (self->has_async_condition()) {
-      ThreadInVMfromJavaNoAsyncException __tiv(self);
+      ThreadInVMfromJava __tiv(self, false /* check asyncs */);
       Deoptimization::deoptimize_frame(self, caller_fr.id());
     }
 

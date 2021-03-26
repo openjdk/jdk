@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "classfile/vmSymbols.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -51,16 +50,16 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
-#include "prims/nativeLookup.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
-  vmIntrinsics::ID id = m->intrinsic_id();
+  vmIntrinsicID id = m->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   if (!m->is_loaded()) {
@@ -89,7 +88,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     return new LibraryIntrinsic(m, is_virtual,
                                 vmIntrinsics::predicates_needed(id),
                                 vmIntrinsics::does_virtual_dispatch(id),
-                                (vmIntrinsics::ID) id);
+                                id);
   } else {
     return NULL;
   }
@@ -108,7 +107,9 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 #endif
   ciMethod* callee = kit.callee();
   const int bci    = kit.bci();
-
+#ifdef ASSERT
+  Node* ctrl = kit.control();
+#endif
   // Try to inline the intrinsic.
   if ((CheckIntrinsics ? callee->intrinsic_candidate() : true) &&
       kit.try_to_inline(_last_predicate)) {
@@ -132,6 +133,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   }
 
   // The intrinsic bailed out
+  assert(ctrl == kit.control(), "Control flow was added although the intrinsic bailed out");
   if (jvms->has_method()) {
     // Not a root compile.
     const char* msg;
@@ -483,7 +485,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
   case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
-  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex();
+  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex(T_INT);
+  case vmIntrinsics::_Preconditions_checkLongIndex: return inline_preconditions_checkIndex(T_LONG);
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
 
   case vmIntrinsics::_allocateUninitializedArray: return inline_unsafe_newArray(true);
@@ -521,6 +524,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_getCallerClass:           return inline_native_Reflection_getCallerClass();
 
   case vmIntrinsics::_Reference_get:            return inline_reference_get();
+  case vmIntrinsics::_Reference_refersTo0:      return inline_reference_refersTo0(false);
+  case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
 
   case vmIntrinsics::_Class_cast:               return inline_Class_cast();
 
@@ -574,6 +579,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_ghash_processBlocks();
   case vmIntrinsics::_base64_encodeBlock:
     return inline_base64_encodeBlock();
+  case vmIntrinsics::_base64_decodeBlock:
+    return inline_base64_decodeBlock();
 
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
@@ -659,13 +666,16 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_VectorExtract:
     return inline_vector_extract();
 
+  case vmIntrinsics::_getObjectSize:
+    return inline_getObjectSize();
+
   default:
     // If you get here, it may be that someone has added a new intrinsic
-    // to the list in vmSymbols.hpp without implementing it here.
+    // to the list in vmIntrinsics.hpp without implementing it here.
 #ifndef PRODUCT
     if ((PrintMiscellaneous && (Verbose || WizardMode)) || PrintOpto) {
       tty->print_cr("*** Warning: Unimplemented intrinsic %s(%d)",
-                    vmIntrinsics::name_at(intrinsic_id()), intrinsic_id());
+                    vmIntrinsics::name_at(intrinsic_id()), vmIntrinsics::as_int(intrinsic_id()));
     }
 #endif
     return false;
@@ -697,11 +707,11 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
-    // to the list in vmSymbols.hpp without implementing it here.
+    // to the list in vmIntrinsics.hpp without implementing it here.
 #ifndef PRODUCT
     if ((PrintMiscellaneous && (Verbose || WizardMode)) || PrintOpto) {
       tty->print_cr("*** Warning: Unimplemented predicate for intrinsic %s(%d)",
-                    vmIntrinsics::name_at(intrinsic_id()), intrinsic_id());
+                    vmIntrinsics::name_at(intrinsic_id()), vmIntrinsics::as_int(intrinsic_id()));
     }
 #endif
     Node* slow_ctl = control();
@@ -996,14 +1006,15 @@ bool LibraryCallKit::inline_hasNegatives() {
   return true;
 }
 
-bool LibraryCallKit::inline_preconditions_checkIndex() {
+bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   Node* index = argument(0);
-  Node* length = argument(1);
+  Node* length = bt == T_INT ? argument(1) : argument(2);
   if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
     return false;
   }
 
-  Node* len_pos_cmp = _gvn.transform(new CmpINode(length, intcon(0)));
+  // check that length is positive
+  Node* len_pos_cmp = _gvn.transform(CmpNode::make(length, integercon(0, bt), bt));
   Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
 
   {
@@ -1012,11 +1023,19 @@ bool LibraryCallKit::inline_preconditions_checkIndex() {
                   Deoptimization::Action_make_not_entrant);
   }
 
+  // length is now known postive, add a cast node to make this explicit
+  jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
+  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
+  casted_length = _gvn.transform(casted_length);
+  replace_in_map(length, casted_length);
+  length = casted_length;
+
   if (stopped()) {
     return false;
   }
 
-  Node* rc_cmp = _gvn.transform(new CmpUNode(index, length));
+  // Use an unsigned comparison for the range check itself
+  Node* rc_cmp = _gvn.transform(CmpNode::make(index, length, bt, true));
   BoolTest::mask btest = BoolTest::lt;
   Node* rc_bool = _gvn.transform(new BoolNode(rc_cmp, btest));
   RangeCheckNode* rc = new RangeCheckNode(control(), rc_bool, PROB_MAX, COUNT_UNKNOWN);
@@ -1036,8 +1055,8 @@ bool LibraryCallKit::inline_preconditions_checkIndex() {
     return false;
   }
 
-  Node* result = new CastIINode(index, TypeInt::make(0, _gvn.type(length)->is_int()->_hi, Type::WidenMax));
-  result->set_req(0, control());
+  // index is now known to be >= 0 and < length, cast it
+  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
@@ -2181,15 +2200,12 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   Node* receiver = argument(0);  // type: oop
 
   // Build address expression.
-  Node* adr;
   Node* heap_base_oop = top();
-  Node* offset = top();
-  Node* val;
 
   // The base is either a Java object or a value produced by Unsafe.staticFieldBase
   Node* base = argument(1);  // type: oop
   // The offset is a value produced by Unsafe.staticFieldOffset or Unsafe.objectFieldOffset
-  offset = argument(2);  // type: long
+  Node* offset = argument(2);  // type: long
   // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
   // to be plain byte offsets, which are also the same as those accepted
   // by oopDesc::field_addr.
@@ -2197,12 +2213,19 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
          "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
-  adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
+
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
+
+  Node* adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
 
   if (_gvn.type(base)->isa_ptr() == TypePtr::NULL_PTR) {
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
     } else {
+      set_map(old_map);
+      set_sp(old_sp);
       return false; // off-heap oop accesses are not supported
     }
   } else {
@@ -2216,10 +2239,12 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     decorators |= IN_HEAP;
   }
 
-  val = is_store ? argument(4) : NULL;
+  Node* val = is_store ? argument(4) : NULL;
 
   const TypePtr* adr_type = _gvn.type(adr)->isa_ptr();
   if (adr_type == TypePtr::NULL_PTR) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false; // off-heap access with zero address
   }
 
@@ -2229,6 +2254,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
       alias_type->adr_type() == TypeAryPtr::RANGE) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false; // not supported
   }
 
@@ -2247,6 +2274,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     }
     if ((bt == T_OBJECT) != (type == T_OBJECT)) {
       // Don't intrinsify mismatched object accesses
+      set_map(old_map);
+      set_sp(old_sp);
       return false;
     }
     mismatched = (bt != type);
@@ -2254,6 +2283,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
+  old_map->destruct(&_gvn);
   assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   if (mismatched) {
@@ -2488,6 +2518,9 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   assert(Unsafe_field_offset_to_byte_offset(11) == 11, "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
   Node* adr = make_unsafe_address(base, offset, ACCESS_WRITE | ACCESS_READ, type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
@@ -2496,8 +2529,12 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   if (bt != T_ILLEGAL &&
       (is_reference_type(bt) != (type == T_OBJECT))) {
     // Don't intrinsify mismatched object accesses.
+    set_map(old_map);
+    set_sp(old_sp);
     return false;
   }
+
+  old_map->destruct(&_gvn);
 
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.
@@ -3310,7 +3347,13 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
     // ensuing call will throw an exception, or else it
     // will cache the array klass for next time.
     PreserveJVMState pjvms(this);
-    CallJavaNode* slow_call = generate_method_call_static(vmIntrinsics::_newArray);
+    CallJavaNode* slow_call = NULL;
+    if (uninitialized) {
+      // Generate optimized virtual call (holder class 'Unsafe' is final)
+      slow_call = generate_method_call(vmIntrinsics::_allocateUninitializedArray, false, false);
+    } else {
+      slow_call = generate_method_call_static(vmIntrinsics::_newArray);
+    }
     Node* slow_result = set_results_for_java_call(slow_call);
     // this->control() comes from set_results_for_java_call
     result_reg->set_req(_slow_path, control());
@@ -3567,8 +3610,7 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
   if (is_static) {
     assert(!is_virtual, "");
     slow_call = new CallStaticJavaNode(C, tf,
-                           SharedRuntime::get_resolve_static_call_stub(),
-                           method, bci());
+                           SharedRuntime::get_resolve_static_call_stub(), method);
   } else if (is_virtual) {
     null_check_receiver();
     int vtable_index = Method::invalid_vtable_index;
@@ -3584,12 +3626,11 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
     }
     slow_call = new CallDynamicJavaNode(tf,
                           SharedRuntime::get_resolve_virtual_call_stub(),
-                          method, vtable_index, bci());
+                          method, vtable_index);
   } else {  // neither virtual nor static:  opt_virtual
     null_check_receiver();
     slow_call = new CallStaticJavaNode(C, tf,
-                                SharedRuntime::get_resolve_opt_virtual_call_stub(),
-                                method, bci());
+                                SharedRuntime::get_resolve_opt_virtual_call_stub(), method);
     slow_call->set_optimized_virtual(true);
   }
   if (CallGenerator::is_inlined_method_handle_intrinsic(this->method(), bci(), callee())) {
@@ -4101,8 +4142,8 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
           PreserveJVMState pjvms2(this);
           set_control(is_obja);
           // Generate a direct call to the right arraycopy function(s).
-          Node* alloc = tightly_coupled_allocation(alloc_obj, NULL);
-          ArrayCopyNode* ac = ArrayCopyNode::make(this, true, obj, intcon(0), alloc_obj, intcon(0), obj_length, alloc != NULL, false);
+          // Clones are always tightly coupled.
+          ArrayCopyNode* ac = ArrayCopyNode::make(this, true, obj, intcon(0), alloc_obj, intcon(0), obj_length, true, false);
           ac->set_clone_oop_array();
           Node* n = _gvn.transform(ac);
           assert(n == ac, "cannot disappear");
@@ -5258,7 +5299,7 @@ bool LibraryCallKit::inline_updateByteBufferCRC32() {
 
 //------------------------------get_table_from_crc32c_class-----------------------
 Node * LibraryCallKit::get_table_from_crc32c_class(ciInstanceKlass *crc32c_class) {
-  Node* table = load_field_from_object(NULL, "byteTable", "[I", /*is_exact*/ false, /*is_static*/ true, crc32c_class);
+  Node* table = load_field_from_object(NULL, "byteTable", "[I", /*decorators*/ IN_HEAP, /*is_static*/ true, crc32c_class);
   assert (table != NULL, "wrong version of java.util.zip.CRC32C");
 
   return table;
@@ -5449,23 +5490,11 @@ bool LibraryCallKit::inline_reference_get() {
   Node* reference_obj = null_check_receiver();
   if (stopped()) return true;
 
-  const TypeInstPtr* tinst = _gvn.type(reference_obj)->isa_instptr();
-  assert(tinst != NULL, "obj is null");
-  assert(tinst->klass()->is_loaded(), "obj is not loaded");
-  ciInstanceKlass* referenceKlass = tinst->klass()->as_instance_klass();
-  ciField* field = referenceKlass->get_field_by_name(ciSymbol::make("referent"),
-                                                     ciSymbol::make("Ljava/lang/Object;"),
-                                                     false);
-  assert (field != NULL, "undefined field");
-
-  Node* adr = basic_plus_adr(reference_obj, reference_obj, referent_offset);
-  const TypePtr* adr_type = C->alias_type(field)->adr_type();
-
-  ciInstanceKlass* klass = env()->Object_klass();
-  const TypeOopPtr* object_type = TypeOopPtr::make_from_klass(klass);
-
   DecoratorSet decorators = IN_HEAP | ON_WEAK_OOP_REF;
-  Node* result = access_load_at(reference_obj, adr, adr_type, object_type, T_OBJECT, decorators);
+  Node* result = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
+                                        decorators, /*is_static*/ false, NULL);
+  if (result == NULL) return false;
+
   // Add memory barrier to prevent commoning reads from this field
   // across safepoint since GC can change its value.
   insert_mem_bar(Op_MemBarCPUOrder);
@@ -5474,15 +5503,54 @@ bool LibraryCallKit::inline_reference_get() {
   return true;
 }
 
+//----------------------------inline_reference_refersTo0----------------------------
+// bool java.lang.ref.Reference.refersTo0();
+// bool java.lang.ref.PhantomReference.refersTo0();
+bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
+  // Get arguments:
+  Node* reference_obj = null_check_receiver();
+  Node* other_obj = argument(1);
+  if (stopped()) return true;
 
-Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString,
-                                              bool is_exact=true, bool is_static=false,
-                                              ciInstanceKlass * fromKls=NULL) {
+  DecoratorSet decorators = IN_HEAP | AS_NO_KEEPALIVE;
+  decorators |= (is_phantom ? ON_PHANTOM_OOP_REF : ON_WEAK_OOP_REF);
+  Node* referent = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
+                                          decorators, /*is_static*/ false, NULL);
+  if (referent == NULL) return false;
+
+  // Add memory barrier to prevent commoning reads from this field
+  // across safepoint since GC can change its value.
+  insert_mem_bar(Op_MemBarCPUOrder);
+
+  Node* cmp = _gvn.transform(new CmpPNode(referent, other_obj));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+  IfNode* if_node = create_and_map_if(control(), bol, PROB_FAIR, COUNT_UNKNOWN);
+
+  RegionNode* region = new RegionNode(3);
+  PhiNode* phi = new PhiNode(region, TypeInt::BOOL);
+
+  Node* if_true = _gvn.transform(new IfTrueNode(if_node));
+  region->init_req(1, if_true);
+  phi->init_req(1, intcon(1));
+
+  Node* if_false = _gvn.transform(new IfFalseNode(if_node));
+  region->init_req(2, if_false);
+  phi->init_req(2, intcon(0));
+
+  set_control(_gvn.transform(region));
+  record_for_igvn(region);
+  set_result(_gvn.transform(phi));
+  return true;
+}
+
+
+Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString,
+                                             DecoratorSet decorators = IN_HEAP, bool is_static = false,
+                                             ciInstanceKlass* fromKls = NULL) {
   if (fromKls == NULL) {
     const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
     assert(tinst != NULL, "obj is null");
     assert(tinst->klass()->is_loaded(), "obj is not loaded");
-    assert(!is_exact || tinst->klass_is_exact(), "klass not exact");
     fromKls = tinst->klass()->as_instance_klass();
   } else {
     assert(is_static, "only for static field access");
@@ -5517,8 +5585,6 @@ Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * field
   } else {
     type = Type::get_const_basic_type(bt);
   }
-
-  DecoratorSet decorators = IN_HEAP;
 
   if (is_vol) {
     decorators |= MO_SEQ_CST;
@@ -5612,22 +5678,10 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
   if (k_start == NULL) return false;
 
-  if (Matcher::pass_original_key_for_aes()) {
-    // on SPARC we need to pass the original key since key expansion needs to happen in intrinsics due to
-    // compatibility issues between Java key expansion and SPARC crypto instructions
-    Node* original_k_start = get_original_key_start_from_aescrypt_object(aescrypt_object);
-    if (original_k_start == NULL) return false;
-
-    // Call the stub.
-    make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::aescrypt_block_Type(),
-                      stubAddr, stubName, TypePtr::BOTTOM,
-                      src_start, dest_start, k_start, original_k_start);
-  } else {
-    // Call the stub.
-    make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::aescrypt_block_Type(),
-                      stubAddr, stubName, TypePtr::BOTTOM,
-                      src_start, dest_start, k_start);
-  }
+  // Call the stub.
+  make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::aescrypt_block_Type(),
+                    stubAddr, stubName, TypePtr::BOTTOM,
+                    src_start, dest_start, k_start);
 
   return true;
 }
@@ -5685,7 +5739,7 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   // so we cast it here safely.
   // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
 
-  Node* embeddedCipherObj = load_field_from_object(cipherBlockChaining_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(cipherBlockChaining_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
   if (embeddedCipherObj == NULL) return false;
 
   // cast it to what we know it will be at runtime
@@ -5706,29 +5760,15 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   if (k_start == NULL) return false;
 
   // similarly, get the start address of the r vector
-  Node* objRvec = load_field_from_object(cipherBlockChaining_object, "r", "[B", /*is_exact*/ false);
+  Node* objRvec = load_field_from_object(cipherBlockChaining_object, "r", "[B");
   if (objRvec == NULL) return false;
   Node* r_start = array_element_address(objRvec, intcon(0), T_BYTE);
 
-  Node* cbcCrypt;
-  if (Matcher::pass_original_key_for_aes()) {
-    // on SPARC we need to pass the original key since key expansion needs to happen in intrinsics due to
-    // compatibility issues between Java key expansion and SPARC crypto instructions
-    Node* original_k_start = get_original_key_start_from_aescrypt_object(aescrypt_object);
-    if (original_k_start == NULL) return false;
-
-    // Call the stub, passing src_start, dest_start, k_start, r_start, src_len and original_k_start
-    cbcCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
-                                 OptoRuntime::cipherBlockChaining_aescrypt_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 src_start, dest_start, k_start, r_start, len, original_k_start);
-  } else {
-    // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
-    cbcCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
-                                 OptoRuntime::cipherBlockChaining_aescrypt_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 src_start, dest_start, k_start, r_start, len);
-  }
+  // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
+  Node* cbcCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                     OptoRuntime::cipherBlockChaining_aescrypt_Type(),
+                                     stubAddr, stubName, TypePtr::BOTTOM,
+                                     src_start, dest_start, k_start, r_start, len);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(cbcCrypt, TypeFunc::Parms));
@@ -5787,7 +5827,7 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   // so we cast it here safely.
   // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
 
-  Node* embeddedCipherObj = load_field_from_object(electronicCodeBook_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(electronicCodeBook_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
   if (embeddedCipherObj == NULL) return false;
 
   // cast it to what we know it will be at runtime
@@ -5807,16 +5847,11 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
   if (k_start == NULL) return false;
 
-  Node* ecbCrypt;
-  if (Matcher::pass_original_key_for_aes()) {
-    // no SPARC version for AES/ECB intrinsics now.
-    return false;
-  }
   // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
-  ecbCrypt = make_runtime_call(RC_LEAF | RC_NO_FP,
-                               OptoRuntime::electronicCodeBook_aescrypt_Type(),
-                               stubAddr, stubName, TypePtr::BOTTOM,
-                               src_start, dest_start, k_start, len);
+  Node* ecbCrypt = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                     OptoRuntime::electronicCodeBook_aescrypt_Type(),
+                                     stubAddr, stubName, TypePtr::BOTTOM,
+                                     src_start, dest_start, k_start, len);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(ecbCrypt, TypeFunc::Parms));
@@ -5865,7 +5900,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   // (because of the predicated logic executed earlier).
   // so we cast it here safely.
   // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
-  Node* embeddedCipherObj = load_field_from_object(counterMode_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(counterMode_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
   if (embeddedCipherObj == NULL) return false;
   // cast it to what we know it will be at runtime
   const TypeInstPtr* tinst = _gvn.type(counterMode_object)->isa_instptr();
@@ -5882,25 +5917,20 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
   if (k_start == NULL) return false;
   // similarly, get the start address of the r vector
-  Node* obj_counter = load_field_from_object(counterMode_object, "counter", "[B", /*is_exact*/ false);
+  Node* obj_counter = load_field_from_object(counterMode_object, "counter", "[B");
   if (obj_counter == NULL) return false;
   Node* cnt_start = array_element_address(obj_counter, intcon(0), T_BYTE);
 
-  Node* saved_encCounter = load_field_from_object(counterMode_object, "encryptedCounter", "[B", /*is_exact*/ false);
+  Node* saved_encCounter = load_field_from_object(counterMode_object, "encryptedCounter", "[B");
   if (saved_encCounter == NULL) return false;
   Node* saved_encCounter_start = array_element_address(saved_encCounter, intcon(0), T_BYTE);
   Node* used = field_address_from_object(counterMode_object, "used", "I", /*is_exact*/ false);
 
-  Node* ctrCrypt;
-  if (Matcher::pass_original_key_for_aes()) {
-    // no SPARC version for AES/CTR intrinsics now.
-    return false;
-  }
   // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
-  ctrCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
-                               OptoRuntime::counterMode_aescrypt_Type(),
-                               stubAddr, stubName, TypePtr::BOTTOM,
-                               src_start, dest_start, k_start, cnt_start, len, saved_encCounter_start, used);
+  Node* ctrCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                     OptoRuntime::counterMode_aescrypt_Type(),
+                                     stubAddr, stubName, TypePtr::BOTTOM,
+                                     src_start, dest_start, k_start, cnt_start, len, saved_encCounter_start, used);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(ctrCrypt, TypeFunc::Parms));
@@ -5915,14 +5945,14 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   // Intel's extention is based on this optimization and AESCrypt generates round keys by preprocessing MixColumns.
   // However, ppc64 vncipher processes MixColumns and requires the same round keys with encryption.
   // The ppc64 stubs of encryption and decryption use the same round keys (sessionK[0]).
-  Node* objSessionK = load_field_from_object(aescrypt_object, "sessionK", "[[I", /*is_exact*/ false);
+  Node* objSessionK = load_field_from_object(aescrypt_object, "sessionK", "[[I");
   assert (objSessionK != NULL, "wrong version of com.sun.crypto.provider.AESCrypt");
   if (objSessionK == NULL) {
     return (Node *) NULL;
   }
   Node* objAESCryptKey = load_array_element(control(), objSessionK, intcon(0), TypeAryPtr::OOPS);
 #else
-  Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I", /*is_exact*/ false);
+  Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I");
 #endif // PPC64
   assert (objAESCryptKey != NULL, "wrong version of com.sun.crypto.provider.AESCrypt");
   if (objAESCryptKey == NULL) return (Node *) NULL;
@@ -5930,17 +5960,6 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   // now have the array, need to get the start address of the K array
   Node* k_start = array_element_address(objAESCryptKey, intcon(0), T_INT);
   return k_start;
-}
-
-//------------------------------get_original_key_start_from_aescrypt_object-----------------------
-Node * LibraryCallKit::get_original_key_start_from_aescrypt_object(Node *aescrypt_object) {
-  Node* objAESCryptKey = load_field_from_object(aescrypt_object, "lastKey", "[B", /*is_exact*/ false);
-  assert (objAESCryptKey != NULL, "wrong version of com.sun.crypto.provider.AESCrypt");
-  if (objAESCryptKey == NULL) return (Node *) NULL;
-
-  // now have the array, need to get the start address of the lastKey array
-  Node* original_k_start = array_element_address(objAESCryptKey, intcon(0), T_BYTE);
-  return original_k_start;
 }
 
 //----------------------------inline_cipherBlockChaining_AESCrypt_predicate----------------------------
@@ -5960,7 +5979,7 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
   Node* dest = argument(4);
 
   // Load embeddedCipher field of CipherBlockChaining object.
-  Node* embeddedCipherObj = load_field_from_object(objCBC, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(objCBC, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
 
   // get AESCrypt klass for instanceOf check
   // AESCrypt might not be loaded yet if some other SymmetricCipher got us to this compile point
@@ -6023,7 +6042,7 @@ Node* LibraryCallKit::inline_electronicCodeBook_AESCrypt_predicate(bool decrypti
   Node* objECB = argument(0);
 
   // Load embeddedCipher field of ElectronicCodeBook object.
-  Node* embeddedCipherObj = load_field_from_object(objECB, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(objECB, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
 
   // get AESCrypt klass for instanceOf check
   // AESCrypt might not be loaded yet if some other SymmetricCipher got us to this compile point
@@ -6083,7 +6102,7 @@ Node* LibraryCallKit::inline_counterMode_AESCrypt_predicate() {
   Node* objCTR = argument(0);
 
   // Load embeddedCipher field of CipherBlockChaining object.
-  Node* embeddedCipherObj = load_field_from_object(objCTR, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(objCTR, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
 
   // get AESCrypt klass for instanceOf check
   // AESCrypt might not be loaded yet if some other SymmetricCipher got us to this compile point
@@ -6172,6 +6191,40 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
                                    OptoRuntime::base64_encodeBlock_Type(),
                                    stubAddr, stubName, TypePtr::BOTTOM,
                                    src_start, offset, len, dest_start, dp, isURL);
+  return true;
+}
+
+bool LibraryCallKit::inline_base64_decodeBlock() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseBASE64Intrinsics, "need Base64 intrinsics support");
+  assert(callee()->signature()->size() == 6, "base64_decodeBlock has 6 parameters");
+  stubAddr = StubRoutines::base64_decodeBlock();
+  stubName = "decodeBlock";
+
+  if (!stubAddr) return false;
+  Node* base64obj = argument(0);
+  Node* src = argument(1);
+  Node* src_offset = argument(2);
+  Node* len = argument(3);
+  Node* dest = argument(4);
+  Node* dest_offset = argument(5);
+  Node* isURL = argument(6);
+
+  src = must_be_not_null(src, true);
+  dest = must_be_not_null(dest, true);
+
+  Node* src_start = array_element_address(src, intcon(0), T_BYTE);
+  assert(src_start, "source array is NULL");
+  Node* dest_start = array_element_address(dest, intcon(0), T_BYTE);
+  assert(dest_start, "destination array is NULL");
+
+  Node* call = make_runtime_call(RC_LEAF,
+                                 OptoRuntime::base64_decodeBlock_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 src_start, src_offset, len, dest_start, dest_offset, isURL);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
   return true;
 }
 
@@ -6410,7 +6463,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
 
 //------------------------------get_state_from_digest_object-----------------------
 Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, const char *state_type) {
-  Node* digest_state = load_field_from_object(digest_object, "state", state_type, /*is_exact*/ false);
+  Node* digest_state = load_field_from_object(digest_object, "state", state_type);
   assert (digest_state != NULL, "wrong version of sun.security.provider.MD5/SHA/SHA2/SHA5/SHA3");
   if (digest_state == NULL) return (Node *) NULL;
 
@@ -6421,7 +6474,7 @@ Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, const c
 
 //------------------------------get_digest_length_from_sha3_object----------------------------------
 Node * LibraryCallKit::get_digest_length_from_digest_object(Node *digest_object) {
-  Node* digest_length = load_field_from_object(digest_object, "digestLength", "I", /*is_exact*/ false);
+  Node* digest_length = load_field_from_object(digest_object, "digestLength", "I");
   assert (digest_length != NULL, "sanity");
   return digest_length;
 }
@@ -6701,5 +6754,121 @@ bool LibraryCallKit::inline_profileBoolean() {
 bool LibraryCallKit::inline_isCompileConstant() {
   Node* n = argument(0);
   set_result(n->is_Con() ? intcon(1) : intcon(0));
+  return true;
+}
+
+//------------------------------- inline_getObjectSize --------------------------------------
+//
+// Calculate the runtime size of the object/array.
+//   native long sun.instrument.InstrumentationImpl.getObjectSize0(long nativeAgent, Object objectToSize);
+//
+bool LibraryCallKit::inline_getObjectSize() {
+  Node* obj = argument(3);
+  Node* klass_node = load_object_klass(obj);
+
+  jint  layout_con = Klass::_lh_neutral_value;
+  Node* layout_val = get_layout_helper(klass_node, layout_con);
+  int   layout_is_con = (layout_val == NULL);
+
+  if (layout_is_con) {
+    // Layout helper is constant, can figure out things at compile time.
+
+    if (Klass::layout_helper_is_instance(layout_con)) {
+      // Instance case:  layout_con contains the size itself.
+      Node *size = longcon(Klass::layout_helper_size_in_bytes(layout_con));
+      set_result(size);
+    } else {
+      // Array case: size is round(header + element_size*arraylength).
+      // Since arraylength is different for every array instance, we have to
+      // compute the whole thing at runtime.
+
+      Node* arr_length = load_array_length(obj);
+
+      int round_mask = MinObjAlignmentInBytes - 1;
+      int hsize  = Klass::layout_helper_header_size(layout_con);
+      int eshift = Klass::layout_helper_log2_element_size(layout_con);
+
+      if ((round_mask & ~right_n_bits(eshift)) == 0) {
+        round_mask = 0;  // strength-reduce it if it goes away completely
+      }
+      assert((hsize & right_n_bits(eshift)) == 0, "hsize is pre-rounded");
+      Node* header_size = intcon(hsize + round_mask);
+
+      Node* lengthx = ConvI2X(arr_length);
+      Node* headerx = ConvI2X(header_size);
+
+      Node* abody = lengthx;
+      if (eshift != 0) {
+        abody = _gvn.transform(new LShiftXNode(lengthx, intcon(eshift)));
+      }
+      Node* size = _gvn.transform( new AddXNode(headerx, abody) );
+      if (round_mask != 0) {
+        size = _gvn.transform( new AndXNode(size, MakeConX(~round_mask)) );
+      }
+      size = ConvX2L(size);
+      set_result(size);
+    }
+  } else {
+    // Layout helper is not constant, need to test for array-ness at runtime.
+
+    enum { _instance_path = 1, _array_path, PATH_LIMIT };
+    RegionNode* result_reg = new RegionNode(PATH_LIMIT);
+    PhiNode* result_val = new PhiNode(result_reg, TypeLong::LONG);
+    record_for_igvn(result_reg);
+
+    Node* array_ctl = generate_array_guard(klass_node, NULL);
+    if (array_ctl != NULL) {
+      // Array case: size is round(header + element_size*arraylength).
+      // Since arraylength is different for every array instance, we have to
+      // compute the whole thing at runtime.
+
+      PreserveJVMState pjvms(this);
+      set_control(array_ctl);
+      Node* arr_length = load_array_length(obj);
+
+      int round_mask = MinObjAlignmentInBytes - 1;
+      Node* mask = intcon(round_mask);
+
+      Node* hss = intcon(Klass::_lh_header_size_shift);
+      Node* hsm = intcon(Klass::_lh_header_size_mask);
+      Node* header_size = _gvn.transform(new URShiftINode(layout_val, hss));
+      header_size = _gvn.transform(new AndINode(header_size, hsm));
+      header_size = _gvn.transform(new AddINode(header_size, mask));
+
+      // There is no need to mask or shift this value.
+      // The semantics of LShiftINode include an implicit mask to 0x1F.
+      assert(Klass::_lh_log2_element_size_shift == 0, "use shift in place");
+      Node* elem_shift = layout_val;
+
+      Node* lengthx = ConvI2X(arr_length);
+      Node* headerx = ConvI2X(header_size);
+
+      Node* abody = _gvn.transform(new LShiftXNode(lengthx, elem_shift));
+      Node* size = _gvn.transform(new AddXNode(headerx, abody));
+      if (round_mask != 0) {
+        size = _gvn.transform(new AndXNode(size, MakeConX(~round_mask)));
+      }
+      size = ConvX2L(size);
+
+      result_reg->init_req(_array_path, control());
+      result_val->init_req(_array_path, size);
+    }
+
+    if (!stopped()) {
+      // Instance case: the layout helper gives us instance size almost directly,
+      // but we need to mask out the _lh_instance_slow_path_bit.
+      Node* size = ConvI2X(layout_val);
+      assert((int) Klass::_lh_instance_slow_path_bit < BytesPerLong, "clear bit");
+      Node* mask = MakeConX(~(intptr_t) right_n_bits(LogBytesPerLong));
+      size = _gvn.transform(new AndXNode(size, mask));
+      size = ConvX2L(size);
+
+      result_reg->init_req(_instance_path, control());
+      result_val->init_req(_instance_path, size);
+    }
+
+    set_result(result_reg, result_val);
+  }
+
   return true;
 }

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +26,8 @@
 #ifndef SHARE_RUNTIME_THREAD_INLINE_HPP
 #define SHARE_RUNTIME_THREAD_INLINE_HPP
 
+#include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -93,6 +94,27 @@ inline ThreadsList* Thread::get_threads_hazard_ptr() {
 inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
   Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
 }
+
+#if defined(__APPLE__) && defined(AARCH64)
+inline void Thread::init_wx() {
+  assert(this == Thread::current(), "should only be called for current thread");
+  assert(!_wx_init, "second init");
+  _wx_state = WXWrite;
+  os::current_thread_enable_wx(_wx_state);
+  DEBUG_ONLY(_wx_init = true);
+}
+
+inline WXMode Thread::enable_wx(WXMode new_state) {
+  assert(this == Thread::current(), "should only be called for current thread");
+  assert(_wx_init, "should be inited");
+  WXMode old = _wx_state;
+  if (_wx_state != new_state) {
+    _wx_state = new_state;
+    os::current_thread_enable_wx(new_state);
+  }
+  return old;
+}
+#endif // __APPLE__ && AARCH64
 
 inline void JavaThread::set_ext_suspended() {
   set_suspend_flag (_ext_suspended);

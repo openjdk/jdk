@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,18 +37,26 @@ class G1PostBarrierStub;
 
 class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
 protected:
-  virtual void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators, Register from, Register to, Register count,
+  virtual void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                               Register from, Register to, Register count,
                                                Register preserve1, Register preserve2);
-  virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count, Register preserve);
+  virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                                Register addr, Register count,
+                                                Register preserve);
 
-  void g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators, Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
-                            Register tmp1, Register tmp2, bool needs_frame);
-  void g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators, Register store_addr, Register new_val,
-                             Register tmp1, Register tmp2, Register tmp3);
+  void g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators,
+                            Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
+                            Register tmp1, Register tmp2,
+                            MacroAssembler::PreservationLevel preservation_level);
+  void g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators,
+                             Register store_addr, Register new_val,
+                             Register tmp1, Register tmp2, Register tmp3,
+                             MacroAssembler::PreservationLevel preservation_level);
 
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                             Register base, RegisterOrConstant ind_or_offs, Register val,
-                            Register tmp1, Register tmp2, Register tmp3, bool needs_frame);
+                            Register tmp1, Register tmp2, Register tmp3,
+                            MacroAssembler::PreservationLevel preservation_level);
 
 public:
 #ifdef COMPILER1
@@ -61,9 +69,13 @@ public:
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register base, RegisterOrConstant ind_or_offs, Register dst,
-                       Register tmp1, Register tmp2, bool needs_frame, Label *L_handle_null = NULL);
+                       Register tmp1, Register tmp2,
+                       MacroAssembler::PreservationLevel preservation_level,
+                       Label *L_handle_null = NULL);
 
-  virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2, bool needs_frame);
+  virtual void resolve_jobject(MacroAssembler* masm, Register value,
+                               Register tmp1, Register tmp2,
+                               MacroAssembler::PreservationLevel preservation_level);
 };
 
 #endif // CPU_PPC_GC_G1_G1BARRIERSETASSEMBLER_PPC_HPP

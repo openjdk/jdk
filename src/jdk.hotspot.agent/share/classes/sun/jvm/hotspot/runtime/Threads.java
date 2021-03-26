@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import sun.jvm.hotspot.runtime.linux_aarch64.LinuxAARCH64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_ppc64.LinuxPPC64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.bsd_x86.BsdX86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.bsd_amd64.BsdAMD64JavaThreadPDAccess;
+import sun.jvm.hotspot.runtime.bsd_aarch64.BsdAARCH64JavaThreadPDAccess;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
@@ -132,6 +133,8 @@ public class Threads {
         } else if (os.equals("darwin")) {
             if (cpu.equals("amd64") || cpu.equals("x86_64")) {
                 access = new BsdAMD64JavaThreadPDAccess();
+            } else if (cpu.equals("aarch64")) {
+                access = new BsdAARCH64JavaThreadPDAccess();
             }
         }
 
@@ -149,6 +152,7 @@ public class Threads {
         }
         virtualConstructor.addMapping("JvmtiAgentThread", JvmtiAgentThread.class);
         virtualConstructor.addMapping("ServiceThread", ServiceThread.class);
+        virtualConstructor.addMapping("MonitorDeflationThread", MonitorDeflationThread.class);
         virtualConstructor.addMapping("NotificationThread", NotificationThread.class);
     }
 
@@ -157,7 +161,7 @@ public class Threads {
     }
 
     /** NOTE: this returns objects of type JavaThread, CompilerThread,
-      JvmtiAgentThread, NotificationThread, and ServiceThread.
+      JvmtiAgentThread, NotificationThread, MonitorDeflationThread and ServiceThread.
       The latter four are subclasses of the former. Most operations
       (fetching the top frame, etc.) are only allowed to be performed on
       a "pure" JavaThread. For this reason, {@link
@@ -188,7 +192,7 @@ public class Threads {
             return thread;
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
-            " (expected type JavaThread, CompilerThread, ServiceThread, JvmtiAgentThread or CodeCacheSweeperThread)", e);
+            " (expected type JavaThread, CompilerThread, MonitorDeflationThread, ServiceThread, JvmtiAgentThread or CodeCacheSweeperThread)", e);
         }
     }
 

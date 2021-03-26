@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -38,6 +40,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jniCheck.hpp"
@@ -175,6 +178,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     // other than the current thread is required we need to transition
     // from native so as to resolve the jthread.
 
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
@@ -410,7 +414,7 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
     if (k_mirror == NULL) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
-    if (!k_mirror->is_a(SystemDictionary::Class_klass())) {
+    if (!k_mirror->is_a(vmClasses::Class_klass())) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
 
@@ -658,13 +662,6 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
 
-    // lock the loader
-    Thread* thread = Thread::current();
-    HandleMark hm(thread);
-    Handle loader_lock = Handle(thread, SystemDictionary::system_loader_lock());
-
-    ObjectLocker ol(loader_lock, thread);
-
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());
 #if INCLUDE_CDS
@@ -697,7 +694,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     // The phase is checked by the wrapper that called this function,
     // but this thread could be racing with the thread that is
     // terminating the VM so we check one more time.
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current();
     HandleMark hm(THREAD);
 
     // create the zip entry (which will open the zip file and hence
@@ -860,7 +857,7 @@ JvmtiEnv::GetThreadState(jthread thread, jint* thread_state_ptr) {
     java_thread = current_thread;
     thread_oop = java_thread->threadObj();
 
-    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
+    if (thread_oop == NULL || !thread_oop->is_a(vmClasses::Thread_klass())) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
   } else {
@@ -1135,7 +1132,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
   oop thread_oop = NULL;
   if (thread == NULL) {
     thread_oop = current_thread->threadObj();
-    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
+    if (thread_oop == NULL || !thread_oop->is_a(vmClasses::Thread_klass())) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
   } else {
@@ -1202,14 +1199,14 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread* calling_thread = JavaThread::current();
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
@@ -1252,14 +1249,14 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread* calling_thread = JavaThread::current();
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
@@ -1450,7 +1447,7 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
 jvmtiError
 JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jthread** threads_ptr, jint* group_count_ptr, jthreadGroup** groups_ptr) {
   JavaThread* current_thread = JavaThread::current();
-  oop group_obj = (oop) JNIHandles::resolve_external_guard(group);
+  oop group_obj = JNIHandles::resolve_external_guard(group);
   NULL_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   Handle *thread_objs = NULL;
@@ -2370,15 +2367,10 @@ JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
   if (!java_lang_Class::is_primitive(k_mirror)) {
     Klass* k = java_lang_Class::as_Klass(k_mirror);
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    result = k->compute_modifier_flags(current_thread);
-    JavaThread* THREAD = current_thread; // pass to macros
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-      return JVMTI_ERROR_INTERNAL;
-    };
+    result = k->compute_modifier_flags();
 
-    // Reset the deleted  ACC_SUPER bit ( deleted in compute_modifier_flags()).
-    if(k->is_super()) {
+    // Reset the deleted  ACC_SUPER bit (deleted in compute_modifier_flags()).
+    if (k->is_super()) {
       result |= JVM_ACC_SUPER;
     }
   } else {

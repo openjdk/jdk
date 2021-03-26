@@ -26,7 +26,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<language type="ceb">Binisaya</language>
 			<language type="de">Aleman</language>
 			<language type="de_AT">Austriano nga Aleman</language>
-			<language type="de_CH">Swiss nga Taas nga Aleman</language>
+			<language type="de_CH">Taas nga Aleman sa Switzerland</language>
 			<language type="en">Ingles</language>
 			<language type="en_AU">Ingles sa Australia</language>
 			<language type="en_CA">Ingles sa Canada</language>
@@ -40,7 +40,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<language type="es_MX">Espanyol sa Mexico</language>
 			<language type="fr">Pranses</language>
 			<language type="fr_CA">Pranses sa Canada</language>
-			<language type="fr_CH">Swiss nga Pranses</language>
+			<language type="fr_CH">Pranses sa Switzerland</language>
 			<language type="hi">Hindi</language>
 			<language type="id">Indonesian</language>
 			<language type="it">Italiano</language>
@@ -79,7 +79,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		<territories>
 			<territory type="001">Kalibutan</territory>
 			<territory type="002">Africa</territory>
-			<territory type="003">North America</territory>
+			<territory type="003">Amihanang Amerika</territory>
 			<territory type="005">South America</territory>
 			<territory type="009">Oceania</territory>
 			<territory type="011">Western Africa</territory>
@@ -152,7 +152,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="CD" alt="variant">Congo (DRC)</territory>
 			<territory type="CF">Central African Republic</territory>
 			<territory type="CG">Congo - Brazzaville</territory>
-			<territory type="CG" alt="variant">Congo (Republic)</territory>
+			<territory type="CG" alt="variant">Congo (Republika)</territory>
 			<territory type="CH">Switzerland</territory>
 			<territory type="CI">Cote d’Ivoire</territory>
 			<territory type="CI" alt="variant">Ivory Coast</territory>
@@ -183,7 +183,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="EG">Egypt</territory>
 			<territory type="EH">Western Sahara</territory>
 			<territory type="ER">Eritrea</territory>
-			<territory type="ES">Spain</territory>
+			<territory type="ES">Espanya</territory>
 			<territory type="ET">Ethiopia</territory>
 			<territory type="EU">European Union</territory>
 			<territory type="EZ">Eurozone</territory>
@@ -360,7 +360,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="UA">Ukraine</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">U.S. Outlying Islands</territory>
-			<territory type="UN">United Nations</territory>
+			<territory type="UN">Hiniusang Kanasoran</territory>
 			<territory type="US">Estados Unidos</territory>
 			<territory type="US" alt="short">US</territory>
 			<territory type="UY">Uruguay</territory>
@@ -595,14 +595,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">En</month>
+							<month type="1">Ene</month>
 							<month type="2">Peb</month>
 							<month type="3">Mar</month>
-							<month type="4">Apr</month>
+							<month type="4">Abr</month>
 							<month type="5">May</month>
 							<month type="6">Hun</month>
 							<month type="7">Hul</month>
-							<month type="8">Ag</month>
+							<month type="8">Ago</month>
 							<month type="9">Set</month>
 							<month type="10">Okt</month>
 							<month type="11">Nob</month>
@@ -787,14 +787,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<eras>
 					<eraNames>
 						<era type="0">Sa Wala Pa Si Kristo</era>
-						<era type="0" alt="variant">Sa Wala Pa ang Common Era</era>
+						<era type="0" alt="variant">Wala Pa ang Komong Panahon</era>
 						<era type="1">Anno Domini</era>
-						<era type="1" alt="variant">Common Era</era>
+						<era type="1" alt="variant">Komong Panahon</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BC</era>
 						<era type="0" alt="variant">BCE</era>
-						<era type="1">KP</era>
+						<era type="1">AD</era>
 						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 				</eras>
@@ -876,7 +876,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -1046,7 +1046,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>era</displayName>
+				<displayName>panahon</displayName>
 			</field>
 			<field type="year">
 				<displayName>tuig</displayName>
@@ -1193,6 +1193,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<daylight>Tamdanang Oras sa Irish</daylight>
 				</long>
 			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>Siyudad sa Ho Chi Minh</exemplarCity>
+			</zone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Oras sa Afghanistan</standard>
@@ -1273,7 +1276,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Arabia</generic>
 					<standard>Tamdanang Oras sa Arabia</standard>
-					<daylight>Oras sa Adlawan sa Arabia</daylight>
+					<daylight>Oras sa Tag-init sa Arabia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
@@ -1403,9 +1406,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="China">
 				<long>
-					<generic>Oras sa China</generic>
-					<standard>Tamdanang Oras sa China</standard>
-					<daylight>Oras sa Adlawan sa China</daylight>
+					<generic>Oras sa Tsina</generic>
+					<standard>Tamdanang Oras sa Tsina</standard>
+					<daylight>Oras sa Tag-init sa Tsina</daylight>
 				</long>
 			</metazone>
 			<metazone type="Choibalsan">
@@ -1629,7 +1632,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Iran</generic>
 					<standard>Tamdanang Oras sa Iran</standard>
-					<daylight>Oras sa Adlawan sa Iran</daylight>
+					<daylight>Oras sa Tag-init sa Iran</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -1643,7 +1646,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Israel</generic>
 					<standard>Tamdanang Oras sa Israel</standard>
-					<daylight>Oras sa Adlawan sa Israel</daylight>
+					<daylight>Oras sa Tag-init sa Israel</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
@@ -1667,7 +1670,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Korea</generic>
 					<standard>Tamdanang Oras sa Korea</standard>
-					<daylight>Oras sa Adlawan sa Korea</daylight>
+					<daylight>Oras sa Tag-init sa Korea</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kosrae">
@@ -1814,9 +1817,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Oras sa Norfolk Island</generic>
-					<standard draft="contributed">Tamdanang Oras sa Norfolk Island</standard>
-					<daylight draft="contributed">Oras sa Tag-init sa Norfolk Island</daylight>
+					<generic>Oras sa Norfolk Island</generic>
+					<standard>Tamdanang Oras sa Norfolk Island</standard>
+					<daylight>Oras sa Tag-init sa Norfolk Island</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -1968,7 +1971,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Taipei</generic>
 					<standard>Tamdanang Oras sa Taipei</standard>
-					<daylight>Oras sa Adlawan sa Taipei</daylight>
+					<daylight>Oras sa Tag-init sa Taipei</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -2098,13 +2101,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,#0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -2881,9 +2877,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="other">Mga CFP franc</displayName>
 			</currency>
 			<currency type="XXX">
-				<displayName>Wala Nahibaluan nga Currency</displayName>
-				<displayName count="one">(wala nahibaluan nga yunit sa currency)</displayName>
-				<displayName count="other">(wala nahibaluan nga currency)</displayName>
+				<displayName>Wala Nailhi nga Kwarta</displayName>
+				<displayName count="one">(wala mailhi nga yunit sa kwarta)</displayName>
+				<displayName count="other">(wala mailhi nga kwarta)</displayName>
 			</currency>
 			<currency type="YER">
 				<displayName>Yemeni Rial</displayName>
@@ -2907,7 +2903,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		<minimalPairs>
 			<pluralMinimalPairs count="one" draft="contributed">{0} ka adlaw</pluralMinimalPairs>
 			<pluralMinimalPairs count="other" draft="contributed">{0} ka mga adlaw</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other" draft="contributed">Adto sa ika-{0} nga tuo.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Adto sa ika-{0} nga tuo.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -2972,6 +2968,30 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} kada {1}</compoundUnitPattern>
 			</compoundUnit>
@@ -2990,9 +3010,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} g-force</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName>mga metro kada second squared</displayName>
-				<unitPattern count="one">{0} ka metro kada second squared</unitPattern>
-				<unitPattern count="other">{0} ka mga metro kada second squared</unitPattern>
+				<displayName>mga metro kada segundo kwadrado</displayName>
+				<unitPattern count="one">{0} ka metro kada segundo kwadrado</unitPattern>
+				<unitPattern count="other">{0} ka mga metro kada segundo kwadrado</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>rebolusyon</displayName>
@@ -3021,9 +3041,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>mga square kilometer</displayName>
-				<unitPattern count="one">{0} ka square kilometer</unitPattern>
-				<unitPattern count="other">{0} ka mga square kilometer</unitPattern>
-				<perUnitPattern>{0} kada square kilometer</perUnitPattern>
+				<unitPattern count="one">{0} ka kilometro kwadrado</unitPattern>
+				<unitPattern count="other">{0} ka mga kilometro kwadrado</unitPattern>
+				<perUnitPattern>{0} kada kilometro kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>mga ektarya</displayName>
@@ -3031,22 +3051,22 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga ektarya</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<displayName>mga square meter</displayName>
-				<unitPattern count="one">{0} ka square meter</unitPattern>
-				<unitPattern count="other">{0} ka mga square meter</unitPattern>
-				<perUnitPattern>{0} kada square meter</perUnitPattern>
+				<displayName>mga metro kwadrado</displayName>
+				<unitPattern count="one">{0} ka metro kwadrado</unitPattern>
+				<unitPattern count="other">{0} ka mga metro kwadrado</unitPattern>
+				<perUnitPattern>{0} kada metro kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
-				<displayName>mga square centimeter</displayName>
-				<unitPattern count="one">{0} ka square centimeter</unitPattern>
-				<unitPattern count="other">{0} ka mga square centimeter</unitPattern>
-				<perUnitPattern>{0} kada square centimeter</perUnitPattern>
+				<displayName>mga centimetro kwadrado</displayName>
+				<unitPattern count="one">{0} ka sentimetro kwadrado</unitPattern>
+				<unitPattern count="other">{0} ka mga sentimetro kwadrado</unitPattern>
+				<perUnitPattern>{0} kada sentimetro kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>mga square mile</displayName>
-				<unitPattern count="one">{0} ka square mile</unitPattern>
-				<unitPattern count="other">{0} ka mga square mile</unitPattern>
-				<perUnitPattern>{0} kada square mile</perUnitPattern>
+				<displayName>mga milya kwadrado</displayName>
+				<unitPattern count="one">{0} ka milya kwadrado</unitPattern>
+				<unitPattern count="other">{0} ka mga milya kwadrado</unitPattern>
+				<perUnitPattern>{0} kada milya kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>mga acre</displayName>
@@ -3386,6 +3406,15 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka dot kada pulgada</unitPattern>
 				<unitPattern count="other">{0} ka mga dot kada pulgada</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<unitPattern count="one">{0} dot</unitPattern>
+				<unitPattern count="other">{0} dot</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>radyus sa yuta</displayName>
+				<unitPattern count="one">{0} ka radyus sa yuta</unitPattern>
+				<unitPattern count="other">{0} ka radyus sa yuta</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>mga kilometro</displayName>
 				<unitPattern count="one">{0} ka kilometro</unitPattern>
@@ -3491,6 +3520,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>candela</displayName>
+				<unitPattern count="one">{0} ka candela</unitPattern>
+				<unitPattern count="other">{0} ka candela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+				<unitPattern count="one">{0} ka lumen</unitPattern>
+				<unitPattern count="other">{0} ka lumen</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>mga solar luminosity</displayName>
 				<unitPattern count="one">{0} ka solar luminosity</unitPattern>
@@ -3565,6 +3604,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka solar mass</unitPattern>
 				<unitPattern count="other">{0} ka mga solar mass</unitPattern>
 			</unit>
+			<unit type="mass-grain">
+				<unitPattern count="one">{0} ka grain</unitPattern>
+				<unitPattern count="other">{0} ka grain</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>mga gigawatt</displayName>
 				<unitPattern count="one">{0} ka gigawatt</unitPattern>
@@ -3606,8 +3649,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga pound kada kuwadradong pulgada</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<displayName>mga pulgada sa mercury</displayName>
-				<unitPattern count="one">{0} ka pulgada sa mercury</unitPattern>
+				<displayName>mga inch sa mercury</displayName>
+				<unitPattern count="one">{0} ka inch sa mercury</unitPattern>
 				<unitPattern count="other">{0} ka mga pulgada sa mercury</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
@@ -3681,13 +3724,13 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga kelvin</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
-				<displayName>mga pound-force-foot</displayName>
+				<displayName>pound-feet</displayName>
 				<unitPattern count="one">{0} ka pound-force-foot</unitPattern>
 				<unitPattern count="other">{0} ka mga pound-force-foot</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>mga newton-meter</displayName>
-				<unitPattern count="one">{0} ka newton-meter</unitPattern>
+				<unitPattern count="one">{0} N⋅m</unitPattern>
 				<unitPattern count="other">{0} ka mga newton-meter</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
@@ -3825,6 +3868,38 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka barrel</unitPattern>
 				<unitPattern count="other">{0} ka mga barrel</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>kutsarang panghinam-is</displayName>
+				<unitPattern count="one">{0} ka kutsarang panghinam-is</unitPattern>
+				<unitPattern count="other">{0} ka kutsarang panghinam-is</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Imp. nga kutsarang panghinam-is</displayName>
+				<unitPattern count="one">{0} ka Imp. nga kutsarang panghinam-is</unitPattern>
+				<unitPattern count="other">{0} ka Imp. nga kutsarang panghinam-is</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<unitPattern count="one">{0} ka drop</unitPattern>
+				<unitPattern count="other">{0} ka drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram</displayName>
+				<unitPattern count="one">{0} ka dram</unitPattern>
+				<unitPattern count="other">{0} ka dram</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="one">{0} ka jigger</unitPattern>
+				<unitPattern count="other">{0} ka jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<unitPattern count="one">{0} ka pinch</unitPattern>
+				<unitPattern count="other">{0} ka pinch</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Imp. quart</displayName>
+				<unitPattern count="one">{0} ka Imp. quart</unitPattern>
+				<unitPattern count="other">{0} ka Imp. quart</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>cardinal nga direksyon</displayName>
 				<coordinateUnitPattern type="east">{0} sidlakan</coordinateUnitPattern>
@@ -3859,10 +3934,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName>mga ektarya</displayName>
 			</unit>
 			<unit type="area-square-meter">
-				<displayName>mga meter²</displayName>
+				<displayName>mga metro²</displayName>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>mga sq mile</displayName>
+				<displayName>mga milya kwadrado</displayName>
 				<unitPattern count="one">{0} sq mi</unitPattern>
 				<unitPattern count="other">{0} sq mi</unitPattern>
 			</unit>
@@ -4213,6 +4288,22 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>barrel</displayName>
+			</unit>
+			<unit type="volume-drop">
+				<unitPattern count="one">{0} ka drop</unitPattern>
+				<unitPattern count="other">{0} ka drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<unitPattern count="one">{0} ka dram fl</unitPattern>
+				<unitPattern count="other">{0} ka dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="one">{0} ka jigger</unitPattern>
+				<unitPattern count="other">{0} ka jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<unitPattern count="one">{0} ka pinch</unitPattern>
+				<unitPattern count="other">{0} ka pinch</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>direksyon</displayName>

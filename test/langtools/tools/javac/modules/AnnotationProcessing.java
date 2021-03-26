@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747 8236842
+ * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747 8236842 8254023
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -508,6 +508,66 @@ public class AnnotationProcessing extends ModuleTestBase {
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             throw new AssertionError();
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @Test
+    public void testAnnotationsWithoutTargetInModuleInfo(Path base) throws Exception {
+        Path moduleSrc = base.resolve("module-src");
+        Path m1 = moduleSrc.resolve("m1");
+
+        tb.writeJavaFiles(m1,
+                          "@test.A module m1x { exports test; }",
+                          "package test; public @interface A { }",
+                          "package test; public @interface B { }");
+
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        List<String> expectedLog = List.of("Note: m1x/test.A AP Invoked",
+                                           "Note: m1x/test.A AP Invoked");
+
+        List<String> actualLog = new JavacTask(tb)
+                .options("-processor", AnnotationsWithoutTargetInModuleInfo.class.getName()
+                         + "," + AnnotationsWithoutTargetNotInModuleInfo.class.getName())
+                .outdir(classes)
+                .files(findJavaFiles(m1))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.checkEqual(expectedLog, actualLog);
+    }
+
+    @SupportedAnnotationTypes("m1x/test.A")
+    public static final class AnnotationsWithoutTargetInModuleInfo extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            processingEnv.getMessager().printMessage(Kind.NOTE, "m1x/test.A AP Invoked");
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @SupportedAnnotationTypes("m1x/test.B")
+    public static final class AnnotationsWithoutTargetNotInModuleInfo extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            processingEnv.getMessager().printMessage(Kind.NOTE, "m1x/test.B AP Invoked");
+            return false;
         }
 
         @Override

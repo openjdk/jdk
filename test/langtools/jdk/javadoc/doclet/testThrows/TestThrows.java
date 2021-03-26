@@ -76,7 +76,7 @@
                  """
                      <div class="member-signature"><span class="type-parameters">&lt;T extends java\
                      .lang.Throwable&gt;</span>&nbsp;<span class="return-type">void</span>&nbsp;<sp\
-                     an class="member-name">m</span>()
+                     an class="element-name">m</span>()
                                                      throws <span class="exceptions">T,
                      java.lang.Exception</span></div>
                      """,

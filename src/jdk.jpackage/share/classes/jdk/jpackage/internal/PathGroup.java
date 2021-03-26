@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ final class PathGroup {
      * All configured entries.
      */
     List<Path> paths() {
-        return entries.values().stream().collect(Collectors.toList());
+        return entries.values().stream().toList();
     }
 
     /**
@@ -74,8 +74,7 @@ final class PathGroup {
     List<Path> roots() {
         // Sort by the number of path components in ascending order.
         List<Map.Entry<Path, Path>> sorted = normalizedPaths().stream().sorted(
-                (a, b) -> a.getKey().getNameCount() - b.getKey().getNameCount()).collect(
-                        Collectors.toList());
+                (a, b) -> a.getKey().getNameCount() - b.getKey().getNameCount()).toList();
 
         // Returns `true` if `a` is a parent of `b`
         BiFunction<Map.Entry<Path, Path>, Map.Entry<Path, Path>, Boolean> isParentOrSelf = (a, b) -> {
@@ -85,7 +84,7 @@ final class PathGroup {
         return sorted.stream().filter(
                 v -> v == sorted.stream().sequential().filter(
                         v2 -> isParentOrSelf.apply(v2, v)).findFirst().get()).map(
-                        v -> v.getValue()).collect(Collectors.toList());
+                        v -> v.getValue()).toList();
     }
 
     long sizeInBytes() throws IOException {
@@ -179,7 +178,7 @@ final class PathGroup {
             handler = new TransformHandler() {
                 @Override
                 public void copyFile(Path src, Path dst) throws IOException {
-                    Files.createDirectories(dst.getParent());
+                    Files.createDirectories(IOUtils.getParent(dst));
                     if (move) {
                         Files.move(src, dst);
                     } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
  * @compile CheckArchivedModuleApp.java
- * @run driver ClassFileInstaller -jar app.jar CheckArchivedModuleApp
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar CheckArchivedModuleApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver ArchivedModuleComboTest
  */
 
@@ -40,6 +40,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import sun.hotspot.WhiteBox;
 
 public class ArchivedModuleComboTest {
@@ -48,7 +50,7 @@ public class ArchivedModuleComboTest {
         String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
         String appJar = ClassFileInstaller.getJarPath("app.jar");
 
-        Path userDir = Paths.get(System.getProperty("user.dir"));
+        Path userDir = Paths.get(CDSTestUtils.getOutputDir());
         Path moduleDir = Files.createTempDirectory(userDir, "mods");
 
         //

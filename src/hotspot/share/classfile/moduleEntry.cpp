@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "memory/archiveUtils.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -358,14 +357,15 @@ ModuleEntryTable::~ModuleEntryTable() {
       if (to_remove->location() != NULL) {
         to_remove->location()->decrement_refcount();
       }
-
-      // Unlink from the Hashtable prior to freeing
-      unlink_entry(to_remove);
-      FREE_C_HEAP_ARRAY(char, to_remove);
+      BasicHashtable<mtModule>::free_entry(to_remove);
     }
   }
   assert(number_of_entries() == 0, "should have removed all entries");
-  assert(new_entry_free_list() == NULL, "entry present on ModuleEntryTable's free list");
+}
+
+void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
+  assert(!cld->has_class_mirror_holder(), "Unexpected has_class_mirror_holder cld");
+  _loader_data = cld;
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -380,7 +380,7 @@ static ArchivedModuleEntries* _archive_modules_entries = NULL;
 
 ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   assert(is_named(), "unnamed packages/modules are not archived");
-  ModuleEntry* archived_entry = (ModuleEntry*)MetaspaceShared::read_write_space_alloc(sizeof(ModuleEntry));
+  ModuleEntry* archived_entry = (ModuleEntry*)ArchiveBuilder::rw_region_alloc(sizeof(ModuleEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
 
   if (_archive_modules_entries == NULL) {
@@ -405,7 +405,7 @@ Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArray<ModuleEntry
   Array<ModuleEntry*>* archived_array = NULL;
   int length = (array == NULL) ? 0 : array->length();
   if (length > 0) {
-    archived_array = MetaspaceShared::new_ro_array<ModuleEntry*>(length);
+    archived_array = ArchiveBuilder::new_ro_array<ModuleEntry*>(length);
     for (int i = 0; i < length; i++) {
       ModuleEntry* archived_entry = get_archived_entry(array->at(i));
       archived_array->at_put(i, archived_entry);
@@ -467,7 +467,7 @@ void ModuleEntry::init_archived_oops() {
   if (module_obj != NULL) {
     oop m = HeapShared::find_archived_heap_object(module_obj);
     assert(m != NULL, "sanity");
-    _archived_module_narrow_oop = CompressedOops::encode(m);
+    _archived_module_index = HeapShared::append_root(m);
   }
   assert(shared_protection_domain() == NULL, "never set during -Xshare:dump");
   // Clear handles and restore at run time. Handles cannot be archived.
@@ -481,8 +481,8 @@ void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
   JFR_ONLY(INIT_ID(this);)
 }
 
-void ModuleEntry::restore_archive_oops(ClassLoaderData* loader_data) {
-  Handle module_handle(Thread::current(), HeapShared::materialize_archived_object(_archived_module_narrow_oop));
+void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
+  Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));
   assert(module_handle.not_null(), "huh");
   set_module(loader_data->add_handle(module_handle));
 
@@ -493,6 +493,10 @@ void ModuleEntry::restore_archive_oops(ClassLoaderData* loader_data) {
   if (loader_data->class_loader() != NULL) {
     java_lang_Module::set_loader(module_handle(), loader_data->class_loader());
   }
+}
+
+void ModuleEntry::clear_archived_oops() {
+  HeapShared::clear_root(_archived_module_index);
 }
 
 static int compare_module_by_name(ModuleEntry* a, ModuleEntry* b) {
@@ -509,7 +513,7 @@ void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
 }
 
 Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
-  Array<ModuleEntry*>* archived_modules = MetaspaceShared::new_rw_array<ModuleEntry*>(number_of_entries());
+  Array<ModuleEntry*>* archived_modules = ArchiveBuilder::new_rw_array<ModuleEntry*>(number_of_entries());
   int n = 0;
   for (int i = 0; i < table_size(); ++i) {
     for (ModuleEntry* m = bucket(i); m != NULL; m = m->next()) {
@@ -561,7 +565,7 @@ void ModuleEntryTable::restore_archived_oops(ClassLoaderData* loader_data, Array
   assert(UseSharedSpaces, "runtime only");
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
-    archived_entry->restore_archive_oops(loader_data);
+    archived_entry->restore_archived_oops(loader_data);
   }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -571,7 +575,7 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
                                          Symbol* version, Symbol* location,
                                          ClassLoaderData* loader_data) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
-  ModuleEntry* entry = (ModuleEntry*)Hashtable<Symbol*, mtModule>::allocate_new_entry(hash, name);
+  ModuleEntry* entry = (ModuleEntry*)Hashtable<Symbol*, mtModule>::new_entry(hash, name);
 
   // Initialize fields specific to a ModuleEntry
   entry->init();

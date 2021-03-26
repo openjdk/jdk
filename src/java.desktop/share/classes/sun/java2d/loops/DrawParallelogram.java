@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 
 package sun.java2d.loops;
 
-import sun.java2d.loops.GraphicsPrimitive;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 
@@ -81,15 +80,6 @@ public class DrawParallelogram extends GraphicsPrimitive
                                          double dx1, double dy1,
                                          double dx2, double dy2,
                                          double lw1, double lw2);
-
-    public GraphicsPrimitive makePrimitive(SurfaceType srctype,
-                                           CompositeType comptype,
-                                           SurfaceType dsttype)
-    {
-        // REMIND: iterate with a FillRect primitive?
-        throw new InternalError("DrawParallelogram not implemented for "+
-                                srctype+" with "+comptype);
-    }
 
     public GraphicsPrimitive traceWrap() {
         return new TraceDrawParallelogram(this);

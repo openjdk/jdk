@@ -278,7 +278,7 @@ void Relocation::set_value(address x) {
 void Relocation::const_set_data_value(address x) {
 #ifdef _LP64
   if (format() == relocInfo::narrow_oop_in_const) {
-    *(narrowOop*)addr() = CompressedOops::encode((oop) x);
+    *(narrowOop*)addr() = CompressedOops::encode(cast_to_oop(x));
   } else {
 #endif
     *(address*)addr() = x;
@@ -290,7 +290,7 @@ void Relocation::const_set_data_value(address x) {
 void Relocation::const_verify_data_value(address x) {
 #ifdef _LP64
   if (format() == relocInfo::narrow_oop_in_const) {
-    guarantee(*(narrowOop*)addr() == CompressedOops::encode((oop) x), "must agree");
+    guarantee(*(narrowOop*)addr() == CompressedOops::encode(cast_to_oop(x)), "must agree");
   } else {
 #endif
     guarantee(*(address*)addr() == x, "must agree");
@@ -732,16 +732,16 @@ bool static_stub_Relocation::clear_inline_cache() {
 
 
 void external_word_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
-  address target = _target;
-  if (target == NULL) {
-    // An absolute embedded reference to an external location,
-    // which means there is nothing to fix here.
-    return;
+  if (_target != NULL) {
+    // Probably this reference is absolute,  not relative, so the following is
+    // probably a no-op.
+    set_value(_target);
   }
-  // Probably this reference is absolute, not relative, so the
-  // following is probably a no-op.
-  assert(src->section_index_of(target) == CodeBuffer::SECT_NONE, "sanity");
-  set_value(target);
+  // If target is NULL, this is  an absolute embedded reference to an external
+  // location, which means  there is nothing to fix here.  In either case, the
+  // resulting target should be an "external" address.
+  postcond(src->section_index_of(target()) == CodeBuffer::SECT_NONE);
+  postcond(dest->section_index_of(target()) == CodeBuffer::SECT_NONE);
 }
 
 

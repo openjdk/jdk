@@ -30,7 +30,7 @@
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build javadoc.tester.*
+ * @build toolbox.ToolBox javadoc.tester.*
  * @run main TestLinkPlatform
  */
 
@@ -55,8 +55,8 @@ public class TestLinkPlatform extends JavadocTester {
     final static String NEW_PLATFORM_URL = "https://docs.oracle.com/en/java/javase/%d/docs/api/java.base/java/lang/Object.html";
     final static String PRE_PLATFORM_URL = "https://download.java.net/java/early_access/jdk%d/docs/api/java.base/java/lang/Object.html";
 
-    final static String NON_MODULAR_CUSTOM_PLATFORM_URL = "https://some.domain/docs/%d/api/java/lang/Object.html";
-    final static String MODULAR_CUSTOM_PLATFORM_URL = "https://some.domain/docs/%d/api/java.base/java/lang/Object.html";
+    final static String NON_MODULAR_CUSTOM_PLATFORM_URL = "https://example.com/%d/api/java/lang/Object.html";
+    final static String MODULAR_CUSTOM_PLATFORM_URL = "https://example.com/%d/api/java.base/java/lang/Object.html";
 
     final static int EARLIEST_VERSION = 7;
     final static int LATEST_VERSION = Integer.parseInt(SourceVersion.latest().name().substring(8));
@@ -113,13 +113,14 @@ public class TestLinkPlatform extends JavadocTester {
 
     @Test
     public void testPlatformLinkWithCustomPropertyURL(Path base) throws Exception {
+        Path customProps = writeCustomProperties(base);
         for (int version = EARLIEST_VERSION; version <= LATEST_VERSION; version++) {
             Path out = base.resolve("out_" + version);
 
             javadoc("-d", out.toString(),
                     "-sourcepath", packageSrc.toString(),
                     "--release", Integer.toString(version),
-                    "--link-platform-properties", "file:" + testSrc("linkplatform.properties"),
+                    "--link-platform-properties", customProps.toUri().toString(),
                     "p.q");
 
             checkExit(Exit.OK);
@@ -134,13 +135,14 @@ public class TestLinkPlatform extends JavadocTester {
 
     @Test
     public void testPlatformLinkWithCustomPropertyFile(Path base) throws Exception {
+        Path customProps = writeCustomProperties(base);
         for (int version = EARLIEST_VERSION; version <= LATEST_VERSION; version++) {
             Path out = base.resolve("out_" + version);
 
             javadoc("-d", out.toString(),
                     "-sourcepath", packageSrc.toString(),
                     "--release", Integer.toString(version),
-                    "--link-platform-properties", testSrc("linkplatform.properties"),
+                    "--link-platform-properties", customProps.toString(),
                     "p.q");
 
             checkExit(Exit.OK);
@@ -151,6 +153,17 @@ public class TestLinkPlatform extends JavadocTester {
                     "<a href=\"" + url + "#equals(java.lang.Object)\" title=\"class or interface in java.lang\" class=\"external-link\">",
                     "<a href=\"" + url + "#finalize()\" title=\"class or interface in java.lang\" class=\"external-link\">");
         }
+    }
+
+    private Path writeCustomProperties(Path base) throws IOException {
+        ToolBox tb = new ToolBox();
+        StringBuilder sb = new StringBuilder();
+        for (int version = EARLIEST_VERSION; version <= LATEST_VERSION; version++) {
+            sb.append(String.format("doclet.platform.docs.%1$d= https://example.com/%1$d/api/\n", version));
+        }
+        Path path = base.resolve("linkplatform.properties");
+        tb.writeFile(path, sb.toString());
+        return path;
     }
 
     @Test

@@ -30,7 +30,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
-#include "gc/z/zPageAllocator.hpp"
+#include "gc/z/zPageAllocator.inline.hpp"
 #include "gc/z/zPageCache.hpp"
 #include "gc/z/zSafeDelete.inline.hpp"
 #include "gc/z/zStat.hpp"
@@ -130,22 +130,19 @@ public:
 ZPageAllocator::ZPageAllocator(ZWorkers* workers,
                                size_t min_capacity,
                                size_t initial_capacity,
-                               size_t max_capacity,
-                               size_t max_reserve) :
+                               size_t max_capacity) :
     _lock(),
     _cache(),
     _virtual(max_capacity),
     _physical(max_capacity),
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
-    _max_reserve(max_reserve),
     _current_max_capacity(max_capacity),
     _capacity(0),
     _claimed(0),
     _used(0),
     _used_high(0),
     _used_low(0),
-    _allocated(0),
     _reclaimed(0),
     _stalled(),
     _satisfied(),
@@ -161,7 +158,6 @@ ZPageAllocator::ZPageAllocator(ZWorkers* workers,
   log_info_p(gc, init)("Min Capacity: " SIZE_FORMAT "M", min_capacity / M);
   log_info_p(gc, init)("Initial Capacity: " SIZE_FORMAT "M", initial_capacity / M);
   log_info_p(gc, init)("Max Capacity: " SIZE_FORMAT "M", max_capacity / M);
-  log_info_p(gc, init)("Max Reserve: " SIZE_FORMAT "M", max_reserve / M);
   if (ZPageSizeMedium > 0) {
     log_info_p(gc, init)("Medium Page Size: " SIZE_FORMAT "M", ZPageSizeMedium / M);
   } else {
@@ -259,18 +255,6 @@ size_t ZPageAllocator::capacity() const {
   return Atomic::load(&_capacity);
 }
 
-size_t ZPageAllocator::max_reserve() const {
-  return _max_reserve;
-}
-
-size_t ZPageAllocator::used_high() const {
-  return _used_high;
-}
-
-size_t ZPageAllocator::used_low() const {
-  return _used_low;
-}
-
 size_t ZPageAllocator::used() const {
   return Atomic::load(&_used);
 }
@@ -279,22 +263,24 @@ size_t ZPageAllocator::unused() const {
   const ssize_t capacity = (ssize_t)Atomic::load(&_capacity);
   const ssize_t used = (ssize_t)Atomic::load(&_used);
   const ssize_t claimed = (ssize_t)Atomic::load(&_claimed);
-  const ssize_t max_reserve = (ssize_t)_max_reserve;
-  const ssize_t unused = capacity - used - claimed - max_reserve;
+  const ssize_t unused = capacity - used - claimed;
   return unused > 0 ? (size_t)unused : 0;
 }
 
-size_t ZPageAllocator::allocated() const {
-  return _allocated;
-}
-
-size_t ZPageAllocator::reclaimed() const {
-  return _reclaimed > 0 ? (size_t)_reclaimed : 0;
+ZPageAllocatorStats ZPageAllocator::stats() const {
+  ZLocker<ZLock> locker(&_lock);
+  return ZPageAllocatorStats(_min_capacity,
+                             _max_capacity,
+                             soft_max_capacity(),
+                             _capacity,
+                             _used,
+                             _used_high,
+                             _used_low,
+                             _reclaimed);
 }
 
 void ZPageAllocator::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  _allocated = 0;
   _reclaimed = 0;
   _used_high = _used_low = _used;
 }
@@ -333,13 +319,12 @@ void ZPageAllocator::decrease_capacity(size_t size, bool set_max_capacity) {
   }
 }
 
-void ZPageAllocator::increase_used(size_t size, bool relocation) {
-  if (relocation) {
-    // Allocating a page for the purpose of relocation has a
-    // negative contribution to the number of reclaimed bytes.
+void ZPageAllocator::increase_used(size_t size, bool worker_relocation) {
+  if (worker_relocation) {
+    // Allocating a page for the purpose of worker relocation has
+    // a negative contribution to the number of reclaimed bytes.
     _reclaimed -= size;
   }
-  _allocated += size;
 
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::add(&_used, size);
@@ -355,8 +340,6 @@ void ZPageAllocator::decrease_used(size_t size, bool reclaimed) {
   // to undo an allocation.
   if (reclaimed) {
     _reclaimed += size;
-  } else {
-    _allocated -= size;
   }
 
   // Update atomically since we have concurrent readers
@@ -401,45 +384,23 @@ void ZPageAllocator::destroy_page(ZPage* page) {
   _safe_delete(page);
 }
 
-bool ZPageAllocator::is_alloc_allowed(size_t size, bool no_reserve) const {
-  size_t available = _current_max_capacity - _used - _claimed;
-
-  if (no_reserve) {
-    // The reserve should not be considered available
-    available -= MIN2(available, _max_reserve);
-  }
-
+bool ZPageAllocator::is_alloc_allowed(size_t size) const {
+  const size_t available = _current_max_capacity - _used - _claimed;
   return available >= size;
 }
 
-bool ZPageAllocator::is_alloc_allowed_from_cache(size_t size, bool no_reserve) const {
-  size_t available = _capacity - _used - _claimed;
-
-  if (no_reserve) {
-    // The reserve should not be considered available
-    available -= MIN2(available, _max_reserve);
-  } else if (_capacity != _current_max_capacity) {
-    // Always increase capacity before using the reserve
-    return false;
-  }
-
-  return available >= size;
-}
-
-bool ZPageAllocator::alloc_page_common_inner(uint8_t type, size_t size, bool no_reserve, ZList<ZPage>* pages) {
-  if (!is_alloc_allowed(size, no_reserve)) {
+bool ZPageAllocator::alloc_page_common_inner(uint8_t type, size_t size, ZList<ZPage>* pages) {
+  if (!is_alloc_allowed(size)) {
     // Out of memory
     return false;
   }
 
   // Try allocate from the page cache
-  if (is_alloc_allowed_from_cache(size, no_reserve)) {
-    ZPage* const page = _cache.alloc_page(type, size);
-    if (page != NULL) {
-      // Success
-      pages->insert_last(page);
-      return true;
-    }
+  ZPage* const page = _cache.alloc_page(type, size);
+  if (page != NULL) {
+    // Success
+    pages->insert_last(page);
+    return true;
   }
 
   // Try increase capacity
@@ -461,17 +422,13 @@ bool ZPageAllocator::alloc_page_common(ZPageAllocation* allocation) {
   const ZAllocationFlags flags = allocation->flags();
   ZList<ZPage>* const pages = allocation->pages();
 
-  // Try allocate without using the reserve
-  if (!alloc_page_common_inner(type, size, true /* no_reserve */, pages)) {
-    // If allowed to, try allocate using the reserve
-    if (flags.no_reserve() || !alloc_page_common_inner(type, size, false /* no_reserve */, pages)) {
-      // Out of memory
-      return false;
-    }
+  if (!alloc_page_common_inner(type, size, pages)) {
+    // Out of memory
+    return false;
   }
 
   // Updated used statistics
-  increase_used(size, flags.relocation());
+  increase_used(size, flags.worker_relocation());
 
   // Success
   return true;
@@ -689,9 +646,9 @@ retry:
   // where the global sequence number was updated.
   page->reset();
 
-  // Update allocation statistics. Exclude worker threads to avoid
-  // artificial inflation of the allocation rate due to relocation.
-  if (!flags.worker_thread()) {
+  // Update allocation statistics. Exclude worker relocations to avoid
+  // artificial inflation of the allocation rate during relocation.
+  if (!flags.worker_relocation()) {
     // Note that there are two allocation rate counters, which have
     // different purposes and are sampled at different frequencies.
     const size_t bytes = page->size();
@@ -701,7 +658,7 @@ retry:
 
   // Send event
   event.commit(type, size, allocation.flushed(), allocation.committed(),
-               page->physical_memory().nsegments(), flags.non_blocking(), flags.no_reserve());
+               page->physical_memory().nsegments(), flags.non_blocking());
 
   return page;
 }
@@ -776,11 +733,10 @@ size_t ZPageAllocator::uncommit(uint64_t* timeout) {
     SuspendibleThreadSetJoiner joiner(!ZVerifyViews);
     ZLocker<ZLock> locker(&_lock);
 
-    // Never uncommit the reserve, and never uncommit below min capacity. We flush
-    // out and uncommit chunks at a time (~0.8% of the max capacity, but at least
-    // one granule and at most 256M), in case demand for memory increases while we
-    // are uncommitting.
-    const size_t retain = clamp(_used + _max_reserve, _min_capacity, _capacity);
+    // Never uncommit below min capacity. We flush out and uncommit chunks at
+    // a time (~0.8% of the max capacity, but at least one granule and at most
+    // 256M), in case demand for memory increases while we are uncommitting.
+    const size_t retain = MAX2(_used, _min_capacity);
     const size_t release = _capacity - retain;
     const size_t limit = MIN2(align_up(_current_max_capacity >> 7, ZGranuleSize), 256 * M);
     const size_t flush = MIN2(release, limit);

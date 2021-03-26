@@ -533,13 +533,25 @@ public abstract class WComponentPeer extends WObjectPeer
 
     @Override
     public boolean updateGraphicsData(GraphicsConfiguration gc) {
+        var old = getGraphicsConfiguration().getDefaultTransform();
         winGraphicsConfig = (Win32GraphicsConfig)gc;
+        if (gc != null && !old.equals(gc.getDefaultTransform())) {
+            syncBounds(); // the bounds of the peer depend on the DPI
+        }
         try {
             replaceSurfaceData();
         } catch (InvalidPipeException e) {
             // REMIND : what do we do if our surface creation failed?
         }
         return false;
+    }
+
+    /**
+     * Make sure that the native peer's coordinates are in sync with the target.
+     */
+    void syncBounds() {
+        Rectangle r = ((Component) target).getBounds();
+        setBounds(r.x, r.y, r.width, r.height, SET_BOUNDS);
     }
 
     //This will return null for Components not yet added to a Container

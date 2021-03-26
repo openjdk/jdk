@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================
@@ -29,9 +29,6 @@
  * (C) Copyright IBM Corp. 2003 All Rights Reserved.
  *
  * ===========================================================================
- */
-/*
- * $Id: DOMReference.java 1854026 2019-02-21 09:30:01Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -165,7 +162,7 @@ public final class DOMReference extends DOMStructure
         }
         this.digestMethod = dm;
         this.uri = uri;
-        if (uri != null && !uri.equals("")) {
+        if (uri != null && !uri.isEmpty()) {
             try {
                 new URI(uri);
             } catch (URISyntaxException e) {
@@ -196,7 +193,7 @@ public final class DOMReference extends DOMStructure
         // unmarshal Transforms, if specified
         Element nextSibling = DOMUtils.getFirstChildElement(refElem);
         List<Transform> newTransforms = new ArrayList<>(MAXIMUM_TRANSFORM_COUNT);
-        if (nextSibling.getLocalName().equals("Transforms")
+        if ("Transforms".equals(nextSibling.getLocalName())
             && XMLSignature.XMLNS.equals(nextSibling.getNamespaceURI())) {
             Element transformElem = DOMUtils.getFirstChildElement(nextSibling,
                                                                   "Transform",
@@ -223,7 +220,7 @@ public final class DOMReference extends DOMStructure
             }
             nextSibling = DOMUtils.getNextSiblingElement(nextSibling);
         }
-        if (!nextSibling.getLocalName().equals("DigestMethod")
+        if (!"DigestMethod".equals(nextSibling.getLocalName())
             && XMLSignature.XMLNS.equals(nextSibling.getNamespaceURI())) {
             throw new MarshalException("Invalid element name: " +
                                        nextSibling.getLocalName() +
@@ -448,6 +445,7 @@ public final class DOMReference extends DOMStructure
             dos = new DigesterOutputStream(md);
         }
         Data data = dereferencedData;
+        XMLSignatureInput xi = null;
         try (OutputStream os = new UnsyncBufferedOutputStream(dos)) {
             for (int i = 0, size = transforms.size(); i < size; i++) {
                 DOMTransform transform = (DOMTransform)transforms.get(i);
@@ -459,7 +457,6 @@ public final class DOMReference extends DOMStructure
             }
 
             if (data != null) {
-                XMLSignatureInput xi;
                 // explicitly use C14N 1.1 when generating signature
                 // first check system property, then context property
                 boolean c14n11 = useC14N11;
@@ -500,56 +497,66 @@ public final class DOMReference extends DOMStructure
                 }
 
                 boolean secVal = Utils.secureValidation(context);
-                xi.setSecureValidation(secVal);
-                if (context instanceof XMLSignContext && c14n11
-                    && !xi.isOctetStream() && !xi.isOutputStreamSet()) {
-                    TransformService spi = null;
-                    if (provider == null) {
-                        spi = TransformService.getInstance(c14nalg, "DOM");
-                    } else {
-                        try {
-                            spi = TransformService.getInstance(c14nalg, "DOM", provider);
-                        } catch (NoSuchAlgorithmException nsae) {
+                try {
+                    xi.setSecureValidation(secVal);
+                    if (context instanceof XMLSignContext && c14n11
+                            && !xi.isOctetStream() && !xi.isOutputStreamSet()) {
+                        TransformService spi = null;
+                        if (provider == null) {
                             spi = TransformService.getInstance(c14nalg, "DOM");
+                        } else {
+                            try {
+                                spi = TransformService.getInstance(c14nalg, "DOM", provider);
+                            } catch (NoSuchAlgorithmException nsae) {
+                                spi = TransformService.getInstance(c14nalg, "DOM");
+                            }
                         }
-                    }
 
-                    DOMTransform t = new DOMTransform(spi);
-                    Element transformsElem = null;
-                    String dsPrefix = DOMUtils.getSignaturePrefix(context);
-                    if (allTransforms.isEmpty()) {
-                        transformsElem = DOMUtils.createElement(
-                            refElem.getOwnerDocument(),
-                            "Transforms", XMLSignature.XMLNS, dsPrefix);
-                        refElem.insertBefore(transformsElem,
-                            DOMUtils.getFirstChildElement(refElem));
+                        DOMTransform t = new DOMTransform(spi);
+                        Element transformsElem = null;
+                        String dsPrefix = DOMUtils.getSignaturePrefix(context);
+                        if (allTransforms.isEmpty()) {
+                            transformsElem = DOMUtils.createElement(
+                                    refElem.getOwnerDocument(),
+                                    "Transforms", XMLSignature.XMLNS, dsPrefix);
+                            refElem.insertBefore(transformsElem,
+                                    DOMUtils.getFirstChildElement(refElem));
+                        } else {
+                            transformsElem = DOMUtils.getFirstChildElement(refElem);
+                        }
+                        t.marshal(transformsElem, dsPrefix,
+                                (DOMCryptoContext) context);
+                        allTransforms.add(t);
+                        xi.updateOutputStream(os, true);
                     } else {
-                        transformsElem = DOMUtils.getFirstChildElement(refElem);
+                        xi.updateOutputStream(os);
                     }
-                    t.marshal(transformsElem, dsPrefix,
-                              (DOMCryptoContext)context);
-                    allTransforms.add(t);
-                    xi.updateOutputStream(os, true);
-                } else {
-                    xi.updateOutputStream(os);
+                } finally {
+                    if(xi.getOctetStreamReal() != null) {
+                        xi.getOctetStreamReal().close();
+                    }
                 }
+            } else {
+                LOG.warn("The input bytes to the digest operation are null. " +
+                   "This may be due to a problem with the Reference URI " +
+                   "or its Transforms.");
             }
             os.flush();
             if (cache != null && cache) {
                 this.dis = dos.getInputStream();
             }
             return dos.getDigestValue();
-        } catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException | TransformException | MarshalException
+                | IOException | com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException e) {
             throw new XMLSignatureException(e);
-        } catch (TransformException e) {
-            throw new XMLSignatureException(e);
-        } catch (MarshalException e) {
-            throw new XMLSignatureException(e);
-        } catch (IOException e) {
-            throw new XMLSignatureException(e);
-        } catch (com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException e) {
-            throw new XMLSignatureException(e);
-        } finally {
+        } finally { //NOPMD
+            if (xi != null && xi.getOctetStreamReal() != null) {
+                try {
+                    xi.getOctetStreamReal().close();
+                } catch (IOException e) {
+                    throw new XMLSignatureException(e);
+                }
+            }
             if (dos != null) {
                 try {
                     dos.close();

@@ -121,6 +121,12 @@ public final class GraphicsPrimitiveMgr {
         primitives = temp;
     }
 
+    /**
+     * Registers the general loop which will be used to produce specific
+     * primitives by the {@link GraphicsPrimitive#makePrimitive} function.
+     *
+     * @param gen the graphics primitive to be registered as the general loop
+     */
     public static synchronized void registerGeneral(GraphicsPrimitive gen) {
         if (generalPrimitives == null) {
             generalPrimitives = new GraphicsPrimitive[] {gen};

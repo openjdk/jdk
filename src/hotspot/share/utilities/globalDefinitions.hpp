@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 #include "classfile_constants.h"
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
+
+class oopDesc;
 
 // Defaults for macros that might be defined per compiler.
 #ifndef NOINLINE
@@ -73,18 +75,12 @@
 // This file holds all globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
-// Declare the named class to be noncopyable.  This macro must be used in
-// a private part of the class's definition, followed by a semi-colon.
-// Doing so provides private declarations for the class's copy constructor
-// and assignment operator.  Because these operations are private, most
-// potential callers will fail to compile because they are inaccessible.
-// The operations intentionally lack a definition, to provoke link-time
-// failures for calls from contexts where they are accessible, e.g. from
-// within the class or from a friend of the class.
-// Note: The lack of definitions is still not completely bullet-proof, as
-// an apparent call might be optimized away by copy elision.
-// For C++11 the declarations should be changed to deleted definitions.
-#define NONCOPYABLE(C) C(C const&); C& operator=(C const&) /* next token must be ; */
+// Declare the named class to be noncopyable.  This macro must be followed by
+// a semi-colon.  The macro provides deleted declarations for the class's copy
+// constructor and assignment operator.  Because these operations are deleted,
+// they cannot be defined and potential callers will fail to compile.
+#define NONCOPYABLE(C) C(C const&) = delete; C& operator=(C const&) = delete /* next token must be ; */
+
 
 //----------------------------------------------------------------------------------------------------
 // Printf-style formatters for fixed- and variable-width types as pointers and
@@ -718,6 +714,22 @@ extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a jcha
 inline const char* type2name(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2name_tab[t] : NULL; }
 extern BasicType name2type(const char* name);
 
+inline jlong max_signed_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return max_jint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return max_jlong;
+}
+
+inline jlong min_signed_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return min_jint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return min_jlong;
+}
+
 // Auxiliary math routines
 // least common multiple
 extern size_t lcm(size_t a, size_t b);
@@ -795,6 +807,7 @@ class JavaValue {
     jint     i;
     jlong    l;
     jobject  h;
+    oopDesc* o;
   } JavaCallValue;
 
  private:
@@ -819,6 +832,7 @@ class JavaValue {
  jint get_jint() const { return _value.i; }
  jlong get_jlong() const { return _value.l; }
  jobject get_jobject() const { return _value.h; }
+ oopDesc* get_oop() const { return _value.o; }
  JavaCallValue* get_value_addr() { return &_value; }
  BasicType get_type() const { return _type; }
 
@@ -827,6 +841,7 @@ class JavaValue {
  void set_jint(jint i) { _value.i = i;}
  void set_jlong(jlong l) { _value.l = l;}
  void set_jobject(jobject h) { _value.h = h;}
+ void set_oop(oopDesc* o) { _value.o = o;}
  void set_type(BasicType t) { _type = t; }
 
  jboolean get_jboolean() const { return (jboolean) (_value.i);}
@@ -972,7 +987,6 @@ const intptr_t OneBit     =  1; // only right_most bit set in a word
 // (note: #define used only so that they can be used in enum constant definitions)
 #define nth_bit(n)        (((n) >= BitsPerWord) ? 0 : (OneBit << (n)))
 #define right_n_bits(n)   (nth_bit(n) - 1)
-#define left_n_bits(n)    (right_n_bits(n) << (((n) >= BitsPerWord) ? 0 : (BitsPerWord - (n))))
 
 // bit-operations using a mask m
 inline void   set_bits    (intptr_t& x, intptr_t m) { x |= m; }
@@ -1024,59 +1038,6 @@ template<typename T>
 inline T clamp(T value, T min, T max) {
   assert(min <= max, "must be");
   return MIN2(MAX2(value, min), max);
-}
-
-// Returns largest i such that 2^i <= x.
-// If x == 0, the function returns -1.
-inline int log2_intptr(uintptr_t x) {
-  int i = -1;
-  uintptr_t p = 1;
-  while (p != 0 && p <= x) {
-    // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
-    i++; p *= 2;
-  }
-  // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
-  // If p = 0, overflow has occurred and i = 31 or i = 63 (depending on the machine word size).
-  return i;
-}
-
-//* largest i such that 2^i <= x
-inline int log2_long(julong x) {
-  int i = -1;
-  julong p =  1;
-  while (p != 0 && p <= x) {
-    // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
-    i++; p *= 2;
-  }
-  // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
-  // (if p = 0 then overflow occurred and i = 63)
-  return i;
-}
-
-// If x < 0, the function returns 31 on a 32-bit machine and 63 on a 64-bit machine.
-inline int log2_intptr(intptr_t x) {
-  return log2_intptr((uintptr_t)x);
-}
-
-inline int log2_int(int x) {
-  STATIC_ASSERT(sizeof(int) <= sizeof(uintptr_t));
-  return log2_intptr((uintptr_t)(unsigned int)x);
-}
-
-inline int log2_jint(jint x) {
-  STATIC_ASSERT(sizeof(jint) <= sizeof(uintptr_t));
-  return log2_intptr((uintptr_t)(juint)x);
-}
-
-inline int log2_uint(uint x) {
-  STATIC_ASSERT(sizeof(uint) <= sizeof(uintptr_t));
-  return log2_intptr((uintptr_t)x);
-}
-
-//  A negative value of 'x' will return '63'
-inline int log2_jlong(jlong x) {
-  STATIC_ASSERT(sizeof(jlong) <= sizeof(julong));
-  return log2_long((julong)x);
 }
 
 inline bool is_odd (intx x) { return x & 1;      }

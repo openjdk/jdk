@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,7 +400,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     /*package-private*/
     @ForceInline
     static long toBits(double e) {
-        return  Double.doubleToLongBits(e);
+        return  Double.doubleToRawLongBits(e);
     }
 
     /*package-private*/
@@ -665,8 +665,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                         v0.bOp(v1, (i, a, b) -> (double)Math.max(a, b));
                 case VECTOR_OP_MIN: return (v0, v1) ->
                         v0.bOp(v1, (i, a, b) -> (double)Math.min(a, b));
-                case VECTOR_OP_OR: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
                 default: return null;
                 }}));
     }
@@ -2059,7 +2057,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                            S shuffle,
                                            DoubleVector v) {
         VectorMask<Double> valid = shuffle.laneIsValid();
-        S ws = shuffletype.cast(shuffle.wrapIndexes());
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         DoubleVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, double.class, length(),
@@ -2319,8 +2318,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                       toBits(v.rOp(MAX_OR_INF, (i, a, b) -> (double) Math.min(a, b)));
               case VECTOR_OP_MAX: return v ->
                       toBits(v.rOp(MIN_OR_INF, (i, a, b) -> (double) Math.max(a, b)));
-              case VECTOR_OP_OR: return v ->
-                      toBits(v.rOp((double)0, (i, a, b) -> fromBits(toBits(a) | toBits(b))));
               default: return null;
               }})));
     }
@@ -2336,13 +2333,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
                 switch (opc_) {
                 case VECTOR_OP_ADD:
-                case VECTOR_OP_OR:
-                case VECTOR_OP_XOR:
                     return v -> v.broadcast(0);
                 case VECTOR_OP_MUL:
                     return v -> v.broadcast(1);
-                case VECTOR_OP_AND:
-                    return v -> v.broadcast(-1);
                 case VECTOR_OP_MIN:
                     return v -> v.broadcast(MAX_OR_INF);
                 case VECTOR_OP_MAX:

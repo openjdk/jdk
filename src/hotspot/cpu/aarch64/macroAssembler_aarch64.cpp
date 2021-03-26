@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,11 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTable.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
@@ -46,6 +48,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER1
@@ -175,7 +178,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // instruction.
   if (Instruction_aarch64::extract(insn, 31, 21) == 0b11010010101) {
     // Move narrow OOP
-    uint32_t n = CompressedOops::narrow_oop_value((oop)o);
+    uint32_t n = CompressedOops::narrow_oop_value(cast_to_oop(o));
     Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
     Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
     instructions = 2;
@@ -301,7 +304,7 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acqui
     cmp(in_nmethod ? sp : rfp, rscratch1);
     br(Assembler::HI, slow_path);
   } else {
-    tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
+    tbnz(rscratch1, log2i_exact(SafepointMechanism::poll_bit()), slow_path);
   }
 }
 
@@ -1381,7 +1384,6 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
     bind(*retaddr);
 
   ldp(rscratch1, rmethod, Address(post(sp, 2 * wordSize)));
-  maybe_isb();
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, int number_of_arguments) {
@@ -2563,6 +2565,8 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
 
 ATOMIC_XCHG(xchg, swp, ldxr, stxr, Assembler::xword)
 ATOMIC_XCHG(xchgw, swp, ldxrw, stxrw, Assembler::word)
+ATOMIC_XCHG(xchgl, swpl, ldxr, stlxr, Assembler::xword)
+ATOMIC_XCHG(xchglw, swpl, ldxrw, stlxrw, Assembler::word)
 ATOMIC_XCHG(xchgal, swpal, ldaxr, stlxr, Assembler::xword)
 ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word)
 
@@ -2660,6 +2664,8 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
           as_FloatRegister(i+3), T1D, Address(post(sp, 4 * wordSize)));
   }
 
+  reinitialize_ptrue();
+
   pop(call_clobbered_registers() - exclude, sp);
 }
 
@@ -2696,6 +2702,11 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
       ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
           as_FloatRegister(i+3), restore_vectors ? T2D : T1D, Address(post(sp, step)));
   }
+
+  if (restore_vectors) {
+    reinitialize_ptrue();
+  }
+
   pop(0x3fffffff, sp);         // integer registers except lr & sp
 }
 
@@ -3994,7 +4005,7 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
   if (operand_valid_for_logical_immediate(
         /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
     const uint64_t range_mask =
-      (1ULL << log2_intptr(CompressedKlassPointers::range())) - 1;
+      (1ULL << log2i(CompressedKlassPointers::range())) - 1;
     if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
       return (_klass_decode_mode = KlassDecodeXor);
     }
@@ -4387,10 +4398,15 @@ void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype)
 // Read the polling page.  The address of the polling page must
 // already be in r.
 address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype) {
-  InstructionMark im(this);
-  code_section()->relocate(inst_mark(), rtype);
-  ldrw(zr, Address(r, 0));
-  return inst_mark();
+  address mark;
+  {
+    InstructionMark im(this);
+    code_section()->relocate(inst_mark(), rtype);
+    ldrw(zr, Address(r, 0));
+    mark = inst_mark();
+  }
+  verify_cross_modify_fence_not_required();
+  return mark;
 }
 
 void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
@@ -4425,18 +4441,9 @@ void MacroAssembler::load_byte_map_base(Register reg) {
   CardTable::CardValue* byte_map_base =
     ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
 
-  if (is_valid_AArch64_address((address)byte_map_base)) {
-    // Strictly speaking the byte_map_base isn't an address at all,
-    // and it might even be negative.
-    uint64_t offset;
-    adrp(reg, ExternalAddress((address)byte_map_base), offset);
-    // We expect offset to be zero with most collectors.
-    if (offset != 0) {
-      add(reg, reg, offset);
-    }
-  } else {
-    mov(reg, (uint64_t)byte_map_base);
-  }
+  // Strictly speaking the byte_map_base isn't an address at all, and it might
+  // even be negative. It is thus materialised as a constant.
+  mov(reg, (uint64_t)byte_map_base);
 }
 
 void MacroAssembler::build_frame(int framesize) {
@@ -4455,6 +4462,7 @@ void MacroAssembler::build_frame(int framesize) {
       sub(sp, sp, rscratch1);
     }
   }
+  verify_cross_modify_fence_not_required();
 }
 
 void MacroAssembler::remove_frame(int framesize) {
@@ -5258,10 +5266,14 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 // by the call to JavaThread::aarch64_get_thread_helper() or, indeed,
 // the call setup code.
 //
-// aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On Linux, aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On other systems, the helper is a usual C function.
 //
 void MacroAssembler::get_thread(Register dst) {
-  RegSet saved_regs = RegSet::range(r0, r1) + lr - dst;
+  RegSet saved_regs =
+    LINUX_ONLY(RegSet::range(r0, r1)  + lr - dst)
+    NOT_LINUX (RegSet::range(r0, r17) + lr - dst);
+
   push(saved_regs, sp);
 
   mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));
@@ -5296,8 +5308,9 @@ void MacroAssembler::cache_wbsync(bool is_pre) {
 }
 
 void MacroAssembler::verify_sve_vector_length() {
+  // Make sure that native code does not change SVE vector length.
+  if (!UseSVE) return;
   Label verify_ok;
-  assert(UseSVE > 0, "should only be used for SVE");
   movw(rscratch1, zr);
   sve_inc(rscratch1, B);
   subsw(zr, rscratch1, VM_Version::get_initial_sve_vector_length());
@@ -5308,10 +5321,38 @@ void MacroAssembler::verify_sve_vector_length() {
 
 void MacroAssembler::verify_ptrue() {
   Label verify_ok;
-  assert(UseSVE > 0, "should only be used for SVE");
+  if (!UseSVE) {
+    return;
+  }
   sve_cntp(rscratch1, B, ptrue, ptrue); // get true elements count.
   sve_dec(rscratch1, B);
   cbz(rscratch1, verify_ok);
   stop("Error: the preserved predicate register (p7) elements are not all true");
   bind(verify_ok);
 }
+
+void MacroAssembler::safepoint_isb() {
+  isb();
+#ifndef PRODUCT
+  if (VerifyCrossModifyFence) {
+    // Clear the thread state.
+    strb(zr, Address(rthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
+  }
+#endif
+}
+
+#ifndef PRODUCT
+void MacroAssembler::verify_cross_modify_fence_not_required() {
+  if (VerifyCrossModifyFence) {
+    // Check if thread needs a cross modify fence.
+    ldrb(rscratch1, Address(rthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
+    Label fence_not_required;
+    cbz(rscratch1, fence_not_required);
+    // If it does then fail.
+    lea(rscratch1, CAST_FROM_FN_PTR(address, JavaThread::verify_cross_modify_fence_failure));
+    mov(c_rarg0, rthread);
+    blr(rscratch1);
+    bind(fence_not_required);
+  }
+}
+#endif

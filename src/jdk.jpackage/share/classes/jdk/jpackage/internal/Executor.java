@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ final public class Executor {
 
                     if ((outputConsumer != null || Log.isVerbose())
                             || saveOutput) {
-                        savedOutput = br.lines().collect(Collectors.toList());
+                        savedOutput = br.lines().toList();
                     } else {
                         savedOutput = null;
                     }
@@ -218,7 +218,7 @@ final public class Executor {
         StringBuilder sb = new StringBuilder();
         sb.append((quiet) ? pb.command().get(0) : pb.command());
         if (pb.directory() != null) {
-            sb.append(String.format("in %s", pb.directory().getAbsolutePath()));
+            sb.append(String.format(" in %s", pb.directory().getAbsolutePath()));
         }
         return sb.toString();
     }

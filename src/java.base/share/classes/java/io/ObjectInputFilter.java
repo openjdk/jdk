@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import jdk.internal.util.StaticProperty;
  * {@link Status#UNDECIDED UNDECIDED}.
  * Filters should be designed for the specific use case and expected types.
  * A filter designed for a particular use may be passed a class that is outside
- * of the scope of the filter. If the purpose of the filter is to black-list classes
+ * of the scope of the filter. If the purpose of the filter is to reject classes
  * then it can reject a candidate class that matches and report UNDECIDED for others.
  * A filter may be called with class equals {@code null}, {@code arrayLength} equal -1,
  * the depth, number of references, and stream size and return a status
@@ -226,12 +226,12 @@ public interface ObjectInputFilter {
         /**
          * Lock object for system-wide filter.
          */
-        private final static Object serialFilterLock = new Object();
+        private static final Object serialFilterLock = new Object();
 
         /**
          * Debug: Logger
          */
-        private final static System.Logger configLog;
+        private static final System.Logger configLog;
 
         /**
          * Logger for debugging.
@@ -246,14 +246,14 @@ public interface ObjectInputFilter {
          * The name for the system-wide deserialization filter.
          * Used as a system property and a java.security.Security property.
          */
-        private final static String SERIAL_FILTER_PROPNAME = "jdk.serialFilter";
+        private static final String SERIAL_FILTER_PROPNAME = "jdk.serialFilter";
 
         /**
          * The system-wide filter; may be null.
          * Lookup the filter in java.security.Security or
          * the system property.
          */
-        private final static ObjectInputFilter configuredFilter;
+        private static final ObjectInputFilter configuredFilter;
 
         static {
             configuredFilter = AccessController
@@ -405,7 +405,7 @@ public interface ObjectInputFilter {
          * used for all ObjectInputStreams that do not set their own filters.
          *
          */
-        final static class Global implements ObjectInputFilter {
+        static final class Global implements ObjectInputFilter {
             /**
              * The pattern used to create the filter.
              */

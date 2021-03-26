@@ -35,18 +35,18 @@ class ZListNode {
   friend class ZList<T>;
 
 private:
-  ZListNode* _next;
-  ZListNode* _prev;
+  ZListNode<T>* _next;
+  ZListNode<T>* _prev;
 
-  ZListNode(ZListNode* next, ZListNode* prev);
+  NONCOPYABLE(ZListNode);
 
-  void set_unused();
+  void verify_links() const;
+  void verify_links_linked() const;
+  void verify_links_unlinked() const;
 
 public:
   ZListNode();
   ~ZListNode();
-
-  bool is_unused() const;
 };
 
 // Doubly linked list
@@ -58,7 +58,7 @@ private:
 
   NONCOPYABLE(ZList);
 
-  void verify() const;
+  void verify_head() const;
 
   void insert(ZListNode<T>* before, ZListNode<T>* node);
 
@@ -84,8 +84,6 @@ public:
   void remove(T* elem);
   T* remove_first();
   T* remove_last();
-
-  void transfer(ZList<T>* list);
 };
 
 template <typename T, bool Forward>

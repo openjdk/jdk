@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/native
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions
@@ -62,15 +62,17 @@
  */
 
 import sun.hotspot.code.Compiler;
+import sun.hotspot.WhiteBox;
+import sun.hotspot.gc.GC;
 
 public class TestDriver {
     public static void main(String[] args) throws Exception {
-        sun.hotspot.WhiteBox wb = sun.hotspot.WhiteBox.getWhiteBox();
+        WhiteBox wb = WhiteBox.getWhiteBox();
         Boolean isExplicitGCInvokesConcurrentOn = wb.getBooleanVMFlag("ExplicitGCInvokesConcurrent");
-        Boolean isUseG1GCon = wb.getBooleanVMFlag("UseG1GC");
-        Boolean isUseZGCon = wb.getBooleanVMFlag("UseZGC");
-        Boolean isShenandoahGCon = wb.getBooleanVMFlag("UseShenandoahGC");
-        Boolean isUseEpsilonGCon = wb.getBooleanVMFlag("UseEpsilonGC");
+        boolean isUseG1GCon = GC.G1.isSelected();
+        boolean isUseZGCon = GC.Z.isSelected();
+        boolean isShenandoahGCon = GC.Shenandoah.isSelected();
+        boolean isUseEpsilonGCon = GC.Epsilon.isSelected();
 
         if (Compiler.isGraalEnabled() &&
             (isUseZGCon || isUseEpsilonGCon || isShenandoahGCon)) {

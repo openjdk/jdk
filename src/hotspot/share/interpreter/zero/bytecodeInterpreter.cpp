@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
  */
 
 // no precompiled headers
+#include "jvm_io.h"
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -35,6 +38,8 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -44,14 +49,15 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCritical.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 
 // no precompiled headers
 
@@ -101,12 +107,12 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define SAFEPOINT                                                                 \
-    {                                                                             \
-       /* zap freed handles rather than GC'ing them */                            \
-       HandleMarkCleaner __hmc(THREAD);                                           \
-       CALL_VM(SafepointMechanism::process_if_requested(THREAD), handle_exception); \
-    }
+#define SAFEPOINT                                                                                         \
+    if (SafepointMechanism::should_process(THREAD)) {                                                     \
+      HandleMarkCleaner __hmc(THREAD);                                                                    \
+      CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
+              handle_exception);                                                                          \
+    }                                                                                                     \
 
 /*
  * VM_JAVA_ERROR - Macro for throwing a java exception from
@@ -153,7 +159,7 @@
 #endif
 
 #undef DEBUGGER_SINGLE_STEP_NOTIFY
-#ifdef VM_JVMTI
+#if INCLUDE_JVMTI
 /* NOTE: (kbr) This macro must be called AFTER the PC has been
    incremented. JvmtiExport::at_single_stepping_point() may cause a
    breakpoint opcode to get inserted at the current PC to allow the
@@ -163,33 +169,31 @@
    to get the current opcode. This will override any other prefetching
    that might have occurred.
 */
-#define DEBUGGER_SINGLE_STEP_NOTIFY()                                            \
-{                                                                                \
-      if (_jvmti_interp_events) {                                                \
-        if (JvmtiExport::should_post_single_step()) {                            \
-          DECACHE_STATE();                                                       \
-          SET_LAST_JAVA_FRAME();                                                 \
-          ThreadInVMfromJava trans(THREAD);                                      \
-          JvmtiExport::at_single_stepping_point(THREAD,                          \
-                                          istate->method(),                      \
-                                          pc);                                   \
-          RESET_LAST_JAVA_FRAME();                                               \
-          CACHE_STATE();                                                         \
-          if (THREAD->has_pending_popframe() &&                                  \
-              !THREAD->pop_frame_in_process()) {                                 \
-            goto handle_Pop_Frame;                                               \
-          }                                                                      \
-          if (THREAD->jvmti_thread_state() &&                                    \
-              THREAD->jvmti_thread_state()->is_earlyret_pending()) {             \
-            goto handle_Early_Return;                                            \
-          }                                                                      \
-          opcode = *pc;                                                          \
-        }                                                                        \
-      }                                                                          \
+#define DEBUGGER_SINGLE_STEP_NOTIFY()                                        \
+{                                                                            \
+    if (JVMTI_ENABLED && JvmtiExport::should_post_single_step()) {           \
+      DECACHE_STATE();                                                       \
+      SET_LAST_JAVA_FRAME();                                                 \
+      ThreadInVMfromJava trans(THREAD);                                      \
+      JvmtiExport::at_single_stepping_point(THREAD,                          \
+                                           istate->method(),                 \
+                                           pc);                              \
+      RESET_LAST_JAVA_FRAME();                                               \
+      CACHE_STATE();                                                         \
+      if (THREAD->has_pending_popframe() &&                                  \
+        !THREAD->pop_frame_in_process()) {                                   \
+        goto handle_Pop_Frame;                                               \
+      }                                                                      \
+      if (THREAD->jvmti_thread_state() &&                                    \
+          THREAD->jvmti_thread_state()->is_earlyret_pending()) {             \
+        goto handle_Early_Return;                                            \
+      }                                                                      \
+      opcode = *pc;                                                          \
+   }                                                                         \
 }
 #else
 #define DEBUGGER_SINGLE_STEP_NOTIFY()
-#endif
+#endif // INCLUDE_JVMTI
 
 /*
  * CONTINUE - Macro for executing the next opcode.
@@ -387,22 +391,18 @@
 
 /*
  * BytecodeInterpreter::run(interpreterState istate)
- * BytecodeInterpreter::runWithChecks(interpreterState istate)
  *
  * The real deal. This is where byte codes actually get interpreted.
  * Basically it's a big while loop that iterates until we return from
  * the method passed in.
- *
- * The runWithChecks is used if JVMTI is enabled.
- *
  */
-#if defined(VM_JVMTI)
-void
-BytecodeInterpreter::runWithChecks(interpreterState istate) {
-#else
-void
-BytecodeInterpreter::run(interpreterState istate) {
-#endif
+
+// Instantiate two variants of the method for future linking.
+template void BytecodeInterpreter::run<true>(interpreterState istate);
+template void BytecodeInterpreter::run<false>(interpreterState istate);
+
+template<bool JVMTI_ENABLED>
+void BytecodeInterpreter::run(interpreterState istate) {
 
   // In order to simplify some tests based on switches set at runtime
   // we invoke the interpreter a single time after switches are enabled
@@ -417,14 +417,10 @@ BytecodeInterpreter::run(interpreterState istate) {
   if (checkit && *c_addr != c_value) {
     os::breakpoint();
   }
-#ifdef VM_JVMTI
-  static bool _jvmti_interp_events = 0;
-#endif
 
 #ifdef ASSERT
   if (istate->_msg != initialize) {
     assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-    IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
   }
   // Verify linkages.
   interpreterState l = istate;
@@ -555,9 +551,6 @@ BytecodeInterpreter::run(interpreterState istate) {
   switch (istate->msg()) {
     case initialize: {
       if (initialized++) ShouldNotReachHere(); // Only one initialize call.
-#ifdef VM_JVMTI
-      _jvmti_interp_events = JvmtiExport::can_post_interpreter_events();
-#endif
       return;
     }
     break;
@@ -581,103 +574,36 @@ BytecodeInterpreter::run(interpreterState istate) {
           rcvr = LOCALS_OBJECT(0);
           VERIFY_OOP(rcvr);
         }
+
         // The initial monitor is ours for the taking.
         // Monitor not filled in frame manager any longer as this caused race condition with biased locking.
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
-        bool success = false;
-        uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
-        markWord mark = rcvr->mark();
-        intptr_t hash = (intptr_t) markWord::no_hash;
-        // Implies UseBiasedLocking.
-        if (mark.has_bias_pattern()) {
-          uintptr_t thread_ident;
-          uintptr_t anticipated_bias_locking_value;
-          thread_ident = (uintptr_t)istate->thread();
-          anticipated_bias_locking_value =
-            ((rcvr->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-            ~(markWord::age_mask_in_place);
 
-          if (anticipated_bias_locking_value == 0) {
-            // Already biased towards this thread, nothing to do.
-            if (PrintBiasedLockingStatistics) {
-              (* BiasedLocking::biased_lock_entry_count_addr())++;
-            }
-            success = true;
-          } else if ((anticipated_bias_locking_value & markWord::biased_lock_mask_in_place) != 0) {
-            // Try to revoke bias.
-            markWord header = rcvr->klass()->prototype_header();
-            if (hash != markWord::no_hash) {
-              header = header.copy_set_hash(hash);
-            }
-            if (rcvr->cas_set_mark(header, mark) == mark) {
-              if (PrintBiasedLockingStatistics)
-                (*BiasedLocking::revoked_lock_entry_count_addr())++;
-            }
-          } else if ((anticipated_bias_locking_value & epoch_mask_in_place) != 0) {
-            // Try to rebias.
-            markWord new_header( (intptr_t) rcvr->klass()->prototype_header().value() | thread_ident);
-            if (hash != markWord::no_hash) {
-              new_header = new_header.copy_set_hash(hash);
-            }
-            if (rcvr->cas_set_mark(new_header, mark) == mark) {
-              if (PrintBiasedLockingStatistics) {
-                (* BiasedLocking::rebiased_lock_entry_count_addr())++;
-              }
-            } else {
-              InterpreterRuntime::monitorenter(THREAD, mon);
-            }
-            success = true;
-          } else {
-            // Try to bias towards thread in case object is anonymously biased.
-            markWord header(mark.value() &
-                            (markWord::biased_lock_mask_in_place |
-                             markWord::age_mask_in_place | epoch_mask_in_place));
-            if (hash != markWord::no_hash) {
-              header = header.copy_set_hash(hash);
-            }
-            markWord new_header(header.value() | thread_ident);
-            // Debugging hint.
-            DEBUG_ONLY(mon->lock()->set_displaced_header(markWord((uintptr_t) 0xdeaddead));)
-            if (rcvr->cas_set_mark(new_header, header) == header) {
-              if (PrintBiasedLockingStatistics) {
-                (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
-              }
-            } else {
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
-            }
-            success = true;
-          }
-        }
+        assert(!UseBiasedLocking, "Not implemented");
 
         // Traditional lightweight locking.
-        if (!success) {
-          markWord displaced = rcvr->mark().set_unlocked();
-          mon->lock()->set_displaced_header(displaced);
-          bool call_vm = UseHeavyMonitors;
-          if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
-            // Is it simple recursive case?
-            if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-              mon->lock()->set_displaced_header(markWord::from_pointer(NULL));
-            } else {
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
-            }
+        markWord displaced = rcvr->mark().set_unlocked();
+        mon->lock()->set_displaced_header(displaced);
+        bool call_vm = UseHeavyMonitors;
+        if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
+          // Is it simple recursive case?
+          if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+            mon->lock()->set_displaced_header(markWord::from_pointer(NULL));
+          } else {
+            CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
           }
         }
       }
       THREAD->clr_do_not_unlock();
 
-      // Notify jvmti
-#ifdef VM_JVMTI
-      if (_jvmti_interp_events) {
-        // Whenever JVMTI puts a thread in interp_only_mode, method
-        // entry/exit events are sent for that thread to track stack depth.
-        if (THREAD->is_interp_only_mode()) {
-          CALL_VM(InterpreterRuntime::post_method_entry(THREAD),
-                  handle_exception);
-        }
+      // Notify jvmti.
+      // Whenever JVMTI puts a thread in interp_only_mode, method
+      // entry/exit events are sent for that thread to track stack depth.
+      if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
+        CALL_VM(InterpreterRuntime::post_method_entry(THREAD),
+                handle_exception);
       }
-#endif /* VM_JVMTI */
 
       goto run;
     }
@@ -749,84 +675,19 @@ BytecodeInterpreter::run(interpreterState istate) {
       BasicObjectLock* entry = (BasicObjectLock*) istate->stack_base();
       assert(entry->obj() == NULL, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
-      bool success = false;
-      uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
 
-      markWord mark = lockee->mark();
-      intptr_t hash = (intptr_t) markWord::no_hash;
-      // implies UseBiasedLocking
-      if (mark.has_bias_pattern()) {
-        uintptr_t thread_ident;
-        uintptr_t anticipated_bias_locking_value;
-        thread_ident = (uintptr_t)istate->thread();
-        anticipated_bias_locking_value =
-          ((lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-          ~(markWord::age_mask_in_place);
-
-        if  (anticipated_bias_locking_value == 0) {
-          // already biased towards this thread, nothing to do
-          if (PrintBiasedLockingStatistics) {
-            (* BiasedLocking::biased_lock_entry_count_addr())++;
-          }
-          success = true;
-        } else if ((anticipated_bias_locking_value & markWord::biased_lock_mask_in_place) != 0) {
-          // try revoke bias
-          markWord header = lockee->klass()->prototype_header();
-          if (hash != markWord::no_hash) {
-            header = header.copy_set_hash(hash);
-          }
-          if (lockee->cas_set_mark(header, mark) == mark) {
-            if (PrintBiasedLockingStatistics) {
-              (*BiasedLocking::revoked_lock_entry_count_addr())++;
-            }
-          }
-        } else if ((anticipated_bias_locking_value & epoch_mask_in_place) !=0) {
-          // try rebias
-          markWord new_header( (intptr_t) lockee->klass()->prototype_header().value() | thread_ident);
-          if (hash != markWord::no_hash) {
-            new_header = new_header.copy_set_hash(hash);
-          }
-          if (lockee->cas_set_mark(new_header, mark) == mark) {
-            if (PrintBiasedLockingStatistics) {
-              (* BiasedLocking::rebiased_lock_entry_count_addr())++;
-            }
-          } else {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
-          success = true;
-        } else {
-          // try to bias towards thread in case object is anonymously biased
-          markWord header(mark.value() & (markWord::biased_lock_mask_in_place |
-                                          markWord::age_mask_in_place | epoch_mask_in_place));
-          if (hash != markWord::no_hash) {
-            header = header.copy_set_hash(hash);
-          }
-          markWord new_header(header.value() | thread_ident);
-          // debugging hint
-          DEBUG_ONLY(entry->lock()->set_displaced_header(markWord((uintptr_t) 0xdeaddead));)
-          if (lockee->cas_set_mark(new_header, header) == header) {
-            if (PrintBiasedLockingStatistics) {
-              (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
-            }
-          } else {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
-          success = true;
-        }
-      }
+      assert(!UseBiasedLocking, "Not implemented");
 
       // traditional lightweight locking
-      if (!success) {
-        markWord displaced = lockee->mark().set_unlocked();
-        entry->lock()->set_displaced_header(displaced);
-        bool call_vm = UseHeavyMonitors;
-        if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-          // Is it simple recursive case?
-          if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-            entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
-          } else {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
+      markWord displaced = lockee->mark().set_unlocked();
+      entry->lock()->set_displaced_header(displaced);
+      bool call_vm = UseHeavyMonitors;
+      if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
+        // Is it simple recursive case?
+        if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+          entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
+        } else {
+          CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
         }
       }
       UPDATE_PC_AND_TOS(1, -1);
@@ -1513,10 +1374,13 @@ run:
 #define ARRAY_INTRO(arrayOff)                                                  \
       arrayOop arrObj = (arrayOop)STACK_OBJECT(arrayOff);                      \
       jint     index  = STACK_INT(arrayOff + 1);                               \
-      char message[jintAsStringSize];                                          \
+      /* Two integers, the additional message, and the null-terminator */      \
+      char message[2 * jintAsStringSize + 33];                                 \
       CHECK_NULL(arrObj);                                                      \
       if ((uint32_t)index >= (uint32_t)arrObj->length()) {                     \
-          sprintf(message, "%d", index);                                       \
+          jio_snprintf(message, sizeof(message),                               \
+                  "Index %d out of bounds for length %d",                      \
+                  index, arrObj->length());                                    \
           VM_JAVA_ERROR(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), \
                         message);                                              \
       }
@@ -1654,87 +1518,19 @@ run:
         }
         if (entry != NULL) {
           entry->set_obj(lockee);
-          int success = false;
-          uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
 
-          markWord mark = lockee->mark();
-          intptr_t hash = (intptr_t) markWord::no_hash;
-          // implies UseBiasedLocking
-          if (mark.has_bias_pattern()) {
-            uintptr_t thread_ident;
-            uintptr_t anticipated_bias_locking_value;
-            thread_ident = (uintptr_t)istate->thread();
-            anticipated_bias_locking_value =
-              ((lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-              ~(markWord::age_mask_in_place);
-
-            if  (anticipated_bias_locking_value == 0) {
-              // already biased towards this thread, nothing to do
-              if (PrintBiasedLockingStatistics) {
-                (* BiasedLocking::biased_lock_entry_count_addr())++;
-              }
-              success = true;
-            }
-            else if ((anticipated_bias_locking_value & markWord::biased_lock_mask_in_place) != 0) {
-              // try revoke bias
-              markWord header = lockee->klass()->prototype_header();
-              if (hash != markWord::no_hash) {
-                header = header.copy_set_hash(hash);
-              }
-              if (lockee->cas_set_mark(header, mark) == mark) {
-                if (PrintBiasedLockingStatistics)
-                  (*BiasedLocking::revoked_lock_entry_count_addr())++;
-              }
-            }
-            else if ((anticipated_bias_locking_value & epoch_mask_in_place) !=0) {
-              // try rebias
-              markWord new_header( (intptr_t) lockee->klass()->prototype_header().value() | thread_ident);
-              if (hash != markWord::no_hash) {
-                new_header = new_header.copy_set_hash(hash);
-              }
-              if (lockee->cas_set_mark(new_header, mark) == mark) {
-                if (PrintBiasedLockingStatistics)
-                  (* BiasedLocking::rebiased_lock_entry_count_addr())++;
-              }
-              else {
-                CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-              }
-              success = true;
-            }
-            else {
-              // try to bias towards thread in case object is anonymously biased
-              markWord header(mark.value() & (markWord::biased_lock_mask_in_place |
-                                              markWord::age_mask_in_place |
-                                              epoch_mask_in_place));
-              if (hash != markWord::no_hash) {
-                header = header.copy_set_hash(hash);
-              }
-              markWord new_header(header.value() | thread_ident);
-              // debugging hint
-              DEBUG_ONLY(entry->lock()->set_displaced_header(markWord((uintptr_t) 0xdeaddead));)
-              if (lockee->cas_set_mark(new_header, header) == header) {
-                if (PrintBiasedLockingStatistics)
-                  (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
-              }
-              else {
-                CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-              }
-              success = true;
-            }
-          }
+          assert(!UseBiasedLocking, "Not implemented");
 
           // traditional lightweight locking
-          if (!success) {
-            markWord displaced = lockee->mark().set_unlocked();
-            entry->lock()->set_displaced_header(displaced);
-            bool call_vm = UseHeavyMonitors;
-            if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-              // Is it simple recursive case?
-              if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-                entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
-              } else {
-                CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-              }
+          markWord displaced = lockee->mark().set_unlocked();
+          entry->lock()->set_displaced_header(displaced);
+          bool call_vm = UseHeavyMonitors;
+          if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
+            // Is it simple recursive case?
+            if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+              entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
+            } else {
+              CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
             }
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
@@ -1756,16 +1552,17 @@ run:
             BasicLock* lock = most_recent->lock();
             markWord header = lock->displaced_header();
             most_recent->set_obj(NULL);
-            if (!lockee->mark().has_bias_pattern()) {
-              bool call_vm = UseHeavyMonitors;
-              // If it isn't recursive we either must swap old header or call the runtime
-              if (header.to_pointer() != NULL || call_vm) {
-                markWord old_header = markWord::encode(lock);
-                if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
-                  // restore object for the slow case
-                  most_recent->set_obj(lockee);
-                  InterpreterRuntime::monitorexit(most_recent);
-                }
+
+            assert(!UseBiasedLocking, "Not implemented");
+
+            // If it isn't recursive we either must swap old header or call the runtime
+            bool call_vm = UseHeavyMonitors;
+            if (header.to_pointer() != NULL || call_vm) {
+              markWord old_header = markWord::encode(lock);
+              if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
+                // restore object for the slow case
+                most_recent->set_obj(lockee);
+                InterpreterRuntime::monitorexit(most_recent);
               }
             }
             UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
@@ -1800,8 +1597,7 @@ run:
             cache = cp->entry_at(index);
           }
 
-#ifdef VM_JVMTI
-          if (_jvmti_interp_events) {
+          if (JVMTI_ENABLED) {
             int *count_addr;
             oop obj;
             // Check to see if a field modification watch has been set
@@ -1809,9 +1605,9 @@ run:
             count_addr = (int *)JvmtiExport::get_field_access_count_addr();
             if ( *count_addr > 0 ) {
               if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
-                obj = (oop)NULL;
+                obj = NULL;
               } else {
-                obj = (oop) STACK_OBJECT(-1);
+                obj = STACK_OBJECT(-1);
                 VERIFY_OOP(obj);
               }
               CALL_VM(InterpreterRuntime::post_field_access(THREAD,
@@ -1820,7 +1616,6 @@ run:
                                           handle_exception);
             }
           }
-#endif /* VM_JVMTI */
 
           oop obj;
           if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
@@ -1828,7 +1623,7 @@ run:
             obj = k->java_mirror();
             MORE_STACK(1);  // Assume single slot push
           } else {
-            obj = (oop) STACK_OBJECT(-1);
+            obj = STACK_OBJECT(-1);
             CHECK_NULL(obj);
           }
 
@@ -1841,46 +1636,74 @@ run:
             if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
               OrderAccess::fence();
             }
-            if (tos_type == atos) {
-              VERIFY_OOP(obj->obj_field_acquire(field_offset));
-              SET_STACK_OBJECT(obj->obj_field_acquire(field_offset), -1);
-            } else if (tos_type == itos) {
-              SET_STACK_INT(obj->int_field_acquire(field_offset), -1);
-            } else if (tos_type == ltos) {
-              SET_STACK_LONG(obj->long_field_acquire(field_offset), 0);
-              MORE_STACK(1);
-            } else if (tos_type == btos || tos_type == ztos) {
-              SET_STACK_INT(obj->byte_field_acquire(field_offset), -1);
-            } else if (tos_type == ctos) {
-              SET_STACK_INT(obj->char_field_acquire(field_offset), -1);
-            } else if (tos_type == stos) {
-              SET_STACK_INT(obj->short_field_acquire(field_offset), -1);
-            } else if (tos_type == ftos) {
-              SET_STACK_FLOAT(obj->float_field_acquire(field_offset), -1);
-            } else {
-              SET_STACK_DOUBLE(obj->double_field_acquire(field_offset), 0);
-              MORE_STACK(1);
+            switch (tos_type) {
+              case btos:
+              case ztos:
+                SET_STACK_INT(obj->byte_field_acquire(field_offset), -1);
+                break;
+              case ctos:
+                SET_STACK_INT(obj->char_field_acquire(field_offset), -1);
+                break;
+              case stos:
+                SET_STACK_INT(obj->short_field_acquire(field_offset), -1);
+                break;
+              case itos:
+                SET_STACK_INT(obj->int_field_acquire(field_offset), -1);
+                break;
+              case ftos:
+                SET_STACK_FLOAT(obj->float_field_acquire(field_offset), -1);
+                break;
+              case ltos:
+                SET_STACK_LONG(obj->long_field_acquire(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case dtos:
+                SET_STACK_DOUBLE(obj->double_field_acquire(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case atos: {
+                oop val = obj->obj_field_acquire(field_offset);
+                VERIFY_OOP(val);
+                SET_STACK_OBJECT(val, -1);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           } else {
-            if (tos_type == atos) {
-              VERIFY_OOP(obj->obj_field(field_offset));
-              SET_STACK_OBJECT(obj->obj_field(field_offset), -1);
-            } else if (tos_type == itos) {
-              SET_STACK_INT(obj->int_field(field_offset), -1);
-            } else if (tos_type == ltos) {
-              SET_STACK_LONG(obj->long_field(field_offset), 0);
-              MORE_STACK(1);
-            } else if (tos_type == btos || tos_type == ztos) {
-              SET_STACK_INT(obj->byte_field(field_offset), -1);
-            } else if (tos_type == ctos) {
-              SET_STACK_INT(obj->char_field(field_offset), -1);
-            } else if (tos_type == stos) {
-              SET_STACK_INT(obj->short_field(field_offset), -1);
-            } else if (tos_type == ftos) {
-              SET_STACK_FLOAT(obj->float_field(field_offset), -1);
-            } else {
-              SET_STACK_DOUBLE(obj->double_field(field_offset), 0);
-              MORE_STACK(1);
+            switch (tos_type) {
+              case btos:
+              case ztos:
+                SET_STACK_INT(obj->byte_field(field_offset), -1);
+                break;
+              case ctos:
+                SET_STACK_INT(obj->char_field(field_offset), -1);
+                break;
+              case stos:
+                SET_STACK_INT(obj->short_field(field_offset), -1);
+                break;
+              case itos:
+                SET_STACK_INT(obj->int_field(field_offset), -1);
+                break;
+              case ftos:
+                SET_STACK_FLOAT(obj->float_field(field_offset), -1);
+                break;
+              case ltos:
+                SET_STACK_LONG(obj->long_field(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case dtos:
+                SET_STACK_DOUBLE(obj->double_field(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case atos: {
+                oop val = obj->obj_field(field_offset);
+                VERIFY_OOP(val);
+                SET_STACK_OBJECT(val, -1);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           }
 
@@ -1898,8 +1721,7 @@ run:
             cache = cp->entry_at(index);
           }
 
-#ifdef VM_JVMTI
-          if (_jvmti_interp_events) {
+          if (JVMTI_ENABLED) {
             int *count_addr;
             oop obj;
             // Check to see if a field modification watch has been set
@@ -1907,13 +1729,13 @@ run:
             count_addr = (int *)JvmtiExport::get_field_modification_count_addr();
             if ( *count_addr > 0 ) {
               if ((Bytecodes::Code)opcode == Bytecodes::_putstatic) {
-                obj = (oop)NULL;
+                obj = NULL;
               }
               else {
                 if (cache->is_long() || cache->is_double()) {
-                  obj = (oop) STACK_OBJECT(-3);
+                  obj = STACK_OBJECT(-3);
                 } else {
-                  obj = (oop) STACK_OBJECT(-2);
+                  obj = STACK_OBJECT(-2);
                 }
                 VERIFY_OOP(obj);
               }
@@ -1925,7 +1747,6 @@ run:
                                           handle_exception);
             }
           }
-#endif /* VM_JVMTI */
 
           // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
           // out so c++ compiler has a chance for constant prop to fold everything possible away.
@@ -1943,7 +1764,7 @@ run:
             obj = k->java_mirror();
           } else {
             --count;
-            obj = (oop) STACK_OBJECT(count);
+            obj = STACK_OBJECT(count);
             CHECK_NULL(obj);
           }
 
@@ -1952,49 +1773,75 @@ run:
           //
           int field_offset = cache->f2_as_index();
           if (cache->is_volatile()) {
-            if (tos_type == itos) {
-              obj->release_int_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == atos) {
-              VERIFY_OOP(STACK_OBJECT(-1));
-              obj->release_obj_field_put(field_offset, STACK_OBJECT(-1));
-            } else if (tos_type == btos) {
-              obj->release_byte_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ztos) {
-              int bool_field = STACK_INT(-1);  // only store LSB
-              obj->release_byte_field_put(field_offset, (bool_field & 1));
-            } else if (tos_type == ltos) {
-              obj->release_long_field_put(field_offset, STACK_LONG(-1));
-            } else if (tos_type == ctos) {
-              obj->release_char_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == stos) {
-              obj->release_short_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ftos) {
-              obj->release_float_field_put(field_offset, STACK_FLOAT(-1));
-            } else {
-              obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
+            switch (tos_type) {
+              case ztos:
+                obj->release_byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
+                break;
+              case btos:
+                obj->release_byte_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ctos:
+                obj->release_char_field_put(field_offset, STACK_INT(-1));
+                break;
+              case stos:
+                obj->release_short_field_put(field_offset, STACK_INT(-1));
+                break;
+              case itos:
+                obj->release_int_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ftos:
+                obj->release_float_field_put(field_offset, STACK_FLOAT(-1));
+                break;
+              case ltos:
+                obj->release_long_field_put(field_offset, STACK_LONG(-1));
+                break;
+              case dtos:
+                obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
+                break;
+              case atos: {
+                oop val = STACK_OBJECT(-1);
+                VERIFY_OOP(val);
+                obj->release_obj_field_put(field_offset, val);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
             OrderAccess::storeload();
           } else {
-            if (tos_type == itos) {
-              obj->int_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == atos) {
-              VERIFY_OOP(STACK_OBJECT(-1));
-              obj->obj_field_put(field_offset, STACK_OBJECT(-1));
-            } else if (tos_type == btos) {
-              obj->byte_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ztos) {
-              int bool_field = STACK_INT(-1);  // only store LSB
-              obj->byte_field_put(field_offset, (bool_field & 1));
-            } else if (tos_type == ltos) {
-              obj->long_field_put(field_offset, STACK_LONG(-1));
-            } else if (tos_type == ctos) {
-              obj->char_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == stos) {
-              obj->short_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ftos) {
-              obj->float_field_put(field_offset, STACK_FLOAT(-1));
-            } else {
-              obj->double_field_put(field_offset, STACK_DOUBLE(-1));
+            switch (tos_type) {
+              case ztos:
+                obj->byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
+                break;
+              case btos:
+                obj->byte_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ctos:
+                obj->char_field_put(field_offset, STACK_INT(-1));
+                break;
+              case stos:
+                obj->short_field_put(field_offset, STACK_INT(-1));
+                break;
+              case itos:
+                obj->int_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ftos:
+                obj->float_field_put(field_offset, STACK_FLOAT(-1));
+                break;
+              case ltos:
+                obj->long_field_put(field_offset, STACK_LONG(-1));
+                break;
+              case dtos:
+                obj->double_field_put(field_offset, STACK_DOUBLE(-1));
+                break;
+              case atos: {
+                oop val = STACK_OBJECT(-1);
+                VERIFY_OOP(val);
+                obj->obj_field_put(field_offset, val);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           }
 
@@ -2003,55 +1850,42 @@ run:
 
       CASE(_new): {
         u2 index = Bytes::get_Java_u2(pc+1);
+
+        // Attempt TLAB allocation first.
+        //
+        // To do this, we need to make sure:
+        //   - klass is initialized
+        //   - klass can be fastpath allocated (e.g. does not have finalizer)
+        //   - TLAB accepts the allocation
         ConstantPool* constants = istate->method()->constants();
-        if (!constants->tag_at(index).is_unresolved_klass()) {
-          // Make sure klass is initialized and doesn't have a finalizer
+        if (UseTLAB && !constants->tag_at(index).is_unresolved_klass()) {
           Klass* entry = constants->resolved_klass_at(index);
           InstanceKlass* ik = InstanceKlass::cast(entry);
-          if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
+          if (ik->is_initialized() && ik->can_be_fastpath_allocated()) {
             size_t obj_size = ik->size_helper();
-            oop result = NULL;
-            // If the TLAB isn't pre-zeroed then we'll have to do it
-            bool need_zero = !ZeroTLAB;
-            if (UseTLAB) {
-              result = (oop) THREAD->tlab().allocate(obj_size);
-            }
-            // Disable non-TLAB-based fast-path, because profiling requires that all
-            // allocations go through InterpreterRuntime::_new() if THREAD->tlab().allocate
-            // returns NULL.
-            if (result == NULL) {
-              need_zero = true;
-              // Try allocate in shared eden
-            retry:
-              HeapWord* compare_to = *Universe::heap()->top_addr();
-              HeapWord* new_top = compare_to + obj_size;
-              if (new_top <= *Universe::heap()->end_addr()) {
-                if (Atomic::cmpxchg(Universe::heap()->top_addr(), compare_to, new_top) != compare_to) {
-                  goto retry;
-                }
-                result = (oop) compare_to;
-              }
-            }
+            HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != NULL) {
-              // Initialize object (if nonzero size and need) and then the header
-              if (need_zero ) {
-                HeapWord* to_zero = cast_from_oop<HeapWord*>(result) + sizeof(oopDesc) / oopSize;
-                obj_size -= sizeof(oopDesc) / oopSize;
-                if (obj_size > 0 ) {
-                  memset(to_zero, 0, obj_size * HeapWordSize);
-                }
+              // Initialize object field block:
+              //   - if TLAB is pre-zeroed, we can skip this path
+              //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
+              //     this area, and we still need to initialize it
+              if (DEBUG_ONLY(true ||) !ZeroTLAB) {
+                size_t hdr_size = oopDesc::header_size();
+                Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
-              if (UseBiasedLocking) {
-                result->set_mark(ik->prototype_header());
-              } else {
-                result->set_mark(markWord::prototype());
-              }
-              result->set_klass_gap(0);
-              result->set_klass(ik);
+
+              oop obj = cast_to_oop(result);
+
+              // Initialize header
+              assert(!UseBiasedLocking, "Not implemented");
+              obj->set_mark(markWord::prototype());
+              obj->set_klass_gap(0);
+              obj->set_klass(ik);
+
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.
               OrderAccess::storestore();
-              SET_STACK_OBJECT(result, 0);
+              SET_STACK_OBJECT(obj, 0);
               UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
             }
           }
@@ -2404,11 +2238,9 @@ run:
         if (callee != NULL) {
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-          if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+          if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
             istate->set_callee_entry_point(callee->interpreter_entry());
           }
-#endif /* VM_JVMTI */
           istate->set_bcp_advance(5);
           UPDATE_PC_AND_RETURN(0); // I'll be back...
         }
@@ -2466,11 +2298,9 @@ run:
 
         istate->set_callee(callee);
         istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-        if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+        if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
           istate->set_callee_entry_point(callee->interpreter_entry());
         }
-#endif /* VM_JVMTI */
         istate->set_bcp_advance(5);
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
@@ -2536,11 +2366,9 @@ run:
 
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-          if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+          if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
             istate->set_callee_entry_point(callee->interpreter_entry());
           }
-#endif /* VM_JVMTI */
           istate->set_bcp_advance(3);
           UPDATE_PC_AND_RETURN(0); // I'll be back...
         }
@@ -2855,17 +2683,18 @@ run:
           markWord header = lock->displaced_header();
           end->set_obj(NULL);
 
-          if (!lockee->mark().has_bias_pattern()) {
-            // If it isn't recursive we either must swap old header or call the runtime
-            if (header.to_pointer() != NULL) {
-              markWord old_header = markWord::encode(lock);
-              if (lockee->cas_set_mark(header, old_header) != old_header) {
-                // restore object for the slow case
-                end->set_obj(lockee);
-                InterpreterRuntime::monitorexit(end);
-              }
+          assert(!UseBiasedLocking, "Not implemented");
+
+          // If it isn't recursive we either must swap old header or call the runtime
+          if (header.to_pointer() != NULL) {
+            markWord old_header = markWord::encode(lock);
+            if (lockee->cas_set_mark(header, old_header) != old_header) {
+              // restore object for the slow case
+              end->set_obj(lockee);
+              InterpreterRuntime::monitorexit(end);
             }
           }
+
           // One error is plenty
           if (illegal_state_oop() == NULL && !suppress_error) {
             {
@@ -2922,19 +2751,18 @@ run:
             markWord header = lock->displaced_header();
             base->set_obj(NULL);
 
-            if (!rcvr->mark().has_bias_pattern()) {
-              base->set_obj(NULL);
-              // If it isn't recursive we either must swap old header or call the runtime
-              if (header.to_pointer() != NULL) {
-                markWord old_header = markWord::encode(lock);
-                if (rcvr->cas_set_mark(header, old_header) != old_header) {
-                  // restore object for the slow case
-                  base->set_obj(rcvr);
-                  InterpreterRuntime::monitorexit(base);
-                  if (THREAD->has_pending_exception()) {
-                    if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
-                    THREAD->clear_pending_exception();
-                  }
+            assert(!UseBiasedLocking, "Not implemented");
+
+            // If it isn't recursive we either must swap old header or call the runtime
+            if (header.to_pointer() != NULL) {
+              markWord old_header = markWord::encode(lock);
+              if (rcvr->cas_set_mark(header, old_header) != old_header) {
+                // restore object for the slow case
+                base->set_obj(rcvr);
+                InterpreterRuntime::monitorexit(base);
+                if (THREAD->has_pending_exception()) {
+                  if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
+                  THREAD->clear_pending_exception();
                 }
               }
             }
@@ -2963,25 +2791,16 @@ run:
     // (with this note) in anticipation of changing the vm and the tests
     // simultaneously.
 
-
-    //
     suppress_exit_event = suppress_exit_event || illegal_state_oop() != NULL;
 
+    // Whenever JVMTI puts a thread in interp_only_mode, method
+    // entry/exit events are sent for that thread to track stack depth.
 
-
-#ifdef VM_JVMTI
-      if (_jvmti_interp_events) {
-        // Whenever JVMTI puts a thread in interp_only_mode, method
-        // entry/exit events are sent for that thread to track stack depth.
-        if ( !suppress_exit_event && THREAD->is_interp_only_mode() ) {
-          {
-            // Prevent any HandleMarkCleaner from freeing our live handles
-            HandleMark __hm(THREAD);
-            CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
-          }
-        }
-      }
-#endif /* VM_JVMTI */
+    if (JVMTI_ENABLED && !suppress_exit_event && THREAD->is_interp_only_mode()) {
+      // Prevent any HandleMarkCleaner from freeing our live handles
+      HandleMark __hm(THREAD);
+      CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
+    }
 
     //
     // See if we are returning any exception
@@ -3031,13 +2850,6 @@ finish:
 
   return;
 }
-
-/*
- * All the code following this point is only produced once and is not present
- * in the JVMTI version of the interpreter
-*/
-
-#ifndef VM_JVMTI
 
 // This constructor should only be used to contruct the object to signal
 // interpreter initialization. All other instances should be created by
@@ -3169,5 +2981,3 @@ extern "C" {
   }
 }
 #endif // PRODUCT
-
-#endif // JVMTI

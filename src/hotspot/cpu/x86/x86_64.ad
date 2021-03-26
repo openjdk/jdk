@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -457,6 +457,11 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return offset;
 }
 
+int MachCallNativeNode::ret_addr_offset() {
+  int offset = 13; // movq r10,#addr; callq (r10)
+  offset += clear_avx_size();
+  return offset;
+}
 //
 // Compute padding required for nodes which need alignment
 //
@@ -1028,10 +1033,10 @@ static enum RC rc_class(OptoReg::Name reg)
 }
 
 // Next two methods are shared by 32- and 64-bit VM. They are defined in x86.ad.
-static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st);
 
-int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
+void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
                      int stack_offset, int reg, uint ireg, outputStream* st);
 
 static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
@@ -1146,13 +1151,13 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       int dst_offset = ra_->reg2offset(dst_first);
       vec_stack_to_stack_helper(cbuf, src_offset, dst_offset, ireg, st);
     } else if (src_first_rc == rc_float && dst_first_rc == rc_float ) {
-      vec_mov_helper(cbuf, false, src_first, dst_first, src_second, dst_second, ireg, st);
+      vec_mov_helper(cbuf, src_first, dst_first, src_second, dst_second, ireg, st);
     } else if (src_first_rc == rc_float && dst_first_rc == rc_stack ) {
       int stack_offset = ra_->reg2offset(dst_first);
-      vec_spill_helper(cbuf, false, false, stack_offset, src_first, ireg, st);
+      vec_spill_helper(cbuf, false, stack_offset, src_first, ireg, st);
     } else if (src_first_rc == rc_stack && dst_first_rc == rc_float ) {
       int stack_offset = ra_->reg2offset(src_first);
-      vec_spill_helper(cbuf, false, true,  stack_offset, dst_first, ireg, st);
+      vec_spill_helper(cbuf, true,  stack_offset, dst_first, ireg, st);
     } else {
       ShouldNotReachHere();
     }
@@ -1643,7 +1648,7 @@ bool Matcher::const_oop_prefer_decode() {
 
 bool Matcher::const_klass_prefer_decode() {
   // Prefer ConP over ConNKlass+DecodeNKlass.
-  return true;
+  return false;
 }
 
 // Is it better to copy float constants, or load them directly from
@@ -2756,12 +2761,6 @@ frame
   // Stack alignment requirement
   stack_alignment(StackAlignmentInBytes); // Alignment size in bytes (128-bit -> 16 bytes)
 
-  // Number of stack slots between incoming argument block and the start of
-  // a new frame.  The PROLOG must add this many slots to the stack.  The
-  // EPILOG must remove this many slots.  amd64 needs two slots for
-  // return address.
-  in_preserve_stack_slots(4 + 2 * VerifyStackAtCalls);
-
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
   varargs_C_out_slots_killed(frame::arg_reg_save_area_bytes/BytesPerInt);
@@ -2776,25 +2775,6 @@ frame
               align_up((Compile::current()->in_preserve_stack_slots() +
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
-
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots.  Passed an array
-  // of ideal registers called "sig" and a "length" count.  Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE.  Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-
-  calling_convention
-  %{
-    // No difference between ingoing/outgoing just pass false
-    SharedRuntime::java_calling_convention(sig_bt, regs, length, false);
-  %}
-
-  c_calling_convention
-  %{
-    // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
-  %}
 
   // Location of compiled Java return values.  Same as C for now.
   return_value
@@ -3192,6 +3172,18 @@ operand immL_32bits()
   match(ConL);
   op_cost(20);
 
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Int Immediate: 2^n-1, postive
+operand immI_Pow2M1()
+%{
+  predicate((n->get_int() > 0)
+            && is_power_of_2(n->get_int() + 1));
+  match(ConI);
+
+  op_cost(20);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -7470,6 +7462,17 @@ instruct castII(rRegI dst)
   ins_pipe(empty);
 %}
 
+instruct castLL(rRegL dst)
+%{
+  match(Set dst (CastLL dst));
+
+  size(0);
+  format %{ "# castLL of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
 // LoadP-locked same as a regular LoadP when used with compare-swap
 instruct loadPLocked(rRegP dst, memory mem)
 %{
@@ -9162,6 +9165,21 @@ instruct andI2L_rReg_imm65535(rRegL dst, rRegI src, immI_65535 mask)
   ins_pipe(ialu_reg);
 %}
 
+// Can skip int2long conversions after AND with small bitmask
+instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src,  immI_Pow2M1 mask, rRegI tmp, rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_bmi2());
+  ins_cost(125);
+  effect(TEMP tmp, KILL cr);
+  match(Set dst (ConvI2L (AndI src mask)));
+  format %{ "bzhiq $dst, $src, $mask \t# using $tmp as TEMP, int &  immI_Pow2M1 -> long" %}
+  ins_encode %{
+    __ movl($tmp$$Register, exact_log2($mask$$constant + 1));
+    __ bzhiq($dst$$Register, $src$$Register, $tmp$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 // And Register with Immediate
 instruct andI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
@@ -9601,7 +9619,7 @@ instruct btrL_mem_imm(memory dst, immL_NotPow2 con, rFlagsReg cr)
 %{
   // con should be a pure 64-bit immediate given that not(con) is a power of 2
   // because AND/OR works well enough for 8/32-bit values.
-  predicate(log2_long(~n->in(3)->in(2)->get_long()) > 30);
+  predicate(log2i_graceful(~n->in(3)->in(2)->get_long()) > 30);
 
   match(Set dst (StoreL dst (AndL (LoadL dst) con)));
   effect(KILL cr);
@@ -9609,7 +9627,7 @@ instruct btrL_mem_imm(memory dst, immL_NotPow2 con, rFlagsReg cr)
   ins_cost(125);
   format %{ "btrq    $dst, log2(not($con))\t# long" %}
   ins_encode %{
-    __ btrq($dst$$Address, log2_long(~$con$$constant));
+    __ btrq($dst$$Address, log2i_exact((julong)~$con$$constant));
   %}
   ins_pipe(ialu_mem_imm);
 %}
@@ -9811,7 +9829,7 @@ instruct btsL_mem_imm(memory dst, immL_Pow2 con, rFlagsReg cr)
 %{
   // con should be a pure 64-bit power of 2 immediate
   // because AND/OR works well enough for 8/32-bit values.
-  predicate(log2_long(n->in(3)->in(2)->get_long()) > 31);
+  predicate(log2i_graceful(n->in(3)->in(2)->get_long()) > 31);
 
   match(Set dst (StoreL dst (OrL (LoadL dst) con)));
   effect(KILL cr);
@@ -9819,7 +9837,7 @@ instruct btsL_mem_imm(memory dst, immL_Pow2 con, rFlagsReg cr)
   ins_cost(125);
   format %{ "btsq    $dst, log2($con)\t# long" %}
   ins_encode %{
-    __ btsq($dst$$Address, log2_long((julong)$con$$constant));
+    __ btsq($dst$$Address, log2i_exact((julong)$con$$constant));
   %}
   ins_pipe(ialu_mem_imm);
 %}
@@ -10756,7 +10774,7 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                   Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large());
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX <= 2 || !VM_Version::supports_avx512vlbw() || !n->in(2)->bottom_type()->is_long()->is_con()));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -10858,6 +10876,18 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_encode %{
     __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register,
                  $tmp$$XMMRegister, true);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rRegI zero, Universe dummy, rFlagsReg cr)
+%{
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX > 2 && VM_Version::supports_avx512vlbw() && n->in(2)->bottom_type()->is_long()->is_con()));
+  match(Set dummy (ClearArray cnt base));
+  effect(TEMP tmp, TEMP zero, KILL cr);
+  format %{ "clear_mem_imm $base , $cnt  \n\t" %}
+  ins_encode %{
+   __ clear_mem($base$$Register, $cnt$$constant, $zero$$Register, $tmp$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -12410,6 +12440,18 @@ instruct CallLeafDirect(method meth)
 
   ins_cost(300);
   format %{ "call_leaf,runtime " %}
+  ins_encode(clear_avx, Java_To_Runtime(meth));
+  ins_pipe(pipe_slow);
+%}
+
+//
+instruct CallNativeDirect(method meth)
+%{
+  match(CallNative);
+  effect(USE meth);
+
+  ins_cost(300);
+  format %{ "call_native " %}
   ins_encode(clear_avx, Java_To_Runtime(meth));
   ins_pipe(pipe_slow);
 %}

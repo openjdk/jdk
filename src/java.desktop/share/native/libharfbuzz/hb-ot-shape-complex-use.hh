@@ -68,6 +68,12 @@ enum use_category_t {
   USE_VS        = 21,   /* VARIATION_SELECTOR */
 //  USE_V       = 36,   /* VOWEL */
 //  USE_VM      = 40,   /* VOWEL_MOD */
+  USE_CS        = 43,   /* CONS_WITH_STACKER */
+
+  /* https://github.com/harfbuzz/harfbuzz/issues/1102 */
+  USE_HVM       = 44,   /* HALANT_OR_VOWEL_MODIFIER */
+
+  USE_Sk        = 48,   /* SAKOT */
 
   USE_FAbv      = 24,   /* CONS_FINAL_ABOVE */
   USE_FBlw      = 25,   /* CONS_FINAL_BELOW */
@@ -88,10 +94,9 @@ enum use_category_t {
   USE_VMPre     = 23,   /* VOWEL_MOD_PRE */
   USE_SMAbv     = 41,   /* SYM_MOD_ABOVE */
   USE_SMBlw     = 42,   /* SYM_MOD_BELOW */
-  USE_CS        = 43,   /* CONS_WITH_STACKER */
-
-  /* https://github.com/harfbuzz/harfbuzz/issues/1102 */
-  USE_HVM       = 44,   /* HALANT_OR_VOWEL_MODIFIER */
+  USE_FMAbv     = 45,   /* CONS_FINAL_MOD       UIPC = Top */
+  USE_FMBlw     = 46,   /* CONS_FINAL_MOD       UIPC = Bottom */
+  USE_FMPst     = 47,   /* CONS_FINAL_MOD       UIPC = Not_Applicable */
 };
 
 HB_INTERNAL USE_TABLE_ELEMENT_TYPE

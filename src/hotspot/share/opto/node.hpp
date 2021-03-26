@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "libadt/vectset.hpp"
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
+#include "utilities/copy.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -41,6 +42,8 @@ class AliasInfo;
 class AllocateArrayNode;
 class AllocateNode;
 class ArrayCopyNode;
+class BaseCountedLoopNode;
+class BaseCountedLoopEndNode;
 class Block;
 class BoolNode;
 class BoxLockNode;
@@ -48,10 +51,13 @@ class CMoveNode;
 class CallDynamicJavaNode;
 class CallJavaNode;
 class CallLeafNode;
+class CallLeafNoFPNode;
 class CallNode;
 class CallRuntimeNode;
+class CallNativeNode;
 class CallStaticJavaNode;
 class CastIINode;
+class CastLLNode;
 class CatchNode;
 class CatchProjNode;
 class CheckCastPPNode;
@@ -85,12 +91,15 @@ class LoadNode;
 class LoadStoreNode;
 class LoadStoreConditionalNode;
 class LockNode;
+class LongCountedLoopNode;
+class LongCountedLoopEndNode;
 class LoopNode;
 class MachBranchNode;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
 class MachCallNode;
+class MachCallNativeNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
 class MachConstantBaseNode;
@@ -153,15 +162,13 @@ class TypeNode;
 class UnlockNode;
 class VectorNode;
 class LoadVectorNode;
+class LoadVectorMaskedNode;
+class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
 class VectorMaskCmpNode;
 class VectorSet;
-typedef void (*NFunc)(Node&,void*);
-extern "C" {
-  typedef int (*C_sort_func_t)(const void *, const void *);
-}
 
 // The type of all node counts and indexes.
 // It must hold at least 16 bits, but must also be fast to load and store.
@@ -447,8 +454,8 @@ protected:
     }
     return -1;
   }
-  int replace_edge(Node* old, Node* neww);
-  int replace_edges_in_range(Node* old, Node* neww, int start, int end);
+  int replace_edge(Node* old, Node* neww, PhaseGVN* gvn = NULL);
+  int replace_edges_in_range(Node* old, Node* neww, int start, int end, PhaseGVN* gvn);
   // NULL out all inputs to eliminate incoming Def-Use edges.
   void disconnect_inputs(Compile* C);
 
@@ -522,7 +529,8 @@ public:
     replace_by(new_node);
     disconnect_inputs(c);
   }
-  void set_req_X( uint i, Node *n, PhaseIterGVN *igvn );
+  void set_req_X(uint i, Node *n, PhaseIterGVN *igvn);
+  void set_req_X(uint i, Node *n, PhaseGVN *gvn);
   // Find the one non-null required input.  RegionNode only
   Node *nonnull_req() const;
   // Add or remove precedence edges
@@ -625,18 +633,22 @@ public:
             DEFINE_CLASS_ID(CallDynamicJava,  CallJava, 1)
           DEFINE_CLASS_ID(CallRuntime,      Call, 1)
             DEFINE_CLASS_ID(CallLeaf,         CallRuntime, 0)
+              DEFINE_CLASS_ID(CallLeafNoFP,     CallLeaf, 0)
           DEFINE_CLASS_ID(Allocate,         Call, 2)
             DEFINE_CLASS_ID(AllocateArray,    Allocate, 0)
           DEFINE_CLASS_ID(AbstractLock,     Call, 3)
             DEFINE_CLASS_ID(Lock,             AbstractLock, 0)
             DEFINE_CLASS_ID(Unlock,           AbstractLock, 1)
           DEFINE_CLASS_ID(ArrayCopy,        Call, 4)
+          DEFINE_CLASS_ID(CallNative,       Call, 5)
       DEFINE_CLASS_ID(MultiBranch, Multi, 1)
         DEFINE_CLASS_ID(PCTable,     MultiBranch, 0)
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
           DEFINE_CLASS_ID(Jump,        PCTable, 1)
         DEFINE_CLASS_ID(If,          MultiBranch, 1)
-          DEFINE_CLASS_ID(CountedLoopEnd,         If, 0)
+          DEFINE_CLASS_ID(BaseCountedLoopEnd,     If, 0)
+            DEFINE_CLASS_ID(CountedLoopEnd,       BaseCountedLoopEnd, 0)
+            DEFINE_CLASS_ID(LongCountedLoopEnd,   BaseCountedLoopEnd, 1)
           DEFINE_CLASS_ID(RangeCheck,             If, 1)
           DEFINE_CLASS_ID(OuterStripMinedLoopEnd, If, 2)
         DEFINE_CLASS_ID(NeverBranch, MultiBranch, 2)
@@ -654,6 +666,7 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
+            DEFINE_CLASS_ID(MachCallNative,       MachCall, 2)
       DEFINE_CLASS_ID(MachBranch, Mach, 1)
         DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
         DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
@@ -671,6 +684,7 @@ public:
       DEFINE_CLASS_ID(ConstraintCast, Type, 1)
         DEFINE_CLASS_ID(CastII, ConstraintCast, 0)
         DEFINE_CLASS_ID(CheckCastPP, ConstraintCast, 1)
+        DEFINE_CLASS_ID(CastLL, ConstraintCast, 2)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -689,13 +703,15 @@ public:
       DEFINE_CLASS_ID(Parm,      Proj, 4)
       DEFINE_CLASS_ID(MachProj,  Proj, 5)
 
-    DEFINE_CLASS_ID(Mem,   Node, 4)
-      DEFINE_CLASS_ID(Load,  Mem, 0)
+    DEFINE_CLASS_ID(Mem, Node, 4)
+      DEFINE_CLASS_ID(Load, Mem, 0)
         DEFINE_CLASS_ID(LoadVector,  Load, 0)
           DEFINE_CLASS_ID(LoadVectorGather, LoadVector, 0)
+          DEFINE_CLASS_ID(LoadVectorMasked, LoadVector, 1)
       DEFINE_CLASS_ID(Store, Mem, 1)
         DEFINE_CLASS_ID(StoreVector, Store, 0)
           DEFINE_CLASS_ID(StoreVectorScatter, StoreVector, 0)
+          DEFINE_CLASS_ID(StoreVectorMasked, StoreVector, 1)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)
         DEFINE_CLASS_ID(LoadStoreConditional, LoadStore, 0)
           DEFINE_CLASS_ID(CompareAndSwap, LoadStoreConditional, 0)
@@ -704,7 +720,9 @@ public:
     DEFINE_CLASS_ID(Region, Node, 5)
       DEFINE_CLASS_ID(Loop, Region, 0)
         DEFINE_CLASS_ID(Root,                Loop, 0)
-        DEFINE_CLASS_ID(CountedLoop,         Loop, 1)
+        DEFINE_CLASS_ID(BaseCountedLoop,     Loop, 1)
+          DEFINE_CLASS_ID(CountedLoop,       BaseCountedLoop, 0)
+          DEFINE_CLASS_ID(LongCountedLoop,   BaseCountedLoop, 1)
         DEFINE_CLASS_ID(OuterStripMinedLoop, Loop, 2)
 
     DEFINE_CLASS_ID(Sub,   Node, 6)
@@ -807,18 +825,23 @@ public:
   DEFINE_CLASS_QUERY(Allocate)
   DEFINE_CLASS_QUERY(AllocateArray)
   DEFINE_CLASS_QUERY(ArrayCopy)
+  DEFINE_CLASS_QUERY(BaseCountedLoop)
+  DEFINE_CLASS_QUERY(BaseCountedLoopEnd)
   DEFINE_CLASS_QUERY(Bool)
   DEFINE_CLASS_QUERY(BoxLock)
   DEFINE_CLASS_QUERY(Call)
+  DEFINE_CLASS_QUERY(CallNative)
   DEFINE_CLASS_QUERY(CallDynamicJava)
   DEFINE_CLASS_QUERY(CallJava)
   DEFINE_CLASS_QUERY(CallLeaf)
+  DEFINE_CLASS_QUERY(CallLeafNoFP)
   DEFINE_CLASS_QUERY(CallRuntime)
   DEFINE_CLASS_QUERY(CallStaticJava)
   DEFINE_CLASS_QUERY(Catch)
   DEFINE_CLASS_QUERY(CatchProj)
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(CastII)
+  DEFINE_CLASS_QUERY(CastLL)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
@@ -842,6 +865,8 @@ public:
   DEFINE_CLASS_QUERY(Initialize)
   DEFINE_CLASS_QUERY(Jump)
   DEFINE_CLASS_QUERY(JumpProj)
+  DEFINE_CLASS_QUERY(LongCountedLoop)
+  DEFINE_CLASS_QUERY(LongCountedLoopEnd)
   DEFINE_CLASS_QUERY(Load)
   DEFINE_CLASS_QUERY(LoadStore)
   DEFINE_CLASS_QUERY(LoadStoreConditional)
@@ -850,6 +875,7 @@ public:
   DEFINE_CLASS_QUERY(Mach)
   DEFINE_CLASS_QUERY(MachBranch)
   DEFINE_CLASS_QUERY(MachCall)
+  DEFINE_CLASS_QUERY(MachCallNative)
   DEFINE_CLASS_QUERY(MachCallDynamicJava)
   DEFINE_CLASS_QUERY(MachCallJava)
   DEFINE_CLASS_QUERY(MachCallLeaf)
@@ -1082,6 +1108,7 @@ public:
   }
   // Here's where the work is done.  Can produce non-constant int types too.
   const TypeInt* find_int_type() const;
+  const TypeInteger* find_integer_type(BasicType bt) const;
 
   // Same thing for long (and intptr_t, via type.hpp):
   jlong get_long() const {
@@ -1095,6 +1122,11 @@ public:
   }
   const TypeLong* find_long_type() const;
 
+  jlong get_integer_as_long(BasicType bt) const {
+    const TypeInteger* t = find_integer_type(bt);
+    guarantee(t != NULL, "must be con");
+    return t->get_con_as_long(bt);
+  }
   const TypePtr* get_ptr_type() const;
 
   // These guys are called by code generated by ADLC:
@@ -1117,18 +1149,12 @@ public:
   virtual int cisc_operand() const { return AdlcVMDeps::Not_cisc_spillable; }
   bool is_cisc_alternate() const { return (_flags & Flag_is_cisc_alternate) != 0; }
 
-//----------------- Graph walking
-public:
-  // Walk and apply member functions recursively.
-  // Supplied (this) pointer is root.
-  void walk(NFunc pre, NFunc post, void *env);
-  static void nop(Node &, void*); // Dummy empty function
-  static void packregion( Node &n, void* );
-private:
-  void walk_(NFunc pre, NFunc post, void *env, VectorSet &visited);
+  // Whether this is a memory-writing machine node.
+  bool is_memory_writer() const { return is_Mach() && bottom_type()->has_memory(); }
 
 //----------------- Printing, etc
 #ifndef PRODUCT
+ private:
   int _indent;
 
  public:
@@ -1213,6 +1239,12 @@ public:
   uint        _del_tick;               // Bumped when a deletion happens..
   #endif
 #endif
+public:
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    Unimplemented();
+    return false;
+  }
 };
 
 
@@ -1301,6 +1333,9 @@ class DUIterator : public DUIterator_Common {
   DUIterator()
     { /*initialize to garbage*/         debug_only(_vdui = false); }
 
+  DUIterator(const DUIterator& that)
+    { _idx = that._idx;                 debug_only(_vdui = false; reset(that)); }
+
   void operator++(int dummy_to_specify_postfix_op)
     { _idx++;                           VDUI_ONLY(verify_increment()); }
 
@@ -1363,6 +1398,9 @@ class DUIterator_Fast : public DUIterator_Common {
   DUIterator_Fast()
     { /*initialize to garbage*/         debug_only(_vdui = false); }
 
+  DUIterator_Fast(const DUIterator_Fast& that)
+    { _outp = that._outp;               debug_only(_vdui = false; reset(that)); }
+
   void operator++(int dummy_to_specify_postfix_op)
     { _outp++;                          VDUI_ONLY(verify(_node, true)); }
 
@@ -1423,6 +1461,8 @@ class DUIterator_Last : private DUIterator_Fast {
   DUIterator_Last() { }
   // initialize to garbage
 
+  DUIterator_Last(const DUIterator_Last& that) = default;
+
   void operator--()
     { _outp--;              VDUI_ONLY(verify_step(1));  }
 
@@ -1435,8 +1475,7 @@ class DUIterator_Last : private DUIterator_Fast {
     return _outp >= limit._outp;
   }
 
-  void operator=(const DUIterator_Last& that)
-    { DUIterator_Fast::operator=(that); }
+  DUIterator_Last& operator=(const DUIterator_Last& that) = default;
 };
 
 DUIterator_Last Node::last_outs(DUIterator_Last& imin) const {
@@ -1482,30 +1521,30 @@ class SimpleDUIterator : public StackObj {
 class Node_Array : public ResourceObj {
   friend class VMStructs;
 protected:
-  Arena *_a;                    // Arena to allocate in
+  Arena* _a;                    // Arena to allocate in
   uint   _max;
-  Node **_nodes;
+  Node** _nodes;
   void   grow( uint i );        // Grow array node to fit
 public:
-  Node_Array(Arena *a) : _a(a), _max(OptoNodeListSize) {
-    _nodes = NEW_ARENA_ARRAY( a, Node *, OptoNodeListSize );
-    for( int i = 0; i < OptoNodeListSize; i++ ) {
-      _nodes[i] = NULL;
-    }
+  Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
+    _nodes = NEW_ARENA_ARRAY(a, Node*, max);
+    clear();
   }
 
-  Node_Array(Node_Array *na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
+  Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
   Node *operator[] ( uint i ) const // Lookup, or NULL for not mapped
   { return (i<_max) ? _nodes[i] : (Node*)NULL; }
-  Node *at( uint i ) const { assert(i<_max,"oob"); return _nodes[i]; }
-  Node **adr() { return _nodes; }
+  Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
+  Node** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
   void map( uint i, Node *n ) { if( i>=_max ) grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
-  void sort( C_sort_func_t func);
-  void reset( Arena *new_a );   // Zap mapping to empty; reclaim storage
-  void clear();                 // Set all entries to NULL, keep storage
+  // Clear all entries in _nodes to NULL but keep storage
+  void clear() {
+    Copy::zero_to_bytes(_nodes, _max * sizeof(Node*));
+  }
+
   uint Size() const { return _max; }
   void dump() const;
 };
@@ -1514,8 +1553,8 @@ class Node_List : public Node_Array {
   friend class VMStructs;
   uint _cnt;
 public:
-  Node_List() : Node_Array(Thread::current()->resource_area()), _cnt(0) {}
-  Node_List(Arena *a) : Node_Array(a), _cnt(0) {}
+  Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
+  Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
   bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
@@ -1527,8 +1566,15 @@ public:
   void push( Node *b ) { map(_cnt++,b); }
   void yank( Node *n );         // Find and remove
   Node *pop() { return _nodes[--_cnt]; }
-  Node *rpop() { Node *b = _nodes[0]; _nodes[0]=_nodes[--_cnt]; return b;}
   void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
+  void copy(const Node_List& from) {
+    if (from._max > _max) {
+      grow(from._max);
+    }
+    _cnt = from._cnt;
+    Copy::conjoint_words_to_higher((HeapWord*)&from._nodes[0], (HeapWord*)&_nodes[0], from._max * sizeof(Node*));
+  }
+
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;

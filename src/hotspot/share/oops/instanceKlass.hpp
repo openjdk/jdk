@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_INSTANCEKLASS_HPP
 #define SHARE_OOPS_INSTANCEKLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
@@ -328,7 +327,7 @@ class InstanceKlass: public Klass {
   // embedded nonstatic oop-map blocks follows here
   // embedded implementor of this interface follows here
   //   The embedded implementor only exists if the current klass is an
-  //   iterface. The possible values of the implementor fall into following
+  //   interface. The possible values of the implementor fall into following
   //   three cases:
   //     NULL: no implementor.
   //     A Klass* that's not itself: one implementor.
@@ -466,14 +465,14 @@ class InstanceKlass: public Klass {
   jushort nest_host_index() const { return _nest_host_index; }
   void set_nest_host_index(u2 i)  { _nest_host_index = i; }
   // dynamic nest member support
-  void set_nest_host(InstanceKlass* host, TRAPS);
+  void set_nest_host(InstanceKlass* host);
 
   // record components
   Array<RecordComponent*>* record_components() const { return _record_components; }
   void set_record_components(Array<RecordComponent*>* record_components) {
     _record_components = record_components;
   }
-  bool is_record() const { return _record_components != NULL; }
+  bool is_record() const;
 
   // permitted subclasses
   Array<u2>* permitted_subclasses() const     { return _permitted_subclasses; }
@@ -487,7 +486,7 @@ public:
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns NULL if there was no error.
-  const char* nest_host_error(TRAPS);
+  const char* nest_host_error();
   // Returns nest-host class, resolving and validating it if needed.
   // Returns NULL if resolution is not possible from the calling context.
   InstanceKlass* nest_host(TRAPS);
@@ -512,9 +511,6 @@ public:
     enclosing_method_attribute_size = 2
   };
 
-  // method override check
-  bool is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS);
-
   // package
   PackageEntry* package() const     { return _package_entry; }
   ModuleEntry* module() const;
@@ -527,7 +523,7 @@ public:
   // packages returned by get_system_packages().
   // For packages whose classes are loaded from the boot loader class path, the
   // classpath_index indicates which entry on the boot loader class path.
-  void set_classpath_index(s2 path_index, TRAPS);
+  void set_classpath_index(s2 path_index);
   bool is_same_class_package(const Klass* class2) const;
   bool is_same_class_package(oop other_class_loader, const Symbol* other_class_name) const;
 
@@ -691,25 +687,8 @@ public:
   objArrayOop signers() const;
 
   // host class
-  InstanceKlass* unsafe_anonymous_host() const {
-    InstanceKlass** hk = adr_unsafe_anonymous_host();
-    if (hk == NULL) {
-      assert(!is_unsafe_anonymous(), "Unsafe anonymous classes have host klasses");
-      return NULL;
-    } else {
-      assert(*hk != NULL, "host klass should always be set if the address is not null");
-      assert(is_unsafe_anonymous(), "Only unsafe anonymous classes have host klasses");
-      return *hk;
-    }
-  }
-  void set_unsafe_anonymous_host(const InstanceKlass* host) {
-    assert(is_unsafe_anonymous(), "not unsafe anonymous");
-    const InstanceKlass** addr = (const InstanceKlass **)adr_unsafe_anonymous_host();
-    assert(addr != NULL, "no reversed space");
-    if (addr != NULL) {
-      *addr = host;
-    }
-  }
+  inline InstanceKlass* unsafe_anonymous_host() const;
+  inline void set_unsafe_anonymous_host(const InstanceKlass* host);
   bool is_unsafe_anonymous() const                {
     return (_misc_flags & _misc_is_unsafe_anonymous) != 0;
   }
@@ -1037,14 +1016,14 @@ public:
 #endif
 
   // Access to the implementor of an interface.
-  Klass* implementor() const;
-  void set_implementor(Klass* k);
+  InstanceKlass* implementor() const;
+  void set_implementor(InstanceKlass* ik);
   int  nof_implementors() const;
-  void add_implementor(Klass* k);  // k is a new class that implements this interface
+  void add_implementor(InstanceKlass* ik);  // ik is a new class that implements this interface
   void init_implementor();           // initialize
 
   // link this class into the implementors list of every interface it implements
-  void process_interfaces(Thread *thread);
+  void process_interfaces();
 
   // virtual operations from Klass
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
@@ -1100,60 +1079,17 @@ public:
                                                has_stored_fingerprint());
   }
 
-  intptr_t* start_of_itable()   const { return (intptr_t*)start_of_vtable() + vtable_length(); }
-  intptr_t* end_of_itable()     const { return start_of_itable() + itable_length(); }
+  inline intptr_t* start_of_itable() const;
+  inline intptr_t* end_of_itable() const;
+  inline int itable_offset_in_words() const;
+  inline oop static_field_base_raw();
 
-  int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)this; }
+  inline OopMapBlock* start_of_nonstatic_oop_maps() const;
+  inline Klass** end_of_nonstatic_oop_maps() const;
 
-  oop static_field_base_raw() { return java_mirror(); }
-
-  OopMapBlock* start_of_nonstatic_oop_maps() const {
-    return (OopMapBlock*)(start_of_itable() + itable_length());
-  }
-
-  Klass** end_of_nonstatic_oop_maps() const {
-    return (Klass**)(start_of_nonstatic_oop_maps() +
-                     nonstatic_oop_map_count());
-  }
-
-  Klass* volatile* adr_implementor() const {
-    if (is_interface()) {
-      return (Klass* volatile*)end_of_nonstatic_oop_maps();
-    } else {
-      return NULL;
-    }
-  };
-
-  InstanceKlass** adr_unsafe_anonymous_host() const {
-    if (is_unsafe_anonymous()) {
-      InstanceKlass** adr_impl = (InstanceKlass**)adr_implementor();
-      if (adr_impl != NULL) {
-        return adr_impl + 1;
-      } else {
-        return (InstanceKlass **)end_of_nonstatic_oop_maps();
-      }
-    } else {
-      return NULL;
-    }
-  }
-
-  address adr_fingerprint() const {
-    if (has_stored_fingerprint()) {
-      InstanceKlass** adr_host = adr_unsafe_anonymous_host();
-      if (adr_host != NULL) {
-        return (address)(adr_host + 1);
-      }
-
-      Klass* volatile* adr_impl = adr_implementor();
-      if (adr_impl != NULL) {
-        return (address)(adr_impl + 1);
-      }
-
-      return (address)end_of_nonstatic_oop_maps();
-    } else {
-      return NULL;
-    }
-  }
+  inline InstanceKlass* volatile* adr_implementor() const;
+  inline InstanceKlass** adr_unsafe_anonymous_host() const;
+  inline address adr_fingerprint() const;
 
   // Use this to return the size of an instance in heap words:
   int size_helper() const {
@@ -1331,8 +1267,7 @@ public:
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
 
-  // jvm support
-  jint compute_modifier_flags(TRAPS) const;
+  jint compute_modifier_flags() const;
 
 public:
   // JVMTI support
@@ -1491,6 +1426,43 @@ class InnerClassesIterator : public StackObj {
   u2 inner_access_flags() const {
     return _inner_classes->at(
                _idx + InstanceKlass::inner_class_access_flags_offset);
+  }
+};
+
+// Iterator over class hierarchy under a particular class. Implements depth-first pre-order traversal.
+// Usage:
+//  for (ClassHierarchyIterator iter(root_klass); !iter.done(); iter.next()) {
+//    Klass* k = iter.klass();
+//    ...
+//  }
+class ClassHierarchyIterator : public StackObj {
+ private:
+  InstanceKlass* _root;
+  Klass*         _current;
+  bool           _visit_subclasses;
+
+ public:
+  ClassHierarchyIterator(InstanceKlass* root) : _root(root), _current(root), _visit_subclasses(true) {
+    assert(!root->is_interface(), "no subclasses");
+    assert(_root == _current, "required"); // initial state
+  }
+
+  bool done() {
+    return (_current == NULL);
+  }
+
+  // Make a step iterating over the class hierarchy under the root class.
+  // Skips subclasses if requested.
+  void next();
+
+  Klass* klass() {
+    assert(!done(), "sanity");
+    return _current;
+  }
+
+  // Skip subclasses of the current class.
+  void skip_subclasses() {
+    _visit_subclasses = false;
   }
 };
 

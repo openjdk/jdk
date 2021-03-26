@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,9 +216,8 @@ final class NetMulticastSocket extends MulticastSocket {
             throw new SocketException("already bound");
         if (addr == null)
             addr = new InetSocketAddress(0);
-        if (!(addr instanceof InetSocketAddress))
+        if (!(addr instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type!");
-        InetSocketAddress epoint = (InetSocketAddress) addr;
         if (epoint.isUnresolved())
             throw new SocketException("Unresolved address");
         InetAddress iaddr = epoint.getAddress();
@@ -259,9 +258,8 @@ final class NetMulticastSocket extends MulticastSocket {
     public void connect(SocketAddress addr) throws SocketException {
         if (addr == null)
             throw new IllegalArgumentException("Address can't be null");
-        if (!(addr instanceof InetSocketAddress))
+        if (!(addr instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
-        InetSocketAddress epoint = (InetSocketAddress) addr;
         if (epoint.isUnresolved())
             throw new SocketException("Unresolved address");
         connectInternal(epoint.getAddress(), epoint.getPort());
@@ -801,19 +799,19 @@ final class NetMulticastSocket extends MulticastSocket {
         if (isClosed())
             throw new SocketException("Socket is closed");
 
-        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress addr))
             throw new IllegalArgumentException("Unsupported address type");
 
         if (oldImpl)
             throw new UnsupportedOperationException();
 
-        checkAddress(((InetSocketAddress)mcastaddr).getAddress(), "joinGroup");
+        checkAddress(addr.getAddress(), "joinGroup");
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkMulticast(((InetSocketAddress)mcastaddr).getAddress());
+            security.checkMulticast(addr.getAddress());
         }
 
-        if (!((InetSocketAddress)mcastaddr).getAddress().isMulticastAddress()) {
+        if (!addr.getAddress().isMulticastAddress()) {
             throw new SocketException("Not a multicast address");
         }
 
@@ -826,19 +824,19 @@ final class NetMulticastSocket extends MulticastSocket {
         if (isClosed())
             throw new SocketException("Socket is closed");
 
-        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress addr))
             throw new IllegalArgumentException("Unsupported address type");
 
         if (oldImpl)
             throw new UnsupportedOperationException();
 
-        checkAddress(((InetSocketAddress)mcastaddr).getAddress(), "leaveGroup");
+        checkAddress(addr.getAddress(), "leaveGroup");
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkMulticast(((InetSocketAddress)mcastaddr).getAddress());
+            security.checkMulticast(addr.getAddress());
         }
 
-        if (!((InetSocketAddress)mcastaddr).getAddress().isMulticastAddress()) {
+        if (!addr.getAddress().isMulticastAddress()) {
             throw new SocketException("Not a multicast address");
         }
 

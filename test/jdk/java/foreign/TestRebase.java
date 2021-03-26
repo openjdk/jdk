@@ -27,6 +27,7 @@
  * @run testng TestRebase
  */
 
+import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
@@ -38,41 +39,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 public class TestRebase {
-
-    static VarHandle BYTE_VH = MemoryLayouts.JAVA_BYTE.varHandle(byte.class);
 
     @Test(dataProvider = "slices")
     public void testRebase(SegmentSlice s1, SegmentSlice s2) {
         if (s1.contains(s2)) {
             //check that an address and its rebased counterpart point to same element
-            MemoryAddress base = s2.segment.baseAddress();
-            MemoryAddress rebased = base.rebase(s1.segment);
+            MemoryAddress base = s2.segment.address();
+            long offset = base.segmentOffset(s1.segment);
             for (int i = 0; i < s2.size(); i++) {
-                int expected = (int) BYTE_VH.get(base.addOffset(i));
-                int found = (int) BYTE_VH.get(rebased.addOffset(i));
+                int expected = MemoryAccess.getByteAtOffset(s2.segment, i);
+                int found = (int)MemoryAccess.getByteAtOffset(s1.segment, i + offset);
                 assertEquals(found, expected);
             }
         } else if (s1.kind != s2.kind) {
             // check that rebase s1 to s2 fails
             try {
-                s1.segment.baseAddress().rebase(s2.segment);
+                s1.segment.address().segmentOffset(s2.segment);
                 fail("Rebase unexpectedly passed!");
             } catch (IllegalArgumentException ex) {
                 assertTrue(true);
             }
         } else if (!s2.contains(s1)) {
             //disjoint segments - check that rebased address is out of bounds
-            MemoryAddress base = s2.segment.baseAddress();
-            MemoryAddress rebased = base.rebase(s1.segment);
+            MemoryAddress base = s2.segment.address();
+            long offset = base.segmentOffset(s1.segment);
             for (int i = 0; i < s2.size(); i++) {
-                BYTE_VH.get(base.addOffset(i));
+                MemoryAccess.getByteAtOffset(s2.segment, i);
                 try {
-                    BYTE_VH.get(rebased.addOffset(i));
+                    MemoryAccess.getByteAtOffset(s1.segment, i + offset);
                     fail("Rebased address on a disjoint segment is not out of bounds!");
                 } catch (IndexOutOfBoundsException ex) {
                     assertTrue(true);
@@ -129,7 +126,7 @@ public class TestRebase {
             //init root segment
             MemorySegment segment = kind.makeSegment(16);
             for (int i = 0 ; i < 16 ; i++) {
-                BYTE_VH.set(segment.baseAddress().addOffset(i), (byte)i);
+                MemoryAccess.setByteAtOffset(segment, i, (byte)i);
             }
             //compute all slices
             for (int size : sizes) {

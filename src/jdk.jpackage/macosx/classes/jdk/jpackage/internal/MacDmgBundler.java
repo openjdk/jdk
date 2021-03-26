@@ -58,7 +58,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     static final String BACKGROUND_IMAGE_FOLDER =".background";
     static final String BACKGROUND_IMAGE = "background.tiff";
     static final String DEFAULT_DMG_SETUP_SCRIPT = "DMGsetup.scpt";
-    static final String TEMPLATE_BUNDLE_ICON = "java.icns";
+    static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
 
     static final String DEFAULT_LICENSE_PLIST="lic_template.plist";
 
@@ -245,7 +245,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         // generic find attempt
         try {
-            ProcessBuilder pb = new ProcessBuilder("xcrun", "-find", "SetFile");
+            ProcessBuilder pb = new ProcessBuilder("/usr/bin/xcrun", "-find", "SetFile");
             Process p = pb.start();
             InputStreamReader isr = new InputStreamReader(p.getInputStream());
             BufferedReader br = new BufferedReader(isr);
@@ -270,7 +270,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         }
 
         Path protoDMG = imagesRoot.resolve(APP_NAME.fetchFrom(params) +"-tmp.dmg");
-        Path finalDMG = outdir.resolve(INSTALLER_NAME.fetchFrom(params)
+        Path finalDMG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
                 + INSTALLER_SUFFIX.fetchFrom(params) + ".dmg");
 
         Path srcFolder = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
@@ -387,7 +387,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             // to install-dir in DMG as critical error, since it can fail in
             // headless enviroment.
             try {
-                pb = new ProcessBuilder("osascript",
+                pb = new ProcessBuilder("/usr/bin/osascript",
                         getConfig_VolumeScript(params).toAbsolutePath().toString());
                 IOUtils.exec(pb, 180); // Wait 3 minutes. See JDK-8248248.
             } catch (IOException ex) {
@@ -437,7 +437,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             pb = new ProcessBuilder(
                     hdiutil,
                     "detach",
-                    "-force",
                     hdiUtilVerbosityFlag,
                     mountedRoot.toAbsolutePath().toString());
             // "hdiutil detach" might not work right away due to resource busy error, so
@@ -451,12 +450,21 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 }
             });
             try {
-                // 10 times with 3 second delays.
-                retryExecutor.setMaxAttemptsCount(10).setAttemptTimeoutMillis(3000)
+                // 10 times with 6 second delays.
+                retryExecutor.setMaxAttemptsCount(10).setAttemptTimeoutMillis(6000)
                         .execute(pb);
             } catch (IOException ex) {
                 if (!retryExecutor.isAborted()) {
-                    throw ex;
+                    // Now force to detach if it still attached
+                    if (Files.exists(mountedRoot)) {
+                        pb = new ProcessBuilder(
+                                hdiutil,
+                                "detach",
+                                "-force",
+                                hdiUtilVerbosityFlag,
+                                mountedRoot.toAbsolutePath().toString());
+                        IOUtils.exec(pb);
+                    }
                 }
             }
         }
@@ -469,7 +477,29 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 hdiUtilVerbosityFlag,
                 "-format", "UDZO",
                 "-o", finalDMG.toAbsolutePath().toString());
-        IOUtils.exec(pb);
+        try {
+            new RetryExecutor()
+                .setMaxAttemptsCount(10)
+                .setAttemptTimeoutMillis(3000)
+                .execute(pb);
+        } catch (Exception ex) {
+            // Convert might failed if something holds file. Try to convert copy.
+            Path protoDMG2 = imagesRoot
+                    .resolve(APP_NAME.fetchFrom(params) + "-tmp2.dmg");
+            Files.copy(protoDMG, protoDMG2);
+            try {
+                pb = new ProcessBuilder(
+                        hdiutil,
+                        "convert",
+                        protoDMG2.toAbsolutePath().toString(),
+                        hdiUtilVerbosityFlag,
+                        "-format", "UDZO",
+                        "-o", finalDMG.toAbsolutePath().toString());
+                IOUtils.exec(pb);
+            } finally {
+                Files.deleteIfExists(protoDMG2);
+            }
+        }
 
         //add license if needed
         if (Files.exists(getConfig_LicenseFile(params))) {
@@ -480,7 +510,10 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     "-xml",
                     getConfig_LicenseFile(params).toAbsolutePath().toString()
             );
-            IOUtils.exec(pb);
+            new RetryExecutor()
+                .setMaxAttemptsCount(10)
+                .setAttemptTimeoutMillis(3000)
+                .execute(pb);
         }
 
         //Delete the temporary image

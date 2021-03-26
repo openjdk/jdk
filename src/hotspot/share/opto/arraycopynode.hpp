@@ -180,6 +180,9 @@ public:
   bool has_negative_length_guard() const { return _has_negative_length_guard; }
 
   static bool may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac);
+
+  static int get_partial_inline_vector_lane_count(BasicType type, int const_len);
+
   bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify) const;
 
 #ifndef PRODUCT

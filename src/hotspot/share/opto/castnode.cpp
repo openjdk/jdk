@@ -96,6 +96,11 @@ Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t,
     cast->set_req(0, c);
     return cast;
   }
+  case Op_CastLL: {
+    Node* cast = new CastLLNode(n, t, carry_dependency);
+    cast->set_req(0, c);
+    return cast;
+  }
   case Op_CastPP: {
     Node* cast = new CastPPNode(n, t, carry_dependency);
     cast->set_req(0, c);
@@ -104,6 +109,20 @@ Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t,
   case Op_CheckCastPP: return new CheckCastPPNode(c, n, t, carry_dependency);
   default:
     fatal("Bad opcode %d", opcode);
+  }
+  return NULL;
+}
+
+Node* ConstraintCastNode::make(Node* c, Node *n, const Type *t, BasicType bt) {
+  switch(bt) {
+  case T_INT: {
+    return make_cast(Op_CastII, c, n, t, false);
+  }
+  case T_LONG: {
+    return make_cast(Op_CastLL, c, n, t, false);
+  }
+  default:
+    fatal("Bad basic type %s", type2name(bt));
   }
   return NULL;
 }
@@ -221,10 +240,48 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
   return res;
 }
 
+static Node* find_or_make_CastII(PhaseIterGVN* igvn, Node* parent, Node* control,
+                                 const TypeInt* type) {
+  Node* n = new CastIINode(parent, type);
+  n->set_req(0, control);
+  Node* existing = igvn->hash_find_insert(n);
+  if (existing != NULL) {
+    n->destruct(igvn);
+    return existing;
+  }
+  return igvn->register_new_node_with_optimizer(n);
+}
+
 Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* progress = ConstraintCastNode::Ideal(phase, can_reshape);
   if (progress != NULL) {
     return progress;
+  }
+
+  PhaseIterGVN *igvn = phase->is_IterGVN();
+  const TypeInt* this_type = this->type()->is_int();
+  Node* z = in(1);
+  const TypeInteger* rx = NULL;
+  const TypeInteger* ry = NULL;
+  // Similar to ConvI2LNode::Ideal() for the same reasons
+  if (!_range_check_dependency && Compile::push_thru_add(phase, z, this_type, rx, ry, T_INT)) {
+    if (igvn == NULL) {
+      // Postpone this optimization to iterative GVN, where we can handle deep
+      // AddI chains without an exponential number of recursive Ideal() calls.
+      phase->record_for_igvn(this);
+      return NULL;
+    }
+    int op = z->Opcode();
+    Node* x = z->in(1);
+    Node* y = z->in(2);
+
+    Node* cx = find_or_make_CastII(igvn, x, in(0), rx->is_int());
+    Node* cy = find_or_make_CastII(igvn, y, in(0), ry->is_int());
+    switch (op) {
+      case Op_AddI:  return new AddINode(cx, cy);
+      case Op_SubI:  return new SubINode(cx, cy);
+      default:       ShouldNotReachHere();
+    }
   }
 
   // Similar to ConvI2LNode::Ideal() for the same reasons

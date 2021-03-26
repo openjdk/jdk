@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,13 @@
 #import "JavaTextAccessibility.h"
 #import "JavaAccessibilityUtilities.h"
 #import "GeomUtilities.h"
-#import "OSVersion.h"
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
 #import <Carbon/Carbon.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+
+// keyboard layout
+static NSString *kbdLayout;
 
 @interface AWTView()
 @property (retain) CDropTarget *_dropTarget;
@@ -53,10 +55,7 @@
 //#define EXTRA_DEBUG
 
 static BOOL shouldUsePressAndHold() {
-    static int shouldUsePressAndHold = -1;
-    if (shouldUsePressAndHold != -1) return shouldUsePressAndHold;
-    shouldUsePressAndHold = !isSnowLeopardOrLower();
-    return shouldUsePressAndHold;
+    return YES;
 }
 
 @implementation AWTView
@@ -117,7 +116,7 @@ static BOOL shouldUsePressAndHold() {
     {
         JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
 
-        JNFDeleteGlobalRef(env, fInputMethodLOCKABLE);
+        (*env)->DeleteGlobalRef(env, fInputMethodLOCKABLE);
         fInputMethodLOCKABLE = NULL;
     }
 
@@ -135,7 +134,7 @@ static BOOL shouldUsePressAndHold() {
 
     [AWTToolkit eventCountPlusPlus];
 
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^() {
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^() {
         [[self window] makeFirstResponder: self];
     }];
     if ([self window] != NULL) {
@@ -394,9 +393,9 @@ static BOOL shouldUsePressAndHold() {
         deltaY = [event scrollingDeltaY] * 0.1;
     }
 
-    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
-    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDDI)V");
-    jobject jEvent = JNFNewObject(env, jctor_NSEvent,
+    DECLARE_CLASS(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
+    DECLARE_METHOD(jctor_NSEvent, jc_NSEvent, "<init>", "(IIIIIIIIDDI)V");
+    jobject jEvent = (*env)->NewObject(env, jc_NSEvent, jctor_NSEvent,
                                   [event type],
                                   [event modifierFlags],
                                   clickCount,
@@ -408,11 +407,12 @@ static BOOL shouldUsePressAndHold() {
                                   [AWTToolkit scrollStateWithEvent: event]);
     CHECK_NULL(jEvent);
 
-    static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
-    static JNF_MEMBER_CACHE(jm_deliverMouseEvent, jc_PlatformView, "deliverMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
+    DECLARE_CLASS(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
+    DECLARE_METHOD(jm_deliverMouseEvent, jc_PlatformView, "deliverMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
     jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
     if (!(*env)->IsSameObject(env, jlocal, NULL)) {
-        JNFCallVoidMethod(env, jlocal, jm_deliverMouseEvent, jEvent);
+        (*env)->CallVoidMethod(env, jlocal, jm_deliverMouseEvent, jEvent);
+        CHECK_EXCEPTION();
         (*env)->DeleteLocalRef(env, jlocal);
     }
     (*env)->DeleteLocalRef(env, jEvent);
@@ -460,13 +460,13 @@ static BOOL shouldUsePressAndHold() {
     jstring characters = NULL;
     jstring charactersIgnoringModifiers = NULL;
     if ([event type] != NSFlagsChanged) {
-        characters = JNFNSToJavaString(env, [event characters]);
-        charactersIgnoringModifiers = JNFNSToJavaString(env, [event charactersIgnoringModifiers]);
+        characters = NSStringToJavaString(env, [event characters]);
+        charactersIgnoringModifiers = NSStringToJavaString(env, [event charactersIgnoringModifiers]);
     }
 
-    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
-    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IISLjava/lang/String;Ljava/lang/String;)V");
-    jobject jEvent = JNFNewObject(env, jctor_NSEvent,
+    DECLARE_CLASS(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
+    DECLARE_METHOD(jctor_NSEvent, jc_NSEvent, "<init>", "(IISLjava/lang/String;Ljava/lang/String;)V");
+    jobject jEvent = (*env)->NewObject(env, jc_NSEvent, jctor_NSEvent,
                                   [event type],
                                   [event modifierFlags],
                                   [event keyCode],
@@ -474,12 +474,13 @@ static BOOL shouldUsePressAndHold() {
                                   charactersIgnoringModifiers);
     CHECK_NULL(jEvent);
 
-    static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
-    static JNF_MEMBER_CACHE(jm_deliverKeyEvent, jc_PlatformView,
+    DECLARE_CLASS(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
+    DECLARE_METHOD(jm_deliverKeyEvent, jc_PlatformView,
                             "deliverKeyEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
     jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
     if (!(*env)->IsSameObject(env, jlocal, NULL)) {
-        JNFCallVoidMethod(env, jlocal, jm_deliverKeyEvent, jEvent);
+        (*env)->CallVoidMethod(env, jlocal, jm_deliverKeyEvent, jEvent);
+        CHECK_EXCEPTION();
         (*env)->DeleteLocalRef(env, jlocal);
     }
     if (characters != NULL) {
@@ -494,12 +495,13 @@ static BOOL shouldUsePressAndHold() {
     jint w = (jint) rect.size.width;
     jint h = (jint) rect.size.height;
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
-    static JNF_MEMBER_CACHE(jm_deliverResize, jc_PlatformView, "deliverResize", "(IIII)V");
+    DECLARE_CLASS(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
+    DECLARE_METHOD(jm_deliverResize, jc_PlatformView, "deliverResize", "(IIII)V");
 
     jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
     if (!(*env)->IsSameObject(env, jlocal, NULL)) {
-        JNFCallVoidMethod(env, jlocal, jm_deliverResize, x,y,w,h);
+        (*env)->CallVoidMethod(env, jlocal, jm_deliverResize, x,y,w,h);
+        CHECK_EXCEPTION();
         (*env)->DeleteLocalRef(env, jlocal);
     }
 }
@@ -528,11 +530,12 @@ static BOOL shouldUsePressAndHold() {
          }
          } else {
          */
-        static JNF_CLASS_CACHE(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView");
-        static JNF_MEMBER_CACHE(jm_deliverWindowDidExposeEvent, jc_CPlatformView, "deliverWindowDidExposeEvent", "()V");
+        DECLARE_CLASS(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView");
+        DECLARE_METHOD(jm_deliverWindowDidExposeEvent, jc_CPlatformView, "deliverWindowDidExposeEvent", "()V");
         jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
         if (!(*env)->IsSameObject(env, jlocal, NULL)) {
-            JNFCallVoidMethod(env, jlocal, jm_deliverWindowDidExposeEvent);
+            (*env)->CallVoidMethod(env, jlocal, jm_deliverWindowDidExposeEvent);
+            CHECK_EXCEPTION();
             (*env)->DeleteLocalRef(env, jlocal);
         }
         /*
@@ -567,40 +570,39 @@ static BOOL shouldUsePressAndHold() {
 // NSAccessibility support
 - (jobject)awtComponent:(JNIEnv*)env
 {
-    static JNF_CLASS_CACHE(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView");
-    static JNF_MEMBER_CACHE(jf_Peer, jc_CPlatformView, "peer", "Lsun/lwawt/LWWindowPeer;");
+    DECLARE_CLASS_RETURN(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView", NULL);
+    DECLARE_FIELD_RETURN(jf_Peer, jc_CPlatformView, "peer", "Lsun/lwawt/LWWindowPeer;", NULL);
     if ((env == NULL) || (m_cPlatformView == NULL)) {
         NSLog(@"Apple AWT : Error AWTView:awtComponent given bad parameters.");
-        if (env != NULL)
-        {
-            JNFDumpJavaStack(env);
-        }
+        NSLog(@"%@",[NSThread callStackSymbols]);
         return NULL;
     }
 
     jobject peer = NULL;
     jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
     if (!(*env)->IsSameObject(env, jlocal, NULL)) {
-        peer = JNFGetObjectField(env, jlocal, jf_Peer);
+        peer = (*env)->GetObjectField(env, jlocal, jf_Peer);
         (*env)->DeleteLocalRef(env, jlocal);
     }
-    static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
-    static JNF_MEMBER_CACHE(jf_Target, jc_LWWindowPeer, "target", "Ljava/awt/Component;");
+    DECLARE_CLASS_RETURN(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer", NULL);
+    DECLARE_FIELD_RETURN(jf_Target, jc_LWWindowPeer, "target", "Ljava/awt/Component;", NULL);
     if (peer == NULL) {
         NSLog(@"Apple AWT : Error AWTView:awtComponent got null peer from CPlatformView");
-        JNFDumpJavaStack(env);
+        NSLog(@"%@",[NSThread callStackSymbols]);
         return NULL;
     }
-    jobject comp = JNFGetObjectField(env, peer, jf_Target);
+    jobject comp = (*env)->GetObjectField(env, peer, jf_Target);
     (*env)->DeleteLocalRef(env, peer);
     return comp;
 }
 
 + (AWTView *) awtView:(JNIEnv*)env ofAccessible:(jobject)jaccessible
 {
-    static JNF_STATIC_MEMBER_CACHE(jm_getAWTView, sjc_CAccessibility, "getAWTView", "(Ljavax/accessibility/Accessible;)J");
+    DECLARE_CLASS_RETURN(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility", NULL);
+    DECLARE_STATIC_METHOD_RETURN(jm_getAWTView, sjc_CAccessibility, "getAWTView", "(Ljavax/accessibility/Accessible;)J", NULL);
 
-    jlong jptr = JNFCallStaticLongMethod(env, jm_getAWTView, jaccessible);
+    jlong jptr = (*env)->CallStaticLongMethod(env, sjc_CAccessibility, jm_getAWTView, jaccessible);
+    CHECK_EXCEPTION();
     if (jptr == 0) return nil;
 
     return (AWTView *)jlong_to_ptr(jptr);
@@ -926,7 +928,13 @@ static BOOL shouldUsePressAndHold() {
 /********************************  BEGIN NSTextInputClient Protocol  ********************************/
 
 
-JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
+static jclass jc_CInputMethod = NULL;
+
+#define GET_CIM_CLASS() \
+    GET_CLASS(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
+
+#define GET_CIM_CLASS_RETURN(ret) \
+    GET_CLASS_RETURN(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod", ret);
 
 - (void) insertText:(id)aString replacementRange:(NSRange)replacementRange
 {
@@ -967,16 +975,19 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     if ([self hasMarkedText] || !fProcessingKeystroke || aStringIsComplex) {
         JNIEnv *env = [ThreadUtilities getJNIEnv];
 
-        static JNF_MEMBER_CACHE(jm_selectPreviousGlyph, jc_CInputMethod, "selectPreviousGlyph", "()V");
+        GET_CIM_CLASS();
+        DECLARE_METHOD(jm_selectPreviousGlyph, jc_CInputMethod, "selectPreviousGlyph", "()V");
         // We need to select the previous glyph so that it is overwritten.
         if (fPAHNeedsToSelect) {
-            JNFCallVoidMethod(env, fInputMethodLOCKABLE, jm_selectPreviousGlyph);
+            (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_selectPreviousGlyph);
+            CHECK_EXCEPTION();
             fPAHNeedsToSelect = NO;
         }
 
-        static JNF_MEMBER_CACHE(jm_insertText, jc_CInputMethod, "insertText", "(Ljava/lang/String;)V");
-        jstring insertedText =  JNFNSToJavaString(env, useString);
-        JNFCallVoidMethod(env, fInputMethodLOCKABLE, jm_insertText, insertedText); // AWT_THREADING Safe (AWTRunLoopMode)
+        DECLARE_METHOD(jm_insertText, jc_CInputMethod, "insertText", "(Ljava/lang/String;)V");
+        jstring insertedText =  NSStringToJavaString(env, useString);
+        (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_insertText, insertedText);
+        CHECK_EXCEPTION();
         (*env)->DeleteLocalRef(env, insertedText);
 
         // The input method event will create psuedo-key events for each character in the committed string.
@@ -998,7 +1009,7 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     [self abandonInput];
 }
 
-- (void)keyboardInputSourceChanged:(NSNotification *)notification
++ (void)keyboardInputSourceChanged:(NSNotification *)notification
 {
 #ifdef IM_DEBUG
     NSLog(@"keyboardInputSourceChangeNotification received");
@@ -1031,16 +1042,18 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
 #ifdef IM_DEBUG
     fprintf(stderr, "AWTView InputMethod Selector Called : [setMarkedText] \"%s\", loc=%lu, length=%lu\n", [incomingString UTF8String], (unsigned long)selectionRange.location, (unsigned long)selectionRange.length);
 #endif // IM_DEBUG
-    static JNF_MEMBER_CACHE(jm_startIMUpdate, jc_CInputMethod, "startIMUpdate", "(Ljava/lang/String;)V");
-    static JNF_MEMBER_CACHE(jm_addAttribute, jc_CInputMethod, "addAttribute", "(ZZII)V");
-    static JNF_MEMBER_CACHE(jm_dispatchText, jc_CInputMethod, "dispatchText", "(IIZ)V");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CIM_CLASS();
+    DECLARE_METHOD(jm_startIMUpdate, jc_CInputMethod, "startIMUpdate", "(Ljava/lang/String;)V");
+    DECLARE_METHOD(jm_addAttribute, jc_CInputMethod, "addAttribute", "(ZZII)V");
+    DECLARE_METHOD(jm_dispatchText, jc_CInputMethod, "dispatchText", "(IIZ)V");
 
     // NSInputContext already did the analysis of the TSM event and created attributes indicating
     // the underlining and color that should be done to the string.  We need to look at the underline
     // style and color to determine what kind of Java hilighting needs to be done.
-    jstring inProcessText = JNFNSToJavaString(env, incomingString);
-    JNFCallVoidMethod(env, fInputMethodLOCKABLE, jm_startIMUpdate, inProcessText); // AWT_THREADING Safe (AWTRunLoopMode)
+    jstring inProcessText = NSStringToJavaString(env, incomingString);
+    (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_startIMUpdate, inProcessText);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, inProcessText);
 
     if (isAttributedString) {
@@ -1063,20 +1076,24 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
                 (NSColor *)[attributes objectForKey:NSUnderlineColorAttributeName];
                 isGray = !([underlineColorObj isEqual:[NSColor blackColor]]);
 
-                JNFCallVoidMethod(env, fInputMethodLOCKABLE, jm_addAttribute, isThickUnderline, isGray, effectiveRange.location, effectiveRange.length); // AWT_THREADING Safe (AWTRunLoopMode)
+                (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_addAttribute, isThickUnderline,
+                       isGray, effectiveRange.location, effectiveRange.length);
+                CHECK_EXCEPTION();
             }
         }
     }
 
-    static JNF_MEMBER_CACHE(jm_selectPreviousGlyph, jc_CInputMethod, "selectPreviousGlyph", "()V");
+    DECLARE_METHOD(jm_selectPreviousGlyph, jc_CInputMethod, "selectPreviousGlyph", "()V");
     // We need to select the previous glyph so that it is overwritten.
     if (fPAHNeedsToSelect) {
-        JNFCallVoidMethod(env, fInputMethodLOCKABLE, jm_selectPreviousGlyph);
+        (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_selectPreviousGlyph);
+         CHECK_EXCEPTION();
         fPAHNeedsToSelect = NO;
     }
 
-    JNFCallVoidMethod(env, fInputMethodLOCKABLE, jm_dispatchText, selectionRange.location, selectionRange.length, JNI_FALSE); // AWT_THREADING Safe (AWTRunLoopMode)
-
+    (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_dispatchText,
+            selectionRange.location, selectionRange.length, JNI_FALSE);
+         CHECK_EXCEPTION();
     // If the marked text is being cleared (zero-length string) don't handle the key event.
     if ([incomingString length] == 0) {
         fKeyEventsNeeded = NO;
@@ -1094,10 +1111,11 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     }
 
     // unmarkText cancels any input in progress and commits it to the text field.
-    static JNF_MEMBER_CACHE(jm_unmarkText, jc_CInputMethod, "unmarkText", "()V");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    JNFCallVoidMethod(env, fInputMethodLOCKABLE, jm_unmarkText); // AWT_THREADING Safe (AWTRunLoopMode)
-
+    GET_CIM_CLASS();
+    DECLARE_METHOD(jm_unmarkText, jc_CInputMethod, "unmarkText", "()V");
+    (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_unmarkText);
+    CHECK_EXCEPTION();
 }
 
 - (BOOL) hasMarkedText
@@ -1110,12 +1128,15 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         return NO;
     }
 
-    static JNF_MEMBER_CACHE(jf_fCurrentText, jc_CInputMethod, "fCurrentText", "Ljava/text/AttributedString;");
-    static JNF_MEMBER_CACHE(jf_fCurrentTextLength, jc_CInputMethod, "fCurrentTextLength", "I");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject currentText = JNFGetObjectField(env, fInputMethodLOCKABLE, jf_fCurrentText);
+    GET_CIM_CLASS_RETURN(NO);
+    DECLARE_FIELD_RETURN(jf_fCurrentText, jc_CInputMethod, "fCurrentText", "Ljava/text/AttributedString;", NO);
+    DECLARE_FIELD_RETURN(jf_fCurrentTextLength, jc_CInputMethod, "fCurrentTextLength", "I", NO);
+    jobject currentText = (*env)->GetObjectField(env, fInputMethodLOCKABLE, jf_fCurrentText);
+    CHECK_EXCEPTION();
 
-    jint currentTextLength = JNFGetIntField(env, fInputMethodLOCKABLE, jf_fCurrentTextLength);
+    jint currentTextLength = (*env)->GetIntField(env, fInputMethodLOCKABLE, jf_fCurrentTextLength);
+    CHECK_EXCEPTION();
 
     BOOL hasMarkedText = (currentText != NULL && currentTextLength > 0);
 
@@ -1143,12 +1164,17 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
 #ifdef IM_DEBUG
     fprintf(stderr, "AWTView InputMethod Selector Called : [attributedSubstringFromRange] location=%lu, length=%lu\n", (unsigned long)theRange.location, (unsigned long)theRange.length);
 #endif // IM_DEBUG
+    if (!fInputMethodLOCKABLE) {
+        return nil;
+    }
 
-    static JNF_MEMBER_CACHE(jm_substringFromRange, jc_CInputMethod, "attributedSubstringFromRange", "(II)Ljava/lang/String;");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject theString = JNFCallObjectMethod(env, fInputMethodLOCKABLE, jm_substringFromRange, theRange.location, theRange.length); // AWT_THREADING Safe (AWTRunLoopMode)
+    GET_CIM_CLASS_RETURN(nil);
+    DECLARE_METHOD_RETURN(jm_substringFromRange, jc_CInputMethod, "attributedSubstringFromRange", "(II)Ljava/lang/String;", nil);
+    jobject theString = (*env)->CallObjectMethod(env, fInputMethodLOCKABLE, jm_substringFromRange, theRange.location, theRange.length);
+    CHECK_EXCEPTION_NULL_RETURN(theString, nil);
 
-    id result = [[[NSAttributedString alloc] initWithString:JNFJavaToNSString(env, theString)] autorelease];
+    id result = [[[NSAttributedString alloc] initWithString:JavaStringToNSString(env, theString)] autorelease];
 #ifdef IM_DEBUG
     NSLog(@"attributedSubstringFromRange returning \"%@\"", result);
 #endif // IM_DEBUG
@@ -1171,14 +1197,16 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         return NSMakeRange(NSNotFound, 0);
     }
 
-    static JNF_MEMBER_CACHE(jm_markedRange, jc_CInputMethod, "markedRange", "()[I");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jarray array;
     jboolean isCopy;
     jint *_array;
     NSRange range = NSMakeRange(NSNotFound, 0);
+    GET_CIM_CLASS_RETURN(range);
+    DECLARE_METHOD_RETURN(jm_markedRange, jc_CInputMethod, "markedRange", "()[I", range);
 
-    array = JNFCallObjectMethod(env, fInputMethodLOCKABLE, jm_markedRange); // AWT_THREADING Safe (AWTRunLoopMode)
+    array = (*env)->CallObjectMethod(env, fInputMethodLOCKABLE, jm_markedRange);
+    CHECK_EXCEPTION();
 
     if (array) {
         _array = (*env)->GetIntArrayElements(env, array, &isCopy);
@@ -1206,18 +1234,20 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         return NSMakeRange(NSNotFound, 0);
     }
 
-    static JNF_MEMBER_CACHE(jm_selectedRange, jc_CInputMethod, "selectedRange", "()[I");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jarray array;
     jboolean isCopy;
     jint *_array;
     NSRange range = NSMakeRange(NSNotFound, 0);
+    GET_CIM_CLASS_RETURN(range);
+    DECLARE_METHOD_RETURN(jm_selectedRange, jc_CInputMethod, "selectedRange", "()[I", range);
 
 #ifdef IM_DEBUG
     fprintf(stderr, "AWTView InputMethod Selector Called : [selectedRange]\n");
 #endif // IM_DEBUG
 
-    array = JNFCallObjectMethod(env, fInputMethodLOCKABLE, jm_selectedRange); // AWT_THREADING Safe (AWTRunLoopMode)
+    array = (*env)->CallObjectMethod(env, fInputMethodLOCKABLE, jm_selectedRange);
+    CHECK_EXCEPTION();
     if (array) {
         _array = (*env)->GetIntArrayElements(env, array, &isCopy);
         if (_array != NULL) {
@@ -1239,9 +1269,10 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         return NSZeroRect;
     }
 
-    static JNF_MEMBER_CACHE(jm_firstRectForCharacterRange, jc_CInputMethod,
-                            "firstRectForCharacterRange", "(I)[I");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CIM_CLASS_RETURN(NSZeroRect);
+    DECLARE_METHOD_RETURN(jm_firstRectForCharacterRange, jc_CInputMethod,
+                            "firstRectForCharacterRange", "(I)[I", NSZeroRect);
     jarray array;
     jboolean isCopy;
     jint *_array;
@@ -1253,8 +1284,9 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
             (unsigned long)theRange.location, (unsigned long)theRange.length);
 #endif // IM_DEBUG
 
-    array = JNFCallObjectMethod(env, fInputMethodLOCKABLE, jm_firstRectForCharacterRange,
-                                theRange.location); // AWT_THREADING Safe (AWTRunLoopMode)
+    array = (*env)->CallObjectMethod(env, fInputMethodLOCKABLE, jm_firstRectForCharacterRange,
+                                theRange.location);
+    CHECK_EXCEPTION();
 
     _array = (*env)->GetIntArrayElements(env, array, &isCopy);
     if (_array) {
@@ -1282,9 +1314,10 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         return NSNotFound;
     }
 
-    static JNF_MEMBER_CACHE(jm_characterIndexForPoint, jc_CInputMethod,
-                            "characterIndexForPoint", "(II)I");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CIM_CLASS_RETURN(NSNotFound);
+    DECLARE_METHOD_RETURN(jm_characterIndexForPoint, jc_CInputMethod,
+                            "characterIndexForPoint", "(II)I", NSNotFound);
 
     NSPoint flippedLocation = ConvertNSScreenPoint(env, thePoint);
 
@@ -1292,10 +1325,12 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     fprintf(stderr, "AWTView InputMethod Selector Called : [characterIndexForPoint:(NSPoint)thePoint] x=%f, y=%f\n", flippedLocation.x, flippedLocation.y);
 #endif // IM_DEBUG
 
-    jint index = JNFCallIntMethod(env, fInputMethodLOCKABLE, jm_characterIndexForPoint, (jint)flippedLocation.x, (jint)flippedLocation.y); // AWT_THREADING Safe (AWTRunLoopMode)
+    jint index = (*env)->CallIntMethod(env, fInputMethodLOCKABLE, jm_characterIndexForPoint,
+                      (jint)flippedLocation.x, (jint)flippedLocation.y);
+    CHECK_EXCEPTION();
 
 #ifdef IM_DEBUG
-    fprintf(stderr, "characterIndexForPoint returning %ld\n", index);
+    fprintf(stderr, "characterIndexForPoint returning %d\n", index);
 #endif // IM_DEBUG
 
     if (index == -1) {
@@ -1324,14 +1359,10 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
 
     // Get rid of the old one
     if (fInputMethodLOCKABLE) {
-        JNFDeleteGlobalRef(env, fInputMethodLOCKABLE);
+        (*env)->DeleteGlobalRef(env, fInputMethodLOCKABLE);
     }
 
-    // Save a global ref to the new input method.
-    if (inputMethod != NULL)
-        fInputMethodLOCKABLE = JNFNewGlobalRef(env, inputMethod);
-    else
-        fInputMethodLOCKABLE = NULL;
+    fInputMethodLOCKABLE = inputMethod; // input method arg must be a GlobalRef
 
     NSTextInputContext *curContxt = [NSTextInputContext currentInputContext];
     kbdLayout = curContxt.selectedKeyboardInputSource;
@@ -1369,10 +1400,11 @@ Java_sun_lwawt_macosx_CPlatformView_nativeCreateView
 {
     __block AWTView *newView = nil;
 
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     NSRect rect = NSMakeRect(originX, originY, width, height);
     jobject cPlatformView = (*env)->NewWeakGlobalRef(env, obj);
+    CHECK_EXCEPTION();
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
 
@@ -1382,7 +1414,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeCreateView
                                     windowLayer:windowLayer];
     }];
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 
     return ptr_to_jlong(newView);
 }
@@ -1397,7 +1429,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CPlatformView_nativeSetAutoResizable
 (JNIEnv *env, jclass cls, jlong viewPtr, jboolean toResize)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
 
@@ -1414,7 +1446,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeSetAutoResizable
         }
 
     }];
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -1429,7 +1461,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeGetNSViewDisplayID
 {
     __block jint ret; //CGDirectDisplayID
 
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
@@ -1437,7 +1469,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeGetNSViewDisplayID
         ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
     }];
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 
     return ret;
 }
@@ -1454,7 +1486,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeGetLocationOnScreen
 {
     jobject jRect = NULL;
 
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     __block NSRect rect = NSZeroRect;
 
@@ -1470,7 +1502,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeGetLocationOnScreen
     }];
     jRect = NSToJavaRect(env, rect);
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 
     return jRect;
 }
@@ -1486,7 +1518,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPlatformView_nativeIsViewUnder
 {
     __block jboolean underMouse = JNI_FALSE;
 
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     NSView *nsView = OBJC(viewPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
@@ -1495,7 +1527,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPlatformView_nativeIsViewUnder
         underMouse = [nsView hitTest:ptViewCoords] != nil;
     }];
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 
     return underMouse;
 }

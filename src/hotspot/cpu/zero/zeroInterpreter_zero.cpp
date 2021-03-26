@@ -31,7 +31,9 @@
 #include "interpreter/zero/bytecodeInterpreter.hpp"
 #include "interpreter/zero/zeroInterpreter.hpp"
 #include "interpreter/zero/zeroInterpreterGenerator.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -70,10 +72,11 @@ void ZeroInterpreter::initialize_code() {
 
   // Allow c++ interpreter to do one initialization now that switches are set, etc.
   BytecodeInterpreter start_msg(BytecodeInterpreter::initialize);
-  if (JvmtiExport::can_post_interpreter_events())
-    BytecodeInterpreter::runWithChecks(&start_msg);
-  else
-    BytecodeInterpreter::run(&start_msg);
+  if (JvmtiExport::can_post_interpreter_events()) {
+    BytecodeInterpreter::run<true>(&start_msg);
+  } else {
+    BytecodeInterpreter::run<false>(&start_msg);
+  }
 }
 
 void ZeroInterpreter::invoke_method(Method* method, address entry_point, TRAPS) {
@@ -114,6 +117,28 @@ int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Execute those bytecodes!
   main_loop(0, THREAD);
+
+  // No deoptimized frames on the stack
+  return 0;
+}
+
+int ZeroInterpreter::Reference_get_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
+  ZeroStack* stack = thread->zero_stack();
+  intptr_t* topOfStack = stack->sp();
+
+  oop ref = STACK_OBJECT(0);
+
+  // Shortcut if reference is known NULL
+  if (ref == NULL) {
+    return normal_entry(method, 0, THREAD);
+  }
+
+  // Read the referent with weaker semantics, and let GCs handle the rest.
+  const int referent_offset = java_lang_ref_Reference::referent_offset();
+  oop obj = HeapAccess<IN_HEAP | ON_WEAK_OOP_REF>::oop_load_at(ref, referent_offset);
+
+  SET_STACK_OBJECT(obj, 0);
 
   // No deoptimized frames on the stack
   return 0;
@@ -169,10 +194,11 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
     thread->set_last_Java_frame();
 
     // Call the interpreter
-    if (JvmtiExport::can_post_interpreter_events())
-      BytecodeInterpreter::runWithChecks(istate);
-    else
-      BytecodeInterpreter::run(istate);
+    if (JvmtiExport::can_post_interpreter_events()) {
+      BytecodeInterpreter::run<true>(istate);
+    } else {
+      BytecodeInterpreter::run<false>(istate);
+    }
     fixup_after_potential_safepoint();
 
     // Clear the frame anchor
@@ -287,26 +313,6 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   thread->push_zero_frame(frame);
   interpreterState istate = frame->interpreter_state();
   intptr_t *locals = istate->locals();
-
-#if 0
-  // Update the invocation counter
-  if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
-    MethodCounters* mcs = method->method_counters();
-    if (mcs == NULL) {
-      CALL_VM_NOCHECK(mcs = InterpreterRuntime::build_method_counters(thread, method));
-      if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
-    }
-    InvocationCounter *counter = mcs->invocation_counter();
-    counter->increment();
-    if (counter->reached_InvocationLimit(mcs->backedge_counter())) {
-      CALL_VM_NOCHECK(
-        InterpreterRuntime::frequency_counter_overflow(thread, NULL));
-      if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
-    }
-  }
-#endif
 
   // Lock if necessary
   BasicObjectLock *monitor;
@@ -545,38 +551,23 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   return 0;
 }
 
-int ZeroInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
-  ZeroStack *stack = thread->zero_stack();
-  intptr_t *locals = stack->sp();
-
+int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Drop into the slow path if we need a safepoint check
   if (SafepointMechanism::should_process(THREAD)) {
     return normal_entry(method, 0, THREAD);
   }
 
-  // Load the object pointer and drop into the slow path
-  // if we have a NullPointerException
-  oop object = LOCALS_OBJECT(0);
-  if (object == NULL) {
-    return normal_entry(method, 0, THREAD);
-  }
-
-  // Read the field index from the bytecode, which looks like this:
+  // Read the field index from the bytecode:
   //  0:  aload_0
   //  1:  getfield
   //  2:    index
   //  3:    index
-  //  4:  ireturn/areturn/freturn/lreturn/dreturn
+  //  4:  return
+  //
   // NB this is not raw bytecode: index is in machine order
-  u1 *code = method->code_base();
-  assert(code[0] == Bytecodes::_aload_0 &&
-         code[1] == Bytecodes::_getfield &&
-         (code[4] == Bytecodes::_ireturn ||
-          code[4] == Bytecodes::_freturn ||
-          code[4] == Bytecodes::_lreturn ||
-          code[4] == Bytecodes::_dreturn ||
-          code[4] == Bytecodes::_areturn), "should do");
+
+  assert(method->is_getter(), "Expect the particular bytecode shape");
+  u1* code = method->code_base();
   u2 index = Bytes::get_native_u2(&code[2]);
 
   // Get the entry from the constant pool cache, and drop into
@@ -587,95 +578,153 @@ int ZeroInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
     return normal_entry(method, 0, THREAD);
   }
 
-  // Get the result and push it onto the stack
-  switch (entry->flag_state()) {
-  case ltos:
-  case dtos:
-    stack->overflow_check(1, CHECK_0);
-    stack->alloc(wordSize);
-    break;
+  JavaThread* thread = THREAD->as_Java_thread();
+  ZeroStack* stack = thread->zero_stack();
+  intptr_t* topOfStack = stack->sp();
+
+  // Load the object pointer and drop into the slow path
+  // if we have a NullPointerException
+  oop object = STACK_OBJECT(0);
+  if (object == NULL) {
+    return normal_entry(method, 0, THREAD);
   }
+
+  // If needed, allocate additional slot on stack: we already have one
+  // for receiver, and double/long need another one.
+  switch (entry->flag_state()) {
+    case ltos:
+    case dtos:
+      stack->overflow_check(1, CHECK_0);
+      stack->alloc(wordSize);
+      topOfStack = stack->sp();
+      break;
+  }
+
+  // Read the field to stack(0)
+  int offset = entry->f2_as_index();
   if (entry->is_volatile()) {
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       OrderAccess::fence();
     }
     switch (entry->flag_state()) {
-    case ctos:
-      SET_LOCALS_INT(object->char_field_acquire(entry->f2_as_index()), 0);
-      break;
-
-    case btos:
-    case ztos:
-      SET_LOCALS_INT(object->byte_field_acquire(entry->f2_as_index()), 0);
-      break;
-
-    case stos:
-      SET_LOCALS_INT(object->short_field_acquire(entry->f2_as_index()), 0);
-      break;
-
-    case itos:
-      SET_LOCALS_INT(object->int_field_acquire(entry->f2_as_index()), 0);
-      break;
-
-    case ltos:
-      SET_LOCALS_LONG(object->long_field_acquire(entry->f2_as_index()), 0);
-      break;
-
-    case ftos:
-      SET_LOCALS_FLOAT(object->float_field_acquire(entry->f2_as_index()), 0);
-      break;
-
-    case dtos:
-      SET_LOCALS_DOUBLE(object->double_field_acquire(entry->f2_as_index()), 0);
-      break;
-
-    case atos:
-      SET_LOCALS_OBJECT(object->obj_field_acquire(entry->f2_as_index()), 0);
-      break;
-
-    default:
-      ShouldNotReachHere();
+      case btos:
+      case ztos: SET_STACK_INT(object->byte_field_acquire(offset),      0); break;
+      case ctos: SET_STACK_INT(object->char_field_acquire(offset),      0); break;
+      case stos: SET_STACK_INT(object->short_field_acquire(offset),     0); break;
+      case itos: SET_STACK_INT(object->int_field_acquire(offset),       0); break;
+      case ltos: SET_STACK_LONG(object->long_field_acquire(offset),     0); break;
+      case ftos: SET_STACK_FLOAT(object->float_field_acquire(offset),   0); break;
+      case dtos: SET_STACK_DOUBLE(object->double_field_acquire(offset), 0); break;
+      case atos: SET_STACK_OBJECT(object->obj_field_acquire(offset),    0); break;
+      default:
+        ShouldNotReachHere();
     }
-  }
-  else {
+  } else {
     switch (entry->flag_state()) {
-    case ctos:
-      SET_LOCALS_INT(object->char_field(entry->f2_as_index()), 0);
-      break;
-
-    case btos:
-    case ztos:
-      SET_LOCALS_INT(object->byte_field(entry->f2_as_index()), 0);
-      break;
-
-    case stos:
-      SET_LOCALS_INT(object->short_field(entry->f2_as_index()), 0);
-      break;
-
-    case itos:
-      SET_LOCALS_INT(object->int_field(entry->f2_as_index()), 0);
-      break;
-
-    case ltos:
-      SET_LOCALS_LONG(object->long_field(entry->f2_as_index()), 0);
-      break;
-
-    case ftos:
-      SET_LOCALS_FLOAT(object->float_field(entry->f2_as_index()), 0);
-      break;
-
-    case dtos:
-      SET_LOCALS_DOUBLE(object->double_field(entry->f2_as_index()), 0);
-      break;
-
-    case atos:
-      SET_LOCALS_OBJECT(object->obj_field(entry->f2_as_index()), 0);
-      break;
-
-    default:
-      ShouldNotReachHere();
+      case btos:
+      case ztos: SET_STACK_INT(object->byte_field(offset),      0); break;
+      case ctos: SET_STACK_INT(object->char_field(offset),      0); break;
+      case stos: SET_STACK_INT(object->short_field(offset),     0); break;
+      case itos: SET_STACK_INT(object->int_field(offset),       0); break;
+      case ltos: SET_STACK_LONG(object->long_field(offset),     0); break;
+      case ftos: SET_STACK_FLOAT(object->float_field(offset),   0); break;
+      case dtos: SET_STACK_DOUBLE(object->double_field(offset), 0); break;
+      case atos: SET_STACK_OBJECT(object->obj_field(offset),    0); break;
+      default:
+        ShouldNotReachHere();
     }
   }
+
+  // No deoptimized frames on the stack
+  return 0;
+}
+
+int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  // Drop into the slow path if we need a safepoint check
+  if (SafepointMechanism::should_process(THREAD)) {
+    return normal_entry(method, 0, THREAD);
+  }
+
+  // Read the field index from the bytecode:
+  //  0:  aload_0
+  //  1:  *load_1
+  //  2:  putfield
+  //  3:    index
+  //  4:    index
+  //  5:  return
+  //
+  // NB this is not raw bytecode: index is in machine order
+
+  assert(method->is_setter(), "Expect the particular bytecode shape");
+  u1* code = method->code_base();
+  u2 index = Bytes::get_native_u2(&code[3]);
+
+  // Get the entry from the constant pool cache, and drop into
+  // the slow path if it has not been resolved
+  ConstantPoolCache* cache = method->constants()->cache();
+  ConstantPoolCacheEntry* entry = cache->entry_at(index);
+  if (!entry->is_resolved(Bytecodes::_putfield)) {
+    return normal_entry(method, 0, THREAD);
+  }
+
+  JavaThread* thread = THREAD->as_Java_thread();
+  ZeroStack* stack = thread->zero_stack();
+  intptr_t* topOfStack = stack->sp();
+
+  // Figure out where the receiver is. If there is a long/double
+  // operand on stack top, then receiver is two slots down.
+  oop object = NULL;
+  switch (entry->flag_state()) {
+    case ltos:
+    case dtos:
+      object = STACK_OBJECT(-2);
+      break;
+    default:
+      object = STACK_OBJECT(-1);
+      break;
+  }
+
+  // Load the receiver pointer and drop into the slow path
+  // if we have a NullPointerException
+  if (object == NULL) {
+    return normal_entry(method, 0, THREAD);
+  }
+
+  // Store the stack(0) to field
+  int offset = entry->f2_as_index();
+  if (entry->is_volatile()) {
+    switch (entry->flag_state()) {
+      case btos: object->release_byte_field_put(offset,   STACK_INT(0));     break;
+      case ztos: object->release_byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
+      case ctos: object->release_char_field_put(offset,   STACK_INT(0));     break;
+      case stos: object->release_short_field_put(offset,  STACK_INT(0));     break;
+      case itos: object->release_int_field_put(offset,    STACK_INT(0));     break;
+      case ltos: object->release_long_field_put(offset,   STACK_LONG(0));    break;
+      case ftos: object->release_float_field_put(offset,  STACK_FLOAT(0));   break;
+      case dtos: object->release_double_field_put(offset, STACK_DOUBLE(0));  break;
+      case atos: object->release_obj_field_put(offset,    STACK_OBJECT(0));  break;
+      default:
+        ShouldNotReachHere();
+    }
+    OrderAccess::storeload();
+  } else {
+    switch (entry->flag_state()) {
+      case btos: object->byte_field_put(offset,   STACK_INT(0));     break;
+      case ztos: object->byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
+      case ctos: object->char_field_put(offset,   STACK_INT(0));     break;
+      case stos: object->short_field_put(offset,  STACK_INT(0));     break;
+      case itos: object->int_field_put(offset,    STACK_INT(0));     break;
+      case ltos: object->long_field_put(offset,   STACK_LONG(0));    break;
+      case ftos: object->float_field_put(offset,  STACK_FLOAT(0));   break;
+      case dtos: object->double_field_put(offset, STACK_DOUBLE(0));  break;
+      case atos: object->obj_field_put(offset,    STACK_OBJECT(0));  break;
+      default:
+        ShouldNotReachHere();
+    }
+  }
+
+  // Nothing is returned, pop out parameters
+  stack->set_sp(stack->sp() + method->size_of_parameters());
 
   // No deoptimized frames on the stack
   return 0;
@@ -759,7 +808,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
     if (method->is_static())
       object = method->constants()->pool_holder()->java_mirror();
     else
-      object = (oop) (void*)locals[0];
+      object = cast_to_oop((void*)locals[0]);
     monitor->set_obj(object);
   }
 

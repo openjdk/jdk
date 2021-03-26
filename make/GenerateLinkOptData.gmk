@@ -61,7 +61,7 @@ endif
 
 # Save the stderr output of the command and print it along with stdout in case
 # something goes wrong.
-$(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
+$(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST_JAR)
 	$(call MakeDir, $(LINK_OPT_DIR))
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $(JLI_TRACE_FILE)))
@@ -94,7 +94,7 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 # dependencies, make will correctly rebuild both jli trace and classlist
 # incrementally using the single recipe above.
 $(CLASSLIST_FILE): $(JLI_TRACE_FILE)
-$(JLI_TRACE_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
+$(JLI_TRACE_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST_JAR)
 
 TARGETS += $(CLASSLIST_FILE) $(JLI_TRACE_FILE)
 

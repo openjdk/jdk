@@ -69,7 +69,7 @@ hb_map_create ()
 hb_map_t *
 hb_map_get_empty ()
 {
-  return const_cast<hb_map_t *> (&Null(hb_map_t));
+  return const_cast<hb_map_t *> (&Null (hb_map_t));
 }
 
 /**

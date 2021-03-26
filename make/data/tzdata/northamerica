@@ -2257,7 +2257,7 @@ Zone America/Creston	-7:46:04 -	LMT	1884
 #     to say eight hours behind Greenwich Time.
 #
 # * O.I.C. 1980/02 INTERPRETATION ACT
-#   [no online source found]
+#   https://mm.icann.org/pipermail/tz/attachments/20201125/d5adc93b/CAYTOIC1980-02DST1980-01-04-0001.pdf
 #
 # * Yukon Daylight Saving Time, YOIC 1987/56
 #   https://www.canlii.org/en/yk/laws/regu/yoic-1987-56/latest/yoic-1987-56.html
@@ -2958,12 +2958,38 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 #
 # For 1899 Milne gives -5:09:29.5; round that.
 #
+# From P Chan (2020-11-27, corrected on 2020-12-02):
+# There were two periods of DST observed in 1942-1945: 1942-05-01
+# midnight to 1944-12-31 midnight and 1945-02-01 to 1945-10-17 midnight.
+# "midnight" should mean 24:00 from the context.
+#
+# War Time Order 1942 [1942-05-01] and War Time (No. 2) Order 1942  [1942-09-29]
+# Appendix to the Statutes of 7 George VI. and the Year 1942. p 34, 43
+# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA3-PA34
+# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA3-PA43
+#
+# War Time Order 1943 [1943-03-31] and War Time Order 1944 [1943-12-29]
+# Appendix to the Statutes of 8 George VI. and the Year 1943. p 9-10, 28-29
+# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA4-PA9
+# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA4-PA28
+#
+# War Time Order 1945 [1945-01-31] and the Order which revoke War Time Order
+# 1945 [1945-10-16] Appendix to the Statutes of 9 George VI. and the Year
+# 1945. p 160, 247-248
+# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA6-PA160
+# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA6-PA247
+#
 # From Sue Williams (2006-12-07):
 # The Bahamas announced about a month ago that they plan to change their DST
 # rules to sync with the U.S. starting in 2007....
 # http://www.jonesbahamas.com/?c=45&a=10412
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	Bahamas	1942	only	-	May	 1	24:00	1:00	W
+Rule	Bahamas	1944	only	-	Dec	31	24:00	0	S
+Rule	Bahamas	1945	only	-	Feb	 1	0:00	1:00	W
+Rule	Bahamas	1945	only	-	Aug	14	23:00u	1:00	P # Peace
+Rule	Bahamas	1945	only	-	Oct	17	24:00	0	S
 Rule	Bahamas	1964	1975	-	Oct	lastSun	2:00	0	S
 Rule	Bahamas	1964	1975	-	Apr	lastSun	2:00	1:00	D
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -2987,34 +3013,161 @@ Zone America/Barbados	-3:58:29 -	LMT	1924 # Bridgetown
 			-4:00	Barb	A%sT
 
 # Belize
-# Whitman entirely disagrees with Shanks; go with Shanks & Pottenger.
+
+# From P Chan (2020-11-03):
+# Below are some laws related to the time in British Honduras/Belize:
+#
+# Definition of Time Ordinance, 1927 (No.4 of 1927) [1927-04-01]
+# Ordinances of British Honduras Passed in the Year 1927, p 19-20
+# https://books.google.com/books?id=LqEpAQAAMAAJ&pg=RA3-PA19
+#
+# Definition of Time (Amendment) Ordinance, 1942 (No. 5 of 1942) [1942-06-27]
+# Ordinances of British Honduras Passed in the Year 1942, p 31-32
+# https://books.google.com/books?id=h6MpAQAAMAAJ&pg=RA6-PA95-IA44
+#
+# Definition of Time Ordinance, 1945 (No. 19 of 1945) [1945-12-15]
+# Ordinances of British Honduras Passed in the Year 1945, p 49-50
+# https://books.google.com/books?id=xaMpAQAAMAAJ&pg=RA2-PP1
+#
+# Definition of Time Ordinance, 1947 (No. 1 of 1947) [1947-03-11]
+# Ordinances of British Honduras Passed in the Year 1947, p 1-2
+# https://books.google.com/books?id=xaMpAQAAMAAJ&pg=RA3-PA1
+#
+# Time (Definition of) Ordinance  (Chapter 180)
+# The Laws of British Honduras in Force on the 15th Day of September, 1958 , Volume IV, p 2580
+# https://books.google.com/books?id=v5QpAQAAMAAJ&pg=PA2580
+#
+# Time (Definition of) (Amendment) Ordinance, 1968 (No. 13 of 1968) [1968-08-03]
+# https://books.google.com/books?id=xij7KEB_58wC&pg=RA1-PA428-IA9
+#
+# Definition of Time Act (Chapter 339)
+# Law of Belize, Revised Edition 2000
+# http://www.belizelaw.org/web/lawadmin/PDF%20files/cap339.pdf
+
+# From Paul Eggert (2020-11-03):
+# The transitions below are derived from P Chan's sources, except that the
+# 1973 through 1983 transitions are from Shanks & Pottenger since we have
+# no better data there.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Belize	1918	1942	-	Oct	Sun>=2	0:00	0:30	-0530
-Rule	Belize	1919	1943	-	Feb	Sun>=9	0:00	0	CST
+Rule	Belize	1918	1941	-	Oct	Sat>=1	24:00	0:30	-0530
+Rule	Belize	1919	1942	-	Feb	Sat>=8	24:00	0	CST
+Rule	Belize	1942	only	-	Jun	27	24:00	1:00	CWT
+Rule	Belize	1945	only	-	Aug	14	23:00u	1:00	CPT
+Rule	Belize	1945	only	-	Dec	15	24:00	0	CST
+Rule	Belize	1947	1967	-	Oct	Sat>=1	24:00	0:30	-0530
+Rule	Belize	1948	1968	-	Feb	Sat>=8	24:00	0	CST
 Rule	Belize	1973	only	-	Dec	 5	0:00	1:00	CDT
 Rule	Belize	1974	only	-	Feb	 9	0:00	0	CST
 Rule	Belize	1982	only	-	Dec	18	0:00	1:00	CDT
 Rule	Belize	1983	only	-	Feb	12	0:00	0	CST
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Belize	-5:52:48 -	LMT	1912 Apr
+Zone	America/Belize	-5:52:48 -	LMT	1912 Apr  1
 			-6:00	Belize	%s
 
 # Bermuda
 
+# From Paul Eggert (2020-11-24):
 # For 1899 Milne gives -4:19:18.3 as the meridian of the clock tower,
-# Bermuda dockyard, Ireland I; round that.
+# Bermuda dockyard, Ireland I.  This agrees with standard offset given in the
+# Daylight Saving Act, 1917 cited below.  Round that to the nearest second.
+# It is not known when this time became standard for Bermuda; guess 1890.
+# The transition to -04 was specified by:
+# 1930: The Time Zone Act, 1929 (1929: No. 39) [1929-11-08]
+# https://books.google.com/books?id=7tdMAQAAIAAJ&pg=RA54-PP1
+
+# From P Chan (2020-11-20):
+# Most of the information can be found online from the Bermuda National
+# Library - Digital Collection which includes The Royal Gazette (RG) until 1957
+# https://bnl.contentdm.oclc.org/digital/
+# I will cite the ID.  For example, [10000] means
+# https://bnl.contentdm.oclc.org/digital/collection/BermudaNP02/id/10000
+#
+# 1917: Apr 5 midnight to Sep 30 midnight
+# Daylight Saving Act, 1917 (1917 No. 13) [1917-04-02]
+# Bermuda Acts and Resolves 1917, p 37-38
+# https://books.google.com/books?id=M-lCAQAAMAAJ&pg=PA36-IA2
+# RG, 1917-04-04, p 6 [42340] gives the spring forward date.
+#
+# 1918: Apr 13 midnight to Sep 15 midnight
+# Daylight Saving Act, 1918 (1918 No. 9) [1918-04-06]
+# Bermuda Acts and Resolves 1917, p 13
+# https://books.google.com/books?id=K-lCAQAAMAAJ&pg=RA1-PA7
+#
+# Note that local mean time was still used before 1930.
+#
+# During WWII, DST was introduced by Defence Regulations
+# 1942: Jan 11 02:00 to Oct 18 02:00 [113646], [115726]
+# 1943: Mar 21 02:00 to Oct 31 02:00 [116704], [118193]
+# 1944: Mar 12 02:00 to Nov 5 02:00 [119225], [121593]
+# 1945: Mar 11 02:00 to Nov 4 02:00 [122369], [124461]
+# RG, 1942-01-08, p 2, 1942-10-12, p 2 , 1943-03-06, p 2, 1943-09-03, p 1,
+# 1944-02-29, p 6, 1944-09-20, p 2, 1945-02-13, p 2, 1945-11-03, p 1
+#
+# In 1946, the House of Assembly rejected DST twice. [128686], [128076]
+# RG, 1946-03-16 p 1,1946-04-13 p 1
+#
+# 1947: third Sunday in May 02:00 to second Sunday in September 02:00
+# DST in 1947 was defined in the Daylight Saving Act, 1947 (1947: No. 12)
+# which expired at the end of the year.  [125784] ,[132405], [144454], [138226]
+# RG, 1947-02-27, p 1, 1947-05-15, p 1, 1947-09-13, p 1, 1947-12-30, p 1
+#
+# 1948-1952: fourth Sunday in May 02:00 to first Sunday in September 02:00
+# DST in 1948 was defined in the Daylight Saving Act, 1948 (1948 : No. 12)
+# which was set to expired at the end of the year but it was extended until
+# the end of 1952 and was not further extended.
+# [129802], [139403], [146008], [135240], [144330], [139049], [143309],
+# [148271], [149773], [153589], [153802], [155924]
+# RG, 1948-04-13, p 1, 1948-05-22, p 1, 1948-09-04, p 1, 1949-05-21, p1,
+# 1949-09-03, p 1, 1950-05-27 p 1, 1950-09-02, p 1, 1951-05-27, p 1,
+# 1951-09-01, p 1, 1952-05-23, p 1, 1952-09-26, p 1, 1952-12-21, p 8
+#
+# In 1953-1955, the House of Assembly rejected DST each year. [158996],
+# [162620], [166720] RG, 1953-05-02, p 1, 1954-04-01 p 1, 1955-03-12, p 1
+#
+# 1956: fourth Sunday in May 02:00 to last Sunday in October 02:00
+# Time Zone (Seasonal Variation) Act, 1956 (1956: No.44) [1956-05-25]
+# Bermuda Public Acts 1956, p 331-332
+# https://books.google.com/books?id=Xs1AlmD_cEwC&pg=PA63
+#
+# The extension of the Act was rejected by the House of Assembly. [176218]
+# RG, 1956-12-13, p 1
+#
+# From the Chronological Table of Public and Private Acts up to 1985, it seems
+# that there does not exist other Acts related to DST before 1973.
+# https://books.google.com/books?id=r9hMAQAAIAAJ&pg=RA23-PA1
+# Public Acts of the Legislature of the Islands of Bermuda, Together with
+# Statutory Instruments in Force Thereunder, Vol VII
 
 # From Dan Jones, reporting in The Royal Gazette (2006-06-26):
-
 # Next year, however, clocks in the US will go forward on the second Sunday
 # in March, until the first Sunday in November.  And, after the Time Zone
 # (Seasonal Variation) Bill 2006 was passed in the House of Assembly on
 # Friday, the same thing will happen in Bermuda.
 # http://www.theroyalgazette.com/apps/pbcs.dll/article?AID=/20060529/NEWS/105290135
 
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	Bermuda	1917	only	-	Apr	 5	24:00	1:00	-
+Rule	Bermuda	1917	only	-	Sep	30	24:00	0	-
+Rule	Bermuda	1918	only	-	Apr	13	24:00	1:00	-
+Rule	Bermuda	1918	only	-	Sep	15	24:00	0	S
+Rule	Bermuda	1942	only	-	Jan	11	 2:00	1:00	D
+Rule	Bermuda	1942	only	-	Oct	18	 2:00	0	S
+Rule	Bermuda	1943	only	-	Mar	21	 2:00	1:00	D
+Rule	Bermuda	1943	only	-	Oct	31	 2:00	0	S
+Rule	Bermuda	1944	1945	-	Mar	Sun>=8	 2:00	1:00	D
+Rule	Bermuda	1944	1945	-	Nov	Sun>=1	 2:00	0	S
+Rule	Bermuda	1947	only	-	May	Sun>=15	 2:00	1:00	D
+Rule	Bermuda	1947	only	-	Sep	Sun>=8	 2:00	0	S
+Rule	Bermuda	1948	1952	-	May	Sun>=22	 2:00	1:00	D
+Rule	Bermuda	1948	1952	-	Sep	Sun>=1	 2:00	0	S
+Rule	Bermuda	1956	only	-	May	Sun>=22	 2:00	1:00	D
+Rule	Bermuda	1956	only	-	Oct	lastSun	 2:00	0	S
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Atlantic/Bermuda	-4:19:18 -	LMT	1930 Jan  1  2:00 # Hamilton
-			-4:00	-	AST	1974 Apr 28  2:00
+Zone Atlantic/Bermuda	-4:19:18 -	LMT	1890	# Hamilton
+			-4:19:18 Bermuda BMT/BST 1930 Jan 1  2:00
+			-4:00	Bermuda	A%sT	1974 Apr 28  2:00
 			-4:00	Canada	A%sT	1976
 			-4:00	US	A%sT
 
@@ -3597,7 +3750,7 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 # "Eastern Standard Times Begins 2007
 # Clocks are set back one hour at 2:00 a.m. local Daylight Saving Time"
 # indicating that the normal ET rules are followed.
-#
+
 # From Paul Eggert (2014-08-19):
 # The 2014-08-13 Cabinet meeting decided to stay on UT -04 year-round.  See:
 # http://tcweeklynews.com/daylight-savings-time-to-be-maintained-p5353-127.htm
@@ -3612,19 +3765,42 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 # during the summer months and Standard Time, also known as Local
 # Time, during the winter months with effect from April 2018 ...
 # https://www.gov.uk/government/news/turks-and-caicos-post-cabinet-meeting-statement--3
-#
 # From Paul Eggert (2017-08-26):
 # The date of effect of the spring 2018 change appears to be March 11,
 # which makes more sense.  See: Hamilton D. Time change back
 # by March 2018 for TCI. Magnetic Media. 2017-08-25.
 # http://magneticmediatv.com/2017/08/time-change-back-by-march-2018-for-tci/
 #
+# From P Chan (2020-11-27):
+# Standard Time Declaration Order 2015 (L.N. 15/2015)
+# http://online.fliphtml5.com/fizd/czin/#p=2
+#
+# Standard Time Declaration Order 2017 (L.N. 31/2017)
+# http://online.fliphtml5.com/fizd/dmcu/#p=2
+#
+# From Tim Parenti (2020-12-05):
+# Although L.N. 31/2017 reads that it "shall come into operation at 2:00 a.m.
+# on 11th March 2018", a precise interpretation here poses some problems.  The
+# order states that "the standard time to be observed throughout the Turks and
+# Caicos Islands shall be the same time zone as the Eastern United States of
+# America" and further clarifies "[f]or the avoidance of doubt" that it
+# "applies to the Eastern Standard Time as well as any changes thereto for
+# Daylight Saving Time."  However, as clocks in Turks and Caicos approached
+# 02:00 -04, and thus the declared implementation time, it was still 01:00 EST
+# (-05), as DST in the Eastern US would not start until an hour later.
+#
+# Since it is unlikely that those on the islands switched their clocks twice in
+# the span of an hour, we assume instead that the adoption of EDT actually took
+# effect once clocks in the Eastern US had sprung forward, from 03:00 -04.
+# This discrepancy only affects the time zone abbreviation and DST flag for the
+# intervening hour, not wall clock times, as -04 was maintained throughout.
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Grand_Turk	-4:44:32 -	LMT	1890
 			-5:07:10 -	KMT	1912 Feb # Kingston Mean Time
 			-5:00	-	EST	1979
-			-5:00	US	E%sT	2015 Nov Sun>=1 2:00
-			-4:00	-	AST	2018 Mar 11 3:00
+			-5:00	US	E%sT	2015 Mar  8  2:00
+			-4:00	-	AST	2018 Mar 11  3:00
 			-5:00	US	E%sT
 
 # British Virgin Is

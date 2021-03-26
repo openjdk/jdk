@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -45,6 +46,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
@@ -62,11 +64,14 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/xmlstream.hpp"
 #if INCLUDE_JVMCI
@@ -496,7 +501,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  int comp_level,
+  const GrowableArrayView<RuntimeStub*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -518,6 +524,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
       CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
       + adjust_pcs_size(debug_info->pcs_size())
       + align_up((int)dependencies->size_in_bytes(), oopSize)
+      + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize)
       + align_up(handler_table->size_in_bytes()    , oopSize)
       + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
@@ -533,7 +540,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
             handler_table,
             nul_chk_table,
             compiler,
-            comp_level
+            comp_level,
+            native_invokers
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
@@ -621,7 +629,8 @@ nmethod::nmethod(
     scopes_data_offset       = _metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
-    _handler_table_offset    = _dependencies_offset;
+    _native_invokers_offset     = _dependencies_offset;
+    _handler_table_offset    = _native_invokers_offset;
     _nul_chk_table_offset    = _handler_table_offset;
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset;
@@ -717,7 +726,8 @@ nmethod::nmethod(
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  int comp_level,
+  const GrowableArrayView<RuntimeStub*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -794,7 +804,8 @@ nmethod::nmethod(
 
     _scopes_pcs_offset       = scopes_data_offset    + align_up(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
-    _handler_table_offset    = _dependencies_offset  + align_up((int)dependencies->size_in_bytes (), oopSize);
+    _native_invokers_offset  = _dependencies_offset  + align_up((int)dependencies->size_in_bytes(), oopSize);
+    _handler_table_offset    = _native_invokers_offset + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize);
     _nul_chk_table_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
@@ -816,6 +827,10 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
     dependencies->copy_to(this);
+    if (native_invokers.is_nonempty()) { // can not get address of zero-length array
+      // Copy native stubs
+      memcpy(native_invokers_begin(), native_invokers.adr_at(0), native_invokers.data_size_in_bytes());
+    }
     clear_unloading_state();
 
     Universe::heap()->register_nmethod(this);
@@ -921,6 +936,8 @@ void nmethod::maybe_print_nmethod(DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
+  run_nmethod_entry_barrier(); // ensure all embedded OOPs are valid before printing
+
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != NULL) {
     xtty->begin_head("print_nmethod");
@@ -966,16 +983,20 @@ void nmethod::print_nmethod(bool printmethod) {
 #if defined(SUPPORT_DATA_STRUCTS)
   if (AbstractDisassembler::show_structs()) {
     methodHandle mh(Thread::current(), _method);
-    if (printmethod || PrintDebugInfo || CompilerOracle::has_option_string(mh, "PrintDebugInfo")) {
+    if (printmethod || PrintDebugInfo || CompilerOracle::has_option(mh, CompileCommand::PrintDebugInfo)) {
       print_scopes();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod || PrintRelocations || CompilerOracle::has_option_string(mh, "PrintRelocations")) {
+    if (printmethod || PrintRelocations || CompilerOracle::has_option(mh, CompileCommand::PrintRelocations)) {
       print_relocations();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod || PrintDependencies || CompilerOracle::has_option_string(mh, "PrintDependencies")) {
+    if (printmethod || PrintDependencies || CompilerOracle::has_option(mh, CompileCommand::PrintDependencies)) {
       print_dependencies();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+    }
+    if (printmethod && native_invokers_begin() < native_invokers_end()) {
+      print_native_invokers();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintExceptionHandlers) {
@@ -1005,7 +1026,7 @@ inline void nmethod::initialize_immediate_oop(oop* dest, jobject handle) {
   if (handle == NULL ||
       // As a special case, IC oops are initialized to 1 or -1.
       handle == (jobject) Universe::non_oop_word()) {
-    (*dest) = (oop) handle;
+    (*dest) = cast_to_oop(handle);
   } else {
     (*dest) = JNIHandles::resolve_non_null(handle);
   }
@@ -1035,6 +1056,12 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   Metadata** dest = metadata_begin();
   for (int index = 0 ; index < length; index++) {
     dest[index] = array->at(index);
+  }
+}
+
+void nmethod::free_native_invokers() {
+  for (RuntimeStub** it = native_invokers_begin(); it < native_invokers_end(); it++) {
+    CodeCache::free(*it);
   }
 }
 
@@ -1248,7 +1275,6 @@ void nmethod::make_unloaded() {
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != NULL) {
     nmethod_data->invalidate_nmethod_mirror(this);
-    nmethod_data->clear_nmethod_mirror(this);
   }
 #endif
 }
@@ -2670,8 +2696,16 @@ void nmethod::print_pcs_on(outputStream* st) {
   }
 }
 
+void nmethod::print_native_invokers() {
+  ResourceMark m;       // in case methods get printed via debugger
+  tty->print_cr("Native invokers:");
+  for (RuntimeStub** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
+    (*itt)->print_on(tty);
+  }
+}
+
 void nmethod::print_handler_table() {
-  ExceptionHandlerTable(this).print();
+  ExceptionHandlerTable(this).print(code_begin());
 }
 
 void nmethod::print_nul_chk_table() {
@@ -2687,7 +2721,7 @@ void nmethod::print_recorded_oops() {
     for (int i = 0; i < n; i++) {
       oop o = oop_at(i);
       tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(o));
-      if (o == (oop)Universe::non_oop_word()) {
+      if ((void*)o == Universe::non_oop_word()) {
         tty->print("non-oop word");
       } else if (o == NULL) {
         tty->print("NULL-oop");
@@ -3110,7 +3144,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
         assert(sig_index == sizeargs, "");
       }
       const char* spname = "sp"; // make arch-specific?
-      intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs, false);
+      intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
       int stack_slot_offset = this->frame_size() * wordSize;
       int tab1 = 14, tab2 = 24;
       int sig_index = 0;

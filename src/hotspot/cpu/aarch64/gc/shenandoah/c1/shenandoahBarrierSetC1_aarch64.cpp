@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
@@ -39,7 +40,7 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   Register tmp2 = _tmp2->as_register();
   Register result = result_opr()->as_register();
 
-  ShenandoahBarrierSet::assembler()->storeval_barrier(masm->masm(), newval, rscratch2);
+  ShenandoahBarrierSet::assembler()->iu_barrier(masm->masm(), newval, rscratch2);
 
   if (UseCompressedOops) {
     __ encode_heap_oop(tmp1, cmpval);
@@ -50,7 +51,7 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
 
   ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), addr, cmpval, newval, /*acquire*/ true, /*release*/ true, /*is_cae*/ false, result);
 
-  if (is_c1_or_interpreter_only()) {
+  if (CompilerConfig::is_c1_only_no_aot_or_jvmci()) {
     // The membar here is necessary to prevent reordering between the
     // release store in the CAS above and a subsequent volatile load.
     // However for tiered compilation C1 inserts a full barrier before
@@ -101,7 +102,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   LIR_Opr value_opr = value.result();
 
   if (access.is_oop()) {
-    value_opr = storeval_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
+    value_opr = iu_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
   }
 
   assert(type == T_INT || is_reference_type(type) LP64_ONLY( || type == T_LONG ), "unexpected type");
@@ -109,7 +110,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   __ xchg(access.resolved_addr(), value_opr, result, tmp);
 
   if (access.is_oop()) {
-    result = load_reference_barrier(access.gen(), result, LIR_OprFact::addressConst(0), ShenandoahBarrierSet::AccessKind::NORMAL);
+    result = load_reference_barrier(access.gen(), result, LIR_OprFact::addressConst(0), access.decorators());
     LIR_Opr tmp = gen->new_register(type);
     __ move(result, tmp);
     result = tmp;

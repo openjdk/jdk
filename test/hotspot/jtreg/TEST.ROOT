@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@
 # headful:              test can be run only on headful host
 # intermittent:         flaky test, known to fail intermittently
 # randomness:           test uses randomness, test cases differ from run to run
-keys=stress headful intermittent randomness
+# cgroups:              test uses cgroups
+keys=stress headful intermittent randomness cgroups
 
 groups=TEST.groups TEST.quick-groups
 
@@ -74,8 +75,8 @@ requires.properties= \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.musl \
+    vm.flagless \
     docker.support \
-    test.vm.gc.nvdimm \
     jdk.containerized
 
 # Minimum jtreg version

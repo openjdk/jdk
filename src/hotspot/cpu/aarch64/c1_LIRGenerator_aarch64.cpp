@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -174,10 +174,10 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
     if (large_disp != 0) {
       LIR_Opr tmp = new_pointer_register();
       if (Assembler::operand_valid_for_add_sub_immediate(large_disp)) {
-        __ add(tmp, tmp, LIR_OprFact::intptrConst(large_disp));
+        __ add(index, LIR_OprFact::intptrConst(large_disp), tmp);
         index = tmp;
       } else {
-        __ move(tmp, LIR_OprFact::intptrConst(large_disp));
+        __ move(LIR_OprFact::intptrConst(large_disp), tmp);
         __ add(tmp, index, tmp);
         index = tmp;
       }
@@ -191,7 +191,7 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   }
 
   // at this point we either have base + index or base + displacement
-  if (large_disp == 0) {
+  if (large_disp == 0 && index->is_register()) {
     return new LIR_Address(base, index, type);
   } else {
     assert(Address::offset_ok_for_immed(large_disp, 0), "must be");
@@ -1411,7 +1411,7 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
   // membar it's possible for a simple Dekker test to fail if loads
   // use LD;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and C1 compiles the loads in another.
-  if (!is_c1_or_interpreter_only()) {
+  if (!CompilerConfig::is_c1_only_no_aot_or_jvmci()) {
     __ membar();
   }
   __ volatile_load_mem_reg(address, result, info);

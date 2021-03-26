@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ class G1CollectionSetChooser;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
-class G1YoungGenSizer;
 class GCPolicyCounters;
 class STWGCTimer;
 
@@ -95,7 +94,7 @@ class G1Policy: public CHeapObj<mtGC> {
   // for the first time during initialization.
   uint   _reserve_regions;
 
-  G1YoungGenSizer* _young_gen_sizer;
+  G1YoungGenSizer _young_gen_sizer;
 
   uint _free_regions_at_end_of_collection;
 
@@ -247,7 +246,7 @@ public:
 
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
-  uint calc_min_old_cset_length() const;
+  uint calc_min_old_cset_length(G1CollectionSetCandidates* candidates) const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
@@ -262,33 +261,14 @@ private:
   void clear_collection_set_candidates();
   // Sets up marking if proper conditions are met.
   void maybe_start_marking();
-
-  // The kind of STW pause.
-  enum PauseKind : uint {
-    FullGC,
-    YoungOnlyGC,
-    MixedGC,
-    LastYoungGC,
-    ConcurrentStartMarkGC,
-    ConcurrentStartUndoGC,
-    Cleanup,
-    Remark
-  };
-
-  static bool is_young_only_pause(PauseKind kind);
-  static bool is_mixed_pause(PauseKind kind);
-  static bool is_last_young_pause(PauseKind kind);
-  static bool is_concurrent_start_pause(PauseKind kind);
-  // Calculate PauseKind from internal state.
-  PauseKind young_gc_pause_kind(bool concurrent_operation_is_full_mark) const;
   // Manage time-to-mixed tracking.
-  void update_time_to_mixed_tracking(PauseKind pause, double start, double end);
+  void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(PauseKind kind, double start, double end);
+  void record_pause(G1GCPauseType gc_type, double start, double end);
 
   bool should_update_gc_stats();
 
-  void update_gc_pause_time_ratios(PauseKind kind, double start_sec, double end_sec);
+  void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
@@ -302,8 +282,6 @@ public:
 
   virtual ~G1Policy();
 
-  static G1Policy* create_policy(STWGCTimer* gc_timer_stw);
-
   G1CollectorState* collector_state() const;
 
   G1GCPhaseTimes* phase_times() const;
@@ -316,7 +294,7 @@ public:
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
 
-  virtual void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
+  void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
   void note_gc_start();
 
@@ -328,11 +306,11 @@ public:
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  virtual void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
+  void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
-  virtual void record_full_collection_end();
+  void record_full_collection_end();
 
   // Must currently be called while the world is stopped.
   void record_concurrent_mark_init_end();
@@ -350,6 +328,8 @@ public:
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
 
+  // Amount of allowed waste in bytes in the collection set.
+  size_t allowed_waste_in_collection_set() const;
   // Calculate and return the number of initial and optional old gen regions from
   // the given collection set candidates and the remaining time.
   void calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
@@ -449,10 +429,6 @@ public:
   void update_max_gc_locker_expansion();
 
   void update_survivors_policy();
-
-  virtual bool force_upgrade_to_full() {
-    return false;
-  }
 };
 
 #endif // SHARE_GC_G1_G1POLICY_HPP

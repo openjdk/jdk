@@ -24,97 +24,160 @@
 #
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
-AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
+AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
 [
-  SRC_ROOT_LENGTH=`$THEPWDCMD -L|$WC -m`
-  if test $SRC_ROOT_LENGTH -gt 100; then
-    AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+    # Clarify if it is wsl1 or wsl2, and use that as OS_ENV from this point forward
+    $PATHTOOL -w / > /dev/null 2>&1
+    if test $? -ne 0; then
+      # Without Windows access to our root, it's definitely WSL1
+      OPENJDK_BUILD_OS_ENV=windows.wsl1
+    else
+      # This test is not guaranteed, but there is no documented way of
+      # distinguishing between WSL1 and WSL2. Assume only WSL2 has WSL_INTEROP
+      # in /run/WSL
+      if test -d "/run/WSL" ; then
+        OPENJDK_BUILD_OS_ENV=windows.wsl2
+      else
+        OPENJDK_BUILD_OS_ENV=windows.wsl1
+      fi
+    fi
+    # This is a bit silly since we really don't have a target env as such,
+    # but do it to keep consistency.
+    OPENJDK_TARGET_OS_ENV=$OPENJDK_BUILD_OS_ENV
   fi
 
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
+    # Must be done prior to calling any commands to avoid mangling of command line
+    export MSYS2_ARG_CONV_EXCL="*"
+  fi
+
+  AC_MSG_CHECKING([Windows environment type])
+  WINENV_VENDOR=${OPENJDK_BUILD_OS_ENV#windows.}
+  AC_MSG_RESULT([$WINENV_VENDOR])
+
+  if test "x$WINENV_VENDOR" = x; then
+    AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys2, wsl1 nor wsl2 was detected.])
+  fi
+
+  if test "x$PATHTOOL" = x; then
+    AC_MSG_ERROR([Incorrect $WINENV_VENDOR installation. Neither cygpath nor wslpath was found])
+  fi
+
+  if test "x$CMD" = x; then
+    AC_MSG_ERROR([Incorrect Windows/$WINENV_VENDOR setup. Could not locate cmd.exe])
+  fi
+
+  AC_MSG_CHECKING([$WINENV_VENDOR drive prefix])
+  WINENV_PREFIX=`$PATHTOOL -u c:/ | $SED -e 's!/c/!!'`
+  AC_MSG_RESULT(['$WINENV_PREFIX'])
+  AC_SUBST(WINENV_PREFIX)
+
+  AC_MSG_CHECKING([$WINENV_VENDOR root directory as Windows path])
+  if test "x$OPENJDK_BUILD_OS_ENV" != "xwindows.wsl1"; then
+    WINENV_ROOT=`$PATHTOOL -w / 2> /dev/null`
+    # msys2 has a trailing backslash; strip it
+    WINENV_ROOT=${WINENV_ROOT%\\}
+  else
+    WINENV_ROOT='[[unavailable]]'
+  fi
+  AC_MSG_RESULT(['$WINENV_ROOT'])
+  AC_SUBST(WINENV_ROOT)
+
+  AC_MSG_CHECKING([$WINENV_VENDOR temp directory])
+  WINENV_TEMP_DIR=$($PATHTOOL -u $($CMD /q /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
+  AC_MSG_RESULT([$WINENV_TEMP_DIR])
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
+    # Don't trust the current directory for WSL2, but change to an OK temp dir
+    cd "$WINENV_TEMP_DIR"
+    # Bring along confdefs.h or autoconf gets all confused
+    cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
+  fi
+
+  AC_MSG_CHECKING([$WINENV_VENDOR release])
+  WINENV_UNAME_RELEASE=`$UNAME -r`
+  AC_MSG_RESULT([$WINENV_UNAME_RELEASE])
+
+  AC_MSG_CHECKING([$WINENV_VENDOR version])
+  WINENV_UNAME_VERSION=`$UNAME -v`
+  AC_MSG_RESULT([$WINENV_UNAME_VERSION])
+
+  WINENV_VERSION="$WINENV_UNAME_RELEASE, $WINENV_UNAME_VERSION"
+
   AC_MSG_CHECKING([Windows version])
+
+  # We must change directory to one guaranteed to work, otherwise WSL1
+  # can complain (since it does not have a WINENV_ROOT so it can't access
+  # unix-style paths from Windows.
   # Additional [] needed to keep m4 from mangling shell constructs.
-  [ WINDOWS_VERSION=`$CMD /c ver.exe | $EGREP -o '([0-9]+\.)+[0-9]+'` ]
+  [ WINDOWS_VERSION=`cd $WINENV_TEMP_DIR && $CMD /c ver | $EGREP -o '([0-9]+\.)+[0-9]+'` ]
   AC_MSG_RESULT([$WINDOWS_VERSION])
 
+  # Additional handling per specific env
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    AC_MSG_CHECKING([cygwin release])
-    CYGWIN_RELEASE=`$UNAME -r`
-    AC_MSG_RESULT([$CYGWIN_RELEASE])
-
-    AC_MSG_CHECKING([cygwin version])
-    CYGWIN_VERSION=`$UNAME -v`
-    AC_MSG_RESULT([$CYGWIN_VERSION])
-
     # Additional [] needed to keep m4 from mangling shell constructs.
-    [ CYGWIN_VERSION_OLD=`$ECHO $CYGWIN_RELEASE | $GREP -e '^1\.[0-6]'` ]
+    [ CYGWIN_VERSION_OLD=`$ECHO $WINENV_UNAME_RELEASE | $GREP -e '^1\.[0-6]'` ]
     if test "x$CYGWIN_VERSION_OLD" != x; then
       AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_RELEASE, but at least cygwin 1.7 is required. Please upgrade.])
       AC_MSG_ERROR([Cannot continue])
     fi
-
-    WINDOWS_ENV_VENDOR='cygwin'
-    WINDOWS_ENV_VERSION="$CYGWIN_RELEASE, $CYGWIN_VERSION"
-
-    if test "x$CYGPATH" = x; then
-      AC_MSG_ERROR([Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path])
+    if test "x$LDD" = x; then
+      AC_MSG_ERROR([ldd is missing, which is needed on cygwin])
     fi
-    AC_MSG_CHECKING([cygwin root directory as unix-style path])
-    # The cmd output ends with Windows line endings (CR/LF)
-    cygwin_winpath_root=`cd / ; cmd /c cd | $TR -d '\r\n'`
-    # Force cygpath to report the proper root by including a trailing space, and then stripping it off again.
-    CYGWIN_ROOT_PATH=`$CYGPATH -u "$cygwin_winpath_root " | $CUT -f 1 -d " "`
-    AC_MSG_RESULT([$CYGWIN_ROOT_PATH])
-    WINDOWS_ENV_ROOT_PATH="$CYGWIN_ROOT_PATH"
-    test_cygdrive_prefix=`$ECHO $CYGWIN_ROOT_PATH | $GREP ^/cygdrive/`
-    if test "x$test_cygdrive_prefix" = x; then
-      AC_MSG_ERROR([Your cygdrive prefix is not /cygdrive. This is currently not supported. Change with mount -c.])
+    WINENV_MARKER_DLL=cygwin1.dll
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
+    if test "x$LDD" = x; then
+      AC_MSG_ERROR([ldd is missing, which is needed on msys2])
     fi
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    AC_MSG_CHECKING([msys release])
-    MSYS_RELEASE=`$UNAME -r`
-    AC_MSG_RESULT([$MSYS_RELEASE])
-
-    AC_MSG_CHECKING([msys version])
-    MSYS_VERSION=`$UNAME -v`
-    AC_MSG_RESULT([$MSYS_VERSION])
-
-    WINDOWS_ENV_VENDOR='msys'
-    WINDOWS_ENV_VERSION="$MSYS_RELEASE, $MSYS_VERSION"
-
-    AC_MSG_CHECKING([msys root directory as unix-style path])
-    # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
-    MSYS_ROOT_PATH=`cd / ; cmd /c cd | $GREP ".*"`
-    UTIL_REWRITE_AS_UNIX_PATH(MSYS_ROOT_PATH)
-    AC_MSG_RESULT([$MSYS_ROOT_PATH])
-    WINDOWS_ENV_ROOT_PATH="$MSYS_ROOT_PATH"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-
-    AC_MSG_CHECKING([WSL kernel version])
-    WSL_KERNEL_VERSION=`$UNAME -v`
-    AC_MSG_RESULT([$WSL_KERNEL_VERSION])
-
-    AC_MSG_CHECKING([WSL kernel release])
-    WSL_KERNEL_RELEASE=`$UNAME -r`
-    AC_MSG_RESULT([$WSL_KERNEL_RELEASE])
-
-    AC_MSG_CHECKING([WSL distribution])
+    WINENV_MARKER_DLL=msys-2.0.dll
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1" || test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
+    AC_MSG_CHECKING([wsl distribution])
     WSL_DISTRIBUTION=`$LSB_RELEASE -d | sed 's/Description:\t//'`
     AC_MSG_RESULT([$WSL_DISTRIBUTION])
 
-    WINDOWS_ENV_VENDOR='wsl'
-    WINDOWS_ENV_VERSION="$WSL_KERNEL_RELEASE, $WSL_KERNEL_VERSION ($WSL_DISTRIBUTION)"
-  else
-    AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys, nor wsl was detected.])
+    WINENV_VERSION="$WINENV_VERSION ($WSL_DISTRIBUTION)"
+
+    # Tell WSL to automatically translate the PATH variable
+    export WSLENV=PATH/l
   fi
 
-  # Test if windows or unix (cygwin/msys) find is first in path.
+  # Chicken and egg: FIXPATH is needed for UTIL_FIXUP_PATH to work. So for the
+  # first run we use the auto-detect abilities of fixpath.sh.
+  FIXPATH_DIR="$TOPDIR/make/scripts"
+  FIXPATH="$BASH $FIXPATH_DIR/fixpath.sh exec"
+  FIXPATH_BASE="$BASH $FIXPATH_DIR/fixpath.sh"
+  FIXPATH_SAVED_PATH="$PATH"
+  UTIL_FIXUP_PATH(FIXPATH_DIR)
+
+  # Now we can use FIXPATH_DIR to rewrite path to fixpath.sh properly.
+  if test "x$WINENV_PREFIX" = x; then
+    # On msys the prefix is empty, but we need to pass something to have the
+    # fixpath.sh options parser happy.
+    WINENV_PREFIX_ARG="NONE"
+  else
+    WINENV_PREFIX_ARG="$WINENV_PREFIX"
+  fi
+  FIXPATH_ARGS="-e $PATHTOOL -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT//\\/\\\\}  -t $WINENV_TEMP_DIR -c $CMD -q"
+  FIXPATH_BASE="$BASH $FIXPATH_DIR/fixpath.sh $FIXPATH_ARGS"
+  FIXPATH="$FIXPATH_BASE exec"
+
+  AC_SUBST(FIXPATH_BASE)
+  AC_SUBST(FIXPATH)
+
+  SRC_ROOT_LENGTH=`$ECHO "$TOPDIR" | $WC -m`
+  if test $SRC_ROOT_LENGTH -gt 100; then
+    AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
+  fi
+
+  # Test if windows or unix "find" is first in path.
   AC_MSG_CHECKING([what kind of 'find' is first on the PATH])
   FIND_BINARY_OUTPUT=`find --version 2>&1`
   if test "x`echo $FIND_BINARY_OUTPUT | $GREP GNU`" != x; then
     AC_MSG_RESULT([unix style])
   elif test "x`echo $FIND_BINARY_OUTPUT | $GREP FIND`" != x; then
     AC_MSG_RESULT([Windows])
-    AC_MSG_NOTICE([Your path contains Windows tools (C:\Windows\system32) before your unix (cygwin or msys) tools.])
+    AC_MSG_NOTICE([Your path contains Windows tools (C:\Windows\system32) before your unix tools.])
     AC_MSG_NOTICE([This will not work. Please correct and make sure /usr/bin (or similar) is first in path.])
     AC_MSG_ERROR([Cannot continue])
   else
@@ -123,73 +186,39 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   fi
 ])
 
-AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
+# Verify that the directory is usable on Windows
+AC_DEFUN([BASIC_WINDOWS_VERIFY_DIR],
 [
-  # When using cygwin or msys, we need a wrapper binary that renames
-  # /cygdrive/c/ arguments into c:/ arguments and peeks into
-  # @files and rewrites these too! This wrapper binary is
-  # called fixpath.
-  FIXPATH=
-  if test "x$OPENJDK_BUILD_OS" = xwindows; then
-    AC_MSG_CHECKING([if fixpath can be created])
-    FIXPATH_SRC="$TOPDIR/make/src/native/fixpath.c"
-    FIXPATH_BIN="$CONFIGURESUPPORT_OUTPUTDIR/bin/fixpath.exe"
-    FIXPATH_DIR="$CONFIGURESUPPORT_OUTPUTDIR/fixpath"
-    if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then
-      # Important to keep the .exe suffix on Cygwin for Hotspot makefiles
-      FIXPATH="$FIXPATH_BIN -c"
-    elif test "x$OPENJDK_BUILD_OS_ENV" = xwindows.msys; then
-      # Take all collected prefixes and turn them into a -m/c/foo@/c/bar@... command line
-      # @ was chosen as separator to minimize risk of other tools messing around with it
-      all_unique_prefixes=`echo "${all_fixpath_prefixes@<:@@@:>@}" \
-          | tr ' ' '\n' | $GREP '^/./' | $SORT | $UNIQ`
-      fixpath_argument_list=`echo $all_unique_prefixes  | tr ' ' '@'`
-      FIXPATH="$FIXPATH_BIN -m$fixpath_argument_list"
-    elif test "x$OPENJDK_BUILD_OS_ENV" = xwindows.wsl; then
-      FIXPATH="$FIXPATH_BIN -w"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1"; then
+    OUTPUTDIR_WIN=`$FIXPATH_BASE print $1`
+    if test "x$OUTPUTDIR_WIN" = x; then
+      AC_MSG_NOTICE([For wsl1, the $2 dir must be located on a Windows drive. Please see doc/building.md for details.])
+      AC_MSG_ERROR([Cannot continue])
     fi
-    FIXPATH_SRC_W="$FIXPATH_SRC"
-    FIXPATH_BIN_W="$FIXPATH_BIN"
-    $RM -rf $FIXPATH_BIN $FIXPATH_DIR
-    $MKDIR -p $FIXPATH_DIR $CONFIGURESUPPORT_OUTPUTDIR/bin
-    UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_SRC_W])
-    UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_BIN_W])
-    cd $FIXPATH_DIR
-    $CC $FIXPATH_SRC_W -Fe$FIXPATH_BIN_W > $FIXPATH_DIR/fixpath1.log 2>&1
-    cd $CONFIGURE_START_DIR
-
-    if test ! -x $FIXPATH_BIN; then
-      AC_MSG_RESULT([no])
-      cat $FIXPATH_DIR/fixpath1.log
-      AC_MSG_ERROR([Could not create $FIXPATH_BIN])
-    fi
-    AC_MSG_RESULT([yes])
-
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-      OLD_WSLENV="$WSLENV"
-      WSLENV=`$ECHO $WSLENV | $SED 's/PATH\/l://'`
-      UTIL_APPEND_TO_PATH(WSLENV, "FIXPATH_PATH")
-      export WSLENV
-      export FIXPATH_PATH=$VS_PATH_WINDOWS
-      AC_MSG_NOTICE([FIXPATH_PATH is $FIXPATH_PATH])
-      AC_MSG_NOTICE([Rewriting WSLENV from $OLD_WSLENV to $WSLENV])
-    fi
-
-    AC_MSG_CHECKING([if fixpath.exe works])
-    cd $FIXPATH_DIR
-    $FIXPATH $CC $FIXPATH_SRC -Fe$FIXPATH_DIR/fixpath2.exe \
-        > $FIXPATH_DIR/fixpath2.log 2>&1
-    cd $CONFIGURE_START_DIR
-    if test ! -x $FIXPATH_DIR/fixpath2.exe; then
-      AC_MSG_RESULT([no])
-      cat $FIXPATH_DIR/fixpath2.log
-      AC_MSG_ERROR([fixpath did not work!])
-    fi
-    AC_MSG_RESULT([yes])
-
-    FIXPATH_DETACH_FLAG="--detach"
   fi
+])
 
-  AC_SUBST(FIXPATH)
-  AC_SUBST(FIXPATH_DETACH_FLAG)
+# Create fixpath wrapper
+AC_DEFUN([BASIC_WINDOWS_FINALIZE_FIXPATH],
+[
+  if test "x$OPENJDK_BUILD_OS" = xwindows; then
+    FIXPATH_CMDLINE=". $TOPDIR/make/scripts/fixpath.sh -e $PATHTOOL \
+        -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT//\\/\\\\}  -t $WINENV_TEMP_DIR \
+        -c $CMD -q"
+    $ECHO >  $OUTPUTDIR/fixpath '#!/bin/bash'
+    $ECHO >> $OUTPUTDIR/fixpath export PATH='"[$]PATH:'$PATH'"'
+    $ECHO >> $OUTPUTDIR/fixpath $FIXPATH_CMDLINE '"[$]@"'
+    $CHMOD +x $OUTPUTDIR/fixpath
+    FIXPATH_BASE="$OUTPUTDIR/fixpath"
+    FIXPATH="$FIXPATH_BASE exec"
+  fi
+])
+
+# Platform-specific finalization
+AC_DEFUN([BASIC_WINDOWS_FINALIZE],
+[
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
+    # Change back from temp dir
+    cd $CONFIGURE_START_DIR
+  fi
 ])

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.sound.midi;
 
+import java.io.Serial;
+
 /**
  * An {@code InvalidMidiDataException} indicates that inappropriate MIDI data
  * was encountered. This often means that the data is invalid in and of itself,
@@ -42,6 +44,7 @@ public class InvalidMidiDataException extends Exception {
     /**
      * Use serialVersionUID from JDK 1.3 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 2780771756789932067L;
 
     /**

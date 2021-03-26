@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,12 @@ package java.io;
  * A data output stream lets an application write primitive Java data
  * types to an output stream in a portable way. An application can
  * then use a data input stream to read the data back in.
+ * <p>
+ * A DataOutputStream is not safe for use by multiple concurrent
+ * threads. If a DataOutputStream is to be used by more than one
+ * thread then access to the data output stream should be controlled
+ * by appropriate synchronization.
  *
- * @author  unascribed
  * @see     java.io.DataInputStream
  * @since   1.0
  */
@@ -45,6 +49,8 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * bytearr is initialized on demand by writeUTF
      */
     private byte[] bytearr = null;
+
+    private final byte[] writeBuffer = new byte[8];
 
     /**
      * Creates a new data output stream to write data to the specified
@@ -163,8 +169,9 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeShort(int v) throws IOException {
-        out.write((v >>> 8) & 0xFF);
-        out.write((v >>> 0) & 0xFF);
+        writeBuffer[0] = (byte)(v >>> 8);
+        writeBuffer[1] = (byte)(v >>> 0);
+        out.write(writeBuffer, 0, 2);
         incCount(2);
     }
 
@@ -178,8 +185,9 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeChar(int v) throws IOException {
-        out.write((v >>> 8) & 0xFF);
-        out.write((v >>> 0) & 0xFF);
+        writeBuffer[0] = (byte)(v >>> 8);
+        writeBuffer[1] = (byte)(v >>> 0);
+        out.write(writeBuffer, 0, 2);
         incCount(2);
     }
 
@@ -193,14 +201,13 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeInt(int v) throws IOException {
-        out.write((v >>> 24) & 0xFF);
-        out.write((v >>> 16) & 0xFF);
-        out.write((v >>>  8) & 0xFF);
-        out.write((v >>>  0) & 0xFF);
+        writeBuffer[0] = (byte)(v >>> 24);
+        writeBuffer[1] = (byte)(v >>> 16);
+        writeBuffer[2] = (byte)(v >>>  8);
+        writeBuffer[3] = (byte)(v >>>  0);
+        out.write(writeBuffer, 0, 4);
         incCount(4);
     }
-
-    private byte writeBuffer[] = new byte[8];
 
     /**
      * Writes a {@code long} to the underlying output stream as eight
@@ -293,8 +300,9 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         int len = s.length();
         for (int i = 0 ; i < len ; i++) {
             int v = s.charAt(i);
-            out.write((v >>> 8) & 0xFF);
-            out.write((v >>> 0) & 0xFF);
+            writeBuffer[0] = (byte)(v >>> 8);
+            writeBuffer[1] = (byte)(v >>> 0);
+            out.write(writeBuffer, 0, 2);
         }
         incCount(len * 2);
     }
@@ -361,8 +369,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
             throw new UTFDataFormatException(tooLongMsg(str, utflen));
 
         final byte[] bytearr;
-        if (out instanceof DataOutputStream) {
-            DataOutputStream dos = (DataOutputStream)out;
+        if (out instanceof DataOutputStream dos) {
             if (dos.bytearr == null || (dos.bytearr.length < (utflen + 2)))
                 dos.bytearr = new byte[(utflen*2) + 2];
             bytearr = dos.bytearr;

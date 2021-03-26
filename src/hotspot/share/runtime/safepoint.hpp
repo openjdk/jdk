@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
-#include "runtime/vmOperations.hpp"
+#include "runtime/vmOperation.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/waitBarrier.hpp"
 
@@ -71,7 +71,6 @@ class SafepointSynchronize : AllStatic {
   // The enums are listed in the order of the tasks when done serially.
   enum SafepointCleanupTasks {
     SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING,
-    SAFEPOINT_CLEANUP_DEFLATE_MONITORS,
     SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES,
     SAFEPOINT_CLEANUP_COMPILATION_POLICY,
     SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH,

@@ -26,6 +26,7 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.NetPermission;
 import java.net.ProtocolFamily;
 import java.net.ServerSocket;
@@ -234,7 +235,7 @@ public abstract class ServerSocketChannel
      * <p> The {@code backlog} parameter is the maximum number of pending
      * connections on the socket. Its exact semantics are implementation specific.
      * In particular, an implementation may impose a maximum length or may choose
-     * to ignore the parameter altogther. If the {@code backlog} parameter has
+     * to ignore the parameter altogether. If the {@code backlog} parameter has
      * the value {@code 0}, or a negative value, then an implementation specific
      * default is used.
      *
@@ -252,7 +253,11 @@ public abstract class ServerSocketChannel
      * Each platform enforces an implementation specific, maximum length for the
      * name of a <i>Unix Domain</i> socket. This limitation is enforced when a
      * channel is bound. The maximum length is typically close to and generally
-     * not less than 100 bytes.
+     * not less than 100 bytes. This limitation also applies to <i>automatically</i>
+     * bound server socket channels. See the <i>Unix domain</i>
+     * <a href="../../net/doc-files/net-properties.html#Unixdomain">networking
+     * properties</a> that can be used to select the temporary directory where
+     * these sockets are created.
      *
      * @param   local
      *          The address to bind the socket, or {@code null} to bind to
@@ -348,9 +353,12 @@ public abstract class ServerSocketChannel
      *          If this channel's socket has not yet been bound
      *
      * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit access to the remote endpoint
-     *          of the new connection
+     *          If a security manager has been installed and this
+     *          channel is bound to an {@link InetSocketAddress}
+     *          and the security manager denies access to the remote endpoint
+     *          of the new connection, or if this channel is bound to a
+     *          {@link UnixDomainSocketAddress} and the security manager
+     *          denies {@link NetPermission}{@code ("accessUnixDomainSocket")}
      *
      * @throws  IOException
      *          If some other I/O error occurs

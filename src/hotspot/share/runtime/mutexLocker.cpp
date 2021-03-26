@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
@@ -113,9 +114,11 @@ Mutex*   OopMapCacheAlloc_lock        = NULL;
 
 Mutex*   FreeList_lock                = NULL;
 Mutex*   OldSets_lock                 = NULL;
+Mutex*   Uncommit_lock                = NULL;
 Monitor* RootRegionScan_lock          = NULL;
 
 Mutex*   Management_lock              = NULL;
+Monitor* MonitorDeflation_lock        = NULL;
 Monitor* Service_lock                 = NULL;
 Monitor* Notification_lock            = NULL;
 Monitor* PeriodicTask_lock            = NULL;
@@ -136,7 +139,7 @@ Mutex*   UnsafeJlong_lock             = NULL;
 #endif
 Mutex*   CodeHeapStateAnalytics_lock  = NULL;
 
-Mutex*   MetaspaceExpand_lock         = NULL;
+Mutex*   Metaspace_lock               = NULL;
 Mutex*   ClassLoaderDataGraph_lock    = NULL;
 Monitor* ThreadsSMRDelete_lock        = NULL;
 Mutex*   ThreadIdTableCreate_lock     = NULL;
@@ -154,6 +157,7 @@ Mutex*   CDSLambda_lock               = NULL;
 Mutex*   DumpRegion_lock              = NULL;
 Mutex*   ClassListFile_lock           = NULL;
 #endif // INCLUDE_CDS
+Mutex*   Bootclasspath_lock           = NULL;
 
 #if INCLUDE_JVMCI
 Monitor* JVMCI_lock                   = NULL;
@@ -219,6 +223,7 @@ void mutex_init() {
 
     def(FreeList_lock              , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
     def(OldSets_lock               , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
+    def(Uncommit_lock              , PaddedMutex  , leaf + 1 ,   true,  _safepoint_check_never);
     def(RootRegionScan_lock        , PaddedMonitor, leaf     ,   true,  _safepoint_check_never);
 
     def(StringDedupQueue_lock      , PaddedMonitor, leaf,        true,  _safepoint_check_never);
@@ -239,11 +244,12 @@ void mutex_init() {
   def(RawMonitor_lock              , PaddedMutex  , special,     true,  _safepoint_check_never);
   def(OopMapCacheAlloc_lock        , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for oop_map_cache allocation.
 
-  def(MetaspaceExpand_lock         , PaddedMutex  , leaf-1,      true,  _safepoint_check_never);
+  def(Metaspace_lock               , PaddedMutex  , leaf-1,      true,  _safepoint_check_never);
   def(ClassLoaderDataGraph_lock    , PaddedMutex  , nonleaf,     false, _safepoint_check_always);
 
   def(Patching_lock                , PaddedMutex  , special,     true,  _safepoint_check_never);      // used for safepointing and code patching.
   def(CompiledMethod_lock          , PaddedMutex  , special-1,   true,  _safepoint_check_never);
+  def(MonitorDeflation_lock        , PaddedMonitor, tty-2,       true,  _safepoint_check_never);      // used for monitor deflation thread operations
   def(Service_lock                 , PaddedMonitor, tty-2,       true,  _safepoint_check_never);      // used for service thread operations
 
   if (UseNotificationThread) {
@@ -348,6 +354,7 @@ void mutex_init() {
   def(DumpRegion_lock              , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(ClassListFile_lock           , PaddedMutex  , leaf,        true,  _safepoint_check_never);
 #endif // INCLUDE_CDS
+  def(Bootclasspath_lock           , PaddedMutex  , leaf,        false, _safepoint_check_never);
 
 #if INCLUDE_JVMCI
   def(JVMCI_lock                   , PaddedMonitor, nonleaf+2,   true,  _safepoint_check_always);

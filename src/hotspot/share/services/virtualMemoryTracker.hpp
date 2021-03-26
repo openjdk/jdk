@@ -68,17 +68,18 @@ class VirtualMemory {
 };
 
 // Virtual memory allocation site, keeps track where the virtual memory is reserved.
-class VirtualMemoryAllocationSite : public AllocationSite<VirtualMemory> {
+class VirtualMemoryAllocationSite : public AllocationSite {
+  VirtualMemory _c;
  public:
   VirtualMemoryAllocationSite(const NativeCallStack& stack, MEMFLAGS flag) :
-    AllocationSite<VirtualMemory>(stack, flag) { }
+    AllocationSite(stack, flag) { }
 
-  inline void reserve_memory(size_t sz)  { data()->reserve_memory(sz);  }
-  inline void commit_memory (size_t sz)  { data()->commit_memory(sz);   }
-  inline void uncommit_memory(size_t sz) { data()->uncommit_memory(sz); }
-  inline void release_memory(size_t sz)  { data()->release_memory(sz);  }
-  inline size_t reserved() const  { return peek()->reserved(); }
-  inline size_t committed() const { return peek()->committed(); }
+  inline void reserve_memory(size_t sz)  { _c.reserve_memory(sz);  }
+  inline void commit_memory (size_t sz)  { _c.commit_memory(sz);   }
+  inline void uncommit_memory(size_t sz) { _c.uncommit_memory(sz); }
+  inline void release_memory(size_t sz)  { _c.release_memory(sz);  }
+  inline size_t reserved() const  { return _c.reserved(); }
+  inline size_t committed() const { return _c.committed(); }
 };
 
 class VirtualMemorySummary;
@@ -204,8 +205,7 @@ class VirtualMemoryRegion {
   inline bool overlap_region(address addr, size_t sz) const {
     assert(sz > 0, "Invalid size");
     assert(size() > 0, "Invalid size");
-    return contain_address(addr) ||
-           contain_address(addr + sz - 1);
+    return MAX2(addr, base()) < MIN2(addr + sz, end());
   }
 
   inline bool adjacent_to(address addr, size_t sz) const {
@@ -339,6 +339,8 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
     return *this;
   }
+
+  const char* flag_name() { return NMTUtil::flag_to_name(_flag); }
 
  private:
   // The committed region contains the uncommitted region, subtract the uncommitted

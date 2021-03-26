@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
  *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369 8182765 8196201 8184205 8223378 8241544
- *           8253117
+ *           8253117 8263528
  * @summary  Run tests on doclet stylesheet.
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -160,7 +160,7 @@ public class TestStylesheet extends JavadocTester {
                     .col-first a:link, .col-first a:visited,
                     .col-second a:link, .col-second a:visited,
                     .col-constructor-name a:link, .col-constructor-name a:visited,
-                    .col-deprecated-item-name a:link, .col-deprecated-item-name a:visited,
+                    .col-summary-item-name a:link, .col-summary-item-name a:visited,
                     .constant-values-container a:link, .constant-values-container a:visited,
                     .all-classes-container a:link, .all-classes-container a:visited,
                     .all-packages-container a:link, .all-packages-container a:visited {
@@ -179,7 +179,7 @@ public class TestStylesheet extends JavadocTester {
                         display:inline-block;
                     }""",
                 """
-                    #reset {
+                    #reset-button {
                         background-color: rgb(255,255,255);
                         background-image:url('resources/x.png');
                         background-position:center;
@@ -352,7 +352,7 @@ public class TestStylesheet extends JavadocTester {
                 "method-summary",
                 // the following provide the ability to optionally override components of the
                 // memberSignature structure
-                "member-name",
+                "name",
                 "modifiers",
                 "packages",
                 "return-type",

@@ -82,7 +82,7 @@ struct BaselineTableFormat2Part
   }
 
   protected:
-  GlyphID       stdGlyph;       /* The specific glyph index number in this
+  HBGlyphID     stdGlyph;       /* The specific glyph index number in this
                                  * font that is used to set the baseline values.
                                  * This is the standard glyph.
                                  * This glyph must contain a set of control points
@@ -101,11 +101,11 @@ struct BaselineTableFormat3Part
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) && lookupTable.sanitize (c));
+    return_trace (likely (c->check_struct (this) && lookupTable.sanitize (c)));
   }
 
   protected:
-  GlyphID       stdGlyph;       /* ditto */
+  HBGlyphID     stdGlyph;       /* ditto */
   HBUINT16      ctlPoints[32];  /* ditto */
   Lookup<HBUINT16>
                 lookupTable;    /* Lookup table that maps glyphs to their

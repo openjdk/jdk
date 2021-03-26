@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,10 @@ import java.util.Objects;
  * way. An application uses a data output stream to write data that
  * can later be read by a data input stream.
  * <p>
- * DataInputStream is not necessarily safe for multithreaded access.
- * Thread safety is optional and is the responsibility of users of
- * methods in this class.
+ * A DataInputStream is not safe for use by multiple concurrent
+ * threads. If a DataInputStream is to be used by more than one
+ * thread then access to the data input stream should be controlled
+ * by appropriate synchronization.
  *
  * @author  Arthur van Hoff
  * @see     java.io.DataOutputStream
@@ -594,8 +595,7 @@ loop:   while (true) {
         int utflen = in.readUnsignedShort();
         byte[] bytearr = null;
         char[] chararr = null;
-        if (in instanceof DataInputStream) {
-            DataInputStream dis = (DataInputStream)in;
+        if (in instanceof DataInputStream dis) {
             if (dis.bytearr.length < utflen){
                 dis.bytearr = new byte[utflen*2];
                 dis.chararr = new char[utflen*2];

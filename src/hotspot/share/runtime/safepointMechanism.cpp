@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "services/memTracker.hpp"
@@ -80,7 +81,7 @@ void SafepointMechanism::process(JavaThread *thread) {
     // Any load in ::block must not pass the global poll load.
     // Otherwise we might load an old safepoint counter (for example).
     OrderAccess::loadload();
-    SafepointSynchronize::block(thread); // Recursive
+    SafepointSynchronize::block(thread);
   }
 
   // The call to on_safepoint fixes the thread's oops and the first few frames.

@@ -23,7 +23,6 @@
 
 package nsk.jvmti.GetCurrentContendedMonitor;
 
-import nsk.share.Wicket;
 import java.io.PrintStream;
 
 public class contmon001 {
@@ -42,8 +41,8 @@ public class contmon001 {
         }
     }
 
-    public static Wicket startingBarrier;
-    public static Wicket waitingBarrier;
+    public static volatile boolean startingBarrier = true;
+    public static volatile boolean waitingBarrier = true;
     static Object lockFld = new Object();
 
     static boolean DEBUG_MODE = false;
@@ -53,6 +52,14 @@ public class contmon001 {
         args = nsk.share.jvmti.JVMTITest.commonInit(args);
 
         System.exit(run(args, System.out) + 95/*STATUS_TEMP*/);
+    }
+
+    public static void doSleep() {
+        try {
+            Thread.sleep(10);
+        } catch (Exception e) {
+            throw new Error("Unexpected " + e);
+        }
     }
 
     public static int run(String argv[], PrintStream ref) {
@@ -75,13 +82,13 @@ public class contmon001 {
             out.println("Check #1 done");
 
         contmon001a thr = new contmon001a();
-        startingBarrier = new Wicket();
-        waitingBarrier = new Wicket();
 
         thr.start();
         if (DEBUG_MODE)
             out.println("\nWaiting for auxiliary thread ...");
-        startingBarrier.waitFor();
+        while (startingBarrier) {
+            doSleep();
+        }
         if (DEBUG_MODE)
             out.println("Auxiliary thread is ready");
 
@@ -93,7 +100,9 @@ public class contmon001 {
 
         thr.letItGo();
 
-        waitingBarrier.waitFor();
+        while (waitingBarrier) {
+            doSleep();
+        }
         synchronized (lockFld) {
             if (DEBUG_MODE)
                 out.println("\nMain thread entered lockFld's monitor"
@@ -138,7 +147,7 @@ class contmon001a extends Thread {
 
         if (contmon001.DEBUG_MODE)
             contmon001.out.println("notifying main thread");
-        contmon001.startingBarrier.unlock();
+        contmon001.startingBarrier = false;
 
         if (contmon001.DEBUG_MODE)
             contmon001.out.println("thread is going to loop while <flag> is true ...");
@@ -158,7 +167,7 @@ class contmon001a extends Thread {
             contmon001.out.println("looping is done: <flag> is false");
 
         synchronized (contmon001.lockFld) {
-            contmon001.waitingBarrier.unlock();
+            contmon001.waitingBarrier = false;
             if (contmon001.DEBUG_MODE)
                 contmon001.out.println("\nthread entered lockFld's monitor"
                     + "\n\tand releasing it through the lockFld.wait() call");

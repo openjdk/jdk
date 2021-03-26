@@ -85,10 +85,16 @@ public class ConstructorReceiverTest {
             return;
         }
 
-        // check that getType() matches the receiver
-        assertEquals(annotatedReceiverType.getType(),
-                ctorParamType,
-                "getType() doesn't match receiver type: " + ctorParamType);
+        // check that getType() matches the receiver (which can be parameterized)
+        if (annotatedReceiverType.getType() instanceof ParameterizedType) {
+            assertEquals(((ParameterizedType) annotatedReceiverType.getType()).getRawType(),
+                    ctorParamType,
+                    "getType() doesn't match receiver type: " + ctorParamType);
+        } else {
+            assertEquals(annotatedReceiverType.getType(),
+                    ctorParamType,
+                    "getType() doesn't match receiver type: " + ctorParamType);
+        }
 
         Annotation[] receiverAnnotations = annotatedReceiverType.getAnnotations();
 

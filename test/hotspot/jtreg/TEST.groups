@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,7 @@ hotspot_compiler_all_gcs = \
   -compiler/graalunit
 
 hotspot_gc = \
-  gc \
-  -gc/nvdimm
+  gc
 
 # By design this group should include ALL tests under runtime sub-directory
 hotspot_runtime = \
@@ -66,7 +65,6 @@ hotspot_misc = \
  -:hotspot_gc \
  -:hotspot_runtime \
  -:hotspot_serviceability \
- -gc/nvdimm \
  -:hotspot_containers
 
 hotspot_native_sanity = \
@@ -78,7 +76,8 @@ hotspot_containers = \
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
-  gtest/MetaspaceGtests.java
+  gtest/MetaspaceGtests.java \
+  gtest/LargePageGtests.java
 
 tier1_compiler = \
   :tier1_compiler_1 \
@@ -203,8 +202,7 @@ tier1_gc_2 = \
   -gc/logging/TestUnifiedLoggingSwitchStress.java \
   -gc/stress \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
-  -gc/shenandoah \
-  -gc/nvdimm
+  -gc/shenandoah
 
 gc_epsilon = \
   gc/epsilon/ \
@@ -278,14 +276,11 @@ tier1_runtime = \
  -runtime/CompressedOops/UseCompressedOops.java \
  -runtime/ConstantPool/IntfMethod.java \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
- -runtime/ErrorHandling/ErrorHandler.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
- -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/InvocationTests \
  -runtime/logging/MonitorMismatchTest.java \
  -runtime/memory/ReserveMemory.java \
- -runtime/memory/RunUnitTestsConcurrently.java \
  -runtime/Metaspace/FragmentMetaspace.java \
  -runtime/Metaspace/FragmentMetaspaceSimple.java \
  -runtime/MirrorFrame/Test8003720.java \
@@ -336,9 +331,13 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
  -runtime/cds/appcds/ExtraSymbols.java \
+ -runtime/cds/appcds/LambdaEagerInit.java \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
+ -runtime/cds/appcds/LambdaVerificationFailedDuringDump.java \
+ -runtime/cds/appcds/LambdaWithOldClass.java \
  -runtime/cds/appcds/LongClassListPath.java \
  -runtime/cds/appcds/LotsOfClasses.java \
+ -runtime/cds/appcds/MismatchedPathTriggerMemoryRelease.java \
  -runtime/cds/appcds/NonExistClasspath.java \
  -runtime/cds/appcds/RelativePath.java \
  -runtime/cds/appcds/SharedArchiveConsistency.java \

@@ -25,6 +25,7 @@
 
 package java.lang.ref;
 
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Phantom reference objects, which are enqueued after the collector
@@ -66,6 +67,7 @@ public class PhantomReference<T> extends Reference<T> {
      * do reference processing concurrently.
      */
     @Override
+    @IntrinsicCandidate
     native final boolean refersTo0(Object o);
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,15 +133,16 @@ module java.base {
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
+    exports com.sun.crypto.provider to
+        jdk.crypto.cryptoki;
     exports sun.invoke.util to
         jdk.compiler,
         jdk.incubator.foreign;
     exports com.sun.security.ntlm to
         java.security.sasl;
-    exports jdk.internal to // for @HotSpotIntrinsicCandidate
+    exports jdk.internal.javac to
         java.compiler,
         jdk.compiler,
-        jdk.incubator.vector,
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
@@ -164,7 +165,8 @@ module java.base {
     exports jdk.internal.loader to
         java.instrument,
         java.logging,
-        java.naming;
+        java.naming,
+        jdk.incubator.foreign;
     exports jdk.internal.jmod to
         jdk.compiler,
         jdk.jlink;
@@ -217,7 +219,8 @@ module java.base {
     exports jdk.internal.platform to
         jdk.management;
     exports jdk.internal.ref to
-        java.desktop;
+        java.desktop,
+        jdk.incubator.foreign;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
@@ -229,6 +232,7 @@ module java.base {
         jdk.internal.jvmstat,
         jdk.management.agent;
     exports jdk.internal.vm.annotation to
+        java.instrument,
         jdk.internal.vm.ci,
         jdk.incubator.vector,
         jdk.incubator.foreign,
@@ -349,6 +353,8 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
+    exports jdk.internal.invoke to
+        jdk.incubator.foreign;
 
 
     // the service types defined by the APIs in this module

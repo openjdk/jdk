@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@ package sun.java2d.cmm.lcms;
 
 import java.awt.color.CMMException;
 import java.awt.color.ICC_Profile;
+
 import sun.java2d.cmm.ColorTransform;
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.Profile;
-import sun.java2d.cmm.lcms.LCMSProfile.TagData;
 
-public class LCMS implements PCMM {
+final class LCMS implements PCMM {
 
     /* methods invoked from ICC_Profile */
     @Override
@@ -47,80 +47,11 @@ public class LCMS implements PCMM {
         return null;
     }
 
-    private native long loadProfileNative(byte[] data, Object ref);
-
-    private LCMSProfile getLcmsProfile(Profile p) {
+    private static LCMSProfile getLcmsProfile(Profile p) {
         if (p instanceof LCMSProfile) {
             return (LCMSProfile)p;
         }
         throw new CMMException("Invalid profile: " + p);
-    }
-
-
-    @Override
-    public void freeProfile(Profile p) {
-        // we use disposer, so this method does nothing
-    }
-
-    @Override
-    public int getProfileSize(final Profile p) {
-        synchronized (p) {
-            return getProfileSizeNative(getLcmsProfile(p).getLcmsPtr());
-        }
-    }
-
-    private native int getProfileSizeNative(long ptr);
-
-    @Override
-    public void getProfileData(final Profile p, byte[] data) {
-        synchronized (p) {
-            getProfileDataNative(getLcmsProfile(p).getLcmsPtr(), data);
-        }
-    }
-
-    private native void getProfileDataNative(long ptr, byte[] data);
-
-    @Override
-    public int getTagSize(Profile p, int tagSignature) {
-        final LCMSProfile profile = getLcmsProfile(p);
-
-        synchronized (profile) {
-            TagData t = profile.getTag(tagSignature);
-            return t == null ? 0 : t.getSize();
-        }
-    }
-
-    static native byte[] getTagNative(long profileID, int signature);
-
-    @Override
-    public void getTagData(Profile p, int tagSignature, byte[] data)
-    {
-        final LCMSProfile profile = getLcmsProfile(p);
-
-        synchronized (profile) {
-            TagData t = profile.getTag(tagSignature);
-            if (t != null) {
-                t.copyDataTo(data);
-            }
-        }
-    }
-
-    @Override
-    public synchronized void setTagData(Profile p, int tagSignature, byte[] data) {
-        final LCMSProfile profile = getLcmsProfile(p);
-
-        synchronized (profile) {
-            profile.clearTagCache();
-
-            // Now we are going to update the profile with new tag data
-            // In some cases, we may change the pointer to the native
-            // profile.
-            //
-            // If we fail to write tag data for any reason, the old pointer
-            // should be used.
-            setTagDataNative(profile.getLcmsPtr(),
-                    tagSignature, data);
-        }
     }
 
     /**
@@ -133,10 +64,27 @@ public class LCMS implements PCMM {
      * Throws CMMException if operation fails, preserve old profile from
      * destruction.
      */
-    private native void setTagDataNative(long ptr, int tagSignature,
-                                               byte[] data);
+    static native void setTagDataNative(long ptr, int tagSignature, byte[] data);
+    static native byte[] getProfileDataNative(long ptr);
+    static native byte[] getTagNative(long profileID, int signature);
+    private static native long loadProfileNative(byte[] data, Object ref);
 
-    public static synchronized native LCMSProfile getProfileID(ICC_Profile profile);
+    @Override
+    public byte[] getProfileData(Profile p) {
+        return getLcmsProfile(p).getProfileData();
+    }
+
+    @Override
+    public byte[] getTagData(Profile p, int tagSignature) {
+        return getLcmsProfile(p).getTag(tagSignature);
+    }
+
+    @Override
+    public synchronized void setTagData(Profile p, int tagSignature, byte[] data) {
+        getLcmsProfile(p).setTag(tagSignature, data);
+    }
+
+    static synchronized native LCMSProfile getProfileID(ICC_Profile profile);
 
     /* Helper method used from LCMSColorTransfrom */
     static long createTransform(

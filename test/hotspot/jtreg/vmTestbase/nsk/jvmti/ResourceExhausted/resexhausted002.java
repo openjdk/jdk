@@ -64,8 +64,9 @@ public class resexhausted002 {
         }
 
         System.gc();
-        if ( ! Helper.checkResult("creating " + count + " objects") )
+        if (!Helper.checkResult(Helper.JVMTI_RESOURCE_EXHAUSTED_JAVA_HEAP, "creating " + count + " objects")) {
             return Consts.TEST_FAILED;
+        }
 
         return Consts.TEST_PASSED;
     }

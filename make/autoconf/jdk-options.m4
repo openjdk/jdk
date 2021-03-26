@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -388,9 +388,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
     UTIL_FIXUP_PATH(JCOV_HOME)
     if test "x$with_jcov_input_jdk" != "x" ; then
       JCOV_INPUT_JDK="$with_jcov_input_jdk"
-      if test ! -f "$JCOV_INPUT_JDK/bin/java$EXE_SUFFIX"; then
+      if test ! -f "$JCOV_INPUT_JDK/bin/java" && test ! -f "$JCOV_INPUT_JDK/bin/java.exe"; then
         AC_MSG_RESULT([fail])
-        AC_MSG_ERROR([Invalid JDK bundle: "$JCOV_INPUT_JDK/bin/java$EXE_SUFFIX" does not exist])
+        AC_MSG_ERROR([Invalid JDK bundle: "$JCOV_INPUT_JDK/bin/java" does not exist])
       fi
       UTIL_FIXUP_PATH(JCOV_INPUT_JDK)
     fi
@@ -587,6 +587,30 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 
 ################################################################################
 #
+# Enable the alternative CDS core region alignment
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],
+[
+  UTIL_ARG_ENABLE(NAME: compatible-cds-alignment, DEFAULT: false,
+      RESULT: ENABLE_COMPATIBLE_CDS_ALIGNMENT,
+      DESC: [enable use alternative compatible cds core region alignment],
+      DEFAULT_DESC: [disabled],
+      CHECKING_MSG: [if compatible cds region alignment enabled],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if CDS archive is available])
+        if test "x$ENABLE_CDS" = "xfalse"; then
+          AVAILABLE=false
+          AC_MSG_RESULT([no (CDS is disabled)])
+        else
+          AVAILABLE=true
+          AC_MSG_RESULT([yes])
+        fi
+      ])
+  AC_SUBST(ENABLE_COMPATIBLE_CDS_ALIGNMENT)
+])
+
+################################################################################
+#
 # Disallow any output from containing absolute paths from the build system.
 # This setting defaults to allowed on debug builds and not allowed on release
 # builds.
@@ -640,7 +664,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     SOURCE_DATE=$($DATE +"%s")
     AC_MSG_RESULT([$SOURCE_DATE, from 'current'])
   elif test "x$with_source_date" = xversion; then
-    # Use the date from version-numbers
+    # Use the date from version-numbers.conf
     UTIL_GET_EPOCH_TIMESTAMP(SOURCE_DATE, $DEFAULT_VERSION_DATE)
     if test "x$SOURCE_DATE" = x; then
       AC_MSG_RESULT([unavailable])
@@ -664,10 +688,27 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     fi
   fi
 
-  UTIL_ARG_ENABLE(NAME: reproducible-build, DEFAULT: $with_source_date_present,
+  REPRODUCIBLE_BUILD_DEFAULT=$with_source_date_present
+
+  if test "x$OPENJDK_BUILD_OS" = xwindows && \
+      test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse; then
+    # To support banning absolute paths on Windows, we must use the -pathmap
+    # method, which requires reproducible builds.
+    REPRODUCIBLE_BUILD_DEFAULT=true
+  fi
+
+  UTIL_ARG_ENABLE(NAME: reproducible-build, DEFAULT: $REPRODUCIBLE_BUILD_DEFAULT,
       RESULT: ENABLE_REPRODUCIBLE_BUILD,
       DESC: [enable reproducible builds (not yet fully functional)],
-      DEFAULT_DESC: [enabled if --with-source-date is given])
+      DEFAULT_DESC: [enabled if --with-source-date is given or on Windows without absolute paths])
+
+  if test "x$OPENJDK_BUILD_OS" = xwindows && \
+      test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse && \
+      test "x$ENABLE_REPRODUCIBLE_BUILD" = xfalse; then
+    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-builds])
+    AC_MSG_NOTICE([with --disable-absolute-paths-in-output.])
+    AC_MSG_ERROR([Cannot continue])
+  fi
 
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)

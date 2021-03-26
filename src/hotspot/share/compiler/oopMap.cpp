@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,9 @@
 #endif
 #ifdef COMPILER2
 #include "opto/optoreg.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci_globals.hpp"
 #endif
 
 // OopMapStream
@@ -273,14 +276,14 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
         continue;
       }
 
-#ifndef TIERED
+#ifndef COMPILER2
       COMPILER1_PRESENT(ShouldNotReachHere();)
 #if INCLUDE_JVMCI
       if (UseJVMCICompiler) {
         ShouldNotReachHere();
       }
 #endif
-#endif // !TIERED
+#endif // !COMPILER2
       oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
       guarantee(loc != NULL, "missing saved register");
       oop *derived_loc = loc;
@@ -717,7 +720,7 @@ void DerivedPointerTable::add(oop *derived_loc, oop *base_loc) {
     );
   }
   // Set derived oop location to point to base.
-  *derived_loc = (oop)base_loc;
+  *derived_loc = cast_to_oop(base_loc);
   Entry* entry = new Entry(derived_loc, offset);
   Entry::_list->push(*entry);
 }
@@ -734,7 +737,7 @@ void DerivedPointerTable::update_pointers() {
     oop base = **(oop**)derived_loc;
     assert(Universe::heap()->is_in_or_null(base), "must be an oop");
 
-    *derived_loc = (oop)(cast_from_oop<address>(base) + offset);
+    *derived_loc = cast_to_oop(cast_from_oop<address>(base) + offset);
     assert(value_of_loc(derived_loc) - value_of_loc(&base) == offset, "sanity check");
 
     if (TraceDerivedPointers) {

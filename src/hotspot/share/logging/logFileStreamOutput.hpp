@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,20 @@ static LogFileStreamInitializer log_stream_initializer;
 
 // Base class for all FileStream-based log outputs.
 class LogFileStreamOutput : public LogOutput {
+ private:
+  bool                _write_error_is_shown;
  protected:
   FILE*               _stream;
   size_t              _decorator_padding[LogDecorators::Count];
 
-  LogFileStreamOutput(FILE *stream) : _stream(stream) {
+  LogFileStreamOutput(FILE *stream) : _write_error_is_shown(false), _stream(stream) {
     for (size_t i = 0; i < LogDecorators::Count; i++) {
       _decorator_padding[i] = 0;
     }
   }
 
   int write_decorations(const LogDecorations& decorations);
+  bool flush();
 
  public:
   virtual int write(const LogDecorations& decorations, const char* msg);

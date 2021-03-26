@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public:
   static inline uint32_t extract(uint32_t val, int msb, int lsb) {
     int nbits = msb - lsb + 1;
     assert_cond(msb >= lsb);
-    uint32_t mask = (1U << nbits) - 1;
+    uint32_t mask = checked_cast<uint32_t>(right_n_bits(nbits));
     uint32_t result = val >> lsb;
     result &= mask;
     return result;
@@ -219,7 +219,7 @@ public:
     int nbits = msb - lsb + 1;
     guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);
-    unsigned mask = (1U << nbits) - 1;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     val <<= lsb;
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
@@ -233,7 +233,7 @@ public:
     int64_t chk = val >> (nbits - 1);
     guarantee (chk == -1 || chk == 0, "Field too big for insn");
     unsigned uval = val;
-    unsigned mask = (1U << nbits) - 1;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
     uval <<= lsb;
     mask <<= lsb;
@@ -245,9 +245,9 @@ public:
 
   void f(unsigned val, int msb, int lsb) {
     int nbits = msb - lsb + 1;
-    guarantee(val < (1U << nbits), "Field too big for insn");
+    guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);
-    unsigned mask = (1U << nbits) - 1;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     val <<= lsb;
     mask <<= lsb;
     insn |= val;
@@ -266,7 +266,7 @@ public:
     int64_t chk = val >> (nbits - 1);
     guarantee (chk == -1 || chk == 0, "Field too big for insn");
     unsigned uval = val;
-    unsigned mask = (1U << nbits) - 1;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
     f(uval, lsb + nbits - 1, lsb);
   }
@@ -299,7 +299,7 @@ public:
 
   unsigned get(int msb = 31, int lsb = 0) {
     int nbits = msb - lsb + 1;
-    unsigned mask = ((1U << nbits) - 1) << lsb;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits)) << lsb;
     assert_cond((bits & mask) == mask);
     return (insn & mask) >> lsb;
   }
@@ -504,8 +504,7 @@ class Address {
         if (size == 0) // It's a byte
           i->f(_ext.shift() >= 0, 12);
         else {
-          if (_ext.shift() > 0)
-            assert(_ext.shift() == (int)size, "bad shift");
+          assert(_ext.shift() <= 0 || _ext.shift() == (int)size, "bad shift");
           i->f(_ext.shift() > 0, 12);
         }
         i->f(0b10, 11, 10);
@@ -1535,7 +1534,7 @@ public:
   };
 
   enum SIMD_RegVariant {
-    B, H, S, D, Q
+    B, H, S, D, Q, INVALID
   };
 
   enum shift_kind { LSL, LSR, ASR, ROR };
@@ -1949,7 +1948,7 @@ public:
     starti;
     f(op31, 31, 29);
     f(0b11110, 28, 24);
-    f(type, 23, 22), f(1, 21), f(opcode, 15, 12), f(0b10, 11, 10);
+    f(type, 23, 22), f(1, 21), f(opcode, 15, 10);
     rf(Vm, 16), rf(Vn, 5), rf(Vd, 0);
   }
 
@@ -1958,21 +1957,23 @@ public:
     data_processing(op31, type, opcode, Vd, Vn, Vm);    \
   }
 
-  INSN(fmuls, 0b000, 0b00, 0b0000);
-  INSN(fdivs, 0b000, 0b00, 0b0001);
-  INSN(fadds, 0b000, 0b00, 0b0010);
-  INSN(fsubs, 0b000, 0b00, 0b0011);
-  INSN(fmaxs, 0b000, 0b00, 0b0100);
-  INSN(fmins, 0b000, 0b00, 0b0101);
-  INSN(fnmuls, 0b000, 0b00, 0b1000);
+  INSN(fabds,  0b011, 0b10, 0b110101);
+  INSN(fmuls,  0b000, 0b00, 0b000010);
+  INSN(fdivs,  0b000, 0b00, 0b000110);
+  INSN(fadds,  0b000, 0b00, 0b001010);
+  INSN(fsubs,  0b000, 0b00, 0b001110);
+  INSN(fmaxs,  0b000, 0b00, 0b010010);
+  INSN(fmins,  0b000, 0b00, 0b010110);
+  INSN(fnmuls, 0b000, 0b00, 0b100010);
 
-  INSN(fmuld, 0b000, 0b01, 0b0000);
-  INSN(fdivd, 0b000, 0b01, 0b0001);
-  INSN(faddd, 0b000, 0b01, 0b0010);
-  INSN(fsubd, 0b000, 0b01, 0b0011);
-  INSN(fmaxd, 0b000, 0b01, 0b0100);
-  INSN(fmind, 0b000, 0b01, 0b0101);
-  INSN(fnmuld, 0b000, 0b01, 0b1000);
+  INSN(fabdd,  0b011, 0b11, 0b110101);
+  INSN(fmuld,  0b000, 0b01, 0b000010);
+  INSN(fdivd,  0b000, 0b01, 0b000110);
+  INSN(faddd,  0b000, 0b01, 0b001010);
+  INSN(fsubd,  0b000, 0b01, 0b001110);
+  INSN(fmaxd,  0b000, 0b01, 0b010010);
+  INSN(fmind,  0b000, 0b01, 0b010110);
+  INSN(fnmuld, 0b000, 0b01, 0b100010);
 
 #undef INSN
 
@@ -2482,6 +2483,7 @@ public:
     f(T==T2D ? 1:0, 22); f(1, 21), rf(Vm, 16), f(op3, 15, 10), rf(Vn, 5), rf(Vd, 0);    \
   }
 
+  INSN(fabd, 1, 1, 0b110101);
   INSN(fadd, 0, 0, 0b110101);
   INSN(fdiv, 1, 0, 0b111111);
   INSN(fmul, 1, 0, 0b110111);
@@ -2633,15 +2635,20 @@ public:
     rf(Vn, 5), rf(Vd, 0);
   }
 
-  // (Floating-point) {a, b} -> (a + b)
-  void faddp(FloatRegister Vd, FloatRegister Vn, SIMD_RegVariant type) {
-    assert(type == D || type == S, "Wrong type for faddp");
-    starti;
-    f(0b011111100, 31, 23);
-    f(type == D ? 1 : 0, 22);
-    f(0b110000110110, 21, 10);
-    rf(Vn, 5), rf(Vd, 0);
+  // Floating-point AdvSIMD scalar pairwise
+#define INSN(NAME, op1, op2) \
+  void NAME(FloatRegister Vd, FloatRegister Vn, SIMD_RegVariant type) {                 \
+    starti;                                                                             \
+    assert(type == D || type == S, "Wrong type for faddp/fmaxp/fminp");                 \
+    f(0b0111111, 31, 25), f(op1, 24, 23),                                               \
+    f(type == S ? 0 : 1, 22), f(0b11000, 21, 17), f(op2, 16, 10), rf(Vn, 5), rf(Vd, 0); \
   }
+
+  INSN(faddp, 0b00, 0b0110110);
+  INSN(fmaxp, 0b00, 0b0111110);
+  INSN(fminp, 0b01, 0b0111110);
+
+#undef INSN
 
   void ins(FloatRegister Vd, SIMD_RegVariant T, FloatRegister Vn, int didx, int sidx) {
     starti;
@@ -2650,16 +2657,18 @@ public:
     f(sidx<<(int)T, 14, 11), f(1, 10), rf(Vn, 5), rf(Vd, 0);
   }
 
-#define INSN(NAME, op)                                                     \
-  void NAME(Register Rd, FloatRegister Vn, SIMD_RegVariant T, int idx) {   \
-    starti;                                                                \
-    f(0, 31), f(T==D ? 1:0, 30), f(0b001110000, 29, 21);                   \
-    f(((idx<<1)|1)<<(int)T, 20, 16), f(op, 15, 10);                        \
-    rf(Vn, 5), rf(Rd, 0);                                                  \
+#define INSN(NAME, cond, op1, op2)                                                      \
+  void NAME(Register Rd, FloatRegister Vn, SIMD_RegVariant T, int idx) {                \
+    starti;                                                                             \
+    assert(cond, "invalid register variant");                                           \
+    f(0, 31), f(op1, 30), f(0b001110000, 29, 21);                                       \
+    f(((idx << 1) | 1) << (int)T, 20, 16), f(op2, 15, 10);                              \
+    rf(Vn, 5), rf(Rd, 0);                                                               \
   }
 
-  INSN(umov, 0b001111);
-  INSN(smov, 0b001011);
+  INSN(umov, (T != Q), (T == D ? 1 : 0), 0b001111);
+  INSN(smov, (T < D),  1,                0b001011);
+
 #undef INSN
 
 #define INSN(NAME, opc, opc2, isSHR)                                    \
@@ -2678,6 +2687,7 @@ public:
      *   1xxx xxx       1D/2D,  shift = UInt(immh:immb) - 64            \
      *   (1D is RESERVED)                                               \
      */                                                                 \
+    guarantee(!isSHR || (isSHR && (shift != 0)), "impossible encoding");\
     assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");           \
     int cVal = (1 << (((T >> 1) + 3) + (isSHR ? 1 : 0)));               \
     int encodedShift = isSHR ? cVal - shift : cVal + shift;             \
@@ -2688,6 +2698,8 @@ public:
   INSN(shl,  0, 0b010101, /* isSHR = */ false);
   INSN(sshr, 0, 0b000001, /* isSHR = */ true);
   INSN(ushr, 1, 0b000001, /* isSHR = */ true);
+  INSN(usra, 1, 0b000101, /* isSHR = */ true);
+  INSN(ssra, 0, 0b000101, /* isSHR = */ true);
 
 #undef INSN
 

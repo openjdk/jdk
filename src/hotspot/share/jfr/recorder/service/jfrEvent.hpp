@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_JFR_RECORDER_SERVICE_JFREVENT_HPP
 
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
+#include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
@@ -63,9 +64,14 @@ class JfrEvent {
   jlong _start_time;
   jlong _end_time;
   bool _started;
+  bool _untimed;
+  bool _should_commit;
+  bool _evaluated;
 
  protected:
-  JfrEvent(EventStartTime timing=TIMED) : _start_time(0), _end_time(0), _started(false)
+  JfrEvent(EventStartTime timing=TIMED) : _start_time(0), _end_time(0),
+                                          _started(false), _untimed(timing == UNTIMED),
+                                          _should_commit(false), _evaluated(false)
 #ifdef ASSERT
   , _verifier()
 #endif
@@ -79,19 +85,12 @@ class JfrEvent {
   }
 
   void commit() {
-    if (!should_commit()) {
+    assert(!_verifier.committed(), "event already committed");
+    if (!should_write()) {
       return;
     }
-    assert(!_verifier.committed(), "event already committed");
-    if (_start_time == 0) {
-      set_starttime(JfrTicks::now());
-    } else if (_end_time == 0) {
-      set_endtime(JfrTicks::now());
-    }
-    if (should_write()) {
-      write_event();
-      DEBUG_ONLY(_verifier.set_committed();)
-    }
+    write_event();
+    DEBUG_ONLY(_verifier.set_committed();)
   }
 
  public:
@@ -147,16 +146,44 @@ class JfrEvent {
     return T::hasStackTrace;
   }
 
-  bool should_commit() {
+  bool is_started() const {
     return _started;
+  }
+
+  bool should_commit() {
+    if (!_started) {
+      return false;
+    }
+    if (_untimed) {
+      return true;
+    }
+    if (_evaluated) {
+      return _should_commit;
+    }
+    _should_commit = evaluate();
+    _evaluated = true;
+    return _should_commit;
   }
 
  private:
   bool should_write() {
-    if (T::isInstant || T::isRequestable || T::hasCutoff) {
-      return true;
+    return _started && (_evaluated ? _should_commit : evaluate());
+  }
+
+  bool evaluate() {
+    assert(_started, "invariant");
+    if (_start_time == 0) {
+      set_starttime(JfrTicks::now());
+    } else if (_end_time == 0) {
+      set_endtime(JfrTicks::now());
     }
-    return (_end_time - _start_time) >= JfrEventSetting::threshold(T::eventId);
+    if (T::isInstant || T::isRequestable) {
+      return T::hasThrottle ? JfrEventThrottler::accept(T::eventId, _untimed ? 0 : _start_time) : true;
+    }
+    if (_end_time - _start_time < JfrEventSetting::threshold(T::eventId)) {
+      return false;
+    }
+    return T::hasThrottle ? JfrEventThrottler::accept(T::eventId, _untimed ? 0 : _end_time) : true;
   }
 
   void write_event() {

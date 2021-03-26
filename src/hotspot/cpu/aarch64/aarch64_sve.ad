@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ operand vmemA_immLOffset4()
   interface(CONST_INTER);
 %}
 
-
 operand vmemA_indOffI4(iRegP reg, vmemA_immIOffset4 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -88,7 +87,6 @@ source_hpp %{
 %}
 
 source %{
-
   static inline BasicType vector_element_basic_type(const MachNode* n) {
     const TypeVect* vt = n->bottom_type()->is_vect();
     return vt->element_basic_type();
@@ -99,6 +97,27 @@ source %{
     Node* def = use->in(def_idx);
     const TypeVect* vt = def->bottom_type()->is_vect();
     return vt->element_basic_type();
+  }
+
+  static Assembler::SIMD_RegVariant elemBytes_to_regVariant(int esize) {
+    switch(esize) {
+      case 1:
+        return Assembler::B;
+      case 2:
+        return Assembler::H;
+      case 4:
+        return Assembler::S;
+      case 8:
+        return Assembler::D;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+    return Assembler::INVALID;
+  }
+
+  static Assembler::SIMD_RegVariant elemType_to_regVariant(BasicType bt) {
+    return elemBytes_to_regVariant(type2aelembytes(bt));
   }
 
   typedef void (C2_MacroAssembler::* sve_mem_insn_predicate)(FloatRegister Rt, Assembler::SIMD_RegVariant T,
@@ -189,14 +208,11 @@ source %{
         return true;
     }
   }
-
 %}
 
 definitions %{
   int_def SVE_COST             (200, 200);
 %}
-
-
 
 
 // All SVE instructions
@@ -231,7 +247,6 @@ instruct storeV(vReg src, vmemA mem) %{
   %}
   ins_pipe(pipe_slow);
 %}
-
 
 // vector abs
 
@@ -464,56 +479,44 @@ instruct vdivD(vReg dst_src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
-// vector max
+// vector min/max
 
-instruct vmaxF(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= 4 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst_src1 (MaxV dst_src1 src2));
-  ins_cost(SVE_COST);
-  format %{ "sve_fmax $dst_src1, $dst_src1, $src2\t # vector (sve) (S)" %}
-  ins_encode %{
-    __ sve_fmax(as_FloatRegister($dst_src1$$reg), __ S,
-         ptrue, as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmaxD(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= 2 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst_src1 (MaxV dst_src1 src2));
-  ins_cost(SVE_COST);
-  format %{ "sve_fmax $dst_src1, $dst_src1, $src2\t # vector (sve) (D)" %}
-  ins_encode %{
-    __ sve_fmax(as_FloatRegister($dst_src1$$reg), __ D,
-         ptrue, as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vminF(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= 4 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+instruct vmin(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
   match(Set dst_src1 (MinV dst_src1 src2));
   ins_cost(SVE_COST);
-  format %{ "sve_fmin $dst_src1, $dst_src1, $src2\t # vector (sve) (S)" %}
+  format %{ "sve_min $dst_src1, $dst_src1, $src2\t # vector (sve)" %}
   ins_encode %{
-    __ sve_fmin(as_FloatRegister($dst_src1$$reg), __ S,
-         ptrue, as_FloatRegister($src2$$reg));
+    BasicType bt = vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+    if (is_floating_point_type(bt)) {
+      __ sve_fmin(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    } else {
+      assert(is_integral_type(bt), "Unsupported type");
+      __ sve_smin(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    }
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vminD(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= 2 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst_src1 (MinV dst_src1 src2));
+instruct vmax(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst_src1 (MaxV dst_src1 src2));
   ins_cost(SVE_COST);
-  format %{ "sve_fmin $dst_src1, $dst_src1, $src2\t # vector (sve) (D)" %}
+  format %{ "sve_max $dst_src1, $dst_src1, $src2\t # vector (sve)" %}
   ins_encode %{
-    __ sve_fmin(as_FloatRegister($dst_src1$$reg), __ D,
-         ptrue, as_FloatRegister($src2$$reg));
+    BasicType bt = vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+    if (is_floating_point_type(bt)) {
+      __ sve_fmax(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    } else {
+      assert(is_integral_type(bt), "Unsupported type");
+      __ sve_smax(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    }
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1111,7 +1114,6 @@ instruct replicateL(vReg dst, iRegL src) %{
   ins_pipe(pipe_slow);
 %}
 
-
 instruct replicateB_imm8(vReg dst, immI8 con) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 16);
   match(Set dst (ReplicateB con));
@@ -1155,7 +1157,6 @@ instruct replicateL_imm8(vReg dst, immL8_shift8 con) %{
   %}
   ins_pipe(pipe_slow);
 %}
-
 
 instruct replicateF(vReg dst, vRegF src) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 4);
@@ -1699,4 +1700,3 @@ instruct vsubD(vReg dst, vReg src1, vReg src2) %{
   %}
   ins_pipe(pipe_slow);
 %}
-

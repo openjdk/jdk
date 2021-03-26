@@ -30,7 +30,8 @@
 </HEAD>
 <BODY LANG="en-US" DIR="LTR">
 <H1 style="text-align:center">Networking Properties</H1>
-<P>There are a few standard system properties used to
+<p>
+There are a few standard system properties used to
 alter the mechanisms and behavior of the various classes of the
 java.net package. Some are checked only once at startup of the VM,
 and therefore are best set using the -D option of the java command,
@@ -38,7 +39,8 @@ while others have a more dynamic nature and can also be changed using
 the <a href="../../lang/System.html#setProperty(java.lang.String,java.lang.String)">System.setProperty()</a> API.
 The purpose of this document is to list
 and detail all of these properties.</P>
-<P>If there is no special note, a property value is checked every time it is used.</P>
+<p>
+If there is no special note, a property value is checked every time it is used.</P>
 <a id="Ipv4IPv6"></a>
 <H2>IPv4 / IPv6</H2>
 <UL>
@@ -240,5 +242,56 @@ tuning on how the cache is operating.</P>
 <P>Since these 2 properties are part of the security policy, they are
 not set by either the -D option or the {@code System.setProperty()} API,
 instead they are set as security properties.</P>
+<a id="Unixdomain"></a>
+<H2>Unix domain sockets</H2>
+<p>
+Calling {@link java.nio.channels.ServerSocketChannel#bind(SocketAddress,int) ServerSocketChannel.bind}
+with a {@code null} address parameter will bind to an <i>automatically assigned</i> socket address.
+For Unix domain sockets, this means a unique path in some predefined system temporary directory.
+There are a number of system (and networking) properties that affect this behavior.
+<p>
+Unix domain socket addresses are limited in length to approximately 100 
+bytes (depending on the platform), it is important to ensure that the temporary directory's name
+together with the filename used for the socket (currently a name similar to
+{@code socket_1679697142}) does not exceed this limit. The following properties
+can be used to control the selection of this directory:
+<ul>
+	<li><p><b>{@systemProperty jdk.net.unixdomain.tmpdir}</b> This can be set as 
+	a networking property in {@code conf/net.properties} If set, this specifies the 
+	directory to use for automatically bound server socket addresses. On some platforms,
+	(eg some Unix systems) this will have a predefined default value. On others,
+	(eg Windows) there is no default value. Either way, it is always possible
+	to override the networking property with a system property of the same name
+	set on the command line. If neither of the networking nor system property
+	are set, then some systems (eg Windows)  may check a commonly used environment 
+	variable as temporary directory.
+	<li><p><b>{@systemProperty java.io.tmpdir}</b> If the previous step fails to locate
+	a directory to use, then the directory identified by the system property
+	{@code java.io.tmpdir} is used.
+</ul>
+More information about the platform specific behavior can be seen in the 
+{@code conf/net.properties} configuration file.
+<p>
+<i>Implicit</i> binding of a {@link java.nio.channels.SocketChannel SocketChannel}
+<p>
+If a client socket is connected to a remote destination without calling {@code bind} first,
+then the socket is <i>implicitly</i> bound. In this case, <i>Unix domain</i> sockets 
+are <i>unnamed</i> (ie. their path is empty). This behavior is not affected by any
+system or networking properties.
+<p>
+<a id="EnhancedExceptions"></a>
+<H2>Enhanced exception messages</H2>
+By default, for security reasons, exception messages do not include potentially sensitive
+security information such as hostnames or Unix domain socket address paths.
+The following property can be used to relax this restriction, for debugging and other
+purposes.
+<ul>
+	<li><p><b>{@systemProperty jdk.includeInExceptions}</b> This is typically set to
+	a comma separated list of keywords that refer to exception types whose messages
+	may be enhanced with more detailed information. If the value includes the string
+	{@code hostInfo} then socket addresses will be included in exception message
+	texts (eg hostnames, Unix domain socket address paths).
+</ul>
+
 </BODY>
 </HTML>

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -44,12 +42,16 @@ public class TestGetField {
         EventType type = EventType.getEventType(MyEvent.class);
 
         ValueDescriptor v = type.getField("myByte");
-        Asserts.assertNotNull(v, "getFiled(myByte) was null");
+        Asserts.assertNotNull(v, "getField(myByte) was null");
         Asserts.assertEquals(v.getTypeName(), "byte", "myByte was not type byte");
 
         v = type.getField("myInt");
-        Asserts.assertNotNull(v, "getFiled(myInt) was null");
+        Asserts.assertNotNull(v, "getField(myInt) was null");
         Asserts.assertEquals(v.getTypeName(), "int", "myInt was not type int");
+
+        v = type.getField("eventThread.group.name");
+        Asserts.assertNotNull(v, "getField(eventThread.group.name) was null");
+        Asserts.assertEquals(v.getTypeName(), "java.lang.String", "eventThread.group.name was not type java.lang.String");
 
         v = type.getField("myStatic");
         Asserts.assertNull(v, "got static field");
@@ -59,6 +61,7 @@ public class TestGetField {
 
         v = type.getField("");
         Asserts.assertNull(v, "got field for empty name");
+
 
         try {
             v = type.getField(null);

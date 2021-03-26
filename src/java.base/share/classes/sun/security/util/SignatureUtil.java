@@ -195,9 +195,9 @@ public class SignatureUtil {
     }
 
     public static class EdDSADigestAlgHolder {
-        public final static AlgorithmId sha512;
-        public final static AlgorithmId shake256;
-        public final static AlgorithmId shake256$512;
+        public static final AlgorithmId sha512;
+        public static final AlgorithmId shake256;
+        public static final AlgorithmId shake256$512;
 
         static {
             try {
@@ -508,17 +508,17 @@ public class SignatureUtil {
 
     // Useful PSSParameterSpec objects
     private static class PSSParamsHolder {
-        final static PSSParameterSpec PSS_256_SPEC = new PSSParameterSpec(
+        static final PSSParameterSpec PSS_256_SPEC = new PSSParameterSpec(
                 "SHA-256", "MGF1",
-                new MGF1ParameterSpec("SHA-256"),
+                MGF1ParameterSpec.SHA256,
                 32, PSSParameterSpec.TRAILER_FIELD_BC);
-        final static PSSParameterSpec PSS_384_SPEC = new PSSParameterSpec(
+        static final PSSParameterSpec PSS_384_SPEC = new PSSParameterSpec(
                 "SHA-384", "MGF1",
-                new MGF1ParameterSpec("SHA-384"),
+                MGF1ParameterSpec.SHA384,
                 48, PSSParameterSpec.TRAILER_FIELD_BC);
-        final static PSSParameterSpec PSS_512_SPEC = new PSSParameterSpec(
+        static final PSSParameterSpec PSS_512_SPEC = new PSSParameterSpec(
                 "SHA-512", "MGF1",
-                new MGF1ParameterSpec("SHA-512"),
+                MGF1ParameterSpec.SHA512,
                 64, PSSParameterSpec.TRAILER_FIELD_BC);
     }
 

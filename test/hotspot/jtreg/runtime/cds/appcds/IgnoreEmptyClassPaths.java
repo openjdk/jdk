@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,13 @@ public class IgnoreEmptyClassPaths {
     String cp_exec = sep + jar1 + sep + sep + jar2 + sep;
 
     TestCommon.testDump(cp_dump, TestCommon.list("Hello", "HelloMore"),
-                        "-XX:+TraceClassPaths", "-XX:+IgnoreEmptyClassPaths");
+                        "-Xlog:class+path=info", "-XX:+IgnoreEmptyClassPaths");
 
     TestCommon.run(
         "-verbose:class",
         "-cp", cp_exec,
         "-XX:+IgnoreEmptyClassPaths", // should affect classpath even if placed after the "-cp" argument
-        "-XX:+TraceClassPaths",
+        "-Xlog:class+path=info",
         "HelloMore")
       .assertNormalExit();
   }

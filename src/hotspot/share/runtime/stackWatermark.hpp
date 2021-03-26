@@ -101,7 +101,7 @@ protected:
   void yield_processing();
   static bool has_barrier(const frame& f);
   void ensure_safe(const frame& f);
-  void assert_is_frame_safe(const frame& f) PRODUCT_RETURN;
+  void assert_is_frame_safe(const frame& f) NOT_DEBUG_RETURN;
   bool is_frame_safe(const frame& f);
 
   // API for consumers of the stack watermark barrier.
@@ -130,6 +130,7 @@ public:
   void set_next(StackWatermark* n) { _next = n; }
 
   void link_watermark(StackWatermark* watermark);
+  DEBUG_ONLY(StackWatermark* linked_watermark() const { return _linked_watermark; })
 
   uintptr_t watermark();
   uintptr_t last_processed();

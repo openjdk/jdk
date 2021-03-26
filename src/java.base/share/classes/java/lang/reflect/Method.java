@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.internal.reflect.MethodAccessor;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.ExceptionProxy;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 import sun.reflect.generics.repository.MethodRepository;
@@ -66,6 +67,7 @@ import java.util.StringJoiner;
  * @since 1.1
  */
 public final class Method extends Executable {
+    @Stable
     private Class<?>            clazz;
     private int                 slot;
     // This is guaranteed to be interned by the VM in the 1.4
@@ -74,6 +76,7 @@ public final class Method extends Executable {
     private Class<?>            returnType;
     private Class<?>[]          parameterTypes;
     private Class<?>[]          exceptionTypes;
+    @Stable
     private int                 modifiers;
     // Generics and annotations support
     private transient String              signature;
@@ -231,6 +234,7 @@ public final class Method extends Executable {
 
     /**
      * {@inheritDoc}
+     * @jls 8.4.3 Method Modifiers
      */
     @Override
     public int getModifiers() {
@@ -241,6 +245,7 @@ public final class Method extends Executable {
      * {@inheritDoc}
      * @throws GenericSignatureFormatError {@inheritDoc}
      * @since 1.5
+     * @jls 8.4.4 Generic Methods
      */
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -279,9 +284,9 @@ public final class Method extends Executable {
      *     specified in
      *     <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the underlying method's
-     *     return type refers to a non-existent type declaration
+     *     return type refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if the
-     *     underlying method's return typed refers to a parameterized
+     *     underlying method's return type refers to a parameterized
      *     type that cannot be instantiated for any reason
      * @since 1.5
      */
@@ -355,8 +360,7 @@ public final class Method extends Executable {
      * and formal parameter types and return type.
      */
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof Method) {
-            Method other = (Method)obj;
+        if (obj instanceof Method other) {
             if ((getDeclaringClass() == other.getDeclaringClass())
                 && (getName() == other.getName())) {
                 if (!returnType.equals(other.getReturnType()))
@@ -402,7 +406,7 @@ public final class Method extends Executable {
      *
      * @jls 8.4.3 Method Modifiers
      * @jls 9.4 Method Declarations
-     * @jls 9.6.1 Annotation Type Elements
+     * @jls 9.6.1 Annotation Interface Elements
      */
     public String toString() {
         return sharedToString(Modifier.methodModifiers(),
@@ -472,7 +476,7 @@ public final class Method extends Executable {
      *
      * @jls 8.4.3 Method Modifiers
      * @jls 9.4 Method Declarations
-     * @jls 9.6.1 Annotation Type Elements
+     * @jls 9.6.1 Annotation Interface Elements
      */
     @Override
     public String toGenericString() {
@@ -565,12 +569,44 @@ public final class Method extends Executable {
     }
 
     /**
-     * Returns {@code true} if this method is a bridge
-     * method; returns {@code false} otherwise.
+     * {@return {@code true} if this method is a bridge
+     * method; returns {@code false} otherwise}
      *
-     * @return true if and only if this method is a bridge
-     * method as defined by the Java Language Specification.
+     * @apiNote
+     * A bridge method is a {@linkplain isSynthetic synthetic} method
+     * created by a Java compiler alongside a method originating from
+     * the source code. Bridge methods are used by Java compilers in
+     * various circumstances to span differences in Java programming
+     * language semantics and JVM semantics.
+     *
+     * <p>One example use of bridge methods is as a technique for a
+     * Java compiler to support <i>covariant overrides</i>, where a
+     * subclass overrides a method and gives the new method a more
+     * specific return type than the method in the superclass.  While
+     * the Java language specification forbids a class declaring two
+     * methods with the same parameter types but a different return
+     * type, the virtual machine does not. A common case where
+     * covariant overrides are used is for a {@link
+     * java.lang.Cloneable Cloneable} class where the {@link
+     * Object#clone() clone} method inherited from {@code
+     * java.lang.Object} is overridden and declared to return the type
+     * of the class. For example, {@code Object} declares
+     * <pre>{@code protected Object clone() throws CloneNotSupportedException {...}}</pre>
+     * and {@code EnumSet<E>} declares its language-level {@linkplain
+     * java.util.EnumSet#clone() covariant override}
+     * <pre>{@code public EnumSet<E> clone() {...}}</pre>
+     * If this technique was being used, the resulting class file for
+     * {@code EnumSet} would have two {@code clone} methods, one
+     * returning {@code EnumSet<E>} and the second a bridge method
+     * returning {@code Object}. The bridge method is a JVM-level
+     * override of {@code Object.clone()}.  The body of the {@code
+     * clone} bridge method calls its non-bridge counterpart and
+     * returns its result.
      * @since 1.5
+     *
+     * @jls 8.4.8.3 Requirements in Overriding and Hiding
+     * @jls 15.12.4.5 Create Frame, Synchronize, Transfer Control
+     * @jvms 4.6 Methods
      */
     public boolean isBridge() {
         return (getModifiers() & Modifier.BRIDGE) != 0;
@@ -579,6 +615,7 @@ public final class Method extends Executable {
     /**
      * {@inheritDoc}
      * @since 1.5
+     * @jls 8.4.1 Formal Parameters
      */
     @Override
     public boolean isVarArgs() {
@@ -588,6 +625,7 @@ public final class Method extends Executable {
     /**
      * {@inheritDoc}
      * @jls 13.1 The Form of a Binary
+     * @jvms 4.6 Methods
      * @since 1.5
      */
     @Override
@@ -600,12 +638,12 @@ public final class Method extends Executable {
      * method; returns {@code false} otherwise.
      *
      * A default method is a public non-abstract instance method, that
-     * is, a non-static method with a body, declared in an interface
-     * type.
+     * is, a non-static method with a body, declared in an interface.
      *
      * @return true if and only if this method is a default
      * method as defined by the Java Language Specification.
      * @since 1.8
+     * @jls 9.4 Method Declarations
      */
     public boolean isDefault() {
         // Default methods are public non-abstract instance methods
@@ -663,6 +701,7 @@ public final class Method extends Executable {
      *     {@link Class} and no definition can be found for the
      *     default class value.
      * @since  1.5
+     * @jls 9.6.2 Defaults for Annotation Type Elements
      */
     public Object getDefaultValue() {
         if  (annotationDefault == null)
@@ -675,8 +714,7 @@ public final class Method extends Executable {
                 getConstantPool(getDeclaringClass()),
             getDeclaringClass());
         if (result instanceof ExceptionProxy) {
-            if (result instanceof TypeNotPresentExceptionProxy) {
-                TypeNotPresentExceptionProxy proxy = (TypeNotPresentExceptionProxy)result;
+            if (result instanceof TypeNotPresentExceptionProxy proxy) {
                 throw new TypeNotPresentException(proxy.typeName(), proxy.getCause());
             }
             throw new AnnotationFormatError("Invalid default: " + this);

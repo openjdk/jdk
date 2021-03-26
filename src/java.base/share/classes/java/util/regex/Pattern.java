@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,7 +539,7 @@ import jdk.internal.util.ArraysSupport;
  *
  * <p> This class is in conformance with Level 1 of <a
  * href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
- * Standard #18: Unicode Regular Expression</i></a>, plus RL2.1
+ * Standard #18: Unicode Regular Expressions</i></a>, plus RL2.1
  * Canonical Equivalents and RL2.2 Extended Grapheme Clusters.
  * <p>
  * <b>Unicode escape sequences</b> such as <code>&#92;u2014</code> in Java source code
@@ -602,7 +602,7 @@ import jdk.internal.util.ArraysSupport;
  * {@code gc}) as in {@code general_category=Lu} or {@code gc=Lu}.
  * <p>
  * The supported categories are those of
- * <a href="http://www.unicode.org/unicode/standard/standard.html">
+ * <a href="http://www.unicode.org/standard/standard.html">
  * <i>The Unicode Standard</i></a> in the version specified by the
  * {@link java.lang.Character Character} class. The category names are those
  * defined in the Standard, both normative and informative.
@@ -630,8 +630,8 @@ import jdk.internal.util.ArraysSupport;
  * <p>
  * The following <b>Predefined Character classes</b> and <b>POSIX character classes</b>
  * are in conformance with the recommendation of <i>Annex C: Compatibility Properties</i>
- * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Regular Expression
- * </i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
+ * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical Standard #18:
+ * Unicode Regular Expressions</i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
  *
  * <table class="striped">
  * <caption style="display:none">predefined and posix character classes in Unicode mode</caption>
@@ -906,7 +906,7 @@ public final class Pattern
      * <i>Predefined character classes</i> and <i>POSIX character classes</i>
      * are in conformance with
      * <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
-     * Standard #18: Unicode Regular Expression</i></a>
+     * Standard #18: Unicode Regular Expressions</i></a>
      * <i>Annex C: Compatibility Properties</i>.
      * <p>
      * The UNICODE_CHARACTER_CLASS mode can also be enabled via the embedded
@@ -2063,7 +2063,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         Node prev = null;
         Node firstTail = null;
         Branch branch = null;
-        BranchConn branchConn = null;
+        Node branchConn = null;
 
         for (;;) {
             Node node = sequence(end);
@@ -2211,24 +2211,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 break;
             }
 
-            if (node instanceof LineEnding) {
-                LineEnding le = (LineEnding)node;
-                node = closureOfLineEnding(le);
-
-                if (node != le) {
-                    // LineEnding was replaced with an anonymous group
-                    if (head == null)
-                        head = node;
-                    else
-                        tail.next = node;
-                    // Double return: Tail was returned in root
-                    tail = root;
-                    continue;
-                }
-            } else {
-                node = closure(node);
-            }
-
+            node = closure(node);
             /* save the top dot-greedy nodes (.*, .+) as well
             if (node instanceof GreedyCharProperty &&
                 ((GreedyCharProperty)node).cp instanceof Dot) {
@@ -3096,31 +3079,18 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         if (saveTCNCount < topClosureNodes.size())
             topClosureNodes.subList(saveTCNCount, topClosureNodes.size()).clear();
 
-        return groupWithClosure(node, head, tail, capturingGroup);
-    }
-
-    /**
-     * Transforms a Group with quantifiers into some special constructs
-     * (such as Branch or Loop/GroupCurly), if necessary.
-     *
-     * This method is applied either to actual groups or to the Unicode
-     * linebreak (aka \\R) represented as an anonymous group.
-     */
-    private Node groupWithClosure(Node node, Node head, Node tail,
-                                  boolean capturingGroup)
-    {
         if (node instanceof Ques) {
             Ques ques = (Ques) node;
             if (ques.type == Qtype.POSSESSIVE) {
                 root = node;
                 return node;
             }
-            BranchConn branchConn = new BranchConn();
-            tail = tail.next = branchConn;
+            tail.next = new BranchConn();
+            tail = tail.next;
             if (ques.type == Qtype.GREEDY) {
-                head = new Branch(head, null, branchConn);
+                head = new Branch(head, null, tail);
             } else { // Reluctant quantifier
-                head = new Branch(null, head, branchConn);
+                head = new Branch(null, head, tail);
             }
             root = tail;
             return head;
@@ -3295,31 +3265,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             }
         }
         return new Curly(prev, cmin, MAX_REPS, qtype);
-    }
-
-    /**
-     * Processing repetition of a Unicode linebreak \\R.
-     */
-    private Node closureOfLineEnding(LineEnding le) {
-        int ch = peek();
-        if (ch != '?' && ch != '*' && ch != '+' && ch != '{') {
-            return le;
-        }
-
-        // Replace the LineEnding with an anonymous group
-        // (?:\\u000D\\u000A|[\\u000A\\u000B\\u000C\\u000D\\u0085\\u2028\\u2029])
-        Node grHead = createGroup(true);
-        Node grTail = root;
-        BranchConn branchConn = new BranchConn();
-        branchConn.next = grTail;
-        Node slice = new Slice(new int[] {0x0D, 0x0A});
-        slice.next = branchConn;
-        Node chClass = newCharProperty(x -> x == 0x0A || x == 0x0B ||
-                x == 0x0C || x == 0x0D || x == 0x85 || x == 0x2028 ||
-                x == 0x2029);
-        chClass.next = branchConn;
-        grHead.next = new Branch(slice, chClass, branchConn);
-        return groupWithClosure(closure(grHead), grHead, grTail, false);
     }
 
     /**
@@ -4777,8 +4722,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     static final class Branch extends Node {
         Node[] atoms = new Node[2];
         int size = 2;
-        BranchConn conn;
-        Branch(Node first, Node second, BranchConn branchConn) {
+        Node conn;
+        Branch(Node first, Node second, Node branchConn) {
             conn = branchConn;
             atoms[0] = first;
             atoms[1] = second;
@@ -4786,10 +4731,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
 
         void add(Node node) {
             if (size >= atoms.length) {
-                int len = ArraysSupport.newLength(size,
-                        1,    /* minimum growth */
-                        size  /* preferred growth */);
-                atoms = Arrays.copyOf(atoms, len);
+                Node[] tmp = new Node[atoms.length*2];
+                System.arraycopy(atoms, 0, tmp, 0, atoms.length);
+                atoms = tmp;
             }
             atoms[size++] = node;
         }

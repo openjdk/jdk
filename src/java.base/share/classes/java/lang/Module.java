@@ -96,6 +96,7 @@ import sun.security.util.SecurityConstants;
  *
  * @since 9
  * @see Class#getModule()
+ * @jls 7.7 Module Declarations
  */
 
 public final class Module implements AnnotatedElement {
@@ -169,6 +170,7 @@ public final class Module implements AnnotatedElement {
      * @return {@code true} if this is a named module
      *
      * @see ClassLoader#getUnnamedModule()
+     * @jls 7.7.5 Unnamed Modules
      */
     public boolean isNamed() {
         return name != null;
@@ -1077,9 +1079,9 @@ public final class Module implements AnnotatedElement {
      * <p> For named modules, the returned set contains an element for each
      * package in the module. </p>
      *
-     * <p> For unnamed modules, this method is the equivalent to invoking the
-     * {@link ClassLoader#getDefinedPackages() getDefinedPackages} method of
-     * this module's class loader and returning the set of package names. </p>
+     * <p> For unnamed modules, the returned set contains an element for
+     * each package that {@link ClassLoader#getDefinedPackages() has been defined}
+     * in the unnamed module.</p>
      *
      * @return the set of the package names of the packages in this module
      */
@@ -1094,10 +1096,10 @@ public final class Module implements AnnotatedElement {
             } else {
                 packages = loader.packages();
             }
-            return packages.map(Package::getName).collect(Collectors.toSet());
+            return packages.filter(p -> p.module() == this)
+                           .map(Package::getName).collect(Collectors.toSet());
         }
     }
-
 
     // -- creating Module objects --
 

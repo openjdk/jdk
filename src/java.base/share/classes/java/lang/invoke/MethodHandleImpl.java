@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.invoke.NativeEntryPoint;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.reflect.CallerSensitive;
@@ -565,55 +566,6 @@ abstract class MethodHandleImpl {
         }
     }
 
-    /** Factory method:  Spread selected argument. */
-    static MethodHandle makeSpreadArguments(MethodHandle target,
-                                            Class<?> spreadArgType, int spreadArgPos, int spreadArgCount) {
-        MethodType targetType = target.type();
-
-        for (int i = 0; i < spreadArgCount; i++) {
-            Class<?> arg = VerifyType.spreadArgElementType(spreadArgType, i);
-            if (arg == null)  arg = Object.class;
-            targetType = targetType.changeParameterType(spreadArgPos + i, arg);
-        }
-        target = target.asType(targetType);
-
-        MethodType srcType = targetType
-                .replaceParameterTypes(spreadArgPos, spreadArgPos + spreadArgCount, spreadArgType);
-        // Now build a LambdaForm.
-        MethodType lambdaType = srcType.invokerType();
-        Name[] names = arguments(spreadArgCount + 2, lambdaType);
-        int nameCursor = lambdaType.parameterCount();
-        int[] indexes = new int[targetType.parameterCount()];
-
-        for (int i = 0, argIndex = 1; i < targetType.parameterCount() + 1; i++, argIndex++) {
-            Class<?> src = lambdaType.parameterType(i);
-            if (i == spreadArgPos) {
-                // Spread the array.
-                MethodHandle aload = MethodHandles.arrayElementGetter(spreadArgType);
-                Name array = names[argIndex];
-                names[nameCursor++] = new Name(getFunction(NF_checkSpreadArgument), array, spreadArgCount);
-                for (int j = 0; j < spreadArgCount; i++, j++) {
-                    indexes[i] = nameCursor;
-                    names[nameCursor++] = new Name(new NamedFunction(aload, Intrinsic.ARRAY_LOAD), array, j);
-                }
-            } else if (i < indexes.length) {
-                indexes[i] = argIndex;
-            }
-        }
-        assert(nameCursor == names.length-1);  // leave room for the final call
-
-        // Build argument array for the call.
-        Name[] targetArgs = new Name[targetType.parameterCount()];
-        for (int i = 0; i < targetType.parameterCount(); i++) {
-            int idx = indexes[i];
-            targetArgs[i] = names[idx];
-        }
-        names[names.length - 1] = new Name(target, (Object[]) targetArgs);
-
-        LambdaForm form = new LambdaForm(lambdaType.parameterCount(), names, Kind.SPREAD);
-        return SimpleMethodHandle.make(srcType, form);
-    }
-
     static void checkSpreadArgument(Object av, int n) {
         if (av == null && n == 0) {
             return;
@@ -628,60 +580,6 @@ abstract class MethodHandleImpl {
         }
         // fall through to error:
         throw newIllegalArgumentException("array is not of length "+n);
-    }
-
-    /** Factory method:  Collect or filter selected argument(s). */
-    static MethodHandle makeCollectArguments(MethodHandle target,
-                MethodHandle collector, int collectArgPos, boolean retainOriginalArgs) {
-        MethodType targetType = target.type();          // (a..., c, [b...])=>r
-        MethodType collectorType = collector.type();    // (b...)=>c
-        int collectArgCount = collectorType.parameterCount();
-        Class<?> collectValType = collectorType.returnType();
-        int collectValCount = (collectValType == void.class ? 0 : 1);
-        MethodType srcType = targetType                 // (a..., [b...])=>r
-                .dropParameterTypes(collectArgPos, collectArgPos+collectValCount);
-        if (!retainOriginalArgs) {                      // (a..., b...)=>r
-            srcType = srcType.insertParameterTypes(collectArgPos, collectorType.parameterArray());
-        }
-        // in  arglist: [0: ...keep1 | cpos: collect...  | cpos+cacount: keep2... ]
-        // out arglist: [0: ...keep1 | cpos: collectVal? | cpos+cvcount: keep2... ]
-        // out(retain): [0: ...keep1 | cpos: cV? coll... | cpos+cvc+cac: keep2... ]
-
-        // Now build a LambdaForm.
-        MethodType lambdaType = srcType.invokerType();
-        Name[] names = arguments(2, lambdaType);
-        final int collectNamePos = names.length - 2;
-        final int targetNamePos  = names.length - 1;
-
-        Name[] collectorArgs = Arrays.copyOfRange(names, 1 + collectArgPos, 1 + collectArgPos + collectArgCount);
-        names[collectNamePos] = new Name(collector, (Object[]) collectorArgs);
-
-        // Build argument array for the target.
-        // Incoming LF args to copy are: [ (mh) headArgs collectArgs tailArgs ].
-        // Output argument array is [ headArgs (collectVal)? (collectArgs)? tailArgs ].
-        Name[] targetArgs = new Name[targetType.parameterCount()];
-        int inputArgPos  = 1;  // incoming LF args to copy to target
-        int targetArgPos = 0;  // fill pointer for targetArgs
-        int chunk = collectArgPos;  // |headArgs|
-        System.arraycopy(names, inputArgPos, targetArgs, targetArgPos, chunk);
-        inputArgPos  += chunk;
-        targetArgPos += chunk;
-        if (collectValType != void.class) {
-            targetArgs[targetArgPos++] = names[collectNamePos];
-        }
-        chunk = collectArgCount;
-        if (retainOriginalArgs) {
-            System.arraycopy(names, inputArgPos, targetArgs, targetArgPos, chunk);
-            targetArgPos += chunk;   // optionally pass on the collected chunk
-        }
-        inputArgPos += chunk;
-        chunk = targetArgs.length - targetArgPos;  // all the rest
-        System.arraycopy(names, inputArgPos, targetArgs, targetArgPos, chunk);
-        assert(inputArgPos + chunk == collectNamePos);  // use of rest of input args also
-        names[targetNamePos] = new Name(target, (Object[]) targetArgs);
-
-        LambdaForm form = new LambdaForm(lambdaType.parameterCount(), names, Kind.COLLECT);
-        return SimpleMethodHandle.make(srcType, form);
     }
 
     @Hidden
@@ -766,7 +664,7 @@ abstract class MethodHandleImpl {
                                    DONT_INLINE_THRESHOLD);
     }
 
-    private final static class Makers {
+    private static final class Makers {
         /** Constructs reinvoker lambda form which block inlining during JIT-compilation for a particular method handle */
         static final Function<MethodHandle, LambdaForm> PRODUCE_BLOCK_INLINING_FORM = new Function<MethodHandle, LambdaForm>() {
             @Override
@@ -840,21 +738,9 @@ abstract class MethodHandleImpl {
             return (asTypeCache = wrapper);
         }
 
-        // Customize target if counting happens for too long.
-        private int invocations = CUSTOMIZE_THRESHOLD;
-        private void maybeCustomizeTarget() {
-            int c = invocations;
-            if (c >= 0) {
-                if (c == 1) {
-                    target.customize();
-                }
-                invocations = c - 1;
-            }
-        }
-
         boolean countDown() {
             int c = count;
-            maybeCustomizeTarget();
+            target.maybeCustomize(); // customize if counting happens for too long
             if (c <= 1) {
                 // Try to limit number of updates. MethodHandle.updateForm() doesn't guarantee LF update visibility.
                 if (isCounting) {
@@ -871,12 +757,15 @@ abstract class MethodHandleImpl {
 
         @Hidden
         static void maybeStopCounting(Object o1) {
-             CountingWrapper wrapper = (CountingWrapper) o1;
+             final CountingWrapper wrapper = (CountingWrapper) o1;
              if (wrapper.countDown()) {
                  // Reached invocation threshold. Replace counting behavior with a non-counting one.
-                 LambdaForm lform = wrapper.nonCountingFormProducer.apply(wrapper.target);
-                 lform.compileToBytecode(); // speed up warmup by avoiding LF interpretation again after transition
-                 wrapper.updateForm(lform);
+                 wrapper.updateForm(new Function<>() {
+                     public LambdaForm apply(LambdaForm oldForm) {
+                         LambdaForm lform = wrapper.nonCountingFormProducer.apply(wrapper.target);
+                         lform.compileToBytecode(); // speed up warmup by avoiding LF interpretation again after transition
+                         return lform;
+                     }});
              }
         }
 
@@ -1769,40 +1658,14 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public VarHandle memoryAccessVarHandle(Class<?> carrier, long alignmentMask,
-                                                   ByteOrder order, long offset, long[] strides) {
-                return VarHandles.makeMemoryAddressViewHandle(carrier, alignmentMask, order, offset, strides);
+            public VarHandle memoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
+                                                   ByteOrder order) {
+                return VarHandles.makeMemoryAddressViewHandle(carrier, skipAlignmentMaskCheck, alignmentMask, order);
             }
 
             @Override
-            public Class<?> memoryAddressCarrier(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).carrier();
-            }
-
-            @Override
-            public long memoryAddressAlignmentMask(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).alignmentMask;
-            }
-
-            @Override
-            public ByteOrder memoryAddressByteOrder(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).be ?
-                        ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
-            }
-
-            @Override
-            public long memoryAddressOffset(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).offset;
-            }
-
-            @Override
-            public long[] memoryAddressStrides(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).strides();
-            }
-
-            @Override
-            public boolean isMemoryAccessVarHandle(VarHandle handle) {
-                return asMemoryAccessVarHandle(handle) != null;
+            public MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback) {
+                return NativeMethodHandle.make(nep, fallback);
             }
 
             @Override
@@ -1833,26 +1696,6 @@ abstract class MethodHandleImpl {
             @Override
             public VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
                 return VarHandles.insertCoordinates(target, pos, values);
-            }
-
-            private MemoryAccessVarHandleBase asMemoryAccessVarHandle(VarHandle handle) {
-                if (handle instanceof MemoryAccessVarHandleBase) {
-                    return (MemoryAccessVarHandleBase)handle;
-                } else if (handle.target() instanceof MemoryAccessVarHandleBase) {
-                    // skip first adaptation, since we have to step over MemoryAddressProxy
-                    // see JDK-8237349
-                    return (MemoryAccessVarHandleBase)handle.target();
-                } else {
-                    return null;
-                }
-            }
-
-            private MemoryAccessVarHandleBase checkMemoryAccessHandle(VarHandle handle) {
-                MemoryAccessVarHandleBase base = asMemoryAccessVarHandle(handle);
-                if (base == null) {
-                    throw new IllegalArgumentException("Not a memory access varhandle: " + handle);
-                }
-                return base;
             }
         });
     }

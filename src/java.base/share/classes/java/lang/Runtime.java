@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,7 +48,6 @@ import jdk.internal.reflect.Reflection;
  * <p>
  * An application cannot create its own instance of this class.
  *
- * @author  unascribed
  * @see     java.lang.Runtime#getRuntime()
  * @since   1.0
  */
@@ -817,12 +816,14 @@ public class Runtime {
      * @since  9
      */
     public static Version version() {
-        if (version == null) {
-            version = new Version(VersionProps.versionNumbers(),
+        var v = version;
+        if (v == null) {
+            v = new Version(VersionProps.versionNumbers(),
                     VersionProps.pre(), VersionProps.build(),
                     VersionProps.optional());
+            version = v;
         }
-        return version;
+        return v;
     }
 
     /**
@@ -942,14 +943,15 @@ public class Runtime {
      *     $VNUM(-$PRE)?
      * </pre></blockquote>
      *
-     * <p>This is a <a href="./doc-files/ValueBased.html">value-based</a>
-     * class; use of identity-sensitive operations (including reference equality
-     * ({@code ==}), identity hash code, or synchronization) on instances of
-     * {@code Version} may have unpredictable results and should be avoided.
-     * </p>
+     * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+     * class; programmers should treat instances that are
+     * {@linkplain #equals(Object) equal} as interchangeable and should not
+     * use instances for synchronization, or unpredictable behavior may
+     * occur. For example, in a future release, synchronization may fail.</p>
      *
      * @since  9
      */
+    @jdk.internal.ValueBased
     public static final class Version
         implements Comparable<Version>
     {
@@ -1425,11 +1427,8 @@ public class Runtime {
         public boolean equalsIgnoreOptional(Object obj) {
             if (this == obj)
                 return true;
-            if (!(obj instanceof Version))
-                return false;
-
-            Version that = (Version)obj;
-            return (this.version().equals(that.version())
+            return (obj instanceof Version that)
+                && (this.version().equals(that.version())
                 && this.pre().equals(that.pre())
                 && this.build().equals(that.build()));
         }

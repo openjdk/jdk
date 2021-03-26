@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib
  * @requires vm.cds
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main/othervm/native ReplaceCriticalClasses
  */
 
@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import sun.hotspot.WhiteBox;
 
 public class ReplaceCriticalClasses {
@@ -172,10 +173,7 @@ public class ReplaceCriticalClasses {
             opts.addSuffix("-XX:+WhiteBoxAPI",
                            "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"));
         }
-        if (subgraph) {
-            opts.addSuffix("-Xlog:cds,cds+heap");
-        }
-
+        opts.addSuffix("-Xlog:cds,cds+heap");
         opts.addSuffix("ReplaceCriticalClasses",
                        "child",
                        shared,

@@ -38,9 +38,8 @@ import javax.lang.model.type.TypeMirror;
  */
 public interface ModuleElement extends Element, QualifiedNameable {
     /**
-     * Returns a {@linkplain javax.lang.model.type.NoType pseudo-type}
-     * for this module.
-     * @return a pseudo-type for this module
+     * {@return a {@linkplain javax.lang.model.type.NoType pseudo-type}
+     * for this module}
      *
      * @see javax.lang.model.type.NoType
      * @see javax.lang.model.type.TypeKind#MODULE
@@ -87,27 +86,20 @@ public interface ModuleElement extends Element, QualifiedNameable {
     Name getSimpleName();
 
     /**
-     * Returns the packages within this module.
-     * @return the packages within this module
+     * {@return the packages within this module}
      */
     @Override
     List<? extends Element> getEnclosedElements();
 
     /**
-     * Returns {@code true} if this is an open module and {@code
-     * false} otherwise.
-     *
-     * @return {@code true} if this is an open module and {@code
-     * false} otherwise
+     * {@return {@code true} if this is an open module and {@code
+     * false} otherwise}
      */
     boolean isOpen();
 
     /**
-     * Returns {@code true} if this is an unnamed module and {@code
-     * false} otherwise.
-     *
-     * @return {@code true} if this is an unnamed module and {@code
-     * false} otherwise
+     * {@return {@code true} if this is an unnamed module and {@code
+     * false} otherwise}
      *
      * @jls 7.7.5 Unnamed Modules
      */
@@ -159,7 +151,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      */
     interface Directive {
         /**
-         * Returns the {@code kind} of this directive.
+         * {@return the {@code kind} of this directive}
          * <ul>
          *
          * <li> The kind of a {@linkplain RequiresDirective requires
@@ -178,8 +170,6 @@ public interface ModuleElement extends Element, QualifiedNameable {
          * directive} is {@link DirectiveKind#PROVIDES PROVIDES}.
          *
          * </ul>
-         *
-         * @return the kind of this directive
          */
         DirectiveKind getKind();
 
@@ -310,20 +300,17 @@ public interface ModuleElement extends Element, QualifiedNameable {
      */
     interface RequiresDirective extends Directive {
         /**
-         * Returns whether or not this is a static dependency.
-         * @return whether or not this is a static dependency
+         * {@return whether or not this is a static dependency}
          */
         boolean isStatic();
 
         /**
-         * Returns whether or not this is a transitive dependency.
-         * @return whether or not this is a transitive dependency
+         * {@return whether or not this is a transitive dependency}
          */
         boolean isTransitive();
 
         /**
-         * Returns the module that is required
-         * @return the module that is required
+         * {@return the module that is required}
          */
         ModuleElement getDependency();
     }
@@ -335,8 +322,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     interface ExportsDirective extends Directive {
 
         /**
-         * Returns the package being exported.
-         * @return the package being exported
+         * {@return the package being exported}
          */
         PackageElement getPackage();
 
@@ -356,8 +342,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     interface OpensDirective extends Directive {
 
         /**
-         * Returns the package being opened.
-         * @return the package being opened
+         * {@return the package being opened}
          */
         PackageElement getPackage();
 
@@ -376,14 +361,12 @@ public interface ModuleElement extends Element, QualifiedNameable {
      */
     interface ProvidesDirective extends Directive {
         /**
-         * Returns the service being provided.
-         * @return the service being provided
+         * {@return the service being provided}
          */
         TypeElement getService();
 
         /**
-         * Returns the implementations of the service being provided.
-         * @return the implementations of the service being provided
+         * {@return the implementations of the service being provided}
          */
         List<? extends TypeElement> getImplementations();
     }
@@ -394,8 +377,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      */
     interface UsesDirective extends Directive {
         /**
-         * Returns the service that is used.
-         * @return the service that is used
+         * {@return the service that is used}
          */
         TypeElement getService();
     }

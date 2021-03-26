@@ -883,10 +883,10 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     // Load object pointer
     ldr(Robj, Address(Rlock, obj_offset));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(R0, Robj);
       ldr_u32(R0, Address(R0, Klass::access_flags_offset()));
-      tst(R0, JVM_ACC_IS_BOX_CLASS);
+      tst(R0, JVM_ACC_IS_VALUE_BASED_CLASS);
       b(slow_case, ne);
     }
 
@@ -983,7 +983,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
 
 // Unlocks an object. Used in monitorexit bytecode and remove_activation.
 //
-// Argument: R1: Points to BasicObjectLock structure for lock
+// Argument: R0: Points to BasicObjectLock structure for lock
 // Throw an IllegalMonitorException if object is not locked by current thread
 // Blows volatile registers R0-R3, Rtemp, LR. Calls VM.
 void InterpreterMacroAssembler::unlock_object(Register Rlock) {
@@ -996,8 +996,7 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
 
     const Register Robj = R2;
     const Register Rmark = R3;
-    const Register Rresult = R0;
-    assert_different_registers(Robj, Rmark, Rlock, R0, Rtemp);
+    assert_different_registers(Robj, Rmark, Rlock, Rtemp);
 
     const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
     const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();

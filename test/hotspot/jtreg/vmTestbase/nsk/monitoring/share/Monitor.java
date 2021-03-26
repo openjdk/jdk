@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,7 +423,7 @@ public class Monitor {
      */
     protected void setLongAttribute(ObjectName object, String name,
                                                                    long value) {
-        Attribute attribute = new Attribute(name, new Long(value));
+        Attribute attribute = new Attribute(name, Long.valueOf(value));
 
         try {
             getMBeanServer().setAttribute(object, attribute);
@@ -442,7 +442,7 @@ public class Monitor {
      */
     protected void setBooleanAttribute(ObjectName object, String name,
                                                                 boolean value) {
-        Attribute attribute = new Attribute(name, new Boolean(value));
+        Attribute attribute = new Attribute(name, Boolean.valueOf(value));
 
         try {
             getMBeanServer().setAttribute(object, attribute);

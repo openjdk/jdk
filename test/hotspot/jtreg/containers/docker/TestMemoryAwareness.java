@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key cgroups
  * @summary Test JVM's memory resource awareness when running inside docker container
  * @requires docker.support
  * @library /test/lib
@@ -32,7 +33,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build AttemptOOM sun.hotspot.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run driver TestMemoryAwareness
  */
 import jdk.test.lib.containers.docker.Common;

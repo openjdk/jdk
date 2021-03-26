@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -37,6 +35,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -58,10 +57,10 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
@@ -177,10 +176,97 @@ static inline double fileTimeAsDouble(FILETIME* time) {
 
 // Implementation of os
 
+#define RANGE_FORMAT                "[" PTR_FORMAT "-" PTR_FORMAT ")"
+#define RANGE_FORMAT_ARGS(p, len)   p2i(p), p2i((address)p + len)
+
+// A number of wrappers for more frequently used system calls, to add standard logging.
+
+struct PreserveLastError {
+  const DWORD v;
+  PreserveLastError() : v(::GetLastError()) {}
+  ~PreserveLastError() { ::SetLastError(v); }
+};
+
+// Logging wrapper for VirtualAlloc
+static LPVOID virtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect) {
+  LPVOID result = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
+  if (result != NULL) {
+    log_trace(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) returned " PTR_FORMAT "%s.",
+                  p2i(lpAddress), dwSize, flAllocationType, flProtect, p2i(result),
+                  ((lpAddress != NULL && result != lpAddress) ? " <different base!>" : ""));
+  } else {
+    PreserveLastError ple;
+    log_info(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) failed (%u).",
+                  p2i(lpAddress), dwSize, flAllocationType, flProtect, ple.v);
+  }
+  return result;
+}
+
+// Logging wrapper for VirtualFree
+static BOOL virtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD  dwFreeType) {
+  BOOL result = ::VirtualFree(lpAddress, dwSize, dwFreeType);
+  if (result != FALSE) {
+    log_trace(os)("VirtualFree(" PTR_FORMAT ", " SIZE_FORMAT ", %x) succeeded",
+                  p2i(lpAddress), dwSize, dwFreeType);
+  } else {
+    PreserveLastError ple;
+    log_info(os)("VirtualFree(" PTR_FORMAT ", " SIZE_FORMAT ", %x) failed (%u).",
+                 p2i(lpAddress), dwSize, dwFreeType, ple.v);
+  }
+  return result;
+}
+
+// Logging wrapper for VirtualAllocExNuma
+static LPVOID virtualAllocExNuma(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD  flAllocationType,
+                                 DWORD  flProtect, DWORD  nndPreferred) {
+  LPVOID result = ::VirtualAllocExNuma(hProcess, lpAddress, dwSize, flAllocationType, flProtect, nndPreferred);
+  if (result != NULL) {
+    log_trace(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) returned " PTR_FORMAT "%s.",
+                  p2i(lpAddress), dwSize, flAllocationType, flProtect, nndPreferred, p2i(result),
+                  ((lpAddress != NULL && result != lpAddress) ? " <different base!>" : ""));
+  } else {
+    PreserveLastError ple;
+    log_info(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) failed (%u).",
+                 p2i(lpAddress), dwSize, flAllocationType, flProtect, nndPreferred, ple.v);
+  }
+  return result;
+}
+
+// Logging wrapper for MapViewOfFileEx
+static LPVOID mapViewOfFileEx(HANDLE hFileMappingObject, DWORD  dwDesiredAccess, DWORD  dwFileOffsetHigh,
+                              DWORD  dwFileOffsetLow, SIZE_T dwNumberOfBytesToMap, LPVOID lpBaseAddress) {
+  LPVOID result = ::MapViewOfFileEx(hFileMappingObject, dwDesiredAccess, dwFileOffsetHigh,
+                                    dwFileOffsetLow, dwNumberOfBytesToMap, lpBaseAddress);
+  if (result != NULL) {
+    log_trace(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") returned " PTR_FORMAT "%s.",
+                  p2i(lpBaseAddress), dwNumberOfBytesToMap, p2i(result),
+                  ((lpBaseAddress != NULL && result != lpBaseAddress) ? " <different base!>" : ""));
+  } else {
+    PreserveLastError ple;
+    log_info(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") failed (%u).",
+                 p2i(lpBaseAddress), dwNumberOfBytesToMap, ple.v);
+  }
+  return result;
+}
+
+// Logging wrapper for UnmapViewOfFile
+static BOOL unmapViewOfFile(LPCVOID lpBaseAddress) {
+  BOOL result = ::UnmapViewOfFile(lpBaseAddress);
+  if (result != FALSE) {
+    log_trace(os)("UnmapViewOfFile(" PTR_FORMAT ") succeeded", p2i(lpBaseAddress));
+  } else {
+    PreserveLastError ple;
+    log_info(os)("UnmapViewOfFile(" PTR_FORMAT ") failed (%u).",  p2i(lpBaseAddress), ple.v);
+  }
+  return result;
+}
+
 bool os::unsetenv(const char* name) {
   assert(name != NULL, "Null pointer");
   return (SetEnvironmentVariable(name, NULL) == TRUE);
 }
+
+char** os::get_environ() { return _environ; }
 
 // No setuid programs under Windows.
 bool os::have_special_privileges() {
@@ -339,7 +425,6 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return captured;
 }
 
-
 // os::current_stack_base()
 //
 //   Returns the base of the stack, which is the stack's
@@ -427,6 +512,7 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
   return NULL;
 }
 
+JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads
@@ -767,16 +853,16 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
-bool os::has_allocatable_memory_limit(julong* limit) {
+bool os::has_allocatable_memory_limit(size_t* limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
 #ifdef _LP64
-  *limit = (julong)ms.ullAvailVirtual;
+  *limit = (size_t)ms.ullAvailVirtual;
   return true;
 #else
   // Limit to 1400m because of the 2gb address space wall
-  *limit = MIN2((julong)1400*M, (julong)ms.ullAvailVirtual);
+  *limit = MIN2((size_t)1400*M, (size_t)ms.ullAvailVirtual);
   return true;
 #endif
 }
@@ -1616,9 +1702,9 @@ void os::print_os_info(outputStream* st) {
   char buffer[1024];
   st->print("HostName: ");
   if (get_host_name(buffer, sizeof(buffer))) {
-    st->print("%s ", buffer);
+    st->print_cr(buffer);
   } else {
-    st->print("N/A ");
+    st->print_cr("N/A");
   }
 #endif
   st->print_cr("OS:");
@@ -2144,6 +2230,8 @@ static int check_pending_signals() {
       }
     } while (threadIsSuspended);
   }
+  ShouldNotReachHere();
+  return 0; // Satisfy compiler
 }
 
 int os::signal_wait() {
@@ -2155,29 +2243,24 @@ int os::signal_wait() {
 LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
                       address handler) {
   Thread* thread = Thread::current_or_null();
-  // Save pc in thread
+
 #if defined(_M_ARM64)
-  // Do not blow up if no thread info available.
-  if (thread) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Pc);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->Pc = (DWORD64)handler;
+  #define PC_NAME Pc
 #elif defined(_M_AMD64)
-  // Do not blow up if no thread info available.
-  if (thread != NULL) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->Rip = (DWORD64)handler;
+  #define PC_NAME Rip
+#elif defined(_M_IX86)
+  #define PC_NAME Eip
 #else
-  // Do not blow up if no thread info available.
-  if (thread != NULL) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->Eip = (DWORD)(DWORD_PTR)handler;
+  #error unknown architecture
 #endif
+
+  // Save pc in thread
+  if (thread != nullptr && thread->is_Java_thread()) {
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->PC_NAME);
+  }
+
+  // Set pc to handler
+  exceptionInfo->ContextRecord->PC_NAME = (DWORD64)handler;
 
   // Continue the execution
   return EXCEPTION_CONTINUE_EXECUTION;
@@ -2354,11 +2437,12 @@ static inline void report_error(Thread* t, DWORD exception_code,
                                 address addr, void* siginfo, void* context) {
   VMError::report_and_die(t, exception_code, addr, siginfo, context);
 
-  // If UseOsErrorReporting, this will return here and save the error file
+  // If UseOSErrorReporting, this will return here and save the error file
   // somewhere where we can find it in the minidump.
 }
 
 //-----------------------------------------------------------------------------
+JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
@@ -2897,7 +2981,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
     // Overflowed.
     return NULL;
   }
-  p_buf = (char *) VirtualAlloc(addr,
+  p_buf = (char *) virtualAlloc(addr,
                                 size_of_reserve,  // size of Reserve
                                 MEM_RESERVE,
                                 PAGE_READWRITE);
@@ -2943,7 +3027,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
       p_new = NULL;
     } else {
       if (!UseNUMAInterleaving) {
-        p_new = (char *) VirtualAlloc(next_alloc_addr,
+        p_new = (char *) virtualAlloc(next_alloc_addr,
                                       bytes_to_rq,
                                       flags,
                                       prot);
@@ -2951,7 +3035,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         // get the next node to use from the used_node_list
         assert(numa_node_list_holder.get_count() > 0, "Multiple NUMA nodes expected");
         DWORD node = numa_node_list_holder.get_node_list_entry(count % numa_node_list_holder.get_count());
-        p_new = (char *)VirtualAllocExNuma(hProc, next_alloc_addr, bytes_to_rq, flags, prot, node);
+        p_new = (char *)virtualAllocExNuma(hProc, next_alloc_addr, bytes_to_rq, flags, prot, node);
       }
     }
 
@@ -3031,12 +3115,9 @@ void os::large_page_init() {
   }
 
   _large_page_size = large_page_init_decide_size();
-
   const size_t default_page_size = (size_t) vm_page_size();
   if (_large_page_size > default_page_size) {
-    _page_sizes[0] = _large_page_size;
-    _page_sizes[1] = default_page_size;
-    _page_sizes[2] = 0;
+    _page_sizes.add(_large_page_size);
   }
 
   UseLargePages = _large_page_size != 0;
@@ -3097,7 +3178,7 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     return NULL;
   }
 
-  LPVOID addr = MapViewOfFileEx(fileMapping, FILE_MAP_WRITE, 0, 0, size, base);
+  LPVOID addr = mapViewOfFileEx(fileMapping, FILE_MAP_WRITE, 0, 0, size, base);
 
   CloseHandle(fileMapping);
 
@@ -3112,28 +3193,6 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// On win32, one cannot release just a part of reserved memory, it's an
-// all or nothing deal.  When we split a reservation, we must break the
-// reservation into two reservations.
-void os::split_reserved_memory(char *base, size_t size, size_t split) {
-
-  char* const split_address = base + split;
-  assert(size > 0, "Sanity");
-  assert(size > split, "Sanity");
-  assert(split > 0, "Sanity");
-  assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
-  assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
-
-  release_memory(base, size);
-  attempt_reserve_memory_at(base, split);
-  attempt_reserve_memory_at(split_address, size - split);
-
-  // NMT: nothing to do here. Since Windows implements the split by
-  //  releasing and re-reserving memory, the parts are already registered
-  //  as individual mappings with NMT.
-
-}
-
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
@@ -3146,33 +3205,37 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
   char* aligned_base = NULL;
+  static const int max_attempts = 20;
 
-  do {
-    char* extra_base = file_desc != -1 ?
-      os::map_memory_to_file(extra_size, file_desc) :
-      os::reserve_memory(extra_size);
+  for (int attempt = 0; attempt < max_attempts && aligned_base == NULL; attempt ++) {
+    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc) :
+                                         os::reserve_memory(extra_size);
     if (extra_base == NULL) {
       return NULL;
     }
     // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
 
-    if (file_desc != -1) {
-      os::unmap_memory(extra_base, extra_size);
-    } else {
-      os::release_memory(extra_base, extra_size);
+    bool rc = (file_desc != -1) ? os::unmap_memory(extra_base, extra_size) :
+                                  os::release_memory(extra_base, extra_size);
+    assert(rc, "release failed");
+    if (!rc) {
+      return NULL;
     }
 
-    aligned_base = file_desc != -1 ?
-      os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
-      os::attempt_reserve_memory_at(aligned_base, size);
+    // Attempt to map, into the just vacated space, the slightly smaller aligned area.
+    // Which may fail, hence the loop.
+    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
+                                     os::attempt_reserve_memory_at(aligned_base, size);
+  }
 
-  } while (aligned_base == NULL);
+  assert(aligned_base != NULL, "Did not manage to re-map after %d attempts?", max_attempts);
 
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+  // exec can be ignored
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
@@ -3180,13 +3243,13 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
   return map_or_reserve_memory_aligned(size, alignment, fd);
 }
 
-char* os::pd_reserve_memory(size_t bytes) {
-  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes);
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
+  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes, exec);
 }
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_page_size() == 0, "reserve page size");
@@ -3195,7 +3258,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
   // will go thru reserve_memory_special rather than thru here.
   bool use_individual = (UseNUMAInterleaving && !UseLargePages);
   if (!use_individual) {
-    res = (char*)VirtualAlloc(addr, bytes, MEM_RESERVE, PAGE_READWRITE);
+    res = (char*)virtualAlloc(addr, bytes, MEM_RESERVE, PAGE_READWRITE);
   } else {
     elapsedTimer reserveTimer;
     if (Verbose && PrintMiscellaneous) reserveTimer.start();
@@ -3274,7 +3337,7 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, char* addr,
 
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-    char * res = (char *)VirtualAlloc(addr, bytes, flag, prot);
+    char * res = (char *)virtualAlloc(addr, bytes, flag, prot);
 
     return res;
   }
@@ -3311,7 +3374,7 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
   // is always within a reserve covered by a single VirtualAlloc
   // in that case we can just do a single commit for the requested size
   if (!UseNUMAInterleaving) {
-    if (VirtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) == NULL) {
+    if (virtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) == NULL) {
       NOT_PRODUCT(warn_fail_commit_memory(addr, bytes, exec);)
       return false;
     }
@@ -3336,7 +3399,7 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
       MEMORY_BASIC_INFORMATION alloc_info;
       VirtualQuery(next_alloc_addr, &alloc_info, sizeof(alloc_info));
       size_t bytes_to_rq = MIN2(bytes_remaining, (size_t)alloc_info.RegionSize);
-      if (VirtualAlloc(next_alloc_addr, bytes_to_rq, MEM_COMMIT,
+      if (virtualAlloc(next_alloc_addr, bytes_to_rq, MEM_COMMIT,
                        PAGE_READWRITE) == NULL) {
         NOT_PRODUCT(warn_fail_commit_memory(next_alloc_addr, bytes_to_rq,
                                             exec);)
@@ -3381,18 +3444,68 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t bytes) {
+bool os::pd_uncommit_memory(char* addr, size_t bytes, bool exec) {
   if (bytes == 0) {
     // Don't bother the OS with noops.
     return true;
   }
   assert((size_t) addr % os::vm_page_size() == 0, "uncommit on page boundaries");
   assert(bytes % os::vm_page_size() == 0, "uncommit in page-sized chunks");
-  return (VirtualFree(addr, bytes, MEM_DECOMMIT) != 0);
+  return (virtualFree(addr, bytes, MEM_DECOMMIT) == TRUE);
 }
 
 bool os::pd_release_memory(char* addr, size_t bytes) {
-  return VirtualFree(addr, 0, MEM_RELEASE) != 0;
+  // Given a range we are to release, we require a mapping to start at the beginning of that range;
+  //  if NUMA or LP we allow the range to contain multiple mappings, which have to cover the range
+  //  completely; otherwise the range must match an OS mapping exactly.
+  address start = (address)addr;
+  address end = start + bytes;
+  os::win32::mapping_info_t mi;
+  const bool multiple_mappings_allowed = UseLargePagesIndividualAllocation || UseNUMAInterleaving;
+  address p = start;
+  bool first_mapping = true;
+
+  do {
+    // Find mapping and check it
+    const char* err = NULL;
+    if (!os::win32::find_mapping(p, &mi)) {
+      err = "no mapping found";
+    } else {
+      if (first_mapping) {
+        if (mi.base != start) {
+          err = "base address mismatch";
+        }
+        if (multiple_mappings_allowed ? (mi.size > bytes) : (mi.size != bytes)) {
+          err = "size mismatch";
+        }
+      } else {
+        assert(p == mi.base && mi.size > 0, "Sanity");
+        if (mi.base + mi.size > end) {
+          err = "mapping overlaps end";
+        }
+        if (mi.size == 0) {
+          err = "zero length mapping?"; // Should never happen; just to prevent endlessly looping in release.
+        }
+      }
+    }
+    // Handle mapping error. We assert in debug, unconditionally print a warning in release.
+    if (err != NULL) {
+      log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
+#ifdef ASSERT
+      os::print_memory_mappings((char*)start, bytes, tty);
+      assert(false, "bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
+#endif
+      return false;
+    }
+    // Free this range
+    if (virtualFree(p, 0, MEM_RELEASE) == FALSE) {
+      return false;
+    }
+    first_mapping = false;
+    p = mi.base + mi.size;
+  } while (p < end);
+
+  return true;
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
@@ -4019,11 +4132,9 @@ void nx_check_protection() {
 void os::init(void) {
   _initial_pid = _getpid();
 
-  init_random(1234567);
-
   win32::initialize_system_info();
   win32::setmode_streams();
-  init_page_sizes((size_t) win32::vm_page_size());
+  _page_sizes.add(win32::vm_page_size());
 
   // This may be overridden later when argument processing is done.
   FLAG_SET_ERGO(UseLargePagesIndividualAllocation, false);
@@ -4072,21 +4183,14 @@ jint os::init_2(void) {
 #endif
 
   // for debugging float code generation bugs
-  if (ForceFloatExceptions) {
-#ifndef  _WIN64
-    static long fp_control_word = 0;
-    __asm { fstcw fp_control_word }
-    // see Intel PPro Manual, Vol. 2, p 7-16
-    const long precision = 0x20;
-    const long underflow = 0x10;
-    const long overflow  = 0x08;
-    const long zero_div  = 0x04;
-    const long denorm    = 0x02;
-    const long invalid   = 0x01;
-    fp_control_word |= invalid;
-    __asm { fldcw fp_control_word }
+#if defined(ASSERT) && !defined(_WIN64)
+  static long fp_control_word = 0;
+  __asm { fstcw fp_control_word }
+  // see Intel PPro Manual, Vol. 2, p 7-16
+  const long invalid   = 0x01;
+  fp_control_word |= invalid;
+  __asm { fldcw fp_control_word }
 #endif
-  }
 
   // If stack_commit_size is 0, windows will reserve the default size,
   // but only commit a small portion of it.
@@ -4379,8 +4483,18 @@ bool os::same_files(const char* file1, const char* file2) {
     return true;
   }
 
-  HANDLE handle1 = create_read_only_file_handle(file1);
-  HANDLE handle2 = create_read_only_file_handle(file2);
+  char* native_file1 = os::strdup_check_oom(file1);
+  native_file1 = os::native_path(native_file1);
+  char* native_file2 = os::strdup_check_oom(file2);
+  native_file2 = os::native_path(native_file2);
+  if (strcmp(native_file1, native_file2) == 0) {
+    os::free(native_file1);
+    os::free(native_file2);
+    return true;
+  }
+
+  HANDLE handle1 = create_read_only_file_handle(native_file1);
+  HANDLE handle2 = create_read_only_file_handle(native_file2);
   bool result = false;
 
   // if we could open both paths...
@@ -4406,6 +4520,9 @@ bool os::same_files(const char* file1, const char* file2) {
   if (handle2 != INVALID_HANDLE_VALUE) {
     ::CloseHandle(handle2);
   }
+
+  os::free(native_file1);
+  os::free(native_file2);
 
   return result;
 }
@@ -4938,10 +5055,9 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     // we might consider DLLizing the shared archive with a proper PE
     // header so that mapping executable + sharing is possible.
 
-    base = (char*) VirtualAlloc(addr, bytes, MEM_COMMIT | MEM_RESERVE,
+    base = (char*) virtualAlloc(addr, bytes, MEM_COMMIT | MEM_RESERVE,
                                 PAGE_READWRITE);
     if (base == NULL) {
-      log_info(os)("VirtualAlloc() failed: GetLastError->%ld.", GetLastError());
       CloseHandle(hFile);
       return NULL;
     }
@@ -4973,10 +5089,9 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     }
 
     DWORD access = read_only ? FILE_MAP_READ : FILE_MAP_COPY;
-    base = (char*)MapViewOfFileEx(hMap, access, 0, (DWORD)file_offset,
+    base = (char*)mapViewOfFileEx(hMap, access, 0, (DWORD)file_offset,
                                   (DWORD)bytes, addr);
     if (base == NULL) {
-      log_info(os)("MapViewOfFileEx() failed: GetLastError->%ld.", GetLastError());
       CloseHandle(hMap);
       CloseHandle(hFile);
       return NULL;
@@ -5048,9 +5163,8 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
     return pd_release_memory(addr, bytes);
   }
 
-  BOOL result = UnmapViewOfFile(addr);
+  BOOL result = unmapViewOfFile(addr);
   if (result == 0) {
-    log_info(os)("UnmapViewOfFile() failed: GetLastError->%ld.", GetLastError());
     return false;
   }
   return true;
@@ -5330,11 +5444,10 @@ void os::PlatformEvent::unpark() {
 
 // The Windows implementation of Park is very straightforward: Basic
 // operations on Win32 Events turn out to have the right semantics to
-// use them directly. We opportunistically resuse the event inherited
-// from Monitor.
+// use them directly.
 
 void Parker::park(bool isAbsolute, jlong time) {
-  guarantee(_ParkEvent != NULL, "invariant");
+  guarantee(_ParkHandle != NULL, "invariant");
   // First, demultiplex/decode time arguments
   if (time < 0) { // don't wait
     return;
@@ -5356,16 +5469,16 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Don't wait if interrupted or already triggered
   if (thread->is_interrupted(false) ||
-      WaitForSingleObject(_ParkEvent, 0) == WAIT_OBJECT_0) {
-    ResetEvent(_ParkEvent);
+      WaitForSingleObject(_ParkHandle, 0) == WAIT_OBJECT_0) {
+    ResetEvent(_ParkHandle);
     return;
   } else {
     ThreadBlockInVM tbivm(thread);
     OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
     thread->set_suspend_equivalent();
 
-    WaitForSingleObject(_ParkEvent, time);
-    ResetEvent(_ParkEvent);
+    WaitForSingleObject(_ParkHandle, time);
+    ResetEvent(_ParkHandle);
 
     // If externally suspended while waiting, re-suspend
     if (thread->handle_special_suspend_equivalent_condition()) {
@@ -5375,8 +5488,8 @@ void Parker::park(bool isAbsolute, jlong time) {
 }
 
 void Parker::unpark() {
-  guarantee(_ParkEvent != NULL, "invariant");
-  SetEvent(_ParkEvent);
+  guarantee(_ParkHandle != NULL, "invariant");
+  SetEvent(_ParkHandle);
 }
 
 // Platform Monitor implementation
@@ -5401,7 +5514,7 @@ int os::PlatformMonitor::wait(jlong millis) {
 
 // Run the specified command in a separate process. Return its exit value,
 // or -1 on failure (e.g. can't create a new process).
-int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
+int os::fork_and_exec(const char* cmd, bool dummy /* ignored */) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   DWORD exit_code;
@@ -5679,58 +5792,6 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   return agent_entry_name;
 }
 
-#ifndef PRODUCT
-
-// test the code path in reserve_memory_special() that tries to allocate memory in a single
-// contiguous memory block at a particular address.
-// The test first tries to find a good approximate address to allocate at by using the same
-// method to allocate some memory at any address. The test then tries to allocate memory in
-// the vicinity (not directly after it to avoid possible by-chance use of that location)
-// This is of course only some dodgy assumption, there is no guarantee that the vicinity of
-// the previously allocated memory is available for allocation. The only actual failure
-// that is reported is when the test tries to allocate at a particular location but gets a
-// different valid one. A NULL return value at this point is not considered an error but may
-// be legitimate.
-void TestReserveMemorySpecial_test() {
-  if (!UseLargePages) {
-    return;
-  }
-  // save current value of globals
-  bool old_use_large_pages_individual_allocation = UseLargePagesIndividualAllocation;
-  bool old_use_numa_interleaving = UseNUMAInterleaving;
-
-  // set globals to make sure we hit the correct code path
-  UseLargePagesIndividualAllocation = UseNUMAInterleaving = false;
-
-  // do an allocation at an address selected by the OS to get a good one.
-  const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
-  if (result == NULL) {
-  } else {
-    os::release_memory_special(result, large_allocation_size);
-
-    // allocate another page within the recently allocated memory area which seems to be a good location. At least
-    // we managed to get it once.
-    const size_t expected_allocation_size = os::large_page_size();
-    char* expected_location = result + os::large_page_size();
-    char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
-    if (actual_location == NULL) {
-    } else {
-      // release memory
-      os::release_memory_special(actual_location, expected_allocation_size);
-      // only now check, after releasing any memory to avoid any leaks.
-      assert(actual_location == expected_location,
-             "Failed to allocate memory at requested location " PTR_FORMAT " of size " SIZE_FORMAT ", is " PTR_FORMAT " instead",
-             expected_location, expected_allocation_size, actual_location);
-    }
-  }
-
-  // restore globals
-  UseLargePagesIndividualAllocation = old_use_large_pages_individual_allocation;
-  UseNUMAInterleaving = old_use_numa_interleaving;
-}
-#endif // PRODUCT
-
 /*
   All the defined signal names for Windows.
 
@@ -5780,4 +5841,232 @@ void os::win32::initialize_thread_ptr_offset() {
 
 bool os::supports_map_sync() {
   return false;
+}
+
+#ifdef ASSERT
+static void check_meminfo(MEMORY_BASIC_INFORMATION* minfo) {
+  assert(minfo->State == MEM_FREE || minfo->State == MEM_COMMIT || minfo->State == MEM_RESERVE, "Invalid state");
+  if (minfo->State != MEM_FREE) {
+    assert(minfo->AllocationBase != NULL && minfo->BaseAddress >= minfo->AllocationBase, "Invalid pointers");
+    assert(minfo->RegionSize > 0, "Invalid region size");
+  }
+}
+#endif
+
+
+static bool checkedVirtualQuery(address addr, MEMORY_BASIC_INFORMATION* minfo) {
+  ZeroMemory(minfo, sizeof(MEMORY_BASIC_INFORMATION));
+  if (::VirtualQuery(addr, minfo, sizeof(MEMORY_BASIC_INFORMATION)) == sizeof(MEMORY_BASIC_INFORMATION)) {
+    DEBUG_ONLY(check_meminfo(minfo);)
+    return true;
+  }
+  return false;
+}
+
+// Given a pointer pointing into an allocation (an area allocated with VirtualAlloc),
+//  return information about that allocation.
+bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
+  // Query at addr to find allocation base; then, starting at allocation base,
+  //  query all regions, until we either find the next allocation or a free area.
+  ZeroMemory(mi, sizeof(mapping_info_t));
+  MEMORY_BASIC_INFORMATION minfo;
+  address allocation_base = NULL;
+  address allocation_end = NULL;
+  bool rc = false;
+  if (checkedVirtualQuery(addr, &minfo)) {
+    if (minfo.State != MEM_FREE) {
+      allocation_base = (address)minfo.AllocationBase;
+      allocation_end = allocation_base;
+      // Iterate through all regions in this allocation to find its end. While we are here, also count things.
+      for (;;) {
+        bool rc = checkedVirtualQuery(allocation_end, &minfo);
+        if (rc == false ||                                       // VirtualQuery error, end of allocation?
+           minfo.State == MEM_FREE ||                            // end of allocation, free memory follows
+           (address)minfo.AllocationBase != allocation_base)     // end of allocation, a new one starts
+        {
+          break;
+        }
+        const size_t region_size = minfo.RegionSize;
+        mi->regions ++;
+        if (minfo.State == MEM_COMMIT) {
+          mi->committed_size += minfo.RegionSize;
+        }
+        allocation_end += region_size;
+      }
+      if (allocation_base != NULL && allocation_end > allocation_base) {
+        mi->base = allocation_base;
+        mi->size = allocation_end - allocation_base;
+        rc = true;
+      }
+    }
+  }
+#ifdef ASSERT
+  if (rc) {
+    assert(mi->size > 0 && mi->size >= mi->committed_size, "Sanity");
+    assert(addr >= mi->base && addr < mi->base + mi->size, "Sanity");
+    assert(mi->regions > 0, "Sanity");
+  }
+#endif
+  return rc;
+}
+
+// Helper for print_one_mapping: print n words, both as hex and ascii.
+// Use Safefetch for all values.
+static void print_snippet(const void* p, outputStream* st) {
+  static const int num_words = LP64_ONLY(3) NOT_LP64(6);
+  static const int num_bytes = num_words * sizeof(int);
+  intptr_t v[num_words];
+  const int errval = 0xDE210244;
+  for (int i = 0; i < num_words; i++) {
+    v[i] = SafeFetchN((intptr_t*)p + i, errval);
+    if (v[i] == errval &&
+        SafeFetchN((intptr_t*)p + i, ~errval) == ~errval) {
+      return;
+    }
+  }
+  st->put('[');
+  for (int i = 0; i < num_words; i++) {
+    st->print(INTPTR_FORMAT " ", v[i]);
+  }
+  const char* b = (char*)v;
+  st->put('\"');
+  for (int i = 0; i < num_bytes; i++) {
+    st->put(::isgraph(b[i]) ? b[i] : '.');
+  }
+  st->put('\"');
+  st->put(']');
+}
+
+// Helper function for print_memory_mappings:
+//  Given a MEMORY_BASIC_INFORMATION, containing information about a non-free region:
+//  print out all regions in that allocation. If any of those regions
+//  fall outside the given range [start, end), indicate that in the output.
+// Return the pointer to the end of the allocation.
+static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start, address end, outputStream* st) {
+  // Print it like this:
+  //
+  // Base: <xxxxx>: [xxxx - xxxx], state=MEM_xxx, prot=x, type=MEM_xxx       (region 1)
+  //                [xxxx - xxxx], state=MEM_xxx, prot=x, type=MEM_xxx       (region 2)
+  assert(minfo->State != MEM_FREE, "Not inside an allocation.");
+  address allocation_base = (address)minfo->AllocationBase;
+  #define IS_IN(p) (p >= start && p < end)
+  bool first_line = true;
+  bool is_dll = false;
+  for(;;) {
+    if (first_line) {
+      st->print("Base " PTR_FORMAT ": ", p2i(allocation_base));
+    } else {
+      st->print_raw(NOT_LP64 ("                 ")
+                    LP64_ONLY("                         "));
+    }
+    address region_start = (address)minfo->BaseAddress;
+    address region_end = region_start + minfo->RegionSize;
+    assert(region_end > region_start, "Sanity");
+    if (region_end <= start) {
+      st->print("<outside range> ");
+    } else if (region_start >= end) {
+      st->print("<outside range> ");
+    } else if (!IS_IN(region_start) || !IS_IN(region_end - 1)) {
+      st->print("<partly outside range> ");
+    }
+    st->print("[" PTR_FORMAT "-" PTR_FORMAT "), state=", p2i(region_start), p2i(region_end));
+    switch (minfo->State) {
+      case MEM_COMMIT:  st->print_raw("MEM_COMMIT "); break;
+      case MEM_FREE:    st->print_raw("MEM_FREE   "); break;
+      case MEM_RESERVE: st->print_raw("MEM_RESERVE"); break;
+      default: st->print("%x?", (unsigned)minfo->State);
+    }
+    st->print(", prot=%3x, type=", (unsigned)minfo->Protect);
+    switch (minfo->Type) {
+      case MEM_IMAGE:   st->print_raw("MEM_IMAGE  "); break;
+      case MEM_MAPPED:  st->print_raw("MEM_MAPPED "); break;
+      case MEM_PRIVATE: st->print_raw("MEM_PRIVATE"); break;
+      default: st->print("%x?", (unsigned)minfo->State);
+    }
+    // At the start of every allocation, print some more information about this mapping.
+    // Notes:
+    //  - this could be beefed up a lot, similar to os::print_location
+    //  - for now we just query the allocation start point. This may be confusing for cases where
+    //    the kernel merges multiple mappings.
+    if (first_line) {
+      char buf[MAX_PATH];
+      if (os::dll_address_to_library_name(allocation_base, buf, sizeof(buf), nullptr)) {
+        st->print(", %s", buf);
+        is_dll = true;
+      }
+    }
+    // If memory is accessible, and we do not know anything else about it, print a snippet
+    if (!is_dll &&
+        minfo->State == MEM_COMMIT &&
+        !(minfo->Protect & PAGE_NOACCESS || minfo->Protect & PAGE_GUARD)) {
+      st->print_raw(", ");
+      print_snippet(region_start, st);
+    }
+    st->cr();
+    // Next region...
+    bool rc = checkedVirtualQuery(region_end, minfo);
+    if (rc == false ||                                         // VirtualQuery error, end of allocation?
+       (minfo->State == MEM_FREE) ||                           // end of allocation, free memory follows
+       ((address)minfo->AllocationBase != allocation_base) ||  // end of allocation, a new one starts
+       (region_end > end))                                     // end of range to print.
+    {
+      return region_end;
+    }
+    first_line = false;
+  }
+  #undef IS_IN
+  ShouldNotReachHere();
+  return NULL;
+}
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
+  MEMORY_BASIC_INFORMATION minfo;
+  address start = (address)addr;
+  address end = start + bytes;
+  address p = start;
+  if (p == nullptr) { // Lets skip the zero pages.
+    p += os::vm_allocation_granularity();
+  }
+  address p2 = p; // guard against wraparounds
+  int fuse = 0;
+
+  while (p < end && p >= p2) {
+    p2 = p;
+    // Probe for the next mapping.
+    if (checkedVirtualQuery(p, &minfo)) {
+      if (minfo.State != MEM_FREE) {
+        // Found one. Print it out.
+        address p2 = print_one_mapping(&minfo, start, end, st);
+        assert(p2 > p, "Sanity");
+        p = p2;
+      } else {
+        // Note: for free regions, most of MEMORY_BASIC_INFORMATION is undefined.
+        //  Only region dimensions are not: use those to jump to the end of
+        //  the free range.
+        address region_start = (address)minfo.BaseAddress;
+        address region_end = region_start + minfo.RegionSize;
+        assert(p >= region_start && p < region_end, "Sanity");
+        p = region_end;
+      }
+    } else {
+      // MSDN doc on VirtualQuery is unclear about what it means if it returns an error.
+      //  In particular, whether querying an address outside any mappings would report
+      //  a MEM_FREE region or just return an error. From experiments, it seems to return
+      //  a MEM_FREE region for unmapped areas in valid address space and an error if we
+      //  are outside valid address space.
+      // Here, we advance the probe pointer by alloc granularity. But if the range to print
+      //  is large, this may take a long time. Therefore lets stop right away if the address
+      //  is outside of what we know are valid addresses on Windows. Also, add a loop fuse.
+      static const address end_virt = (address)(LP64_ONLY(0x7ffffffffffULL) NOT_LP64(3*G));
+      if (p >= end_virt) {
+        break;
+      } else {
+        // Advance probe pointer, but with a fuse to break long loops.
+        if (fuse++ == 100000) {
+          break;
+        }
+        p += os::vm_allocation_granularity();
+      }
+    }
+  }
 }

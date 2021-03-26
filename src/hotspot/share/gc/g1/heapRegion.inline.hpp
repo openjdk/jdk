@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
     return (p == humongous_start_region()->bottom());
   }
   if (ClassUnloadingWithConcurrentMark) {
-    return !g1h->is_obj_dead(oop(p), this);
+    return !g1h->is_obj_dead(cast_to_oop(p), this);
   }
   return p < top();
 }
@@ -166,7 +166,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
   return !obj_allocated_since_prev_marking(obj) &&
          !prev_bitmap->is_marked(obj) &&
-         !is_open_archive();
+         !is_closed_archive();
 }
 
 inline size_t HeapRegion::block_size(const HeapWord *addr) const {
@@ -175,23 +175,49 @@ inline size_t HeapRegion::block_size(const HeapWord *addr) const {
   }
 
   if (block_is_obj(addr)) {
-    return oop(addr)->size();
+    return cast_to_oop(addr)->size();
   }
 
   return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap());
 }
 
-inline void HeapRegion::complete_compaction() {
-  // Reset space and bot after compaction is complete if needed.
-  reset_after_compaction();
+inline void HeapRegion::reset_compaction_top_after_compaction() {
+  set_top(compaction_top());
+  _compaction_top = bottom();
+}
+
+inline void HeapRegion::reset_compacted_after_full_gc() {
+  assert(!is_pinned(), "must be");
+
+  reset_compaction_top_after_compaction();
+  // After a compaction the mark bitmap in a non-pinned regions is invalid.
+  // We treat all objects as being above PTAMS.
+  zero_marked_bytes();
+  init_top_at_mark_start();
+
+  reset_after_full_gc_common();
+}
+
+inline void HeapRegion::reset_pinned_after_full_gc() {
+  assert(!is_free(), "should not have compacted free region");
+  assert(is_pinned(), "must be");
+
+  assert(compaction_top() == bottom(),
+         "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
+         hrm_index(), p2i(compaction_top()), p2i(bottom()));
+
+  _prev_top_at_mark_start = top(); // Keep existing top and usage.
+  _prev_marked_bytes = used();
+  _next_top_at_mark_start = bottom();
+  _next_marked_bytes = 0;
+
+  reset_after_full_gc_common();
+}
+
+inline void HeapRegion::reset_after_full_gc_common() {
   if (is_empty()) {
     reset_bot();
   }
-
-  // After a compaction the mark bitmap is invalid, so we must
-  // treat all objects as being inside the unmarked area.
-  zero_marked_bytes();
-  init_top_at_mark_start();
 
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
@@ -210,7 +236,7 @@ inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarke
     // some extra work done by get_next_marked_addr for
     // the case where next_addr is marked.
     if (bitmap->is_marked(next_addr)) {
-      oop current = oop(next_addr);
+      oop current = cast_to_oop(next_addr);
       next_addr += closure->apply(current);
     } else {
       next_addr = bitmap->get_next_marked_addr(next_addr, limit);
@@ -242,6 +268,7 @@ inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t min_word_size,
 inline void HeapRegion::note_start_of_marking() {
   _next_marked_bytes = 0;
   _next_top_at_mark_start = top();
+  _gc_efficiency = -1.0;
 }
 
 inline void HeapRegion::note_end_of_marking() {
@@ -261,7 +288,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
                                                         G1CollectedHeap* g1h) {
   assert(is_humongous(), "precondition");
   HeapRegion* sr = humongous_start_region();
-  oop obj = oop(sr->bottom());
+  oop obj = cast_to_oop(sr->bottom());
 
   // If concurrent and klass_or_null is NULL, then space has been
   // allocated but the object has not yet been published by setting
@@ -341,7 +368,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
 
   const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
   while (true) {
-    oop obj = oop(cur);
+    oop obj = cast_to_oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
     assert(obj->klass_or_null() != NULL,
            "Unparsable heap at " PTR_FORMAT, p2i(cur));

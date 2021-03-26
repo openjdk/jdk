@@ -138,7 +138,7 @@ public final class BasicTest {
 
         TKit.trace("Check parameters in help text");
         TKit.assertNotEquals(0, countStrings.apply(List.of(expectedPrefix)),
-                "Check help text contains plaform specific parameters");
+                "Check help text contains platform specific parameters");
         TKit.assertEquals(0, countStrings.apply(unexpectedPrefixes),
                 "Check help text doesn't contain unexpected parameters");
     }
@@ -226,6 +226,8 @@ public final class BasicTest {
     @Parameter("com.other/com.other.Hello")
     // Modular app in .jmod file
     @Parameter("hello.jmod:com.other/com.other.Hello")
+    // Modular app in exploded .jmod file
+    @Parameter("hello.ejmod:com.other/com.other.Hello")
     public void testApp(String javaAppDesc) {
         JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
         JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);

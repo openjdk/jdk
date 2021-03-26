@@ -56,7 +56,7 @@ template <class E>
 E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
   size_t size = size_for(length);
 
-  char* addr = os::reserve_memory(size, flags);
+  char* addr = os::reserve_memory(size, !ExecMem, flags);
   if (addr == NULL) {
     return NULL;
   }
@@ -73,7 +73,7 @@ template <class E>
 E* MmapArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
   size_t size = size_for(length);
 
-  char* addr = os::reserve_memory(size, flags);
+  char* addr = os::reserve_memory(size, !ExecMem, flags);
   if (addr == NULL) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }

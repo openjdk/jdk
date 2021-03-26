@@ -26,6 +26,10 @@
  * Google Author(s): Behdad Esfahbod
  */
 
+#include "hb.hh"
+
+#ifndef HB_NO_OT_SHAPE
+
 #include "hb-ot-map.hh"
 #include "hb-ot-shape.hh"
 #include "hb-ot-layout.hh"
@@ -34,7 +38,7 @@
 void hb_ot_map_t::collect_lookups (unsigned int table_index, hb_set_t *lookups_out) const
 {
   for (unsigned int i = 0; i < lookups[table_index].length; i++)
-    hb_set_add (lookups_out, lookups[table_index][i].index);
+    lookups_out->add (lookups[table_index][i].index);
 }
 
 
@@ -187,13 +191,14 @@ hb_ot_map_builder_t::compile (hb_ot_map_t                  &m,
           feature_infos[j].max_value = feature_infos[i].max_value;
           feature_infos[j].default_value = feature_infos[i].default_value;
         } else {
-          feature_infos[j].flags &= ~F_GLOBAL;
-          feature_infos[j].max_value = MAX (feature_infos[j].max_value, feature_infos[i].max_value);
+          if (feature_infos[j].flags & F_GLOBAL)
+            feature_infos[j].flags ^= F_GLOBAL;
+          feature_infos[j].max_value = hb_max (feature_infos[j].max_value, feature_infos[i].max_value);
           /* Inherit default_value from j */
         }
         feature_infos[j].flags |= (feature_infos[i].flags & F_HAS_FALLBACK);
-        feature_infos[j].stage[0] = MIN (feature_infos[j].stage[0], feature_infos[i].stage[0]);
-        feature_infos[j].stage[1] = MIN (feature_infos[j].stage[1], feature_infos[i].stage[1]);
+        feature_infos[j].stage[0] = hb_min (feature_infos[j].stage[0], feature_infos[i].stage[0]);
+        feature_infos[j].stage[1] = hb_min (feature_infos[j].stage[1], feature_infos[i].stage[1]);
       }
     feature_infos.shrink (j + 1);
   }
@@ -213,34 +218,34 @@ hb_ot_map_builder_t::compile (hb_ot_map_t                  &m,
       bits_needed = 0;
     else
       /* Limit bits per feature. */
-      bits_needed = MIN(HB_OT_MAP_MAX_BITS, hb_bit_storage (info->max_value));
+      bits_needed = hb_min (HB_OT_MAP_MAX_BITS, hb_bit_storage (info->max_value));
 
     if (!info->max_value || next_bit + bits_needed > 8 * sizeof (hb_mask_t))
       continue; /* Feature disabled, or not enough bits. */
 
 
-    hb_bool_t found = false;
+    bool found = false;
     unsigned int feature_index[2];
     for (unsigned int table_index = 0; table_index < 2; table_index++)
     {
       if (required_feature_tag[table_index] == info->tag)
         required_feature_stage[table_index] = info->stage[table_index];
 
-      found |= hb_ot_layout_language_find_feature (face,
-                                                   table_tags[table_index],
-                                                   script_index[table_index],
-                                                   language_index[table_index],
-                                                   info->tag,
-                                                   &feature_index[table_index]);
+      found |= (bool) hb_ot_layout_language_find_feature (face,
+                                                          table_tags[table_index],
+                                                          script_index[table_index],
+                                                          language_index[table_index],
+                                                          info->tag,
+                                                          &feature_index[table_index]);
     }
     if (!found && (info->flags & F_GLOBAL_SEARCH))
     {
       for (unsigned int table_index = 0; table_index < 2; table_index++)
       {
-        found |= hb_ot_layout_table_find_feature (face,
-                                                  table_tags[table_index],
-                                                  info->tag,
-                                                  &feature_index[table_index]);
+        found |= (bool) hb_ot_layout_table_find_feature (face,
+                                                         table_tags[table_index],
+                                                         info->tag,
+                                                         &feature_index[table_index]);
       }
     }
     if (!found && !(info->flags & F_HAS_FALLBACK))
@@ -332,3 +337,6 @@ hb_ot_map_builder_t::compile (hb_ot_map_t                  &m,
     }
   }
 }
+
+
+#endif

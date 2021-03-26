@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1942,15 +1942,14 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, i
     move_resolver.set_multiple_reads_allowed();
 
     Constant* con = from_value->as_Constant();
-    if (con != NULL && !con->is_pinned()) {
-      // unpinned constants may have no register, so add mapping from constant to interval
+    if (con != NULL && (!con->is_pinned() || con->operand()->is_constant())) {
+      // Need a mapping from constant to interval if unpinned (may have no register) or if the operand is a constant (no register).
       move_resolver.add_mapping(LIR_OprFact::value_type(con->type()), to_interval);
     } else {
       // search split child at the throwing op_id
       Interval* from_interval = interval_at_op_id(from_value->operand()->vreg_number(), throwing_op_id);
       move_resolver.add_mapping(from_interval, to_interval);
     }
-
   } else {
     // no phi function, so use reg_num also for from_interval
     // search split child at the throwing op_id
@@ -3929,8 +3928,8 @@ void MoveResolver::insert_move(Interval* from_interval, Interval* to_interval) {
   assert(_insert_list != NULL && _insert_idx != -1, "must setup insert position first");
   assert(_insertion_buffer.lir_list() == _insert_list, "wrong insertion buffer");
 
-  LIR_Opr from_opr = LIR_OprFact::virtual_register(from_interval->reg_num(), from_interval->type());
-  LIR_Opr to_opr = LIR_OprFact::virtual_register(to_interval->reg_num(), to_interval->type());
+  LIR_Opr from_opr = get_virtual_register(from_interval);
+  LIR_Opr to_opr = get_virtual_register(to_interval);
 
   if (!_multiple_reads_allowed) {
     // the last_use flag is an optimization for FPU stack allocation. When the same
@@ -3948,12 +3947,27 @@ void MoveResolver::insert_move(LIR_Opr from_opr, Interval* to_interval) {
   assert(_insert_list != NULL && _insert_idx != -1, "must setup insert position first");
   assert(_insertion_buffer.lir_list() == _insert_list, "wrong insertion buffer");
 
-  LIR_Opr to_opr = LIR_OprFact::virtual_register(to_interval->reg_num(), to_interval->type());
+  LIR_Opr to_opr = get_virtual_register(to_interval);
   _insertion_buffer.move(_insert_idx, from_opr, to_opr);
 
   TRACE_LINEAR_SCAN(4, tty->print("MoveResolver: inserted move from constant "); from_opr->print(); tty->print_cr("  to %d (%d, %d)", to_interval->reg_num(), to_interval->assigned_reg(), to_interval->assigned_regHi()));
 }
 
+LIR_Opr MoveResolver::get_virtual_register(Interval* interval) {
+  // Add a little fudge factor for the bailout since the bailout is only checked periodically. This allows us to hand out
+  // a few extra registers before we really run out which helps to avoid to trip over assertions.
+  int reg_num = interval->reg_num();
+  if (reg_num + 20 >= LIR_OprDesc::vreg_max) {
+    _allocator->bailout("out of virtual registers in linear scan");
+    if (reg_num + 2 >= LIR_OprDesc::vreg_max) {
+      // Wrap it around and continue until bailout really happens to avoid hitting assertions.
+      reg_num = LIR_OprDesc::vreg_base;
+    }
+  }
+  LIR_Opr vreg = LIR_OprFact::virtual_register(reg_num, interval->type());
+  assert(vreg != LIR_OprFact::illegal(), "ran out of virtual registers");
+  return vreg;
+}
 
 void MoveResolver::resolve_mappings() {
   TRACE_LINEAR_SCAN(4, tty->print_cr("MoveResolver: resolving mappings for Block B%d, index %d", _insert_list->block() != NULL ? _insert_list->block()->block_id() : -1, _insert_idx));
@@ -6646,8 +6660,7 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
 
         case lir_rtcall:
         case lir_static_call:
-        case lir_optvirtual_call:
-        case lir_virtual_call:    inc_counter(counter_call); break;
+        case lir_optvirtual_call: inc_counter(counter_call); break;
 
         case lir_move: {
           inc_counter(counter_move);

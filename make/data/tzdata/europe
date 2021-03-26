@@ -1052,17 +1052,16 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 # Denmark, Faroe Islands, and Greenland
 
 # From Jesper Nørgaard Welen (2005-04-26):
-# http://www.hum.aau.dk/~poe/tid/tine/DanskTid.htm says that the law
-# [introducing standard time] was in effect from 1894-01-01....
-# The page http://www.retsinfo.dk/_GETDOCI_/ACCN/A18930008330-REGL
+# the law [introducing standard time] was in effect from 1894-01-01....
+# The page https://www.retsinformation.dk/eli/lta/1893/83
 # confirms this, and states that the law was put forth 1893-03-29.
 #
 # The EU [actually, EEC and Euratom] treaty with effect from 1973:
-# http://www.retsinfo.dk/_GETDOCI_/ACCN/A19722110030-REGL
+# https://www.retsinformation.dk/eli/lta/1972/21100
 #
 # This provoked a new law from 1974 to make possible summer time changes
 # in subsequent decrees with the law
-# http://www.retsinfo.dk/_GETDOCI_/ACCN/A19740022330-REGL
+# https://www.retsinformation.dk/eli/lta/1974/223
 #
 # It seems however that no decree was set forward until 1980.  I have
 # not found any decree, but in another related law, the effecting DST
@@ -1074,7 +1073,7 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 # The law is about the management of the extra hour, concerning
 # working hours reported and effect on obligatory-rest rules (which
 # was suspended on that night):
-# http://www.retsinfo.dk/_GETDOCI_/ACCN/C19801120554-REGL
+# https://web.archive.org/web/20140104053304/https://www.retsinformation.dk/Forms/R0710.aspx?id=60267
 
 # From Jesper Nørgaard Welen (2005-06-11):
 # The Herning Folkeblad (1980-09-26) reported that the night between
@@ -2916,6 +2915,19 @@ Zone Europe/Astrakhan	 3:12:12 -	LMT	1924 May
 # The law has been published today on
 # http://publication.pravo.gov.ru/Document/View/0001201810110037
 
+# From Alexander Krivenyshev (2020-11-27):
+# The State Duma approved (Nov 24, 2020) the transition of the Volgograd
+# region to the Moscow time zone....
+# https://sozd.duma.gov.ru/bill/1012130-7
+#
+# From Stepan Golosunov (2020-12-05):
+# Currently proposed text for the second reading (expected on December 8) ...
+# changes the date to December 27. https://v1.ru/text/gorod/2020/12/04/69601031/
+#
+# From Stepan Golosunov (2020-12-22):
+# The law was published today on
+# http://publication.pravo.gov.ru/Document/View/0001202012220002
+
 Zone Europe/Volgograd	 2:57:40 -	LMT	1920 Jan  3
 			 3:00	-	+03	1930 Jun 21
 			 4:00	-	+04	1961 Nov 11
@@ -2925,7 +2937,8 @@ Zone Europe/Volgograd	 2:57:40 -	LMT	1920 Jan  3
 			 3:00	Russia	+03/+04	2011 Mar 27  2:00s
 			 4:00	-	+04	2014 Oct 26  2:00s
 			 3:00	-	+03	2018 Oct 28  2:00s
-			 4:00	-	+04
+			 4:00	-	+04	2020 Dec 27  2:00s
+			 3:00	-	+03
 
 # From Paul Eggert (2016-11-11):
 # Europe/Saratov covers:

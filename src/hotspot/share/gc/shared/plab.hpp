@@ -151,6 +151,7 @@ class PLABStats : public CHeapObj<mtGC> {
   size_t _wasted;             // of which wasted (internal fragmentation)
   size_t _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
   size_t _unused;             // Unused in last buffer
+  size_t _default_plab_sz;
   size_t _desired_net_plab_sz;// Output of filter (below), suitably trimmed and quantized
   AdaptiveWeightedAverage
          _filter;             // Integrator with decay
@@ -169,13 +170,14 @@ class PLABStats : public CHeapObj<mtGC> {
   virtual size_t compute_desired_plab_sz();
 
  public:
-  PLABStats(const char* description, size_t desired_net_plab_sz_, unsigned wt) :
+  PLABStats(const char* description, size_t default_per_thread_plab_size, size_t desired_net_plab_sz, unsigned wt) :
     _description(description),
     _allocated(0),
     _wasted(0),
     _undo_wasted(0),
     _unused(0),
-    _desired_net_plab_sz(desired_net_plab_sz_),
+    _default_plab_sz(default_per_thread_plab_size),
+    _desired_net_plab_sz(desired_net_plab_sz),
     _filter(wt)
   { }
 

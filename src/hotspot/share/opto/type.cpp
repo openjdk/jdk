@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/stringUtils.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -701,15 +702,8 @@ void Type::Initialize(Compile* current) {
   Arena* type_arena = current->type_arena();
 
   // Create the hash-cons'ing dictionary with top-level storage allocation
-  Dict *tdic = new (type_arena) Dict( (CmpKey)Type::cmp,(Hash)Type::uhash, type_arena, 128 );
+  Dict *tdic = new (type_arena) Dict(*_shared_type_dict, type_arena);
   current->set_type_dict(tdic);
-
-  // Transfer the shared types.
-  DictI i(_shared_type_dict);
-  for( ; i.test(); ++i ) {
-    Type* t = (Type*)i._value;
-    tdic->Insert(t,t);  // New Type, insert into Type table
-  }
 }
 
 //------------------------------hashcons---------------------------------------
@@ -821,18 +815,26 @@ bool Type::interface_vs_oop(const Type *t) const {
 
 #endif
 
-void Type::check_symmetrical(const Type *t, const Type *mt) const {
+void Type::check_symmetrical(const Type* t, const Type* mt) const {
 #ifdef ASSERT
-  assert(mt == t->xmeet(this), "meet not commutative");
+  const Type* mt2 = t->xmeet(this);
+  if (mt != mt2) {
+    tty->print_cr("=== Meet Not Commutative ===");
+    tty->print("t           = ");   t->dump(); tty->cr();
+    tty->print("this        = ");      dump(); tty->cr();
+    tty->print("t meet this = "); mt2->dump(); tty->cr();
+    tty->print("this meet t = ");  mt->dump(); tty->cr();
+    fatal("meet not commutative");
+  }
   const Type* dual_join = mt->_dual;
-  const Type *t2t    = dual_join->xmeet(t->_dual);
-  const Type *t2this = dual_join->xmeet(this->_dual);
+  const Type* t2t    = dual_join->xmeet(t->_dual);
+  const Type* t2this = dual_join->xmeet(this->_dual);
 
   // Interface meet Oop is Not Symmetric:
   // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
   // Interface:NotNull meet Oop:NotNull == java/lang/Object:NotNull
 
-  if( !interface_vs_oop(t) && (t2t != t->_dual || t2this != this->_dual) ) {
+  if (!interface_vs_oop(t) && (t2t != t->_dual || t2this != this->_dual)) {
     tty->print_cr("=== Meet Not Symmetric ===");
     tty->print("t   =                   ");              t->dump(); tty->cr();
     tty->print("this=                   ");                 dump(); tty->cr();
@@ -845,7 +847,7 @@ void Type::check_symmetrical(const Type *t, const Type *mt) const {
     tty->print("mt_dual meet t_dual=    "); t2t           ->dump(); tty->cr();
     tty->print("mt_dual meet this_dual= "); t2this        ->dump(); tty->cr();
 
-    fatal("meet not symmetric" );
+    fatal("meet not symmetric");
   }
 #endif
 }
@@ -1112,6 +1114,73 @@ void Type::dump_stats() {
 }
 #endif
 
+//------------------------------category---------------------------------------
+#ifndef PRODUCT
+Type::Category Type::category() const {
+  const TypeTuple* tuple;
+  switch (base()) {
+    case Type::Int:
+    case Type::Long:
+    case Type::Half:
+    case Type::NarrowOop:
+    case Type::NarrowKlass:
+    case Type::Array:
+    case Type::VectorA:
+    case Type::VectorS:
+    case Type::VectorD:
+    case Type::VectorX:
+    case Type::VectorY:
+    case Type::VectorZ:
+    case Type::AnyPtr:
+    case Type::RawPtr:
+    case Type::OopPtr:
+    case Type::InstPtr:
+    case Type::AryPtr:
+    case Type::MetadataPtr:
+    case Type::KlassPtr:
+    case Type::Function:
+    case Type::Return_Address:
+    case Type::FloatTop:
+    case Type::FloatCon:
+    case Type::FloatBot:
+    case Type::DoubleTop:
+    case Type::DoubleCon:
+    case Type::DoubleBot:
+      return Category::Data;
+    case Type::Memory:
+      return Category::Memory;
+    case Type::Control:
+      return Category::Control;
+    case Type::Top:
+    case Type::Abio:
+    case Type::Bottom:
+      return Category::Other;
+    case Type::Bad:
+    case Type::lastype:
+      return Category::Undef;
+    case Type::Tuple:
+      // Recursive case. Return CatMixed if the tuple contains types of
+      // different categories (e.g. CallStaticJavaNode's type), or the specific
+      // category if all types are of the same category (e.g. IfNode's type).
+      tuple = is_tuple();
+      if (tuple->cnt() == 0) {
+        return Category::Undef;
+      } else {
+        Category first = tuple->field_at(0)->category();
+        for (uint i = 1; i < tuple->cnt(); i++) {
+          if (tuple->field_at(i)->category() != first) {
+            return Category::Mixed;
+          }
+        }
+        return first;
+      }
+    default:
+      assert(false, "unmatched base type: all base types must be categorized");
+  }
+  return Category::Undef;
+}
+#endif
+
 //------------------------------typerr-----------------------------------------
 void Type::typerr( const Type *t ) const {
 #ifndef PRODUCT
@@ -1345,6 +1414,30 @@ bool TypeD::empty(void) const {
   return false;                 // always exactly a singleton
 }
 
+const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::make(checked_cast<jint>(lo), checked_cast<jint>(hi), w);
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::make(lo, hi, w);
+}
+
+jlong TypeInteger::get_con_as_long(BasicType bt) const {
+  if (bt == T_INT) {
+    return is_int()->get_con();
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return is_long()->get_con();
+}
+
+const TypeInteger* TypeInteger::bottom(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::INT;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::LONG;
+}
+
 //=============================================================================
 // Convience common pre-built types.
 const TypeInt *TypeInt::MAX;    // INT_MAX
@@ -1370,7 +1463,7 @@ const TypeInt *TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
 const TypeInt *TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
 //------------------------------TypeInt----------------------------------------
-TypeInt::TypeInt( jint lo, jint hi, int w ) : Type(Int), _lo(lo), _hi(hi), _widen(w) {
+TypeInt::TypeInt( jint lo, jint hi, int w ) : TypeInteger(Int), _lo(lo), _hi(hi), _widen(w) {
 }
 
 //------------------------------make-------------------------------------------
@@ -1630,7 +1723,7 @@ const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
 const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 //------------------------------TypeLong---------------------------------------
-TypeLong::TypeLong( jlong lo, jlong hi, int w ) : Type(Long), _lo(lo), _hi(hi), _widen(w) {
+TypeLong::TypeLong(jlong lo, jlong hi, int w) : TypeInteger(Long), _lo(lo), _hi(hi), _widen(w) {
 }
 
 //------------------------------make-------------------------------------------
@@ -4011,15 +4104,23 @@ int TypeInstPtr::hash(void) const {
 //------------------------------dump2------------------------------------------
 // Dump oop Type
 #ifndef PRODUCT
-void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
+void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
   // Print the name of the klass.
   klass()->print_name_on(st);
 
   switch( _ptr ) {
   case Constant:
-    // TO DO: Make CI print the hex address of the underlying oop.
     if (WizardMode || Verbose) {
-      const_oop()->print_oop(st);
+      ResourceMark rm;
+      stringStream ss;
+
+      st->print(" ");
+      const_oop()->print_oop(&ss);
+      // 'const_oop->print_oop()' may emit newlines('\n') into ss.
+      // suppress newlines from it so -XX:+Verbose -XX:+PrintIdeal dumps one-liner for each node.
+      char* buf = ss.as_string(/* c_heap= */false);
+      StringUtils::replace_no_expand(buf, "\n", "");
+      st->print_raw(buf);
     }
   case BotPTR:
     if (!WizardMode && !Verbose) {
