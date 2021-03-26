@@ -475,7 +475,6 @@ void Universe::fixup_mirrors(TRAPS) {
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
-    EXCEPTION_MARK;
     java_lang_Class::fixup_mirror(k, CATCH);
   }
   delete java_lang_Class::fixup_mirror_list();
@@ -869,8 +868,8 @@ OopStorage* Universe::vm_global() {
 }
 
 void Universe::oopstorage_init() {
-  Universe::_vm_global = OopStorageSet::create_strong("VM Global");
-  Universe::_vm_weak = OopStorageSet::create_weak("VM Weak");
+  Universe::_vm_global = OopStorageSet::create_strong("VM Global", mtInternal);
+  Universe::_vm_weak = OopStorageSet::create_weak("VM Weak", mtInternal);
 }
 
 void universe_oopstorage_init() {

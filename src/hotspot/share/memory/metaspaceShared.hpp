@@ -77,10 +77,16 @@ class MetaspaceShared : AllStatic {
   };
 
   static void prepare_for_dumping() NOT_CDS_RETURN;
-  static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
-  static int preload_classes(const char * class_list_path,
-                             TRAPS) NOT_CDS_RETURN_(0);
+  static void preload_and_dump() NOT_CDS_RETURN;
 
+private:
+  static void preload_and_dump_impl(TRAPS) NOT_CDS_RETURN;
+  static void preload_classes(TRAPS) NOT_CDS_RETURN;
+  static int parse_classlist(const char * classlist_path,
+                              TRAPS) NOT_CDS_RETURN_(0);
+
+
+public:
   static Symbol* symbol_rs_base() {
     return (Symbol*)_symbol_rs.base();
   }
@@ -127,13 +133,15 @@ class MetaspaceShared : AllStatic {
     NOT_CDS(return false);
   }
 
-  static bool try_link_class(InstanceKlass* ik, TRAPS);
+  static bool try_link_class(Thread* current, InstanceKlass* ik);
   static void link_and_cleanup_shared_classes(TRAPS) NOT_CDS_RETURN;
   static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
   static bool linking_required(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS
-  static size_t reserved_space_alignment();
+  // Alignment for the 3 core CDS regions (MC/RW/RO) only.
+  // (Heap region alignments are decided by GC).
+  static size_t core_region_alignment();
   static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
 #endif
 
@@ -174,7 +182,7 @@ class MetaspaceShared : AllStatic {
   static void disable_full_module_graph() { _use_full_module_graph = false; }
 
 private:
-  static void read_extra_data(const char* filename, TRAPS) NOT_CDS_RETURN;
+  static void read_extra_data(Thread* current, const char* filename) NOT_CDS_RETURN;
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the

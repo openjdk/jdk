@@ -405,7 +405,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
                                        ciSymbol* name,
                                        bool require_local) {
   ASSERT_IN_VM;
-  EXCEPTION_CONTEXT;
+  Thread* current = Thread::current();
 
   // Now we need to check the SystemDictionary
   Symbol* sym = name->get_symbol();
@@ -425,11 +425,11 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     return unloaded_klass;
   }
 
-  Handle loader(THREAD, (oop)NULL);
-  Handle domain(THREAD, (oop)NULL);
+  Handle loader;
+  Handle domain;
   if (accessing_klass != NULL) {
-    loader = Handle(THREAD, accessing_klass->loader());
-    domain = Handle(THREAD, accessing_klass->protection_domain());
+    loader = Handle(current, accessing_klass->loader());
+    domain = Handle(current, accessing_klass->protection_domain());
   }
 
   // setup up the proper type to return on OOM
@@ -442,10 +442,10 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   Klass* found_klass;
   {
     ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
-    MutexLocker ml(Compile_lock);
+    MutexLocker ml(current, Compile_lock);
     Klass* kls;
     if (!require_local) {
-      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader, THREAD);
+      kls = SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
     } else {
       kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
@@ -658,6 +658,8 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
       assert (constant->is_instance(), "must be an instance, or not? ");
       return ciConstant(T_OBJECT, constant);
     }
+  } else if (tag.is_unresolved_klass_in_error()) {
+    return ciConstant();
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
     // 4881222: allow ldc to take a class type
     ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);

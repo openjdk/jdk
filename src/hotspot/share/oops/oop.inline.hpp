@@ -294,7 +294,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
   if (old_mark == compare) {
     return NULL;
   } else {
-    return (oop)old_mark.decode_pointer();
+    return cast_to_oop(old_mark.decode_pointer());
   }
 }
 
@@ -302,14 +302,14 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  return (oop) mark().decode_pointer();
+  return cast_to_oop(mark().decode_pointer());
 }
 
 // Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee_acquire() const {
-  return (oop) Atomic::load_acquire(&_mark).decode_pointer();
+  return cast_to_oop(Atomic::load_acquire(&_mark).decode_pointer());
 }
 
 // The following method needs to be MT safe.

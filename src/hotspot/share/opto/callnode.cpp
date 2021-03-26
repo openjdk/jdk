@@ -2058,7 +2058,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // one computed above.
   if (can_reshape && EliminateLocks && !is_non_esc_obj()) {
     //
-    // If we are locking an unescaped object, the lock/unlock is unnecessary
+    // If we are locking an non-escaped object, the lock/unlock is unnecessary
     //
     ConnectionGraph *cgr = phase->C->congraph();
     if (cgr != NULL && cgr->not_global_escape(obj_node())) {
@@ -2226,7 +2226,7 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Escape state is defined after Parse phase.
   if (can_reshape && EliminateLocks && !is_non_esc_obj()) {
     //
-    // If we are unlocking an unescaped object, the lock/unlock is unnecessary.
+    // If we are unlocking an non-escaped object, the lock/unlock is unnecessary.
     //
     ConnectionGraph *cgr = phase->C->congraph();
     if (cgr != NULL && cgr->not_global_escape(obj_node())) {

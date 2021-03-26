@@ -153,9 +153,7 @@ void ArrayKlass::array_klasses_do(void f(Klass* k)) {
   }
 }
 
-// JVM support
-
-jint ArrayKlass::compute_modifier_flags(TRAPS) const {
+jint ArrayKlass::compute_modifier_flags() const {
   return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
 }
 

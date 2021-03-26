@@ -61,7 +61,10 @@ void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address
     thread = Thread::current();
   }
 
-  upcall_helper(thread->as_Java_thread(), rec, buff);
+  {
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+    upcall_helper(thread->as_Java_thread(), rec, buff);
+  }
 
   if (should_detach) {
     JavaVM_ *vm = (JavaVM *)(&main_vm);

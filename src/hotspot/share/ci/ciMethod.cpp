@@ -45,7 +45,6 @@
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
-#include "prims/nativeLookup.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -299,7 +298,7 @@ bool ciMethod::has_balanced_monitors() {
   }
 
   {
-    EXCEPTION_MARK;
+    ExceptionMark em(THREAD);
     ResourceMark rm(THREAD);
     GeneratePairingInfo gpi(method);
     gpi.compute_map(CATCH);
@@ -966,8 +965,7 @@ bool ciMethod::ensure_method_data(const methodHandle& h_m) {
   }
   if (h_m()->method_data() != NULL) {
     _method_data = CURRENT_ENV->get_method_data(h_m()->method_data());
-    _method_data->load_data();
-    return true;
+    return _method_data->load_data();
   } else {
     _method_data = CURRENT_ENV->get_empty_methodData();
     return false;
@@ -1143,7 +1141,7 @@ bool ciMethod::was_executed_more_than(int times) {
 bool ciMethod::has_unloaded_classes_in_signature() {
   VM_ENTRY_MARK;
   {
-    EXCEPTION_MARK;
+    ExceptionMark em(THREAD);
     methodHandle m(THREAD, get_Method());
     bool has_unloaded = Method::has_unloaded_classes_in_signature(m, thread);
     if( HAS_PENDING_EXCEPTION ) {
@@ -1170,7 +1168,7 @@ bool ciMethod::check_call(int refinfo_index, bool is_static) const {
   // FIXME: Remove this method and resolve_method_statically; refactor to use the other LinkResolver entry points.
   VM_ENTRY_MARK;
   {
-    EXCEPTION_MARK;
+    ExceptionMark em(THREAD);
     HandleMark hm(THREAD);
     constantPoolHandle pool (THREAD, get_Method()->constants());
     Bytecodes::Code code = (is_static ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual);

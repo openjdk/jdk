@@ -44,7 +44,7 @@ static oop new_java_util_arraylist(TRAPS) {
   JavaValue result(T_OBJECT);
   JfrJavaArguments args(&result, "java/util/ArrayList", "<init>", "()V", CHECK_NULL);
   JfrJavaSupport::new_object(&args, CHECK_NULL);
-  return (oop)result.get_jobject();
+  return result.get_oop();
 }
 
 static const int initial_array_size = 64;

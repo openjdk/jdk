@@ -148,6 +148,7 @@ public:
   ShenandoahHeap(ShenandoahCollectorPolicy* policy);
   jint initialize();
   void post_initialize();
+  void initialize_mode();
   void initialize_heuristics();
 
   void initialize_serviceability();
@@ -263,6 +264,9 @@ public:
 
     // Heap is under updating: needs no additional barriers.
     UPDATEREFS_BITPOS = 3,
+
+    // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
+    WEAK_ROOTS_BITPOS  = 4,
   };
 
   enum GCState {
@@ -271,6 +275,7 @@ public:
     MARKING       = 1 << MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
     UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
+    WEAK_ROOTS    = 1 << WEAK_ROOTS_BITPOS,
   };
 
 private:
@@ -280,7 +285,6 @@ private:
   ShenandoahSharedFlag   _full_gc_move_in_progress;
   ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
-  ShenandoahSharedFlag   _concurrent_weak_root_in_progress;
 
   void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
@@ -367,7 +371,6 @@ private:
   void update_heap_region_states(bool concurrent);
   void rebuild_free_set(bool concurrent);
 
-  void rendezvous_threads();
   void recycle_trash();
 
 public:

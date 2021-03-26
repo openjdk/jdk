@@ -1605,9 +1605,9 @@ run:
             count_addr = (int *)JvmtiExport::get_field_access_count_addr();
             if ( *count_addr > 0 ) {
               if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
-                obj = (oop)NULL;
+                obj = NULL;
               } else {
-                obj = (oop) STACK_OBJECT(-1);
+                obj = STACK_OBJECT(-1);
                 VERIFY_OOP(obj);
               }
               CALL_VM(InterpreterRuntime::post_field_access(THREAD,
@@ -1623,7 +1623,7 @@ run:
             obj = k->java_mirror();
             MORE_STACK(1);  // Assume single slot push
           } else {
-            obj = (oop) STACK_OBJECT(-1);
+            obj = STACK_OBJECT(-1);
             CHECK_NULL(obj);
           }
 
@@ -1729,13 +1729,13 @@ run:
             count_addr = (int *)JvmtiExport::get_field_modification_count_addr();
             if ( *count_addr > 0 ) {
               if ((Bytecodes::Code)opcode == Bytecodes::_putstatic) {
-                obj = (oop)NULL;
+                obj = NULL;
               }
               else {
                 if (cache->is_long() || cache->is_double()) {
-                  obj = (oop) STACK_OBJECT(-3);
+                  obj = STACK_OBJECT(-3);
                 } else {
-                  obj = (oop) STACK_OBJECT(-2);
+                  obj = STACK_OBJECT(-2);
                 }
                 VERIFY_OOP(obj);
               }
@@ -1764,7 +1764,7 @@ run:
             obj = k->java_mirror();
           } else {
             --count;
-            obj = (oop) STACK_OBJECT(count);
+            obj = STACK_OBJECT(count);
             CHECK_NULL(obj);
           }
 
@@ -1850,35 +1850,42 @@ run:
 
       CASE(_new): {
         u2 index = Bytes::get_Java_u2(pc+1);
+
+        // Attempt TLAB allocation first.
+        //
+        // To do this, we need to make sure:
+        //   - klass is initialized
+        //   - klass can be fastpath allocated (e.g. does not have finalizer)
+        //   - TLAB accepts the allocation
         ConstantPool* constants = istate->method()->constants();
-        if (!constants->tag_at(index).is_unresolved_klass()) {
-          // Make sure klass is initialized and doesn't have a finalizer
+        if (UseTLAB && !constants->tag_at(index).is_unresolved_klass()) {
           Klass* entry = constants->resolved_klass_at(index);
           InstanceKlass* ik = InstanceKlass::cast(entry);
-          if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
+          if (ik->is_initialized() && ik->can_be_fastpath_allocated()) {
             size_t obj_size = ik->size_helper();
-            oop result = NULL;
-            if (UseTLAB) {
-              result = (oop) THREAD->tlab().allocate(obj_size);
-            }
+            HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != NULL) {
-              // Initialize object (if nonzero size and need) and then the header.
-              // If the TLAB isn't pre-zeroed then we'll have to do it.
-              if (!ZeroTLAB) {
-                HeapWord* to_zero = cast_from_oop<HeapWord*>(result) + sizeof(oopDesc) / oopSize;
-                obj_size -= sizeof(oopDesc) / oopSize;
-                if (obj_size > 0 ) {
-                  memset(to_zero, 0, obj_size * HeapWordSize);
-                }
+              // Initialize object field block:
+              //   - if TLAB is pre-zeroed, we can skip this path
+              //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
+              //     this area, and we still need to initialize it
+              if (DEBUG_ONLY(true ||) !ZeroTLAB) {
+                size_t hdr_size = oopDesc::header_size();
+                Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
+
+              oop obj = cast_to_oop(result);
+
+              // Initialize header
               assert(!UseBiasedLocking, "Not implemented");
-              result->set_mark(markWord::prototype());
-              result->set_klass_gap(0);
-              result->set_klass(ik);
+              obj->set_mark(markWord::prototype());
+              obj->set_klass_gap(0);
+              obj->set_klass(ik);
+
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.
               OrderAccess::storestore();
-              SET_STACK_OBJECT(result, 0);
+              SET_STACK_OBJECT(obj, 0);
               UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
             }
           }

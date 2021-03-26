@@ -65,7 +65,6 @@
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "prims/nativeLookup.hpp"
 #include "prims/stackwalk.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -94,6 +93,7 @@
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
@@ -600,7 +600,7 @@ JVM_ENTRY(void, JVM_MonitorWait(JNIEnv* env, jobject handle, jlong ms))
   Handle obj(THREAD, JNIHandles::resolve_non_null(handle));
   JavaThreadInObjectWaitState jtiows(thread, ms != 0);
   if (JvmtiExport::should_post_monitor_wait()) {
-    JvmtiExport::post_monitor_wait(thread, (oop)obj(), ms);
+    JvmtiExport::post_monitor_wait(thread, obj(), ms);
 
     // The current thread already owns the monitor and it has not yet
     // been added to the wait queue so the current thread cannot be
@@ -1350,7 +1350,7 @@ JVM_ENTRY(jint, JVM_GetClassModifiers(JNIEnv *env, jclass cls))
   }
 
   Klass* k = java_lang_Class::as_Klass(mirror);
-  debug_only(int computed_modifiers = k->compute_modifier_flags(CHECK_0));
+  debug_only(int computed_modifiers = k->compute_modifier_flags());
   assert(k->modifier_flags() == computed_modifiers, "modifiers cache is OK");
   return k->modifier_flags();
 JVM_END

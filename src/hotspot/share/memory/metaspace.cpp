@@ -71,7 +71,7 @@ size_t MetaspaceUtils::used_words() {
 }
 
 size_t MetaspaceUtils::used_words(Metaspace::MetadataType mdtype) {
-  return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::used_words_class() : RunningCounters::used_words_nonclass();
+  return mdtype == Metaspace::ClassType ? RunningCounters::used_words_class() : RunningCounters::used_words_nonclass();
 }
 
 size_t MetaspaceUtils::reserved_words() {
@@ -79,7 +79,7 @@ size_t MetaspaceUtils::reserved_words() {
 }
 
 size_t MetaspaceUtils::reserved_words(Metaspace::MetadataType mdtype) {
-  return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::reserved_words_class() : RunningCounters::reserved_words_nonclass();
+  return mdtype == Metaspace::ClassType ? RunningCounters::reserved_words_class() : RunningCounters::reserved_words_nonclass();
 }
 
 size_t MetaspaceUtils::committed_words() {
@@ -87,7 +87,7 @@ size_t MetaspaceUtils::committed_words() {
 }
 
 size_t MetaspaceUtils::committed_words(Metaspace::MetadataType mdtype) {
-  return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::committed_words_class() : RunningCounters::committed_words_nonclass();
+  return mdtype == Metaspace::ClassType ? RunningCounters::committed_words_class() : RunningCounters::committed_words_nonclass();
 }
 
 void MetaspaceUtils::print_metaspace_change(const metaspace::MetaspaceSizesSnapshot& pre_meta_values) {
@@ -607,9 +607,8 @@ void Metaspace::ergo_initialize() {
   //  to commit for the Metaspace.
   //  It is just a number; a limit we compare against before committing. It
   //  does not have to be aligned to anything.
-  //  It gets used as compare value in class CommitLimiter.
-  //  It is set to max_uintx in globals.hpp by default, so by default it does
-  //  not limit anything.
+  //  It gets used as compare value before attempting to increase the metaspace
+  //  commit charge. It defaults to max_uintx (unlimited).
   //
   // CompressedClassSpaceSize is the size, in bytes, of the address range we
   //  pre-reserve for the compressed class space (if we use class space).
@@ -626,8 +625,7 @@ void Metaspace::ergo_initialize() {
   // We still adjust CompressedClassSpaceSize to reasonable limits, mainly to
   //  save on reserved space, and to make ergnonomics less confusing.
 
-  // (aligned just for cleanliness:)
-  MaxMetaspaceSize = MAX2(align_down(MaxMetaspaceSize, commit_alignment()), commit_alignment());
+  MaxMetaspaceSize = MAX2(MaxMetaspaceSize, commit_alignment());
 
   if (UseCompressedClassPointers) {
     // Let CCS size not be larger than 80% of MaxMetaspaceSize. Note that is
@@ -824,13 +822,6 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   }
 
   if (result == NULL) {
-    if (DumpSharedSpaces) {
-      // CDS dumping keeps loading classes, so if we hit an OOM we probably will keep hitting OOM.
-      // We should abort to avoid generating a potentially bad archive.
-      vm_exit_during_cds_dumping(err_msg("Failed allocating metaspace object type %s of size " SIZE_FORMAT ". CDS dump aborted.",
-          MetaspaceObj::type_name(type), word_size * BytesPerWord),
-        err_msg("Please increase MaxMetaspaceSize (currently " SIZE_FORMAT " bytes).", MaxMetaspaceSize));
-    }
     report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
     assert(HAS_PENDING_EXCEPTION, "sanity");
     return NULL;
