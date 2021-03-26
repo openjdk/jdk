@@ -804,7 +804,7 @@ void Arguments::describe_range_error(ArgsRange errcode) {
 }
 
 static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
-  if (JVMFlagAccess::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::xxset(flag, &value, origin) == JVMFlag::SUCCESS) {
     return true;
   } else {
     return false;

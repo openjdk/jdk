@@ -80,6 +80,19 @@ public:
     return JVMFlag::SUCCESS;
   }
 
+  template <typename T>
+  static JVMFlag::Error xxget(const JVMFlag* flag, T* value) {
+    if (flag == NULL) {
+      return JVMFlag::INVALID_FLAG;
+    }
+    int type_enum = flag->type();
+    if (!JVMFlag::is_compatible_type<T>(type_enum)) {
+      return JVMFlag::WRONG_FORMAT;
+    }
+    *value = flag->xxread<T>();
+    return JVMFlag::SUCCESS;
+  }
+
   // This is a *flag specific* setter. It should be used only via by the
   // FLAG_SET_{DEFAULT, CMDLINE, ERGO, MGMT} macros.
   // It's used to set a specific flag whose type is statically known. A mismatched
@@ -97,6 +110,11 @@ public:
   template <typename T, int type_enum>
   static JVMFlag::Error set(JVMFlag* flag, T* value, JVMFlagOrigin origin) {
     return set_impl(flag, type_enum, (void*)value, origin);
+  }
+
+  template <typename T>
+  static JVMFlag::Error xxset(JVMFlag* flag, T* value, JVMFlagOrigin origin) {
+    return set_impl(flag, flag->type(), (void*)value, origin);
   }
 
   static JVMFlag::Error boolAtPut    (JVMFlag* f, bool*     v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(bool)>    (f, v, origin); }
