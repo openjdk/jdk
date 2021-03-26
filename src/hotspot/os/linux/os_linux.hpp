@@ -91,7 +91,7 @@ class Linux {
 
   static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec);
   static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, char* req_addr, bool exec);
-  static char* commit_memory_special(size_t bytes, size_t page_size, char* req_addr, bool exec);
+  static bool commit_memory_special(size_t bytes, size_t page_size, char* req_addr, bool exec);
 
   static bool release_memory_special_impl(char* base, size_t bytes);
   static bool release_memory_special_shm(char* base, size_t bytes);

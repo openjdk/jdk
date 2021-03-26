@@ -3926,10 +3926,10 @@ static void warn_on_commit_special_failure(char* req_addr, size_t bytes,
   }
 }
 
-char* os::Linux::commit_memory_special(size_t bytes,
-                                       size_t page_size,
-                                       char* req_addr,
-                                       bool exec) {
+bool os::Linux::commit_memory_special(size_t bytes,
+                                      size_t page_size,
+                                      char* req_addr,
+                                      bool exec) {
   assert(UseLargePages && UseHugeTLBFS, "Should only get here when HugeTLBFS large pages are used");
   assert(is_aligned(bytes, page_size), "Unaligned size");
   assert(is_aligned(req_addr, page_size), "Unaligned address");
@@ -3946,7 +3946,7 @@ char* os::Linux::commit_memory_special(size_t bytes,
 
   if (addr == MAP_FAILED) {
     warn_on_commit_special_failure(req_addr, bytes, page_size, errno);
-    return NULL;
+    return false;
   }
 
   log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=" SIZE_FORMAT "%s, page size="
@@ -3956,7 +3956,7 @@ char* os::Linux::commit_memory_special(size_t bytes,
                       byte_size_in_exact_unit(page_size),
                       exact_unit_for_byte_size(page_size));
   assert(is_aligned(addr, page_size), "Must be");
-  return addr;
+  return true;
 }
 
 char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
@@ -3986,18 +3986,18 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
 
   // First commit using large pages.
   size_t large_bytes = align_down(bytes, os::large_page_size());
-  char* large_mapping = commit_memory_special(large_bytes, os::large_page_size(), aligned_start, exec);
+  bool large_committed = commit_memory_special(large_bytes, os::large_page_size(), aligned_start, exec);
 
-  if (bytes == large_bytes) {
+  if (large_committed && bytes == large_bytes) {
     // The size was large page aligned so no additional work is
     // needed even if the commit failed.
-    return large_mapping;
+    return aligned_start;
   }
 
   // The requested size requires some small pages as well.
   char* small_start = aligned_start + large_bytes;
   size_t small_size = bytes - large_bytes;
-  if (large_mapping == NULL) {
+  if (!large_committed) {
     // Failed to commit large pages, so we need to unmap the
     // reminder of the orinal reservation.
     ::munmap(small_start, small_size);
@@ -4005,13 +4005,14 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   }
 
   // Commit the remaining bytes using small pages.
-  void* small_mapping = commit_memory_special(small_size, os::vm_page_size(), small_start, exec);
-  if (small_mapping == NULL) {
-    // Failed to commit the remaining size, need to unmap large.
-    ::munmap(large_mapping, large_bytes);
+  bool small_committed = commit_memory_special(small_size, os::vm_page_size(), small_start, exec);
+  if (!small_committed) {
+    // Failed to commit the remaining size, need to unmap
+    // the large pages part of the reservation.
+    ::munmap(aligned_start, large_bytes);
     return NULL;
   }
-  return large_mapping;
+  return aligned_start;
 }
 
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment,
