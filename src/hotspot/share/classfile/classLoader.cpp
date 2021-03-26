@@ -556,7 +556,6 @@ void ClassLoader::setup_module_search_path(Thread* current, const char* path) {
   if (new_entry != NULL) {
     add_to_module_path_entries(path, new_entry);
   }
-  return;
 }
 
 #endif // INCLUDE_CDS
