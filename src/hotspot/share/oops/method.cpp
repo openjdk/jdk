@@ -568,7 +568,7 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
   if (counters == NULL) {
     CompileBroker::log_metaspace_failure();
     ClassLoaderDataGraph::set_metaspace_oom(true);
-    return NULL;   // return the exception (which is cleared)
+    return NULL;
   }
   if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);

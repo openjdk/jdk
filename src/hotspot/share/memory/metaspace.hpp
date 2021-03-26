@@ -124,7 +124,8 @@ public:
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type, TRAPS);
 
-  // Nothrow version of allocate which can be called by a non-Java thread.
+  // Non-TRAPS version of allocate which can be called by a non-Java thread, that returns
+  // NULL on failure.
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type);
 
