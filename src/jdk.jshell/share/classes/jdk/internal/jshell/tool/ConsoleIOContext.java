@@ -365,7 +365,7 @@ class ConsoleIOContext extends IOContext {
                                              .count() == 2;
                 boolean tooManyItems = suggestions.size() > /*in.getAutoprintThreshold()*/AUTOPRINT_THRESHOLD;
                 CompletionTask ordinaryCompletion;
-                List<CharSequence> ordinaryCompletionToShow;
+                List<? extends CharSequence> ordinaryCompletionToShow;
 
                 if (hasBoth) {
                     ordinaryCompletionToShow =
@@ -605,12 +605,12 @@ class ConsoleIOContext extends IOContext {
     }
 
     private final class OrdinaryCompletionTask implements CompletionTask {
-        private final List<CharSequence> toShow;
+        private final List<? extends CharSequence> toShow;
         private final String prefix;
         private final boolean cont;
         private final boolean showSmart;
 
-        public OrdinaryCompletionTask(List<CharSequence> toShow,
+        public OrdinaryCompletionTask(List<? extends CharSequence> toShow,
                                       String prefix,
                                       boolean cont,
                                       boolean showSmart) {
