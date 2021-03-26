@@ -170,10 +170,14 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (dst instanceof sun.nio.ch.DirectBuffer buf) {
-            long address = buf.address() + pos;
-            int n = read(name, address, rem);
-            dst.position(pos + n);
-            return n;
+            try {
+                long address = buf.address() + pos;
+                int n = read(name, address, rem);
+                dst.position(pos + n);
+                return n;
+            } finally {
+                Reference.reachabilityFence(buf);
+            }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
                 long address = nb.address();
@@ -227,10 +231,14 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (src instanceof sun.nio.ch.DirectBuffer buf) {
-            long address = buf.address() + pos;
-            write(name, address, rem);
-            src.position(pos + rem);
-            return rem;
+            try {
+                long address = buf.address() + pos;
+                write(name, address, rem);
+                src.position(pos + rem);
+                return rem;
+            } finally {
+                Reference.reachabilityFence(buf);
+            }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
                 long address = nb.address();
