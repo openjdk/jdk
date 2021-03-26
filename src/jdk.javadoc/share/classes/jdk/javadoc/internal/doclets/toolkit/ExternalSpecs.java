@@ -118,6 +118,15 @@ public class ExternalSpecs {
             this.uri = uri;
             this.title = title;
         }
+
+        boolean match(String s) {
+            String u = uri.toString();
+            if (u.endsWith("/")) {
+                return s.startsWith(u) || s.equals(u.substring(u.length() - 1));
+            } else {
+                return s.equals(u);
+            }
+        }
     }
 
     /**
@@ -160,7 +169,7 @@ public class ExternalSpecs {
         }
         String s = u.toString();
         for (Entry e : l) {
-            if (s.startsWith(e.uri.toString())) {
+            if (e.match(s)) {
                 return e.title;
             }
         }
