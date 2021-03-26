@@ -373,9 +373,10 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @param category  {@link RandomGenerator} sub-interface class to filter
      * @param <T>       {@link RandomGenerator} sub-interface return type
      *
+     * RandomGenerators that are marked as deprecated or are not properly configured are not included in the result.
+     *
      * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
-     * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
-     * as deprecated or are not properly configured are not included in the result.
+     * to locate implementations of the RandomGenerator interface.
      *
      * @return Stream of matching {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
@@ -394,9 +395,10 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Returns a non-empty stream of available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
+     * RandomGenerators that are marked as deprecated or are not properly configured are not included in the result.
+     *
      * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
-     * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
-     * as deprecated or are not properly configured are not included in the result.
+     * to locate implementations of the RandomGenerator interface.
      *
      * @return a non-empty stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
@@ -412,10 +414,6 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Return the name of the <a href="package-summary.html#algorithms">algorithm</a>
      * used by the random number generator.
-     *
-     * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
-     * to locate implementations of the RandomGenerator interface. RandomGenerators that are marked
-     * as deprecated are not included in the result.
      *
      * @return Name of the <a href="package-summary.html#algorithms">algorithm</a>.
      */

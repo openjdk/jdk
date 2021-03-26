@@ -932,9 +932,9 @@ public class Random extends AbstractSpliteratorGenerator
      * @param randomNumberBound the bound (exclusive) of each random value
      * @return a stream of pseudorandom {@code double} values,
      *         each with the given origin (inclusive) and bound (exclusive)
-     * @throws IllegalArgumentException if {@code streamSize} is
-     *         less than zero
-     * @throws IllegalArgumentException if {@code randomNumberOrigin}
+     * @throws IllegalArgumentException if {@code streamSize} is less than zero,
+     *         or {@code randomNumberOrigin} is not finite,
+     *         or {@code randomNumberBound} is not finite, or {@code randomNumberOrigin}
      *         is greater than or equal to {@code randomNumberBound}
      * @since 1.8
      */
