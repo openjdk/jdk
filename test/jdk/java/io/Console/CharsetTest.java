@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,11 +21,21 @@
  * questions.
  */
 
-package jdk.internal.access;
-
 import java.io.Console;
-import java.nio.charset.Charset;
 
-public interface JavaIOAccess {
-    Console console();
+/**
+ * @test
+ * @bug 8264208
+ * @summary Tests Console.charset() method
+ * @build CharsetTest
+ * @run shell runCharsetTest.sh en_US.ISO8859-1 ISO-8859-1
+ * @run shell runCharsetTest.sh en_US.US-ASCII US-ASCII
+ * @run shell runCharsetTest.sh en_US.UTF-8 UTF-8
+ * @run shell runCharsetTest.sh en_US.FOO ignored
+ */
+public class CharsetTest {
+    public static void main(String... args) {
+        Console con = System.console();
+        System.out.println(con.charset());
+    }
 }
