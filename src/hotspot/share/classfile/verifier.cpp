@@ -135,11 +135,9 @@ void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verif
 
 // Prints the end-verification message to the appropriate output.
 void Verifier::log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, oop pending_exception) {
-   Thread* THREAD = Thread::current();
-
   if (pending_exception != NULL) {
     st->print("Verification for %s has", klassName);
-    oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+    oop message = java_lang_Throwable::message(pending_exception);
     if (message != NULL) {
       char* ex_msg = java_lang_String::as_utf8_string(message);
       st->print_cr(" exception pending '%s %s'",
@@ -195,7 +193,8 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
 
   log_info(class, init)("Start class verification for: %s", klass->external_name());
   if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
-    ClassVerifier split_verifier(THREAD->as_Java_thread(), klass);
+    ClassVerifier split_verifier(jt, klass);
+    // We don't use CHECK here, or on inference_verify below, so that we can log any exception.
     split_verifier.verify_class(THREAD);
     exception_name = split_verifier.result();
 
@@ -616,6 +615,7 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
                          create_temporary_symbol(sig, (int)strlen(sig)));
   return TypeOrigin::implicit(vt);
 }
+
 
 void ClassVerifier::verify_class(TRAPS) {
   log_info(verification)("Verifying class %s with new format", _klass->external_name());
