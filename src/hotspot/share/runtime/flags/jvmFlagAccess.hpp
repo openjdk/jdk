@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ class outputStream;
 //  JVMFlag* flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(ObjectAlignmentInBytes));
 //
 //  /* If you use a wrong type, a run-time assertion will happen */
-//  intx v = flag->read<JVM_FLAG_TYPE(intx)>();
+//  intx v = flag->read<intx>();
 //
 //  /* If you use a wrong type, or a NULL flag, an error code is returned */
-//  JVMFlag::Error err = JVMFlagAccess::get<JVM_FLAG_TYPE(intx)>(flag, &v);
+//  JVMFlag::Error err = JVMFlagAccess::get<intx>(flag, &v, origin);
 
 #define JVM_FLAG_TYPE(t) \
   t, JVMFlag::TYPE_ ## t
@@ -62,26 +62,8 @@ public:
   static void print_range(outputStream* st, const JVMFlag* flag, const JVMFlagLimit* range);
   static void print_range(outputStream* st, const JVMFlag* flag);
 
-  template <typename T, int type_enum>
-  static JVMFlag::Error get(const JVMFlag* flag, T* value) {
-    if (flag == NULL) {
-      return JVMFlag::INVALID_FLAG;
-    }
-    if (type_enum == JVMFlag::TYPE_ccstr) {
-      if (!flag->is_ccstr()) { // ccstr or ccstrlist
-        return JVMFlag::WRONG_FORMAT;
-      }
-    } else {
-      if (flag->type() != type_enum) {
-        return JVMFlag::WRONG_FORMAT;
-      }
-    }
-    *value = flag->read<T, type_enum>();
-    return JVMFlag::SUCCESS;
-  }
-
   template <typename T>
-  static JVMFlag::Error xxget(const JVMFlag* flag, T* value) {
+  static JVMFlag::Error get(const JVMFlag* flag, T* value) {
     if (flag == NULL) {
       return JVMFlag::INVALID_FLAG;
     }
@@ -89,7 +71,7 @@ public:
     if (!JVMFlag::is_compatible_type<T>(type_enum)) {
       return JVMFlag::WRONG_FORMAT;
     }
-    *value = flag->xxread<T>();
+    *value = flag->read<T>();
     return JVMFlag::SUCCESS;
   }
 
@@ -102,38 +84,23 @@ public:
     return set_impl(flag_enum, type_enum, &value, origin);
   }
 
-  // This setter, and the xxxAtPut functions below, are *generic* setters. They should be used
-  // by code that can set a number of different flags, often according to external input that
-  // may contain errors.
+  // This is a *generic* setter. It should be used by code that can set a number of different
+  // flags, often according to external input that may contain errors.
   // Examples callers are arguments.cpp, writeableFlags.cpp, and WB_SetXxxVMFlag functions.
   // A mismatched type_enum would result in a JVMFlag::WRONG_FORMAT code.
-  template <typename T, int type_enum>
-  static JVMFlag::Error set(JVMFlag* flag, T* value, JVMFlagOrigin origin) {
-    return set_impl(flag, type_enum, (void*)value, origin);
-  }
-
   template <typename T>
-  static JVMFlag::Error xxset(JVMFlag* flag, T* value, JVMFlagOrigin origin) {
+  static JVMFlag::Error set(JVMFlag* flag, T* value, JVMFlagOrigin origin) {
     return set_impl(flag, flag->type(), (void*)value, origin);
   }
-
-  static JVMFlag::Error boolAtPut    (JVMFlag* f, bool*     v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(bool)>    (f, v, origin); }
-  static JVMFlag::Error intAtPut     (JVMFlag* f, int*      v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(int)>     (f, v, origin); }
-  static JVMFlag::Error uintAtPut    (JVMFlag* f, uint*     v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(uint)>    (f, v, origin); }
-  static JVMFlag::Error intxAtPut    (JVMFlag* f, intx*     v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(intx)>    (f, v, origin); }
-  static JVMFlag::Error uintxAtPut   (JVMFlag* f, uintx*    v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(uintx)>   (f, v, origin); }
-  static JVMFlag::Error uint64_tAtPut(JVMFlag* f, uint64_t* v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(uint64_t)>(f, v, origin); }
-  static JVMFlag::Error size_tAtPut  (JVMFlag* f, size_t*   v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(size_t)>  (f, v, origin); }
-  static JVMFlag::Error doubleAtPut  (JVMFlag* f, double*   v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(double)>  (f, v, origin); }
 
   // Special handling needed for ccstr
   // Contract:  JVMFlag will make private copy of the incoming value.
   // Outgoing value is always malloc-ed, and caller MUST call free.
-  static JVMFlag::Error ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin);
+  static JVMFlag::Error set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin);
 
   // Handy aliases
-  static JVMFlag::Error ccstrAt(const JVMFlag* flag, ccstr* value) {
-    return get<ccstr, JVMFlag::TYPE_ccstr>(flag, value);
+  static JVMFlag::Error ccstrAt(const JVMFlag* flag, ccstr* value) { // FIXME rename
+    return get<ccstr>(flag, value);
   }
 };
 

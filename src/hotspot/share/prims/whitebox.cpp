@@ -1131,7 +1131,7 @@ static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   const JVMFlag* flag = JVMFlag::find_declared_flag(flag_name);
-  JVMFlag::Error result = JVMFlagAccess::xxget<T>(flag, value);
+  JVMFlag::Error result = JVMFlagAccess::get<T>(flag, value);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }
@@ -1145,7 +1145,7 @@ static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   JVMFlag* flag = JVMFlag::find_flag(flag_name);
-  JVMFlag::Error result = JVMFlagAccess::xxset<T>(flag, value, JVMFlagOrigin::INTERNAL);
+  JVMFlag::Error result = JVMFlagAccess::set<T>(flag, value, JVMFlagOrigin::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }
@@ -1208,58 +1208,38 @@ WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
   return NULL;
 WB_END
 
-WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
-  int result;
+template <typename T>
+jobject GetVMFlag_longBox(JNIEnv* env, JavaThread* thread, jstring name) {
+  T result;
   if (GetVMFlag(thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
   return NULL;
+}
+
+WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
+  return GetVMFlag_longBox<int>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUintVMFlag(JNIEnv* env, jobject o, jstring name))
-  uint result;
-  if (GetVMFlag(thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<uint>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetIntxVMFlag(JNIEnv* env, jobject o, jstring name))
-  intx result;
-  if (GetVMFlag(thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<intx>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUintxVMFlag(JNIEnv* env, jobject o, jstring name))
-  uintx result;
-  if (GetVMFlag(thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<uintx>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
-  uint64_t result;
-  if (GetVMFlag(thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<uint64_t>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetSizeTVMFlag(JNIEnv* env, jobject o, jstring name))
-  size_t result;
-  if (GetVMFlag(thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<size_t>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))

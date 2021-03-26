@@ -70,7 +70,7 @@ public:
       }
     }
 
-    T old_value = flag->xxread<T>();
+    T old_value = flag->read<T>();
     trace_flag_changed<T, EVENT>(flag, old_value, value, origin);
     flag->write<T>(value);
     *((T*)value_addr) = old_value;
@@ -80,7 +80,7 @@ public:
   }
 
   JVMFlag::Error check_constraint(const JVMFlag* flag, void * func, bool verbose) const  {
-    return typed_check_constraint(func, flag->xxread<T>(), verbose);
+    return typed_check_constraint(func, flag->read<T>(), verbose);
   }
 
   virtual JVMFlag::Error typed_check_constraint(void * func, T value, bool verbose) const = 0;
@@ -120,7 +120,7 @@ public:
   virtual JVMFlag::Error check_range(const JVMFlag* flag, bool verbose) const {
     const JVMTypedFlagLimit<T>* range = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_range(flag);
     if (range != NULL) {
-      T value = flag->xxread<T>();
+      T value = flag->read<T>();
       if ((value < range->min()) || (value > range->max())) {
         range_error(flag->name(), value, range->min(), range->max(), verbose);
         return JVMFlag::OUT_OF_BOUNDS;
@@ -295,7 +295,7 @@ inline const FlagAccessImpl* JVMFlagAccess::access_impl(const JVMFlag* flag) {
 // This is called by JVMFlagAccess::*AtPut() and JVMFlagAccess::set<...>(JVMFlag* flag, ...)
 JVMFlag::Error JVMFlagAccess::set_impl(JVMFlag* flag, int type_enum, void* value, JVMFlagOrigin origin) {
   if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
-    return ccstrAtPut(flag, (ccstr*)value, origin);
+    return set_ccstr(flag, (ccstr*)value, origin);
   }
 
   if (flag == NULL) {
@@ -307,7 +307,7 @@ JVMFlag::Error JVMFlagAccess::set_impl(JVMFlag* flag, int type_enum, void* value
   return access_impl(flag)->set(flag, value, origin);
 }
 
-JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin) {
+JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin) {
   if (flag == NULL) return JVMFlag::INVALID_FLAG;
   if (!flag->is_ccstr()) return JVMFlag::WRONG_FORMAT;
   ccstr old_value = flag->get_ccstr();

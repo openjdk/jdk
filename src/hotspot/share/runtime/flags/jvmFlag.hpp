@@ -225,22 +225,9 @@ public:
   int type() const { return _type; }
   const char* name() const { return _name; }
 
-  void assert_type(int type_enum) const {
-    if (type_enum == JVMFlag::TYPE_ccstr) {
-      assert(is_ccstr(), "type check"); // ccstr or ccstrlist
-    } else {
-      assert(_type == type_enum, "type check");
-    }
-  }
-
   // Do not use JVMFlag::read() or JVMFlag::write() directly unless you know
   // what you're doing. Use FLAG_SET_XXX macros or JVMFlagAccess instead.
-  template <typename T, int type_enum> T read() const {
-    assert_type(type_enum);
-    return *static_cast<T*>(_addr);
-  }
-
-  template <typename T> T xxread() const {
+  template <typename T> T read() const {
     assert_compatible_type<T>(_type);
     return *static_cast<T*>(_addr);
   }
