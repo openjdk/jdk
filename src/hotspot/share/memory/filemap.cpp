@@ -2336,11 +2336,16 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
       const char* path = scpe->name();
       struct stat st;
       if (os::stat(path, &st) != 0) {
-        char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128); ;
-        jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
+        char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
+        jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
         THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
       } else {
-        ent = ClassLoader::create_class_path_entry_or_fail(path, &st, false, false, CHECK_NULL);
+        ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false);
+        if (ent == NULL) {
+          char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
+          jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
+          THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
+        }
       }
     }
 
