@@ -292,19 +292,12 @@ inline const FlagAccessImpl* JVMFlagAccess::access_impl(const JVMFlag* flag) {
   return flag_accesss[type];
 }
 
-// This is called by JVMFlagAccess::*AtPut() and JVMFlagAccess::set<...>(JVMFlag* flag, ...)
-JVMFlag::Error JVMFlagAccess::set_impl(JVMFlag* flag, int type_enum, void* value, JVMFlagOrigin origin) {
-  if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
+JVMFlag::Error JVMFlagAccess::set_impl(JVMFlag* flag, void* value, JVMFlagOrigin origin) {
+  if (flag->is_ccstr()) {
     return set_ccstr(flag, (ccstr*)value, origin);
+  } else {
+    return access_impl(flag)->set(flag, value, origin);
   }
-
-  if (flag == NULL) {
-    return JVMFlag::INVALID_FLAG;
-  }
-  if (flag->type() != type_enum) {
-    return JVMFlag::WRONG_FORMAT;
-  }
-  return access_impl(flag)->set(flag, value, origin);
 }
 
 JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin) {
@@ -327,30 +320,15 @@ JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrig
 }
 
 // This is called by the FLAG_SET_XXX macros.
-JVMFlag::Error JVMFlagAccess::set_impl(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin) {
+JVMFlag::Error JVMFlagAccess::set_or_assert(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin) {
   if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
-    return ccstrAtPut((JVMFlagsEnum)flag_enum, *((ccstr*)value), origin);
+    // FIXME -- change the FLAG_SET_XXX macros to templates this can be checked using static_assert at compile time.
+    fatal("FLAG_SET_XXX macros should not be used on ccstr options");
   }
 
   JVMFlag* flag = JVMFlag::flag_from_enum(flag_enum);
   assert(flag->type() == type_enum, "wrong flag type");
-  return set_impl(flag, type_enum, value, origin);
-}
-
-// This is called by the FLAG_SET_XXX macros.
-JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlagsEnum flag, ccstr value, JVMFlagOrigin origin) {
-  JVMFlag* faddr = JVMFlag::flag_from_enum(flag);
-  assert(faddr->is_ccstr(), "wrong flag type");
-  ccstr old_value = faddr->get_ccstr();
-  trace_flag_changed<ccstr, EventStringFlagChanged>(faddr, old_value, value, origin);
-  char* new_value = os::strdup_check_oom(value);
-  faddr->set_ccstr(new_value);
-  if (!faddr->is_default() && old_value != NULL) {
-    // Prior value is heap allocated so free it.
-    FREE_C_HEAP_ARRAY(char, old_value);
-  }
-  faddr->set_origin(origin);
-  return JVMFlag::SUCCESS;
+  return set_impl(flag, value, origin);
 }
 
 JVMFlag::Error JVMFlagAccess::check_range(const JVMFlag* flag, bool verbose) {

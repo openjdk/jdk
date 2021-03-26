@@ -52,9 +52,8 @@ class outputStream;
 // of setters are provided. See notes below on which one to use.
 class JVMFlagAccess : AllStatic {
   inline static const FlagAccessImpl* access_impl(const JVMFlag* flag);
-  static JVMFlag::Error set_impl(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin);
-  static JVMFlag::Error set_impl(JVMFlag* flag, int type_enum, void* value, JVMFlagOrigin origin);
-  static JVMFlag::Error ccstrAtPut(JVMFlagsEnum flag, ccstr value, JVMFlagOrigin origin);
+  static JVMFlag::Error set_impl(JVMFlag* flag, void* value, JVMFlagOrigin origin);
+  static JVMFlag::Error set_or_assert(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin);
 
 public:
   static JVMFlag::Error check_range(const JVMFlag* flag, bool verbose);
@@ -81,7 +80,7 @@ public:
   // type_enum will result in an assert.
   template <typename T, int type_enum>
   static JVMFlag::Error set(JVMFlagsEnum flag_enum, T value, JVMFlagOrigin origin) {
-    return set_impl(flag_enum, type_enum, &value, origin);
+    return set_or_assert(flag_enum, type_enum, &value, origin);
   }
 
   // This is a *generic* setter. It should be used by code that can set a number of different
@@ -90,7 +89,13 @@ public:
   // A mismatched type_enum would result in a JVMFlag::WRONG_FORMAT code.
   template <typename T>
   static JVMFlag::Error set(JVMFlag* flag, T* value, JVMFlagOrigin origin) {
-    return set_impl(flag, flag->type(), (void*)value, origin);
+    if (flag == NULL) {
+      return JVMFlag::INVALID_FLAG;
+    }
+    if (!JVMFlag::is_compatible_type<T>(flag->type())) {
+      return JVMFlag::WRONG_FORMAT;
+    }
+    return set_impl(flag, (void*)value, origin);
   }
 
   // Special handling needed for ccstr
@@ -99,7 +104,7 @@ public:
   static JVMFlag::Error set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin);
 
   // Handy aliases
-  static JVMFlag::Error ccstrAt(const JVMFlag* flag, ccstr* value) { // FIXME rename
+  static JVMFlag::Error get_ccstr(const JVMFlag* flag, ccstr* value) {
     return get<ccstr>(flag, value);
   }
 };
