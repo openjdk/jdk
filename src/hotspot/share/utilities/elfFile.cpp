@@ -303,7 +303,8 @@ ElfStringTable* ElfFile::get_string_table(int index) {
   return NULL;
 }
 
-// Use unified logging rather than assert() throughout this method as this code is already part of the error reporting.
+// Use unified logging to report errors rather than assert() throughout this method as this code is already part of the error reporting
+// and the debug symbols might be corrupted or in an unsupported DWARF version.
 bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, const size_t filename_size, int* line, bool is_first_frame) {
   ResourceMark rm;
   // (1)
@@ -345,10 +346,10 @@ bool ElfFile::load_dwarf_file() {
   }
 
   size_t offset = (strlen(debug_filename) + 4) >> 2;
-  const uint32_t crc = ((uint32_t*)debug_filename)[offset];
+  const uint32_t crc = ((uint32_t*) debug_filename)[offset];
   const char* debug_file_directory = "/usr/lib/debug";
   char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(debug_filename) + strlen(_filepath) + strlen(".debug/")
-                                            + strlen(debug_file_directory) + 2);
+                                                  + strlen(debug_file_directory) + 2);
   if (debug_pathname == nullptr) {
     return false;
   }
@@ -363,6 +364,16 @@ bool ElfFile::load_dwarf_file() {
   strcpy(last_slash + 1, debug_filename);
   if (open_valid_debuginfo_file(debug_pathname, crc)) {
     return true;
+  }
+
+  char* dwarf_path = ::getenv("JVM_DWARF_PATH");
+  if (dwarf_path != nullptr) {
+    // Look in environmental variable JVM_DWARF_PATH specified by user.
+    strcat(dwarf_path, "/");
+    strcat(dwarf_path, debug_filename);
+    if (open_valid_debuginfo_file(dwarf_path, crc)) {
+      return true;
+    }
   }
 
   // Look in a subdirectory named ".debug".
@@ -380,6 +391,7 @@ bool ElfFile::load_dwarf_file() {
   if (open_valid_debuginfo_file(debug_pathname, crc)) {
     return true;
   }
+
   return false;
 }
 
@@ -503,7 +515,7 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
 
   FILE* file = fopen(filepath, "r");
   if (file == nullptr) {
-    log_info(dwarf)("Could not open dwarf file %s (%s)", filepath, os::strerror(errno));
+    log_debug(dwarf)("Could not open dwarf file %s (%s)", filepath, os::strerror(errno));
     return false;
   }
 
