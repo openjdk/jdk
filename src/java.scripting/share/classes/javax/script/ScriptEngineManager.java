@@ -247,7 +247,7 @@ public class ScriptEngineManager  {
     private ScriptEngine getEngineBy(String selector, Map<String, ScriptEngineFactory> associations,
         Function<ScriptEngineFactory, List<String>> valuesFn)
     {
-        if (selector == null) throw new NullPointerException();
+        Objects.requireNonNull(selector);
         //look for registered types first
         Object obj;
         if (null != (obj = associations.get(selector))) {
