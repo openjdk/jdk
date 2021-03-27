@@ -28,6 +28,7 @@ import java.util.*;
 import java.security.*;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
+import java.util.function.Function;
 
 /**
  * The <code>ScriptEngineManager</code> implements a discovery and instantiation
@@ -212,44 +213,7 @@ public class ScriptEngineManager  {
      * @throws NullPointerException if shortName is null.
      */
     public ScriptEngine getEngineByName(String shortName) {
-        if (shortName == null) throw new NullPointerException();
-        //look for registered name first
-        Object obj;
-        if (null != (obj = nameAssociations.get(shortName))) {
-            ScriptEngineFactory spi = (ScriptEngineFactory)obj;
-            try {
-                ScriptEngine engine = spi.getScriptEngine();
-                engine.setBindings(getBindings(), ScriptContext.GLOBAL_SCOPE);
-                return engine;
-            } catch (Exception exp) {
-                if (DEBUG) exp.printStackTrace();
-            }
-        }
-
-        for (ScriptEngineFactory spi : engineSpis) {
-            List<String> names = null;
-            try {
-                names = spi.getNames();
-            } catch (Exception exp) {
-                if (DEBUG) exp.printStackTrace();
-            }
-
-            if (names != null) {
-                for (String name : names) {
-                    if (shortName.equals(name)) {
-                        try {
-                            ScriptEngine engine = spi.getScriptEngine();
-                            engine.setBindings(getBindings(), ScriptContext.GLOBAL_SCOPE);
-                            return engine;
-                        } catch (Exception exp) {
-                            if (DEBUG) exp.printStackTrace();
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
+        return getEngineBy(shortName, nameAssociations, ScriptEngineFactory::getNames);
     }
 
     /**
@@ -263,41 +227,7 @@ public class ScriptEngineManager  {
      * @throws NullPointerException if extension is null.
      */
     public ScriptEngine getEngineByExtension(String extension) {
-        if (extension == null) throw new NullPointerException();
-        //look for registered extension first
-        Object obj;
-        if (null != (obj = extensionAssociations.get(extension))) {
-            ScriptEngineFactory spi = (ScriptEngineFactory)obj;
-            try {
-                ScriptEngine engine = spi.getScriptEngine();
-                engine.setBindings(getBindings(), ScriptContext.GLOBAL_SCOPE);
-                return engine;
-            } catch (Exception exp) {
-                if (DEBUG) exp.printStackTrace();
-            }
-        }
-
-        for (ScriptEngineFactory spi : engineSpis) {
-            List<String> exts = null;
-            try {
-                exts = spi.getExtensions();
-            } catch (Exception exp) {
-                if (DEBUG) exp.printStackTrace();
-            }
-            if (exts == null) continue;
-            for (String ext : exts) {
-                if (extension.equals(ext)) {
-                    try {
-                        ScriptEngine engine = spi.getScriptEngine();
-                        engine.setBindings(getBindings(), ScriptContext.GLOBAL_SCOPE);
-                        return engine;
-                    } catch (Exception exp) {
-                        if (DEBUG) exp.printStackTrace();
-                    }
-                }
-            }
-        }
-        return null;
+        return getEngineBy(extension, extensionAssociations, ScriptEngineFactory::getExtensions);
     }
 
     /**
@@ -311,10 +241,16 @@ public class ScriptEngineManager  {
      * @throws NullPointerException if mimeType is null.
      */
     public ScriptEngine getEngineByMimeType(String mimeType) {
-        if (mimeType == null) throw new NullPointerException();
+        return getEngineBy(mimeType, mimeTypeAssociations, ScriptEngineFactory::getMimeTypes);
+    }
+
+    private ScriptEngine getEngineBy(String selector, Map<String, ScriptEngineFactory> associations,
+        Function<ScriptEngineFactory, List<String>> valuesFn)
+    {
+        if (selector == null) throw new NullPointerException();
         //look for registered types first
         Object obj;
-        if (null != (obj = mimeTypeAssociations.get(mimeType))) {
+        if (null != (obj = associations.get(selector))) {
             ScriptEngineFactory spi = (ScriptEngineFactory)obj;
             try {
                 ScriptEngine engine = spi.getScriptEngine();
@@ -326,15 +262,15 @@ public class ScriptEngineManager  {
         }
 
         for (ScriptEngineFactory spi : engineSpis) {
-            List<String> types = null;
+            List<String> values = null;
             try {
-                types = spi.getMimeTypes();
+                values = valuesFn.apply(spi);
             } catch (Exception exp) {
                 if (DEBUG) exp.printStackTrace();
             }
-            if (types == null) continue;
-            for (String type : types) {
-                if (mimeType.equals(type)) {
+            if (values == null) continue;
+            for (String value : values) {
+                if (selector.equals(value)) {
                     try {
                         ScriptEngine engine = spi.getScriptEngine();
                         engine.setBindings(getBindings(), ScriptContext.GLOBAL_SCOPE);
