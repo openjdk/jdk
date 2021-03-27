@@ -354,11 +354,7 @@ public class ScriptEngineManager  {
      * @return List of all discovered <code>ScriptEngineFactory</code>s.
      */
     public List<ScriptEngineFactory> getEngineFactories() {
-        List<ScriptEngineFactory> res = new ArrayList<ScriptEngineFactory>(engineSpis.size());
-        for (ScriptEngineFactory spi : engineSpis) {
-            res.add(spi);
-        }
-        return Collections.unmodifiableList(res);
+        return List.copyOf(engineSpis);
     }
 
     /**
