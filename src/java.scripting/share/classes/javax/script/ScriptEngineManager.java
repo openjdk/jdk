@@ -85,7 +85,7 @@ public class ScriptEngineManager  {
     }
 
     private void initEngines(final ClassLoader loader) {
-        Iterator<ScriptEngineFactory> itr = null;
+        Iterator<ScriptEngineFactory> itr;
         try {
             var sl = AccessController.doPrivileged(
                 (PrivilegedAction<ServiceLoader<ScriptEngineFactory>>)() -> getServiceLoader(loader));
@@ -106,7 +106,6 @@ public class ScriptEngineManager  {
                 } catch (ServiceConfigurationError err) {
                     reportException("ScriptEngineManager providers.next(): ", err);
                     // one factory failed, but check other factories...
-                    continue;
                 }
             }
         } catch (ServiceConfigurationError err) {
@@ -114,7 +113,6 @@ public class ScriptEngineManager  {
             // do not throw any exception here. user may want to
             // manage his/her own factories using this manager
             // by explicit registratation (by registerXXX) methods.
-            return;
         }
     }
 
