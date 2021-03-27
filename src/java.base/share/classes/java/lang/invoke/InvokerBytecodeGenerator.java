@@ -302,8 +302,7 @@ class InvokerBytecodeGenerator {
     }
 
     private static String debugString(Object arg) {
-        if (arg instanceof MethodHandle) {
-            MethodHandle mh = (MethodHandle) arg;
+        if (arg instanceof MethodHandle mh) {
             MemberName member = mh.internalMemberName();
             if (member != null)
                 return member.toString();
@@ -627,8 +626,7 @@ class InvokerBytecodeGenerator {
 
     private void emitReferenceCast(Class<?> cls, Object arg) {
         Name writeBack = null;  // local to write back result
-        if (arg instanceof Name) {
-            Name n = (Name) arg;
+        if (arg instanceof Name n) {
             if (lambdaForm.useCount(n) > 1) {
                 // This guy gets used more than once.
                 writeBack = n;
@@ -1679,8 +1677,7 @@ class InvokerBytecodeGenerator {
 
     private void emitPushArgument(Class<?> ptype, Object arg) {
         BasicType bptype = basicType(ptype);
-        if (arg instanceof Name) {
-            Name n = (Name) arg;
+        if (arg instanceof Name n) {
             emitLoadInsn(n.type, n.index());
             emitImplicitConversion(n.type, ptype, n);
         } else if (arg == null && bptype == L_TYPE) {

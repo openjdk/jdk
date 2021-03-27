@@ -87,11 +87,16 @@ class ValidOptions {
         options.put(CLIOptions.INSTALL_DIR.getId(), USE.INSTALL);
         options.put(CLIOptions.PREDEFINED_APP_IMAGE.getId(), USE.INSTALL);
 
+        options.put(CLIOptions.ABOUT_URL.getId(), USE.INSTALL);
+
         options.put(CLIOptions.FILE_ASSOCIATIONS.getId(),
             (Platform.getPlatform() == Platform.MAC) ?  USE.ALL : USE.INSTALL);
 
         if (Platform.getPlatform() == Platform.WINDOWS) {
             options.put(CLIOptions.WIN_CONSOLE_HINT.getId(), USE.LAUNCHER);
+
+            options.put(CLIOptions.WIN_HELP_URL.getId(), USE.INSTALL);
+            options.put(CLIOptions.WIN_UPDATE_URL.getId(), USE.INSTALL);
 
             options.put(CLIOptions.WIN_MENU_HINT.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_MENU_GROUP.getId(), USE.INSTALL);

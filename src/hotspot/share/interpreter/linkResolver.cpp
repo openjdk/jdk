@@ -51,7 +51,6 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
-#include "prims/nativeLookup.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -383,7 +382,7 @@ Method* LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
 Method* LinkResolver::lookup_instance_method_in_klasses(Klass* klass,
                                                         Symbol* name,
                                                         Symbol* signature,
-                                                        Klass::PrivateLookupMode private_mode, TRAPS) {
+                                                        Klass::PrivateLookupMode private_mode) {
   Method* result = klass->uncached_lookup_method(name, signature, Klass::OverpassLookupMode::find, private_mode);
 
   while (result != NULL && result->is_static() && result->method_holder()->super() != NULL) {
@@ -544,13 +543,13 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
   return NULL;
 }
 
-static void print_nest_host_error_on(stringStream* ss, Klass* ref_klass, Klass* sel_klass, TRAPS) {
+static void print_nest_host_error_on(stringStream* ss, Klass* ref_klass, Klass* sel_klass) {
   assert(ref_klass->is_instance_klass(), "must be");
   assert(sel_klass->is_instance_klass(), "must be");
   InstanceKlass* ref_ik = InstanceKlass::cast(ref_klass);
   InstanceKlass* sel_ik = InstanceKlass::cast(sel_klass);
-  const char* nest_host_error_1 = ref_ik->nest_host_error(THREAD);
-  const char* nest_host_error_2 = sel_ik->nest_host_error(THREAD);
+  const char* nest_host_error_1 = ref_ik->nest_host_error();
+  const char* nest_host_error_2 = sel_ik->nest_host_error();
   if (nest_host_error_1 != NULL || nest_host_error_2 != NULL) {
     ss->print(", (%s%s%s)",
               (nest_host_error_1 != NULL) ? nest_host_error_1 : "",
@@ -611,7 +610,7 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
     // For private access see if there was a problem with nest host
     // resolution, and if so report that as part of the message.
     if (sel_method->is_private()) {
-      print_nest_host_error_on(&ss, ref_klass, sel_klass, THREAD);
+      print_nest_host_error_on(&ss, ref_klass, sel_klass);
     }
 
     Exceptions::fthrow(THREAD_AND_LOCATION,
@@ -676,7 +675,7 @@ void LinkResolver::check_method_loader_constraints(const LinkInfo& link_info,
     SystemDictionary::check_signature_loaders(link_info.signature(),
                                               /*klass_being_linked*/ NULL, // We are not linking class
                                               current_loader,
-                                              resolved_loader, true, CHECK);
+                                              resolved_loader, true);
   if (failed_type_symbol != NULL) {
     Klass* current_class = link_info.current_klass();
     ClassLoaderData* current_loader_data = current_class->class_loader_data();
@@ -713,8 +712,7 @@ void LinkResolver::check_field_loader_constraints(Symbol* field, Symbol* sig,
     SystemDictionary::check_signature_loaders(sig,
                                               /*klass_being_linked*/ NULL, // We are not linking class
                                               ref_loader, sel_loader,
-                                              false,
-                                              CHECK);
+                                              false);
   if (failed_type_symbol != NULL) {
     stringStream ss;
     const char* failed_type_name = failed_type_symbol->as_klass_external_name();
@@ -956,7 +954,7 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
     // For private access see if there was a problem with nest host
     // resolution, and if so report that as part of the message.
     if (fd.is_private()) {
-      print_nest_host_error_on(&ss, ref_klass, sel_klass, THREAD);
+      print_nest_host_error_on(&ss, ref_klass, sel_klass);
     }
     Exceptions::fthrow(THREAD_AND_LOCATION,
                        vmSymbols::java_lang_IllegalAccessError(),
@@ -1248,7 +1246,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
       Method* instance_method = lookup_instance_method_in_klasses(super_klass,
                                                      resolved_method->name(),
                                                      resolved_method->signature(),
-                                                     Klass::PrivateLookupMode::find, CHECK);
+                                                     Klass::PrivateLookupMode::find);
       sel_method = methodHandle(THREAD, instance_method);
 
       // check if found
@@ -1490,7 +1488,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
     Method* method = lookup_instance_method_in_klasses(recv_klass,
                                                        resolved_method->name(),
                                                        resolved_method->signature(),
-                                                       Klass::PrivateLookupMode::skip, CHECK);
+                                                       Klass::PrivateLookupMode::skip);
     selected_method = methodHandle(THREAD, method);
 
     if (selected_method.is_null() && !check_null_and_abstract) {
@@ -1770,7 +1768,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // to CPCE state, including f1.
 
   // Log dynamic info to CDS classlist.
-  ArchiveUtils::log_to_classlist(&bootstrap_specifier, THREAD);
+  ArchiveUtils::log_to_classlist(&bootstrap_specifier, CHECK);
 }
 
 void LinkResolver::resolve_dynamic_call(CallInfo& result,

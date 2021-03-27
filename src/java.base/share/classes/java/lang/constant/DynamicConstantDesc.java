@@ -350,12 +350,11 @@ public abstract class DynamicConstantDesc<T>
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof DynamicConstantDesc)) return false;
-        DynamicConstantDesc<?> desc = (DynamicConstantDesc<?>) o;
-        return Objects.equals(bootstrapMethod, desc.bootstrapMethod) &&
-               Arrays.equals(bootstrapArgs, desc.bootstrapArgs) &&
-               Objects.equals(constantName, desc.constantName) &&
-               Objects.equals(constantType, desc.constantType);
+        return (o instanceof DynamicConstantDesc<?> desc)
+                && Objects.equals(bootstrapMethod, desc.bootstrapMethod)
+                && Arrays.equals(bootstrapArgs, desc.bootstrapArgs)
+                && Objects.equals(constantName, desc.constantName)
+                && Objects.equals(constantType, desc.constantType);
     }
 
     @Override

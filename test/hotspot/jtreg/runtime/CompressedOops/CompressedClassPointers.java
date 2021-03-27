@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,9 +125,11 @@ public class CompressedClassPointers {
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (testNarrowKlassBase()) {
-            output.shouldContain("Narrow klass base: 0x0000000000000000");
-            if (!Platform.isAArch64() && !Platform.isOSX()) {
-                output.shouldContain("Narrow klass shift: 0");
+            if (!(Platform.isAArch64() && Platform.isOSX())) { // see JDK-8262895
+                output.shouldContain("Narrow klass base: 0x0000000000000000");
+                if (!Platform.isAArch64() && !Platform.isOSX()) {
+                    output.shouldContain("Narrow klass shift: 0");
+                }
             }
         }
         output.shouldHaveExitValue(0);

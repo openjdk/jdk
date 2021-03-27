@@ -115,13 +115,12 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
       if (args[0].equals("help") || args[0].equals("-help")) {
         doUsage();
       }
-      // If all numbers, it is a PID to attach to
-      // Else, it is a pathname to a .../bin/java for a core file.
       try {
+        // Attempt to attach as a PID
         pid = Integer.parseInt(args[0]);
       } catch (NumberFormatException e) {
-        execPath = args[0];
-        coreFilename = "core";
+        // Attempt to connect to remote debug server
+        debugServerName = args[0];
       }
       break;
 

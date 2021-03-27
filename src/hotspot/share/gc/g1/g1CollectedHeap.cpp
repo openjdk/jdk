@@ -3514,7 +3514,7 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
     bool humongous_region_is_candidate(HeapRegion* region) const {
       assert(region->is_starts_humongous(), "Must start a humongous object");
 
-      oop obj = oop(region->bottom());
+      oop obj = cast_to_oop(region->bottom());
 
       // Dead objects cannot be eager reclaim candidates. Due to class
       // unloading it is unsafe to query their classes so we return early.
@@ -3979,6 +3979,8 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
 
   eagerly_reclaim_humongous_regions();
 
+  rebuild_free_region_list();
+
   record_obj_copy_mem_stats();
 
   evacuation_info.set_collectionset_used_before(collection_set()->bytes_used_before());
@@ -4330,21 +4332,17 @@ void G1CollectedHeap::free_collection_set(G1CollectionSet* collection_set, G1Eva
   Ticks free_cset_end_time = Ticks::now();
   phase_times()->record_total_free_cset_time_ms((free_cset_end_time - free_cset_start_time).seconds() * 1000.0);
 
-  // Now rebuild the free region list.
-  _hrm.rebuild_free_list(workers());
-  phase_times()->record_total_rebuild_freelist_time_ms((Ticks::now() - free_cset_end_time).seconds() * 1000.0);
-
   collection_set->clear();
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {
- private:
+private:
   FreeRegionList* _free_region_list;
   HeapRegionSet* _proxy_set;
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
- public:
+public:
 
   G1FreeHumongousRegionClosure(FreeRegionList* free_region_list) :
     _free_region_list(free_region_list), _proxy_set(NULL), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
@@ -4357,7 +4355,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    oop obj = (oop)r->bottom();
+    oop obj = cast_to_oop(r->bottom());
     G1CMBitMap* next_bitmap = g1h->concurrent_mark()->next_mark_bitmap();
 
     // The following checks whether the humongous object is live are sufficient.
@@ -4479,11 +4477,16 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
     }
   }
 
-  prepend_to_freelist(&local_cleanup_list);
   decrement_summary_bytes(cl.bytes_freed());
 
   phase_times()->record_fast_reclaim_humongous_time_ms((os::elapsedTime() - start_time) * 1000.0,
                                                        cl.humongous_objects_reclaimed());
+}
+
+void G1CollectedHeap::rebuild_free_region_list() {
+  Ticks start = Ticks::now();
+  _hrm.rebuild_free_list(workers());
+  phase_times()->record_total_rebuild_freelist_time_ms((Ticks::now() - start).seconds() * 1000.0);
 }
 
 class G1AbandonCollectionSetClosure : public HeapRegionClosure {

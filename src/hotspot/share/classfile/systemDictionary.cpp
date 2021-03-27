@@ -455,73 +455,6 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   return superk;
 }
 
-void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
-                                                  Handle class_loader,
-                                                  Handle protection_domain,
-                                                  TRAPS) {
-  // Now we have to call back to java to check if the initating class has access
-  assert(class_loader() != NULL, "Should not call this");
-  assert(protection_domain() != NULL, "Should not call this");
-
-  // We only have to call checkPackageAccess if there's a security manager installed.
-  if (java_lang_System::has_security_manager()) {
-
-    // This handle and the class_loader handle passed in keeps this class from
-    // being unloaded through several GC points.
-    // The class_loader handle passed in is the initiating loader.
-    Handle mirror(THREAD, klass->java_mirror());
-
-    InstanceKlass* system_loader = vmClasses::ClassLoader_klass();
-    JavaValue result(T_VOID);
-    JavaCalls::call_special(&result,
-                           class_loader,
-                           system_loader,
-                           vmSymbols::checkPackageAccess_name(),
-                           vmSymbols::class_protectiondomain_signature(),
-                           mirror,
-                           protection_domain,
-                           THREAD);
-
-    LogTarget(Debug, protectiondomain) lt;
-    if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
-      // Print out trace information
-      LogStream ls(lt);
-      ls.print_cr("Checking package access");
-      ls.print("class loader: ");
-      class_loader()->print_value_on(&ls);
-      ls.print(" protection domain: ");
-      protection_domain()->print_value_on(&ls);
-      ls.print(" loading: "); klass->print_value_on(&ls);
-      if (HAS_PENDING_EXCEPTION) {
-        ls.print_cr(" DENIED !!!!!!!!!!!!!!!!!!!!!");
-      } else {
-        ls.print_cr(" granted");
-      }
-    }
-
-    if (HAS_PENDING_EXCEPTION) return;
-  }
-
-  // If no exception has been thrown, we have validated the protection domain
-  // Insert the protection domain of the initiating class into the set.
-  // We still have to add the protection_domain to the dictionary in case a new
-  // security manager is installed later. Calls to load the same class with class loader
-  // and protection domain are expected to succeed.
-  {
-    ClassLoaderData* loader_data = class_loader_data(class_loader);
-    Dictionary* dictionary = loader_data->dictionary();
-
-    Symbol*  kn = klass->name();
-    unsigned int name_hash = dictionary->compute_hash(kn);
-
-    MutexLocker mu(THREAD, SystemDictionary_lock);
-    int d_index = dictionary->hash_to_index(name_hash);
-    dictionary->add_protection_domain(d_index, name_hash, klass,
-                                      protection_domain, THREAD);
-  }
-}
-
 // We only get here if this thread finds that another thread
 // has already claimed the placeholder token for the current operation,
 // but that other thread either never owned or gave up the
@@ -876,12 +809,9 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   DEBUG_ONLY(verify_dictionary_entry(name, loaded_class));
 
   // Check if the protection domain is present it has the right access
-  if (protection_domain() != NULL &&
-     java_lang_System::allow_security_manager() &&
-     !dictionary->is_valid_protection_domain(name_hash, name,
-                                             protection_domain)) {
+  if (protection_domain() != NULL) {
     // Verify protection domain. If it fails an exception is thrown
-    validate_protection_domain(loaded_class, class_loader, protection_domain, CHECK_NULL);
+    dictionary->validate_protection_domain(name_hash, loaded_class, class_loader, protection_domain, CHECK_NULL);
   }
 
   return loaded_class;
@@ -1119,7 +1049,7 @@ InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
 bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                InstanceKlass* ik,
                                                PackageEntry* pkg_entry,
-                                               Handle class_loader, TRAPS) {
+                                               Handle class_loader) {
   assert(!ModuleEntryTable::javabase_moduleEntry()->is_patched(),
          "Cannot use sharing if java.base is patched");
 
@@ -1151,17 +1081,17 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
   if (MetaspaceShared::use_optimized_module_handling()) {
     // Class visibility has not changed between dump time and run time, so a class
     // that was visible (and thus archived) during dump time is always visible during runtime.
-    assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader, THREAD),
+    assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader),
            "visibility cannot change between dump time and runtime");
     return true;
   }
-  return is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader, THREAD);
+  return is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader);
 }
 
 bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
                                                     InstanceKlass* ik,
                                                     PackageEntry* pkg_entry,
-                                                    Handle class_loader, TRAPS) {
+                                                    Handle class_loader) {
   int scp_index = ik->shared_classpath_index();
   assert(!ik->is_shared_unregistered_class(), "this function should be called for built-in classes only");
   assert(scp_index >= 0, "must be");
@@ -1279,7 +1209,7 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
   // as verified in SystemDictionaryShared::add_lambda_proxy_class()
   assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
   assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
-  ik->set_nest_host(shared_nest_host, THREAD);
+  ik->set_nest_host(shared_nest_host);
 
   InstanceKlass* loaded_ik = load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, CHECK_NULL);
 
@@ -1301,9 +1231,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
   Symbol* class_name = ik->name();
 
-  bool visible = is_shared_class_visible(
-                          class_name, ik, pkg_entry, class_loader, CHECK_NULL);
-  if (!visible) {
+  if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
     return NULL;
   }
 
@@ -1646,13 +1574,14 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     // Other cases fall through, and may run into duplicate defines
     // caught by finding an entry in the SystemDictionary
     if (is_parallelDefine(class_loader) && (probe->instance_klass() != NULL)) {
+      InstanceKlass* ik = probe->instance_klass();
       placeholders()->find_and_remove(name_hash, name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
       SystemDictionary_lock->notify_all();
 #ifdef ASSERT
       InstanceKlass* check = dictionary->find_class(name_hash, name_h);
       assert(check != NULL, "definer missed recording success");
 #endif
-      return probe->instance_klass();
+      return ik;
     } else {
       // This thread will define the class (even if earlier thread tried and had an error)
       probe->set_definer(THREAD);
@@ -1887,7 +1816,7 @@ void SystemDictionary::update_dictionary(unsigned int hash,
 // loader constraints might know about a class that isn't fully loaded
 // yet and these will be ignored.
 Klass* SystemDictionary::find_constrained_instance_or_array_klass(
-                    Symbol* class_name, Handle class_loader, Thread* THREAD) {
+                    Thread* current, Symbol* class_name, Handle class_loader) {
 
   // First see if it has been loaded directly.
   // Force the protection domain to be null.  (This removes protection checks.)
@@ -1909,7 +1838,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
     if (t != T_OBJECT) {
       klass = Universe::typeArrayKlassObj(t);
     } else {
-      MutexLocker mu(THREAD, SystemDictionary_lock);
+      MutexLocker mu(current, SystemDictionary_lock);
       klass = constraints()->find_constrained_klass(ss.as_symbol(), class_loader);
     }
     // If element class already loaded, allocate array klass
@@ -1917,7 +1846,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
       klass = klass->array_klass_or_null(ndims);
     }
   } else {
-    MutexLocker mu(THREAD, SystemDictionary_lock);
+    MutexLocker mu(current, SystemDictionary_lock);
     // Non-array classes are easy: simply check the constraint table.
     klass = constraints()->find_constrained_klass(class_name, class_loader);
   }
@@ -1928,8 +1857,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
 bool SystemDictionary::add_loader_constraint(Symbol* class_name,
                                              Klass* klass_being_linked,
                                              Handle class_loader1,
-                                             Handle class_loader2,
-                                             Thread* THREAD) {
+                                             Handle class_loader2) {
   ClassLoaderData* loader_data1 = class_loader_data(class_loader1);
   ClassLoaderData* loader_data2 = class_loader_data(class_loader2);
 
@@ -1959,7 +1887,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
   unsigned int name_hash2 = dictionary2->compute_hash(constraint_name);
 
   {
-    MutexLocker mu_s(THREAD, SystemDictionary_lock);
+    MutexLocker mu_s(SystemDictionary_lock);
     InstanceKlass* klass1 = dictionary1->find_class(name_hash1, constraint_name);
     InstanceKlass* klass2 = dictionary2->find_class(name_hash2, constraint_name);
     bool result = constraints()->add_entry(constraint_name, klass1, class_loader1,
@@ -1969,7 +1897,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
         !klass_being_linked->is_shared()) {
          SystemDictionaryShared::record_linking_constraint(constraint_name,
                                      InstanceKlass::cast(klass_being_linked),
-                                     class_loader1, class_loader2, THREAD);
+                                     class_loader1, class_loader2);
     }
 #endif // INCLUDE_CDS
     if (Signature::is_array(class_name)) {
@@ -2107,9 +2035,9 @@ const char* SystemDictionary::find_nest_host_error(const constantPoolHandle& poo
 // NULL if no constraint failed.  No exception except OOME is thrown.
 // Arrays are not added to the loader constraint table, their elements are.
 Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
-                                               Klass* klass_being_linked,
-                                               Handle loader1, Handle loader2,
-                                               bool is_method, TRAPS)  {
+                                                  Klass* klass_being_linked,
+                                                  Handle loader1, Handle loader2,
+                                                  bool is_method)  {
   // Nothing to do if loaders are the same.
   if (loader1() == loader2()) {
     return NULL;
@@ -2121,7 +2049,7 @@ Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
       // Note: In the future, if template-like types can take
       // arguments, we will want to recognize them and dig out class
       // names hiding inside the argument lists.
-      if (!add_loader_constraint(sig, klass_being_linked, loader1, loader2, THREAD)) {
+      if (!add_loader_constraint(sig, klass_being_linked, loader1, loader2)) {
         return sig;
       }
     }
