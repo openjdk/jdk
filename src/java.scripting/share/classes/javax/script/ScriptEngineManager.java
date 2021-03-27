@@ -60,8 +60,7 @@ public class ScriptEngineManager  {
      * @see java.lang.Thread#getContextClassLoader
      */
     public ScriptEngineManager() {
-        ClassLoader ctxtLoader = Thread.currentThread().getContextClassLoader();
-        init(ctxtLoader);
+        this(Thread.currentThread().getContextClassLoader());
     }
 
     /**
@@ -74,18 +73,6 @@ public class ScriptEngineManager  {
      * @param loader ClassLoader used to discover script engine factories.
      */
     public ScriptEngineManager(ClassLoader loader) {
-        init(loader);
-    }
-
-    private void init(final ClassLoader loader) {
-        globalScope = new SimpleBindings();
-        engineSpis = new TreeSet<ScriptEngineFactory>(Comparator.comparing(
-            ScriptEngineFactory::getEngineName,
-            Comparator.nullsLast(Comparator.naturalOrder()))
-        );
-        nameAssociations = new HashMap<String, ScriptEngineFactory>();
-        extensionAssociations = new HashMap<String, ScriptEngineFactory>();
-        mimeTypeAssociations = new HashMap<String, ScriptEngineFactory>();
         initEngines(loader);
     }
 
@@ -329,18 +316,23 @@ public class ScriptEngineManager  {
         extensionAssociations.put(extension, factory);
     }
 
+    private static final Comparator<ScriptEngineFactory> COMPARATOR = Comparator.comparing(
+        ScriptEngineFactory::getEngineName,
+        Comparator.nullsLast(Comparator.naturalOrder())
+    );
+
     /** Set of script engine factories discovered. */
-    private TreeSet<ScriptEngineFactory> engineSpis;
+    private final TreeSet<ScriptEngineFactory> engineSpis = new TreeSet<>(COMPARATOR);
 
     /** Map of engine name to script engine factory. */
-    private HashMap<String, ScriptEngineFactory> nameAssociations;
+    private final HashMap<String, ScriptEngineFactory> nameAssociations = new HashMap<>();
 
     /** Map of script file extension to script engine factory. */
-    private HashMap<String, ScriptEngineFactory> extensionAssociations;
+    private final HashMap<String, ScriptEngineFactory> extensionAssociations = new HashMap<>();
 
     /** Map of script MIME type to script engine factory. */
-    private HashMap<String, ScriptEngineFactory> mimeTypeAssociations;
+    private final HashMap<String, ScriptEngineFactory> mimeTypeAssociations = new HashMap<>();
 
     /** Global bindings associated with script engines created by this manager. */
-    private Bindings globalScope;
+    private Bindings globalScope = new SimpleBindings();
 }
