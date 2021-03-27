@@ -87,14 +87,8 @@ public class ScriptEngineManager  {
     private void initEngines(final ClassLoader loader) {
         Iterator<ScriptEngineFactory> itr = null;
         try {
-            ServiceLoader<ScriptEngineFactory> sl = AccessController.doPrivileged(
-                new PrivilegedAction<ServiceLoader<ScriptEngineFactory>>() {
-                    @Override
-                    public ServiceLoader<ScriptEngineFactory> run() {
-                        return getServiceLoader(loader);
-                    }
-                });
-
+            var sl = AccessController.doPrivileged(
+                (PrivilegedAction<ServiceLoader<ScriptEngineFactory>>)() -> getServiceLoader(loader));
             itr = sl.iterator();
         } catch (ServiceConfigurationError err) {
             System.err.println("Can't find ScriptEngineFactory providers: " +
