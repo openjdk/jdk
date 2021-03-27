@@ -29,6 +29,7 @@ import java.security.*;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * The <code>ScriptEngineManager</code> implements a discovery and instantiation
@@ -248,37 +249,34 @@ public class ScriptEngineManager  {
         Function<ScriptEngineFactory, List<String>> valuesFn)
     {
         Objects.requireNonNull(selector);
-        //look for registered types first
-        Object obj;
-        if (null != (obj = associations.get(selector))) {
-            ScriptEngineFactory spi = (ScriptEngineFactory)obj;
-            try {
-                ScriptEngine engine = spi.getScriptEngine();
-                engine.setBindings(getBindings(), ScriptContext.GLOBAL_SCOPE);
-                return engine;
-            } catch (Exception exp) {
-                if (DEBUG) exp.printStackTrace();
-            }
-        }
+        Stream<ScriptEngineFactory> spis = Stream.concat(
+            //look for registered types first
+            Stream.ofNullable(associations.get(selector)),
 
-        for (ScriptEngineFactory spi : engineSpis) {
-            List<String> values = null;
-            try {
-                values = valuesFn.apply(spi);
-            } catch (Exception exp) {
-                if (DEBUG) exp.printStackTrace();
-            }
-            if (values != null && values.contains(selector)) {
+            engineSpis.stream().filter(spi -> {
+                try {
+                    List<String> matches = valuesFn.apply(spi);
+                    return matches != null && matches.contains(selector);
+                } catch (Exception exp) {
+                    if (DEBUG) exp.printStackTrace();
+                    return false;
+                }
+            })
+        );
+        return spis
+            .map(spi -> {
                 try {
                     ScriptEngine engine = spi.getScriptEngine();
                     engine.setBindings(getBindings(), ScriptContext.GLOBAL_SCOPE);
                     return engine;
                 } catch (Exception exp) {
                     if (DEBUG) exp.printStackTrace();
+                    return null;
                 }
-            }
-        }
-        return null;
+            })
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(null);
     }
 
     /**
