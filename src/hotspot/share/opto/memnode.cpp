@@ -2939,17 +2939,12 @@ Node *StoreCMNode::Ideal(PhaseGVN *phase, bool can_reshape){
 
 //------------------------------Value-----------------------------------------
 const Type* StoreCMNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
-  const Type *t = phase->type( in(MemNode::Memory) );
-  if( t == Type::TOP ) return Type::TOP;
-  t = phase->type( in(MemNode::Address) );
-  if( t == Type::TOP ) return Type::TOP;
-  t = phase->type( in(MemNode::ValueIn) );
-  if( t == Type::TOP ) return Type::TOP;
+  // Either input is TOP ==> the result is TOP (checked in StoreNode::Value).
   // If extra input is TOP ==> the result is TOP
-  t = phase->type( in(MemNode::OopStore) );
-  if( t == Type::TOP ) return Type::TOP;
-
+  const Type* t = phase->type( in(MemNode::OopStore) );
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
   return StoreNode::Value( phase );
 }
 
@@ -2958,6 +2953,9 @@ const Type* StoreCMNode::Value(PhaseGVN* phase) const {
 //----------------------------------SCMemProjNode------------------------------
 const Type* SCMemProjNode::Value(PhaseGVN* phase) const
 {
+  if (in(0) == NULL || phase->type(in(0)) == Type::TOP) {
+    return Type::TOP;
+  }
   return bottom_type();
 }
 
@@ -2974,6 +2972,27 @@ LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Ty
   init_req(MemNode::Address, adr);
   init_req(MemNode::ValueIn, val);
   init_class_id(Class_LoadStore);
+}
+
+//------------------------------Value-----------------------------------------
+const Type* LoadStoreNode::Value(PhaseGVN* phase) const {
+  // Either input is TOP ==> the result is TOP
+  if (!in(MemNode::Control) || phase->type(in(MemNode::Control)) == Type::TOP) {
+    return Type::TOP;
+  }
+  const Type *t = phase->type( in(MemNode::Memory) );
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+  t = phase->type( in(MemNode::Address) );
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+  t = phase->type( in(MemNode::ValueIn) );
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+  return bottom_type();
 }
 
 uint LoadStoreNode::ideal_reg() const {
@@ -3019,6 +3038,15 @@ uint LoadStoreNode::size_of() const { return sizeof(*this); }
 //----------------------------------LoadStoreConditionalNode--------------------
 LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, NULL, TypeInt::BOOL, 5) {
   init_req(ExpectedIn, ex );
+}
+
+const Type* LoadStoreConditionalNode::Value(PhaseGVN* phase) const {
+  // Either input is TOP ==> the result is TOP
+  const Type* t = phase->type( in(ExpectedIn) );
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+  return LoadStoreNode::Value(phase);
 }
 
 //=============================================================================
