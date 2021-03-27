@@ -42,7 +42,7 @@ public class SimpleBindings implements Bindings {
     /**
      * The {@code Map} field stores the attributes.
      */
-    private Map<String,Object> map;
+    private final Map<String,Object> map;
 
     /**
      * Constructor uses an existing {@code Map} to store the values.
