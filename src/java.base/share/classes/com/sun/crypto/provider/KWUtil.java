@@ -44,11 +44,17 @@ class KWUtil {
     /*
      * The wrapping function W as defined in section 6.1 of NIST SP 800-38F as
      * well as sec 2.2.1 of RFC 3394.
+     * @param firstSemiblk the first semi block value to overwrite the input
+     *         with
      * @param in input bytes
      * @param inLen length of the to-be-processed bytes
      * @param cipher the initialized cipher object used
      */
-    static final void W(byte[] in, int inLen, SymmetricCipher cipher) {
+    static final void W(byte[] firstSemiblk, byte[] in, int inLen,
+            SymmetricCipher cipher) {
+        // overwrite the first block of in with the iv semiblock
+        System.arraycopy(firstSemiblk, 0, in, 0, SEMI_BLKSIZE);
+
         // assert (inLen % SEMI_BLKSIZE == 0) {
         int n = inLen / SEMI_BLKSIZE - 1;
 

@@ -48,23 +48,27 @@ class AESKeyWrapPadded extends FeedbackCipher {
 
     private static final byte[] PAD_BLK = new byte[SEMI_BLKSIZE - 1];
 
-    // generate internal 8-byte iv based on icv and input length
-    private static byte[] generateIV(byte[] icv, int inLen) {
-        if (icv.length != ICV2.length) throw new RuntimeException("Invalid iv");
-        byte[] newIv = Arrays.copyOf(icv, SEMI_BLKSIZE);
-        newIv[4] = (byte) ((inLen >>> 24) & 0xFF);
-        newIv[5] = (byte) ((inLen >>> 16) & 0xFF);
-        newIv[6] = (byte) ((inLen >>> 8) & 0xFF);
-        newIv[7] = (byte) (inLen & 0xFF);
-        return newIv;
+    // set the first semiblock of dest with iv and inLen
+    private static void setIvAndLen(byte[] dest, byte[] iv, int inLen) {
+        assert(dest.length >= SEMI_BLKSIZE) : "buffer needs at least 8 bytes";
+
+        System.arraycopy(iv, 0, dest, 0, iv.length);
+        dest[4] = (byte) ((inLen >>> 24) & 0xFF);
+        dest[5] = (byte) ((inLen >>> 16) & 0xFF);
+        dest[6] = (byte) ((inLen >>> 8) & 0xFF);
+        dest[7] = (byte) (inLen & 0xFF);
     }
 
-    // validate the recovered internal iv against icv and return the
-    // expected input length
-    private static int validateIV(byte[] ivAndLen, byte[] icv)
+    // validate the recovered internal ivAndLen semiblock against iv and
+    // return the recovered input length
+    private static int validateIV(byte[] ivAndLen, byte[] iv)
             throws IllegalBlockSizeException {
-        // check against icv and fail if not match
-        if (!Arrays.equals(ivAndLen, 0, ICV2.length, icv, 0, ICV2.length)) {
+        // check against iv and fail if not match
+        boolean match = true;
+        for (int i = 0; i < ICV2.length; i++) {
+            match &= (ivAndLen[i] == iv[i]);
+        }
+        if (!match) {
             throw new IllegalBlockSizeException("Integrity check failed");
         }
         int outLen = ivAndLen[4];
@@ -161,44 +165,44 @@ class AESKeyWrapPadded extends FeedbackCipher {
     /**
      * Performs single-part encryption operation.
      *
-     * <p>The input <code>pt</code>, starting at <code>ptOfs</code>
-     * and ending at <code>(ptOfs+ptLen-1)</code>, is encrypted.
-     * The result is stored in <code>ct</code>, starting at <code>ctOfs</code>.
+     * <p>The input <code>pt</code>, starting at <code>0</code>
+     * and ending at <code>ptLen-1</code>, is encrypted.
+     * The result is stored in place into <code>pt</code>, starting at
+     * <code>0</code>.
      *
      * <p>The subclass that implements Cipher should ensure that
      * <code>init</code> has been called before this method is called.
      *
      * @param pt the input buffer with the data to be encrypted
-     * @param ptOfs the offset in <code>pt</code>
+     * @param dummy1 the offset in <code>pt</code> which is always 0
      * @param ptLen the length of the input data
-     * @param ct the buffer for the encryption result
-     * @param ctOfs the offset in <code>ct</code>
-     * @return the number of bytes placed into <code>ct</code>
+     * @param dummy2 the output buffer for the encryption which is always pt
+     * @param dummy3 the offset in the output buffer which is always 0
+     * @return the number of bytes placed into <code>pt</code>
      */
     @Override
-    int encryptFinal(byte[] pt, int dummy1, int ptLen, byte[] dummy3,
-            int dummy4) throws IllegalBlockSizeException {
-        // assert ptOfs == 0; ptLen == pt.length; ct == pt; ctOfs == 0
+    int encryptFinal(byte[] pt, int dummy1, int ptLen, byte[] dummy2,
+            int dummy3) throws IllegalBlockSizeException {
         int actualLen = ptLen - SEMI_BLKSIZE;
         if (actualLen < 1) {
             throw new IllegalBlockSizeException
                 ("data should have at least 1 byte");
         }
-        // overwrite the ZERO4 place holder with actual input length
-        pt[4] = (byte) ((actualLen >>> 24) & 0xFF);
-        pt[5] = (byte) ((actualLen >>> 16) & 0xFF);
-        pt[6] = (byte) ((actualLen >>> 8) & 0xFF);
-        pt[7] = (byte) (actualLen & 0xFF);
 
         if (ptLen % SEMI_BLKSIZE != 0) {
             int rem = SEMI_BLKSIZE - (ptLen % SEMI_BLKSIZE);
             System.arraycopy(PAD_BLK, 0, pt, ptLen, rem);
             ptLen += rem;
         }
+
         if (ptLen <= BLKSIZE) {
+            // overwrite the first semiblock with iv and input length
+            setIvAndLen(pt, iv, actualLen);
             embeddedCipher.encryptBlock(pt, 0, pt, 0);
         } else {
-            W(pt, ptLen, embeddedCipher);
+            byte[] ivAndLen = new byte[SEMI_BLKSIZE];
+            setIvAndLen(ivAndLen, iv, actualLen);
+            W(ivAndLen, pt, ptLen, embeddedCipher);
         }
         return ptLen;
     }
@@ -206,31 +210,29 @@ class AESKeyWrapPadded extends FeedbackCipher {
     /**
      * Performs single-part decryption operation.
      *
-     * <p>The input <code>ct</code>, starting at <code>ctOfs</code>
-     * and ending at <code>(ctOfs+ctLen-1)</code>, is decrypted.
-     * The result is stored in <code>pt</code>, starting at <code>ptOfs</code>.
+     * <p>The input <code>ct</code>, starting at <code>0</code>
+     * and ending at <code>ctLen-1</code>, is decrypted.
+     * The result is stored in place into <code>ct</code>, starting at
+     * <code>0</code>.
      *
      * <p>The subclass that implements Cipher should ensure that
      * <code>init</code> has been called before this method is called.
      *
      * @param ct the input buffer with the data to be decrypted
-     * @param ctOfs the offset in <code>ct</code>
+     * @param dummy1 the offset in <code>ct</code> which is always 0
      * @param ctLen the length of the input data
-     * @param pt the buffer for the decryption result
-     * @param ptOfs the offset in <code>pt</code>
-     * @return the number of bytes placed into <code>pt</code>
+     * @param dummy2 the output buffer for the decryption which is always ct
+     * @param dummy3 the offset in the output buffer which is always 0
+     * @return the number of bytes placed into <code>ct</code>
      */
     @Override
-    int decryptFinal(byte[] ct, int dummy1, int ctLen, byte[] dummy3,
-            int dummy4) throws IllegalBlockSizeException {
-        // assert ctOfs == 0; ctLen == ct.length; pt == ct; ptOfs == 0
+    int decryptFinal(byte[] ct, int dummy1, int ctLen, byte[] dummy2,
+            int dummy3) throws IllegalBlockSizeException {
         if (ctLen < BLKSIZE || ctLen % SEMI_BLKSIZE != 0) {
             throw new IllegalBlockSizeException
                 ("data should be at least 16 bytes and multiples of 8");
         }
 
-        // We cannot directly use 'out' as we don't know whether there
-        // are padding bytes
         byte[] ivAndLen = new byte[SEMI_BLKSIZE];
         if (ctLen == BLKSIZE) {
             embeddedCipher.decryptBlock(ct, 0, ct, 0);
@@ -244,9 +246,13 @@ class AESKeyWrapPadded extends FeedbackCipher {
         int outLen = validateIV(ivAndLen, this.iv);
         // check padding bytes
         int padLen = ctLen - outLen;
+        if (padLen < 0 || padLen >= SEMI_BLKSIZE) {
+            throw new IllegalBlockSizeException("Invalid KWP pad length " +
+                    padLen);
+        }
         for (int k = padLen; k > 0; k--) {
             if (ct[ctLen - k] != 0) {
-                throw new IllegalBlockSizeException("KWP Pad check failed");
+                throw new IllegalBlockSizeException("Invalid KWP pad value");
             }
         }
         return outLen;

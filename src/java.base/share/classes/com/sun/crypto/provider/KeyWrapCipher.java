@@ -123,30 +123,27 @@ abstract class KeyWrapCipher extends CipherSpi {
         }
     }
 
-    // place holder for AESKeyWrapPadded
-    private static final byte[] ZERO4 = new byte[4];
-
-    // validate the input length, resize and store the specified bytes into
-    // internal 'dataBuf' and updates 'dataIdx' accordingly
-    // NOTE: if 'in' == null, this method will ensure that dataBuf has enough
-    // capacity for 'inLen' bytes but will attempt to copy bytes from 'in'
-    private void store(byte[] in, int inOfs, int inLen) {
+    // store the specified bytes, e.g. in[inOfs...(inOfs+inLen-1)] into
+    // 'dataBuf' starting at startIdx.
+    // NOTE: if in is null, this method will ensure that dataBuf has enough
+    // capacity for inLen bytes but will NOT copy bytes from in.
+    private void store(int startIdx, byte[] in, int inOfs, int inLen) {
         // In NIST SP 800-38F, KWP input size is limited to be no longer
         // than 2^32 bytes. Otherwise, the length cannot be encoded in 32 bits
         // However, given the current spec requirement that recovered text
         // can only be returned after successful tag verification, we are
         // bound by limiting the data size to the size limit of java byte array,
         // e.g. Integer.MAX_VALUE, since all data are returned by doFinal().
-        int remain = Integer.MAX_VALUE - dataIdx;
+        int remain = Integer.MAX_VALUE - startIdx;
         if (inLen > remain) {
             throw new ProviderException("SunJCE provider can only take " +
                 remain + " more bytes");
         }
 
-        // re-size dataBuf to the smallest (n * BLKSIZE) + SEMI_BLKSIZE)
-        if (dataBuf.length - dataIdx < inLen) {
-            int newSize = Math.addExact(dataIdx, inLen);
-            int lastBlk = (dataIdx + inLen - SEMI_BLKSIZE) % BLKSIZE;
+        // resize dataBuf to the smallest (n * BLKSIZE) + SEMI_BLKSIZE)
+        if (dataBuf.length - startIdx < inLen) {
+            int newSize = Math.addExact(startIdx, inLen);
+            int lastBlk = (startIdx + inLen - SEMI_BLKSIZE) % BLKSIZE;
             if (lastBlk != 0 || padding != null) {
                 newSize = Math.addExact(newSize, BLKSIZE - lastBlk);
             }
@@ -154,8 +151,8 @@ abstract class KeyWrapCipher extends CipherSpi {
         }
 
         if (in != null) {
-            System.arraycopy(in, inOfs, dataBuf, dataIdx, inLen);
-            dataIdx += inLen;
+            System.arraycopy(in, inOfs, dataBuf, startIdx, inLen);
+            dataIdx = startIdx + inLen;
         }
     }
 
@@ -165,8 +162,8 @@ abstract class KeyWrapCipher extends CipherSpi {
     // internal padding object; null if NoPadding
     private final Padding padding;
 
-    // encrypting or decrypting?
-    protected boolean decrypting = false;
+    // encrypt/wrap or decrypt/unwrap?
+    private int opmode = -1; // must be set by init(..)
 
     /*
      * needed to support oids which associates a fixed key size
@@ -174,7 +171,7 @@ abstract class KeyWrapCipher extends CipherSpi {
      */
     private final int fixedKeySize; // in bytes, -1 if no restriction
 
-    // data buffering used for encrypt, decrypt and unwrap calls
+    // internal data buffer for encrypt, decrypt and unwrap calls
     // must use store() to store data into dataBuf as it will resize if needed
     private byte[] dataBuf;
     private int dataIdx;
@@ -209,8 +206,8 @@ abstract class KeyWrapCipher extends CipherSpi {
     }
 
     /**
-     * Sets the padding mechanism of this cipher. Currently, only
-     * "NoPadding" scheme is accepted for this cipher.
+     * Sets the padding mechanism of this cipher. The specified padding
+     * scheme should match what this cipher is configured with.
      *
      * @param padding the padding mechanism
      *
@@ -221,9 +218,9 @@ abstract class KeyWrapCipher extends CipherSpi {
     protected void engineSetPadding(String padding)
             throws NoSuchPaddingException {
         if ((this.padding == null && !"NoPadding".equalsIgnoreCase(padding)) ||
-                this.padding instanceof PKCS5Padding &&
-                "PKCS5Padding".equalsIgnoreCase(padding)) {
-            throw new NoSuchPaddingException();
+                 this.padding instanceof PKCS5Padding &&
+                 !"PKCS5Padding".equalsIgnoreCase(padding)) {
+            throw new NoSuchPaddingException("Unsupported padding " + padding);
         }
     }
 
@@ -255,7 +252,7 @@ abstract class KeyWrapCipher extends CipherSpi {
         if (buffered > 0) {
             result = Math.addExact(result, buffered);
         }
-        if (!decrypting) {
+        if (opmode == Cipher.ENCRYPT_MODE || opmode == Cipher.WRAP_MODE) {
             // calculate padding length first
             if (padding != null) {
                 result = Math.addExact(result, padding.padLength(result));
@@ -283,34 +280,19 @@ abstract class KeyWrapCipher extends CipherSpi {
         return cipher.getIV().clone();
     }
 
-    // write the IV semi-block into the specified buf
-    private int writeIvSemiBlock(byte[] buf) {
-        byte[] iv = cipher.getIV();
-        if (buf == dataBuf) {
-            store(iv, 0, iv.length);
-            if (cipher instanceof AESKeyWrapPadded) {
-                // write ZERO4 as place holder for now
-                store(ZERO4, 0, 4);
-            }
-        } else {
-            System.arraycopy(iv, 0, buf, 0, iv.length);
-            if (cipher instanceof AESKeyWrapPadded) {
-                // write ZERO4 as place holder for now
-                System.arraycopy(ZERO4, 0, dataBuf, iv.length, 4);
-            }
-        }
-        return SEMI_BLKSIZE;
-    }
-
     // actual impl for various engineInit(...) methods
     private void implInit(int opmode, Key key, byte[] iv, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        decrypting = (opmode == Cipher.DECRYPT_MODE ||
-                opmode == Cipher.UNWRAP_MODE);
+        if (opmode < Cipher.ENCRYPT_MODE || opmode > Cipher.UNWRAP_MODE) {
+            throw new RuntimeException("Invalid opmode for Cipher");
+        }
         byte[] keyBytes = key.getEncoded();
         if (keyBytes == null) {
             throw new InvalidKeyException("Null key");
         }
+        this.opmode = opmode;
+        boolean decrypting = (opmode == Cipher.DECRYPT_MODE ||
+                opmode == Cipher.UNWRAP_MODE);
         try {
             cipher.init(decrypting, key.getAlgorithm(), keyBytes, iv);
             dataIdx = 0;
@@ -336,7 +318,7 @@ abstract class KeyWrapCipher extends CipherSpi {
             implInit(opmode, key, (byte[])null, random);
         } catch (InvalidAlgorithmParameterException iae) {
             // should never happen
-            throw new AssertionError();
+            throw new AssertionError(iae);
         }
     }
 
@@ -416,10 +398,10 @@ abstract class KeyWrapCipher extends CipherSpi {
      */
     @Override
     protected byte[] engineUpdate(byte[] in, int inOffset, int inLen) {
-        if (!decrypting && dataIdx == 0) {
-            writeIvSemiBlock(dataBuf);
+        if (opmode != Cipher.ENCRYPT_MODE && opmode != Cipher.DECRYPT_MODE) {
+            throw new IllegalStateException("Cipher not initialized for update");
         }
-        store(in, inOffset, inLen);
+        implUpdate(in, inOffset, inLen);
         return null;
     }
 
@@ -442,13 +424,22 @@ abstract class KeyWrapCipher extends CipherSpi {
     @Override
     protected int engineUpdate(byte[] in, int inOffset, int inLen,
             byte[] out, int outOffset) throws ShortBufferException {
-
-        if (!decrypting && dataIdx == 0) {
-            writeIvSemiBlock(dataBuf);
+        if (opmode != Cipher.ENCRYPT_MODE && opmode != Cipher.DECRYPT_MODE) {
+            throw new IllegalStateException("Cipher not initialized for update");
         }
-
-        store(in, inOffset, inLen);
+        implUpdate(in, inOffset, inLen);
         return 0;
+    }
+
+    // actual impl for various engineUpdate(...) methods
+    private void implUpdate(byte[] in, int inOffset, int inLen) {
+        boolean encrypting = (opmode == Cipher.ENCRYPT_MODE ||
+                opmode == Cipher.WRAP_MODE);
+        if (encrypting && dataIdx == 0) {
+            // the first semiblock is for iv, store data after it
+            dataIdx += SEMI_BLKSIZE;
+        }
+        store(dataIdx, in, inOffset, inLen);
     }
 
     /**
@@ -466,52 +457,17 @@ abstract class KeyWrapCipher extends CipherSpi {
     @Override
     protected byte[] engineDoFinal(byte[] in, int inOfs, int inLen)
             throws IllegalBlockSizeException, BadPaddingException {
-        if (!decrypting && dataIdx == 0) {
-            writeIvSemiBlock(dataBuf);
-        }
-
-        if (inLen > 0) {
-            store(in, inOfs, inLen);
-        }
-
-        // if enc, add padding
-        if (!decrypting) {
-            int actualLen = dataIdx - SEMI_BLKSIZE;
-            if (padding != null) {
-                int paddingLen = padding.padLength(actualLen);
-                // check and re-size dataBuf if needed
-                store(null, 0, paddingLen);
-                try {
-                    padding.padWithLen(dataBuf, dataIdx, paddingLen);
-                    dataIdx += paddingLen;
-                } catch (ShortBufferException sbe) {
-                    // should never happen
-                    throw new AssertionError();
-                }
-            }
+        if (opmode != Cipher.ENCRYPT_MODE && opmode != Cipher.DECRYPT_MODE) {
+            throw new IllegalStateException
+                    ("Cipher not initialized for doFinal");
         }
         try {
-            int outLen;
-            if (decrypting) {
-                outLen = cipher.decryptFinal(dataBuf, 0, dataIdx, null, -1);
-                // unpad if padding is used
-                if (padding != null) {
-                    int padIdx = padding.unpad(dataBuf, 0, outLen);
-                    if (padIdx <= 0) {
-                        throw new BadPaddingException("Bad Padding: " + padIdx);
-                    }
-                    outLen = padIdx;
-                }
-            } else {
-                outLen = cipher.encryptFinal(dataBuf, 0, dataIdx, null, -1);
-            }
+            // implDoFinal() use internal 'dataBuf' as output buffer
+            int outLen = implDoFinal(in, inOfs, inLen);
             return Arrays.copyOf(dataBuf, outLen);
         } catch (ShortBufferException sbe) {
             // should never happen
-            throw new AssertionError();
-        } finally {
-            // reset dataBuf for subsequent operations
-            dataIdx = 0;
+            throw new AssertionError(sbe);
         }
     }
 
@@ -533,61 +489,87 @@ abstract class KeyWrapCipher extends CipherSpi {
     protected int engineDoFinal(byte[] in, int inOfs, int inLen,
             byte[] out, int outOfs) throws IllegalBlockSizeException,
             ShortBufferException, BadPaddingException {
-
+        if (opmode != Cipher.ENCRYPT_MODE && opmode != Cipher.DECRYPT_MODE) {
+            throw new IllegalStateException
+                    ("Cipher not initialized for doFinal");
+        }
         int estOutLen = engineGetOutputSize(inLen);
         if (out.length - outOfs < estOutLen) {
             throw new ShortBufferException("Need at least " + estOutLen);
         }
+        // implDoFinal() use internal 'dataBuf' as output buffer
+        int outLen = implDoFinal(in, inOfs, inLen);
+        // only write out the result after verification succeeds
+        System.arraycopy(dataBuf, 0, out, outOfs, outLen);
+        return outLen;
+    }
 
-        if (!decrypting && dataIdx == 0) {
-            writeIvSemiBlock(dataBuf);
+    // actual impl for various engineDoFinal(...) methods, i.e. write the first
+    // semiblock containing IV if needed, buffer input data, and then perform
+    // single-part encryption/decrytion
+    private int implDoFinal(byte[] in, int inOfs, int inLen)
+        throws IllegalBlockSizeException, BadPaddingException,
+            ShortBufferException {
+        boolean encrypting = (opmode == Cipher.ENCRYPT_MODE ||
+                opmode == Cipher.WRAP_MODE);
+        if (encrypting && dataIdx == 0) {
+            // the first semiblock is for iv, store data after it
+            dataIdx += SEMI_BLKSIZE;
         }
-
         if (inLen > 0) {
-            store(in, inOfs, inLen);
+            store(dataIdx, in, inOfs, inLen);
         }
 
-        // if enc, add padding
-        if (!decrypting) {
-            int actualLen = dataIdx - SEMI_BLKSIZE;
-            if (padding != null) {
-                int paddingLen = padding.padLength(actualLen);
-                // check and re-size dataBuf if needed
-                store(null, 0, paddingLen);
-                try {
-                    padding.padWithLen(dataBuf, dataIdx, paddingLen);
-                    dataIdx += paddingLen;
-                } catch (ShortBufferException sbe) {
-                    // should never happen
-                    throw new AssertionError();
-                }
-            }
-        }
         try {
-            int outLen;
-            if (decrypting) {
-                outLen = cipher.decryptFinal(dataBuf, 0, dataIdx, null, -1);
-                // unpad if padding is used
-                if (padding != null) {
-                    int padIdx = padding.unpad(dataBuf, 0, outLen);
-                    if (padIdx <= 0) {
-                        throw new BadPaddingException("Bad Padding: " + padIdx);
-                    }
-                    outLen = padIdx;
-                }
-            } else {
-                outLen = cipher.encryptFinal(dataBuf, 0, dataIdx, null, -1);
-            }
-            // only write out the result after verification succeeds
-            System.arraycopy(dataBuf, 0, out, outOfs, outLen);
-            return outLen;
-        } catch (ShortBufferException sbe) {
-            // should never happen
-            throw new AssertionError();
+            return (encrypting? helperEncrypt(dataBuf, dataIdx) :
+                    helperDecrypt(dataBuf, dataIdx));
         } finally {
-            // reset dataBuf for subsequent operations
             dataIdx = 0;
         }
+    }
+
+    // helper routine for encryption; assuming all data is in 'inBuf'
+    // with the first semiblock reserved for iv
+    private int helperEncrypt(byte[] inBuf, int inLen)
+            throws IllegalBlockSizeException, ShortBufferException {
+
+        // pad data if padding is used
+        if (padding != null) {
+            int paddingLen = padding.padLength(inLen - SEMI_BLKSIZE);
+
+            if (inLen + paddingLen > inBuf.length) {
+                if (inBuf == dataBuf) {
+                    // enlarge dataBuf to fit padding bytes
+                    store(dataIdx, null, 0, paddingLen);
+                } else {
+                    throw new ProviderException("data buffer too small");
+                }
+            }
+            try {
+                padding.padWithLen(inBuf, inLen, paddingLen);
+                inLen += paddingLen;
+            } catch (ShortBufferException sbe) {
+                // should never happen
+                throw new AssertionError(sbe);
+            }
+        }
+        return cipher.encryptFinal(inBuf, 0, inLen, null, 0);
+    }
+
+    private int helperDecrypt(byte[] inBuf, int inLen)
+            throws IllegalBlockSizeException, BadPaddingException,
+            ShortBufferException {
+
+        int outLen = cipher.decryptFinal(inBuf, 0, inLen, null, 0);
+        // unpad data if padding is used
+        if (padding != null) {
+            int padIdx = padding.unpad(inBuf, 0, outLen);
+            if (padIdx <= 0) {
+                throw new BadPaddingException("Bad Padding: " + padIdx);
+            }
+            outLen = padIdx;
+        }
+        return outLen;
     }
 
     /**
@@ -659,38 +641,30 @@ abstract class KeyWrapCipher extends CipherSpi {
     protected byte[] engineWrap(Key key)
             throws IllegalBlockSizeException, InvalidKeyException {
 
+        if (opmode != Cipher.WRAP_MODE) {
+            throw new IllegalStateException("Cipher not initialized for wrap");
+        }
         byte[] encoded = key.getEncoded();
         if ((encoded == null) || (encoded.length == 0)) {
             throw new InvalidKeyException("Cannot get an encoding of " +
                                           "the key to be wrapped");
         }
-        int keyLen = encoded.length;
         // output size is known, allocate output buffer
-        byte[] out = new byte[engineGetOutputSize(keyLen)];
+        byte[] out = new byte[engineGetOutputSize(encoded.length)];
 
-        int outOfs = writeIvSemiBlock(out);
-        System.arraycopy(encoded, 0, out, outOfs, keyLen);
-        outOfs += keyLen;
+        // reserve the first semiblock and do not write data
+        int outOfs = SEMI_BLKSIZE;
+        System.arraycopy(encoded, 0, out, outOfs, encoded.length);
+        outOfs += encoded.length;
 
         // discard key data
         Arrays.fill(encoded, (byte) 0);
 
-        // add padding
-        if (padding != null) {
-            int actualLen = outOfs - SEMI_BLKSIZE;
-            int paddingLen = padding.padLength(actualLen);
-
-            try {
-                padding.padWithLen(out, outOfs, paddingLen);
-                outOfs += paddingLen;
-            } catch (ShortBufferException sbe) {
-                // should never happen
-                throw new AssertionError();
-            }
-        }
         try {
-            int outLen = cipher.encryptFinal(out, 0, outOfs, null, -1);
-            // assert outLen == out.length
+            int outLen = helperEncrypt(out, outOfs);
+            if (outLen != out.length) {
+                throw new ProviderException("Need to resize output buffer");
+            }
             return out;
         } catch (ShortBufferException sbe) {
             // should never happen
@@ -724,19 +698,16 @@ abstract class KeyWrapCipher extends CipherSpi {
             int wrappedKeyType) throws InvalidKeyException,
             NoSuchAlgorithmException {
 
-        store(wrappedKey, 0, wrappedKey.length);
+        if (opmode != Cipher.UNWRAP_MODE) {
+            throw new IllegalStateException
+                    ("Cipher not initialized for unwrap");
+        }
+
+        store(0, wrappedKey, 0, wrappedKey.length);
 
         int outLen = 0;
         try {
-            outLen = cipher.decryptFinal(dataBuf, 0, dataIdx, null, -1);
-            // unpad if padding is used
-            if (padding != null) {
-                int padIdx = padding.unpad(dataBuf, 0, outLen);
-                if (padIdx <= 0) {
-                    throw new BadPaddingException("Bad Padding: " + padIdx);
-                }
-                outLen = padIdx;
-            }
+            outLen = helperDecrypt(dataBuf, dataIdx);
             return ConstructKeys.constructKey(dataBuf, 0, outLen,
                     wrappedKeyAlgorithm, wrappedKeyType);
         } catch (ShortBufferException sbe) {

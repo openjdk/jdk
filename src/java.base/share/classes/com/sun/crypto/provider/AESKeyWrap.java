@@ -130,55 +130,58 @@ class AESKeyWrap extends FeedbackCipher {
     /**
      * Performs single-part encryption operation.
      *
-     * <p>The input <code>pt</code>, starting at <code>ptOfs</code>
-     * and ending at <code>(ptOfs+ptLen-1)</code>, is encrypted.
-     * The result is stored in <code>ct</code>, starting at <code>ctOfs</code>.
+     * <p>The input <code>pt</code>, starting at <code>0</code>
+     * and ending at <code>ptLen-1</code>, is encrypted.
+     * The result is stored in place into <code>pt</code>, starting at
+     * <code>0</code>.
      *
      * <p>The subclass that implements Cipher should ensure that
      * <code>init</code> has been called before this method is called.
      *
      * @param pt the input buffer with the data to be encrypted
-     * @param ptOfs the offset in <code>pt</code>
+     * @param dummy1 the offset in <code>pt</code> which is always 0
      * @param ptLen the length of the input data
-     * @param ct the buffer for the encryption result
-     * @param ctOfs the offset in <code>ct</code>
-     * @return the number of bytes placed into <code>ct</code>
+     * @param dummy2 the output buffer for the encryption which is always pt
+     * @param dummy3 the offset in the output buffer which is always 0
+     * @return the number of bytes placed into <code>pt</code>
      */
     @Override
-    int encryptFinal(byte[] pt, int dummy1, int ptLen, byte[] dummy3,
-            int dummy4) throws IllegalBlockSizeException {
+    int encryptFinal(byte[] pt, int dummy1, int ptLen, byte[] dummy2,
+            int dummy3) throws IllegalBlockSizeException {
         // adjust the min value since pt contains the first semi-block
         if (ptLen < (BLKSIZE + SEMI_BLKSIZE) || (ptLen % SEMI_BLKSIZE) != 0) {
             throw new IllegalBlockSizeException("data should" +
                 " be at least 16 bytes and multiples of 8");
         }
-        // assert ptOfs == 0; ct == pt; ctOfs == 0;
-        W(pt, ptLen, embeddedCipher);
+
+        W(iv, pt, ptLen, embeddedCipher);
         return ptLen;
     }
 
     /**
      * Performs single-part decryption operation.
      *
-     * <p>The input <code>ct</code>, starting at <code>ctOfs</code>
-     * and ending at <code>(ctOfs+ctLen-1)</code>, is decrypted.
-     * The result is stored in <code>pt</code>, starting at
-     * <code>ptOfs</code>.
+     * <p>The input <code>ct</code>, starting at <code>0</code>
+     * and ending at <code>ctLen-1</code>, is decrypted.
+     * The result is stored in place into <code>ct</code>, starting at
+     * <code>0</code>.
+     *
+     * <p>NOTE: Purpose of this special impl is for minimizing array
+     * copying, those unused arguments are named as dummyN.
      *
      * <p>The subclass that implements Cipher should ensure that
      * <code>init</code> has been called before this method is called.
      *
      * @param ct the input buffer with the data to be decrypted
-     * @param ctOfs the offset in <code>ct</code>
+     * @param dummy1 the offset in <code>ct</code> which is always 0
      * @param ctLen the length of the input data
-     * @param pt the buffer for the decryption result
-     * @param ptOfs the offset in <code>pt</code>
-     * @return the number of bytes placed into <code>pt</code>
+     * @param dummy2 the output buffer for the decryption which is always ct
+     * @param dummy3 the offset in the output buffer which is always 0
+     * @return the number of bytes placed into <code>ct</code>
      */
     @Override
-    int decryptFinal(byte[] ct, int dummy1, int ctLen, byte[] dummy3,
-            int dummy4) throws IllegalBlockSizeException {
-        // assert ctOfs == 0; ctLen == ct.length; pt == ct; ptOfs == 0
+    int decryptFinal(byte[] ct, int dummy1, int ctLen, byte[] dummy2,
+            int dummy3) throws IllegalBlockSizeException {
         if (ctLen < (BLKSIZE + SEMI_BLKSIZE) || (ctLen % SEMI_BLKSIZE) != 0) {
             throw new IllegalBlockSizeException
                 ("data should be at least 24 bytes and multiples of 8");
@@ -188,7 +191,7 @@ class AESKeyWrap extends FeedbackCipher {
         ctLen -= SEMI_BLKSIZE;
 
         // check against icv and fail if not match
-        if (!Arrays.equals(ivOut, 0, ICV1.length, this.iv, 0, ICV1.length)) {
+        if (!MessageDigest.isEqual(ivOut, this.iv)) {
             throw new IllegalBlockSizeException("Integrity check failed");
         }
         return ctLen;
