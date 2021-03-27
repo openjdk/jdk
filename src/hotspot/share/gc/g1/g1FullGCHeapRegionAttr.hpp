@@ -31,6 +31,11 @@
 // fast access during the full collection. In particular some parts of the region
 // type information is encoded in these per-region bytes.
 // Value encoding has been specifically chosen to make required accesses fast.
+// In particular, the table collects whether a region should be considered pinned
+// during full gc (only), and that there are two reasons a
+// region is pinned (and excluded from compaction):
+// (1) the HeapRegion itself has been pinned at the start of Full GC.
+// (2) the occupancy of the region is too high to be considered eligible for compaction.
 class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
   static const uint8_t Normal = 0;        // Other kind of region
   static const uint8_t Pinned = 1;        // Region is a pinned (non-Closed Archive) region
@@ -62,13 +67,13 @@ public:
     return get_by_address(obj) >= Pinned;
   }
 
-  bool is_pinned_or_closed(uint hr_index) const {
-    return get_by_index(hr_index) >= Pinned;
-  }
-
   bool is_pinned(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
     return get_by_address(obj) == Pinned;
+  }
+
+  bool is_pinned(uint idx) const {
+    return get_by_index(idx) == Pinned;
   }
 
   void set_normal(uint idx) { set_by_index(idx, Normal); }

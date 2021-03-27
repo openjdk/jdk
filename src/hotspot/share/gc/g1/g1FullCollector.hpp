@@ -69,6 +69,7 @@ class G1FullCollector : StackObj {
   G1IsAliveClosure          _is_alive;
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
   G1RegionMarkStats*        _live_stats;
+
   static uint calc_active_workers();
 
   G1FullGCSubjectToDiscoveryClosure _always_subject_to_discovery;
@@ -80,7 +81,7 @@ public:
   G1FullCollector(G1CollectedHeap* heap,
                   bool explicit_gc,
                   bool clear_soft_refs,
-                  bool do_maximal_compaction);
+                  bool do_maximum_compaction);
   ~G1FullCollector();
 
   void prepare_collection();
@@ -97,13 +98,13 @@ public:
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
   G1CMBitMap*              mark_bitmap();
   ReferenceProcessor*      reference_processor();
-  size_t                   hr_live_words(uint hr_index) { return _live_stats[hr_index]._live_words; }
+  size_t                   live_words(uint region_index) { return _live_stats[region_index]._live_words; }
 
   void update_attribute_table(HeapRegion* hr, bool force_pinned = false);
 
   inline bool is_in_pinned_or_closed(oop obj) const;
-  inline bool is_in_pinned_or_closed(uint hr_index) const;
   inline bool is_in_pinned(oop obj) const;
+  inline bool is_in_pinned(uint region_index) const;
   inline bool is_in_closed(oop obj) const;
 
 private:

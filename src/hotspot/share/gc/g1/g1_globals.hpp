@@ -303,6 +303,7 @@
           "above this value cancels a given periodic GC. A value of zero "  \
           "disables this check.")                                           \
           range(0.0, (double)max_uintx)
+
 // end of GC_G1_FLAGS
 
 #endif // SHARE_GC_G1_G1_GLOBALS_HPP

@@ -42,19 +42,15 @@ public:
   G1ResetPinnedClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* r) {
-    uint hr_index = r->hrm_index();
-    // In the prepare phase, we "pin" the regions with high survival ratio
-    // by _region_attr_table, so here we use _region_attr_table rather than
-    // HeapRegion itself to tell whether a region is pinned.
-    if (!_collector->is_in_pinned_or_closed(hr_index)) {
+    uint region_index = r->hrm_index();
+    if (!_collector->is_in_pinned(region_index)) {
       return false;
     }
-    assert(_collector->hr_live_words(hr_index) > _collector->scope()->hr_live_words_threshold() ||
+    assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold() ||
            !r->is_starts_humongous() ||
            _collector->mark_bitmap()->is_marked(cast_to_oop(r->bottom())),
            "must be, otherwise reclaimed earlier");
-    r->reset_pinned_after_full_gc();
-
+    r->reset_not_compacted_after_full_gc();
     return false;
   }
 };

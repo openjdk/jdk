@@ -1089,7 +1089,7 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
 
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool clear_all_soft_refs,
-                                         bool do_maximal_compaction) {
+                                         bool do_maximum_compaction) {
   assert_at_safepoint_on_vm_thread();
 
   if (GCLocker::check_active_before_gc()) {
@@ -1100,7 +1100,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
 
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximal_compaction);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
 
   collector.prepare_collection();
@@ -1115,10 +1115,12 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   // Currently, there is no facility in the do_full_collection(bool) API to notify
   // the caller that the collection did not succeed (e.g., because it was locked
   // out by the GC locker). So, right now, we'll ignore the return value.
-  bool do_maximal_compaction = clear_all_soft_refs;
+  // When clear_all_soft_refs is set we want to do a maximum compaction
+  // not leaving any dead wood.
+  bool do_maximum_compaction = clear_all_soft_refs;
   bool dummy = do_full_collection(true,                /* explicit_gc */
                                   clear_all_soft_refs,
-                                  do_maximal_compaction);
+                                  do_maximum_compaction);
 }
 
 void G1CollectedHeap::resize_heap_if_necessary() {
@@ -1160,11 +1162,13 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   }
 
   if (do_gc) {
-    bool do_maximal_compaction = clear_all_soft_refs;
+    // When clear_all_soft_refs is set we want to do a maximum compaction
+    // not leaving any dead wood.
+    bool do_maximum_compaction = clear_all_soft_refs;
     // Expansion didn't work, we'll try to do a Full GC.
     *gc_succeeded = do_full_collection(false, /* explicit_gc */
                                        clear_all_soft_refs,
-                                       do_maximal_compaction);
+                                       do_maximum_compaction);
   }
 
   return NULL;
@@ -2877,7 +2881,7 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
     log_info(gc, ergo)("Attempting maximally compacting collection");
     bool result = do_full_collection(false /* explicit gc */,
                                      true  /* clear_all_soft_refs */,
-                                     false /* do_maximal_compaction */);
+                                     false /* do_maximum_compaction */);
     // do_full_collection only fails if blocked by GC locker, but
     // we've already checked for that above.
     assert(result, "invariant");

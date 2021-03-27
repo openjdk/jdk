@@ -53,7 +53,7 @@ class G1FullGCScope : public StackObj {
   ClearedAllSoftRefs      _soft_refs;
   G1MonitoringScope       _monitoring_scope;
   G1HeapTransition        _heap_transition;
-  size_t                  _hr_live_words_threshold;
+  size_t                  _region_compaction_threshold;
 
 public:
   G1FullGCScope(G1MonitoringSupport* monitoring_support,
@@ -68,7 +68,7 @@ public:
   STWGCTimer* timer();
   G1FullGCTracer* tracer();
   G1HeapTransition* heap_transition();
-  size_t hr_live_words_threshold();
+  size_t region_compaction_threshold();
 };
 
 #endif // SHARE_GC_G1_G1FULLGCSCOPE_HPP

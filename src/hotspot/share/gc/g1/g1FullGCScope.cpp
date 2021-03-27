@@ -28,7 +28,7 @@
 G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              bool explicit_gc,
                              bool clear_soft,
-                             bool do_maximal_compaction) :
+                             bool do_maximum_compaction) :
     _rm(),
     _explicit_gc(explicit_gc),
     _g1h(G1CollectedHeap::heap()),
@@ -41,9 +41,9 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _soft_refs(clear_soft, _g1h->soft_ref_policy()),
     _monitoring_scope(monitoring_support, true /* full_gc */, true /* all_memory_pools_affected */),
     _heap_transition(_g1h),
-    _hr_live_words_threshold(do_maximal_compaction ?
-                               HeapRegion::GrainWords :
-                               (1 - MarkSweepDeadRatio / 100.0) * HeapRegion::GrainWords) {
+    _region_compaction_threshold(do_maximum_compaction ?
+                                 HeapRegion::GrainWords :
+                                 (1 - MarkSweepDeadRatio / 100.0) * HeapRegion::GrainWords) {
   _timer.register_gc_start();
   _tracer.report_gc_start(_g1h->gc_cause(), _timer.gc_start());
   _g1h->pre_full_gc_dump(&_timer);
@@ -82,6 +82,6 @@ G1HeapTransition* G1FullGCScope::heap_transition() {
   return &_heap_transition;
 }
 
-size_t G1FullGCScope::hr_live_words_threshold() {
-  return _hr_live_words_threshold;
+size_t G1FullGCScope::region_compaction_threshold() {
+  return _region_compaction_threshold;
 }
