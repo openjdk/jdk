@@ -274,8 +274,7 @@ public class ScriptEngineManager  {
      * @throws NullPointerException if any of the parameters is null.
      */
     public void registerEngineName(String name, ScriptEngineFactory factory) {
-        if (name == null || factory == null) throw new NullPointerException();
-        nameAssociations.put(name, factory);
+        associateFactory(nameAssociations, name, factory);
     }
 
     /**
@@ -289,8 +288,7 @@ public class ScriptEngineManager  {
      * @throws NullPointerException if any of the parameters is null.
      */
     public void registerEngineMimeType(String type, ScriptEngineFactory factory) {
-        if (type == null || factory == null) throw new NullPointerException();
-        mimeTypeAssociations.put(type, factory);
+        associateFactory(mimeTypeAssociations, type, factory);
     }
 
     /**
@@ -303,8 +301,14 @@ public class ScriptEngineManager  {
      * @throws NullPointerException if any of the parameters is null.
      */
     public void registerEngineExtension(String extension, ScriptEngineFactory factory) {
-        if (extension == null || factory == null) throw new NullPointerException();
-        extensionAssociations.put(extension, factory);
+        associateFactory(extensionAssociations, extension, factory);
+    }
+
+    private static void associateFactory(Map<String, ScriptEngineFactory> associations, String association,
+        ScriptEngineFactory factory)
+    {
+        if (association == null || factory == null) throw new NullPointerException();
+        associations.put(association, factory);
     }
 
     private static final Comparator<ScriptEngineFactory> COMPARATOR = Comparator.comparing(
