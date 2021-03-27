@@ -49,6 +49,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -1233,6 +1235,7 @@ abstract class MethodHandleImpl {
         ARRAY_LENGTH,
         IDENTITY,
         ZERO,
+        COLLECTOR,
         NONE // no intrinsic associated
     }
 
@@ -1275,8 +1278,8 @@ abstract class MethodHandleImpl {
         public MethodHandle asCollector(Class<?> arrayType, int arrayLength) {
             if (intrinsicName == Intrinsic.IDENTITY) {
                 MethodType resultType = type().asCollectorType(arrayType, type().parameterCount() - 1, arrayLength);
-                MethodHandle newArray = MethodHandleImpl.varargsArray(arrayType, arrayLength);
-                return newArray.asType(resultType);
+                MethodHandle collector = MethodHandleImpl.makeCollector(arrayType, arrayLength);
+                return collector.asType(resultType);
             }
             return super.asCollector(arrayType, arrayLength);
         }
@@ -2089,6 +2092,99 @@ abstract class MethodHandleImpl {
         return r;
     }
 
+    private static class CollectorCacheKey {
+        final Class<?> arrayType;
+        final int numArgs;
+
+        public CollectorCacheKey(Class<?> arrayType, int numArgs) {
+            this.arrayType = arrayType;
+            this.numArgs = numArgs;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CollectorCacheKey that = (CollectorCacheKey) o;
+            return numArgs == that.numArgs && Objects.equals(arrayType, that.arrayType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(arrayType, numArgs);
+        }
+    }
+
+    private static final Map<CollectorCacheKey, MethodHandle> COLLECTOR_CACHE = new ConcurrentHashMap<>();
+
+    public static MethodHandle makeCollector(Class<?> arrayType, int parameterCount) {
+        CollectorCacheKey key = new CollectorCacheKey(arrayType, parameterCount);
+        MethodHandle handle = COLLECTOR_CACHE.get(key);
+        if (handle != null) {
+            return handle;
+        }
+
+        int argSlotCount = arrayType == double[].class || arrayType == long[].class ? 2 : 1;
+        if (parameterCount * argSlotCount >= MAX_ARITY - 1) { // jumbo arity workaround
+            MethodHandle collector = makeCollector(arrayType, parameterCount - 1);
+            // collect into MAX_ARITY - 2 array, and then adjoin a single element (with an array copy, sorry)
+            MethodHandle adjoiner = getConstantHandle(MH_adjoinElement);
+            adjoiner = adjoiner.asType(MethodType.methodType(arrayType, arrayType, arrayType.componentType()));
+            return MethodHandles.collectArguments(adjoiner, 0, collector);
+        }
+
+        MethodHandle collector = varargsArray(arrayType, parameterCount);
+        MethodType type = collector.type();
+
+        LambdaForm form = makeCollectorForm(type.basicType(), arrayType);
+
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
+        BoundMethodHandle mh;
+        try {
+            mh = (BoundMethodHandle) data.factory().invokeBasic(type, form, (Object) collector);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+        assert(mh.type() == type);
+        MethodHandle prev = COLLECTOR_CACHE.putIfAbsent(key, mh);
+        return prev == null ? mh : prev;
+    }
+
+    private static LambdaForm makeCollectorForm(MethodType basicType, Class<?> arrayType) {
+        MethodType lambdaType = basicType.invokerType();
+
+        final int THIS_MH      = 0;  // the BMH_L
+        final int ARG_BASE     = 1;  // start of incoming arguments
+        final int ARG_LIMIT    = ARG_BASE + basicType.parameterCount();
+
+        int nameCursor = ARG_LIMIT;
+        final int GET_COLLECTOR    = nameCursor++;
+        final int CALL_COLLECTOR   = nameCursor++;
+
+        Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
+        names[THIS_MH]          = names[THIS_MH].withConstraint(data);
+        names[GET_COLLECTOR]    = new Name(data.getterFunction(0), names[THIS_MH]);
+
+        MethodHandle invokeBasic = MethodHandles.basicInvoker(basicType);
+        Object[] args = new Object[invokeBasic.type().parameterCount()];
+        args[0] = names[GET_COLLECTOR];
+        System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT-ARG_BASE);
+        names[CALL_COLLECTOR] = new Name(new NamedFunction(invokeBasic, Intrinsic.COLLECTOR, arrayType), args);
+
+        return new LambdaForm(lambdaType.parameterCount(), names, Kind.COLLECTOR);
+    }
+
+    private static Object adjoinElement(Object array, Object element) {
+        assert(array.getClass().isArray());
+        int arrayLength = Array.getLength(array);
+        Object newArray = Array.newInstance(array.getClass().getComponentType(), arrayLength + 1);
+        System.arraycopy(array, 0, newArray, 0, arrayLength);
+        Array.set(newArray, arrayLength, element);
+        return newArray;
+    }
+
     // Indexes into constant method handles:
     static final int
             MH_cast                  =  0,
@@ -2103,7 +2199,8 @@ abstract class MethodHandleImpl {
             MH_iteratePred           =  9,
             MH_iterateNext           = 10,
             MH_Array_newInstance     = 11,
-            MH_LIMIT                 = 12;
+            MH_adjoinElement         = 12,
+            MH_LIMIT                 = 13;
 
     static MethodHandle getConstantHandle(int idx) {
         MethodHandle handle = HANDLES[idx];
@@ -2165,6 +2262,9 @@ abstract class MethodHandleImpl {
                 case MH_Array_newInstance:
                     return IMPL_LOOKUP.findStatic(Array.class, "newInstance",
                             MethodType.methodType(Object.class, Class.class, int.class));
+                case MH_adjoinElement:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "adjoinElement",
+                            MethodType.methodType(Object.class, Object.class, Object.class));
             }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);

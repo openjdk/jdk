@@ -39,6 +39,7 @@ import sun.reflect.misc.ReflectUtil;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -893,6 +894,9 @@ class InvokerBytecodeGenerator {
                     assert(name.arguments.length == 0);
                     emitConst(name.type.basicTypeWrapper().zero());
                     continue;
+                case COLLECTOR:
+                    emitCollector(name);
+                    continue;
                 case NONE:
                     // no intrinsic associated
                     break;
@@ -913,7 +917,6 @@ class InvokerBytecodeGenerator {
 
         methodEpilogue();
     }
-
     /*
      * @throws BytecodeGenerationException if something goes wrong when
      *         generating the byte code
@@ -1609,6 +1612,39 @@ class InvokerBytecodeGenerator {
         mv.visitLabel(lDone);
 
         return result;
+    }
+
+    private void emitCollector(Name name) {
+        Class<?> arrayType = (Class<?>) name.function.intrinsicData();
+        Class<?> arrayElementType = arrayType.getComponentType();
+        int collectorArgs = name.arguments.length - 1; // drop invoker
+        if (collectorArgs == 0) {
+            Object emptyArray = Array.newInstance(arrayElementType, 0);
+            assert(java.lang.reflect.Array.getLength(emptyArray) == 0);
+            assert(emptyArray.getClass() == arrayType);  // exact typing
+            mv.visitFieldInsn(Opcodes.GETSTATIC, className, classData(emptyArray), "Ljava/lang/Object;");
+            emitReferenceCast(arrayType, emptyArray);
+            return;
+        }
+        assert(arrayElementType != null);
+        emitIconstInsn(collectorArgs);
+        int xas = Opcodes.AASTORE;
+        if (!arrayElementType.isPrimitive()) {
+            mv.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(arrayElementType));
+        } else {
+            byte tc = arrayTypeCode(Wrapper.forPrimitiveType(arrayElementType));
+            xas = arrayInsnOpcode(tc, xas);
+            mv.visitIntInsn(Opcodes.NEWARRAY, tc);
+        }
+        // store arguments
+        for (int i = 0; i < collectorArgs; i++) {
+            mv.visitInsn(Opcodes.DUP);
+            emitIconstInsn(i);
+            emitPushArgument(name, i + 1); // skip invoker
+            mv.visitInsn(xas);
+        }
+        // the array is left on the stack
+        assertStaticType(arrayType, name);
     }
 
     private int extendLocalsMap(Class<?>[] types) {
