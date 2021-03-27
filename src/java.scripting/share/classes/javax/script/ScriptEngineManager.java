@@ -91,11 +91,7 @@ public class ScriptEngineManager  {
                 (PrivilegedAction<ServiceLoader<ScriptEngineFactory>>)() -> getServiceLoader(loader));
             itr = sl.iterator();
         } catch (ServiceConfigurationError err) {
-            System.err.println("Can't find ScriptEngineFactory providers: " +
-                          err.getMessage());
-            if (DEBUG) {
-                err.printStackTrace();
-            }
+            reportException("Can't find ScriptEngineFactory providers: ", err);
             // do not throw any exception here. user may want to
             // manage his/her own factories using this manager
             // by explicit registratation (by registerXXX) methods.
@@ -108,21 +104,13 @@ public class ScriptEngineManager  {
                     ScriptEngineFactory fact = itr.next();
                     engineSpis.add(fact);
                 } catch (ServiceConfigurationError err) {
-                    System.err.println("ScriptEngineManager providers.next(): "
-                                 + err.getMessage());
-                    if (DEBUG) {
-                        err.printStackTrace();
-                    }
+                    reportException("ScriptEngineManager providers.next(): ", err);
                     // one factory failed, but check other factories...
                     continue;
                 }
             }
         } catch (ServiceConfigurationError err) {
-            System.err.println("ScriptEngineManager providers.hasNext(): "
-                            + err.getMessage());
-            if (DEBUG) {
-                err.printStackTrace();
-            }
+            reportException("ScriptEngineManager providers.hasNext(): ", err);
             // do not throw any exception here. user may want to
             // manage his/her own factories using this manager
             // by explicit registratation (by registerXXX) methods.
@@ -239,7 +227,7 @@ public class ScriptEngineManager  {
                     List<String> matches = valuesFn.apply(spi);
                     return matches != null && matches.contains(selector);
                 } catch (Exception exp) {
-                    if (DEBUG) exp.printStackTrace();
+                    debugPrint(exp);
                     return false;
                 }
             })
@@ -251,13 +239,24 @@ public class ScriptEngineManager  {
                     engine.setBindings(getBindings(), ScriptContext.GLOBAL_SCOPE);
                     return engine;
                 } catch (Exception exp) {
-                    if (DEBUG) exp.printStackTrace();
+                    debugPrint(exp);
                     return null;
                 }
             })
             .filter(Objects::nonNull)
             .findFirst()
             .orElse(null);
+    }
+
+    private static void reportException(String msg, Throwable exp) {
+        System.err.println(msg + exp.getMessage());
+        debugPrint(exp);
+    }
+
+    private static void debugPrint(Throwable exp) {
+        if (DEBUG) {
+            exp.printStackTrace();
+        }
     }
 
     /**
