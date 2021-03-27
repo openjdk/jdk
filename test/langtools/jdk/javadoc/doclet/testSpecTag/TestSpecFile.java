@@ -198,13 +198,16 @@ public class TestSpecFile extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="http://example.com/spec1.txt">Canonical Spec1 Title</a></div>
                     <div class="col-last even-row-color">
-                    <div class="block"><code><a href="p/C.html#CanonicalSpec1Title">class p.C</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#CanonicalSpec1Title">class p.C</a></code></li>
+                    </ul>
                     </div>
                     <div class="col-first odd-row-color"><a href="http://example.com/spec2.txt">Canonical Spec2 Title</a></div>
                     <div class="col-last odd-row-color">
-                    <div class="block"><code><a href="p/C.html#CanonicalSpec2Title">class p.C</a></code></div>
-                    </div>
-                    """);
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#CanonicalSpec2Title">class p.C</a></code></li>
+                    </ul>
+                    </div>""");
     }
 
     @Test
@@ -258,8 +261,10 @@ public class TestSpecFile extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="http://example.com/spec/file1.html">Canonical Title</a></div>
                     <div class="col-last even-row-color">
-                    <div class="block"><code><a href="p/C.html#CanonicalTitle">class p.C</a></code>, \
-                    <code><a href="p/C.html#CanonicalTitle-1">class p.C</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#CanonicalTitle">class p.C</a></code></li>
+                    <li><code><a href="p/C.html#CanonicalTitle-1">class p.C</a></code></li>
+                    </ul>
                     </div>""");
     }
 

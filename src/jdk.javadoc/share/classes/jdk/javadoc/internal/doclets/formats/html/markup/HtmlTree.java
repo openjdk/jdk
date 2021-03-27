@@ -31,11 +31,13 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -220,6 +222,18 @@ public class HtmlTree extends Content {
      */
     public HtmlTree add(List<? extends Content> list) {
         list.forEach(this::add);
+        return this;
+    }
+
+    /**
+     * Adds each of a list of items, using a map function to create the content for each item.
+     *
+     * @param list the list
+     * @return this object
+     */
+    @Override
+    public <T> HtmlTree addAll(Collection<T> list, Function<T, Content> mapper) {
+        list.forEach(item -> add(mapper.apply(item)));
         return this;
     }
 
@@ -513,12 +527,10 @@ public class HtmlTree extends Content {
     }
 
     private static TagName checkHeading(TagName headingTag) {
-        switch (headingTag) {
-            case H1: case H2: case H3: case H4: case H5: case H6:
-                return headingTag;
-            default:
-                throw new IllegalArgumentException(headingTag.toString());
-        }
+        return switch (headingTag) {
+            case H1, H2, H3, H4, H5, H6 -> headingTag;
+            default -> throw new IllegalArgumentException(headingTag.toString());
+        };
     }
 
     /**
@@ -883,6 +895,21 @@ public class HtmlTree extends Content {
         return htmlTree;
     }
 
+    /**
+     * Creates an HTML {@code UL} element with the given style and content generated
+     * from a collection of items..
+     *
+     * @param style the style
+     * @param items the items to be added to the list
+     * @param mapper a mapper to create the content for each item
+     * @return the element
+     */
+    public static <T> HtmlTree UL(HtmlStyle style, Collection<T> items, Function<T,Content> mapper) {
+        return new HtmlTree(TagName.UL)
+                .setStyle(style)
+                .addAll(items, mapper);
+    }
+
     @Override
     public boolean isEmpty() {
         return (!hasContent() && !hasAttrs());
@@ -925,28 +952,27 @@ public class HtmlTree extends Content {
      */
     @Override
     public boolean isValid() {
-        switch (tagName) {
-            case A:
-                return (hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent()));
-            case BR:
-                return (!hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR)));
-            case HR:
-            case INPUT:
-                return (!hasContent());
-            case IMG:
-                return (hasAttr(HtmlAttr.SRC) && hasAttr(HtmlAttr.ALT) && !hasContent());
-            case LINK:
-                return (hasAttr(HtmlAttr.HREF) && !hasContent());
-            case META:
-                return (hasAttr(HtmlAttr.CONTENT) && !hasContent());
-            case SCRIPT:
-                return ((hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent()) ||
-                        (hasAttr(HtmlAttr.TYPE) && hasContent()));
-            case SPAN:
-                return (hasAttr(HtmlAttr.ID) || hasContent());
-            default :
-                return hasContent();
-        }
+        return switch (tagName) {
+            case A ->
+                    hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent());
+            case BR ->
+                    !hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR));
+            case HR, INPUT ->
+                    !hasContent();
+            case IMG ->
+                    hasAttr(HtmlAttr.SRC) && hasAttr(HtmlAttr.ALT) && !hasContent();
+            case LINK ->
+                    hasAttr(HtmlAttr.HREF) && !hasContent();
+            case META ->
+                    hasAttr(HtmlAttr.CONTENT) && !hasContent();
+            case SCRIPT ->
+                    (hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent())
+                            || (hasAttr(HtmlAttr.TYPE) && hasContent());
+            case SPAN ->
+                    hasAttr(HtmlAttr.ID) || hasContent();
+            default ->
+                    hasContent();
+        };
     }
 
     /**
@@ -957,13 +983,10 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/dom.html#kinds-of-content-phrasing-content">Phrasing Content</a>
      */
     public boolean isInline() {
-        switch (tagName) {
-            case A: case BUTTON: case BR: case CODE: case EM: case I: case IMG:
-            case LABEL: case SMALL: case SPAN: case STRONG: case SUB: case SUP:
-                return true;
-            default:
-                return false;
-        }
+        return switch (tagName) {
+            case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB, SUP -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -974,12 +997,10 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/syntax.html#void-elements">Void Elements</a>
      */
     public boolean isVoid() {
-        switch (tagName) {
-            case BR: case HR: case IMG: case INPUT: case LINK: case META:
-                return true;
-            default:
-                return false;
-        }
+        return switch (tagName) {
+            case BR, HR, IMG, INPUT, LINK, META -> true;
+            default -> false;
+        };
     }
 
     @Override

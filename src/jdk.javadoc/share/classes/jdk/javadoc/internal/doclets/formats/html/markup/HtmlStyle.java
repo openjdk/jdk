@@ -78,6 +78,7 @@ public enum HtmlStyle {
     previewBlock,
     previewComment,
     previewLabel,
+    refList,
     searchTagLink,
     searchTagResult,
     serializedPackageContainer,

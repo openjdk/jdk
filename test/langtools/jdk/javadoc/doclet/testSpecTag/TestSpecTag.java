@@ -90,8 +90,10 @@ public class TestSpecTag extends JavadocTester {
                 """
                     <div class="col-first even-row-color">label</div>
                     <div class="col-last even-row-color">
-                    <div class="block"><code><a href="p/C.html#label">class p.C</a></code></div>
-                    """);
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#label">class p.C</a></code></li>
+                    </ul>
+                    </div>""");
     }
 
     @Test
@@ -168,21 +170,28 @@ public class TestSpecTag extends JavadocTester {
                     <div class="table-header col-last">Referenced In</div>
                     <div class="col-first even-row-color"><a href="http://example.com/a%C2%A7b">other: section; U+00A7, UTF-8 c2 a7</a></div>
                     <div class="col-last even-row-color">
-                    <div class="block"><code><a href="p/C.html#other:section;U+00A7,UTF-8c2a7">class p.C</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#other:section;U+00A7,UTF-8c2a7">class p.C</a></code></li>
+                    </ul>
                     </div>
                     <div class="col-first odd-row-color"><a href="http://example.com/a%20b">space: percent</a></div>
                     <div class="col-last odd-row-color">
-                    <div class="block"><code><a href="p/C.html#space:percent">class p.C</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#space:percent">class p.C</a></code></li>
+                    </ul>
                     </div>
                     <div class="col-first even-row-color"><a href="http://example.com/a+b">space: plus</a></div>
                     <div class="col-last even-row-color">
-                    <div class="block"><code><a href="p/C.html#space:plus">class p.C</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#space:plus">class p.C</a></code></li>
+                    </ul>
                     </div>
                     <div class="col-first odd-row-color"><a href="http://example.com/a%C2%B1b">unicode: plus or minus; U+00B1, UTF-8 c2 b1</a></div>
                     <div class="col-last odd-row-color">
-                    <div class="block"><code><a href="p/C.html#unicode:plusorminus;U+00B1,UTF-8c2b1">class p.C</a></code></div>
-                    </div>
-                    """);
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#unicode:plusorminus;U+00B1,UTF-8c2b1">class p.C</a></code></li>
+                    </ul>
+                    </div>""");
     }
 
     @Test
@@ -231,9 +240,11 @@ public class TestSpecTag extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="http://example.com/">example</a></div>
                     <div class="col-last even-row-color">
-                    <div class="block"><code><a href="p/C.html#example">class p.C</a></code>, \
-                    <code><a href="p/C.html#example-1">p.C.f</a></code>, \
-                    <code><a href="p/C.html#example-2">p.C.m()</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#example">class p.C</a></code></li>
+                    <li><code><a href="p/C.html#example-1">p.C.f</a></code></li>
+                    <li><code><a href="p/C.html#example-2">p.C.m()</a></code></li>
+                    </ul>
                     </div>""");
 
     }
@@ -274,19 +285,27 @@ public class TestSpecTag extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="http://example.com/1">example-1</a></div>
                     <div class="col-last even-row-color">
-                    <div class="block"><code><a href="p/C.html#example-1">class p.C</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#example-1">class p.C</a></code></li>
+                    </ul>
                     </div>
                     <div class="col-first odd-row-color"><a href="http://example.com/2">example-2</a></div>
                     <div class="col-last odd-row-color">
-                    <div class="block"><code><a href="p/C.html#example-2">class p.C</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#example-2">class p.C</a></code></li>
+                    </ul>
                     </div>
                     <div class="col-first even-row-color"><a href="http://example.com/3">example-3</a></div>
                     <div class="col-last even-row-color">
-                    <div class="block"><code><a href="p/C.html#example-3">class p.C</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#example-3">class p.C</a></code></li>
+                    </ul>
                     </div>
                     <div class="col-first odd-row-color"><a href="http://example.com/4">example-4</a></div>
                     <div class="col-last odd-row-color">
-                    <div class="block"><code><a href="p/C.html#example-4">class p.C</a></code></div>
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#example-4">class p.C</a></code></li>
+                    </ul>
                     </div>
                     """);
 
@@ -336,7 +355,10 @@ public class TestSpecTag extends JavadocTester {
                 """
                         <div class="col-first even-row-color"><a href="http://example.com/#LK#">#LK# reference</a></div>
                         <div class="col-last even-row-color">
-                        <div class="block"><code><a href="p/C.html##LK#reference">class p.C</a></code></div>"""
+                        <ul class="ref-list">
+                        <li><code><a href="p/C.html##LK#reference">class p.C</a></code></li>
+                        </ul>
+                        </div>"""
                         .replaceAll("#LK#", lk.toString().toLowerCase()));
     }
 

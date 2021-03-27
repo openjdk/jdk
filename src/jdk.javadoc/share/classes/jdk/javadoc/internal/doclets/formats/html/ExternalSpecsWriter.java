@@ -32,7 +32,6 @@ import java.text.Collator;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.function.Predicate;
@@ -40,14 +39,12 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SpecTree;
-
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
@@ -131,21 +128,15 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
      */
     protected void addExternalSpecs(Content content) {
         Map<String, List<IndexItem>> searchIndexMap = groupExternalSpecs();
-        Content separator = Text.of(", ");
         Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.externalSpecifications)
                 .setHeader(new TableHeader(contents.specificationLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
-        for (Entry<String, List<IndexItem>> entry : searchIndexMap.entrySet()) {
-            List<IndexItem> searchIndexItems = entry.getValue();
+        for (List<IndexItem> searchIndexItems : searchIndexMap.values()) {
             Content specName = createSpecLink(searchIndexItems.get(0));
-            Content separatedReferenceLinks = new ContentBuilder();
-            separatedReferenceLinks.add(createLink(searchIndexItems.get(0)));
-            for (int i = 1; i < searchIndexItems.size(); i++) {
-                separatedReferenceLinks.add(separator);
-                separatedReferenceLinks.add(createLink(searchIndexItems.get(i)));
-            }
-            table.addRow(specName, HtmlTree.DIV(HtmlStyle.block, separatedReferenceLinks));
+            Content referencesList = HtmlTree.UL(HtmlStyle.refList, searchIndexItems,
+                    item -> HtmlTree.LI(createLink(item)));
+            table.addRow(specName, referencesList);
         }
         content.add(table);
     }
