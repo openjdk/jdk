@@ -322,6 +322,17 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
   return k;
 }
 
+static inline void log_circularity_error(PlaceholderEntry* probe) {
+  LogTarget(Debug, class, load, placeholders) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print("ClassCircularityError detected for placeholder ");
+    probe->print_entry(&ls);
+    ls.cr();
+  }
+}
+
 // Must be called for any super-class or super-interface resolution
 // during class definition to allow class circularity checking
 // super-interface callers:
@@ -351,12 +362,12 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
 //   4. defineClass B -> calls resolve_from_stream -> calls resolve_super_or_fail for A
 //      resolve_super_or_fail creates placeholder for LOAD_SUPER T1 B, superclass A
 //   5. resolve_or_fail for A
-//      (if same class loader)
-//         Finds placeholder for LOAD_SUPER T1 A -> throws ClassCircularityError
-//      Bootstrap and non-parallelCapable create placeholder LOAD_INSTANCE T1 B
-//      loadClass A
+//      if Bootstrap and non-parallelCapable class loader:
+//         Finds placeholder for LOAD_INSTANCE T1 A -> throws ClassCircularityError
+//      else
+//         loadClass A
 //   6. defineClass A -> calls resolve_from_stream -> calls resolve_super_or_fail for B
-//      Finds placeholder LOAD_SUPER T1 A -> throws ClassCircularityError
+//      Finds placeholder LOAD_SUPER T1 A superclass B -> throws ClassCircularityError
 //
 // Class circularity checking for cases where classloading is delegated to
 // different threads and the classloader lock is released, is described below:
@@ -418,6 +429,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
       // Must check ClassCircularity before checking if super class is already loaded.
       PlaceholderEntry* probe = placeholders()->get_entry(name_hash, class_name, loader_data);
       if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::LOAD_SUPER)) {
+          log_circularity_error(probe);
           throw_circularity_error = true;
       }
     }
@@ -539,12 +551,14 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
     // only need check_seen_thread once, not on each loop
     // 6341374 java/lang/Instrument with -Xcomp
     if (oldprobe->check_seen_thread(current, PlaceholderTable::LOAD_INSTANCE)) {
+      log_circularity_error(oldprobe);
       *throw_circularity_error = true;
       return NULL;
     } else {
-      // Also wait until super class is being loaded
+      // Wait until the first thread has finished loading this class. Also wait until all the
+      // threads trying to load its super class have removed their placeholders.
       while (oldprobe != NULL &&
-            (oldprobe->instance_load_in_progress() || oldprobe->super_load_in_progress())) {
+             (oldprobe->instance_load_in_progress() || oldprobe->super_load_in_progress())) {
 
         // We only get here if the application has released the
         // classloader lock when another thread was in the middle of loading a
@@ -558,12 +572,14 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
         // the original thread completes the class loading or fails
         // If it completes we will use the resulting InstanceKlass
         // which we will find below in the systemDictionary.
+        oldprobe = NULL;  // Other thread could delete this placeholder entry
 
         if (lockObject.is_null()) {
           SystemDictionary_lock->wait();
         } else {
           double_lock_wait(current, lockObject);
         }
+
         // Check if classloading completed while we were waiting
         InstanceKlass* check = loader_data->dictionary()->find_class(name_hash, name);
         if (check != NULL) {
@@ -730,7 +746,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     // So be careful to not exit with a CHECK_ macro between these calls.
 
     if (loaded_class == NULL) {
-
       // Do actual loading
       loaded_class = load_instance_class(name_hash, name, class_loader, THREAD);
     }
