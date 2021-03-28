@@ -2029,6 +2029,8 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(intx, LogAsyncInterval, 300,                                      \
           "Milliseconds between asynchronous log flushing")                 \
+          range(PeriodicTask::min_interval, max_jint)                       \
+          constraint(LogAsyncIntervalConstraintFunc, AtParse)               \
                                                                             \
   product(size_t, AsyncLogBufferSize, 2*K,                                  \
           "Entries of the buffer for Async logs")                           \

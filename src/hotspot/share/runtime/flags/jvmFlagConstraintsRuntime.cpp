@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,18 @@ JVMFlag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose) {
   if ((value % PeriodicTask::interval_gran != 0)) {
     JVMFlag::printError(verbose,
                         "PerfDataSamplingInterval (" INTX_FORMAT ") must be "
+                        "evenly divisible by PeriodicTask::interval_gran (%d)\n",
+                        value, PeriodicTask::interval_gran);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  } else {
+    return JVMFlag::SUCCESS;
+  }
+}
+
+JVMFlag::Error LogAsyncIntervalConstraintFunc(intx value, bool verbose) {
+    if ((value % PeriodicTask::interval_gran) != 0) {
+    JVMFlag::printError(verbose,
+                        "LogAsyncInterval (" INTX_FORMAT ") must be "
                         "evenly divisible by PeriodicTask::interval_gran (%d)\n",
                         value, PeriodicTask::interval_gran);
     return JVMFlag::VIOLATES_CONSTRAINT;
