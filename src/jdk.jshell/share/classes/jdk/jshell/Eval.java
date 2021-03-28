@@ -212,25 +212,25 @@ class Eval {
 
             state.debug(DBG_GEN, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
             return switch (unitTree.getKind()) {
-                case IMPORT 
+                case IMPORT
                     -> processImport(userSource, compileSourceInt);
-                case VARIABLE 
+                case VARIABLE
                     -> processVariables(userSource, units, compileSourceInt, pt);
-                case EXPRESSION_STATEMENT 
+                case EXPRESSION_STATEMENT
                     -> processExpression(userSource, unitTree, compileSourceInt, pt);
-                case CLASS 
+                case CLASS
                     -> processClass(userSource, unitTree, compileSourceInt, SubKind.CLASS_SUBKIND, pt);
-                case ENUM 
+                case ENUM
                     -> processClass(userSource, unitTree, compileSourceInt, SubKind.ENUM_SUBKIND, pt);
-                case ANNOTATION_TYPE 
+                case ANNOTATION_TYPE
                     -> processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
-                case INTERFACE 
+                case INTERFACE
                     -> processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
-                case RECORD 
+                case RECORD
                     -> processClass(userSource, unitTree, compileSourceInt, SubKind.RECORD_SUBKIND, pt);
-                case METHOD 
+                case METHOD
                     -> processMethod(userSource, unitTree, compileSourceInt, pt);
-                default 
+                default
                     -> processStatement(userSource, compileSourceInt);
             };
         });
@@ -368,8 +368,8 @@ class Eval {
                 nameMax = rinit.begin - 1;
             } else {
                 String sinit = switch (typeName) {
-                    case "byte", 
-                         "short", 
+                    case "byte",
+                         "short",
                          "int"     -> "0";
                     case "long"    -> "0L";
                     case "float"   -> "0.0f";
@@ -847,8 +847,8 @@ class Eval {
         OuterWrap outer = switch (probableKind) {
             case IMPORT     -> state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
             case EXPRESSION -> state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(compileSource));
-            case VAR, 
-                 TYPE_DECL, 
+            case VAR,
+                 TYPE_DECL,
                  METHOD     -> state.outerMap.wrapInTrialClass(Wrap.classMemberWrap(compileSource));
             default         -> state.outerMap.wrapInTrialClass(Wrap.methodWrap(compileSource));
         };
