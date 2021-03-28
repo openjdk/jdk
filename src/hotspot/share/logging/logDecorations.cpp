@@ -65,7 +65,7 @@ void LogDecorations::create_decorations(const LogDecorators &decorators) {
   DECORATOR_LIST
 #undef DECORATOR
 
-  assert(get_decorators() == decorators, "insanity check");
+  assert(get_decorators() == decorators, "sanity check");
 }
 
 LogDecorators LogDecorations::get_decorators() const {

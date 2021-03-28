@@ -26,6 +26,7 @@
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/logAsyncFlusher.hpp"
+#include "logging/logMessage.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
@@ -33,9 +34,6 @@
 
 
 class AsyncLogTest : public LogTestFixture {
-  const FlagSetting enabler;
- protected:
-  AsyncLogTest(): enabler(AsyncLogging, true) {}
 };
 
 TEST_VM_F(AsyncLogTest, fifo) {
@@ -147,11 +145,15 @@ LOG_LEVEL_LIST
 TEST_VM_F(AsyncLogTest, asynclog) {
   set_log_config(TestLogFileName, "logging=debug", NULL, "async=true");
 
-  VM_TestFlusher op;
-  ThreadInVMfromNative invm(JavaThread::current());
-  VMThread::execute(&op);
+  LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
+  ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
+  {
+    VM_TestFlusher op;
+    ThreadInVMfromNative invm(JavaThread::current());
+    VMThread::execute(&op);
+  }
+  flusher->flush();
 
-  LogAsyncFlusher::cleanup();
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
@@ -165,4 +167,41 @@ TEST_VM_F(AsyncLogTest, asynclog) {
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "AsyncLogTarget.print = 1"));
   EXPECT_FALSE(file_contains_substring(TestLogFileName, "log_trace-test")); // trace message is masked out
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "log_debug-test"));
+}
+
+TEST_VM_F(AsyncLogTest, logMessage) {
+  set_log_config(TestLogFileName, "logging=debug", "none" /*decorators*/, "async=true");
+
+  LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
+  ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
+
+  const int MULTI_LINES = 20;
+  {
+
+    LogMessage(logging) msg;
+    Log(logging) logger;
+
+    for (int i = 0; i < MULTI_LINES; ++i) {
+      msg.debug("nonbreakable log message line-%02d", i);
+
+      if (0 == (i % 4)) {
+        logger.debug("a noisy message from other logger");
+      }
+    }
+    logger.debug("a noisy message from other logger");
+  }
+  flusher->flush();
+
+  ResourceMark rm;
+  LogMessageBuffer buffer;
+  const char* strs[MULTI_LINES + 1];
+  strs[MULTI_LINES] = NULL;
+  for (int i = 0; i < MULTI_LINES; ++i) {
+    stringStream ss;
+    ss.print_cr("nonbreakable log message line-%02d", i);
+    strs[i] = ss.as_string();
+  }
+  // check nonbreakable log messages are consecutive
+  EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, strs));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "a noisy message from other logger"));
 }

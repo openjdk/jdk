@@ -2030,11 +2030,8 @@ const intx ObjectAlignmentInBytes = 8;
   product(intx, LogAsyncInterval, 300,                                      \
           "Milliseconds between asynchronous log flushing")                 \
                                                                             \
-  product(bool, AsyncLogging, false,                                        \
-          "Enble asynchronous GC logging")                                  \
-                                                                            \
-  product(size_t, GCLogBufferSize, 2*K,                                     \
-          "Entries of ringbuffer for GC log writing")                       \
+  product(size_t, AsyncLogBufferSize, 2*K,                                  \
+          "Entries of the buffer for Async logs")                           \
           range(100, 100*K)                                                 \
                                                                             \
   product(bool, CheckIntrinsics, true, DIAGNOSTIC,                          \

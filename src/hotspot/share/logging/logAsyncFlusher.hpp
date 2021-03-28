@@ -24,6 +24,7 @@
 #ifndef SHARE_LOGGING_ASYNC_FLUSHER_HPP
 #define SHARE_LOGGING_ASYNC_FLUSHER_HPP
 #include "logging/logDecorations.hpp"
+#include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/task.hpp"
@@ -61,7 +62,6 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, mtLogging
 
     if (h != NULL) {
       --_size;
-      log_drop(h->data());
       this->delete_node(h);
     }
   }
@@ -75,8 +75,6 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, mtLogging
   const E* back() const {
     return _tail == NULL ? NULL : _tail->peek();
   }
-
-  void log_drop(E* e) {}
 };
 
 class LogFileOutput;
@@ -132,11 +130,14 @@ class LogAsyncFlusher : public PeriodicTask {
     this->enroll();
   }
 
+  void enqueue_impl(const AsyncLogMessage& msg);
+
  protected:
   void task();
 
  public:
   void enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg);
+  void enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator);
   void flush() { task(); }
 
   // none of following functions are thread-safe.

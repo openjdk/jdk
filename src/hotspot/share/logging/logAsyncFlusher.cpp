@@ -34,18 +34,28 @@ void AsyncLogMessage::writeback() {
   }
 }
 
-#ifndef PRODUCT
-template<> void LinkedListDeque<AsyncLogMessage>::log_drop(AsyncLogMessage* e) {
-  if (Verbose && e->message() != NULL) {
-    // Temporarily turn off SerializeVMOutput so defaultStream will not
-    // invoke set_owner(self) for tty_lock.
-    FlagSetting t(SerializeVMOutput, false);
-    // The writing below can not guarantee non-blocking because tty may be piped by the filesystems
-    // or throttled by XOFF, so only dump the dropping message in Verbose mode.
-    tty->print_cr("asynclog dropping message: %s", e->message());
+void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
+  assert_lock_strong(&_lock);
+
+  if (_buffer.size() >= AsyncLogBufferSize)  {
+    if (Verbose) {
+      const AsyncLogMessage* h = _buffer.front();
+      assert(h != NULL, "sanity check");
+      if (h->message() != NULL) {
+        // Temporarily turn off SerializeVMOutput so defaultStream will not
+        // invoke set_owner(self) for tty_lock.
+        FlagSetting t(SerializeVMOutput, false);
+        // The writing below can not guarantee non-blocking because tty may be piped by the filesystems
+        // or throttled by XOFF, so only dump the dropping message in Verbose mode.
+        tty->print_cr("asynclog dropping message: %s", h->message());
+      }
+    }
+
+    _buffer.pop_front();
   }
+  assert(_buffer.size() < AsyncLogBufferSize, "_buffer is over-sized.");
+  _buffer.push_back(msg);
 }
-#endif
 
 void LogAsyncFlusher::task() {
   LinkedListImpl<AsyncLogMessage, ResourceObj::C_HEAP, mtLogging> logs;
@@ -67,12 +77,18 @@ void LogAsyncFlusher::enqueue(LogFileOutput& output, const LogDecorations& decor
 
   { // critical area
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+    enqueue_impl(m);
+  }
+}
 
-    if (_buffer.size() >= GCLogBufferSize)  {
-      _buffer.pop_front();
-    }
-    assert(_buffer.size() < GCLogBufferSize, "_buffer is over-sized.");
-    _buffer.push_back(m);
+// LogMessageBuffer consists of a multiple-part/multiple-line messsage.
+// the mutex here gurantees its interity.
+void LogAsyncFlusher::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+
+  for (; !msg_iterator.is_at_end(); msg_iterator++) {
+    AsyncLogMessage m(output, msg_iterator.decorations(), msg_iterator.message());
+    enqueue_impl(m);
   }
 }
 
