@@ -313,12 +313,13 @@ extends KeyAgreementSpi {
         // above, so user can recover w/o losing internal state
         generateSecret = false;
 
-        // No further process if z <= 1 or z == (p - 1).
+        // No further process if z <= 1 or z == (p - 1) (See section 5.7.1,
+        // NIST SP 800-56A Rev 3).
         BigInteger z = this.y.modPow(this.x, modulus);
         if ((z.compareTo(BigInteger.ONE) <= 0) ||
                 z.equals(modulus.subtract(BigInteger.ONE))) {
             throw new ProviderException(
-                    "Generated secret is out-of-rang of (1, p -1)");
+                    "Generated secret is out-of-range of (1, p -1)");
         }
 
         /*
