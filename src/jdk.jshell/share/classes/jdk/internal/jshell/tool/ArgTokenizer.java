@@ -331,7 +331,7 @@ class ArgTokenizer {
                             case 'r' -> '\r';
                             case 't' -> '\t';
                             case 'v' -> 0xB;
-                            default -> c;
+                            default  -> c;
                         };
                         d = read();
                     }

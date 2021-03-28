@@ -211,30 +211,28 @@ class Eval {
             String compileSourceInt = new MaskCommentsAndModifiers(compileSource, true).cleared();
 
             state.debug(DBG_GEN, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
-            switch (unitTree.getKind()) {
-                case IMPORT:
-                    return processImport(userSource, compileSourceInt);
-                case VARIABLE:
-                    return processVariables(userSource, units, compileSourceInt, pt);
-                case EXPRESSION_STATEMENT:
-                    return processExpression(userSource, unitTree, compileSourceInt, pt);
-                case CLASS:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.CLASS_SUBKIND, pt);
-                case ENUM:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.ENUM_SUBKIND, pt);
-                case ANNOTATION_TYPE:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
-                case INTERFACE:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
-                case RECORD:
-                    @SuppressWarnings("preview")
-                    List<Snippet> snippets = processClass(userSource, unitTree, compileSourceInt, SubKind.RECORD_SUBKIND, pt);
-                    return snippets;
-                case METHOD:
-                    return processMethod(userSource, unitTree, compileSourceInt, pt);
-                default:
-                    return processStatement(userSource, compileSourceInt);
-            }
+            return switch (unitTree.getKind()) {
+                case IMPORT 
+                    -> processImport(userSource, compileSourceInt);
+                case VARIABLE 
+                    -> processVariables(userSource, units, compileSourceInt, pt);
+                case EXPRESSION_STATEMENT 
+                    -> processExpression(userSource, unitTree, compileSourceInt, pt);
+                case CLASS 
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.CLASS_SUBKIND, pt);
+                case ENUM 
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.ENUM_SUBKIND, pt);
+                case ANNOTATION_TYPE 
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
+                case INTERFACE 
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
+                case RECORD 
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.RECORD_SUBKIND, pt);
+                case METHOD 
+                    -> processMethod(userSource, unitTree, compileSourceInt, pt);
+                default 
+                    -> processStatement(userSource, compileSourceInt);
+            };
         });
     }
 
@@ -370,13 +368,15 @@ class Eval {
                 nameMax = rinit.begin - 1;
             } else {
                 String sinit = switch (typeName) {
-                    case "byte", "short", "int" -> "0";
-                    case "long" -> "0L";
-                    case "float" -> "0.0f";
-                    case "double" -> "0.0d";
+                    case "byte", 
+                         "short", 
+                         "int"     -> "0";
+                    case "long"    -> "0L";
+                    case "float"   -> "0.0f";
+                    case "double"  -> "0.0d";
                     case "boolean" -> "false";
-                    case "char" -> "'\\u0000'";
-                    default -> "null";
+                    case "char"    -> "'\\u0000'";
+                    default        -> "null";
                 };
                 winit = Wrap.simpleWrap(sinit);
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
@@ -845,10 +845,12 @@ class Eval {
         // Install  wrapper for query by SourceCodeAnalysis.wrapper
         String compileSource = Util.trimEnd(new MaskCommentsAndModifiers(userSource, true).cleared());
         OuterWrap outer = switch (probableKind) {
-            case IMPORT -> state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
+            case IMPORT     -> state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
             case EXPRESSION -> state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(compileSource));
-            case VAR, TYPE_DECL, METHOD -> state.outerMap.wrapInTrialClass(Wrap.classMemberWrap(compileSource));
-            default -> state.outerMap.wrapInTrialClass(Wrap.methodWrap(compileSource));
+            case VAR, 
+                 TYPE_DECL, 
+                 METHOD     -> state.outerMap.wrapInTrialClass(Wrap.classMemberWrap(compileSource));
+            default         -> state.outerMap.wrapInTrialClass(Wrap.methodWrap(compileSource));
         };
         snip.setOuterWrap(outer);
 
