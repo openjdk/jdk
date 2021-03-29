@@ -2332,11 +2332,6 @@ void os::print_memory_info(outputStream* st) {
   st->print("(" UINT64_FORMAT "k free)",
             ((jlong)si.freeswap * si.mem_unit) >> 10);
   st->cr();
-
-  st->print(SIZE_FORMAT "k large page", os::large_page_size()>>10);
-  st->cr();
-  st->print(SIZE_FORMAT "k default large page", os::Linux::default_large_page_size()>>10);
-  st->cr();
   st->print("Page Sizes: ");
   _page_sizes.print_on(st);
   st->cr();
@@ -3977,12 +3972,21 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    size_t alignment,
                                                    char* req_addr,
                                                    bool exec) {
+  // Select large_page_size from _page_sizes
+  // that is smaller than size_t bytes
+  size_t large_page_size = os::page_size_for_region_aligned(bytes, 1);
+
+  assert(large_page_size > (size_t)os::vm_page_size(), "large page size: "
+                                                        SIZE_FORMAT " not larger than small page size: "
+                                                        SIZE_FORMAT,
+                                                        large_page_size,
+                                                        (size_t)os::vm_page_size());
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
-  assert(is_aligned(req_addr, os::large_page_size()), "Must be");
+  assert(is_aligned(req_addr, large_page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
-  assert(is_power_of_2(os::large_page_size()), "Must be");
-  assert(bytes >= os::large_page_size(), "Shouldn't allocate large pages for small sizes");
+  assert(is_power_of_2(large_page_size), "Must be");
+  assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
 
   // We only end up here when at least 1 large page can be used.
   // If the size is not a multiple of the large page size, we
@@ -3992,15 +3996,15 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   // a requested address is given it will be used and it must be
   // aligned to both the large page size and the given alignment.
   // The larger of the two will be used.
-  size_t required_alignment = MAX(os::large_page_size(), alignment);
+  size_t required_alignment = MAX(large_page_size, alignment);
   char* const aligned_start = anon_mmap_aligned(req_addr, bytes, required_alignment);
   if (aligned_start == NULL) {
     return NULL;
   }
 
   // First commit using large pages.
-  size_t large_bytes = align_down(bytes, os::large_page_size());
-  bool large_committed = commit_memory_special(large_bytes, os::large_page_size(), aligned_start, exec);
+  size_t large_bytes = align_down(bytes, large_page_size);
+  bool large_committed = commit_memory_special(large_bytes, large_page_size, aligned_start, exec);
 
   if (large_committed && bytes == large_bytes) {
     // The size was large page aligned so no additional work is
