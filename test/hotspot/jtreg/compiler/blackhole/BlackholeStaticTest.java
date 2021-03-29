@@ -29,6 +29,7 @@
  *      -Xmx1g
  *      -Xbatch -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
+ *      -XX:+UnlockExperimentalVMOptions
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeStaticTest
  */
@@ -41,6 +42,7 @@
  *      -Xmx1g
  *      -Xbatch -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
+ *      -XX:+UnlockExperimentalVMOptions
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeStaticTest
  */
@@ -54,6 +56,7 @@
  *      -Xmx1g -XX:-UseCompressedOops
  *      -Xbatch -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
+ *      -XX:+UnlockExperimentalVMOptions
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeStaticTest
  */
@@ -67,6 +70,7 @@
  *      -Xmx1g -XX:-UseCompressedOops
  *      -Xbatch -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
+ *      -XX:+UnlockExperimentalVMOptions
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeStaticTest
  */
