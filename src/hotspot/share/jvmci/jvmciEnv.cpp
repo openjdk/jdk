@@ -28,6 +28,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -1037,6 +1038,10 @@ JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) 
   jmetadata handle = _runtime->allocate_handle(method);
   jboolean exception = false;
   if (is_hotspot()) {
+    // If needed, set the blackhole intrinsic tag for resolved JVMCI methods.
+    if (CompilerOracle::should_blackhole(method) && (method->intrinsic_id() == vmIntrinsics::_none)) {
+      method->set_intrinsic_id(vmIntrinsics::_blackhole);
+    }
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_long((jlong) handle);
