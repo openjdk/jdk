@@ -553,8 +553,8 @@ void AbstractDumpWriter::finish_dump_segment(bool force_flush) {
       Bytes::put_Java_u4((address) (buffer() + 5),
                          (u4) (position() - dump_segment_header_size));
     } else {
-      // Finished process huge sub record
-      // Set _is_huge_sub_record to false so the parallel dump writer could flush data to file.
+      // Finish process huge sub record
+      // Set _is_huge_sub_record to false so the parallel dump writer can flush data to file.
       _is_huge_sub_record = false;
     }
 
@@ -620,7 +620,7 @@ class DumpWriter : public AbstractDumpWriter {
 
   // Called by threads used for parallel writing.
   void writer_loop()                    { _backend.thread_loop(false); }
-  // Called when finished to release the threads.
+  // Called when finish to release the threads.
   virtual void deactivate()             { flush(); _backend.deactivate(); }
   // Get the backend pointer, used by parallel dump writer.
   CompressionBackend* backend_ptr() { return &_backend; }
@@ -1662,9 +1662,9 @@ class StickyClassDumper : public KlassClosure {
 // Large object heap dump support.
 // To avoid memory consumption, when dumping large objects such as huge array and
 // large objects whose size are larger than LARGE_OBJECT_DUMP_THRESHOLD, the scanned
-// partial object/array data will be send to backend directly instead of caching the
-// whole object/array internal buffer.
-// The HeapDumpLargeObjectList is used to save the large object when dumper scanning
+// partial object/array data will be send to the backend directly instead of caching
+// the whole object/array in the internal buffer.
+// The HeapDumpLargeObjectList is used to save the large object when dumper scans
 // the heap. The large objects could be added (push) parallelly by multiple dumpers.
 // But they will be removed (pop) serially only by the VM thread.
 class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
@@ -1881,28 +1881,28 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
   int                     _num_threads;
   // parallel heap dump support
   uint                    _num_dumper_threads;
-  uint                    _num_writter_threads;
+  uint                    _num_writer_threads;
   DumperController*       _dumper_controller;
   ParallelObjectIterator* _poi;
   HeapDumpLargeObjectList* _large_object_list;
 
-  static const size_t WritterType = 0;
+  static const size_t WriterType = 0;
   static const size_t DumperType = 1;
   static const size_t VMDumperType = 2;
 
   size_t get_worker_type(uint worker_id) {
-    assert(_num_writter_threads >= 1, "Must be at least one writters");
-    // worker id of writter starts from 0
-    if (worker_id < _num_writter_threads) {
-        return WritterType;
+    assert(_num_writer_threads >= 1, "Must be at least one writers");
+    // worker id of writer starts from 0
+    if (worker_id < _num_writer_threads) {
+        return WriterType;
     }
     // worker id of dumper starts from _num_dumper_threads
-    if (worker_id < _num_writter_threads + _num_dumper_threads) {
+    if (worker_id < _num_writer_threads + _num_dumper_threads) {
         return DumperType;
     }
 
-    assert (worker_id == _num_writter_threads + _num_dumper_threads,
-            "Invalid worker id for heap dumper/writter");
+    assert (worker_id == _num_writer_threads + _num_dumper_threads,
+            "Invalid worker id for heap dumper/writer");
     return VMDumperType;
   }
 
@@ -1913,13 +1913,13 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
     if (num_total < _num_dumper_threads) {
       _num_dumper_threads = num_total - 1 /* VMThread */;
     }
-    // Calculate dumper and writter threads number.
-    _num_writter_threads = num_total - _num_dumper_threads;
+    // Calculate dumper and writer threads number.
+    _num_writer_threads = num_total - _num_dumper_threads;
     // If dumper threads number is zero, there is only VMThread work as a dumper.
-    // If dumper threads number is equal to active workers, need at lest one thread work as writter.
-    if (_num_dumper_threads > 0 && _num_writter_threads == 0) {
-      _num_writter_threads = 1;
-      _num_dumper_threads = num_total - _num_writter_threads;
+    // If dumper threads number is equal to active workers, need at lest one thread work as writer.
+    if (_num_dumper_threads > 0 && _num_writer_threads == 0) {
+      _num_writer_threads = 1;
+      _num_dumper_threads = num_total - _num_writer_threads;
     }
 
     uint total_dumper_threads = _num_dumper_threads + 1 /* VMThread */;
@@ -2277,7 +2277,7 @@ void VM_HeapDumper::doit() {
 
 void VM_HeapDumper::work(uint worker_id) {
   if (!Thread::current()->is_VM_thread()) {
-    if (get_worker_type(worker_id) == WritterType) {
+    if (get_worker_type(worker_id) == WriterType) {
       writer()->writer_loop();
       return;
     }
@@ -2358,7 +2358,7 @@ void VM_HeapDumper::work(uint worker_id) {
        ParDumpWriter pw(writer());
        {
          HeapObjectDumper obj_dumper(&pw, _large_object_list);
-         uint dumper_id = worker_id - _num_writter_threads;
+         uint dumper_id = worker_id - _num_writer_threads;
          _poi->object_iterate(&obj_dumper, dumper_id);
        }
 
