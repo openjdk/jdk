@@ -197,7 +197,7 @@ public class SSLEngineTemplate implements SSLContextTemplate {
         }
     }
 
-    private static boolean isOpen(SSLEngine engine) {
+    static boolean isOpen(SSLEngine engine) {
         return (!engine.isOutboundDone() || !engine.isInboundDone());
     }
 
@@ -240,7 +240,7 @@ public class SSLEngineTemplate implements SSLContextTemplate {
     }
 
     // Simple check to make sure everything came across as expected.
-    private static void checkTransfer(ByteBuffer a, ByteBuffer b)
+    static void checkTransfer(ByteBuffer a, ByteBuffer b)
             throws Exception {
         a.flip();
         b.flip();
