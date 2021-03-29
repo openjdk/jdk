@@ -60,30 +60,36 @@ public class UnmodifiableHeadersTest {
 
     static void assertUnsupportedOperation(Headers headers) {
         assertThrows(UOP, () -> headers.add("a", "b"));
-        assertThrows(UOP, () -> headers.compute("c", (k, v) -> List.of()));
-        assertThrows(UOP, () -> headers.computeIfAbsent("d", k -> List.of()));
+        assertThrows(UOP, () -> headers.compute("c", (k, v) -> List.of("c")));
+        assertThrows(UOP, () -> headers.computeIfAbsent("d", k -> List.of("d")));
         assertThrows(UOP, () -> headers.computeIfPresent("Foo", (k, v) -> null));
-        assertThrows(UOP, () -> headers.merge("e", List.of(), (k, v) -> List.of()));
-        assertThrows(UOP, () -> headers.put("f", List.of("g")));
+        assertThrows(UOP, () -> headers.merge("e", List.of("e"), (k, v) -> List.of("e")));
+        assertThrows(UOP, () -> headers.put("f", List.of("f")));
         assertThrows(UOP, () -> headers.putAll(Map.of()));
-        assertThrows(UOP, () -> headers.putIfAbsent("h", List.of()));
-        assertThrows(UOP, () -> headers.remove("i"));
-        assertThrows(UOP, () -> headers.replace("j", List.of("k")));
-        assertThrows(UOP, () -> headers.replace("j", List.of("k"), List.of("k")));
-        assertThrows(UOP, () -> headers.replaceAll((k, v) -> List.of()));
+        assertThrows(UOP, () -> headers.putIfAbsent("g", List.of("g")));
+        assertThrows(UOP, () -> headers.remove("h"));
+        assertThrows(UOP, () -> headers.replace("i", List.of("i")));
+        assertThrows(UOP, () -> headers.replace("j", List.of("j"), List.of("j")));
+        assertThrows(UOP, () -> headers.replaceAll((k, v) -> List.of("k")));
         assertThrows(UOP, () -> headers.set("l", "m"));
-        assertThrows(UOP, headers::clear);
+        assertThrows(UOP, () -> headers.clear());
     }
 
     static void assertUnmodifiableCollection(Headers headers) {
-        var entry = new AbstractMap.SimpleEntry<>("n", List.of("o"));
+        var entry = new AbstractMap.SimpleEntry<>("n", List.of("n"));
 
-        assertThrows(UOP, () -> headers.values().remove(List.of("p")));
-        assertThrows(UOP, () -> headers.values().removeAll(List.of("q")));
-        assertThrows(UOP, () -> headers.keySet().remove("r"));
-        assertThrows(UOP, () -> headers.keySet().removeAll(List.of("s", "t")));
+        assertThrows(UOP, () -> headers.values().remove(List.of("Bar")));
+        assertThrows(UOP, () -> headers.values().removeAll(List.of("Bar")));
+        assertThrows(UOP, () -> headers.keySet().remove("Foo"));
+        assertThrows(UOP, () -> headers.keySet().removeAll(List.of("Foo")));
         assertThrows(UOP, () -> headers.entrySet().remove(entry));
         assertThrows(UOP, () -> headers.entrySet().removeAll(List.of(entry)));
+    }
+
+    static void assertUnmodifiableList(Headers headers) {
+        assertThrows(UOP, () -> headers.get("Foo").remove(0));
+        assertThrows(UOP, () -> headers.values().stream().findFirst().orElseThrow().remove(0));
+        assertThrows(UOP, () -> headers.entrySet().stream().findFirst().orElseThrow().getValue().remove(0));
     }
 
     static class TestHttpExchange extends StubHttpExchange {

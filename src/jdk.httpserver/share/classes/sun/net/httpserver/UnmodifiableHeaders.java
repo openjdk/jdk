@@ -31,11 +31,16 @@ import com.sun.net.httpserver.*;
 
 public class UnmodifiableHeaders extends Headers {
 
-        private Map<String, List<String>> map;
+    private final Headers headers;
+    private final Map<String, List<String>> map;
 
-        public UnmodifiableHeaders(Headers map) {
-            this.map = Collections.unmodifiableMap(map);
-        }
+    public UnmodifiableHeaders(Headers headers) {
+        var h = headers;
+        Map<String, List<String>> unmodListMap = new HashMap<>();
+        h.forEach((k, v) -> unmodListMap.put(k, Collections.unmodifiableList(v)));
+        this.map = Collections.unmodifiableMap(unmodListMap);
+        this.headers = h;
+    }
 
         public int size() {return map.size();}
 
@@ -54,13 +59,11 @@ public class UnmodifiableHeaders extends Headers {
         }
 
         public String getFirst(String key) {
-            final var headers = new Headers();
-            map.forEach((k, v) -> headers.add(k, v.get(0)));
             return headers.getFirst(key);
         }
 
         public List<String> put(String key, List<String> value) {
-            return map.put (key, value);
+            throw new UnsupportedOperationException ("unsupported operation");
         }
 
         public void add (String key, String value) {
