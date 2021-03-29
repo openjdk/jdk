@@ -305,7 +305,7 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
 #endif // !COMPILER2
       derived_pointer* derived_loc = (derived_pointer*)fr->oopmapreg_to_location(omv.reg(),reg_map);
       guarantee(derived_loc != NULL, "missing saved register");
-      oop *base_loc = fr->oopmapreg_to_oop_location(omv.content_reg(), reg_map);
+      oop* base_loc = fr->oopmapreg_to_oop_location(omv.content_reg(), reg_map);
       // Ignore NULL oops and decoded NULL narrow oops which
       // equal to CompressedOops::base() when a narrow oop
       // implicit null check is used in compiled code.
