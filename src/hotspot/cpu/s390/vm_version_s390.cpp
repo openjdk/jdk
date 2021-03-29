@@ -91,7 +91,7 @@ void VM_Version::initialize() {
   set_features_string();     // Set a descriptive feature indication.
 
   if (Verbose || PrintAssembly || PrintStubCode) {
-    print_features_internal("CPU Version as detected internally:  ", PrintAssembly || PrintStubCode);
+    print_features_internal("CPU Version as detected internally:", PrintAssembly || PrintStubCode);
   }
 
   intx cache_line_size = Dcache_lineSize(0);
@@ -425,7 +425,7 @@ bool VM_Version::test_feature_bit(unsigned long* featureBuffer, int featureNum, 
 }
 
 void VM_Version::print_features_internal(const char* text, bool print_anyway) {
-  tty->print_cr("%s %s",       text, features_string());
+  tty->print_cr("%s %s", text, features_string());
   tty->cr();
 
   if (Verbose || print_anyway) {
