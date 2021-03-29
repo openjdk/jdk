@@ -415,12 +415,12 @@ class DerivedPointerTable : public AllStatic {
   friend class VMStructs;
  private:
   class Entry;
-  static bool _active;                           // do not record pointers for verify pass etc.
+  static bool _active;                                  // do not record pointers for verify pass etc.
 
  public:
-  static void clear();                           // Called before scavenge/GC
+  static void clear();                                  // Called before scavenge/GC
   static void add(derived_pointer* derived, oop *base); // Called during scavenge/GC
-  static void update_pointers();                 // Called after  scavenge/GC
+  static void update_pointers();                        // Called after  scavenge/GC
   static bool is_empty();
   static bool is_active()                    { return _active; }
   static void set_active(bool value)         { _active = value; }

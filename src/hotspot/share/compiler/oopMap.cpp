@@ -674,8 +674,8 @@ ImmutableOopMapSet* ImmutableOopMapSet::build_from(const OopMapSet* oopmap_set) 
 
 class DerivedPointerTable::Entry : public CHeapObj<mtCompiler> {
   derived_pointer* _location; // Location of derived pointer, also pointing to base
-  intptr_t  _offset;          // Offset from base pointer
-  Entry* volatile _next;
+  intptr_t         _offset;   // Offset from base pointer
+  Entry* volatile  _next;
 
   static Entry* volatile* next_ptr(Entry& entry) { return &entry._next; }
 
