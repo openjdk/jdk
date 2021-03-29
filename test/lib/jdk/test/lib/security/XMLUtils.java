@@ -52,6 +52,7 @@ import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.*;
@@ -87,8 +88,9 @@ public class XMLUtils {
         Asserts.assertTrue(v1.validate(s1.sign(d))); // can read KeyInfo
         Asserts.assertTrue(v1.validate(s2.sign(d))); // can read KeyInfo
         Asserts.assertTrue(v2.validate(s3.sign(d))); // can read KeyInfo
-        Asserts.assertTrue(v2.secureValidation(false).validate(s3.sign(p))); // can read KeyInfo
-        Asserts.assertTrue(v2.secureValidation(false).baseURI(b).validate(s3.sign(b, "x.xml"))); // can read KeyInfo
+        Asserts.assertTrue(v2.secureValidation(false).validate(s3.sign(p.toUri()))); // can read KeyInfo
+        Asserts.assertTrue(v2.secureValidation(false).baseURI(b).validate(
+                s3.sign(p.getParent().toUri(), p.getFileName().toUri()))); // can read KeyInfo
         Asserts.assertTrue(v1.validate(s1.sign("text"))); // plain text
         Asserts.assertTrue(v1.validate(s1.sign("binary".getBytes()))); // raw data
     }
@@ -308,21 +310,21 @@ public class XMLUtils {
         // Signs different sources
 
         // Signs an XML file in detached mode
-        public Document sign(Path file) throws Exception {
+        public Document sign(URI uri) throws Exception {
             Document newDocument = DocumentBuilderFactory.newInstance()
                     .newDocumentBuilder().newDocument();
-            FAC.newXMLSignature(buildSignedInfo(file.toFile().toURI().toString()), buildKeyInfo()).sign(
+            FAC.newXMLSignature(buildSignedInfo(uri.toString()), buildKeyInfo()).sign(
                     new DOMSignContext(privateKey, newDocument));
             return newDocument;
         }
 
         // Signs an XML file in a relative reference in detached mode
-        public Document sign(String base, String ref) throws Exception {
+        public Document sign(URI base, URI ref) throws Exception {
             Document newDocument = DocumentBuilderFactory.newInstance()
                     .newDocumentBuilder().newDocument();
             DOMSignContext ctxt = new DOMSignContext(privateKey, newDocument);
-            ctxt.setBaseURI(base);
-            FAC.newXMLSignature(buildSignedInfo(ref), buildKeyInfo()).sign(ctxt);
+            ctxt.setBaseURI(base.toString());
+            FAC.newXMLSignature(buildSignedInfo(ref.toString()), buildKeyInfo()).sign(ctxt);
             return newDocument;
         }
 
