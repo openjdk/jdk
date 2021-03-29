@@ -56,13 +56,17 @@ public class JarExtractTest {
             );
 
     private static final byte[] FILE_CONTENT = "Hello world!!!".getBytes(StandardCharsets.UTF_8);
+    private static final String LEADING_SLASH_PRESERVED_ENTRY = "/tmp/8173970/f1.txt";
     // the jar that will get extracted in the tests
     private static Path testJarPath;
     private static Collection<Path> filesToDelete = new ArrayList<>();
 
     @BeforeClass
     public static void createTestJar() throws Exception {
-        testJarPath = Paths.get("8173970-test.jar");
+        Files.deleteIfExists(Path.of(LEADING_SLASH_PRESERVED_ENTRY));
+
+        final String tmpDir = Files.createTempDirectory("8173970-").toString();
+        testJarPath = Paths.get(tmpDir,"8173970-test.jar");
         final JarBuilder builder = new JarBuilder(testJarPath.toString());
         // d1
         //  |--- d2
@@ -78,6 +82,8 @@ public class JarExtractTest {
         builder.addEntry("d1/d2/d3/f2.txt", FILE_CONTENT);
         builder.addEntry("d1/d4/", new byte[0]);
         builder.build();
+
+        filesToDelete.add(Path.of(LEADING_SLASH_PRESERVED_ENTRY));
     }
 
     @AfterClass
@@ -198,6 +204,58 @@ public class JarExtractTest {
     }
 
     /**
+     * Tests that extracting a jar using {@code -P} flag and without any explicit destination
+     * directory works correctly if the jar contains entries with leading slashes and/or {@code ..}
+     * parts preserved.
+     */
+    @Test
+    public void testExtractNoDestDirWithPFlag() throws Exception {
+        // create a jar which has leading slash (/) and dot-dot (..) preserved in entry names
+        final Path jarPath = createJarWithPFlagSemantics();
+        // extract with -P flag without any explicit destination directory (expect the extraction to work fine)
+        final String[] args = new String[]{"-xvfP", jarPath.toString()};
+        printJarCommand(args);
+        final int exitCode = JAR_TOOL.run(System.out, System.err, args);
+        Assert.assertEquals(exitCode, 0, "Failed to extract " + jarPath);
+        final String dest = ".";
+        Assert.assertTrue(Files.isDirectory(Paths.get(dest)), dest + " is not a directory");
+        final Path d1 = Paths.get(dest, "d1");
+        Assert.assertTrue(Files.isDirectory(d1), d1 + " directory is missing or not a directory");
+        final Path d2 = Paths.get(dest, "d1", "d2");
+        Assert.assertTrue(Files.isDirectory(d2), d2 + " directory is missing or not a directory");
+        final Path f1 = Paths.get(LEADING_SLASH_PRESERVED_ENTRY);
+        Assert.assertTrue(Files.isRegularFile(f1), f1 + " is missing or not a file");
+        Assert.assertEquals(Files.readAllBytes(f1), FILE_CONTENT, "Unexpected content in file " + f1);
+        final Path f2 = Paths.get("d1/d2/../f2.txt");
+        Assert.assertTrue(Files.isRegularFile(f2), f2 + " is missing or not a file");
+        Assert.assertEquals(Files.readAllBytes(f2), FILE_CONTENT, "Unexpected content in file " + f2);
+    }
+
+    /**
+     * Tests that the {@code -P} option cannot be used during jar extraction when the {@code -C} and/or
+     * {@code --dir} option is used
+     */
+    @Test
+    public void testExtractWithDirPFlagNotAllowed() throws Exception {
+        final String expectedErrMsg = "-P option cannot be used when extracting a jar to a specific location";
+        final String tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toString();
+        final List<String[]> cmdArgs = new ArrayList<>();
+        cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "-P", "-C", tmpDir});
+        cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "-P", "--dir", tmpDir});
+        cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "-P", "-C", "."});
+        cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "-P", "--dir", "."});
+        cmdArgs.add(new String[]{"-xvfP", testJarPath.toString(), "-C", tmpDir});
+        for (final String[] args : cmdArgs) {
+            final ByteArrayOutputStream err = new ByteArrayOutputStream();
+            printJarCommand(args);
+            int exitCode = JAR_TOOL.run(System.out, new PrintStream(err), args);
+            Assert.assertNotEquals(exitCode, 0, "jar extraction was expected to fail but didn't");
+            // verify it did indeed fail due to the right reason
+            Assert.assertTrue(err.toString(StandardCharsets.UTF_8).contains(expectedErrMsg));
+        }
+    }
+
+    /**
      * Tests that {@code jar -xvf <jarname> -C <dir>} works fine too
      */
     @Test
@@ -304,6 +362,18 @@ public class JarExtractTest {
         final Path f2 = Paths.get(d3.toString(), "f2.txt");
         Assert.assertTrue(Files.isRegularFile(f2), f2 + " is missing or not a file");
         Assert.assertEquals(Files.readAllBytes(f2), FILE_CONTENT, "Unexpected content in file " + f2);
+    }
+
+    private static Path createJarWithPFlagSemantics() throws IOException {
+        final String tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toString();
+        final Path jarPath = Paths.get(tmpDir,"8173970-test-withpflag.jar");
+        final JarBuilder builder = new JarBuilder(jarPath.toString());
+        builder.addEntry("d1/", new byte[0]);
+        builder.addEntry("d1/d2/", new byte[0]);
+        builder.addEntry(LEADING_SLASH_PRESERVED_ENTRY, FILE_CONTENT);
+        builder.addEntry("d1/d2/../f2.txt", FILE_CONTENT);
+        builder.build();
+        return jarPath;
     }
 
     private static void printJarCommand(final String[] cmdArgs) {

@@ -362,10 +362,7 @@ public class Main {
                     }
                 }
             } else if (xflag) {
-                if (xdestDir == null) {
-                    // default to current working directory
-                    xdestDir = ".";
-                } else if (!xdestDir.equals(".")) {
+                if (xdestDir != null) {
                     final Path destPath = Paths.get(xdestDir);
                     try {
                         Files.createDirectories(destPath);
@@ -693,6 +690,10 @@ public class Main {
                 usageError(getMsg("error.bad.uflag"));
                 return false;
             }
+        }
+        if (xflag && pflag && xdestDir != null) {
+            usageError(getMsg("error.extract.pflag.not.allowed"));
+            return false;
         }
         return true;
     }
@@ -1345,7 +1346,8 @@ public class Main {
      */
     boolean extract(InputStream in, String files[]) throws IOException {
         if (vflag) {
-            output(formatMsg("out.extract.dir", Path.of(xdestDir).normalize().toAbsolutePath().toString()));
+            output(formatMsg("out.extract.dir", Path.of(xdestDir == null ? "." : xdestDir).normalize()
+                    .toAbsolutePath().toString()));
         }
         ZipInputStream zis = new ZipInputStream(in);
         ZipEntry e;
@@ -1382,7 +1384,8 @@ public class Main {
      */
     void extract(String fname, String files[]) throws IOException {
         if (vflag) {
-            output(formatMsg("out.extract.dir", Path.of(xdestDir).normalize().toAbsolutePath().toString()));
+            output(formatMsg("out.extract.dir", Path.of(xdestDir == null ? "." : xdestDir).normalize()
+                    .toAbsolutePath().toString()));
         }
         ZipFile zf = new ZipFile(fname);
         Set<ZipEntry> dirs = newDirSet();
