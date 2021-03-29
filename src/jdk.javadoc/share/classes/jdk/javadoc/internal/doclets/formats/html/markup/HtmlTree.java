@@ -528,10 +528,10 @@ public class HtmlTree extends Content {
      * @param value the initial value
      * @return the element
      */
-    public static HtmlTree INPUT(String type, String id, String value) {
+    public static HtmlTree INPUT(String type, HtmlId id, String value) {
         return new HtmlTree(TagName.INPUT)
                 .put(HtmlAttr.TYPE, type)
-                .put(HtmlAttr.ID, id)
+                .setId(id)
                 .put(HtmlAttr.VALUE, value)
                 .put(HtmlAttr.DISABLED, "disabled");
     }

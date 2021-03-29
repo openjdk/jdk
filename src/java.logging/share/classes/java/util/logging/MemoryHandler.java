@@ -87,7 +87,7 @@ package java.util.logging;
  */
 
 public class MemoryHandler extends Handler {
-    private final static int DEFAULT_SIZE = 1000;
+    private static final int DEFAULT_SIZE = 1000;
     private volatile Level pushLevel;
     private int size;
     private Handler target;

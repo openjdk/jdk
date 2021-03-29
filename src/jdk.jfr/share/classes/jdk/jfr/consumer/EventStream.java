@@ -263,6 +263,7 @@ public interface EventStream extends AutoCloseable {
      * <p>
      * Closing a previously closed stream has no effect.
      */
+    @Override
     void close();
 
     /**

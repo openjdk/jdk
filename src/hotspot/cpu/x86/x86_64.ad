@@ -1755,7 +1755,7 @@ bool Matcher::const_oop_prefer_decode() {
 
 bool Matcher::const_klass_prefer_decode() {
   // Prefer ConP over ConNKlass+DecodeNKlass.
-  return true;
+  return false;
 }
 
 // Is it better to copy float constants, or load them directly from

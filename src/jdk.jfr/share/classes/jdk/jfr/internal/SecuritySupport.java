@@ -72,10 +72,10 @@ import jdk.jfr.internal.consumer.FileAccess;
  * {@link AccessController#doPrivileged(PrivilegedAction)}
  */
 public final class SecuritySupport {
-    private final static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private final static Module JFR_MODULE = Event.class.getModule();
-    public  final static SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
-    public final static FileAccess PRIVILEGED = new Privileged();
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final Module JFR_MODULE = Event.class.getModule();
+    public  static final SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
+    public static final FileAccess PRIVILEGED = new Privileged();
     static final SafePath USER_HOME = getPathInProperty("user.home", null);
     static final SafePath JAVA_IO_TMPDIR = getPathInProperty("java.io.tmpdir", null);
 
@@ -87,7 +87,7 @@ public final class SecuritySupport {
         addInstrumentExport(Object.class);
     }
 
-    final static class SecureRecorderListener implements FlightRecorderListener {
+    static final class SecureRecorderListener implements FlightRecorderListener {
 
         private final AccessControlContext context;
         private final FlightRecorderListener changeListener;
@@ -172,6 +172,7 @@ public final class SecuritySupport {
             return path.toFile();
         }
 
+        @Override
         public String toString() {
             return text;
         }
@@ -183,8 +184,8 @@ public final class SecuritySupport {
 
         @Override
         public boolean equals(Object other) {
-            if(other != null && other instanceof SafePath){
-                return this.toPath().equals(((SafePath) other).toPath());
+            if(other != null && other instanceof SafePath s){
+                return this.toPath().equals(s.toPath());
             }
             return false;
         }
@@ -476,7 +477,7 @@ public final class SecuritySupport {
         return new SafePath(doPrivilegedIOWithReturn((()-> path.toPath().toAbsolutePath())));
     }
 
-    private final static class Privileged extends FileAccess {
+    private static final class Privileged extends FileAccess {
         @Override
         public RandomAccessFile openRAF(File f, String mode) throws IOException {
             return doPrivilegedIOWithReturn( () -> new RandomAccessFile(f, mode));

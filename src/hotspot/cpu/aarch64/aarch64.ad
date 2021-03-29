@@ -6268,6 +6268,7 @@ operand iRegL2I(iRegL reg) %{
   interface(REG_INTER)
 %}
 
+opclass vmem2(indirect, indIndex, indOffI2, indOffL2);
 opclass vmem4(indirect, indIndex, indOffI4, indOffL4);
 opclass vmem8(indirect, indIndex, indOffI8, indOffL8);
 opclass vmem16(indirect, indIndex, indOffI16, indOffL16);
@@ -9233,7 +9234,6 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
 
 // ---------------------------------------------------------------------
 
-
 // BEGIN This section of the file is automatically generated. Do not edit --------------
 
 // Sundry CAS operations.  Note that release is always true,
@@ -9247,7 +9247,10 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
 
 
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9263,7 +9266,10 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9279,7 +9285,10 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9294,7 +9303,10 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
+
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9309,7 +9321,10 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
+
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9324,6 +9339,8 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
@@ -9340,6 +9357,8 @@ instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
@@ -9357,6 +9376,8 @@ instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
@@ -9374,7 +9395,8 @@ instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
-
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
@@ -9391,6 +9413,8 @@ instruct compareAndExchangeIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
@@ -9407,7 +9431,8 @@ instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL
   ins_pipe(pipe_slow);
 %}
 
-
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
@@ -9424,6 +9449,8 @@ instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
@@ -9440,7 +9467,10 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9457,7 +9487,10 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9474,7 +9507,10 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9491,7 +9527,10 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
+
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9508,7 +9547,10 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
+
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9525,6 +9567,8 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
@@ -9543,6 +9587,8 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
@@ -9561,6 +9607,8 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
@@ -9579,6 +9627,8 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
@@ -9597,6 +9647,8 @@ instruct weakCompareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
@@ -9615,6 +9667,8 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
@@ -9633,9 +9687,11 @@ instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN
   ins_pipe(pipe_slow);
 %}
 
+// This pattern is generated automatically from cas.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
+  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
