@@ -219,15 +219,17 @@ public class Utilities {
      */
     public static <T> boolean waitFor(Predicate<T> predicate, T t) {
         long deadline = System.currentTimeMillis() + Utilities.TIMEOUT * 1000;
-        while (!predicate.test(t) && System.currentTimeMillis() < deadline) {
+        boolean predicateResult = predicate.test(t);
+        while (!predicateResult && System.currentTimeMillis() < deadline) {
             try {
                 TimeUnit.SECONDS.sleep(1);
+                predicateResult = predicate.test(t);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Sleep is interrupted.", e);
             }
         }
 
-        return predicate.test(t);
+        return predicateResult;
     }
 
     /*
