@@ -564,8 +564,15 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
   }
 
   methodHandle mh(current, m);
-  MethodCounters* counters = MethodCounters::allocate(mh);
-  if (counters == NULL) {
+  MethodCounters* counters;
+  if (current->is_Java_thread()) {
+    // For when TRAPS is JavaThread.
+    counters = MethodCounters::allocate(mh, current->as_Java_thread());
+  } else {
+    counters = MethodCounters::allocate(mh);
+  }
+  if (counters == NULL || current->has_pending_exception()) {
+    current->clear_pending_exception(); // MethodData above doesn't clear exception
     CompileBroker::log_metaspace_failure();
     ClassLoaderDataGraph::set_metaspace_oom(true);
     return NULL;

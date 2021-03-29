@@ -60,6 +60,11 @@ MethodCounters* MethodCounters::allocate(const methodHandle& mh) {
   return new(loader_data, method_counters_size(), MetaspaceObj::MethodCountersType) MethodCounters(mh);
 }
 
+MethodCounters* MethodCounters::allocate(const methodHandle& mh, TRAPS) {
+  ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
+  return new(loader_data, method_counters_size(), MetaspaceObj::MethodCountersType, THREAD) MethodCounters(mh);
+}
+
 void MethodCounters::clear_counters() {
   invocation_counter()->reset();
   backedge_counter()->reset();
