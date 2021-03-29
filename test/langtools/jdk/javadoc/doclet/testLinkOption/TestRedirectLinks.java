@@ -88,7 +88,7 @@ public class TestRedirectLinks extends JavadocTester {
     @Test
     public void testRedirects() throws Exception {
         // This test relies on access to an external resource, which may or may not be
-        // reliably available, depending on the shost system configuration and other
+        // reliably available, depending on the host system configuration and other
         // networking issues. Therefore, it is disabled by default, unless the system
         // property "javadoc.dev" is set "true".
         String property = "javadoc.dev";
