@@ -2971,11 +2971,11 @@ Node *StoreCMNode::Ideal(PhaseGVN *phase, bool can_reshape){
 const Type* StoreCMNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP (checked in StoreNode::Value).
   // If extra input is TOP ==> the result is TOP
-  const Type* t = phase->type( in(MemNode::OopStore) );
+  const Type* t = phase->type(in(MemNode::OopStore));
   if (t == Type::TOP) {
     return Type::TOP;
   }
-  return StoreNode::Value( phase );
+  return StoreNode::Value(phase);
 }
 
 
@@ -3010,15 +3010,15 @@ const Type* LoadStoreNode::Value(PhaseGVN* phase) const {
   if (!in(MemNode::Control) || phase->type(in(MemNode::Control)) == Type::TOP) {
     return Type::TOP;
   }
-  const Type *t = phase->type( in(MemNode::Memory) );
+  const Type* t = phase->type(in(MemNode::Memory));
   if (t == Type::TOP) {
     return Type::TOP;
   }
-  t = phase->type( in(MemNode::Address) );
+  t = phase->type(in(MemNode::Address));
   if (t == Type::TOP) {
     return Type::TOP;
   }
-  t = phase->type( in(MemNode::ValueIn) );
+  t = phase->type(in(MemNode::ValueIn));
   if (t == Type::TOP) {
     return Type::TOP;
   }
@@ -3072,7 +3072,7 @@ LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *ad
 
 const Type* LoadStoreConditionalNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type* t = phase->type( in(ExpectedIn) );
+  const Type* t = phase->type(in(ExpectedIn));
   if (t == Type::TOP) {
     return Type::TOP;
   }
