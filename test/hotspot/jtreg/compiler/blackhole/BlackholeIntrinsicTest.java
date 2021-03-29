@@ -31,7 +31,7 @@
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeStaticTest
+ *      compiler.blackhole.BlackholeIntrinsicTest
  */
 
 /**
@@ -44,7 +44,7 @@
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeStaticTest
+ *      compiler.blackhole.BlackholeIntrinsicTest
  */
 
 /**
@@ -58,7 +58,7 @@
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeStaticTest
+ *      compiler.blackhole.BlackholeIntrinsicTest
  */
 
 /**
@@ -72,43 +72,43 @@
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeStaticTest
+ *      compiler.blackhole.BlackholeIntrinsicTest
  */
 
 package compiler.blackhole;
 
-public class BlackholeStaticTest {
+public class BlackholeIntrinsicTest {
 
     public static void main(String[] args) {
-        runTries(BlackholeStaticTest::test_boolean_0);
-        runTries(BlackholeStaticTest::test_byte_0);
-        runTries(BlackholeStaticTest::test_char_0);
-        runTries(BlackholeStaticTest::test_short_0);
-        runTries(BlackholeStaticTest::test_int_0);
-        runTries(BlackholeStaticTest::test_float_0);
-        runTries(BlackholeStaticTest::test_long_0);
-        runTries(BlackholeStaticTest::test_double_0);
-        runTries(BlackholeStaticTest::test_Object_0);
+        runTries(BlackholeIntrinsicTest::test_boolean_0);
+        runTries(BlackholeIntrinsicTest::test_byte_0);
+        runTries(BlackholeIntrinsicTest::test_char_0);
+        runTries(BlackholeIntrinsicTest::test_short_0);
+        runTries(BlackholeIntrinsicTest::test_int_0);
+        runTries(BlackholeIntrinsicTest::test_float_0);
+        runTries(BlackholeIntrinsicTest::test_long_0);
+        runTries(BlackholeIntrinsicTest::test_double_0);
+        runTries(BlackholeIntrinsicTest::test_Object_0);
 
-        runTries(BlackholeStaticTest::test_boolean_1);
-        runTries(BlackholeStaticTest::test_byte_1);
-        runTries(BlackholeStaticTest::test_char_1);
-        runTries(BlackholeStaticTest::test_short_1);
-        runTries(BlackholeStaticTest::test_int_1);
-        runTries(BlackholeStaticTest::test_float_1);
-        runTries(BlackholeStaticTest::test_long_1);
-        runTries(BlackholeStaticTest::test_double_1);
-        runTries(BlackholeStaticTest::test_Object_1);
+        runTries(BlackholeIntrinsicTest::test_boolean_1);
+        runTries(BlackholeIntrinsicTest::test_byte_1);
+        runTries(BlackholeIntrinsicTest::test_char_1);
+        runTries(BlackholeIntrinsicTest::test_short_1);
+        runTries(BlackholeIntrinsicTest::test_int_1);
+        runTries(BlackholeIntrinsicTest::test_float_1);
+        runTries(BlackholeIntrinsicTest::test_long_1);
+        runTries(BlackholeIntrinsicTest::test_double_1);
+        runTries(BlackholeIntrinsicTest::test_Object_1);
 
-        runTries(BlackholeStaticTest::test_boolean_2);
-        runTries(BlackholeStaticTest::test_byte_2);
-        runTries(BlackholeStaticTest::test_char_2);
-        runTries(BlackholeStaticTest::test_short_2);
-        runTries(BlackholeStaticTest::test_int_2);
-        runTries(BlackholeStaticTest::test_float_2);
-        runTries(BlackholeStaticTest::test_long_2);
-        runTries(BlackholeStaticTest::test_double_2);
-        runTries(BlackholeStaticTest::test_Object_2);
+        runTries(BlackholeIntrinsicTest::test_boolean_2);
+        runTries(BlackholeIntrinsicTest::test_byte_2);
+        runTries(BlackholeIntrinsicTest::test_char_2);
+        runTries(BlackholeIntrinsicTest::test_short_2);
+        runTries(BlackholeIntrinsicTest::test_int_2);
+        runTries(BlackholeIntrinsicTest::test_float_2);
+        runTries(BlackholeIntrinsicTest::test_long_2);
+        runTries(BlackholeIntrinsicTest::test_double_2);
+        runTries(BlackholeIntrinsicTest::test_Object_2);
     }
 
     private static final int CYCLES = 1_000_000;
