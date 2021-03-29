@@ -658,17 +658,19 @@ static void *thread_native_entry(Thread *thread) {
 
   thread->record_stack_base_and_size();
 
+#ifndef __GLIBC__
   // Try to randomize the cache line index of hot stack frames.
   // This helps when threads of the same stack traces evict each other's
   // cache lines. The threads can be either from the same JVM instance, or
   // from different JVM instances. The benefit is especially true for
   // processors with hyperthreading technology.
+  // This code is not needed anymore in glibc because it has MULTI_PAGE_ALIASING
+  // and we did not see any degradation in performance without `alloca()`.
   static int counter = 0;
   int pid = os::current_process_id();
-PRAGMA_DIAG_PUSH
-PRAGMA_UNUSED_RESULT_IGNORED
-  alloca(((pid ^ counter++) & 7) * 128);
-PRAGMA_DIAG_POP
+  void *stackmem = alloca(((pid ^ counter++) & 7) * 128);
+  *(char *)stackmem = 1;
+#endif
 
   thread->initialize_thread_current();
 
