@@ -25,47 +25,77 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import static java.nio.file.StandardOpenOption.*;
+import java.util.concurrent.ExecutionException;
 
 /* @test
  * @bug 8263898
- * @summary Verify a byte can be written to the null device.
+ * @summary Verify stream and channel behavior with NUL device
  * @requires os.family == "windows"
  * @run main NulDevice
 */
 public class NulDevice {
-    public static void main(final String[] args) throws IOException {
-        System.getProperties().list(System.out);
-        System.out.println();
+    public static void main(final String[] args)
+        throws ExecutionException, InterruptedException, IOException {
         Path path = Path.of("nul");
+
         try (final OutputStream os = Files.newOutputStream(path)) {
             os.write(0x02);
-            System.out.printf("Wrote a byte to %s%n", path);
             try (InputStream is = Files.newInputStream(path);) {
+                if (is.available() != 0) {
+                    throw new RuntimeException("No bytes should be available");
+                }
                 int aByte = is.read();
-                System.out.printf("read %d from %s%n", aByte, path);
                 if (aByte != -1) {
                     throw new RuntimeException("Should only read -1 from NUL");
                 }
             }
         }
+
         try (final OutputStream os = Files.newOutputStream(path, WRITE)) {
             os.write(0x02);
-            System.out.printf("Wrote a byte to %s%n", path);
         }
+
         try (final FileChannel ch = FileChannel.open(path, CREATE,
              TRUNCATE_EXISTING, WRITE)) {
             byte[] bytes = "Whatever".getBytes();
             ByteBuffer buf = ByteBuffer.allocate(2*bytes.length);
             buf.put(bytes);
             int nw = ch.write(buf);
-            System.out.printf("Wrote %d bytes to %s%n", nw, path);
             if (nw != bytes.length) {
                 throw new RuntimeException("Should write " + bytes.length +
                     " to NUL");
+            }
+        }
+
+        try (final FileChannel ch = FileChannel.open(path, READ)) {
+            if (ch.size() != 0) {
+                throw new RuntimeException("Size should be zero");
+            }
+            ByteBuffer buf = ByteBuffer.allocate(10);
+            int nr = ch.read(buf);
+            if (nr != -1) {
+                throw new RuntimeException("Read returns " + nr + " not -1");
+            }
+        }
+
+        try (final AsynchronousFileChannel ch =
+            AsynchronousFileChannel.open(path, READ, WRITE)) {
+            if (ch.size() != 0) {
+                throw new RuntimeException("Size should be zero");
+            }
+            int nw = ch.write(ByteBuffer.wrap(new byte[] {(byte)0x02}), 0L).get();
+            if (nw != 1) {
+                throw new RuntimeException("Wrote " + nw + " bytes, not one");
+            }
+            ByteBuffer buf = ByteBuffer.allocate(10);
+            int nr = ch.read(buf, 0L).get();
+            if (nr != -1) {
+                throw new RuntimeException("Read returns " + nr + " not -1");
             }
         }
     }
