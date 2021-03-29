@@ -50,6 +50,8 @@
 #include "jvmci/jvmci_globals.hpp"
 #endif
 
+static_assert(sizeof(oop) == sizeof(intptr_t), "Derived pointer sanity check");
+
 static inline intptr_t derived_pointer_value(derived_pointer p) {
   return static_cast<intptr_t>(p);
 }
