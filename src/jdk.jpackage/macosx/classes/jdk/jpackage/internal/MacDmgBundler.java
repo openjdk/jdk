@@ -572,7 +572,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         return isSupported();
     }
 
-    public final static String[] required =
+    public static final String[] required =
             {"/usr/bin/hdiutil", "/usr/bin/osascript"};
     public static boolean isSupported() {
         try {
