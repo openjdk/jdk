@@ -3060,6 +3060,7 @@ public:
   INSN(sve_and, 0b00);
   INSN(sve_eor, 0b10);
   INSN(sve_orr, 0b01);
+  INSN(sve_bic, 0b11);
 #undef INSN
 
 // SVE shift immediate - unpredicated
