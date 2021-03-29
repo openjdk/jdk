@@ -525,7 +525,7 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
             Symbol* failed_type_symbol =
               SystemDictionary::check_signature_loaders(signature, _klass,
                                                         target_loader, super_loader,
-                                                        true, CHECK_(false));
+                                                        true);
             if (failed_type_symbol != NULL) {
               stringStream ss;
               ss.print("loader constraint violation for class %s: when selecting "
@@ -1269,7 +1269,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
                                                       _klass,
                                                       method_holder_loader,
                                                       interface_loader,
-                                                      true, CHECK);
+                                                      true);
           if (failed_type_symbol != NULL) {
             stringStream ss;
             ss.print("loader constraint violation in interface itable"

@@ -47,13 +47,14 @@ import java.util.function.Predicate;
 import jdk.jfr.EventType;
 
 abstract class Command {
-    public final static String title = "Tool for working with Flight Recorder files (.jfr)";
-    private final static Command HELP = new Help();
-    private final static List<Command> COMMANDS = createCommands();
+    public static final String title = "Tool for working with Flight Recorder files";
+    private static final Command HELP = new Help();
+    private static final List<Command> COMMANDS = createCommands();
 
     private static List<Command> createCommands() {
         List<Command> commands = new ArrayList<>();
         commands.add(new Print());
+        commands.add(new Configure());
         commands.add(new Metadata());
         commands.add(new Summary());
         commands.add(new Assemble());
@@ -69,11 +70,11 @@ abstract class Command {
         displayAvailableCommands(System.out);
     }
 
-    abstract public String getName();
+    public abstract String getName();
 
-    abstract public String getDescription();
+    public abstract String getDescription();
 
-    abstract public void execute(Deque<String> argList) throws UserSyntaxException, UserDataException;
+    public abstract void execute(Deque<String> argList) throws UserSyntaxException, UserDataException;
 
     protected String getTitle() {
         return getDescription();
@@ -155,6 +156,14 @@ abstract class Command {
     public void displayOptionUsage(PrintStream stream) {
     }
 
+    protected boolean acceptSwitch(Deque<String> options, String expected) throws UserSyntaxException {
+        if (!options.isEmpty() && options.peek().equals(expected)) {
+            options.remove();
+            return true;
+        }
+        return false;
+    }
+
     protected boolean acceptOption(Deque<String> options, String expected) throws UserSyntaxException {
         if (expected.equals(options.peek())) {
             if (options.size() < 2) {
@@ -195,19 +204,19 @@ abstract class Command {
         return true;
     }
 
-    final protected void ensureMaxArgumentCount(Deque<String> options, int maxCount) throws UserSyntaxException {
+    protected final void ensureMaxArgumentCount(Deque<String> options, int maxCount) throws UserSyntaxException {
         if (options.size() > maxCount) {
             throw new UserSyntaxException("too many arguments");
         }
     }
 
-    final protected void ensureMinArgumentCount(Deque<String> options, int minCount) throws UserSyntaxException {
+    protected final void ensureMinArgumentCount(Deque<String> options, int minCount) throws UserSyntaxException {
         if (options.size() < minCount) {
             throw new UserSyntaxException("too few arguments");
         }
     }
 
-    final protected Path getDirectory(String pathText) throws UserDataException {
+    protected final Path getDirectory(String pathText) throws UserDataException {
         try {
             Path path = Paths.get(pathText).toAbsolutePath();
             if (!Files.exists((path))) {
@@ -222,7 +231,7 @@ abstract class Command {
         }
     }
 
-    final protected Path getJFRInputFile(Deque<String> options) throws UserSyntaxException, UserDataException {
+    protected final Path getJFRInputFile(Deque<String> options) throws UserSyntaxException, UserDataException {
         if (options.isEmpty()) {
             throw new UserSyntaxException("missing file");
         }
@@ -233,7 +242,7 @@ abstract class Command {
         try {
             Path path = Paths.get(file).toAbsolutePath();
             ensureAccess(path);
-            ensureJFRFile(path);
+            ensureFileExtension(path, ".jfr");
             return path;
         } catch (IOError ioe) {
             throw new UserDataException("i/o error reading file '" + file + "', " + ioe.getMessage());
@@ -242,7 +251,7 @@ abstract class Command {
         }
     }
 
-    final protected void ensureAccess(Path path) throws UserDataException {
+    protected final void ensureAccess(Path path) throws UserDataException {
         try (RandomAccessFile rad = new RandomAccessFile(path.toFile(), "r")) {
             if (rad.length() == 0) {
                 throw new UserDataException("file is empty '" + path + "'");
@@ -255,20 +264,20 @@ abstract class Command {
         }
     }
 
-    final protected void couldNotReadError(Path p, IOException e) throws UserDataException {
+    protected final void couldNotReadError(Path p, IOException e) throws UserDataException {
         throw new UserDataException("could not read recording at " + p.toAbsolutePath() + ". " + e.getMessage());
     }
 
-    final protected Path ensureFileDoesNotExist(Path file) throws UserDataException {
+    protected final Path ensureFileDoesNotExist(Path file) throws UserDataException {
         if (Files.exists(file)) {
             throw new UserDataException("file '" + file + "' already exists");
         }
         return file;
     }
 
-    final protected void ensureJFRFile(Path path) throws UserDataException {
-        if (!path.toString().endsWith(".jfr")) {
-            throw new UserDataException("filename must end with '.jfr'");
+    protected final void ensureFileExtension(Path path, String extension) throws UserDataException {
+        if (!path.toString().endsWith(extension)) {
+            throw new UserDataException("filename must end with '" + extension + "'");
         }
     }
 
@@ -278,19 +287,19 @@ abstract class Command {
         displayOptionUsage(stream);
     }
 
-    final protected void println() {
+    protected final void println() {
         System.out.println();
     }
 
-    final protected void print(String text) {
+    protected final void print(String text) {
         System.out.print(text);
     }
 
-    final protected void println(String text) {
+    protected final void println(String text) {
         System.out.println(text);
     }
 
-    final protected boolean matches(String command) {
+    protected final boolean matches(String command) {
         for (String s : getNames()) {
             if (s.equals(command)) {
                 return true;
@@ -316,7 +325,7 @@ abstract class Command {
         }
     }
 
-    final protected static char quoteCharacter() {
+    protected static final char quoteCharacter() {
         return File.pathSeparatorChar == ';' ? '"' : '\'';
     }
 
@@ -373,7 +382,7 @@ abstract class Command {
         return list;
     }
 
-    final protected static Predicate<EventType> addCategoryFilter(String filterText, Predicate<EventType> eventFilter) throws UserSyntaxException {
+    protected static final Predicate<EventType> addCategoryFilter(String filterText, Predicate<EventType> eventFilter) throws UserSyntaxException {
         List<String> filters = explodeFilter(filterText);
         Predicate<EventType> newFilter = recurseIfPossible(eventType -> {
             for (String category : eventType.getCategoryNames()) {
@@ -391,7 +400,7 @@ abstract class Command {
         return eventFilter == null ? newFilter : eventFilter.or(newFilter);
     }
 
-    final protected static Predicate<EventType> addEventFilter(String filterText, final Predicate<EventType> eventFilter) throws UserSyntaxException {
+    protected static final Predicate<EventType> addEventFilter(String filterText, final Predicate<EventType> eventFilter) throws UserSyntaxException {
         List<String> filters = explodeFilter(filterText);
         Predicate<EventType> newFilter = recurseIfPossible(eventType -> {
             for (String filter : filters) {
@@ -409,7 +418,7 @@ abstract class Command {
         return eventFilter == null ? newFilter : eventFilter.or(newFilter);
     }
 
-    final protected static <T, X> Predicate<T> addCache(final Predicate<T> filter, Function<T, X> cacheFunction) {
+    protected static final <T, X> Predicate<T> addCache(final Predicate<T> filter, Function<T, X> cacheFunction) {
         Map<X, Boolean> cache = new HashMap<>();
         return t -> cache.computeIfAbsent(cacheFunction.apply(t), x -> filter.test(t));
     }

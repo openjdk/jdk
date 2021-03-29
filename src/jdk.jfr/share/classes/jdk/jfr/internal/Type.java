@@ -56,7 +56,7 @@ public class Type implements Comparable<Type> {
     // To bootstrap the type system, the supported Java types
     // are available here as statics. When metadata.xml is parsed
     // fields are added to THREAD and STACK_TRACE.
-    private final static Map<Type, Class<?>> knownTypes = new LinkedHashMap<>();
+    private static final Map<Type, Class<?>> knownTypes = new LinkedHashMap<>();
     static final Type BOOLEAN = createKnownType(boolean.class);
     static final Type CHAR = createKnownType(char.class);
     static final Type FLOAT = createKnownType(float.class);
