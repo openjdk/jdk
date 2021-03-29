@@ -46,7 +46,8 @@ class Verifier : AllStatic {
   // Verify the bytecodes for a class.
   static bool verify(InstanceKlass* klass, bool should_verify_class, TRAPS);
 
-  static void log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, TRAPS);
+  static void log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name,
+                                    oop pending_exception);
 
   // Return false if the class is loaded by the bootstrap loader,
   // or if defineClass was called requesting skipping verification
@@ -398,7 +399,7 @@ class ClassVerifier : public StackObj {
   };
 
   // constructor
-  ClassVerifier(InstanceKlass* klass, TRAPS);
+  ClassVerifier(JavaThread* current, InstanceKlass* klass);
 
   // destructor
   ~ClassVerifier();
@@ -415,10 +416,10 @@ class ClassVerifier : public StackObj {
 
   // Translates method signature entries into verificationTypes and saves them
   // in the growable array.
-  void translate_signature(Symbol* const method_sig, sig_as_verification_types* sig_verif_types, TRAPS);
+  void translate_signature(Symbol* const method_sig, sig_as_verification_types* sig_verif_types);
 
   // Initializes a sig_as_verification_types entry and puts it in the hash table.
-  void create_method_sig_entry(sig_as_verification_types* sig_verif_types, int sig_index, TRAPS);
+  void create_method_sig_entry(sig_as_verification_types* sig_verif_types, int sig_index);
 
   // Return status modes
   Symbol* result() const { return _exception_type; }

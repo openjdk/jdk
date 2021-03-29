@@ -1404,7 +1404,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   }
 
   const char* emulated = "";
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(ZERO)
   if (VM_Version::is_cpu_emulated()) {
     emulated = " (EMULATED)";
   }
