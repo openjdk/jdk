@@ -88,14 +88,14 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      * Returns the exception that was raised if an error occurred while
      * attempting to load the class. Otherwise, returns {@code null}.
      *
-     * @deprecated This method predates the general-purpose exception chaining facility.
+     * @apiNote
+     * This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *
      * @return the {@code Exception} that was raised while loading a class
      * @since 1.2
      */
-    @Deprecated
     public Throwable getException() {
         return super.getCause();
     }

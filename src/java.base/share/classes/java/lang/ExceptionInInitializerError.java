@@ -85,7 +85,8 @@ public class ExceptionInInitializerError extends LinkageError {
      * Returns the exception that occurred during a static initialization that
      * caused this error to be created.
      *
-     * @deprecated This method predates the general-purpose exception chaining facility.
+     * @apiNote
+     * This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *
@@ -94,7 +95,6 @@ public class ExceptionInInitializerError extends LinkageError {
      *         if this {@code ExceptionInInitializerError} has no saved
      *         throwable object.
      */
-    @Deprecated
     public Throwable getException() {
         return super.getCause();
     }
