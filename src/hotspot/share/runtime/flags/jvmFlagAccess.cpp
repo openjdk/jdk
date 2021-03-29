@@ -29,7 +29,6 @@
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
-#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -318,27 +317,29 @@ JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlagOri
     new_value = os::strdup_check_oom(*value);
   }
   flag->set_ccstr(new_value);
-  if (flag->is_default() && old_value != NULL) {
-    // Prior value is NOT heap allocated, but was a literal constant.
-    old_value = os::strdup_check_oom(old_value);
+  if (!flag->is_default() && old_value != NULL) {
+    // Old value is heap allocated so free it.
+    FREE_C_HEAP_ARRAY(char, old_value);
   }
-  *value = old_value;
+  // Unlike the other APIs, the old vale is NOT returned, so the caller won't need to free it.
+  // The callers typically don't care what the old value is.
+  // If the caller really wants to know the old value, read it (and make a copy if necessary)
+  // before calling this API.
+  *value = NULL;
   flag->set_origin(origin);
   return JVMFlag::SUCCESS;
 }
 
 // This is called by the FLAG_SET_XXX macros.
 JVMFlag::Error JVMFlagAccess::set_impl(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin) {
-  // The FLAG_SET_XXX macros should have caused an static_assert to fail if you try to use them on
-  // ccstr/ccstrlist options.
-  //
-  // Uncomment the following and verify that the C++ compilation will fail.
-  // FLAG_SET_ERGO(LogFile, "");
-  assert(type_enum != JVMFlag::TYPE_ccstr && type_enum != JVMFlag::TYPE_ccstrlist, "sanity");
-
   JVMFlag* flag = JVMFlag::flag_from_enum(flag_enum);
-  assert(flag->type() == type_enum, "wrong flag type");
-  return set_impl(flag, type_enum, value, origin);
+  if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
+    assert(flag->is_ccstr(), "must be");
+    return ccstrAtPut(flag, (ccstr*)value, origin);
+  } else {
+    assert(flag->type() == type_enum, "wrong flag type");
+    return set_impl(flag, type_enum, value, origin);
+  }
 }
 
 JVMFlag::Error JVMFlagAccess::check_range(const JVMFlag* flag, bool verbose) {

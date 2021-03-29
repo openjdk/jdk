@@ -85,7 +85,6 @@ public:
   // type_enum will result in an assert.
   template <typename T, int type_enum>
   static JVMFlag::Error set(JVMFlagsEnum flag_enum, T value, JVMFlagOrigin origin) {
-    static_assert(type_enum != JVMFlag::TYPE_ccstr && type_enum != JVMFlag::TYPE_ccstrlist, "not supported");
     return set_impl(flag_enum, type_enum, &value, origin);
   }
 
