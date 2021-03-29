@@ -1807,7 +1807,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
           for (DUIterator_Fast jmax, j = be->fast_outs(jmax); j < jmax; j++) {
             Node* n = be->fast_out(j);
             if (n->is_Load()) {
-              assert(n->in(0) == be, "should be on the backedge");
+              assert(n->in(0) == be || n->find_prec_edge(be) > 0, "should be on the backedge");
               do {
                 n = n->raw_out(0);
               } while (!n->is_Phi());
