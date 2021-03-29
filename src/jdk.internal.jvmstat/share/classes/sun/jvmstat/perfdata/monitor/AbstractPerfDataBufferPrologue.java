@@ -61,28 +61,28 @@ public abstract class AbstractPerfDataBufferPrologue {
      * the following constants must match the field offsets and sizes
      * in the PerfDataPrologue structure in perfMemory.hpp
      */
-    final static int PERFDATA_PROLOG_OFFSET=0;
-    final static int PERFDATA_PROLOG_MAGIC_OFFSET=0;
-    final static int PERFDATA_PROLOG_BYTEORDER_OFFSET=4;
-    final static int PERFDATA_PROLOG_BYTEORDER_SIZE=1;         // sizeof(byte)
-    final static int PERFDATA_PROLOG_MAJOR_OFFSET=5;
-    final static int PERFDATA_PROLOG_MAJOR_SIZE=1;             // sizeof(byte)
-    final static int PERFDATA_PROLOG_MINOR_OFFSET=6;
-    final static int PERFDATA_PROLOG_MINOR_SIZE=1;             // sizeof(byte)
-    final static int PERFDATA_PROLOG_RESERVEDB1_OFFSET=7;
-    final static int PERFDATA_PROLOG_RESERVEDB1_SIZE=1;        // sizeof(byte)
+    static final int PERFDATA_PROLOG_OFFSET=0;
+    static final int PERFDATA_PROLOG_MAGIC_OFFSET=0;
+    static final int PERFDATA_PROLOG_BYTEORDER_OFFSET=4;
+    static final int PERFDATA_PROLOG_BYTEORDER_SIZE=1;         // sizeof(byte)
+    static final int PERFDATA_PROLOG_MAJOR_OFFSET=5;
+    static final int PERFDATA_PROLOG_MAJOR_SIZE=1;             // sizeof(byte)
+    static final int PERFDATA_PROLOG_MINOR_OFFSET=6;
+    static final int PERFDATA_PROLOG_MINOR_SIZE=1;             // sizeof(byte)
+    static final int PERFDATA_PROLOG_RESERVEDB1_OFFSET=7;
+    static final int PERFDATA_PROLOG_RESERVEDB1_SIZE=1;        // sizeof(byte)
 
-    final static int PERFDATA_PROLOG_SIZE=8;   // sizeof(struct PerfDataProlog)
+    static final int PERFDATA_PROLOG_SIZE=8;   // sizeof(struct PerfDataProlog)
 
     // these constants should match their #define counterparts in perfMemory.hpp
-    final static byte PERFDATA_BIG_ENDIAN=0;
-    final static byte PERFDATA_LITTLE_ENDIAN=1;
-    final static int  PERFDATA_MAGIC = 0xcafec0c0;
+    static final byte PERFDATA_BIG_ENDIAN=0;
+    static final byte PERFDATA_LITTLE_ENDIAN=1;
+    static final int  PERFDATA_MAGIC = 0xcafec0c0;
 
     // names for counters that expose the prolog fields
-    public final static String PERFDATA_MAJOR_NAME =
+    public static final String PERFDATA_MAJOR_NAME =
             "sun.perfdata.majorVersion";
-    public final static String PERFDATA_MINOR_NAME =
+    public static final String PERFDATA_MINOR_NAME =
             "sun.perfdata.minorVersion";
 
     /**

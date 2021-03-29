@@ -51,8 +51,8 @@ import java.nio.*;
  */
 public class PerfDataBufferPrologue extends AbstractPerfDataBufferPrologue {
 
-    private final static int SUPPORTED_MAJOR_VERSION = 2;
-    private final static int SUPPORTED_MINOR_VERSION = 0;
+    private static final int SUPPORTED_MAJOR_VERSION = 2;
+    private static final int SUPPORTED_MINOR_VERSION = 0;
 
     /*
      * the following constants must match the field offsets and sizes
@@ -62,27 +62,27 @@ public class PerfDataBufferPrologue extends AbstractPerfDataBufferPrologue {
      * note that PERFDATA_PROLOG_ACCESSIBLE_OFFSET redefines
      * PERFDATA_PROLOG_RESERVEDB1_OFFSET from AbstractPerfDataBufferPrologue.
      */
-    final static int PERFDATA_PROLOG_ACCESSIBLE_OFFSET=7;
-    final static int PERFDATA_PROLOG_ACCESSIBLE_SIZE=1;        // sizeof(byte)
-    final static int PERFDATA_PROLOG_USED_OFFSET=8;
-    final static int PERFDATA_PROLOG_USED_SIZE=4;              // sizeof(int)
-    final static int PERFDATA_PROLOG_OVERFLOW_OFFSET=12;
-    final static int PERFDATA_PROLOG_OVERFLOW_SIZE=4;          // sizeof(int)
-    final static int PERFDATA_PROLOG_MODTIMESTAMP_OFFSET=16;
-    final static int PERFDATA_PROLOG_MODTIMESTAMP_SIZE=8;      // sizeof(long)
-    final static int PERFDATA_PROLOG_ENTRYOFFSET_OFFSET=24;
-    final static int PERFDATA_PROLOG_ENTRYOFFSET_SIZE=4;       // sizeof(int)
-    final static int PERFDATA_PROLOG_NUMENTRIES_OFFSET=28;
-    final static int PERFDATA_PROLOG_NUMENTRIES_SIZE=4;        // sizeof(int)
+    static final int PERFDATA_PROLOG_ACCESSIBLE_OFFSET=7;
+    static final int PERFDATA_PROLOG_ACCESSIBLE_SIZE=1;        // sizeof(byte)
+    static final int PERFDATA_PROLOG_USED_OFFSET=8;
+    static final int PERFDATA_PROLOG_USED_SIZE=4;              // sizeof(int)
+    static final int PERFDATA_PROLOG_OVERFLOW_OFFSET=12;
+    static final int PERFDATA_PROLOG_OVERFLOW_SIZE=4;          // sizeof(int)
+    static final int PERFDATA_PROLOG_MODTIMESTAMP_OFFSET=16;
+    static final int PERFDATA_PROLOG_MODTIMESTAMP_SIZE=8;      // sizeof(long)
+    static final int PERFDATA_PROLOG_ENTRYOFFSET_OFFSET=24;
+    static final int PERFDATA_PROLOG_ENTRYOFFSET_SIZE=4;       // sizeof(int)
+    static final int PERFDATA_PROLOG_NUMENTRIES_OFFSET=28;
+    static final int PERFDATA_PROLOG_NUMENTRIES_SIZE=4;        // sizeof(int)
 
-    final static int PERFDATA_PROLOG_SIZE=32;  // sizeof(struct PerfDataProlog)
+    static final int PERFDATA_PROLOG_SIZE=32;  // sizeof(struct PerfDataProlog)
 
     // names for counters that expose prologue fields
-    final static String PERFDATA_BUFFER_SIZE_NAME  = "sun.perfdata.size";
-    final static String PERFDATA_BUFFER_USED_NAME  = "sun.perfdata.used";
-    final static String PERFDATA_OVERFLOW_NAME     = "sun.perfdata.overflow";
-    final static String PERFDATA_MODTIMESTAMP_NAME = "sun.perfdata.timestamp";
-    final static String PERFDATA_NUMENTRIES_NAME   = "sun.perfdata.entries";
+    static final String PERFDATA_BUFFER_SIZE_NAME  = "sun.perfdata.size";
+    static final String PERFDATA_BUFFER_USED_NAME  = "sun.perfdata.used";
+    static final String PERFDATA_OVERFLOW_NAME     = "sun.perfdata.overflow";
+    static final String PERFDATA_MODTIMESTAMP_NAME = "sun.perfdata.timestamp";
+    static final String PERFDATA_NUMENTRIES_NAME   = "sun.perfdata.entries";
 
     /**
      * Create an instance of PerfDataBufferPrologue from the given

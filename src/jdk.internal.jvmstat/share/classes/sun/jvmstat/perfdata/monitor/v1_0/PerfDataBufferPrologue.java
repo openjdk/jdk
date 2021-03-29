@@ -56,19 +56,19 @@ public class PerfDataBufferPrologue extends AbstractPerfDataBufferPrologue {
      * the following constants must match the field offsets and sizes
      * in the PerfDataPrologue structure in perfMemory.hpp
      */
-    final static int PERFDATA_PROLOG_USED_OFFSET=8;
-    final static int PERFDATA_PROLOG_USED_SIZE=4;              // sizeof(int)
-    final static int PERFDATA_PROLOG_OVERFLOW_OFFSET=12;
-    final static int PERFDATA_PROLOG_OVERFLOW_SIZE=4;          // sizeof(int)
-    final static int PERFDATA_PROLOG_MODTIMESTAMP_OFFSET=16;
-    final static int PERFDATA_PROLOG_MODTIMESTAMP_SIZE=8;      // sizeof(long)
-    final static int PERFDATA_PROLOG_SIZE=24;  // sizeof(struct PerfDataProlog)
+    static final int PERFDATA_PROLOG_USED_OFFSET=8;
+    static final int PERFDATA_PROLOG_USED_SIZE=4;              // sizeof(int)
+    static final int PERFDATA_PROLOG_OVERFLOW_OFFSET=12;
+    static final int PERFDATA_PROLOG_OVERFLOW_SIZE=4;          // sizeof(int)
+    static final int PERFDATA_PROLOG_MODTIMESTAMP_OFFSET=16;
+    static final int PERFDATA_PROLOG_MODTIMESTAMP_SIZE=8;      // sizeof(long)
+    static final int PERFDATA_PROLOG_SIZE=24;  // sizeof(struct PerfDataProlog)
 
     // counter names for prologue psuedo counters
-    final static String PERFDATA_BUFFER_SIZE_NAME  = "sun.perfdata.size";
-    final static String PERFDATA_BUFFER_USED_NAME  = "sun.perfdata.used";
-    final static String PERFDATA_OVERFLOW_NAME     = "sun.perfdata.overflow";
-    final static String PERFDATA_MODTIMESTAMP_NAME = "sun.perfdata.timestamp";
+    static final String PERFDATA_BUFFER_SIZE_NAME  = "sun.perfdata.size";
+    static final String PERFDATA_BUFFER_USED_NAME  = "sun.perfdata.used";
+    static final String PERFDATA_OVERFLOW_NAME     = "sun.perfdata.overflow";
+    static final String PERFDATA_MODTIMESTAMP_NAME = "sun.perfdata.timestamp";
 
     /**
      * Create an instance of PerfDataBufferPrologue from the given
