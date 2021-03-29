@@ -83,13 +83,13 @@ public class InvocationTargetException extends ReflectiveOperationException {
     /**
      * Get the thrown target exception.
      *
-     * @deprecated This method predates the general-purpose exception chaining facility.
+     * @apiNote
+     * This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *
      * @return the thrown target exception (cause of this exception).
      */
-    @Deprecated
     public Throwable getTargetException() {
         return target;
     }

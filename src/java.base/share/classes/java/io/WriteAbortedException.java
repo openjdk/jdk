@@ -48,7 +48,7 @@ public class WriteAbortedException extends ObjectStreamException {
      *
      * @serial
      */
-    @Deprecated
+    @Deprecated(since="17")
     public Exception detail;
 
     /**

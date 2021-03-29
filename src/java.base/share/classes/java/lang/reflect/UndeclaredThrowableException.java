@@ -85,13 +85,13 @@ public class UndeclaredThrowableException extends RuntimeException {
      * Returns the {@code Throwable} instance wrapped in this
      * {@code UndeclaredThrowableException}, which may be {@code null}.
      *
-     * @deprecated This method predates the general-purpose exception chaining facility.
+     * @apiNote
+     * This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *
      * @return the undeclared checked exception that was thrown
      */
-    @Deprecated
     public Throwable getUndeclaredThrowable() {
         return super.getCause();
     }
