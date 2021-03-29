@@ -136,7 +136,7 @@ final class D3DContext extends BufferedContext {
 
         @Override
         public String toString() {
-            StringBuffer buf = new StringBuffer(super.toString());
+            StringBuilder buf = new StringBuilder(super.toString());
             if ((caps & CAPS_LCD_SHADER) != 0) {
                 buf.append("CAPS_LCD_SHADER|");
             }
