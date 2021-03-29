@@ -263,21 +263,20 @@ static void trace_codeblob_maps(const frame *fr, const RegisterMap *reg_map) {
 void OopMapSet::oops_do(const frame *fr, const RegisterMap* reg_map, OopClosure* f, DerivedPointerIterationMode mode) {
   switch (mode) {
   case DerivedPointerIterationMode::_directly:
-    all_do(fr, reg_map, f, process_derived_oop, &do_nothing_cl);
+    all_do(fr, reg_map, f, process_derived_oop);
     break;
   case DerivedPointerIterationMode::_with_table:
-    all_do(fr, reg_map, f, add_derived_oop, &do_nothing_cl);
+    all_do(fr, reg_map, f, add_derived_oop);
     break;
   case DerivedPointerIterationMode::_ignore:
-    all_do(fr, reg_map, f, ignore_derived_oop, &do_nothing_cl);
+    all_do(fr, reg_map, f, ignore_derived_oop);
     break;
   }
 }
 
 
 void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
-                       OopClosure* oop_fn, void derived_oop_fn(oop*, derived_pointer*, OopClosure*),
-                       OopClosure* value_fn) {
+                       OopClosure* oop_fn, void derived_oop_fn(oop*, derived_pointer*, OopClosure*)) {
   CodeBlob* cb = fr->cb();
   assert(cb != NULL, "no codeblob");
 
