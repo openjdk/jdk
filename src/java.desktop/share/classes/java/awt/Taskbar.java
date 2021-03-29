@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,6 +323,9 @@ public class Taskbar {
 
     /**
      * Changes this application's icon to the provided image.
+     * <p>
+     * The returned icon image may not be equal
+     * to an image set by {@link java.awt.Taskbar#setIconImage}.
      *
      * @param image to change
      * @throws SecurityException if a security manager exists and it denies the
