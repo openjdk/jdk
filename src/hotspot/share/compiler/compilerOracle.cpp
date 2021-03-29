@@ -426,7 +426,6 @@ void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
   if (!check_predicate(CompileCommand::Blackhole, method)) {
     return;
   }
-
   guarantee(UnlockExperimentalVMOptions, "Checked during initial parsing");
   if (method->result_type() != T_VOID) {
     warning("Blackhole compile option only works for methods with void type: %s",
@@ -443,13 +442,14 @@ void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
             method->name_and_sig_as_C_string());
     return;
   }
-
+  if (method->intrinsic_id() == vmIntrinsics::_blackhole) {
+    return;
+  }
   if (method->intrinsic_id() != vmIntrinsics::_none) {
     warning("Blackhole compile option only works for methods that do not have intrinsic set: %s, %s",
             method->name_and_sig_as_C_string(), vmIntrinsics::name_at(method->intrinsic_id()));
     return;
   }
-
   method->set_intrinsic_id(vmIntrinsics::_blackhole);
 }
 
