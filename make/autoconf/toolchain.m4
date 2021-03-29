@@ -884,7 +884,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
 
       # On windows, the assember is "ml.exe". We currently don't need this so
       # do not require.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+      if test "x$OPENJDK_BUILD_CPU_BITS" = "x64"; then
         # On 64 bit windows, the assember is "ml64.exe"
         UTIL_LOOKUP_PROGS(BUILD_AS, ml64, [$VS_PATH])
       else
