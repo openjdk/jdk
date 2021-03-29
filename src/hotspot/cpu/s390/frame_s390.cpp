@@ -297,7 +297,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     switch (type) {
       case T_OBJECT:
       case T_ARRAY: {
-        *oop_result = (oop) (void*) ijava_state()->oop_tmp;
+        *oop_result = cast_to_oop((void*) ijava_state()->oop_tmp);
         break;
       }
       // We use std/stfd to store the values.

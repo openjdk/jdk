@@ -428,8 +428,8 @@ public:
   void add_obj(oop p, size_t len) { add_obj(cast_from_oop<HeapWord*>(p), len); }
 
   // Fill in the regions covering [beg, end) so that no data moves; i.e., the
-  // destination of region n is simply the start of region n.  The argument beg
-  // must be region-aligned; end need not be.
+  // destination of region n is simply the start of region n.  Both arguments
+  // beg and end must be region-aligned.
   void summarize_dense_prefix(HeapWord* beg, HeapWord* end);
 
   HeapWord* summarize_split_space(size_t src_region, SplitInfo& split_info,
@@ -480,9 +480,7 @@ public:
   HeapWord* partial_obj_end(size_t region_idx) const;
 
   // Return the location of the object after compaction.
-  HeapWord* calc_new_pointer(HeapWord* addr,
-                             ParCompactionManager* cm,
-                             bool use_block_table = true) const;
+  HeapWord* calc_new_pointer(HeapWord* addr, ParCompactionManager* cm) const;
 
   HeapWord* calc_new_pointer(oop p, ParCompactionManager* cm) const {
     return calc_new_pointer(cast_from_oop<HeapWord*>(p), cm);

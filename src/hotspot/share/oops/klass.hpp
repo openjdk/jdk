@@ -690,8 +690,7 @@ protected:
   virtual void release_C_heap_structures();
 
  public:
-  // jvm support
-  virtual jint compute_modifier_flags(TRAPS) const;
+  virtual jint compute_modifier_flags() const = 0;
 
   // JVMTI support
   virtual jint jvmti_class_status() const;

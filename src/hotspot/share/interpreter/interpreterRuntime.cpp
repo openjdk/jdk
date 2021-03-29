@@ -970,6 +970,9 @@ JRT_END
 
 
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, address branch_bcp) {
+  // Enable WXWrite: the function is called directly by interpreter.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+
   // frequency_counter_overflow_inner can throw async exception.
   nmethod* nm = frequency_counter_overflow_inner(thread, branch_bcp);
   assert(branch_bcp != NULL || nm == NULL, "always returns null for non OSR requests");
@@ -1450,9 +1453,8 @@ JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* thread, Meth
   methodHandle m(thread, method);
   assert(m->is_native(), "sanity check");
   // lookup native function entry point if it doesn't exist
-  bool in_base_library;
   if (!m->has_native_function()) {
-    NativeLookup::lookup(m, in_base_library, CHECK);
+    NativeLookup::lookup(m, CHECK);
   }
   // make sure signature handler is installed
   SignatureHandlerLibrary::add(m);
@@ -1499,7 +1501,7 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* thread, 
   Symbol* mname = cpool->name_ref_at(cp_index);
 
   if (MethodHandles::has_member_arg(cname, mname)) {
-    oop member_name_oop = (oop) member_name;
+    oop member_name_oop = cast_to_oop(member_name);
     if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
       // FIXME: remove after j.l.i.InvokerBytecodeGenerator code shape is updated.
       member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
