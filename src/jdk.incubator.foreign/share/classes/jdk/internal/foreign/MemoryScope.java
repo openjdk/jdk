@@ -240,9 +240,9 @@ abstract class MemoryScope implements ScopedMemoryAccess.Scope {
 
         static ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-        final static int ALIVE = 0;
-        final static int CLOSING = 1;
-        final static int CLOSED = 2;
+        static final int ALIVE = 0;
+        static final int CLOSING = 1;
+        static final int CLOSED = 2;
 
         int state = ALIVE;
 

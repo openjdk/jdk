@@ -806,6 +806,6 @@ public interface CLinker {
         TypeKind = layout.attribute(TypeKind.ATTR_NAME).orElse(null);
          * }</pre></blockquote>
          */
-        public final static String ATTR_NAME = "abi/kind";
+        public static final String ATTR_NAME = "abi/kind";
     }
 }

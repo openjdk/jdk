@@ -103,7 +103,7 @@ handle = MemoryHandles.insertCoordinates(handle, 1, 4); //(MemorySegment) -> int
  */
 public final class MemoryHandles {
 
-    private final static JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
+    private static final JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
 
     private MemoryHandles() {
         //sorry, just the one!

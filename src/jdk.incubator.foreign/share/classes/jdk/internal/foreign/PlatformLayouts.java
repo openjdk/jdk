@@ -162,7 +162,7 @@ public class PlatformLayouts {
          * The name of the layout attribute (see {@link MemoryLayout#attributes()} used to mark variadic parameters. The
          * attribute value must be a boolean.
          */
-        public final static String VARARGS_ATTRIBUTE_NAME = "abi/windows/varargs";
+        public static final String VARARGS_ATTRIBUTE_NAME = "abi/windows/varargs";
 
         /**
          * The {@code char} native type.

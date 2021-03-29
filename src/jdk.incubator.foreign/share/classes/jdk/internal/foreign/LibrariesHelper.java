@@ -46,10 +46,10 @@ import java.util.function.Supplier;
 public final class LibrariesHelper {
     private LibrariesHelper() {}
 
-    private final static NativeLibraries nativeLibraries =
+    private static final NativeLibraries nativeLibraries =
             NativeLibraries.rawNativeLibraries(LibrariesHelper.class, true);
 
-    private final static Map<NativeLibrary, AtomicInteger> loadedLibraries = new IdentityHashMap<>();
+    private static final Map<NativeLibrary, AtomicInteger> loadedLibraries = new IdentityHashMap<>();
 
     /**
      * Load the specified shared library.
