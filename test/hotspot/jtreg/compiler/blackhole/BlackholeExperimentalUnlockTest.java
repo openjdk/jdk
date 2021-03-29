@@ -40,7 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class BlackholeExperimentalUnlockTest {
 
-    private static final int CYCLES = 1_000_000;
+    private static final int CYCLES = 100_000;
     private static final int TRIES = 10;
 
     public static void main(String[] args) throws IOException {
