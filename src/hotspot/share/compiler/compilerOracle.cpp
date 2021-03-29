@@ -422,36 +422,30 @@ bool CompilerOracle::should_break_at(const methodHandle& method) {
   return check_predicate(CompileCommand::Break, method);
 }
 
-bool CompilerOracle::should_blackhole(const methodHandle& method) {
+void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
   if (!check_predicate(CompileCommand::Blackhole, method)) {
-    return false;
+    return;
   }
+
   guarantee(UnlockExperimentalVMOptions, "Checked during initial parsing");
   if (method->result_type() != T_VOID) {
     warning("Blackhole compile option only works for methods with void type: %s",
             method->name_and_sig_as_C_string());
-    return false;
+    return;
   }
   if (!method->is_empty_method()) {
     warning("Blackhole compile option only works for empty methods: %s",
             method->name_and_sig_as_C_string());
-    return false;
+    return;
   }
   if (!method->is_static()) {
     warning("Blackhole compile option only works for static methods: %s",
             method->name_and_sig_as_C_string());
-    return false;
-  }
-  return true;
-}
-
-void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
-  if (!should_blackhole(method)) {
     return;
   }
 
   if (method->intrinsic_id() != vmIntrinsics::_none) {
-    warning("Blackhole compile option only works for methods that do not have intrinsics set: %s, %s",
+    warning("Blackhole compile option only works for methods that do not have intrinsic set: %s, %s",
             method->name_and_sig_as_C_string(), vmIntrinsics::name_at(method->intrinsic_id()));
     return;
   }
