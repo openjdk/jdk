@@ -3723,6 +3723,10 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
 
   // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
   JavaThread* thread = JavaThread::current();
+
+  // We are going to VM, change W^X state to the expected one.
+  MACOS_AARCH64_ONLY(WXMode oldmode = thread->enable_wx(WXWrite));
+
   ThreadStateTransition::transition_from_native(thread, _thread_in_vm);
   if (Threads::destroy_vm()) {
     // Should not change thread state, VM is gone
@@ -3731,6 +3735,7 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
     return res;
   } else {
     ThreadStateTransition::transition(thread, _thread_in_vm, _thread_in_native);
+    MACOS_AARCH64_ONLY(thread->enable_wx(oldmode));
     res = JNI_ERR;
     return res;
   }
@@ -3909,6 +3914,9 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
     // Can't detach a thread that's running java, that can't work.
     return JNI_ERR;
   }
+
+  // We are going to VM, change W^X state to the expected one.
+  MACOS_AARCH64_ONLY(thread->enable_wx(WXWrite));
 
   // Safepoint support. Have to do call-back to safepoint code, if in the
   // middle of a safepoint operation
