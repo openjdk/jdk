@@ -57,9 +57,9 @@ import java.util.stream.Stream;
 class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
     private static final String JAVABASEJMOD = "java.base.jmod";
-    private final static String DEFAULT_VERSION = "1.0";
-    private final static String DEFAULT_RELEASE = "1";
-    private final static String[] DEFAULT_JLINK_OPTIONS = {
+    private static final String DEFAULT_VERSION = "1.0";
+    private static final String DEFAULT_RELEASE = "1";
+    private static final String[] DEFAULT_JLINK_OPTIONS = {
             "--strip-native-commands",
             "--strip-debug",
             "--no-man-pages",
