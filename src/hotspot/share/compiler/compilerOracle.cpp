@@ -445,6 +445,20 @@ bool CompilerOracle::should_blackhole(const methodHandle& method) {
   return true;
 }
 
+void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
+  if (!should_blackhole(method)) {
+    return;
+  }
+
+  if (method->intrinsic_id() != vmIntrinsics::_none) {
+    warning("Blackhole compile option only works for methods that do not have intrinsics set: %s, %s",
+            method->name_and_sig_as_C_string(), vmIntrinsics::name_at(method->intrinsic_id()));
+    return;
+  }
+
+  method->set_intrinsic_id(vmIntrinsics::_blackhole);
+}
+
 static enum CompileCommand match_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {
   assert(ARRAY_SIZE(option_names) == static_cast<int>(CompileCommand::Count), "option_names size mismatch");
 

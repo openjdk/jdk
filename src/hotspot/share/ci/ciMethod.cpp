@@ -155,10 +155,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   }
 #endif
 
-  // If needed, set the blackhole intrinsic tag for resolved ciMethods.
-  if (CompilerOracle::should_blackhole(h_m) && (h_m->intrinsic_id() == vmIntrinsics::_none)) {
-    h_m->set_intrinsic_id(vmIntrinsics::_blackhole);
-  }
+  CompilerOracle::tag_blackhole_if_possible(h_m);
 }
 
 

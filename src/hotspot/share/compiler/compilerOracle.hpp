@@ -145,7 +145,10 @@ class CompilerOracle : AllStatic {
   // Tells whether to blackhole when compiling method
   static bool should_blackhole(const methodHandle& method);
 
-  // Tells whether there are any methods to print for print_method_statistics()
+  // Tags the method as blackhole candidate, if possible.
+  static void tag_blackhole_if_possible(const methodHandle& method);
+
+    // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
 
   // A wrapper for checking bool options
