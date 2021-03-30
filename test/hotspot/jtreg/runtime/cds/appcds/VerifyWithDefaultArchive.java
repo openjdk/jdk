@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
+/*
  * @test
- * @bug 8239367
- * @summary Wiring of memory in SubTypeCheck macro node causes graph should be schedulable
- *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestSubTypeCheckMacroNodeWrongMem::test -XX:+IgnoreUnrecognizedVMOptions -XX:-DoEscapeAnalysis TestSubTypeCheckMacroNodeWrongMem
- *
+ * @bug 8264337
+ * @summary test default cds archive when turning on VerifySharedSpaces
+ * @requires vm.cds
+ * @library /test/lib
+ * @run driver VerifyWithDefaultArchive
  */
 
-public class TestSubTypeCheckMacroNodeWrongMem {
-    private static int stop = 100;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-    public static void main(String[] args) {
-        TestSubTypeCheckMacroNodeWrongMem o = new TestSubTypeCheckMacroNodeWrongMem();
-        test();
-    }
-
-    private static void test() {
-        Object o1 = null;
-        for (int i = 0; i < stop; i++) {
-            try {
-                Object o = new TestSubTypeCheckMacroNodeWrongMem();
-                o1.equals(o);
-            } catch (NullPointerException npe) {
-            } catch (Exception e) {
-                throw new RuntimeException();
-            }
-        }
+public class VerifyWithDefaultArchive {
+    public static void main(String... args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:cds", "-XX:+VerifySharedSpaces", "-version");
+        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldContain("OpenJDK");
+        out.shouldHaveExitValue(0);
     }
 }
