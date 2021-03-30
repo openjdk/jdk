@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutionException;
 /* @test
  * @bug 8263898
  * @summary Verify stream and channel behavior with NUL device
+ * @requires os.family == "windows"
  * @run main NulDevice
 */
 public class NulDevice {
@@ -81,8 +82,7 @@ public class NulDevice {
             }
         }
 
-        try (AsynchronousFileChannel ch =
-            AsynchronousFileChannel.open(path, READ, WRITE)) {
+        try (AsynchronousFileChannel ch = AsynchronousFileChannel.open(path, READ, WRITE)) {
             if (ch.size() != 0) {
                 throw new RuntimeException("Size should be zero");
             }
