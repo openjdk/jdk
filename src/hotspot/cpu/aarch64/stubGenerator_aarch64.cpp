@@ -5802,7 +5802,7 @@ class StubGenerator: public StubCodeGenerator {
     // encoding is 76, with the PreProcess80B blob, we actually use no-simd
     // instructions for all MIME encoded data.
     __ movw(rscratch1, 79);
- 
+
     __ BIND(Process4B);
     __ ldrb(r10, __ post(src, 1));
     __ ldrb(r11, __ post(src, 1));
@@ -5832,7 +5832,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GT, Process4B);
 
     // if exiting from PreProcess80B, rscratch1 == -1;
-    // otherwise, rscratch == 0.
+    // otherwise, rscratch1 == 0.
     __ cbzw(rscratch1, Exit);
     __ sub(length, length, 80);
 
