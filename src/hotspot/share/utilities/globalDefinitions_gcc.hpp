@@ -31,6 +31,8 @@
 // globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
+#include <cstddef>
+
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
