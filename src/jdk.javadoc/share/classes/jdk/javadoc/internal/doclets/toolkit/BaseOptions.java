@@ -570,6 +570,10 @@ public abstract class BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         String arg = args.get(0);
                         try {
+                            if (!arg.endsWith("/")) {
+                                // to ensure that URI.resolve works as expected
+                                arg += "/";
+                            }
                             specBaseURI = new URI(arg);
                             return true;
                         } catch (URISyntaxException e) {

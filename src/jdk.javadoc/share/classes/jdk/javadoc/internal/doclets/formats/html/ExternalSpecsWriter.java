@@ -39,6 +39,7 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SpecTree;
+
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -47,6 +48,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
+import jdk.javadoc.internal.doclets.toolkit.ExternalSpecs;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -127,6 +129,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addExternalSpecs(Content content) {
+        final int USE_DETAILS_THRESHHOLD = 20;
         Map<String, List<IndexItem>> searchIndexMap = groupExternalSpecs();
         Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.externalSpecifications)
@@ -136,7 +139,13 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
             Content specName = createSpecLink(searchIndexItems.get(0));
             Content referencesList = HtmlTree.UL(HtmlStyle.refList, searchIndexItems,
                     item -> HtmlTree.LI(createLink(item)));
-            table.addRow(specName, referencesList);
+            Content references = searchIndexItems.size() < USE_DETAILS_THRESHHOLD
+                    ? referencesList
+                    : HtmlTree.DETAILS()
+                            .add(HtmlTree.SUMMARY(contents.getContent("doclet.references",
+                                    String.valueOf(searchIndexItems.size()))))
+                            .add(referencesList);
+            table.addRow(specName, references);
         }
         content.add(table);
     }
@@ -229,6 +238,21 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         } catch (URISyntaxException e) {
             // should not happen: items with bad URIs should not make it into the index
             return label;
+        }
+
+        // Use the canonical URI for the spec if one is available
+        ExternalSpecs extSpecs = configuration.externalSpecs;
+        if (extSpecs != null) {
+            ExternalSpecs.Entry e = extSpecs.getEntry(specURI);
+            if (e != null) {
+                specURI = e.uri;
+                if (specURI.getPath().endsWith("/")) {
+                    // Normally, defaulting to index.html is done by a webserver,
+                    // but that doesn't work when viewing files locally.
+                    // So, to accommodate that case, we handle it here.
+                    specURI = specURI.resolve("index.html");
+                }
+            }
         }
 
         if (!specURI.isAbsolute()) {

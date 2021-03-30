@@ -110,16 +110,25 @@ public class ExternalSpecs {
         return sl;
     }
 
-    static class Entry {
-        final URI uri;
-        final String title;
+    /**
+     * An entry describing the "canonical" URI and title for an external specification.
+     */
+    public static class Entry {
+        /**
+         * The URI.
+         */
+        public final URI uri;
+        /**
+         * The title.
+         */
+        public final String title;
 
-        Entry(URI uri, String title) {
+        private Entry(URI uri, String title) {
             this.uri = uri;
             this.title = title;
         }
 
-        boolean match(String s) {
+        private boolean match(String s) {
             String u = uri.toString();
             if (u.endsWith("/")) {
                 return s.startsWith(u) || s.equals(u.substring(0, u.length() - 1));
@@ -142,7 +151,7 @@ public class ExternalSpecs {
     private final Map<String, List<Entry>> dirEntries = new HashMap<>();
 
     /**
-     * {@return the title of an external specification}
+     * {@return the entry for an external specification}
      *
      * The external specification is determined by looking up an exact
      * match for an entry in the file that did not end with {@code /},
@@ -150,7 +159,7 @@ public class ExternalSpecs {
      *
      * @param u the URL for the specification
      */
-    public String getTitle(URI u) {
+    public Entry getEntry(URI u) {
         if (u.getQuery() != null || u.getFragment() != null) {
             try {
                 // rewrite the URI without the query or fragment
@@ -161,7 +170,7 @@ public class ExternalSpecs {
         }
         String t = fileEntries.get(u);
         if (t != null) {
-            return t;
+            return new Entry(u, t);
         }
         List<Entry> l = dirEntries.get(u.getHost());
         if (l == null) {
@@ -170,7 +179,7 @@ public class ExternalSpecs {
         String s = u.toString();
         for (Entry e : l) {
             if (e.match(s)) {
-                return e.title;
+                return e;
             }
         }
         return null;
@@ -195,7 +204,7 @@ public class ExternalSpecs {
 
     /**
      * Sorts the directory entries first by length (longest first) and then by name.
-     * The sort by length ensures that we find the longest match first in {@link #getTitle(URI)}.
+     * The sort by length ensures that we find the longest match first in {@link #getEntry(URI)}.
      */
     private void sortDirEntries() {
         Comparator<Entry> c =

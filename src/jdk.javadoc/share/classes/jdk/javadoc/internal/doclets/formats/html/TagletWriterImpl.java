@@ -413,10 +413,14 @@ public class TagletWriterImpl extends TagletWriter {
         URI specURI;
         String searchText = null;
         try {
+            // Use the canonical title of the spec if one is available
             specURI = new URI(specTree.getURI().getBody());
             ExternalSpecs extSpecs = configuration.externalSpecs;
             if (extSpecs != null) {
-                searchText = extSpecs.getTitle(specURI);
+                ExternalSpecs.Entry e = extSpecs.getEntry(specURI);
+                if (e != null) {
+                    searchText = e.title;
+                }
             }
         } catch (URISyntaxException e) {
             CommentHelper ch = utils.getCommentHelper(holder);

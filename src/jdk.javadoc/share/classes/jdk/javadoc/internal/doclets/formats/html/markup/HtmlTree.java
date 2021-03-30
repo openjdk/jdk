@@ -378,6 +378,15 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code DETAILS} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree DETAILS() {
+        return new HtmlTree(TagName.DETAILS);
+    }
+
+    /**
      * Creates an HTML {@code DL} element with the given style.
      *
      * @param style the style
@@ -811,6 +820,17 @@ public class HtmlTree extends Content {
         return new HtmlTree(TagName.SPAN)
                 .setId(id)
                 .setStyle(style)
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code SUMMARY} element with the given content.
+     *
+     * @param body the content
+     * @return the element
+     */
+    public static HtmlTree SUMMARY(Content body) {
+        return new HtmlTree(TagName.SUMMARY)
                 .add(body);
     }
 
