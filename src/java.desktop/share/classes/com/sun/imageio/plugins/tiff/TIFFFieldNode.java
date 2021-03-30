@@ -124,7 +124,7 @@ public class TIFFFieldNode extends IIOMetadataNode {
                 byte[] data = field.getAsBytes();
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < count; i++) {
-                    sb.append((data[i] & 0xff));
+                    sb.append(data[i] & 0xff);
                     if (i < count - 1) {
                         sb.append(",");
                     }
