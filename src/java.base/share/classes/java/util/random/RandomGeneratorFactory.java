@@ -342,16 +342,19 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *
      * @param name  Name of random number generator
      * <a href="package-summary.html#algorithms">algorithm</a>
+     * @param <T> Sub-interface of {@link RandomGenerator} to produce
      *
      * @return {@link RandomGeneratorFactory} of {@link RandomGenerator}
      *
      * @throws NullPointerException if name is null
      * @throws IllegalArgumentException if the named algorithm is not found
      */
-    public static RandomGeneratorFactory<RandomGenerator> of(String name) {
+    public static <T extends RandomGenerator> RandomGeneratorFactory<T> of(String name) {
         Objects.requireNonNull(name);
-
-        return factoryOf(name, RandomGenerator.class);
+        @SuppressWarnings("unchecked")
+        RandomGeneratorFactory<T> factory =
+                (RandomGeneratorFactory<T>)factoryOf(name, RandomGenerator.class);
+        return factory;
     }
 
     /**
