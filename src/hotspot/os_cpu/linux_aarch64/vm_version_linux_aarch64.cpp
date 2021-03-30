@@ -168,24 +168,32 @@ void VM_Version::get_os_cpu_info() {
   }
 }
 
-void VM_Version::get_compatible_board(char *buf, int buflen) {
+static bool read_fully(const char *fname, char *buf, int buflen) {
   assert(buf != NULL, "invalid argument");
   assert(buflen >= 1, "invalid argument");
-  *buf = '\0';
-  int fd = open("/proc/device-tree/compatible", O_RDONLY);
+  int fd = open(fname, O_RDONLY);
   if (fd != -1) {
     ssize_t read_sz = read(fd, buf, buflen - 1);
-    if (read_sz > 0) {
+    close(fd);
+    if ((read_sz > 0) && isgraph(*buf)) {
       buf[read_sz] = '\0';
-      // Replace '\0' to ' '
+      // Replace control chars to ' '
       for (char *ch = buf; ch < buf + read_sz; ch++) {
-        if (*ch == '\0') {
+        if (iscntrl(*ch)) {
           *ch = ' ';
         }
       }
-    } else {
-      *buf = '\0';
+      return true;
     }
-    close(fd);
+  }
+  *buf = '\0';
+  return false;
+}
+
+void VM_Version::get_compatible_board(char *buf, int buflen) {
+  if (!read_fully("/proc/device-tree/compatible", buf, buflen)) {
+    if (!read_fully("/sys/devices/virtual/dmi/id/board_name", buf, buflen)) {
+      read_fully("/sys/devices/virtual/dmi/id/product_name", buf, buflen);
+    }
   }
 }
