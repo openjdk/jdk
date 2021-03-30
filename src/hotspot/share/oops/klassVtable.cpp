@@ -68,8 +68,7 @@ void klassVtable::compute_vtable_size_and_num_mirandas(
     int* vtable_length_ret, int* num_new_mirandas,
     GrowableArray<Method*>* all_mirandas, const Klass* super,
     Array<Method*>* methods, AccessFlags class_flags, u2 major_version,
-    Handle classloader, Symbol* classname, Array<InstanceKlass*>* local_interfaces,
-    TRAPS) {
+    Handle classloader, Symbol* classname, Array<InstanceKlass*>* local_interfaces) {
   NoSafepointVerifier nsv;
 
   // set up default result values
@@ -258,7 +257,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
     // Interfaces do not need interface methods in their vtables
     // This includes miranda methods and during later processing, default methods
     if (!ik()->is_interface()) {
-      initialized = fill_in_mirandas(initialized, THREAD);
+      initialized = fill_in_mirandas(THREAD, initialized);
     }
 
     // In class hierarchies where the accessibility is not increasing (i.e., going from private ->
@@ -937,8 +936,8 @@ void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
 // return the new value of initialized.
 // Miranda methods use vtable entries, but do not get assigned a vtable_index
 // The vtable_index is discovered by searching from the end of the vtable
-int klassVtable::fill_in_mirandas(int initialized, TRAPS) {
-  ResourceMark rm(THREAD);
+int klassVtable::fill_in_mirandas(Thread* current, int initialized) {
+  ResourceMark rm(current);
   GrowableArray<Method*> mirandas(20);
   get_mirandas(&mirandas, NULL, ik()->super(), ik()->methods(),
                ik()->default_methods(), ik()->local_interfaces(),
@@ -1112,7 +1111,7 @@ void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
   if (_klass->is_interface()) {
     // This needs to go after vtable indices are assigned but
     // before implementors need to know the number of itable indices.
-    assign_itable_indices_for_interface(InstanceKlass::cast(_klass), THREAD);
+    assign_itable_indices_for_interface(THREAD, InstanceKlass::cast(_klass));
   }
 
   // Cannot be setup doing bootstrapping, interfaces don't have
@@ -1158,9 +1157,9 @@ inline bool interface_method_needs_itable_index(Method* m) {
   return true;
 }
 
-int klassItable::assign_itable_indices_for_interface(InstanceKlass* klass, TRAPS) {
+int klassItable::assign_itable_indices_for_interface(Thread* current, InstanceKlass* klass) {
   // an interface does not have an itable, but its methods need to be numbered
-  ResourceMark rm(THREAD);
+  ResourceMark rm(current);
   log_develop_debug(itables)("%3d: Initializing itable indices for interface %s",
                              ++initialize_count, klass->name()->as_C_string());
   Array<Method*>* methods = klass->methods();
