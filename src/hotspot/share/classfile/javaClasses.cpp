@@ -1027,7 +1027,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
   // to support Class.getModifiers().  Instance classes recalculate
   // the cached flags after the class file is parsed, but before the
   // class is put into the system dictionary.
-  int computed_modifiers = k->compute_modifier_flags(CHECK);
+  int computed_modifiers = k->compute_modifier_flags();
   k->set_modifier_flags(computed_modifiers);
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
@@ -1473,7 +1473,7 @@ objArrayOop java_lang_Class::signers(oop java_class) {
 }
 void java_lang_Class::set_signers(oop java_class, objArrayOop signers) {
   assert(_signers_offset != 0, "must be set");
-  java_class->obj_field_put(_signers_offset, (oop)signers);
+  java_class->obj_field_put(_signers_offset, signers);
 }
 
 oop java_lang_Class::class_data(oop java_class) {

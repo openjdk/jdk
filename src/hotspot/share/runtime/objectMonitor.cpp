@@ -69,7 +69,7 @@
   char* bytes = NULL;                                                      \
   int len = 0;                                                             \
   jlong jtid = SharedRuntime::get_java_tid(thread);                        \
-  Symbol* klassname = ((oop)obj)->klass()->name();                         \
+  Symbol* klassname = obj->klass()->name();                                \
   if (klassname != NULL) {                                                 \
     bytes = (char*)klassname->bytes();                                     \
     len = klassname->utf8_length();                                        \
@@ -2187,7 +2187,7 @@ void ObjectMonitor::Initialize() {
 #undef NEWPERFVARIABLE
   }
 
-  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak");
+  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak", mtSynchronizer);
 
   DEBUG_ONLY(InitDone = true;)
 }

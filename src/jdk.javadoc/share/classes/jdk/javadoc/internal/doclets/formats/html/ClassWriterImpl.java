@@ -176,7 +176,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public Content getClassInfo(Content classInfoTree) {
-        return getMemberTree(HtmlStyle.description, classInfoTree);
+        return getMemberTree(HtmlIds.CLASS_DESCRIPTION, HtmlStyle.classDescription, classInfoTree);
     }
 
     @Override

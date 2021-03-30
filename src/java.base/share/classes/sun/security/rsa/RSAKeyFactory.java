@@ -406,6 +406,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
             if (keySpec.isAssignableFrom(PKCS8_KEYSPEC_CLS)) {
                 return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
             } else if (keySpec.isAssignableFrom(RSA_PRIVCRT_KEYSPEC_CLS)) {
+                // All supported keyspecs (other than PKCS8_KEYSPEC_CLS) descend from RSA_PRIVCRT_KEYSPEC_CLS
                 if (key instanceof RSAPrivateCrtKey) {
                     RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey)key;
                     return keySpec.cast(new RSAPrivateCrtKeySpec(
@@ -419,17 +420,20 @@ public class RSAKeyFactory extends KeyFactorySpi {
                         crtKey.getCrtCoefficient(),
                         crtKey.getParams()
                     ));
-                } else {
-                    throw new InvalidKeySpecException
-                    ("RSAPrivateCrtKeySpec can only be used with CRT keys");
+                } else { // RSAPrivateKey (non-CRT)
+                    if (!keySpec.isAssignableFrom(RSA_PRIV_KEYSPEC_CLS)) {
+                        throw new InvalidKeySpecException
+                            ("RSAPrivateCrtKeySpec can only be used with CRT keys");
+                    }
+
+                    // fall through to RSAPrivateKey (non-CRT)
+                    RSAPrivateKey rsaKey = (RSAPrivateKey) key;
+                    return keySpec.cast(new RSAPrivateKeySpec(
+                        rsaKey.getModulus(),
+                        rsaKey.getPrivateExponent(),
+                        rsaKey.getParams()
+                    ));
                 }
-            } else if (keySpec.isAssignableFrom(RSA_PRIV_KEYSPEC_CLS)) {
-                RSAPrivateKey rsaKey = (RSAPrivateKey)key;
-                return keySpec.cast(new RSAPrivateKeySpec(
-                    rsaKey.getModulus(),
-                    rsaKey.getPrivateExponent(),
-                    rsaKey.getParams()
-                ));
             } else {
                 throw new InvalidKeySpecException
                         ("KeySpec must be RSAPrivate(Crt)KeySpec or "

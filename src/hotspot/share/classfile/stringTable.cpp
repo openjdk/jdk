@@ -210,7 +210,7 @@ void StringTable::create_table() {
   log_trace(stringtable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                          _current_size, start_size_log_2);
   _local_table = new StringTableHash(start_size_log_2, END_SIZE, REHASH_LEN);
-  _oop_storage = OopStorageSet::create_weak("StringTable Weak");
+  _oop_storage = OopStorageSet::create_weak("StringTable Weak", mtSymbol);
   _oop_storage->register_num_dead_callback(&gc_notification);
 }
 

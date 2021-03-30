@@ -77,7 +77,7 @@ class MetaspaceShared : AllStatic {
   };
 
   static void prepare_for_dumping() NOT_CDS_RETURN;
-  static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
+  static void preload_and_dump() NOT_CDS_RETURN;
 
 private:
   static void preload_and_dump_impl(TRAPS) NOT_CDS_RETURN;

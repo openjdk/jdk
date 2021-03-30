@@ -736,7 +736,7 @@ Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TR
     // ByteArrayInputStream bais = new ByteArrayInputStream(buf);
     const char* src = ent->manifest();
     assert(src != NULL, "No Manifest data");
-    manifest = create_jar_manifest(src, size, THREAD);
+    manifest = create_jar_manifest(src, size, CHECK_NH);
     atomic_set_shared_jar_manifest(shared_path_index, manifest());
   }
   manifest = Handle(THREAD, shared_jar_manifest(shared_path_index));
@@ -896,7 +896,7 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
       // Modules::define_module().
       assert(pkg_entry != NULL, "archived class in module image cannot be from unnamed package");
       ModuleEntry* mod_entry = pkg_entry->module();
-      pd = get_shared_protection_domain(class_loader, mod_entry, THREAD);
+      pd = get_shared_protection_domain(class_loader, mod_entry, CHECK_(pd));
     } else {
       // For shared app/platform classes originated from JAR files on the class path:
       //   Each of the 3 SystemDictionaryShared::_shared_xxx arrays has the same length
@@ -1180,7 +1180,7 @@ class LoadedUnregisteredClassesTable : public ResourceHashtable<
 
 static LoadedUnregisteredClassesTable* _loaded_unregistered_classes = NULL;
 
-bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
+bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* k) {
   // We don't allow duplicated unregistered classes of the same name.
   assert(DumpSharedSpaces, "only when dumping");
   Symbol* name = k->name();
@@ -1190,7 +1190,7 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   bool created = false;
   _loaded_unregistered_classes->put_if_absent(name, true, &created);
   if (created) {
-    MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
+    MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k);
   }
   return created;
@@ -1602,7 +1602,8 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
 
   lambda_ik->assign_class_loader_type();
   lambda_ik->set_shared_classpath_index(caller_ik->shared_classpath_index());
-  InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
+  InstanceKlass* nest_host = caller_ik->nest_host(CHECK);
+  assert(nest_host != NULL, "unexpected NULL nest_host");
 
   DumpTimeSharedClassInfo* info = _dumptime_table->get(lambda_ik);
   if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)
@@ -1822,7 +1823,7 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
 // InstanceKlass::link_class(), so that these can be checked quickly
 // at runtime without laying out the vtable/itables.
 void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKlass* klass,
-                                                    Handle loader1, Handle loader2, TRAPS) {
+                                                    Handle loader1, Handle loader2) {
   // A linking constraint check is executed when:
   //   - klass extends or implements type S
   //   - klass overrides method S.M(...) with X.M
@@ -1860,13 +1861,14 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
     return;
   }
 
-  if (THREAD->is_VM_thread()) {
-    assert(DynamicDumpSharedSpaces, "must be");
+  if (DynamicDumpSharedSpaces && Thread::current()->is_VM_thread()) {
     // We are re-laying out the vtable/itables of the *copy* of
     // a class during the final stage of dynamic dumping. The
     // linking constraints for this class has already been recorded.
     return;
   }
+  assert(!Thread::current()->is_VM_thread(), "must be");
+
   Arguments::assert_is_dumping_archive();
   DumpTimeSharedClassInfo* info = find_or_allocate_info_for(klass);
   if (info != NULL) {
@@ -1876,7 +1878,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
 
 // returns true IFF there's no need to re-initialize the i/v-tables for klass for
 // the purpose of checking class loader constraints.
-bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRAPS) {
+bool SystemDictionaryShared::check_linking_constraints(Thread* current, InstanceKlass* klass) {
   assert(!DumpSharedSpaces && UseSharedSpaces, "called at run time with CDS enabled only");
   LogTarget(Info, class, loader, constraints) log;
   if (klass->is_shared_boot_class()) {
@@ -1887,20 +1889,20 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
     RunTimeSharedClassInfo* info = RunTimeSharedClassInfo::get_for(klass);
     assert(info != NULL, "Sanity");
     if (info->_num_loader_constraints > 0) {
-      HandleMark hm(THREAD);
+      HandleMark hm(current);
       for (int i = 0; i < info->_num_loader_constraints; i++) {
         RunTimeSharedClassInfo::RTLoaderConstraint* lc = info->loader_constraint_at(i);
         Symbol* name = lc->constraint_name();
-        Handle loader1(THREAD, get_class_loader_by(lc->_loader_type1));
-        Handle loader2(THREAD, get_class_loader_by(lc->_loader_type2));
+        Handle loader1(current, get_class_loader_by(lc->_loader_type1));
+        Handle loader2(current, get_class_loader_by(lc->_loader_type2));
         if (log.is_enabled()) {
-          ResourceMark rm(THREAD);
+          ResourceMark rm(current);
           log.print("[CDS add loader constraint for class %s symbol %s loader[0] %s loader[1] %s",
                     klass->external_name(), name->as_C_string(),
                     ClassLoaderData::class_loader_data(loader1())->loader_name_and_id(),
                     ClassLoaderData::class_loader_data(loader2())->loader_name_and_id());
         }
-        if (!SystemDictionary::add_loader_constraint(name, klass, loader1, loader2, THREAD)) {
+        if (!SystemDictionary::add_loader_constraint(name, klass, loader1, loader2)) {
           // Loader constraint violation has been found. The caller
           // will re-layout the vtable/itables to produce the correct
           // exception.
@@ -1917,7 +1919,7 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
     }
   }
   if (log.is_enabled()) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     log.print("[CDS has not recorded loader constraint for class %s]", klass->external_name());
   }
   return false;

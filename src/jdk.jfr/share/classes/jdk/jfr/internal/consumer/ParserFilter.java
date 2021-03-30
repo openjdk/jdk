@@ -65,6 +65,7 @@ final class ParserFilter {
         return -1;
     }
 
+    @Override
     public String toString() {
         if (acceptAll) {
             return "ACCEPT ALL";

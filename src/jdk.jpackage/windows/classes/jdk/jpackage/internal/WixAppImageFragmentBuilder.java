@@ -832,29 +832,29 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     private Map<Path, Integer> removeFolderItems;
     private Set<String> defaultedMimes;
 
-    private final static Path TARGETDIR = Path.of("TARGETDIR");
+    private static final Path TARGETDIR = Path.of("TARGETDIR");
 
-    private final static Path INSTALLDIR = Path.of("INSTALLDIR");
+    private static final Path INSTALLDIR = Path.of("INSTALLDIR");
 
-    private final static Set<Path> ROOT_DIRS = Set.of(INSTALLDIR, TARGETDIR);
+    private static final Set<Path> ROOT_DIRS = Set.of(INSTALLDIR, TARGETDIR);
 
-    private final static Path PROGRAM_MENU_PATH = TARGETDIR.resolve("ProgramMenuFolder");
+    private static final Path PROGRAM_MENU_PATH = TARGETDIR.resolve("ProgramMenuFolder");
 
-    private final static Path DESKTOP_PATH = TARGETDIR.resolve("DesktopFolder");
+    private static final Path DESKTOP_PATH = TARGETDIR.resolve("DesktopFolder");
 
-    private final static Path PROGRAM_FILES = TARGETDIR.resolve(
+    private static final Path PROGRAM_FILES = TARGETDIR.resolve(
             is64Bit() ? "ProgramFiles64Folder" : "ProgramFilesFolder");
 
-    private final static Path LOCAL_PROGRAM_FILES = TARGETDIR.resolve("LocalAppDataFolder");
+    private static final Path LOCAL_PROGRAM_FILES = TARGETDIR.resolve("LocalAppDataFolder");
 
-    private final static Set<Path> SYSTEM_DIRS = Set.of(TARGETDIR,
+    private static final Set<Path> SYSTEM_DIRS = Set.of(TARGETDIR,
             PROGRAM_MENU_PATH, DESKTOP_PATH, PROGRAM_FILES, LOCAL_PROGRAM_FILES);
 
-    private final static Set<Path> KNOWN_DIRS = Stream.of(Set.of(INSTALLDIR),
+    private static final Set<Path> KNOWN_DIRS = Stream.of(Set.of(INSTALLDIR),
             SYSTEM_DIRS).flatMap(Set::stream).collect(
             Collectors.toUnmodifiableSet());
 
-    private final static Set<Path> USER_PROFILE_DIRS = Set.of(LOCAL_PROGRAM_FILES,
+    private static final Set<Path> USER_PROFILE_DIRS = Set.of(LOCAL_PROGRAM_FILES,
             PROGRAM_MENU_PATH, DESKTOP_PATH);
 
     private static final StandardBundlerParam<String> MENU_GROUP =
