@@ -4228,6 +4228,8 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
    * }
    */
   add_empty_predicates();
+  C->set_has_loops(true);
+
   RegionNode* head = new RegionNode(3);
   head->init_req(1, control());
   gvn().set_type(head, Type::CONTROL);
