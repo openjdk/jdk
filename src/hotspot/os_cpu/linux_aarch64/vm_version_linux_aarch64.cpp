@@ -191,9 +191,11 @@ static bool read_fully(const char *fname, char *buf, int buflen) {
 }
 
 void VM_Version::get_compatible_board(char *buf, int buflen) {
-  if (!read_fully("/proc/device-tree/compatible", buf, buflen)) {
-    if (!read_fully("/sys/devices/virtual/dmi/id/board_name", buf, buflen)) {
-      read_fully("/sys/devices/virtual/dmi/id/product_name", buf, buflen);
-    }
+  if (read_fully("/proc/device-tree/compatible", buf, buflen)) {
+    return;
   }
+  if (read_fully("/sys/devices/virtual/dmi/id/board_name", buf, buflen)) {
+    return;
+  }
+  read_fully("/sys/devices/virtual/dmi/id/product_name", buf, buflen);
 }
