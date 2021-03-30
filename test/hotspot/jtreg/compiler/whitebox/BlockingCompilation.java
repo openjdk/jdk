@@ -48,20 +48,15 @@ import compiler.testlibrary.CompilerUtils;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
-import java.util.Random;
 
 public class BlockingCompilation {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final Random RANDOM = new Random(42);
 
     public static int foo() {
-        return RANDOM.nextInt();
+        return 42; //constant's value is arbitrary and meaningless
     }
 
     public static void main(String[] args) throws Exception {
-        // Needed to avoid Random.nextInt (and subsequent 'foo') deoptimizations
-        ClassLoader.getSystemClassLoader().loadClass("java.util.concurrent.ThreadLocalRandom");
-
         Method m = BlockingCompilation.class.getMethod("foo");
         int[] levels = CompilerUtils.getAvailableCompilationLevels();
         int highest_level = levels[levels.length-1];
