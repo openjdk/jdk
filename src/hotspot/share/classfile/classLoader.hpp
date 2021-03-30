@@ -384,9 +384,6 @@ class ClassLoader: AllStatic {
   static jlong class_link_count();
   static jlong class_link_time_ms();
 
-  // indicates if class path already contains a entry (exact match by name)
-  static bool contains_append_entry(const char* name);
-
   // adds a class path to the boot append entries
   static void add_to_boot_append_entries(ClassPathEntry* new_entry);
 

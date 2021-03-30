@@ -86,7 +86,6 @@ JVM_GetClassNameUTF
 JVM_GetClassSignature
 JVM_GetClassSigners
 JVM_GetClassTypeAnnotations
-JVM_GetVMArguments
 JVM_GetCPClassNameUTF
 JVM_GetCPFieldClassNameUTF
 JVM_GetCPFieldModifiers

@@ -3661,21 +3661,6 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 #endif // INCLUDE_CDS
 JVM_END
 
-JVM_ENTRY(jobjectArray, JVM_GetVMArguments(JNIEnv* env))
-  int num_vm_args = Arguments::num_jvm_args();
-  if (num_vm_args == 0) {
-    return NULL;
-  }
-
-  char** vm_args  = Arguments::jvm_args_array();
-  objArrayHandle h_args = oopFactory::new_objArray_handle(vmClasses::String_klass(), num_vm_args, CHECK_NULL);
-  for(int i = 0; i < num_vm_args; i++) {
-    Handle h = java_lang_String::create_from_str(vm_args[i], THREAD);
-    h_args->obj_at_put(i, h());
-  }
-  return (jobjectArray) JNIHandles::make_local(THREAD, h_args());
-JVM_END
-
 JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
   return Arguments::is_dumping_archive();
 JVM_END

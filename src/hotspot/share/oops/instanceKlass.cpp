@@ -4239,17 +4239,13 @@ bool InstanceKlass::is_shareable() const {
   }
 
   if (is_hidden() || unsafe_anonymous_host() != NULL) {
-    tty->print_cr("skip writing %s class %s to classlist file",
-                  (is_hidden() ? "hidden" : "unsafe anonymous host"),
-                  name()->as_C_string());
     return false;
   }
 
   if (module()->is_patched()) {
-    tty->print_cr("skip writing class %s to classlist file, module patched",
-                  name()->as_C_string());
     return false;
   }
+
   return true;
 #else
   return false;

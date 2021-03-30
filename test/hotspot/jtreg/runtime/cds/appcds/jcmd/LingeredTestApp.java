@@ -28,6 +28,11 @@ public class LingeredTestApp extends LingeredApp {
     public boolean useDefaultClasspath() { return false; }
 
     public static void main(String args[]) {
+        try {
+            Class.forName("Hello");
+        } catch (Exception e) {
+            System.out.print("Could not load Hello "+ e);
+        }
         LingeredApp.main(args);
     }
 }

@@ -25,18 +25,18 @@
 
 package jdk.internal.misc;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
-
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
@@ -71,7 +71,7 @@ public class CDS {
     public static boolean isSharingEnabled() {
         return isSharingEnabled;
     }
-    private static native String[] getVMArguments(); // return commandline args except for executable itself.
+
     private static native boolean isDumpingClassList0();
     private static native boolean isDumpingArchive0();
     private static native boolean isSharingEnabled0();
@@ -208,13 +208,18 @@ public class CDS {
     private static native void dumpClassList(String listFileName);
     private static native void dumpDynamicArchive(String archiveFileName);
 
-    private static void outputStdStream(InputStream stream, String fileName) {
+    private static void outputStdStream(InputStream stream, String fileName, List<String> cmds) {
         String line;
         InputStreamReader isr = new InputStreamReader(stream);
         BufferedReader rdr = new BufferedReader(isr);
 
         try {
             PrintStream prt = new PrintStream(fileName);
+            prt.println("Command:");
+            for (String s : cmds) {
+                prt.print(s + " ");
+            }
+            prt.println("");
             while((line = rdr.readLine()) != null) {
                 prt.println(line);
             }
@@ -266,14 +271,18 @@ public class CDS {
             }
             dumpClassList(listFile);
             String jdkHome = System.getProperty("java.home");
-            ArrayList<String> cmds = new ArrayList<String>();
+            String classPath = System.getProperty("java.class.path");
+            List<String> cmds = new ArrayList<String>();
             cmds.add(jdkHome + File.separator + "bin" + File.separator + "java"); // java
-            cmds.add("-Xlog:cds");
+            cmds.add("-cp");
+            cmds.add(classPath);
+            cmds.add("-Xlog:cds,class+load");
             cmds.add("-Xshare:dump");
             cmds.add("-XX:SharedClassListFile=" + listFile);
             cmds.add("-XX:SharedArchiveFile=" + archiveFile);
-            // All args in command line
-            String[] vmArgs = getVMArguments();
+
+            // All runtime args.
+            String[] vmArgs = VM.getRuntimeArguments();
             if (vmArgs != null) {
                 for (String arg : vmArgs) {
                     if (arg != null && !containsExcludedFlags(arg)) {
@@ -282,33 +291,24 @@ public class CDS {
                 }
             }
 
-            System.out.println("Static dump cmd: ");
-            for (String s : cmds) {
-                System.out.print(s + " ");
-            }
-            System.out.println("");
-
-            // Do not take parent env which will cause check error on empty directory if
-            // classpath carried in envp.
-            Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[0]),
-                               new String[] {"EnvP=null"});
+            Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[0]));
 
             // Drain stdout to a file in a separate thread.
             String stdOutFile = "java_pid" + proc.pid() + "_stdout.txt";
             new Thread( ()-> {
-                    outputStdStream(proc.getInputStream(), stdOutFile);
+                    outputStdStream(proc.getInputStream(), stdOutFile, cmds);
                 }).start();
 
             // Drain stderr to a file in a separate thread.
             String stdErrFile = "java_pid" + proc.pid() + "_stderr.txt";
             new Thread( ()-> {
-                    outputStdStream(proc.getErrorStream(), stdErrFile);
+                    outputStdStream(proc.getErrorStream(), stdErrFile, cmds);
                 }).start();
 
             proc.waitFor();
             // done, delete classlist file.
             if (fileList.exists()) {
-                fileList.delete();
+                // fileList.delete();
             }
             // Check if archive has been successfully dumped. We won't reach here if exception happens.
             // Throw exception if file is not created.

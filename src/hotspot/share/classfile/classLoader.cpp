@@ -801,19 +801,6 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bo
   return NULL;
 }
 
-// returns true if entry already on class path
-bool ClassLoader::contains_append_entry(const char* name) {
-  ClassPathEntry* e = first_append_entry();
-  while (e != NULL) {
-    // assume zip entries have been canonicalized
-    if (strcmp(name, e->name()) == 0) {
-      return true;
-    }
-    e = e->next();
-  }
-  return false;
-}
-
 // The boot append entries are added with a lock, and read lock free.
 void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
   if (new_entry != NULL) {

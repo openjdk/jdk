@@ -73,8 +73,3 @@ JNIEXPORT void JNICALL
 Java_jdk_internal_misc_CDS_dumpDynamicArchive(JNIEnv *env, jclass jcls, jstring archiveName) {
     JVM_DumpDynamicArchive(env, archiveName);
 }
-
-JNIEXPORT jobjectArray JNICALL
-Java_jdk_internal_misc_CDS_getVMArguments(JNIEnv *env, jclass jcls) {
-    return JVM_GetVMArguments(env);
-}
