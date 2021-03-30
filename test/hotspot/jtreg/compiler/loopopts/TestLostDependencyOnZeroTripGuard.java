@@ -28,6 +28,8 @@
  *
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestLostDependencyOnZeroTripGuard -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM -XX:StressSeed=886771365 TestLostDependencyOnZeroTripGuard
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestLostDependencyOnZeroTripGuard -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM TestLostDependencyOnZeroTripGuard
  *
  */
 
