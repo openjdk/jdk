@@ -879,15 +879,15 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
   return k;
 }
 
-// Note: this method is much like resolve_from_stream, but
-// does not publish the classes via the SystemDictionary.
-// Handles Lookup.defineClass hidden, unsafe_DefineAnonymousClass
-// and redefineclasses. RedefinedClasses do not add to the class hierarchy.
-InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
-                                              Handle class_loader,
-                                              ClassFileStream* st,
-                                              const ClassLoadInfo& cl_info,
-                                              TRAPS) {
+// Note: this method is much like resolve_class_from_stream, but
+// does not publish the classes in the SystemDictionary.
+// Handles Lookup.defineClass hidden and unsafe_DefineAnonymousClass.
+InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
+                                                     ClassFileStream* st,
+                                                     Symbol* class_name,
+                                                     Handle class_loader,
+                                                     const ClassLoadInfo& cl_info,
+                                                     TRAPS) {
 
   EventClassLoad class_load_start_event;
   ClassLoaderData* loader_data;
@@ -898,23 +898,16 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
   // - for hidden classes that are not strong: create a new CLD that has a class holder and
   //                                           whose loader is the Lookup class's loader.
   // - for hidden class: add the class to the Lookup class's loader's CLD.
-  if (is_unsafe_anon_class || cl_info.is_hidden()) {
-    guarantee(!is_unsafe_anon_class || cl_info.unsafe_anonymous_host()->class_loader() == class_loader(),
+  assert (is_unsafe_anon_class || cl_info.is_hidden(), "only used for hidden classes");
+  guarantee(!is_unsafe_anon_class || cl_info.unsafe_anonymous_host()->class_loader() == class_loader(),
               "should be NULL or the same");
-    bool create_mirror_cld = is_unsafe_anon_class || !cl_info.is_strong_hidden();
-    loader_data = register_loader(class_loader, create_mirror_cld);
-  } else {
-    loader_data = ClassLoaderData::class_loader_data(class_loader());
-  }
+  bool create_mirror_cld = is_unsafe_anon_class || !cl_info.is_strong_hidden();
+  loader_data = register_loader(class_loader, create_mirror_cld);
 
   assert(st != NULL, "invariant");
   assert(st->need_verify(), "invariant");
 
   // Parse stream and create a klass.
-  // Note that we do this even though this klass might
-  // already be present in the SystemDictionary, otherwise we would not
-  // throw potential ClassFormatErrors.
-
   InstanceKlass* k = KlassFactory::create_from_stream(st,
                                                       class_name,
                                                       loader_data,
@@ -922,40 +915,39 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
                                                       CHECK_NULL);
   assert(k != NULL, "no klass created");
 
-  if (cl_info.is_hidden() || is_unsafe_anon_class) {
-    // Hidden classes that are not strong and unsafe anonymous classes must update
-    // ClassLoaderData holder so that they can be unloaded when the mirror is no
-    // longer referenced.
-    if (!cl_info.is_strong_hidden() || is_unsafe_anon_class) {
-      k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
-    }
-
-    {
-      MutexLocker mu_r(THREAD, Compile_lock);
-      // Add to class hierarchy, and do possible deoptimizations.
-      add_to_hierarchy(k);
-      // But, do not add to dictionary.
-    }
-
-    // Rewrite and patch constant pool here.
-    k->link_class(CHECK_NULL);
-    if (cl_info.cp_patches() != NULL) {
-      k->constants()->patch_resolved_references(cl_info.cp_patches());
-    }
-
-    // If it's anonymous, initialize it now, since nobody else will.
-    if (is_unsafe_anon_class) {
-      k->eager_initialize(CHECK_NULL);
-    }
-
-    // notify jvmti
-    if (JvmtiExport::should_post_class_load()) {
-      JvmtiExport::post_class_load(THREAD->as_Java_thread(), k);
-    }
-    if (class_load_start_event.should_commit()) {
-      post_class_load_event(&class_load_start_event, k, loader_data);
-    }
+  // Hidden classes that are not strong and unsafe anonymous classes must update
+  // ClassLoaderData holder so that they can be unloaded when the mirror is no
+  // longer referenced.
+  if (!cl_info.is_strong_hidden() || is_unsafe_anon_class) {
+    k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
   }
+
+  {
+    MutexLocker mu_r(THREAD, Compile_lock);
+    // Add to class hierarchy, and do possible deoptimizations.
+    add_to_hierarchy(k);
+    // But, do not add to dictionary.
+  }
+
+  // Rewrite and patch constant pool here.
+  k->link_class(CHECK_NULL);
+  if (cl_info.cp_patches() != NULL) {
+    k->constants()->patch_resolved_references(cl_info.cp_patches());
+  }
+
+  // If it's anonymous, initialize it now, since nobody else will.
+  if (is_unsafe_anon_class) {
+    k->eager_initialize(CHECK_NULL);
+  }
+
+  // notify jvmti
+  if (JvmtiExport::should_post_class_load()) {
+    JvmtiExport::post_class_load(THREAD->as_Java_thread(), k);
+  }
+  if (class_load_start_event.should_commit()) {
+    post_class_load_event(&class_load_start_event, k, loader_data);
+  }
+
   assert(is_unsafe_anon_class || NULL == cl_info.cp_patches(),
          "cp_patches only found with unsafe_anonymous_host");
 
@@ -968,10 +960,11 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
 // the class until we have parsed the stream.
 // This function either returns an InstanceKlass or throws an exception.  It does
 // not return NULL without a pending exception.
-InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
-                                                     Handle class_loader,
-                                                     Handle protection_domain,
+InstanceKlass* SystemDictionary::resolve_class_from_stream(
                                                      ClassFileStream* st,
+                                                     Symbol* class_name,
+                                                     Handle class_loader,
+                                                     const ClassLoadInfo& cl_info,
                                                      TRAPS) {
 
   HandleMark hm(THREAD);
@@ -993,14 +986,13 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   if (!DumpSharedSpaces) {
     k = SystemDictionaryShared::lookup_from_stream(class_name,
                                                    class_loader,
-                                                   protection_domain,
+                                                   cl_info.protection_domain(),
                                                    st,
                                                    CHECK_NULL);
   }
 #endif
 
   if (k == NULL) {
-    ClassLoadInfo cl_info(protection_domain);
     k = KlassFactory::create_from_stream(st, class_name, loader_data, cl_info, CHECK_NULL);
   }
 
@@ -1030,6 +1022,20 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 
   return k;
 }
+
+InstanceKlass* SystemDictionary::resolve_from_stream(ClassFileStream* st,
+                                                     Symbol* class_name,
+                                                     Handle class_loader,
+                                                     const ClassLoadInfo& cl_info,
+                                                     TRAPS) {
+  bool is_unsafe_anon_class = cl_info.unsafe_anonymous_host() != NULL;
+  if (cl_info.is_hidden() || is_unsafe_anon_class) {
+    return resolve_hidden_class_from_stream(st, class_name, class_loader, cl_info, CHECK_NULL);
+  } else {
+    return resolve_class_from_stream(st, class_name, class_loader, cl_info, CHECK_NULL);
+  }
+}
+
 
 #if INCLUDE_CDS
 // Load a class for boot loader from the shared spaces. This also

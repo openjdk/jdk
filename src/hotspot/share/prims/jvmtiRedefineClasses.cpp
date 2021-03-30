@@ -30,7 +30,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/klassFactory.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -1367,7 +1367,6 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     // constant pools
     HandleMark hm(current);
     InstanceKlass* the_class = get_ik(_class_defs[i].klass);
-    Symbol*  the_class_sym = the_class->name();
 
     log_debug(redefine, class, load)
       ("loading name=%s kind=%d (avail_mem=" UINT64_FORMAT "K)",
@@ -1379,8 +1378,6 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
                        ClassFileStream::verify);
 
     // Parse the stream.
-    Handle the_class_loader(current, the_class->class_loader());
-    Handle protection_domain(current, the_class->protection_domain());
     // Set redefined class handle in JvmtiThreadState class.
     // This redefined class is sent to agent event handler for class file
     // load hook event.
@@ -1388,13 +1385,14 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
 
     Thread* THREAD = current;  // for exception processing
     ExceptionMark em(THREAD);
+    Handle protection_domain(THREAD, the_class->protection_domain());
     ClassLoadInfo cl_info(protection_domain);
-    InstanceKlass* scratch_class = SystemDictionary::parse_stream(
-                                                      the_class_sym,
-                                                      the_class_loader,
-                                                      &st,
+    InstanceKlass* scratch_class = KlassFactory::create_from_stream(&st,
+                                                      the_class->name(),
+                                                      the_class->class_loader_data(),
                                                       cl_info,
                                                       THREAD);
+
     // Clear class_being_redefined just to be sure.
     state->clear_class_being_redefined();
 
@@ -1407,7 +1405,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
 
     if (HAS_PENDING_EXCEPTION) {
       Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
-      log_info(redefine, class, load, exceptions)("parse_stream exception: '%s'", ex_name->as_C_string());
+      log_info(redefine, class, load, exceptions)("create_from_stream exception: '%s'", ex_name->as_C_string());
       CLEAR_PENDING_EXCEPTION;
 
       if (ex_name == vmSymbols::java_lang_UnsupportedClassVersionError()) {

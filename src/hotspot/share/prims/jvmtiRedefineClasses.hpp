@@ -302,7 +302,7 @@
 //
 // - How do we serialize the RedefineClasses() API without deadlocking?
 //
-// - SystemDictionary::parse_stream() was called with a NULL protection
+// - KlassFactory::create_from_stream() was called with a NULL protection
 //   domain since the initial version. This has been changed to pass
 //   the_class->protection_domain(). This change has been tested with
 //   all NSK tests and nothing broke, but what will adding it now break
