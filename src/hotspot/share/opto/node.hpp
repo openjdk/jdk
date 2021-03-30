@@ -161,7 +161,6 @@ class Type;
 class TypeNode;
 class UnlockNode;
 class VectorNode;
-class VectorBoxNode;
 class LoadVectorNode;
 class LoadVectorMaskedNode;
 class StoreVectorMaskedNode;
@@ -744,7 +743,6 @@ public:
     DEFINE_CLASS_ID(Halt,     Node, 15)
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
     DEFINE_CLASS_ID(Move,     Node, 17)
-    DEFINE_CLASS_ID(VectorBox, Node, 18)
 
     _max_classes  = ClassMask_Move
   };
@@ -921,7 +919,6 @@ public:
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
   DEFINE_CLASS_QUERY(Vector)
-  DEFINE_CLASS_QUERY(VectorBox)
   DEFINE_CLASS_QUERY(LoadVector)
   DEFINE_CLASS_QUERY(LoadVectorGather)
   DEFINE_CLASS_QUERY(StoreVector)

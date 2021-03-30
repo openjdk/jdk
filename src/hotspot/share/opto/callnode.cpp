@@ -1529,8 +1529,9 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
 #endif
 {
 #ifdef ASSERT
-  if (!alloc->is_Allocate() && !alloc->is_VectorBox()
-        && (!alloc->is_CallStaticJava() || !alloc->as_CallStaticJava()->is_boxing_method())) {
+  if (!alloc->is_Allocate()
+      && !(alloc->Opcode() == Op_VectorBox)
+      && (!alloc->is_CallStaticJava() || !alloc->as_CallStaticJava()->is_boxing_method())) {
     alloc->dump();
     assert(false, "unexpected call node");
   }
