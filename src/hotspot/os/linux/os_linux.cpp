@@ -669,6 +669,7 @@ static void *thread_native_entry(Thread *thread) {
   static int counter = 0;
   int pid = os::current_process_id();
   void *stackmem = alloca(((pid ^ counter++) & 7) * 128);
+  // Ensure the alloca result is used in a way that prevents the compiler from eliding it.
   *(char *)stackmem = 1;
 #endif
 
