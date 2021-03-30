@@ -3235,11 +3235,12 @@ instruct negD_reg_reg(vlRegD dst, vlRegD src) %{
 instruct sqrtF_reg(regF dst, regF src) %{
   predicate(UseSSE>=1);
   match(Set dst (SqrtF src));
-  effect(TEMP dst);
   format %{ "sqrtss  $dst, $src" %}
   ins_cost(150);
   ins_encode %{
-    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+    if ($dst$$XMMRegister != $src$$XMMRegister) {
+      __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ sqrtss($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
@@ -3274,11 +3275,12 @@ instruct sqrtF_imm(regF dst, immF con) %{
 instruct sqrtD_reg(regD dst, regD src) %{
   predicate(UseSSE>=2);
   match(Set dst (SqrtD src));
-  effect(TEMP dst);
   format %{ "sqrtsd  $dst, $src" %}
   ins_cost(150);
   ins_encode %{
-    __ xorpd($dst$$XMMRegister, $dst$$XMMRegister);
+    if ($dst$$XMMRegister != $src$$XMMRegister) {
+      __ xorpd($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ sqrtsd($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
