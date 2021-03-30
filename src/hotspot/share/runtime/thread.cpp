@@ -117,6 +117,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
+#include "services/heapObjectStatistics.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
 #include "services/threadService.hpp"
@@ -3288,6 +3289,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Start the monitor deflation thread:
   MonitorDeflationThread::initialize();
 
+  // Start heap object statistics sampling
+  HeapObjectStatistics::initialize();
+
   // initialize compiler(s)
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI
 #if INCLUDE_JVMCI
@@ -3736,6 +3740,8 @@ bool Threads::destroy_vm() {
   // we will deadlock on the Threads_lock. Once all interactions are
   // complete it is safe to directly delete the thread at any time.
   ThreadsSMRSupport::wait_until_not_protected(thread);
+
+  HeapObjectStatistics::shutdown();
 
   // Stop VM thread.
   {

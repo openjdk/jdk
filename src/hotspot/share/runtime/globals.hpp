@@ -2086,6 +2086,12 @@ const intx ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
+                                                                            \
+  product(bool, HeapObjectStats, false, DIAGNOSTIC,                         \
+             "Enable gathering of heap object statistics")                  \
+                                                                            \
+  product(size_t, HeapObjectStatsSamplingInterval, 500, DIAGNOSTIC,         \
+             "Heap object statistics sampling interval (ms)")               \
 
 // end of RUNTIME_FLAGS
 
