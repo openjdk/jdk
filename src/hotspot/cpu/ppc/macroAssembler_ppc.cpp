@@ -3059,30 +3059,27 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod) {
   ld(temp, in_bytes(Thread::polling_word_offset()), R16_thread);
-  // Armed page has poll_bit set.
-  if (at_return) {
-    Register fp = R1_SP;
-    if (!in_nmethod) {
-      // frame still on stack, need to get fp
-      fp = R0;
-      ld(fp, _abi0(callers_sp), R1_SP);
-    }
 
-    if (UseSIGTRAP && in_nmethod) {
-      // Use Signal Handler.
-      relocate(relocInfo::poll_return_type);
-      td(traptoGreaterThanUnsigned, fp, temp);
-    } else {
-      cmpld(CCR0, fp, temp);
-      if (in_nmethod) {
+  if (at_return) {
+    if (in_nmethod) {
+      if (UseSIGTRAP) {
+        // Use Signal Handler.
+        relocate(relocInfo::poll_return_type);
+        td(traptoGreaterThanUnsigned, R1_SP, temp);
+      } else {
+        cmpld(CCR0, R1_SP, temp);
         // Stub may be out of range for short conditional branch.
         bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::greater), slow_path);
-      } else {
-        bgt(CCR0, slow_path);
       }
+    } else { // Not in nmethod.
+      // Frame still on stack, need to get fp.
+      Register fp = R0;
+      ld(fp, _abi0(callers_sp), R1_SP);
+      cmpld(CCR0, fp, temp);
+      bgt(CCR0, slow_path);
     }
-  } else {
-    assert(!in_nmethod, "unexpected");
+  } else { // Normal safepoint poll. Not at return.
+    assert(!in_nmethod, "should use load_from_polling_page");
     andi_(temp, temp, SafepointMechanism::poll_bit());
     bne(CCR0, slow_path);
   }
