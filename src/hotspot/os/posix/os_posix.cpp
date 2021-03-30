@@ -22,7 +22,11 @@
  *
  */
 
+
 #include "jvm.h"
+#ifdef LINUX
+#include "classfile/classLoader.hpp"
+#endif
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -33,10 +37,12 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/perfMemory.hpp"
 #include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -539,6 +545,26 @@ bool os::get_host_name(char* buf, size_t buflen) {
   jio_snprintf(buf, buflen, "%s", name.nodename);
   return true;
 }
+
+#ifndef _LP64
+// Helper, on 32bit, for os::has_allocatable_memory_limit
+static bool is_allocatable(size_t s) {
+  if (s < 2 * G) {
+    return true;
+  }
+  // Use raw anonymous mmap here; no need to go through any
+  // of our reservation layers. We will unmap right away.
+  void* p = ::mmap(NULL, s, PROT_NONE,
+                   MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS, -1, 0);
+  if (p == MAP_FAILED) {
+    return false;
+  } else {
+    ::munmap(p, s);
+    return true;
+  }
+}
+#endif // !_LP64
+
 
 bool os::has_allocatable_memory_limit(size_t* limit) {
   struct rlimit rlim;
@@ -1841,5 +1867,58 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
       // Unknown exit code; pass it through
       return status;
     }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// runtime exit support
+
+// Note: os::shutdown() might be called very early during initialization, or
+// called from signal handler. Before adding something to os::shutdown(), make
+// sure it is async-safe and can handle partially initialized VM.
+void os::shutdown() {
+
+  // allow PerfMemory to attempt cleanup of any persistent resources
+  perfMemory_exit();
+
+  // needs to remove object in file system
+  AttachListener::abort();
+
+  // flush buffered output, finish log files
+  ostream_abort();
+
+  // Check for abort hook
+  abort_hook_t abort_hook = Arguments::abort_hook();
+  if (abort_hook != NULL) {
+    abort_hook();
+  }
+
+}
+
+// Note: os::abort() might be called very early during initialization, or
+// called from signal handler. Before adding something to os::abort(), make
+// sure it is async-safe and can handle partially initialized VM.
+// Also note we can abort while other threads continue to run, so we can
+// easily trigger secondary faults in those threads. To reduce the likelihood
+// of that we use _exit rather than exit, so that no atexit hooks get run.
+// But note that os::shutdown() could also trigger secondary faults.
+void os::abort(bool dump_core, void* siginfo, const void* context) {
+  os::shutdown();
+  if (dump_core) {
+    LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
+    ::abort(); // dump core
+  }
+  ::_exit(1);
+}
+
+// Die immediately, no exit hook, no abort hook, no cleanup.
+// Dump a core file, if possible, for debugging.
+void os::die() {
+  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
+    // For TimeoutInErrorHandlingTest.java, we just kill the VM
+    // and don't take the time to generate a core file.
+    os::signal_raise(SIGKILL);
+  } else {
+    ::abort();
   }
 }

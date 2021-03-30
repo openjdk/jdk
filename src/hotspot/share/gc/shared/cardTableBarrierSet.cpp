@@ -164,7 +164,7 @@ void CardTableBarrierSet::flush_deferred_card_mark_barrier(JavaThread* thread) {
     assert(_defer_initial_card_mark, "Otherwise should be empty");
     {
       // Verify that the storage points to a parsable object in heap
-      DEBUG_ONLY(oop old_obj = oop(deferred.start());)
+      DEBUG_ONLY(oop old_obj = cast_to_oop(deferred.start());)
       assert(!_card_table->is_in_young(old_obj),
              "Else should have been filtered in on_slowpath_allocation_exit()");
       assert(oopDesc::is_oop(old_obj, true), "Not an oop");

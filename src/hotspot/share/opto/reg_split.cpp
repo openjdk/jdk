@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1278,15 +1278,17 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       IndexSet *liveout = _live->live(b);
       if( !liveout->member(defidx) ) {
 #ifdef ASSERT
-        // The index defidx is not live.  Check the liveout array to ensure that
-        // it contains no members which compress to defidx.  Finding such an
-        // instance may be a case to add liveout adjustment in compress_uf_map().
-        // See 5063219.
-        if (!liveout->is_empty()) {
-          uint member;
-          IndexSetIterator isi(liveout);
-          while ((member = isi.next()) != 0) {
-            assert(defidx != _lrg_map.find_const(member), "Live out member has not been compressed");
+        if (VerifyRegisterAllocator) {
+          // The index defidx is not live.  Check the liveout array to ensure that
+          // it contains no members which compress to defidx.  Finding such an
+          // instance may be a case to add liveout adjustment in compress_uf_map().
+          // See 5063219.
+          if (!liveout->is_empty()) {
+            uint member;
+            IndexSetIterator isi(liveout);
+            while ((member = isi.next()) != 0) {
+              assert(defidx != _lrg_map.find_const(member), "Live out member has not been compressed");
+            }
           }
         }
 #endif

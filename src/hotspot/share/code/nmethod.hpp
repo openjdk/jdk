@@ -671,6 +671,7 @@ public:
   void print_native_invokers();
   void print_handler_table();
   void print_nul_chk_table();
+  void print_recorded_oop(int log_n, int index);
   void print_recorded_oops();
   void print_recorded_metadata();
 

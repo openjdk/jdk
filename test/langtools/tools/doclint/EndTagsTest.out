@@ -1,6 +1,9 @@
 EndTagsTest.java:19: error: unexpected end tag: </a>
     /** </a> */
         ^
+EndTagsTest.java:22: warning: empty <p> tag
+    /** <p> </a> */
+        ^
 EndTagsTest.java:22: error: unexpected end tag: </a>
     /** <p> </a> */
             ^
@@ -23,3 +26,4 @@ EndTagsTest.java:37: error: unknown tag: invalid
     /** </invalid> */
         ^
 8 errors
+1 warning

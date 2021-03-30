@@ -2122,7 +2122,7 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
   Handle h_obj(THREAD, obj);
-  ObjectSynchronizer::enter(h_obj, lock, CHECK);
+  ObjectSynchronizer::enter(h_obj, lock, thread);
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
   JRT_BLOCK_END
 }
@@ -2132,10 +2132,10 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* obj, Ba
   SharedRuntime::monitor_enter_helper(obj, lock, thread);
 JRT_END
 
-void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread) {
-  assert(JavaThread::current() == thread, "invariant");
+void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current) {
+  assert(JavaThread::current() == current, "invariant");
   // Exit must be non-blocking, and therefore no exceptions can be thrown.
-  EXCEPTION_MARK;
+  ExceptionMark em(current);
   // The object could become unlocked through a JNI call, which we have no other checks for.
   // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
   if (obj->is_unlocked()) {
@@ -2144,7 +2144,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     }
     return;
   }
-  ObjectSynchronizer::exit(obj, lock, THREAD);
+  ObjectSynchronizer::exit(obj, lock, current);
 }
 
 // Handles the uncommon cases of monitor unlocking in compiled code
@@ -2643,31 +2643,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* finger
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
-  AdapterHandlerEntry* entry = get_adapter0(method);
-  if (entry != NULL && method->is_shared()) {
-    // See comments around Method::link_method()
-    MutexLocker mu(AdapterHandlerLibrary_lock);
-    if (method->adapter() == NULL) {
-      method->update_adapter_trampoline(entry);
-    }
-    address trampoline = method->from_compiled_entry();
-    if (*(int*)trampoline == 0) {
-      CodeBuffer buffer(trampoline, (int)SharedRuntime::trampoline_size());
-      MacroAssembler _masm(&buffer);
-      SharedRuntime::generate_trampoline(&_masm, entry->get_c2i_entry());
-      assert(*(int*)trampoline != 0, "Instruction(s) for trampoline must not be encoded as zeros.");
-      _masm.flush();
-
-      if (PrintInterpreter) {
-        Disassembler::decode(buffer.insts_begin(), buffer.insts_end());
-      }
-    }
-  }
-
-  return entry;
-}
-
-AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter0(const methodHandle& method) {
   // Use customized signature handler.  Need to lock around updates to
   // the AdapterHandlerTable (it is not safe for concurrent readers
   // and a single writer: this could be fixed if it becomes a

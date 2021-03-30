@@ -343,7 +343,7 @@ class SharedRuntime: AllStatic {
 
   static void monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
 
-  static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
+  static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
  private:
   static Handle find_callee_info(JavaThread* thread,
@@ -389,8 +389,6 @@ class SharedRuntime: AllStatic {
                                   int total_args_passed);
 
   static size_t trampoline_size();
-
-  static void generate_trampoline(MacroAssembler *masm, address destination);
 
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
   // blobs. Unlike adapters in the tiger and earlier releases the code in these
@@ -695,7 +693,6 @@ class AdapterHandlerLibrary: public AllStatic {
   static AdapterHandlerEntry* _abstract_method_handler;
   static BufferBlob* buffer_blob();
   static void initialize();
-  static AdapterHandlerEntry* get_adapter0(const methodHandle& method);
 
  public:
 

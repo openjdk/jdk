@@ -182,6 +182,9 @@
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   jlong)                                 \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
   nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
+  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              intptr_t*)                             \
+  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              intptr_t*)                             \
+  nonstatic_field(JavaThread,                  _jvmci_reserved_oop0,                          oop)                                   \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
@@ -258,7 +261,7 @@
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
   volatile_nonstatic_field(ObjectMonitor,      _cxq,                                          ObjectWaiter*)                         \
   volatile_nonstatic_field(ObjectMonitor,      _EntryList,                                    ObjectWaiter*)                         \
-  volatile_nonstatic_field(ObjectMonitor,      _succ,                                         Thread*)                               \
+  volatile_nonstatic_field(ObjectMonitor,      _succ,                                         JavaThread*)                           \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
@@ -683,6 +686,8 @@
   declare_function(JVMCIRuntime::new_multi_array_or_null) \
   declare_function(JVMCIRuntime::dynamic_new_array_or_null) \
   declare_function(JVMCIRuntime::dynamic_new_instance_or_null) \
+  \
+  declare_function(JVMCIRuntime::invoke_static_method_one_arg) \
   \
   declare_function(JVMCIRuntime::vm_message) \
   declare_function(JVMCIRuntime::identity_hash_code) \

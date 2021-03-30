@@ -86,7 +86,7 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
                 ((RSAPublicKey) key).getPublicExponent(), Constants._TAG_EXPONENT
             );
         } else {
-            Object exArgs[] = { Constants._TAG_RSAKEYVALUE, key.getClass().getName() };
+            Object[] exArgs = { Constants._TAG_RSAKEYVALUE, key.getClass().getName() };
 
             throw new IllegalArgumentException(I18n.translate("KeyValue.IllegalArgument", exArgs));
         }
@@ -109,9 +109,7 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
             PublicKey pk = rsaFactory.generatePublic(rsaKeyspec);
 
             return pk;
-        } catch (NoSuchAlgorithmException ex) {
-            throw new XMLSecurityException(ex);
-        } catch (InvalidKeySpecException ex) {
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
             throw new XMLSecurityException(ex);
         }
     }

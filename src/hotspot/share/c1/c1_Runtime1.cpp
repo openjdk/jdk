@@ -116,7 +116,6 @@ const char *Runtime1::_blob_names[] = {
 
 #ifndef PRODUCT
 // statistics
-int Runtime1::_generic_arraycopy_cnt = 0;
 int Runtime1::_generic_arraycopystub_cnt = 0;
 int Runtime1::_arraycopy_slowcase_cnt = 0;
 int Runtime1::_arraycopy_checkcast_cnt = 0;
@@ -134,7 +133,6 @@ int Runtime1::_throw_div0_exception_count = 0;
 int Runtime1::_throw_null_pointer_exception_count = 0;
 int Runtime1::_throw_class_cast_exception_count = 0;
 int Runtime1::_throw_incompatible_class_change_error_count = 0;
-int Runtime1::_throw_array_store_exception_count = 0;
 int Runtime1::_throw_count = 0;
 
 static int _byte_arraycopy_stub_cnt = 0;
@@ -1268,6 +1266,10 @@ JRT_END
 void Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id) {
   NOT_PRODUCT(_patch_code_slowcase_cnt++);
 
+  // Enable WXWrite: the function is called by c1 stub as a runtime function
+  // (see another implementation above).
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+
   if (TracePatching) {
     tty->print_cr("Deoptimizing because patch is needed");
   }
@@ -1451,7 +1453,6 @@ void Runtime1::print_statistics() {
   tty->print_cr(" _resolve_invoke_static_cnt:      %d", SharedRuntime::_resolve_static_ctr);
   tty->print_cr(" _handle_wrong_method_cnt:        %d", SharedRuntime::_wrong_method_ctr);
   tty->print_cr(" _ic_miss_cnt:                    %d", SharedRuntime::_ic_miss_ctr);
-  tty->print_cr(" _generic_arraycopy_cnt:          %d", _generic_arraycopy_cnt);
   tty->print_cr(" _generic_arraycopystub_cnt:      %d", _generic_arraycopystub_cnt);
   tty->print_cr(" _byte_arraycopy_cnt:             %d", _byte_arraycopy_stub_cnt);
   tty->print_cr(" _short_arraycopy_cnt:            %d", _short_arraycopy_stub_cnt);
@@ -1476,7 +1477,6 @@ void Runtime1::print_statistics() {
   tty->print_cr(" _throw_null_pointer_exception_count:           %d:", _throw_null_pointer_exception_count);
   tty->print_cr(" _throw_class_cast_exception_count:             %d:", _throw_class_cast_exception_count);
   tty->print_cr(" _throw_incompatible_class_change_error_count:  %d:", _throw_incompatible_class_change_error_count);
-  tty->print_cr(" _throw_array_store_exception_count:            %d:", _throw_array_store_exception_count);
   tty->print_cr(" _throw_count:                                  %d:", _throw_count);
 
   SharedRuntime::print_ic_miss_histogram();
