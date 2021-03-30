@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2019, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,21 @@ public class HeapMonitor {
     enableSamplingEvents();
     setSamplingInterval(0);
 
-    // Loop around an allocation loop and wait until the tlabs have settled.
+    // Loop around an allocation loop and wait until the TLABs have settled.
+    // It takes two steps to enable Object Sampling with interval 0
+    // 1. consume current TLAB, which can be varies with heap/GC configuration
+    //    then allocation enters allocate_inside_tlab_slow and check
+    //    JvmtiExport::should_post_sampled_object_alloc
+    // 2. consume initial ThreadHeapSampler::_bytes_until_sample
+    //    then runtime invokes pick_next_sample and check sampleing interval
+    //    and set _bytes_until_sample to 0.
+    //    initial _bytes_until_sample is geometric variable with the specified mean
+    //    (512K by default), check ThreadHeapSampler::pick_next_geometric_sample()
+    //
+    // trigger GC to consume current TLAB in step1
+    // consume initial _bytes_until_sample in following loops, each iteration consume
+    // about 1600KB, 10 iterations can definitly consume intitial _bytes_until_sample
+    System.gc();
     final int maxTries = 10;
     int[][][] result = new int[maxTries][][];
     for (int i = 0; i < maxTries; i++) {
@@ -198,10 +212,11 @@ public class HeapMonitor {
     if (enableSampling) {
       enableSamplingEvents();
     }
-
+    // similar reason with sampleEverything, consume TLAB and trigger sample
+    System.gc();
     List<Frame> frameList = allocate();
     frameList.add(new Frame("allocateAndCheckFrames", "(ZZ)[LMyPackage/Frame;", "HeapMonitor.java",
-          202));
+          217));
     Frame[] frames = frameList.toArray(new Frame[0]);
 
     boolean foundLive = obtainedEvents(frames);

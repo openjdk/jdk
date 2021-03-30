@@ -46,6 +46,8 @@ public class HeapMonitorStatObjectCorrectnessTest {
     emptyStorage();
 
     HeapMonitor.enableSamplingEvents();
+    // retire TLAB with GC, ensure sample happens, not assume TLAB size
+    System.gc();
     for (int j = 0; j < maxIteration; j++) {
       obj = new BigObject();
     }
