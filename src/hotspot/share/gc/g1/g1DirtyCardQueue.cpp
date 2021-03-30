@@ -130,11 +130,49 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   }
 }
 
+// Thread-safe attempt to remove and return the first buffer from
+// the _completed queue, using the LockFreeQueue::try_pop() underneath.
+// It has a restriction that it may return NULL when there are objects
+// in the queue if there is a concurrent push/append operation.
+BufferNode* G1DirtyCardQueueSet::dequeue_completed_buffer() {
+  using Status = LockFreeQueuePopStatus;
+  Thread* current_thread = Thread::current();
+  while (true) {
+    // Use GlobalCounter critical section to avoid ABA problem.
+    // The release of a buffer to its allocator's free list uses
+    // GlobalCounter::write_synchronize() to coordinate with this
+    // dequeuing operation.
+    // We use a CS per iteration, rather than over the whole loop,
+    // because we're not guaranteed to make progress. Lingering in
+    // one CS could defer releasing buffer to the free list for reuse,
+    // leading to excessive allocations.
+    GlobalCounter::CriticalSection cs(current_thread);
+    Pair<Status, BufferNode*> pop_result = _completed.try_pop();
+    switch (pop_result.first) {
+      case Status::success:
+        return pop_result.second;
+      case Status::operation_in_progress:
+        // This could happen when a concurrent operation interferes with
+        // this try_pop() taking the only element in the queue, in two cases:
+        // (1) A concurrent try_pop() may have won the race to take the
+        // element, but has not finished updating the queue. It is fine to
+        // return NULL in this case.
+        // (2) A concurrent push/append is ongoing. We cannot take result,
+        // and we don't just try again, because we could spin for a long time
+        // waiting for the push/append to finish. We just return NULL, which
+        // is OK for a thread getting a buffer to refine.
+        return NULL;
+      case Status::lost_race:
+        break;  // Try again.
+    }
+  }
+}
+
 BufferNode* G1DirtyCardQueueSet::get_completed_buffer() {
-  BufferNode* result = _completed.pop();
+  BufferNode* result = dequeue_completed_buffer();
   if (result == NULL) {         // Unlikely if no paused buffers.
     enqueue_previous_paused_buffers();
-    result = _completed.pop();
+    result = dequeue_completed_buffer();
     if (result == NULL) return NULL;
   }
   Atomic::sub(&_num_cards, buffer_size() - result->index());

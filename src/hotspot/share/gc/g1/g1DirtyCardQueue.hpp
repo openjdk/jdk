@@ -77,16 +77,6 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     HeadTail(BufferNode* head, BufferNode* tail) : _head(head), _tail(tail) {}
   };
 
-  class CompletedQueue: public LockFreeQueue<BufferNode, &BufferNode::next_ptr> {
-  public:
-    BufferNode* pop() {
-      // Use GlobalCounter critical section to avoid ABA problem.
-      // The release of a BufferNode to its allocator's free list uses
-      // GlobalCounter::write_synchronize() to coordinate with the pop().
-      return LockFreeQueue<BufferNode, &BufferNode::next_ptr>::pop<true /*use_rcu*/>();
-    }
-  };
-
   // Concurrent refinement may stop processing in the middle of a buffer if
   // there is a pending safepoint, to avoid long delays to safepoint.  A
   // partially processed buffer needs to be recorded for processing by the
@@ -174,9 +164,11 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   volatile size_t _num_cards;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
-  CompletedQueue _completed;  // Has inner padding, including trailer.
+  // LockFreeQueue has inner padding, including trailer.
+  LockFreeQueue<BufferNode, &BufferNode::next_ptr> _completed;
   // Buffers for which refinement is temporarily paused.
-  PausedBuffers _paused;      // Has inner padding, including trailer.
+  // PausedBuffers has inner padding, including trailer.
+  PausedBuffers _paused;
 
   G1FreeIdSet _free_ids;
 
@@ -222,6 +214,11 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // deallocate the buffer.  Otherwise, record it as paused.
   void handle_refined_buffer(BufferNode* node, bool fully_processed);
 
+  // Thread-safe attempt to remove and return the first buffer from
+  // the _completed queue.
+  // Returns NULL if the queue is empty, or if a concurrent push/append
+  // interferes. It uses GlobalCounter critical section to avoid ABA problem.
+  BufferNode* dequeue_completed_buffer();
   // Remove and return a completed buffer from the list, or return NULL
   // if none available.
   BufferNode* get_completed_buffer();

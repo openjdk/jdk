@@ -45,16 +45,27 @@ public:
   class TestQueue: public LockFreeQueue<Element, &entry_ptr> {
   public:
     Element* pop() {
-      return LockFreeQueue<Element, &entry_ptr>::pop<false>();
-    }
-    Element* pop_rcu() {
-      return LockFreeQueue<Element, &entry_ptr>::pop<true>();
+      using Status = LockFreeQueuePopStatus;
+      while (true) {
+        Pair<Status, Element*> pop_result = try_pop();
+        if (pop_result.first == Status::success) {
+          return pop_result.second;
+        }
+        // Retry until success.
+      }
     }
   };
   class TestQueue1: public LockFreeQueue<Element, &entry1_ptr> {
   public:
     Element* pop() {
-      return LockFreeQueue<Element, &entry1_ptr>::pop<false>();
+      using Status = LockFreeQueuePopStatus;
+      while (true) {
+        Pair<Status, Element*> pop_result = try_pop();
+        if (pop_result.first == Status::success) {
+          return pop_result.second;
+        }
+        // Retry until success.
+      }
     }
   };
 
@@ -109,25 +120,6 @@ TEST_F(LockFreeQueueTestBasics, pop) {
     ASSERT_FALSE(queue.empty());
     ASSERT_EQ(nelements - i, queue.length());
     Element* e = queue.pop();
-    ASSERT_TRUE(e != NULL);
-    ASSERT_EQ(&elements[i], e);
-    ASSERT_EQ(i, e->id());
-  }
-  ASSERT_TRUE(queue.empty());
-  ASSERT_EQ(0u, queue.length());
-  ASSERT_TRUE(queue.pop() == NULL);
-}
-
-TEST_VM(LockFreeQueueTestPopRCU, pop_rcu) {
-  // We have to run this test in a JVM, so that Thread::current() can work.
-  const size_t nelements = 10;
-  Element elements[nelements];
-  TestQueue queue;
-  initialize(elements, nelements, &queue);
-  for (size_t i = 0; i < nelements; ++i) {
-    ASSERT_FALSE(queue.empty());
-    ASSERT_EQ(nelements - i, queue.length());
-    Element* e = queue.pop_rcu();
     ASSERT_TRUE(e != NULL);
     ASSERT_EQ(&elements[i], e);
     ASSERT_EQ(i, e->id());

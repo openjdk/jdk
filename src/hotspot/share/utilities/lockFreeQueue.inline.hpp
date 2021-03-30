@@ -26,10 +26,7 @@
 #define SHARE_UTILITIES_LOCKFREEQUEUE_INLINE_HPP
 
 #include "runtime/atomic.hpp"
-#include "runtime/thread.inline.hpp"
-#include "utilities/globalCounter.inline.hpp"
 #include "utilities/lockFreeQueue.hpp"
-#include "logging/log.hpp"
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
 T* LockFreeQueue<T, next_ptr>::next(const T& node) {
@@ -78,7 +75,7 @@ size_t LockFreeQueue<T, next_ptr>::length() const {
 // head to the old tail, and the list being appended.  If there are concurrent
 // push/append operations, each may introduce another such segment.  But they
 // all eventually get resolved by their respective updates of their old tail's
-// "next" value.  This also means that pop operations must handle an object
+// "next" value.  This also means that try_pop operation must handle an object
 // with a NULL "next" value specially.
 //
 // A push operation is just a degenerate append, where the object being pushed
@@ -96,74 +93,64 @@ void LockFreeQueue<T, next_ptr>::append(T& first, T& last) {
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-template<bool use_rcu>
-T* LockFreeQueue<T, next_ptr>::pop() {
-  while (true) {
-    // Use a critical section per iteration, rather than over the whole
-    // operation. We're not guaranteed to make progress. Lingering in one
-    // CS could defer the write-side operation of RCU synchronization
-    // too long, leading to unwanted effect. E.g., if the write-side
-    // returns released objects to a free list for reuse, it could cause
-    // excessive allocations.
-    GlobalCounter::ConditionalCriticalSection<use_rcu> cs(use_rcu ?
-                                                          Thread::current():
-                                                          NULL);
-
-    // We only need memory_order_consume. Upgrade it to "load_acquire"
-    // as the memory_order_consume API is not ready for use yet.
-    T* result = Atomic::load_acquire(&_head);
-    if (result == NULL) return NULL; // Queue is empty.
-
-    // This relaxed load is always followed by a cmpxchg(), thus it
-    // is OK as the reader-side of the release-acquire ordering.
-    T* next_node = Atomic::load(next_ptr(*result));
-    if (next_node != NULL) {
-      // The "usual" lock-free pop from the head of a singly linked list.
-      if (result == Atomic::cmpxchg(&_head, result, next_node)) {
-        // Former head successfully taken; it is not the last.
-        assert(Atomic::load(&_tail) != result, "invariant");
-        assert(next(*result) != NULL, "invariant");
-        set_next(*result, NULL);
-        return result;
-      }
-      // Lost the race; try again.
-      continue;
-    }
-
-    // next is NULL.  This case is handled differently from the "usual"
-    // lock-free pop from the head of a singly linked list.
-
-    // If _tail == result then result is the only element in the list. We can
-    // remove it from the list by first setting _tail to NULL and then setting
-    // _head to NULL, the order being important.  We set _tail with cmpxchg in
-    // case of a concurrent push/append/pop also changing _tail.  If we win
-    // then we've claimed result.
-    if (Atomic::cmpxchg(&_tail, result, (T*)NULL) == result) {
-      assert(next(*result) == NULL, "invariant");
-      // Now that we've claimed result, also set _head to NULL.  But we must
-      // be careful of a concurrent push/append after we NULLed _tail, since
-      // it may have already performed its list-was-empty update of _head,
-      // which we must not overwrite.
-      Atomic::cmpxchg(&_head, result, (T*)NULL);
-      return result;
-    }
-
-    // If _head != result then we lost the race to take result; try again.
-    if (result != Atomic::load_acquire(&_head)) {
-      continue;
-    }
-
-    // An in-progress concurrent operation interfered with taking the head
-    // element when it was the only element.  A concurrent pop may have won
-    // the race to clear the tail but not yet cleared the head. Alternatively,
-    // a concurrent push/append may have changed the tail but not yet linked
-    // result->next().  We cannot take result in either case.  We don't just
-    // try again, because we could spin for a long time waiting for that
-    // concurrent operation to finish.  In the first case, returning NULL is
-    // fine; we lost the race for the only element to another thread.  We
-    // also return NULL for the second case, and let the caller cope.
-    return NULL;
+Pair<LockFreeQueuePopStatus, T*> LockFreeQueue<T, next_ptr>::try_pop() {
+  typedef Pair<LockFreeQueuePopStatus, T*> StatusPair;
+  // We only need memory_order_consume. Upgrade it to "load_acquire"
+  // as the memory_order_consume API is not ready for use yet.
+  T* result = Atomic::load_acquire(&_head);
+  if (result == NULL) {
+    // Queue is empty.
+    return StatusPair(LockFreeQueuePopStatus::success, NULL);
   }
+
+  // This relaxed load is always followed by a cmpxchg(), thus it
+  // is OK as the reader-side of the release-acquire ordering.
+  T* next_node = Atomic::load(next_ptr(*result));
+  if (next_node != NULL) {
+    // The "usual" lock-free pop from the head of a singly linked list.
+    if (result == Atomic::cmpxchg(&_head, result, next_node)) {
+      // Former head successfully taken; it is not the last.
+      assert(Atomic::load(&_tail) != result, "invariant");
+      assert(next(*result) != NULL, "invariant");
+      set_next(*result, NULL);
+      return StatusPair(LockFreeQueuePopStatus::success, result);
+    }
+    // Lost the race; the caller should try again.
+    return StatusPair(LockFreeQueuePopStatus::lost_race, NULL);
+  }
+
+  // next is NULL.  This case is handled differently from the "usual"
+  // lock-free pop from the head of a singly linked list.
+
+  // If _tail == result then result is the only element in the list. We can
+  // remove it from the list by first setting _tail to NULL and then setting
+  // _head to NULL, the order being important.  We set _tail with cmpxchg in
+  // case of a concurrent push/append/try_pop also changing _tail.  If we win
+  // then we've claimed result.
+  if (Atomic::cmpxchg(&_tail, result, (T*)NULL) == result) {
+    assert(next(*result) == NULL, "invariant");
+    // Now that we've claimed result, also set _head to NULL.  But we must
+    // be careful of a concurrent push/append after we NULLed _tail, since
+    // it may have already performed its list-was-empty update of _head,
+    // which we must not overwrite.
+    Atomic::cmpxchg(&_head, result, (T*)NULL);
+    return StatusPair(LockFreeQueuePopStatus::success, result);
+  }
+
+  // If _head != result then we lost the race to take result;
+  // the caller should try again.
+  if (result != Atomic::load_acquire(&_head)) {
+    return StatusPair(LockFreeQueuePopStatus::lost_race, NULL);
+  }
+
+  // An in-progress concurrent operation interfered with taking the head
+  // element when it was the only element.  A concurrent try_pop may have won
+  // the race to clear the tail but not yet cleared the head. Alternatively,
+  // a concurrent push/append may have changed the tail but not yet linked
+  // result->next(). This case slightly differs from the "lost_race" case,
+  // because the caller could wait for a long time for the other concurrent
+  // operation to finish.
+  return StatusPair(LockFreeQueuePopStatus::operation_in_progress, NULL);
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>

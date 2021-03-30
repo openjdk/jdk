@@ -29,12 +29,19 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
 
+// Return status of a LockFreeQueue::try_pop() call.
+// See description for try_pop() below.
+enum class LockFreeQueuePopStatus {
+  success,
+  lost_race,
+  operation_in_progress
+};
+
 // The LockFreeQueue template provides a lock-free FIFO. Its structure
 // and usage is similar to LockFreeStack. It has inner paddings, and
-// optionally use GlobalCounter critical section in pop() to address
-// the ABA problem. This class has a restriction that pop() may return
-// NULL when there are objects in the queue if there is a concurrent
-// push/append operation.
+// provides a try_pop() function for the client to implement pop()
+// according to its need (e.g., whether or not to retry or prevent
+// ABA problem).
 //
 // \tparam T is the class of the elements in the queue.
 //
@@ -52,49 +59,59 @@ class LockFreeQueue {
 
   // Return the entry following node in the list used by the
   // specialized LockFreeQueue class.
-  static T* next(const T& node);
+  static inline T* next(const T& node);
 
   // Set the entry following node to new_next in the list used by the
   // specialized LockFreeQueue class. Not thread-safe, as it cannot
-  // concurrently run with push or pop operations that modify this
+  // concurrently run with push or try_pop operations that modify this
   // node.
-  static void set_next(T& node, T* new_next);
+  static inline void set_next(T& node, T* new_next);
 
 public:
-  LockFreeQueue();
+  inline LockFreeQueue();
   DEBUG_ONLY(~LockFreeQueue();)
 
   // Return the first object in the queue.
   // Thread-safe, but the result may change immediately.
-  T* top() const;
+  inline T* top() const;
 
   // Return true if the queue is empty.
-  bool empty() const { return top() == NULL; }
+  inline bool empty() const { return top() == NULL; }
 
   // Return the number of objects in the queue.
   // Not thread-safe. There must be no concurrent modification
   // while the length is being determined.
-  size_t length() const;
+  inline size_t length() const;
 
   // Thread-safe add the object to the end of the queue.
-  void push(T& node) { append(node, node); }
+  inline void push(T& node) { append(node, node); }
 
   // Thread-safe add the objects from first to last to the end of the queue.
-  void append(T& first, T& last);
+  inline void append(T& first, T& last);
 
   // Thread-safe attempt to remove and return the first object in the queue.
-  // Returns NULL if the queue is empty, or if a concurrent push/append
-  // interferes.
-  // If use_rcu is true, it applies GlobalCounter critical sections to
-  // address the ABA problem. This requires the object's
-  // allocator use GlobalCounter synchronization to defer reusing object.
-  template<bool use_rcu> T* pop();
+  // Returns a <LockFreeQueuePopStatus, T*> pair for the caller to determine
+  // further operation. 3 possible cases depending on pair.first:
+  // - success:
+  //   The operation succeeded. If pair.second is NULL, the queue is empty;
+  //   otherwise caller can assume ownership of the object pointed by
+  //   pair.second. Note that this case still subjects to ABA behavior;
+  //   callers must ensure usage is safe.
+  // - lost_race:
+  //   An atomic operation failed. pair.second is NULL.
+  //   The caller can typically retry in this case.
+  // - operation_in_progress:
+  //   An in-progress concurrent operation interfered with taking the element
+  //   when it was the only element in the queue. pair.second is NULL.
+  //   Retrying in this case has a higher chance of waiting for a long time
+  //   before succeeding, compared to the "lost_race" case.
+  inline Pair<LockFreeQueuePopStatus, T*> try_pop();
 
   // Take all the objects from the queue, leaving the queue empty.
   // Not thread-safe. It should only be used when there is no concurrent
-  // push/append/pop operation.
+  // push/append/try_pop operation.
   // Returns a pair of <head, tail> pointers to the current queue.
-  Pair<T*, T*> take_all();
+  inline Pair<T*, T*> take_all();
 };
 
 #endif // SHARE_UTILITIES_LOCKFREEQUEUE_HPP
