@@ -35,15 +35,14 @@ import java.util.concurrent.ExecutionException;
 /* @test
  * @bug 8263898
  * @summary Verify stream and channel behavior with NUL device
- * @requires os.family == "windows"
  * @run main NulDevice
 */
 public class NulDevice {
-    public static void main(final String[] args)
+    public static void main(String[] args)
         throws ExecutionException, InterruptedException, IOException {
         Path path = Path.of("nul");
 
-        try (final OutputStream os = Files.newOutputStream(path)) {
+        try (OutputStream os = Files.newOutputStream(path)) {
             os.write(0x02);
             try (InputStream is = Files.newInputStream(path);) {
                 if (is.available() != 0) {
@@ -56,12 +55,11 @@ public class NulDevice {
             }
         }
 
-        try (final OutputStream os = Files.newOutputStream(path, WRITE)) {
+        try (OutputStream os = Files.newOutputStream(path, WRITE)) {
             os.write(0x02);
         }
 
-        try (final FileChannel ch = FileChannel.open(path, CREATE,
-             TRUNCATE_EXISTING, WRITE)) {
+        try (FileChannel ch = FileChannel.open(path, CREATE, TRUNCATE_EXISTING, WRITE)) {
             byte[] bytes = "Whatever".getBytes();
             ByteBuffer buf = ByteBuffer.allocate(2*bytes.length);
             buf.put(bytes);
@@ -72,7 +70,7 @@ public class NulDevice {
             }
         }
 
-        try (final FileChannel ch = FileChannel.open(path, READ)) {
+        try (FileChannel ch = FileChannel.open(path, READ)) {
             if (ch.size() != 0) {
                 throw new RuntimeException("Size should be zero");
             }
@@ -83,7 +81,7 @@ public class NulDevice {
             }
         }
 
-        try (final AsynchronousFileChannel ch =
+        try (AsynchronousFileChannel ch =
             AsynchronousFileChannel.open(path, READ, WRITE)) {
             if (ch.size() != 0) {
                 throw new RuntimeException("Size should be zero");
