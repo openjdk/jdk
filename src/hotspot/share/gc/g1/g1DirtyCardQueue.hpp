@@ -164,8 +164,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   volatile size_t _num_cards;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
-  // LockFreeQueue has inner padding, including trailer.
+  // LockFreeQueue has inner padding of one cache line.
   LockFreeQueue<BufferNode, &BufferNode::next_ptr> _completed;
+  // Add a trailer padding after LockFreeQueue.
+  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
   // Buffers for which refinement is temporarily paused.
   // PausedBuffers has inner padding, including trailer.
   PausedBuffers _paused;

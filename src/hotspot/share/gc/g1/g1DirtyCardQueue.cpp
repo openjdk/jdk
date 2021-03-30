@@ -152,15 +152,10 @@ BufferNode* G1DirtyCardQueueSet::dequeue_completed_buffer() {
       case Status::success:
         return pop_result.second;
       case Status::operation_in_progress:
-        // This could happen when a concurrent operation interferes with
-        // this try_pop() taking the only element in the queue, in two cases:
-        // (1) A concurrent try_pop() may have won the race to take the
-        // element, but has not finished updating the queue. It is fine to
-        // return NULL in this case.
-        // (2) A concurrent push/append is ongoing. We cannot take result,
-        // and we don't just try again, because we could spin for a long time
-        // waiting for the push/append to finish. We just return NULL, which
-        // is OK for a thread getting a buffer to refine.
+        // Returning NULL instead retrying, in order to mitigate the
+        // chance of spinning for a long time. In the case of getting a
+        // buffer to refine, it is also OK to return NULL when there is
+        // an interfering concurrent push/append operation.
         return NULL;
       case Status::lost_race:
         break;  // Try again.

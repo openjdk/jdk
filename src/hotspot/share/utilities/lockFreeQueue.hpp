@@ -38,10 +38,10 @@ enum class LockFreeQueuePopStatus {
 };
 
 // The LockFreeQueue template provides a lock-free FIFO. Its structure
-// and usage is similar to LockFreeStack. It has inner paddings, and
-// provides a try_pop() function for the client to implement pop()
-// according to its need (e.g., whether or not to retry or prevent
-// ABA problem).
+// and usage is similar to LockFreeStack. It provides a try_pop() function
+// for the client to implement pop() according to its need (e.g., whether
+// or not to retry or prevent ABA problem). It has inner padding of one
+// cache line between its two internal pointer fields.
 //
 // \tparam T is the class of the elements in the queue.
 //
@@ -51,9 +51,9 @@ enum class LockFreeQueuePopStatus {
 template<typename T, T* volatile* (*next_ptr)(T&)>
 class LockFreeQueue {
   T* volatile _head;
+  // Padding of one cache line to avoid false sharing.
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(T*));
   T* volatile _tail;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(T*));
 
   NONCOPYABLE(LockFreeQueue);
 
@@ -95,16 +95,19 @@ public:
   // - success:
   //   The operation succeeded. If pair.second is NULL, the queue is empty;
   //   otherwise caller can assume ownership of the object pointed by
-  //   pair.second. Note that this case still subjects to ABA behavior;
+  //   pair.second. Note that this case is still subject to ABA behavior;
   //   callers must ensure usage is safe.
   // - lost_race:
   //   An atomic operation failed. pair.second is NULL.
   //   The caller can typically retry in this case.
   // - operation_in_progress:
-  //   An in-progress concurrent operation interfered with taking the element
-  //   when it was the only element in the queue. pair.second is NULL.
-  //   Retrying in this case has a higher chance of waiting for a long time
-  //   before succeeding, compared to the "lost_race" case.
+  //   An in-progress concurrent operation interfered with taking what had been
+  //   the only remaining element in the queue. pair.second is NULL.
+  //   A concurrent try_pop may have already claimed it, but not completely
+  //   updated the queue. Alternatively, a concurrent push/append may have not
+  //   yet linked the new entry(s) to the former sole entry. Retrying the try_pop
+  //   will continue to fail in this way until that other thread has updated the
+  //   queue's internal structure.
   inline Pair<LockFreeQueuePopStatus, T*> try_pop();
 
   // Take all the objects from the queue, leaving the queue empty.
