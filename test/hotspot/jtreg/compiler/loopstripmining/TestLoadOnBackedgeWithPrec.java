@@ -39,11 +39,10 @@ class a {
 
 public class TestLoadOnBackedgeWithPrec {
     int c ;
-    a[] i =   {
-        new a()};
+    a[] i = {new a()};
     float j() {
         a k = new a();
-        float l = 5     ;
+        float l = 5;
         for (int d = 0; d < 8; ++d) {
             for (int e = 0; e < 9; ++e) {
                 k = k;
@@ -57,7 +56,7 @@ public class TestLoadOnBackedgeWithPrec {
                     new a(), new a(), new a(),
                     new a(), new a(), new a(),
                     new a(), new a(), new a()};
-                c = i[0].g   + k.g;
+                c = i[0].g + k.g;
             }
         }
         return k.h;
