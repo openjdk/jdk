@@ -674,8 +674,7 @@ bool OopStorage::reduce_deferred_updates() {
   // Make list state consistent with bitmask state.
   uintx allocated = block->allocated_bitmask();
   if (is_full_bitmask(allocated)) {
-    // If full then it shouldn't be in the list and we shouldn't be
-    // changing that here.
+    // If full then it shouldn't be in the list, and should stay that way.
     assert(!_allocation_list.contains(*block), "invariant");
   } else if (_allocation_list.contains(*block)) {
     // Block is in list.  If empty, move to the end for possible deletion.
