@@ -567,23 +567,24 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
   MethodCounters* counters;
   if (current->is_Java_thread()) {
     Thread* THREAD = current;
-    counters = MethodCounters::allocate(mh, THREAD);
+    // Use the TRAPS version for a JavaThread so it will adjust the GC threshold
+    // if needed.
+    counters = MethodCounters::allocate_with_exception(mh, THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;  // MethodData above doesn't clear exception
-      CompileBroker::log_metaspace_failure();
-      ClassLoaderDataGraph::set_metaspace_oom(true);
-      return NULL;
+      CLEAR_PENDING_EXCEPTION;
     }
   } else {
     // Call metaspace allocation that doesn't throw exception if the
     // current thread isn't a JavaThread, ie. the VMThread.
-    counters = MethodCounters::allocate(mh);
-    if (counters == NULL) {
-      CompileBroker::log_metaspace_failure();
-      ClassLoaderDataGraph::set_metaspace_oom(true);
-      return NULL;
-    }
+    counters = MethodCounters::allocate_no_exception(mh);
   }
+
+  if (counters == NULL) {
+    CompileBroker::log_metaspace_failure();
+    ClassLoaderDataGraph::set_metaspace_oom(true);
+    return NULL;
+  }
+
   if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);
   }

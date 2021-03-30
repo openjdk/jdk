@@ -69,8 +69,8 @@ class MethodCounters : public Metadata {
  public:
   virtual bool is_methodCounters() const { return true; }
 
-  static MethodCounters* allocate(const methodHandle& mh);
-  static MethodCounters* allocate(const methodHandle& mh, TRAPS);
+  static MethodCounters* allocate_no_exception(const methodHandle& mh);
+  static MethodCounters* allocate_with_exception(const methodHandle& mh, TRAPS);
 
   void deallocate_contents(ClassLoaderData* loader_data) {}
 
