@@ -247,6 +247,24 @@ public class SimpleFileServerTest {
         }
     }
 
+    @Test
+    public void testXss() throws Exception {
+        var root = Files.createDirectory(CWD.resolve("testXss"));
+
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(ss, "beginDelim%3C%3EEndDelim")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertTrue(response.body().contains("beginDelim&lt;&gt;EndDelim"));
+            assertTrue(response.body().contains("not found"));
+        } finally {
+            ss.stop(0);
+        }
+    }
+
     static URI uri(HttpServer server, String path) {
         return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
     }
