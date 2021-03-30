@@ -42,6 +42,9 @@
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \
                                                                             \
+  product(double, ZStackModeChangeRatio, 0.25,                              \
+          "Mark push mode is changed when usage is above the ratio")        \
+                                                                            \
   product(double, ZCollectionInterval, 0,                                   \
           "Force GC at a fixed time interval (in seconds)")                 \
                                                                             \

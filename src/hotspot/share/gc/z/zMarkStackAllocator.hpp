@@ -52,8 +52,11 @@ class ZMarkStackAllocator {
 private:
   ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
   ZCACHE_ALIGNED ZMarkStackSpace        _space;
+  ZCACHE_ALIGNED volatile int           _nmagazine;
 
   void prime_freelist();
+  void inc_nmagazine();
+  void dec_nmagazine();
   ZMarkStackMagazine* create_magazine_from_space(uintptr_t addr, size_t size);
 
 public:

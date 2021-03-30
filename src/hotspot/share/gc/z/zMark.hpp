@@ -53,6 +53,7 @@ private:
   size_t              _ntrycomplete;
   size_t              _ncontinue;
   uint                _nworkers;
+  static volatile bool  _push_local_stripe;
 
   size_t calculate_nstripes(uint nworkers) const;
 
@@ -108,6 +109,13 @@ public:
   void start();
   void mark(bool initial);
   bool end();
+
+  static void set_push_local_stripe(bool mode) {
+    Atomic::store(&_push_local_stripe, mode);
+  }
+  static bool push_local_stripe() {
+    return Atomic::load(&_push_local_stripe);
+  }
 
   void flush_and_free();
   bool flush_and_free(Thread* thread);

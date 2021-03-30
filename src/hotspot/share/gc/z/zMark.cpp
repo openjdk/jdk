@@ -66,6 +66,8 @@ static const ZStatSubPhase ZSubPhaseConcurrentMarkTryFlush("Concurrent Mark Try 
 static const ZStatSubPhase ZSubPhaseConcurrentMarkTryTerminate("Concurrent Mark Try Terminate");
 static const ZStatSubPhase ZSubPhaseMarkTryComplete("Pause Mark Try Complete");
 
+volatile bool ZMark::_push_local_stripe = false;
+
 ZMark::ZMark(ZWorkers* workers, ZPageTable* page_table) :
     _workers(workers),
     _page_table(page_table),
@@ -117,6 +119,8 @@ void ZMark::start() {
   const size_t nstripes = calculate_nstripes(_nworkers);
   _stripes.set_nstripes(nstripes);
 
+  _push_local_stripe = false;
+
   // Update statistics
   ZStatMark::set_at_mark_start(nstripes);
 
@@ -157,7 +161,9 @@ bool ZMark::is_array(uintptr_t addr) const {
 void ZMark::push_partial_array(uintptr_t addr, size_t size, bool finalizable) {
   assert(is_aligned(addr, ZMarkPartialArrayMinSize), "Address misaligned");
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::stacks(Thread::current());
-  ZMarkStripe* const stripe = _stripes.stripe_for_addr(addr);
+  ZMarkStripe* const stripe = push_local_stripe() ?
+      _stripes.stripe_for_worker(_nworkers, ZThread::worker_id()) :
+      _stripes.stripe_for_addr(addr);
   const uintptr_t offset = ZAddress::offset(addr) >> ZMarkPartialArrayMinSizeShift;
   const uintptr_t length = size / oopSize;
   const ZMarkStackEntry entry(offset, length, finalizable);

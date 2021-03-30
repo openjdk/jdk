@@ -27,6 +27,7 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
+#include "gc/z/zMark.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
@@ -128,7 +129,8 @@ uintptr_t ZMarkStackSpace::alloc(size_t size) {
 
 ZMarkStackAllocator::ZMarkStackAllocator() :
     _freelist(),
-    _space() {
+    _space(),
+    _nmagazine(0) {
   // Prime free list to avoid an immediate space
   // expansion when marking starts.
   if (_space.is_initialized()) {
@@ -159,13 +161,45 @@ ZMarkStackMagazine* ZMarkStackAllocator::create_magazine_from_space(uintptr_t ad
     assert(success, "Magazine should never get full");
   }
 
+  inc_nmagazine();
+
   return magazine;
+}
+
+void ZMarkStackAllocator::inc_nmagazine() {
+  int cur = Atomic::add(&_nmagazine, 1);
+  if (!ZMark::push_local_stripe() &&
+      cur * ZMarkStackMagazineSize >= ZMarkStackSpaceLimit * ZStackModeChangeRatio) {
+    ZMark::set_push_local_stripe(true);
+  }
+}
+
+void ZMarkStackAllocator::dec_nmagazine() {
+  int nmagazine = Atomic::load(&_nmagazine);
+
+  for (;;) {
+    if (nmagazine == 0) {
+      break;
+    }
+    const int new_nmagazine = nmagazine - 1;
+    const int prev_nmagazine = Atomic::cmpxchg(&_nmagazine, nmagazine, new_nmagazine);
+    if (prev_nmagazine == nmagazine) {
+      break;
+    }
+    nmagazine = prev_nmagazine;
+  }
+
+  if (ZMark::push_local_stripe() &&
+      nmagazine * ZMarkStackMagazineSize * 2.0 < ZMarkStackSpaceLimit * ZStackModeChangeRatio) {
+    ZMark::set_push_local_stripe(false);
+  }
 }
 
 ZMarkStackMagazine* ZMarkStackAllocator::alloc_magazine() {
   // Try allocating from the free list first
   ZMarkStackMagazine* const magazine = _freelist.pop();
   if (magazine != NULL) {
+    inc_nmagazine();
     return magazine;
   }
 
@@ -180,4 +214,5 @@ ZMarkStackMagazine* ZMarkStackAllocator::alloc_magazine() {
 
 void ZMarkStackAllocator::free_magazine(ZMarkStackMagazine* magazine) {
   _freelist.push(magazine);
+  dec_nmagazine();
 }

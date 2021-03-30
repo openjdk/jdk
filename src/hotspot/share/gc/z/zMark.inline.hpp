@@ -28,6 +28,7 @@
 #include "gc/z/zMark.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "gc/z/zThread.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
@@ -35,7 +36,9 @@ template <bool follow, bool finalizable, bool publish>
 inline void ZMark::mark_object(uintptr_t addr) {
   assert(ZAddress::is_marked(addr), "Should be marked");
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::stacks(Thread::current());
-  ZMarkStripe* const stripe = _stripes.stripe_for_addr(addr);
+  ZMarkStripe* const stripe = push_local_stripe() && ZThread::is_worker() ?
+      _stripes.stripe_for_worker(_nworkers, ZThread::worker_id()) :
+      _stripes.stripe_for_addr(addr);
   ZMarkStackEntry entry(addr, follow, finalizable);
 
   stacks->push(&_allocator, &_stripes, stripe, entry, publish);
