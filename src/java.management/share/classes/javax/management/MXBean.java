@@ -30,6 +30,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.RecordComponent;
 
 // remaining imports are for Javadoc
 import java.io.InvalidObjectException;
@@ -498,6 +499,12 @@ public class MemoryPool
           <td><em>J</em>, the same type</td>
         </tr>
         <tr>
+          <th scope="row">{@linkplain Record Record classes}</th>
+          <td>{@link CompositeType}, if possible<br>
+              (see below)</td>
+          <td>{@link CompositeData}</td>
+        </tr>
+        <tr>
           <th scope="row">{@code int[]} etc<br>
             (a one-dimensional array with primitive element type)</th>
           <td>{@code ArrayType.getPrimitiveArrayType(int[].class)} etc</td>
@@ -745,17 +752,43 @@ public interface ModuleMXBean {
       general, notably because it does not work well for MBeans that are
       {@link NotificationBroadcaster}s.</p>
 
+    <h3 id="records">Mappings for Records</h3>
+
+    <p>A {@linkplain Record record} <em>R</em> whose {@linkplain
+      Class#getRecordComponents() components} are
+      all convertible to open types, is itself convertible to a
+      {@link CompositeType} as follows.
+      The type name of this {@code CompositeType}
+      is determined by the same <a href="#type-names">type name rules</a>
+      defined by the <a href="#composite-map">Mapping for other types</a>
+      below. Its getters are the accessors for the {@linkplain
+      RecordComponent record components}, and the record is reconstructed
+      using its canonical constructor, without needing any annotation.</p>
+
+    <p>A record may also expose additional non-canonical constructors, which
+      can be used to reconstruct the record if the composite data does
+      not exactly contain all the components expected by the
+      canonical constructor. However, in order to be taken into account
+      by the MXBean framework, such non-canonical constructors
+      need to be annotated with either the {@link ConstructorParameters
+      &#64;javax.management.ConstructorParameters} or
+     {@code @java.beans.ConstructorProperties} annotation.</p>
+
+    <p>The complete rules for the mapping are detailed as part
+      of the <a href="#composite-map">Mapping for other types</a>
+      below.</p>
+
     <h3 id="composite-map">Mappings for other types</h3>
 
-    <p>Given a Java class or interface <em>J</em> that does not match the other
+    <p>Given a record, or a Java class or interface <em>J</em> that does not match the other
       rules in the table above, the MXBean framework will attempt to map
       it to a {@link CompositeType} as follows.  The type name of this
       {@code CompositeType} is determined by the <a href="#type-names">
       type name rules</a> below.</p>
 
     <p>If the class is a {@link Record}, its getters are the
-      accessors for the record components. Otherwise, the
-      class is examined for getters using the conventions
+      accessors for the {@linkplain RecordComponent record components}.
+      Otherwise, the class is examined for getters using the conventions
       <a href="#naming-conv">above</a>.  (Getters must be public
       instance methods.)  If there are no getters, or if
       any getter has a type that is not convertible, then <em>J</em> is

@@ -104,6 +104,15 @@ public class RecordsMXBeanTest {
     public record RWithGetter(int x, int y) {
         public int getX() { return x;}
     }
+    // A record with an annotated cannonical constructor.
+    // Annotation should be ignored
+    public record WithAnno(int x, int y) {
+        @ConstructorParameters({"y", "x"})
+        public WithAnno(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
 
     // A read only MXBean interface
     public interface RecordsMXBean {
@@ -181,6 +190,8 @@ public class RecordsMXBeanTest {
         void setTricksterToo(TricksterToo trick);
         RWithGetter getR();
         void setR(RWithGetter r);
+        WithAnno getWithAnno();
+        void setWithAnno(WithAnno r);
     }
 
     // An implementation of the complex MXBean interface
@@ -190,6 +201,7 @@ public class RecordsMXBeanTest {
         private volatile Trickster trickster = new Trickster(4, 5);
         private volatile TricksterToo too = new TricksterToo(6, 7);
         private volatile RWithGetter r = new RWithGetter(8, 9);
+        private volatile WithAnno withAnno = new WithAnno(10, 11);
 
         @Override
         public Annotated getAnnotated() {
@@ -239,6 +251,16 @@ public class RecordsMXBeanTest {
         @Override
         public void setR(RWithGetter r) {
             this.r = r;
+        }
+
+        @Override
+        public WithAnno getWithAnno() {
+            return withAnno;
+        }
+
+        @Override
+        public void setWithAnno(WithAnno r) {
+            this.withAnno = r;
         }
     }
 
@@ -455,6 +477,16 @@ public class RecordsMXBeanTest {
         assertEquals(rWithGetter.x(), rWithGetter.getX());
         assertEquals(rWithGetter.x(), 9);
         assertEquals(rWithGetter.y(), 8);
+
+        var withAnno = mBean5.getWithAnno();
+        assertEquals(withAnno.x(), 10);
+        assertEquals(withAnno.y(), 11);
+        withAnno = new WithAnno(12, 13);
+        mBean5.setWithAnno(withAnno);
+        withAnno = mBean5.getWithAnno();
+        assertEquals(withAnno.x(), 12);
+        assertEquals(withAnno.y(), 13);
+
 
         // Test non compliant records: this one has an Object (not mappable to OpenType)
         var recname4 = new ObjectName("test:type=NCR1");
