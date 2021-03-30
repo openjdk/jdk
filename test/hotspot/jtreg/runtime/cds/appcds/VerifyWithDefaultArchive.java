@@ -23,7 +23,8 @@
  */
 
 /*
- * @test 8264337
+ * @test
+ * @bug 8264337
  * @summary test default cds archive when turning on VerifySharedSpaces
  * @requires vm.cds
  * @library /test/lib
