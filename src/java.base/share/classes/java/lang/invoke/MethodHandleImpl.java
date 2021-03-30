@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -664,7 +664,7 @@ abstract class MethodHandleImpl {
                                    DONT_INLINE_THRESHOLD);
     }
 
-    private final static class Makers {
+    private static final class Makers {
         /** Constructs reinvoker lambda form which block inlining during JIT-compilation for a particular method handle */
         static final Function<MethodHandle, LambdaForm> PRODUCE_BLOCK_INLINING_FORM = new Function<MethodHandle, LambdaForm>() {
             @Override
@@ -1845,7 +1845,7 @@ abstract class MethodHandleImpl {
         }
         @Override
         public String toString() {
-            StringBuffer sb = new StringBuffer("LoopClauses -- ");
+            StringBuilder sb = new StringBuilder("LoopClauses -- ");
             for (int i = 0; i < 4; ++i) {
                 if (i > 0) {
                     sb.append("       ");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -525,7 +525,7 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
             Symbol* failed_type_symbol =
               SystemDictionary::check_signature_loaders(signature, _klass,
                                                         target_loader, super_loader,
-                                                        true, CHECK_(false));
+                                                        true);
             if (failed_type_symbol != NULL) {
               stringStream ss;
               ss.print("loader constraint violation for class %s: when selecting "
@@ -1245,7 +1245,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       // Invokespecial does not perform selection based on the receiver, so it does not use
       // the cached itable.
       target = LinkResolver::lookup_instance_method_in_klasses(_klass, m->name(), m->signature(),
-                                                               Klass::PrivateLookupMode::skip, CHECK);
+                                                               Klass::PrivateLookupMode::skip);
     }
     if (target == NULL || !target->is_public() || target->is_abstract() || target->is_overpass()) {
       assert(target == NULL || !target->is_overpass() || target->is_public(),
@@ -1269,7 +1269,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
                                                       _klass,
                                                       method_holder_loader,
                                                       interface_loader,
-                                                      true, CHECK);
+                                                      true);
           if (failed_type_symbol != NULL) {
             stringStream ss;
             ss.print("loader constraint violation in interface itable"

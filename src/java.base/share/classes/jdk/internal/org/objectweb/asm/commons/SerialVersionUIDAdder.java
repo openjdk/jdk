@@ -349,7 +349,7 @@ public class SerialVersionUIDAdder extends ClassVisitor {
     }
 
     /**
-      * Adds a final static serialVersionUID field to the class, with the given value.
+      * Adds a static final serialVersionUID field to the class, with the given value.
       *
       * @param svuid the serialVersionUID field value.
       */

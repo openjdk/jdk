@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
- *      8067796 8224905
+ *      8067796 8224905 8263729
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -2135,10 +2135,34 @@ public class Basic {
             final int cases = 4;
             for (int i = 0; i < cases; i++) {
                 final int action = i;
-                List<String> childArgs = new ArrayList<String>(javaChildArgs);
+                List<String> childArgs = new ArrayList<>(javaChildArgs);
+                final ProcessBuilder pb = new ProcessBuilder(childArgs);
+                {
+                    // Redirect any child VM error output away from the stream being tested
+                    // and to the log file. For background see:
+                    // 8231297: java/lang/ProcessBuilder/Basic.java test fails intermittently
+                    // Destroying the process may, depending on the timing, cause some output
+                    // from the child VM.
+                    // This test requires the thread reading from the subprocess be blocked
+                    // in the read from the subprocess; there should be no bytes to read.
+                    // Modify the argument list shared with ProcessBuilder to redirect VM output.
+                    assert (childArgs.get(1).equals("-XX:+DisplayVMOutputToStderr")) : "Expected arg 1 to be \"-XX:+DisplayVMOutputToStderr\"";
+                    switch (action & 0x1) {
+                        case 0:
+                            childArgs.set(1, "-XX:+DisplayVMOutputToStderr");
+                            pb.redirectError(INHERIT);
+                            break;
+                        case 1:
+                            childArgs.set(1, "-XX:+DisplayVMOutputToStdout");
+                            pb.redirectOutput(INHERIT);
+                            break;
+                        default:
+                            throw new Error();
+                    }
+                }
                 childArgs.add("sleep");
                 final byte[] bytes = new byte[10];
-                final Process p = new ProcessBuilder(childArgs).start();
+                final Process p = pb.start();
                 final CountDownLatch latch = new CountDownLatch(1);
                 final InputStream s;
                 switch (action & 0x1) {

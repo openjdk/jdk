@@ -218,7 +218,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
   if (UseSharedSpaces) {
     int size = FileMapInfo::get_number_of_shared_paths();
     if (size > 0) {
-      SystemDictionaryShared::allocate_shared_data_arrays(size, THREAD);
+      SystemDictionaryShared::allocate_shared_data_arrays(size, CHECK);
       if (!DynamicDumpSharedSpaces) {
         FileMapInfo* info;
         if (FileMapInfo::dynamic_info() == NULL) {
@@ -558,7 +558,7 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
     // The following function is used to resolve all Strings in the statically
     // dumped classes to archive all the Strings. The archive heap is not supported
     // for the dynamic archive.
-    ik->constants()->resolve_class_constants(CHECK_0); // may throw OOM when interning strings.
+    ik->constants()->resolve_class_constants(CHECK_(false)); // may throw OOM when interning strings.
   }
   return res;
 }
@@ -602,17 +602,13 @@ void MetaspaceShared::prepare_for_dumping() {
   Arguments::assert_is_dumping_archive();
   Arguments::check_unsupported_dumping_properties();
 
-  EXCEPTION_MARK;
-  ClassLoader::initialize_shared_path(THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
-    vm_exit_during_initialization("ClassLoader::initialize_shared_path() failed unexpectedly");
-  }
+  ClassLoader::initialize_shared_path(Thread::current());
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
-void MetaspaceShared::preload_and_dump(TRAPS) {
+void MetaspaceShared::preload_and_dump() {
+  EXCEPTION_MARK;
   ResourceMark rm(THREAD);
   preload_and_dump_impl(THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -709,9 +705,9 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (use_full_module_graph()) {
-    HeapShared::reset_archived_object_states(CHECK);
-  }
+    if (use_full_module_graph()) {
+      HeapShared::reset_archived_object_states(CHECK);
+    }
 #endif
 
   VM_PopulateDumpSharedSpace op;
