@@ -182,6 +182,9 @@
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   jlong)                                 \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
   nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
+  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              intptr_t*)                             \
+  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              intptr_t*)                             \
+  nonstatic_field(JavaThread,                  _jvmci_reserved_oop0,                          oop)                                   \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
