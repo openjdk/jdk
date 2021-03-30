@@ -1403,12 +1403,12 @@ void MetaspaceShared::initialize_shared_spaces() {
       tty->print_cr("Static archive version %d", static_mapinfo->version());
     }
 
+    SystemDictionaryShared::print_shared_archive(tty);
     if (dynamic_mapinfo != nullptr) {
       tty->print_cr("\n\nDynamic archive name: %s", dynamic_mapinfo->full_path());
       tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
+      SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
     }
-
-    SystemDictionaryShared::print_on(tty);
 
     // collect shared symbols and strings
     CountSharedSymbols cl;

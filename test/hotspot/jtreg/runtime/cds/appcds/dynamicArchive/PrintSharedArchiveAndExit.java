@@ -86,9 +86,9 @@ public class PrintSharedArchiveAndExit extends DynamicArchiveTestBase {
                       .shouldMatch("Base archive name: .*.jsa")  // given name ends with .jsa, maynot default name.
                       .shouldMatch("Dynamic archive name: .*" + ARCHIVE_NAME)
                       .shouldMatch("Base archive version \\d+")
-                      .shouldContain("java.lang.Object loaded by: boot_loader")
-                      .shouldContain("HelloUnload loaded by: app_loader")
-                      .shouldContain("CustomLoadee loaded by: unregistered_loader")
+                      .shouldContain("java.lang.Object boot_loader")
+                      .shouldContain("HelloUnload app_loader")
+                      .shouldContain("CustomLoadee unregistered_loader")
                       .shouldContain("Shared Builtin Dictionary")
                       .shouldContain("Shared Unregistered Dictionary")
                       .shouldMatch("Number of shared symbols: \\d+")

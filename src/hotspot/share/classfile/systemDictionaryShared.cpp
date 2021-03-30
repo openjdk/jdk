@@ -2249,23 +2249,24 @@ public:
 
   void do_value(const RunTimeSharedClassInfo* record) {
     ResourceMark rm;
-    _st->print_cr("%4d: %s loaded by: %s", (_index++), record->_klass->external_name(),
+    _st->print_cr("%4d: %s %s", (_index++), record->_klass->external_name(),
         class_loader_name_for_shared(record->_klass));
   }
+  int index() const { return _index; }
 };
 
 class SharedLambdaDictionaryPrinter : StackObj {
   outputStream* _st;
   int _index;
 public:
-  SharedLambdaDictionaryPrinter(outputStream* st) : _st(st), _index(0) {}
+  SharedLambdaDictionaryPrinter(outputStream* st, int idx) : _st(st), _index(idx) {}
 
   void do_value(const RunTimeLambdaProxyClassInfo* record) {
     if (record->proxy_klass_head()->lambda_proxy_is_available()) {
       ResourceMark rm;
       Klass* k = record->proxy_klass_head();
       while (k != nullptr) {
-        _st->print_cr("%4d: %s loaded by: %s", (++_index), k->external_name(),
+        _st->print_cr("%4d: %s %s", (++_index), k->external_name(),
                       class_loader_name_for_shared(k));
         k = k->next_link();
       }
@@ -2286,8 +2287,21 @@ void SystemDictionaryShared::print_on(const char* prefix,
   unregistered_dictionary->iterate(&p);
   if (!lambda_dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
-    SharedLambdaDictionaryPrinter ldp(st);
+    SharedLambdaDictionaryPrinter ldp(st, p.index());
     lambda_dictionary->iterate(&ldp);
+  }
+}
+
+void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
+  if (UseSharedSpaces) {
+    if (is_static) {
+      print_on("", &_builtin_dictionary, &_unregistered_dictionary, &_lambda_proxy_class_dictionary, st);
+    } else {
+      if (DynamicArchive::is_mapped()) {
+        print_on("", &_dynamic_builtin_dictionary, &_dynamic_unregistered_dictionary,
+               &_dynamic_lambda_proxy_class_dictionary, st);
+      }
+    }
   }
 }
 
