@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,7 @@ class klassVtable {
                                                    u2 major_version,
                                                    Handle classloader,
                                                    Symbol* classname,
-                                                   Array<InstanceKlass*>* local_interfaces,
-                                                   TRAPS);
+                                                   Array<InstanceKlass*>* local_interfaces);
 
 #if INCLUDE_JVMTI
   // RedefineClasses() API support:
@@ -126,7 +125,7 @@ class klassVtable {
 
   // support for miranda methods
   bool is_miranda_entry_at(int i);
-  int fill_in_mirandas(int initialized, TRAPS);
+  int fill_in_mirandas(Thread* current, int initialized);
   static bool is_miranda(Method* m, Array<Method*>* class_methods,
                          Array<Method*>* default_methods, const Klass* super,
                          bool is_interface);
@@ -307,7 +306,7 @@ class klassItable {
 #endif // INCLUDE_JVMTI
 
   // Setup of itable
-  static int assign_itable_indices_for_interface(InstanceKlass* klass, TRAPS);
+  static int assign_itable_indices_for_interface(Thread* current, InstanceKlass* klass);
   static int method_count_for_interface(InstanceKlass* klass);
   static int compute_itable_size(Array<InstanceKlass*>* transitive_interfaces);
   static void setup_itable_offset_table(InstanceKlass* klass);
