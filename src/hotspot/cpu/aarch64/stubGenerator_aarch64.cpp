@@ -5573,39 +5573,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void generate_base64_decode_nosimdround(Register src, Register dst,
-        Register nosimd_codec, Label &Exit)
-  {
-    __ ldrb(r10, __ post(src, 1));
-    __ ldrb(r11, __ post(src, 1));
-    __ ldrb(r12, __ post(src, 1));
-    __ ldrb(r13, __ post(src, 1));
-
-    // get the de-code
-    __ ldrb(r10, Address(nosimd_codec, r10, Address::uxtw(0)));
-    __ ldrb(r11, Address(nosimd_codec, r11, Address::uxtw(0)));
-    __ ldrb(r12, Address(nosimd_codec, r12, Address::uxtw(0)));
-    __ ldrb(r13, Address(nosimd_codec, r13, Address::uxtw(0)));
-
-    // error detection, 255u indicates an illegal input
-    __ orrw(r14, r10, r11);
-    __ orrw(r15, r12, r13);
-    __ orrw(r14, r14, r15);
-    __ tbnz(r14, 7, Exit);
-
-    // recover the data
-    __ lslw(r14, r10, 2);
-    __ bfmw(r14, r11, 4, 5);
-    __ lslw(r15, r11, 4);
-    __ bfmw(r15, r12, 2, 5);
-    __ orrw(r13, r13, r12, Assembler::LSL, 6);
-
-    // store the data
-    __ strb(r14, __ post(dst, 1));
-    __ strb(r15, __ post(dst, 1));
-    __ strb(r13, __ post(dst, 1));
-  }
-
   void generate_base64_decode_simdround(Register src, Register dst,
         FloatRegister codecL, FloatRegister codecH, int size, Label& Exit) {
 
@@ -5615,13 +5582,13 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister decL0 = v23, decL1 = v24, decL2 = v25, decL3 = v26;
     FloatRegister decH0 = v28, decH1 = v29, decH2 = v30, decH3 = v31;
 
-    Label NoIllegalData;
+    Label NoIllegalData, ErrorInLowerHalf, StoreLegalData;
 
     Assembler::SIMD_Arrangement arrangement = size == 16 ? __ T16B : __ T8B;
 
     __ ld4(in0, in1, in2, in3, arrangement, __ post(src, 4 * size));
 
-    // we need unsigned saturationg substract, to make sure all input values
+    // we need unsigned saturating substract, to make sure all input values
     // in range [0, 63] will have 0U value in the higher half lookup
     __ uqsubv(decH0, __ T16B, in0, v27);
     __ uqsubv(decH1, __ T16B, in1, v27);
@@ -5646,7 +5613,7 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(decL2, arrangement, decL2, decH2);
     __ orr(decL3, arrangement, decL3, decH3);
 
-    // check iilegal inputs, value larger than 63 (maximum of 6 bits)
+    // check illegal inputs, value larger than 63 (maximum of 6 bits)
     __ cmhi(decH0, arrangement, decL0, v27);
     __ cmhi(decH1, arrangement, decL1, v27);
     __ cmhi(decH2, arrangement, decL2, v27);
@@ -5670,40 +5637,35 @@ class StubGenerator: public StubCodeGenerator {
     __ cbz(rscratch2, NoIllegalData);
 
     // handle illegal input
+    __ umov(r10, in2, __ D, 0);
     if (size == 16) {
-      Label ErrorInLowerHalf;
-      __ umov(rscratch1, in2, __ D, 0);
-      __ cbnz(rscratch1, ErrorInLowerHalf);
+      __ cbnz(r10, ErrorInLowerHalf);
 
       // illegal input is in higher half, store the lower half now.
       __ st3(out0, out1, out2, __ T8B, __ post(dst, 24));
 
-      for (int i = 8; i < 15; i++) {
-        __ umov(rscratch2, in2, __ B, (u1) i);
-        __ cbnz(rscratch2, Exit);
-        __ umov(r10, out0, __ B, (u1) i);
-        __ umov(r11, out1, __ B, (u1) i);
-        __ umov(r12, out2, __ B, (u1) i);
-        __ strb(r10, __ post(dst, 1));
-        __ strb(r11, __ post(dst, 1));
-        __ strb(r12, __ post(dst, 1));
-      }
-      __ b(Exit);
+      __ umov(r10, in2,  __ D, 1);
+      __ umov(r11, out0, __ D, 1);
+      __ umov(r12, out1, __ D, 1);
+      __ umov(r13, out2, __ D, 1);
+      __ b(StoreLegalData);
 
       __ BIND(ErrorInLowerHalf);
     }
+    __ umov(r11, out0, __ D, 0);
+    __ umov(r12, out1, __ D, 0);
+    __ umov(r13, out2, __ D, 0);
 
-    for (int i = 0; i < 7; i++) {
-        __ umov(rscratch2, in2, __ B, (u1) i);
-        __ cbnz(rscratch2, Exit);
-        __ umov(r10, out0, __ B, (u1) i);
-        __ umov(r11, out1, __ B, (u1) i);
-        __ umov(r12, out2, __ B, (u1) i);
-        __ strb(r10, __ post(dst, 1));
-        __ strb(r11, __ post(dst, 1));
-        __ strb(r12, __ post(dst, 1));
-    }
-    __ b(Exit);
+    __ BIND(StoreLegalData);
+    __ tbnz(r10, 5, Exit); // 0xff indicates illegal input
+    __ strb(r11, __ post(dst, 1));
+    __ strb(r12, __ post(dst, 1));
+    __ strb(r13, __ post(dst, 1));
+    __ lsr(r10, r10, 8);
+    __ lsr(r11, r11, 8);
+    __ lsr(r12, r12, 8);
+    __ lsr(r13, r13, 8);
+    __ b(StoreLegalData);
 
     __ BIND(NoIllegalData);
     __ st3(out0, out1, out2, arrangement, __ post(dst, 3 * size));
@@ -5724,6 +5686,13 @@ class StubGenerator: public StubCodeGenerator {
    */
   address generate_base64_decodeBlock() {
 
+    // The SIMD part of this Base64 decode intrinsic is based on the algorithm outlined
+    // on http://0x80.pl/articles/base64-simd-neon.html#encoding-quadwords, in section
+    // titled "Base64 decoding".
+
+    // Non-SIMD lookup tables are mostly dumped from fromBase64 array used in java.util.Base64,
+    // except the trailing character '=' is also treated illegal value in this instrinsic. That
+    // is java.util.Base64.fromBase64['='] = -2, while fromBase(URL)64ForNoSIMD['='] = 255 here.
     static const uint8_t fromBase64ForNoSIMD[256] = {
       255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
       255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
@@ -5800,15 +5769,16 @@ class StubGenerator: public StubCodeGenerator {
     Register send  = c_rarg2;  // source end offset
     Register dst   = c_rarg3;  // dest array
     Register doff  = c_rarg4;  // position for writing to dest array
-    Register isURL = c_rarg5;  // Base64 or URL chracter set
+    Register isURL = c_rarg5;  // Base64 or URL character set
 
     Register length = send;    // reuse send as length of source data to process
 
     Register simd_codec   = c_rarg6;
     Register nosimd_codec = c_rarg7;
 
-    Label ProcessData, PreProcess80B, Process64B, Process32B,
-          Process4B, SIMDEnter, SIMDExit, Exit;
+    Label ProcessData, Process64B, Process32B, Process4B, SIMDEnter, SIMDExit, Exit;
+
+    __ enter();
 
     __ add(src, src, soff);
     __ add(dst, dst, doff);
@@ -5823,18 +5793,47 @@ class StubGenerator: public StubCodeGenerator {
     __ lea(nosimd_codec, ExternalAddress((address) fromBase64URLForNoSIMD));
 
     __ BIND(ProcessData);
+    __ mov(rscratch1, length);
     __ cmp(length, (u1)144); // 144 = 80 + 64
     __ br(Assembler::LT, Process4B);
 
     // The 1st character of the input can be illegal if the data is MIME encoded.
-    // We can not benefits from SIMD for this case. The max line size of MIME
+    // We cannot benefits from SIMD for this case. The max line size of MIME
     // encoding is 76, with the PreProcess80B blob, we actually use no-simd
     // instructions for all MIME encoded data.
-    __ movw(rscratch1, 1);
-    __ BIND(PreProcess80B);
-    generate_base64_decode_nosimdround(src, dst, nosimd_codec, Exit);
-    __ lslw(rscratch1, rscratch1, 1);
-    __ tbz(rscratch1, 20, PreProcess80B);
+    __ movw(rscratch1, 79);
+ 
+    __ BIND(Process4B);
+    __ ldrb(r10, __ post(src, 1));
+    __ ldrb(r11, __ post(src, 1));
+    __ ldrb(r12, __ post(src, 1));
+    __ ldrb(r13, __ post(src, 1));
+    // get the de-code
+    __ ldrb(r10, Address(nosimd_codec, r10, Address::uxtw(0)));
+    __ ldrb(r11, Address(nosimd_codec, r11, Address::uxtw(0)));
+    __ ldrb(r12, Address(nosimd_codec, r12, Address::uxtw(0)));
+    __ ldrb(r13, Address(nosimd_codec, r13, Address::uxtw(0)));
+    // error detection, 255u indicates an illegal input
+    __ orrw(r14, r10, r11);
+    __ orrw(r15, r12, r13);
+    __ orrw(r14, r14, r15);
+    __ tbnz(r14, 7, Exit);
+    // recover the data
+    __ lslw(r14, r10, 2);
+    __ bfmw(r14, r11, 4, 5);
+    __ lslw(r15, r11, 4);
+    __ bfmw(r15, r12, 2, 5);
+    __ orrw(r13, r13, r12, Assembler::LSL, 6);
+    __ strb(r14, __ post(dst, 1));
+    __ strb(r15, __ post(dst, 1));
+    __ strb(r13, __ post(dst, 1));
+    // non-simd loop
+    __ subsw(rscratch1, rscratch1, 4);
+    __ br(Assembler::GT, Process4B);
+
+    // if exiting from PreProcess80B, rscratch1 == -1;
+    // otherwise, rscratch == 0.
+    __ cbzw(rscratch1, Exit);
     __ sub(length, length, 80);
 
     __ lea(simd_codec, ExternalAddress((address) fromBase64ForSIMD));
@@ -5863,14 +5862,13 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(SIMDExit);
     __ cbz(length, Exit);
-
-    __ BIND(Process4B);
-    generate_base64_decode_nosimdround(src, dst, nosimd_codec, Exit);
-    __ sub(length, length, 4);
-    __ cbnz(length, Process4B);
+    __ movw(rscratch1, length);
+    __ b(Process4B);
 
     __ BIND(Exit);
     __ sub(c_rarg0, dst, doff);
+
+    __ leave();
     __ ret(lr);
 
     return start;
