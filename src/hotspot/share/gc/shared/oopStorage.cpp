@@ -111,6 +111,10 @@ void OopStorage::AllocationList::unlink(const Block& block) {
   }
 }
 
+bool OopStorage::AllocationList::contains(const Block& block) const {
+  return (next(block) != NULL) || (ctail() == &block);
+}
+
 OopStorage::ActiveArray::ActiveArray(size_t size) :
   _size(size),
   _block_count(0),
@@ -245,8 +249,8 @@ size_t OopStorage::Block::allocation_alignment_shift() {
   return exact_log2(block_alignment);
 }
 
-inline bool is_full_bitmask(uintx bitmask) { return ~bitmask == 0; }
-inline bool is_empty_bitmask(uintx bitmask) { return bitmask == 0; }
+static inline bool is_full_bitmask(uintx bitmask) { return ~bitmask == 0; }
+static inline bool is_empty_bitmask(uintx bitmask) { return bitmask == 0; }
 
 bool OopStorage::Block::is_full() const {
   return is_full_bitmask(allocated_bitmask());
@@ -667,24 +671,23 @@ bool OopStorage::reduce_deferred_updates() {
   // bitmask state here while blocking a release() operation from recording
   // the deferred update needed for its bitmask change.
   OrderAccess::fence();
-  // Process popped block.
+  // Make list state consistent with bitmask state.
   uintx allocated = block->allocated_bitmask();
-
-  // Make membership in list consistent with bitmask state.
-  if ((_allocation_list.ctail() != NULL) &&
-      ((_allocation_list.ctail() == block) ||
-       (_allocation_list.next(*block) != NULL))) {
-    // Block is in the _allocation_list.
-    assert(!is_full_bitmask(allocated), "invariant");
-  } else if (!is_full_bitmask(allocated)) {
-    // Block is not in the _allocation_list, but now should be.
-    _allocation_list.push_front(*block);
-  } // Else block is full and not in list, which is correct.
-
-  // Move empty block to end of list, for possible deletion.
-  if (is_empty_bitmask(allocated)) {
-    _allocation_list.unlink(*block);
+  if (is_full_bitmask(allocated)) {
+    // If full then it shouldn't be in the list, and should stay that way.
+    assert(!_allocation_list.contains(*block), "invariant");
+  } else if (_allocation_list.contains(*block)) {
+    // Block is in list.  If empty, move to the end for possible deletion.
+    if (is_empty_bitmask(allocated)) {
+      _allocation_list.unlink(*block);
+      _allocation_list.push_back(*block);
+    }
+  } else if (is_empty_bitmask(allocated)) {
+    // Block is empty and not in list. Add to back for possible deletion.
     _allocation_list.push_back(*block);
+  } else {
+    // Block is neither full nor empty, and not in list.  Add to front.
+    _allocation_list.push_front(*block);
   }
 
   log_trace(oopstorage, blocks)("%s: processed deferred update " PTR_FORMAT,
@@ -692,7 +695,7 @@ bool OopStorage::reduce_deferred_updates() {
   return true;              // Processed one pending update.
 }
 
-inline void check_release_entry(const oop* entry) {
+static inline void check_release_entry(const oop* entry) {
   assert(entry != NULL, "Releasing NULL");
   assert(*entry == NULL, "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
 }
