@@ -38,7 +38,7 @@ public class VerifyWithDefaultArchive {
     public static void main(String... args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:cds", "-XX:+VerifySharedSpaces", "-version");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
-        out.shouldContain("OpenJDK");
+        out.shouldNotContain("relocation bitmap CRC error");
         out.shouldHaveExitValue(0);
     }
 }
