@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4413752
+ * @bug 4413752 8262881
  * @summary Test SuspendThread with ObjectMonitor enter.
  * @requires vm.jvmti
  * @library /test/lib
@@ -62,11 +62,6 @@ public class SuspendWithObjectMonitorEnter {
     private static final int DEF_TIME_MAX = 60;    // default max # secs to test
     private static final int JOIN_MAX     = 30;    // max # secs to wait for join
 
-    public static final int THR_MAIN      = 0;     // ID for main thread
-    public static final int THR_BLOCKER   = 1;     // ID for blocker thread
-    public static final int THR_CONTENDER = 2;     // ID for contender thread
-    public static final int THR_RESUMER   = 3;     // ID for resumer thread
-
     public static final int TS_INIT              = 1;  // initial testState
     public static final int TS_BLOCKER_RUNNING   = 2;  // blocker is running
     public static final int TS_CONTENDER_RUNNING = 3;  // contender is running
@@ -82,15 +77,14 @@ public class SuspendWithObjectMonitorEnter {
     public static Object barrierResumer = new Object();  // controls resumer
     public static Object threadLock = new Object();      // testing object
 
-    public volatile static int testState;
     public static long count = 0;
+    public static boolean printDebug = false;
+    public volatile static int testState;
 
     private static void log(String msg) { System.out.println(msg); }
 
-    native static int GetResult();
-    native static void SetPrintDebug();
-    native static void SuspendThread(int id, SuspendWithObjectMonitorEnterWorker thr);
-    native static void Wait4ContendedEnter(int id, SuspendWithObjectMonitorEnterWorker thr);
+    native static int suspendThread(SuspendWithObjectMonitorEnterWorker thr);
+    native static int wait4ContendedEnter(SuspendWithObjectMonitorEnterWorker thr);
 
     public static void main(String[] args) throws Exception {
         try {
@@ -102,7 +96,39 @@ public class SuspendWithObjectMonitorEnter {
             throw ule;
         }
 
-        System.exit(run(args, System.out) + exit_delta);
+        int timeMax = 0;
+        if (args.length == 0) {
+            timeMax = DEF_TIME_MAX;
+        } else {
+            int argIndex = 0;
+            int argsLeft = args.length;
+            if (args[0].equals("-p")) {
+                printDebug = true;
+                argIndex = 1;
+                argsLeft--;
+            }
+            if (argsLeft == 0) {
+                timeMax = DEF_TIME_MAX;
+            } else if (argsLeft == 1) {
+                try {
+                    timeMax = Integer.parseUnsignedInt(args[argIndex]);
+                } catch (NumberFormatException nfe) {
+                    System.err.println("'" + args[argIndex] +
+                                       "': invalid timeMax value.");
+                    usage();
+                }
+            } else {
+                usage();
+            }
+        }
+
+        System.exit(run(timeMax, System.out) + exit_delta);
+    }
+
+    public static void logDebug(String mesg) {
+        if (printDebug) {
+            System.err.println(Thread.currentThread().getName() + ": " + mesg);
+        }
     }
 
     public static void usage() {
@@ -115,8 +141,8 @@ public class SuspendWithObjectMonitorEnter {
         System.exit(1);
     }
 
-    public static int run(String[] args, PrintStream out) {
-        return (new SuspendWithObjectMonitorEnter()).doWork(args, out);
+    public static int run(int timeMax, PrintStream out) {
+        return (new SuspendWithObjectMonitorEnter()).doWork(timeMax, out);
     }
 
     public static void checkTestState(int exp) {
@@ -127,41 +153,15 @@ public class SuspendWithObjectMonitorEnter {
         }
     }
 
-    public int doWork(String[] args, PrintStream out) {
-        int time_max = 0;
-        if (args.length == 0) {
-            time_max = DEF_TIME_MAX;
-        } else {
-            int arg_index = 0;
-            int args_left = args.length;
-            if (args[0].equals("-p")) {
-                SetPrintDebug();
-                arg_index = 1;
-                args_left--;
-            }
-            if (args_left == 0) {
-                time_max = DEF_TIME_MAX;
-            } else if (args_left == 1) {
-                try {
-                    time_max = Integer.parseUnsignedInt(args[arg_index]);
-                } catch (NumberFormatException nfe) {
-                    System.err.println("'" + args[arg_index] +
-                                       "': invalid time_max value.");
-                    usage();
-                }
-            } else {
-                usage();
-            }
-        }
-
+    public int doWork(int timeMax, PrintStream out) {
         SuspendWithObjectMonitorEnterWorker blocker;    // blocker thread
         SuspendWithObjectMonitorEnterWorker contender;  // contender thread
         SuspendWithObjectMonitorEnterWorker resumer;    // resumer thread
 
-        System.out.println("About to execute for " + time_max + " seconds.");
+        System.out.println("About to execute for " + timeMax + " seconds.");
 
         long start_time = System.currentTimeMillis();
-        while (System.currentTimeMillis() < start_time + (time_max * 1000)) {
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
             count++;
             testState = TS_INIT;  // starting the test loop
 
@@ -205,11 +205,23 @@ public class SuspendWithObjectMonitorEnter {
             }
 
             // wait for the contender thread to block
-            Wait4ContendedEnter(THR_MAIN, contender);
+            logDebug("before contended enter wait");
+            int retCode = wait4ContendedEnter(contender);
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI GetThreadState: " +
+                                           "retCode=" + retCode);
+            }
+            logDebug("done contended enter wait");
 
             checkTestState(TS_RESUMER_RUNNING);
             testState = TS_CALL_SUSPEND;
-            SuspendThread(THR_MAIN, contender);
+            logDebug("before suspend thread");
+            retCode = suspendThread(contender);
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI SuspendThread: " +
+                                           "retCode=" + retCode);
+            }
+            logDebug("suspended thread");
 
             //
             // At this point, all of the child threads are running
@@ -257,10 +269,10 @@ public class SuspendWithObjectMonitorEnter {
             checkTestState(TS_CONTENDER_DONE);
         }
 
-        System.out.println("Executed " + count + " loops in " + time_max +
+        System.out.println("Executed " + count + " loops in " + timeMax +
                            " seconds.");
 
-        return GetResult();
+        return 0;
     }
 }
 
@@ -276,13 +288,10 @@ class SuspendWithObjectMonitorEnterWorker extends Thread {
         this.target = target;
     }
 
-    native static int GetPrintDebug();
-    native static void ResumeThread(int id, SuspendWithObjectMonitorEnterWorker thr);
+    native static int resumeThread(SuspendWithObjectMonitorEnterWorker thr);
 
     public void run() {
-        if (GetPrintDebug() != 0) {
-            System.err.println(getName() + " thread running");
-        }
+        SuspendWithObjectMonitorEnter.logDebug("thread running");
 
         //
         // Launch the blocker thread:
@@ -292,13 +301,9 @@ class SuspendWithObjectMonitorEnterWorker extends Thread {
         //
         if (getName().equals("blocker")) {
             // grab threadLock before we tell main we are running
-            if (GetPrintDebug() != 0) {
-                System.err.println(getName() + ": before enter threadLock");
-            }
+            SuspendWithObjectMonitorEnter.logDebug("before enter threadLock");
             synchronized(SuspendWithObjectMonitorEnter.threadLock) {
-                if (GetPrintDebug() != 0) {
-                    System.err.println(getName() + ": enter threadLock");
-                }
+                SuspendWithObjectMonitorEnter.logDebug("enter threadLock");
 
                 SuspendWithObjectMonitorEnter.checkTestState(SuspendWithObjectMonitorEnter.TS_INIT);
 
@@ -308,9 +313,7 @@ class SuspendWithObjectMonitorEnterWorker extends Thread {
                         SuspendWithObjectMonitorEnter.testState = SuspendWithObjectMonitorEnter.TS_BLOCKER_RUNNING;
                         SuspendWithObjectMonitorEnter.barrierLaunch.notify();
                     }
-                    if (GetPrintDebug() != 0) {
-                        System.err.println(getName() + " thread waiting");
-                    }
+                    SuspendWithObjectMonitorEnter.logDebug("thread waiting");
                     // TS_READY_TO_RESUME is set right after TS_DONE_BLOCKING
                     // is set so either can get the blocker thread out of
                     // this wait() wrapper:
@@ -323,9 +326,7 @@ class SuspendWithObjectMonitorEnterWorker extends Thread {
                         }
                     }
                 }
-                if (GetPrintDebug() != 0) {
-                    System.err.println(getName() + ": exit threadLock");
-                }
+                SuspendWithObjectMonitorEnter.logDebug("exit threadLock");
             }
         }
         //
@@ -341,20 +342,14 @@ class SuspendWithObjectMonitorEnterWorker extends Thread {
                 SuspendWithObjectMonitorEnter.barrierLaunch.notify();
             }
 
-            if (GetPrintDebug() != 0) {
-                System.err.println(getName() + ": before enter threadLock");
-            }
+            SuspendWithObjectMonitorEnter.logDebug("before enter threadLock");
             synchronized(SuspendWithObjectMonitorEnter.threadLock) {
-                if (GetPrintDebug() != 0) {
-                    System.err.println(getName() + ": enter threadLock");
-                }
+                SuspendWithObjectMonitorEnter.logDebug("enter threadLock");
 
                 SuspendWithObjectMonitorEnter.checkTestState(SuspendWithObjectMonitorEnter.TS_CALL_RESUME);
                 SuspendWithObjectMonitorEnter.testState = SuspendWithObjectMonitorEnter.TS_CONTENDER_DONE;
 
-                if (GetPrintDebug() != 0) {
-                    System.err.println(getName() + ": exit threadLock");
-                }
+                SuspendWithObjectMonitorEnter.logDebug("exit threadLock");
             }
         }
         //
@@ -371,9 +366,7 @@ class SuspendWithObjectMonitorEnterWorker extends Thread {
                     SuspendWithObjectMonitorEnter.testState = SuspendWithObjectMonitorEnter.TS_RESUMER_RUNNING;
                     SuspendWithObjectMonitorEnter.barrierLaunch.notify();
                 }
-                if (GetPrintDebug() != 0) {
-                    System.err.println(getName() + " thread waiting");
-                }
+                SuspendWithObjectMonitorEnter.logDebug("thread waiting");
                 while (SuspendWithObjectMonitorEnter.testState != SuspendWithObjectMonitorEnter.TS_READY_TO_RESUME) {
                     try {
                         // wait for main to tell us when to continue
@@ -383,23 +376,23 @@ class SuspendWithObjectMonitorEnterWorker extends Thread {
                 }
             }
 
-            if (GetPrintDebug() != 0) {
-                System.err.println(getName() + ": before enter threadLock");
-            }
+            SuspendWithObjectMonitorEnter.logDebug("before enter threadLock");
             synchronized(SuspendWithObjectMonitorEnter.threadLock) {
-                if (GetPrintDebug() != 0) {
-                    System.err.println(getName() + ": enter threadLock");
-                }
+                SuspendWithObjectMonitorEnter.logDebug("enter threadLock");
 
                 SuspendWithObjectMonitorEnter.checkTestState(SuspendWithObjectMonitorEnter.TS_READY_TO_RESUME);
                 SuspendWithObjectMonitorEnter.testState = SuspendWithObjectMonitorEnter.TS_CALL_RESUME;
 
                 // resume the contender thread so contender.join() can work
-                ResumeThread(SuspendWithObjectMonitorEnter.THR_RESUMER, target);
-
-                if (GetPrintDebug() != 0) {
-                    System.err.println(getName() + ": exit threadLock");
+                SuspendWithObjectMonitorEnter.logDebug("before resume thread");
+                int retCode = resumeThread(target);
+                if (retCode != 0) {
+                    throw new RuntimeException("error in JVMTI ResumeThread: " +
+                                               "retCode=" + retCode);
                 }
+                SuspendWithObjectMonitorEnter.logDebug("resumed thread");
+
+                SuspendWithObjectMonitorEnter.logDebug("exit threadLock");
             }
         }
     }

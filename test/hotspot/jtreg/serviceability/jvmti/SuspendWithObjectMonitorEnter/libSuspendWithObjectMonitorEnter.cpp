@@ -26,11 +26,7 @@
 
 extern "C" {
 
-static jint iGlobalStatus = 0;
 static jvmtiEnv* jvmti = NULL;
-static jint printdebug = 0;
-static jrawMonitorID threadLock = NULL;
-static char threadLockName[] = "threadLock";
 
 #define LOG(...) \
   do { \
@@ -39,71 +35,27 @@ static char threadLockName[] = "threadLock";
     fflush(stdout); \
   } while (0)
 
-static void
-check_jvmti_status(JNIEnv* jni, jvmtiError err, const char* msg) {
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("check_jvmti_status: JVMTI function returned error: %d", err);
-    iGlobalStatus = 2;
-    jni->FatalError(msg);
-  }
+JNIEXPORT jint JNICALL
+Java_SuspendWithObjectMonitorEnter_suspendThread(JNIEnv *jni, jclass cls, jthread thr) {
+  return jvmti->SuspendThread(thr);
 }
-
-static void print_debug(jint id, const char* mesg) {
-  const char *thr;
-
-  switch (id) {
-  // These id values need to match SuspendWithObjectMonitorEnter.java:
-  case 0:  thr = "main";      break;
-  case 1:  thr = "blocker";   break;
-  case 2:  thr = "contender"; break;
-  case 3:  thr = "resumer";   break;
-  default: thr = "unknown";   break;
-  }
-
-  (void)fprintf(stderr, "%s: %s", thr, mesg);
-}
-#define DEBUG_MESG(id, m) { if (printdebug) print_debug(id, m); }
 
 JNIEXPORT jint JNICALL
-Java_SuspendWithObjectMonitorEnter_GetResult(JNIEnv *env, jclass cls) {
-  return iGlobalStatus;
-}
-
-JNIEXPORT void JNICALL
-Java_SuspendWithObjectMonitorEnter_SetPrintDebug(JNIEnv *env, jclass cls) {
-  printdebug = 1;
-}
-
-JNIEXPORT void JNICALL
-Java_SuspendWithObjectMonitorEnter_SuspendThread(JNIEnv *jni, jclass cls, jint id, jthread thr) {
-  DEBUG_MESG(id, "before suspend thread\n");
-  jvmtiError err = jvmti->SuspendThread(thr);
-  check_jvmti_status(jni, err, "Java_SuspendWithObjectMonitorEnter_SuspendThread: error in JVMTI SuspendThread");
-  DEBUG_MESG(id, "suspended thread\n");
-}
-
-JNIEXPORT void JNICALL
-Java_SuspendWithObjectMonitorEnter_Wait4ContendedEnter(JNIEnv *jni, jclass cls, jint id, jthread thr) {
+Java_SuspendWithObjectMonitorEnter_wait4ContendedEnter(JNIEnv *jni, jclass cls, jthread thr) {
+  jvmtiError err;
   jint thread_state;
-  DEBUG_MESG(id, "before contended enter wait\n");
   do {
-    jvmtiError err = jvmti->GetThreadState(thr, &thread_state);
-    check_jvmti_status(jni, err, "Java_SuspendWithObjectMonitorEnter_Wait4ContendedEnter: error in JVMTI GetThreadState");
+    err = jvmti->GetThreadState(thr, &thread_state);
+    if (err != JVMTI_ERROR_NONE) {
+      return err;
+    }
   } while ((thread_state & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER) == 0);
-  DEBUG_MESG(id, "done contended enter wait\n");
+  return err;
 }
 
 JNIEXPORT jint JNICALL
-Java_SuspendWithObjectMonitorEnterWorker_GetPrintDebug(JNIEnv *env, jclass cls) {
-  return printdebug;
-}
-
-JNIEXPORT void JNICALL
-Java_SuspendWithObjectMonitorEnterWorker_ResumeThread(JNIEnv *jni, jclass cls, jint id, jthread thr) {
-  DEBUG_MESG(id, "before resume thread\n");
-  jvmtiError err = jvmti->ResumeThread(thr);
-  check_jvmti_status(jni, err, "Java_SuspendWithObjectMonitorEnterWorker_ResumeThread: error in JVMTI ResumeThread");
-  DEBUG_MESG(id, "resumed thread\n");
+Java_SuspendWithObjectMonitorEnterWorker_resumeThread(JNIEnv *jni, jclass cls, jthread thr) {
+  return jvmti->ResumeThread(thr);
 }
 
 

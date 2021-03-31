@@ -62,11 +62,6 @@ public class SuspendWithRawMonitorEnter {
     private static final int DEF_TIME_MAX = 60;    // default max # secs to test
     private static final int JOIN_MAX     = 30;    // max # secs to wait for join
 
-    public static final int THR_MAIN      = 0;     // ID for main thread
-    public static final int THR_BLOCKER   = 1;     // ID for blocker thread
-    public static final int THR_CONTENDER = 2;     // ID for contender thread
-    public static final int THR_RESUMER   = 3;     // ID for resumer thread
-
     public static final int TS_INIT              = 1;  // initial testState
     public static final int TS_BLOCKER_RUNNING   = 2;  // blocker is running
     public static final int TS_CONTENDER_RUNNING = 3;  // contender is running
@@ -81,16 +76,15 @@ public class SuspendWithRawMonitorEnter {
     public static Object barrierBlocker = new Object();  // controls blocker
     public static Object barrierResumer = new Object();  // controls resumer
 
-    public volatile static int testState;
     public static long count = 0;
+    public static boolean printDebug = false;
+    public volatile static int testState;
 
     private static void log(String msg) { System.out.println(msg); }
 
-    native static void CreateRawMonitor(int id);
-    native static void DestroyRawMonitor(int id);
-    native static int GetResult();
-    native static void SetPrintDebug();
-    native static void SuspendThread(int id, SuspendWithRawMonitorEnterWorker thr);
+    native static int createRawMonitor();
+    native static int destroyRawMonitor();
+    native static int suspendThread(SuspendWithRawMonitorEnterWorker thr);
 
     public static void main(String[] args) throws Exception {
         try {
@@ -102,7 +96,39 @@ public class SuspendWithRawMonitorEnter {
             throw ule;
         }
 
-        System.exit(run(args, System.out) + exit_delta);
+        int timeMax = 0;
+        if (args.length == 0) {
+            timeMax = DEF_TIME_MAX;
+        } else {
+            int argIndex = 0;
+            int argsLeft = args.length;
+            if (args[0].equals("-p")) {
+                printDebug = true;
+                argIndex = 1;
+                argsLeft--;
+            }
+            if (argsLeft == 0) {
+                timeMax = DEF_TIME_MAX;
+            } else if (argsLeft == 1) {
+                try {
+                    timeMax = Integer.parseUnsignedInt(args[argIndex]);
+                } catch (NumberFormatException nfe) {
+                    System.err.println("'" + args[argIndex] +
+                                       "': invalid timeMax value.");
+                    usage();
+                }
+            } else {
+                usage();
+            }
+        }
+
+        System.exit(run(timeMax, System.out) + exit_delta);
+    }
+
+    public static void logDebug(String mesg) {
+        if (printDebug) {
+            System.err.println(Thread.currentThread().getName() + ": " + mesg);
+        }
     }
 
     public static void usage() {
@@ -115,8 +141,8 @@ public class SuspendWithRawMonitorEnter {
         System.exit(1);
     }
 
-    public static int run(String[] args, PrintStream out) {
-        return (new SuspendWithRawMonitorEnter()).doWork(args, out);
+    public static int run(int timeMax, PrintStream out) {
+        return (new SuspendWithRawMonitorEnter()).doWork(timeMax, out);
     }
 
     public static void checkTestState(int exp) {
@@ -127,43 +153,22 @@ public class SuspendWithRawMonitorEnter {
         }
     }
 
-    public int doWork(String[] args, PrintStream out) {
-        int time_max = 0;
-        if (args.length == 0) {
-            time_max = DEF_TIME_MAX;
-        } else {
-            int arg_index = 0;
-            int args_left = args.length;
-            if (args[0].equals("-p")) {
-                SetPrintDebug();
-                arg_index = 1;
-                args_left--;
-            }
-            if (args_left == 0) {
-                time_max = DEF_TIME_MAX;
-            } else if (args_left == 1) {
-                try {
-                    time_max = Integer.parseUnsignedInt(args[arg_index]);
-                } catch (NumberFormatException nfe) {
-                    System.err.println("'" + args[arg_index] +
-                                       "': invalid time_max value.");
-                    usage();
-                }
-            } else {
-                usage();
-            }
-        }
-
+    public int doWork(int timeMax, PrintStream out) {
         SuspendWithRawMonitorEnterWorker blocker;    // blocker thread
         SuspendWithRawMonitorEnterWorker contender;  // contender thread
         SuspendWithRawMonitorEnterWorker resumer;    // resumer thread
 
-        CreateRawMonitor(THR_MAIN);
+        int retCode = createRawMonitor();
+        if (retCode != 0) {
+            throw new RuntimeException("error in JVMTI CreateRawMonitor: " +
+                                       "retCode=" + retCode);
+        }
+        logDebug("created threadLock");
 
-        System.out.println("About to execute for " + time_max + " seconds.");
+        System.out.println("About to execute for " + timeMax + " seconds.");
 
         long start_time = System.currentTimeMillis();
-        while (System.currentTimeMillis() < start_time + (time_max * 1000)) {
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
             count++;
             testState = TS_INIT;  // starting the test loop
 
@@ -223,7 +228,13 @@ public class SuspendWithRawMonitorEnter {
             //
             checkTestState(TS_RESUMER_RUNNING);
             testState = TS_CALL_SUSPEND;
-            SuspendThread(THR_MAIN, contender);
+            logDebug("before suspend thread");
+            retCode = suspendThread(contender);
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI SuspendThread: " +
+                                           "retCode=" + retCode);
+            }
+            logDebug("suspended thread");
 
             //
             // At this point, all of the child threads are running
@@ -270,12 +281,17 @@ public class SuspendWithRawMonitorEnter {
 
             checkTestState(TS_CONTENDER_DONE);
         }
-        DestroyRawMonitor(THR_MAIN);
+        retCode = destroyRawMonitor();
+        if (retCode != 0) {
+            throw new RuntimeException("error in JVMTI DestroyRawMonitor: " +
+                                       "retCode=" + retCode);
+        }
+        logDebug("destroyed threadLock");
 
-        System.out.println("Executed " + count + " loops in " + time_max +
+        System.out.println("Executed " + count + " loops in " + timeMax +
                            " seconds.");
 
-        return GetResult();
+        return 0;
     }
 }
 
@@ -291,15 +307,12 @@ class SuspendWithRawMonitorEnterWorker extends Thread {
         this.target = target;
     }
 
-    native static int GetPrintDebug();
-    native static void RawMonitorEnter(int id);
-    native static void RawMonitorExit(int id);
-    native static void ResumeThread(int id, SuspendWithRawMonitorEnterWorker thr);
+    native static int rawMonitorEnter();
+    native static int rawMonitorExit();
+    native static int resumeThread(SuspendWithRawMonitorEnterWorker thr);
 
     public void run() {
-        if (GetPrintDebug() != 0) {
-            System.err.println(getName() + " thread running");
-        }
+        SuspendWithRawMonitorEnter.logDebug("thread running");
 
         //
         // Launch the blocker thread:
@@ -307,15 +320,35 @@ class SuspendWithRawMonitorEnterWorker extends Thread {
         // - holds threadLock until we tell it let go
         // - releases threadLock
         //
+        int retCode;
         if (getName().equals("blocker")) {
             // grab threadLock before we tell main we are running
-            RawMonitorEnter(SuspendWithRawMonitorEnter.THR_BLOCKER);
+            SuspendWithRawMonitorEnter.logDebug("before enter threadLock");
+            retCode = rawMonitorEnter();
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI RawMonitorEnter: " +
+                                           "retCode=" + retCode);
+            }
+            SuspendWithRawMonitorEnter.logDebug("enter threadLock");
 
             SuspendWithRawMonitorEnter.checkTestState(SuspendWithRawMonitorEnter.TS_INIT);
 
             // recursive entry
-            RawMonitorEnter(SuspendWithRawMonitorEnter.THR_BLOCKER);
-            RawMonitorExit(SuspendWithRawMonitorEnter.THR_BLOCKER);
+            SuspendWithRawMonitorEnter.logDebug("before recursive enter threadLock");
+            retCode = rawMonitorEnter();
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI RawMonitorEnter: " +
+                                           "retCode=" + retCode);
+            }
+            SuspendWithRawMonitorEnter.logDebug("recursive enter threadLock");
+
+            SuspendWithRawMonitorEnter.logDebug("before recursive exit threadLock");
+            retCode = rawMonitorExit();
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI RawMonitorExit: " +
+                                           "retCode=" + retCode);
+            }
+            SuspendWithRawMonitorEnter.logDebug("recursive exit threadLock");
 
             synchronized(SuspendWithRawMonitorEnter.barrierBlocker) {
                 synchronized(SuspendWithRawMonitorEnter.barrierLaunch) {
@@ -323,9 +356,7 @@ class SuspendWithRawMonitorEnterWorker extends Thread {
                     SuspendWithRawMonitorEnter.testState = SuspendWithRawMonitorEnter.TS_BLOCKER_RUNNING;
                     SuspendWithRawMonitorEnter.barrierLaunch.notify();
                 }
-                if (GetPrintDebug() != 0) {
-                    System.err.println(getName() + " thread waiting");
-                }
+                SuspendWithRawMonitorEnter.logDebug("thread waiting");
                 // TS_READY_TO_RESUME is set right after TS_DONE_BLOCKING
                 // is set so either can get the blocker thread out of
                 // this wait() wrapper:
@@ -337,7 +368,13 @@ class SuspendWithRawMonitorEnterWorker extends Thread {
                     } catch (InterruptedException ex) {
                     }
                 }
-                RawMonitorExit(SuspendWithRawMonitorEnter.THR_BLOCKER);
+                SuspendWithRawMonitorEnter.logDebug("before exit threadLock");
+                retCode = rawMonitorExit();
+                if (retCode != 0) {
+                    throw new RuntimeException("error in JVMTI RawMonitorExit: "
+                                               + "retCode=" + retCode);
+                }
+                SuspendWithRawMonitorEnter.logDebug("exit threadLock");
             }
         }
         //
@@ -353,12 +390,24 @@ class SuspendWithRawMonitorEnterWorker extends Thread {
                 SuspendWithRawMonitorEnter.barrierLaunch.notify();
             }
 
-            RawMonitorEnter(SuspendWithRawMonitorEnter.THR_CONTENDER);
+            SuspendWithRawMonitorEnter.logDebug("before enter threadLock");
+            retCode = rawMonitorEnter();
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI RawMonitorEnter: " +
+                                           "retCode=" + retCode);
+            }
+            SuspendWithRawMonitorEnter.logDebug("enter threadLock");
 
             SuspendWithRawMonitorEnter.checkTestState(SuspendWithRawMonitorEnter.TS_CALL_RESUME);
             SuspendWithRawMonitorEnter.testState = SuspendWithRawMonitorEnter.TS_CONTENDER_DONE;
 
-            RawMonitorExit(SuspendWithRawMonitorEnter.THR_CONTENDER);
+            SuspendWithRawMonitorEnter.logDebug("before exit threadLock");
+            retCode = rawMonitorExit();
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI RawMonitorExit: " +
+                                           "retCode=" + retCode);
+            }
+            SuspendWithRawMonitorEnter.logDebug("exit threadLock");
         }
         //
         // Launch the resumer thread:
@@ -374,9 +423,7 @@ class SuspendWithRawMonitorEnterWorker extends Thread {
                     SuspendWithRawMonitorEnter.testState = SuspendWithRawMonitorEnter.TS_RESUMER_RUNNING;
                     SuspendWithRawMonitorEnter.barrierLaunch.notify();
                 }
-                if (GetPrintDebug() != 0) {
-                    System.err.println(getName() + " thread waiting");
-                }
+                SuspendWithRawMonitorEnter.logDebug("thread waiting");
                 while (SuspendWithRawMonitorEnter.testState != SuspendWithRawMonitorEnter.TS_READY_TO_RESUME) {
                     try {
                         // wait for main to tell us when to continue
@@ -385,15 +432,33 @@ class SuspendWithRawMonitorEnterWorker extends Thread {
                     }
                 }
             }
-            RawMonitorEnter(SuspendWithRawMonitorEnter.THR_RESUMER);
+            SuspendWithRawMonitorEnter.logDebug("before enter threadLock");
+            retCode = rawMonitorEnter();
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI RawMonitorEnter: " +
+                                           "retCode=" + retCode);
+            }
+            SuspendWithRawMonitorEnter.logDebug("enter threadLock");
 
             SuspendWithRawMonitorEnter.checkTestState(SuspendWithRawMonitorEnter.TS_READY_TO_RESUME);
             SuspendWithRawMonitorEnter.testState = SuspendWithRawMonitorEnter.TS_CALL_RESUME;
 
             // resume the contender thread so contender.join() can work
-            ResumeThread(SuspendWithRawMonitorEnter.THR_RESUMER, target);
+            SuspendWithRawMonitorEnter.logDebug("before resume thread");
+            retCode = resumeThread(target);
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI ResumeThread: " +
+                                           "retCode=" + retCode);
+            }
+            SuspendWithRawMonitorEnter.logDebug("resumed thread");
 
-            RawMonitorExit(SuspendWithRawMonitorEnter.THR_RESUMER);
+            SuspendWithRawMonitorEnter.logDebug("before exit threadLock");
+            retCode = rawMonitorExit();
+            if (retCode != 0) {
+                throw new RuntimeException("error in JVMTI RawMonitorExit: " +
+                                           "retCode=" + retCode);
+            }
+            SuspendWithRawMonitorEnter.logDebug("exit threadLock");
         }
     }
 }
