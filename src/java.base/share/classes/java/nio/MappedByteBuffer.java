@@ -152,8 +152,18 @@ public abstract class MappedByteBuffer
      * @return true if the file was mapped using one of the sync map
      * modes, otherwise false.
      */
-    private boolean isSync() {
+    final boolean isSync() { // package-private
         return isSync;
+    }
+
+    /**
+     * Returns the {@code FileDescriptor} associated with this
+     * {@code MappedByteBuffer}.
+     *
+     * @return the buffer's file descriptor; may be {@code null}
+     */
+    final FileDescriptor fileDescriptor() { // package-private
+        return fd;
     }
 
     /**
@@ -205,7 +215,10 @@ public abstract class MappedByteBuffer
 
     /**
      * Forces any changes made to this buffer's content to be written to the
-     * storage device containing the mapped file.
+     * storage device containing the mapped file.  The region starts at index
+     * zero in this buffer and is {@code capacity()} bytes.  An invocation of
+     * this method behaves in exactly the same way as the invocation
+     * {@link force(int,int) force(0,capacity())}.
      *
      * <p> If the file mapped into this buffer resides on a local storage
      * device then when this method returns it is guaranteed that all changes
@@ -232,9 +245,9 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return this;
         }
-        int limit = limit();
-        if (isSync || ((address != 0) && (limit != 0))) {
-            return force(0, limit);
+        int capacity = capacity();
+        if (isSync || ((address != 0) && (capacity != 0))) {
+            return force(0, capacity);
         }
         return this;
     }
@@ -267,11 +280,11 @@ public abstract class MappedByteBuffer
      * @param  index
      *         The index of the first byte in the buffer region that is
      *         to be written back to storage; must be non-negative
-     *         and less than limit()
+     *         and less than {@code capacity()}
      *
      * @param  length
      *         The length of the region in bytes; must be non-negative
-     *         and no larger than limit() - index
+     *         and no larger than {@code capacity() - index}
      *
      * @throws IndexOutOfBoundsException
      *         if the preconditions on the index and length do not
@@ -289,10 +302,10 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return this;
         }
-        int limit = limit();
-        if ((address != 0) && (limit != 0)) {
+        int capacity = capacity();
+        if ((address != 0) && (capacity != 0)) {
             // check inputs
-            Objects.checkFromIndexSize(index, length, limit);
+            Objects.checkFromIndexSize(index, length, capacity);
             SCOPED_MEMORY_ACCESS.force(scope(), fd, address, isSync, index, length);
         }
         return this;
@@ -362,4 +375,41 @@ public abstract class MappedByteBuffer
         super.rewind();
         return this;
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p> Reading bytes into physical memory by invoking {@code load()} on the
+     * returned buffer, or writing bytes to the storage device by invoking
+     * {@code force()} on the returned buffer, will only act on the sub-range
+     * of this buffer that the returned buffer represents, namely
+     * {@code [position(),limit())}.
+     */
+    @Override
+    public abstract MappedByteBuffer slice();
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p> Reading bytes into physical memory by invoking {@code load()} on the
+     * returned buffer, or writing bytes to the storage device by invoking
+     * {@code force()} on the returned buffer, will only act on the sub-range
+     * of this buffer that the returned buffer represents, namely
+     * {@code [index,index+length)}, where {@code index} and {@code length} are
+     * assumed to satisfy the preconditions.
+     */
+    @Override
+    public abstract MappedByteBuffer slice(int index, int length);
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public abstract MappedByteBuffer duplicate();
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public abstract MappedByteBuffer compact();
 }

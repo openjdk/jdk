@@ -1362,7 +1362,11 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* raw_mem_phi = PhiNode::make(region, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     // Stable path.
-    test_gc_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::HAS_FORWARDED);
+    int flags = ShenandoahHeap::HAS_FORWARDED;
+    if (!ShenandoahBarrierSet::is_strong_access(lrb->decorators())) {
+      flags |= ShenandoahHeap::WEAK_ROOTS;
+    }
+    test_gc_state(ctrl, raw_mem, heap_stable_ctrl, phase, flags);
     IfNode* heap_stable_iff = heap_stable_ctrl->in(0)->as_If();
 
     // Heap stable case

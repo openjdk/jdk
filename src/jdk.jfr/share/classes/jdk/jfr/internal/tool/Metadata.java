@@ -49,7 +49,7 @@ import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 final class Metadata extends Command {
 
-    private final static JdkJfrConsumer PRIVATE_ACCESS = JdkJfrConsumer.instance();
+    private static final JdkJfrConsumer PRIVATE_ACCESS = JdkJfrConsumer.instance();
 
     private static class TypeComparator implements Comparator<Type> {
 

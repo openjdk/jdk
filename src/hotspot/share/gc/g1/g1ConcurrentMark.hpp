@@ -72,7 +72,7 @@ public:
 
   oop obj() const {
     assert(!is_array_slice(), "Trying to read array slice " PTR_FORMAT " as oop", p2i(_holder));
-    return (oop)_holder;
+    return cast_to_oop(_holder);
   }
 
   HeapWord* slice() const {
@@ -610,10 +610,6 @@ private:
     // Initial value for the hash seed, used in the work stealing code
     init_hash_seed                = 17
   };
-
-  // Number of entries in the per-task stats entry. This seems enough to have a very
-  // low cache miss rate.
-  static const uint RegionMarkStatsCacheSize = 1024;
 
   G1CMObjArrayProcessor       _objArray_processor;
 

@@ -96,6 +96,10 @@ public class Logger {
         log0(Level.WARNING, s, e);
     }
 
+    public void warn(String s, Object... o) {
+        log0(Level.WARNING, s, o);
+    }
+
     private void log0(Level level, String s) {
         if (impl.isLoggable(level)) {
             var sf = WALKER.walk(f -> f.skip(2).findFirst()).get();

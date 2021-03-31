@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -443,16 +444,12 @@ public class HotSpotAgent {
             db.getJShortType().getSize());
         }
 
-        if (!isServer) {
-            // Do not initialize the VM on the server (unnecessary, since it's
-            // instantiated on the client)
-            try {
-                VM.initialize(db, debugger);
-            } catch (DebuggerException e) {
-                throw (e);
-            } catch (Exception e) {
-                throw new DebuggerException(e);
-            }
+        try {
+            VM.initialize(db, debugger);
+        } catch (DebuggerException e) {
+            throw (e);
+        } catch (Exception e) {
+            throw new DebuggerException(e);
         }
     }
 
@@ -621,8 +618,10 @@ public class HotSpotAgent {
 
         if (cpu.equals("amd64") || cpu.equals("x86_64")) {
             machDesc = new MachineDescriptionAMD64();
+        } else if (cpu.equals("aarch64")) {
+            machDesc = new MachineDescriptionAArch64();
         } else {
-            throw new DebuggerException("Darwin only supported on x86_64. Current arch: " + cpu);
+            throw new DebuggerException("Darwin only supported on x86_64/aarch64. Current arch: " + cpu);
         }
 
         BsdDebuggerLocal dbg = new BsdDebuggerLocal(machDesc, !isServer);

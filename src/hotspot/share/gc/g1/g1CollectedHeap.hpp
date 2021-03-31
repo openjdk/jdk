@@ -172,6 +172,8 @@ private:
   HeapRegionSet _humongous_set;
 
   void eagerly_reclaim_humongous_regions();
+
+  void rebuild_free_region_list();
   // Start a new incremental collection set for the next pause.
   void start_new_collection_set();
 

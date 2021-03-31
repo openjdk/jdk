@@ -40,9 +40,9 @@ import jdk.jfr.EventType;
 
 public final class RequestEngine {
 
-    private final static JVM jvm = JVM.getJVM();
+    private static final JVM jvm = JVM.getJVM();
 
-    final static class RequestHook {
+    static final class RequestHook {
         private final Runnable hook;
         private final PlatformEventType type;
         private final AccessControlContext accessControllerContext;
@@ -99,7 +99,7 @@ public final class RequestEngine {
         }
     }
 
-    private final static List<RequestHook> entries = new CopyOnWriteArrayList<>();
+    private static final List<RequestHook> entries = new CopyOnWriteArrayList<>();
     private static long lastTimeMillis;
     private static long flushInterval = Long.MAX_VALUE;
     private static long streamDelta;

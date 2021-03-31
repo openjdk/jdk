@@ -182,14 +182,9 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       addx->set_req(1, in(1));
       addx->set_req(2, add2->in(1));
       addx = phase->transform(addx);
-      set_req(1, addx);
-      set_req(2, a22);
+      set_req_X(1, addx, phase);
+      set_req_X(2, a22, phase);
       progress = this;
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (add2->outcnt() == 0 && igvn) {
-        // add disconnected.
-        igvn->_worklist.push(add2);
-      }
     }
   }
 

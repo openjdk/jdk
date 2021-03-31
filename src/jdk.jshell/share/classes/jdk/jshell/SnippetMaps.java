@@ -164,23 +164,20 @@ final class SnippetMaps {
         List<String> klasses = importSnippets()
                                .filter(isi -> !isi.isStar)
                                .map(isi -> isi.fullname)
-                               .collect(toList());
+                               .toList();
         for (String k : klasses) {
             if (k.equals(full)) {
                 return full.substring(full.lastIndexOf(".")+1, full.length());
             }
         }
-        List<String> pkgs = importSnippets()
+        Stream<String> pkgs = importSnippets()
                                .filter(isi -> isi.isStar)
-                               .map(isi -> isi.fullname.substring(0, isi.fullname.lastIndexOf(".")))
-                               .collect(toList());
-        pkgs.add(0, "java.lang");
-        for (String ipkg : pkgs) {
-            if (!ipkg.isEmpty() && ipkg.equals(pkg)) {
-                return full.substring(pkg.length() + 1);
-            }
-        }
-        return full;
+                               .map(isi -> isi.fullname.substring(0, isi.fullname.lastIndexOf(".")));
+        return Stream.concat(Stream.of("java.lang"), pkgs)
+                     .filter(ipkg -> !ipkg.isEmpty() && ipkg.equals(pkg))
+                     .map(ipkg -> full.substring(pkg.length() + 1))
+                     .findFirst()
+                     .orElse(full);
     }
 
     /**

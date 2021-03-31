@@ -180,7 +180,7 @@ public class ECKeyValue extends Signature11ElementProxy implements KeyValueConte
                     uri = curElem.getAttributeNS(null, "URI");
                 }
                 // strip off "urn:oid"
-                if (uri.startsWith("urn:oid:")) {
+                if (uri != null && uri.startsWith("urn:oid:")) {
                     String oid = uri.substring("urn:oid:".length());
                     ecParams = getECParameterSpec(oid);
                     if (ecParams == null) {
@@ -204,11 +204,7 @@ public class ECKeyValue extends Signature11ElementProxy implements KeyValueConte
 
             ECPublicKeySpec spec = new ECPublicKeySpec(ecPoint, ecParams);
             return KeyFactory.getInstance("EC").generatePublic(spec);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new XMLSecurityException(ex);
-        } catch (InvalidKeySpecException ex) {
-            throw new XMLSecurityException(ex);
-        } catch (MarshalException ex) {
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | MarshalException ex) {
             throw new XMLSecurityException(ex);
         }
     }
