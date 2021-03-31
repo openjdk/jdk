@@ -367,7 +367,8 @@ class Universe: AllStatic {
   // array; this should trigger relocation in a sliding compaction collector.
   debug_only(static bool release_fullgc_alot_dummy();)
   // The non-oop pattern (see compiledIC.hpp, etc)
-  static void*   non_oop_word();
+  static void*         non_oop_word();
+  static bool contains_non_oop_word(void* p);
 
   // Oop verification (see MacroAssembler::verify_oop)
   static uintptr_t verify_oop_mask()          PRODUCT_RETURN0;

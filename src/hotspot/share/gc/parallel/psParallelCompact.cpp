@@ -534,6 +534,7 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
 {
   const size_t obj_ofs = pointer_delta(addr, _region_start);
   const size_t beg_region = obj_ofs >> Log2RegionSize;
+  // end_region is inclusive
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
 
   DEBUG_ONLY(Atomic::inc(&add_obj_count);)
@@ -549,7 +550,6 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t beg_ofs = region_offset(addr);
   _region_data[beg_region].add_live_obj(RegionSize - beg_ofs);
 
-  Klass* klass = cast_to_oop(addr)->klass();
   // Middle regions--completely spanned by this object.
   for (size_t region = beg_region + 1; region < end_region; ++region) {
     _region_data[region].set_partial_obj_size(RegionSize);
@@ -565,8 +565,8 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
 void
 ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
 {
-  assert(region_offset(beg) == 0, "not RegionSize aligned");
-  assert(region_offset(end) == 0, "not RegionSize aligned");
+  assert(is_region_aligned(beg), "not RegionSize aligned");
+  assert(is_region_aligned(end), "not RegionSize aligned");
 
   size_t cur_region = addr_to_region_idx(beg);
   const size_t end_region = addr_to_region_idx(end);
@@ -762,7 +762,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
         destination_count += 1;
         // Data from cur_region will be copied to the start of dest_region_2.
         _region_data[dest_region_2].set_source_region(cur_region);
-      } else if (region_offset(dest_addr) == 0) {
+      } else if (is_region_aligned(dest_addr)) {
         // Data from cur_region will be copied to the start of the destination
         // region.
         _region_data[dest_region_1].set_source_region(cur_region);
