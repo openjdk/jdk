@@ -667,20 +667,44 @@ TabularType tabularType =
 
     <h3 id="records">Mappings for Records</h3>
 
-    <p>A {@linkplain Record record} can be converted to a
-      {@link CompositeType} if and only if all its
+    <p>A {@linkplain Record record} class <em>J</em> can be converted
+      to a {@link CompositeType} if and only if all its
       {@linkplain Class#getRecordComponents() components} are
-      convertible to open types.
-      Otherwise, it is not convertible.</p>
+      convertible to open types. Otherwise, it is not convertible.
+      A record that has no components is not convertible.</p>
+
+    <h4 id="record-type-map">Mapping a record class to
+      {@code CompositeType}</h4>
 
     <p>A record whose components are all convertible to open
-      types, is itself convertible to a {@link CompositeType}
-      as follows.
-      The type name of this {@code CompositeType}
-      is determined by the same <a href="#type-names">type name rules</a>
-      defined by the <a href="#composite-map">mapping for other types</a>
-      below. Its getters are the accessors for the {@linkplain
-      RecordComponent record components}.</p>
+      types, is itself convertible to a {@link CompositeType}.
+      The record class is converted to a {@code CompositeType}
+      as follows.</p>
+
+    <ul>
+      <li>The type name of the {@code CompositeType} is the name
+        of the record class.</li>
+
+      <li>The record getters are the accessors for the
+        {@linkplain RecordComponent record components}.</li>
+
+      <li>For each record component of type <em>T</em>, the item in
+        the {@code CompositeType} has the same name as the record
+        component and its type is <em>opentype(T)</em>, as
+        defined by the <a href="#mapping-rules">type mapping rules</a>
+        above.</li>
+    </ul>
+
+    <h4 id="record-data-map">Mapping an instance of a record class to
+      {@code CompositeData}</h4>
+
+    <p>The mapping from an instance of a record class to a
+      {@link CompositeData} corresponding to the {@code CompositeType}
+      is the same as specified for
+      <a href="#composite-data-map">other types</a>.</p>
+
+    <h4 id="reconstructing-record">Reconstructing an instance of a record class
+      from a {@code CompositeData}</h4>
 
     <p>A record is reconstructed using its canonical constructor.
       The canonical constructor doesn't require the presence of
@@ -689,18 +713,11 @@ TabularType tabularType =
       annotations are present on the canonical constructor they
       will be ignored.</p>
 
-    <p>If the {@link CompositeData} from which the record is reconstructed
-      doesn't contain all the record components, the MXBean framework
-      will attempt to reconstruct the record in the same way than
-      for <a href="#composite-map">other types</a>:
-      non canonical constructors may be used if
-      annotated with either the {@link ConstructorParameters
-      &#64;javax.management.ConstructorParameters} or
-      {@code @java.beans.ConstructorProperties} annotation.</p>
-
-    <p>The complete rules for the mapping are detailed as part
-      of the <a href="#composite-map">Mapping for other types</a>
-      below.</p>
+    <p>How an instance of a record class <em>J</em> is reconstructed
+      from a {@link CompositeData} is detailed in
+      <a href="#reconstructing">Reconstructing an instance
+      of Java type or record class <em>J</em> from a {@code CompositeData}</a>
+      below.
 
     <h3 id="mxbean-map">Mappings for MXBean interfaces</h3>
 
@@ -793,16 +810,17 @@ public interface ModuleMXBean {
 
     <h3 id="composite-map">Mappings for other types</h3>
 
-    <p>Given a record <em>J</em>, or a Java class or interface
+    <p>Given a Java class or interface
       <em>J</em> that does not match the other
       rules in the table above, the MXBean framework will attempt to map
       it to a {@link CompositeType} as follows.  The type name of this
       {@code CompositeType} is determined by the <a href="#type-names">
       type name rules</a> below.</p>
 
-    <p>If <em>J</em> is a {@link Record}, its getters are the
-      accessors for the {@linkplain RecordComponent record components}.
-      Otherwise, the class is examined for getters using the conventions
+    <h4 id="composite-type-map">Mapping a Java type <em>J</em>
+      to {@link CompositeType}</h4>
+
+    <p>The class is examined for getters using the conventions
       <a href="#naming-conv">above</a>.  (Getters must be public
       instance methods.)  If there are no getters, or if
       any getter has a type that is not convertible, then <em>J</em> is
@@ -833,13 +851,7 @@ public interface ModuleMXBean {
     then the item in the {@code CompositeType} is called {@code name}
     and has type {@code SimpleType.BOOLEAN}.
 
-    <p>If the class is a {@link Record} and the getter is a component
-       accessor for a record component {@code name} of type <em>T</em>,
-       then the item in the {@code CompositeType} has the same name
-       as the record component, and has type <em>opentype(T)</em>.</p>
-
-    <p>Notice that unless the class is a {@code Record}, the
-      first character (or code point) is converted to
+    <p>Notice that the first character (or code point) is converted to
       lower case.  This follows the Java Beans convention, which for
       historical reasons is different from the Standard MBean
       convention.  In a Standard MBean or MXBean interface, a method
@@ -850,6 +862,9 @@ public interface ModuleMXBean {
     <p>If two methods produce the same item name (for example, {@code
       getOwner} and {@code isOwner}, or {@code getOwner} and {@code
       getowner}) then the type is not convertible.</p>
+
+    <h4 id="composite-data-map" >Mapping from an instance of Java
+      type or record class <em>J</em> to {@code CompositeData}</h4>
 
     <p>When the Open Type is {@code CompositeType}, the corresponding
       mapped Java type (<em>opendata(J)</em>) is {@link
@@ -864,7 +879,7 @@ public interface ModuleMXBean {
       Open Data type.  Thus, a getter such as</p>
 
     <blockquote>
-      {@code List<String> getNames()}
+      {@code List<String> getNames()} (or {@code List<String> names()} for a record)
     </blockquote>
 
     <p>will have been mapped to an item with name "{@code names}" and
@@ -880,8 +895,8 @@ public interface ModuleMXBean {
       CompositeDataSupport}.</p>
 
 
-    <h4>Reconstructing an instance of Java type <em>J</em> from
-      a {@code CompositeData}</h4>
+    <h4 id="reconstructing">Reconstructing an instance of Java type
+      or record class <em>J</em> from a {@code CompositeData}</h4>
 
     <p>If <em>opendata(J)</em> is {@code CompositeData} for a Java type
       <em>J</em>, then either an instance of <em>J</em> can be
