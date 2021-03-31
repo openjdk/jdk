@@ -539,7 +539,7 @@ void SafeThreadsListPtr::release_stable_list() {
     // thread's hazard ptr is handled by acquire_stable_list_fast_path().
     // And that protocol cannot be properly done with a ThreadsList that
     // might not be the current system ThreadsList.
-    assert(_previous->_list->_nested_handle_cnt > 0, "must be > than zero");
+    assert(_previous->_list->_nested_handle_cnt > 0, "must be > zero");
   }
   if (_has_ref_count) {
     // This thread created a nested ThreadsListHandle after the current
