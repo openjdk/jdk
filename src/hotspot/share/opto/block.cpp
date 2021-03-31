@@ -1249,7 +1249,7 @@ void PhaseCFG::verify() const {
           assert(def_block || def->is_Con(), "must have block; constants for debug info ok");
           // Verify that all definitions dominate their uses (except for virtual
           // instructions merging multiple definitions).
-          assert(n->is_Root() || n->is_Region() || n->is_Phi() ||
+          assert(n->is_Root() || n->is_Region() || n->is_Phi() || n->is_MachMerge() ||
                  def_block->dominates(block),
                  "uses must be dominated by definitions");
           // Verify that instructions in the block are in correct order.
