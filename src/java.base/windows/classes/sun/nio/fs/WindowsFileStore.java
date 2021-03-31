@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,15 @@ class WindowsFileStore
         if (!(ob instanceof WindowsFileStore))
             return false;
         WindowsFileStore other = (WindowsFileStore)ob;
-        return root.equals(other.root);
+        if (root.equals(other.root))
+            return true;
+        if (root.equalsIgnoreCase(other.root)) {
+             VolumeInformation otherInfo = other.volumeInformation();
+            return volInfo.volumeName().equals(otherInfo.volumeName()) &&
+                volInfo.fileSystemName().equals(otherInfo.fileSystemName()) &&
+                volInfo.volumeSerialNumber() == otherInfo.volumeSerialNumber();
+        }
+        return false;
     }
 
     @Override

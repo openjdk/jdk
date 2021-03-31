@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6873621 6979526 7006126 7020517
+ * @bug 4313887 6873621 6979526 7006126 7020517 8264400
  * @summary Unit test for java.nio.file.FileStore
  * @key intermittent
  * @library .. /test/lib
@@ -36,8 +36,8 @@ import java.nio.file.attribute.*;
 import java.io.File;
 import java.io.IOException;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
-
 
 public class Basic {
 
@@ -79,6 +79,16 @@ public class Basic {
         assertTrue(store1.equals(store2));
         assertTrue(store2.equals(store1));
         assertTrue(store1.hashCode() == store2.hashCode());
+
+        if (Platform.isWindows()) {
+            /**
+             * Test: FileStore.equals() should not be case sensitive
+             */
+            FileSystem fs = FileSystems.getDefault();
+            FileStore upper = Files.getFileStore(fs.getPath("C:\\"));
+            FileStore lower = Files.getFileStore(fs.getPath("c:\\"));
+            assertTrue(lower.equals(upper));
+        }
 
         /**
          * Test: File and FileStore attributes
