@@ -810,8 +810,7 @@ public interface ModuleMXBean {
 
     <h3 id="composite-map">Mappings for other types</h3>
 
-    <p>Given a Java class or interface
-      <em>J</em> that does not match the other
+    <p>Given a Java class or interface <em>J</em> that does not match the other
       rules in the table above, the MXBean framework will attempt to map
       it to a {@link CompositeType} as follows.  The type name of this
       {@code CompositeType} is determined by the <a href="#type-names">
