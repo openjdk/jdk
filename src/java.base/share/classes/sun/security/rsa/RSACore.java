@@ -437,12 +437,18 @@ public final class RSACore {
         ConcurrentLinkedQueue<BlindingParameters> queue = blindingCache.get(n);
 
         if (queue == null) {
-            // Synchronizing is not needed as threads overwriting the queue is
-            // just a few extra CPU cycles during entry initialization.  Once
-            // the queue is established, it controls thread safety of the
-            // blinding objects. The WeakHashMap will clear all the objects when idle.
-            queue = new ConcurrentLinkedQueue<>();
-            blindingCache.putIfAbsent(n, queue);
+            // Create another queue if none is available, if there is another
+            // thread creating a queue, putIfAbsent() get the established queue
+            // and the created one will be discarded. If two threads happen to
+            // get a null value for queue, the one will be set in the Map,
+            // and the other will only be used for the life of this method.
+            // This could only happen during queue initialization with
+            // minimal cost of some CPU cycles.
+            ConcurrentLinkedQueue<BlindingParameters> newQueue =
+                new ConcurrentLinkedQueue<>();
+            if ((queue = blindingCache.putIfAbsent(n, newQueue)) == null) {
+                queue = newQueue;
+            }
         }
 
         BlindingParameters bps = queue.poll();
