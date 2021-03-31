@@ -814,6 +814,13 @@ MTLBlitLoops_CopyArea(JNIEnv *env,
 
             id<MTLTexture> interTexture = interHandle.texture;
 
+            /*
+             * We need to consider common states like clipping while
+             * performing copyArea, thats why we need to query encoder with
+             * appropriate state from EncoderManager and not use
+             * direct MTLBlitCommandEncoder for texture mapping.
+             */
+
             id<MTLRenderCommandEncoder> interEncoder =
                 [mtlc.encoderManager getTextureEncoder:interTexture
                                            isSrcOpaque:dstOps->isOpaque
