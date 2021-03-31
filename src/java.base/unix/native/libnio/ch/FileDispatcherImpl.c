@@ -375,7 +375,7 @@ Java_sun_nio_ch_FileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
         result = (int)file_stat.f_frsize;
     }
 #else
-    result == -1;
+    result = -1;
 #endif
     return result;
 }
