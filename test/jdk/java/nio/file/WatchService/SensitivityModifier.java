@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,17 @@
  * @key randomness
  */
 
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import static java.nio.file.StandardWatchEventKinds.*;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import com.sun.nio.file.SensitivityWatchEventModifier;
@@ -42,14 +49,19 @@ public class SensitivityModifier {
 
     static final Random rand = new Random();
 
+    static final Map<Path,Integer> pathToTime = new HashMap<>();
+
     static void register(Path[] dirs, WatchService watcher) throws IOException {
-        SensitivityWatchEventModifier[] sensitivtives =
+        pathToTime.clear();
+        SensitivityWatchEventModifier[] sensitivities =
             SensitivityWatchEventModifier.values();
         for (int i=0; i<dirs.length; i++) {
-            SensitivityWatchEventModifier sensivity =
-                sensitivtives[ rand.nextInt(sensitivtives.length) ];
+            SensitivityWatchEventModifier sensitivity =
+                sensitivities[rand.nextInt(sensitivities.length)];
             Path dir = dirs[i];
-            dir.register(watcher, new WatchEvent.Kind<?>[]{ ENTRY_MODIFY }, sensivity);
+            dir.register(watcher, new WatchEvent.Kind<?>[]{ ENTRY_MODIFY },
+                sensitivity);
+            pathToTime.put(dir, sensitivity.sensitivityValueInSeconds());
         }
     }
 
@@ -108,7 +120,10 @@ public class SensitivityModifier {
                 if (eventReceived) {
                     System.out.println("Event OK");
                 } else {
-                    throw new RuntimeException("No ENTRY_MODIFY event received for " + file);
+                    Path parent = file.getParent();
+                    String msg = String.format("No ENTRY_MODIFY event received for %s (dir: %s, sensitivity: %d)",
+                            file, parent, pathToTime.get(parent));
+                    throw new RuntimeException(msg);
                 }
 
                 // re-register the directories to force changing their sensitivity
