@@ -883,8 +883,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    }
 
    protected String genMultPCHref(String pcs) {
-      String buf = genBaseHref() + "pc_multiple=" + pcs;
-      return buf;
+       return genBaseHref() + "pc_multiple=" + pcs;
    }
 
    protected String genPCHref(Address addr) {
