@@ -111,12 +111,13 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     void handleNotFound(HttpExchange exchange) throws IOException {
-        exchange.sendResponseHeaders(404, 0);
+        var bytes = ("<h2>File not found</h2>"
+                + sanitize.apply(exchange.getRequestURI().getPath(), chars)
+                + "<p>").getBytes();
         exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+        exchange.sendResponseHeaders(404, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
-            os.write(("<h2>File not found</h2>"
-                    + sanitize.apply(exchange.getRequestURI().getPath(), chars)
-                    + "<p>").getBytes());
+            os.write(bytes);
         }
     }
 
@@ -173,50 +174,61 @@ public final class FileServerHandler implements HttpHandler {
     {
         var respHdrs = exchange.getResponseHeaders();
         respHdrs.set("Content-Type", mediaType(exchange.getRequestURI().getPath()));
-        exchange.sendResponseHeaders(200, 0);
         if (writeBody) {
+            exchange.sendResponseHeaders(200, Files.size(path));
             try (InputStream fis = Files.newInputStream(path);
                  OutputStream os = exchange.getResponseBody()) {
                 fis.transferTo(os);
             }
+        } else {
+            respHdrs.set("Content-Length", Long.toString(Files.size(path)));
+            exchange.sendResponseHeaders(200, -1);
         }
     }
 
     void listFiles(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException
     {
-        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
-        exchange.sendResponseHeaders(200, 0);
+        var respHdrs = exchange.getResponseHeaders();
+        respHdrs.set("Content-Type", "text/html; charset=UTF-8");
+        var body = dirListing(exchange, path);
         if (writeBody) {
+            exchange.sendResponseHeaders(200, body.length());
             try (OutputStream os = exchange.getResponseBody();
                  PrintStream ps = new PrintStream(os, false, UTF_8)) {
-                ps.println(openHTML
-                        + "<h2>Directory listing for "
-                        + sanitize.apply(exchange.getRequestURI().getPath(), chars)
-                        + "</h2>\n" + "<ul>");
-                printDirContent(ps, path);
-                ps.println(closeHTML);
+                ps.writeBytes(body.getBytes(UTF_8));
                 ps.flush();
             }
+        } else {
+            respHdrs.set("Content-Length", Integer.toString(body.length()));
+            exchange.sendResponseHeaders(200, -1);
         }
     }
 
     private static final String openHTML = """
-                <!DOCTYPE html>
-                <html>
-                <body>""";
+            <!DOCTYPE html>
+            <html>
+            <body>
+            """;
 
     private static final String closeHTML = """
-                </ul><p><hr>
-                </body>
-                </html>""";
+            </ul><p><hr>
+            </body>
+            </html>
+            """;
 
-    void printDirContent(PrintStream ps, Path path) throws IOException {
+    String dirListing(HttpExchange exchange, Path path) throws IOException {
+        var sb = new StringBuffer(openHTML
+                + "<h2>Directory listing for "
+                + sanitize.apply(exchange.getRequestURI().getPath(), chars)
+                + "</h2>\n" + "<ul>\n");
         Files.list(path)
                 .filter(p -> !isHiddenOrSymLink(p))
                 .map(p -> path.toUri().relativize(p.toUri()).toASCIIString())
-                .forEach(uri -> ps.println("<li><a href=\"" + uri
-                        + "\">" + sanitize.apply(uri, chars) + "</a></li>"));
+                .forEach(uri -> sb.append("<li><a href=\"" + uri
+                        + "\">" + sanitize.apply(uri, chars) + "</a></li>\n"));
+        sb.append(closeHTML);
+        return sb.toString();
     }
 
     static boolean isHiddenOrSymLink(Path path) {

@@ -43,9 +43,9 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.testng.Assert.*;
 
@@ -74,6 +74,7 @@ public class SimpleFileServerTest {
     public void testFileGET() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testFileGET"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
+        var expectedLength = Long.toString(Files.size(file));
 
         var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
         ss.start();
@@ -84,6 +85,7 @@ public class SimpleFileServerTest {
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), "some text");
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
+            assertEquals(response.headers().firstValue("content-length").get(),expectedLength);
         } finally {
             ss.stop(0);
         }
@@ -95,13 +97,15 @@ public class SimpleFileServerTest {
         var expectedBody = """
                 <!DOCTYPE html>
                 <html>
-                <body><h2>Directory listing for &#x2F;</h2>
+                <body>
+                <h2>Directory listing for &#x2F;</h2>
                 <ul>
                 <li><a href="yFile.txt">yFile.txt</a></li>
                 </ul><p><hr>
                 </body>
                 </html>
                 """;
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = Files.createDirectory(CWD.resolve("testDirectoryGET"));
         var file = Files.writeString(root.resolve("yFile.txt"), "some text", CREATE);
 
@@ -113,6 +117,7 @@ public class SimpleFileServerTest {
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
             ss.stop(0);
@@ -123,6 +128,7 @@ public class SimpleFileServerTest {
     public void testFileHEAD() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testFileHEAD"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
+        var expectedLength = Long.toString(Files.size(file));
 
         var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
         ss.start();
@@ -133,6 +139,7 @@ public class SimpleFileServerTest {
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), "");
         } finally {
             ss.stop(0);
@@ -141,6 +148,18 @@ public class SimpleFileServerTest {
 
     @Test
     public void testDirectoryHEAD() throws Exception {
+        var expectedLength = Integer.toString(
+                """
+                <!DOCTYPE html>
+                <html>
+                <body>
+                <h2>Directory listing for &#x2F;</h2>
+                <ul>
+                <li><a href="yFile.txt">yFile.txt</a></li>
+                </ul><p><hr>
+                </body>
+                </html>
+                """.getBytes(UTF_8).length);
         var root = Files.createDirectory(CWD.resolve("testDirectoryHEAD"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
 
@@ -153,6 +172,7 @@ public class SimpleFileServerTest {
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), "");
         } finally {
             ss.stop(0);
@@ -170,6 +190,7 @@ public class SimpleFileServerTest {
             var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
+            assertTrue(response.headers().map().containsKey("content-length"));
             assertTrue(response.body().contains("not found"));  // TODO: why partial html reply?
         } finally {
             ss.stop(0);
