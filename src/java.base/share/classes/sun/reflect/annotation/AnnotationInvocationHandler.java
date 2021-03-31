@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,6 +370,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (!type.isInstance(o))
             return false;
         for (Method memberMethod : getMemberMethods()) {
+            if (memberMethod.isSynthetic())
+                continue;
             String member = memberMethod.getName();
             Object ourValue = memberValues.get(member);
             Object hisValue = null;
@@ -490,7 +492,20 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
          * 9.6.1. Annotation Type Elements
          */
         boolean valid = true;
+        Method currentMethod = null;
         for(Method method : memberMethods) {
+            currentMethod = method;
+            int modifiers = method.getModifiers();
+            // Skip over methods that may be a static initializer or
+            // similar construct. A static initializer may be used for
+            // purposes such as initializing a lambda stored in an
+            // interface field.
+            if (method.isSynthetic() &&
+                (modifiers & (Modifier.STATIC | Modifier.PRIVATE)) != 0 &&
+                method.getParameterCount() == 0) {
+                continue;
+            }
+
             /*
              * "By virtue of the AnnotationTypeElementDeclaration
              * production, a method declaration in an annotation type
@@ -501,7 +516,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
              * production, a method declaration in an annotation type
              * declaration cannot be default or static."
              */
-            if (method.getModifiers() != (Modifier.PUBLIC | Modifier.ABSTRACT) ||
+            if (modifiers != (Modifier.PUBLIC | Modifier.ABSTRACT) ||
                 method.isDefault() ||
                 method.getParameterCount() != 0 ||
                 method.getExceptionTypes().length != 0) {
