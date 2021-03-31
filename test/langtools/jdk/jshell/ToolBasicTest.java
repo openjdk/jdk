@@ -526,7 +526,7 @@ public class ToolBasicTest extends ReplToolTesting {
     public void testOpenFileOverHttp() throws IOException {
         var script = "int a = 10;int b = 20;int c = a + b;";
 
-        var localhostAddress = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0);
+        var localhostAddress = new InetSocketAddress(InetAddress.getLoopbackAddress().getHostAddress(), 0);
         var httpServer = HttpServer.create(localhostAddress, 0);
         try {
             httpServer.createContext("/script", exchange -> {
