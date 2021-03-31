@@ -38,6 +38,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "utilities/scopeGuard.hpp"
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -778,25 +779,13 @@ void CompilerOracle::print_parse_error(char* error_msg, char* original_line) {
   print_tip();
 }
 
-class LineCopy : StackObj {
-  const char* _copy;
-public:
-    LineCopy(char* line) {
-      _copy = os::strdup(line, mtInternal);
-    }
-    ~LineCopy() {
-      os::free((void*)_copy);
-    }
-    char* get() {
-      return (char*)_copy;
-    }
-};
-
 void CompilerOracle::parse_from_line(char* line) {
   if (line[0] == '\0') return;
   if (line[0] == '#')  return;
 
-  LineCopy original(line);
+  char* original_line = os::strdup(line, mtInternal);
+  auto g = make_guard([&] { os::free(original_line); });
+
   int bytes_read;
   char error_buf[1024] = {0};
 
@@ -805,7 +794,7 @@ void CompilerOracle::parse_from_line(char* line) {
   ResourceMark rm;
 
   if (option == CompileCommand::Unknown) {
-    print_parse_error(error_buf, original.get());
+    print_parse_error(error_buf, original_line);
     return;
   }
 
@@ -837,7 +826,7 @@ void CompilerOracle::parse_from_line(char* line) {
     skip_comma(line);
     TypedMethodOptionMatcher* archetype = TypedMethodOptionMatcher::parse_method_pattern(line, error_buf, sizeof(error_buf));
     if (archetype == NULL) {
-      print_parse_error(error_buf, original.get());
+      print_parse_error(error_buf, original_line);
       return;
     }
 
@@ -854,7 +843,7 @@ void CompilerOracle::parse_from_line(char* line) {
         // Type (2) option: parse option name and value.
         scan_option_and_value(type, line, bytes_read, typed_matcher, error_buf, sizeof(error_buf));
         if (*error_buf != '\0') {
-          print_parse_error(error_buf, original.get());
+          print_parse_error(error_buf, original_line);
           return;
         }
         line += bytes_read;
@@ -863,7 +852,7 @@ void CompilerOracle::parse_from_line(char* line) {
         int bytes_read;
         enum CompileCommand option = match_option_name(option_type, &bytes_read, error_buf, sizeof(error_buf));
         if (option == CompileCommand::Unknown) {
-          print_parse_error(error_buf, original.get());
+          print_parse_error(error_buf, original_line);
           return;
         }
         if (option2type(option) == OptionType::Bool) {
@@ -871,7 +860,7 @@ void CompilerOracle::parse_from_line(char* line) {
         } else {
           jio_snprintf(error_buf, sizeof(error_buf), "  Missing type '%s' before option '%s'",
                        optiontype2name(option2type(option)), option2name(option));
-          print_parse_error(error_buf, original.get());
+          print_parse_error(error_buf, original_line);
           return;
         }
       }
@@ -890,7 +879,7 @@ void CompilerOracle::parse_from_line(char* line) {
     skip_comma(line);
     TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(line, error_buf, sizeof(error_buf));
     if (matcher == NULL) {
-      print_parse_error(error_buf, original.get());
+      print_parse_error(error_buf, original_line);
       return;
     }
     skip_whitespace(line);
@@ -901,13 +890,13 @@ void CompilerOracle::parse_from_line(char* line) {
         return;
       } else {
         jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));
-        print_parse_error(error_buf, original.get());
+        print_parse_error(error_buf, original_line);
         return;
       }
     }
     scan_value(type, line, bytes_read, matcher, option, error_buf, sizeof(error_buf));
     if (*error_buf != '\0') {
-      print_parse_error(error_buf, original.get());
+      print_parse_error(error_buf, original_line);
       return;
     }
     assert(matcher != NULL, "consistency");
