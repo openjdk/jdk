@@ -501,8 +501,9 @@ public class MemoryPool
         <tr>
           <th scope="row">{@linkplain Record Record classes}</th>
           <td>{@link CompositeType}, if possible<br>
-              (see below)</td>
-          <td>{@link CompositeData}</td>
+            (see below)</td>
+          <td>{@link CompositeData}<br>
+            (see below)</td>
         </tr>
         <tr>
           <th scope="row">{@code int[]} etc<br>
@@ -550,7 +551,8 @@ public class MemoryPool
           <td>{@link CompositeType},
             if possible<br>
             (see below)</td>
-          <td>{@link CompositeData}</td>
+          <td>{@link CompositeData}<br>
+            (see below)</td>
       </tbody>
     </table>
 

@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +38,7 @@ import javax.management.ObjectName;
 import javax.management.StandardMBean;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.CompositeDataView;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
@@ -111,6 +113,18 @@ public class RecordsMXBeanTest {
         public WithAnno(int x, int y) {
             this.x = x;
             this.y = y;
+        }
+    }
+    // A record that implements CompositeDataView
+    public record WithCDV(int x, int y) implements CompositeDataView {
+        @Override
+        public CompositeData toCompositeData(CompositeType ct) {
+            if (ct == null) return null;
+            try {
+                return new CompositeDataSupport(ct, new String[]{"x", "y"}, new Object[]{x() + 1, y() + 2});
+            } catch (OpenDataException x) {
+                throw new IllegalArgumentException(ct.getTypeName(), x);
+            }
         }
     }
 
@@ -192,6 +206,8 @@ public class RecordsMXBeanTest {
         void setR(RWithGetter r);
         WithAnno getWithAnno();
         void setWithAnno(WithAnno r);
+        WithCDV getCDV();
+        void setCDV(WithCDV cdv);
     }
 
     // An implementation of the complex MXBean interface
@@ -202,6 +218,7 @@ public class RecordsMXBeanTest {
         private volatile TricksterToo too = new TricksterToo(6, 7);
         private volatile RWithGetter r = new RWithGetter(8, 9);
         private volatile WithAnno withAnno = new WithAnno(10, 11);
+        private volatile WithCDV withCDV = new WithCDV(12, 13);
 
         @Override
         public Annotated getAnnotated() {
@@ -261,6 +278,16 @@ public class RecordsMXBeanTest {
         @Override
         public void setWithAnno(WithAnno r) {
             this.withAnno = r;
+        }
+
+        @Override
+        public WithCDV getCDV() {
+            return withCDV;
+        }
+
+        @Override
+        public void setCDV(WithCDV cdv) {
+            withCDV = cdv;
         }
     }
 
@@ -487,6 +514,16 @@ public class RecordsMXBeanTest {
         assertEquals(withAnno.x(), 12);
         assertEquals(withAnno.y(), 13);
 
+        // WithCDV.toCompositeData adds 1 to x and 2 to y,
+        // we can check how many time it's been called
+        // by looking at the values for x and y.
+        var cdv = mBean5.getCDV();
+        assertEquals(cdv.x(), 13 /* 12 + 1 */, "x");
+        assertEquals(cdv.y(), 15 /* 13 + 2 */, "y");
+        mBean5.setCDV(new WithCDV(14, 15));
+        cdv = mBean5.getCDV();
+        assertEquals(cdv.x(), 16 /* 14 + 1*2 */, "x");
+        assertEquals(cdv.y(), 19 /* 15 + 2*2 */, "y");
 
         // Test non compliant records: this one has an Object (not mappable to OpenType)
         var recname4 = new ObjectName("test:type=NCR1");
