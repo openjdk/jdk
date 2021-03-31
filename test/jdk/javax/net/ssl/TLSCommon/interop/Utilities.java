@@ -280,48 +280,6 @@ public class Utilities {
     }
 
     /*
-     * Executes shell command and return a OutputAnalyzer wrapping the process.
-     */
-    public static OutputAnalyzer shell(String command) throws IOException {
-        Process process = shellProc(command);
-        OutputAnalyzer oa = new OutputAnalyzer(process);
-        try {
-            process.waitFor();
-            return oa;
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Shell process is interruptted!", e);
-        }
-    }
-
-    /*
-     * Executes shell command and redirect the output to a local file,
-     * and return the process.
-     */
-    public static Process shellProc(String command, Path outputPath)
-            throws IOException {
-        String[] cmds = new String[3];
-        cmds[0] = "sh";
-        cmds[1] = "-c";
-        cmds[2] = command;
-        if (DEBUG) {
-            System.out.println("[sh -c " + command + "]");
-        }
-        ProcessBuilder pb = new ProcessBuilder(cmds);
-        pb.redirectErrorStream(true);
-        if (outputPath != null) {
-            pb.redirectOutput(outputPath.toFile());
-        }
-        return pb.start();
-    }
-
-    /*
-     * Executes shell command and return the process.
-     */
-    public static Process shellProc(String command) throws IOException {
-        return shellProc(command, null);
-    }
-
-    /*
      * Determines if the specified process is alive.
      */
     public static boolean isAliveProcess(Process process) {

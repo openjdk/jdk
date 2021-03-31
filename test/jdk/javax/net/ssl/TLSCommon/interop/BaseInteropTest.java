@@ -39,6 +39,7 @@ public abstract class BaseInteropTest<U extends UseCase> {
 
     protected final Product serverProduct;
     protected final Product clientProduct;
+    private static final int MAX_SERVER_RETRIES = 3;
 
     public BaseInteropTest(Product serverProduct, Product clientProduct) {
         this.serverProduct = serverProduct;
@@ -226,16 +227,26 @@ public abstract class BaseInteropTest<U extends UseCase> {
 
     /*
      * Return a server once it is properly started to avoid client connection issues.
+     * Retry operation if needed, server may fail to bind a port
      */
     protected AbstractServer startAndGetServer(U useCase, ExecutorService executor)
             throws Exception {
-        AbstractServer server = createServer(useCase, executor);
-        if (!Utilities.waitFor(Server::isAlive, server)) {
-            // Retry operation, server might have failed to bind a port
-            server.signalStop();
+        int maxRetries = getServerMaxRetries();
+        boolean serverAlive;
+        AbstractServer server;
+
+        do {
             server = createServer(useCase, executor);
-            if (!Utilities.waitFor(Server::isAlive, server))
-                throw new RuntimeException("Server failed to start");
+            serverAlive = Utilities.waitFor(Server::isAlive, server);
+            if (!serverAlive) {
+                server.signalStop();
+            }
+
+            maxRetries--;
+        } while (!serverAlive && maxRetries > 0);
+
+        if (!serverAlive) {
+            throw new RuntimeException("Server failed to start");
         }
 
         return server;
@@ -295,6 +306,13 @@ public abstract class BaseInteropTest<U extends UseCase> {
                 .setProtocols(useCase.getProtocols())
                 .setCipherSuites(useCase.getCipherSuites())
                 .setCertTuple(useCase.getCertTuple());
+    }
+
+    /*
+     * Returns the maximum number of attempts to start a server.
+     */
+    protected int getServerMaxRetries() {
+        return MAX_SERVER_RETRIES;
     }
 
     /*
