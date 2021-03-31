@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,14 @@ public class TestDockerMemoryMetrics {
                 .addJavaOpts("-cp", "/test-classes/")
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
                 .addClassOptions("failcount");
-        DockerTestUtils.dockerRunJava(opts).shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
+
+        OutputAnalyzer oa = DockerTestUtils.dockerRunJava(opts);
+        String output = oa.getOutput();
+        if (output.contains("Not OOM killed")) {
+            if (!output.contains("Ignoring test")) {
+                oa.shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
+            }
+        }
     }
 
     private static void testMemoryAndSwapLimit(String memory, String memandswap) throws Exception {
