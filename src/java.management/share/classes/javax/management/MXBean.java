@@ -754,23 +754,34 @@ public interface ModuleMXBean {
 
     <h3 id="records">Mappings for Records</h3>
 
-    <p>A {@linkplain Record record} <em>R</em> whose {@linkplain
-      Class#getRecordComponents() components} are
-      all convertible to open types, is itself convertible to a
-      {@link CompositeType} as follows.
+    <p>A {@linkplain Record record} can be converted to a
+      {@link CompositeType} if and only if all its
+      {@linkplain Class#getRecordComponents() components} are
+      convertible to open types.
+      Otherwise, it is not convertible.</p>
+
+    <p>A record whose components are all convertible to open
+      types, is itself convertible to a {@link CompositeType}
+      as follows.
       The type name of this {@code CompositeType}
       is determined by the same <a href="#type-names">type name rules</a>
-      defined by the <a href="#composite-map">Mapping for other types</a>
+      defined by the <a href="#composite-map">mapping for other types</a>
       below. Its getters are the accessors for the {@linkplain
-      RecordComponent record components}, and the record is reconstructed
-      using its canonical constructor, without needing any annotation.</p>
+      RecordComponent record components}.</p>
 
-    <p>A record may also expose additional non-canonical constructors, which
-      can be used to reconstruct the record if the composite data does
-      not exactly contain all the components expected by the
-      canonical constructor. However, in order to be taken into account
-      by the MXBean framework, such non-canonical constructors
-      need to be annotated with either the {@link ConstructorParameters
+    <p>A record is reconstructed using its canonical constructor.
+      The canonical constructor doesn't require the presence of
+      {@link ConstructorParameters &#64;javax.management.ConstructorParameters}
+      or {@code @java.beans.ConstructorProperties} annotations. If these
+      annotations are present on the canonical constructor they
+      will be ignored.</p>
+
+    <p>If the {@link CompositeData} from which the record is reconstructed
+      doesn't contain all the record components, the MXBean framework
+      will attempt to reconstruct the record in the same way than
+      for <a href="#composite-map">other types</a>:
+      non canonical constructors may be used if
+      annotated with either the {@link ConstructorParameters
       &#64;javax.management.ConstructorParameters} or
      {@code @java.beans.ConstructorProperties} annotation.</p>
 
