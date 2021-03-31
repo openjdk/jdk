@@ -717,7 +717,7 @@ TabularType tabularType =
       from a {@link CompositeData} is detailed in
       <a href="#reconstructing">Reconstructing an instance
       of Java type or record class <em>J</em> from a {@code CompositeData}</a>
-      below.
+      below.</p>
 
     <h3 id="mxbean-map">Mappings for MXBean interfaces</h3>
 
