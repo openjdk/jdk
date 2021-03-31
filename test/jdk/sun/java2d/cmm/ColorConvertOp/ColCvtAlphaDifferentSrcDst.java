@@ -48,8 +48,8 @@ import static java.awt.image.BufferedImage.TYPE_USHORT_GRAY;
  */
 public final class ColCvtAlphaDifferentSrcDst {
 
-    private static int WIDTH = 256;
-    private static int HEIGHT = 256;
+    private static final int WIDTH = 256;
+    private static final int HEIGHT = 256;
 
     public static void main(String[] args) throws Exception {
         differentToOpaqueDst();
