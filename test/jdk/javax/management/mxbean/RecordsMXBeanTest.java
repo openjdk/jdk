@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.InvalidObjectException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.stream.Stream;
 import javax.management.Attribute;
 import javax.management.ConstructorParameters;
 import javax.management.JMX;
+import javax.management.MBeanException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerFactory;
@@ -545,6 +547,40 @@ public class RecordsMXBeanTest {
                 () -> server.registerMBean(new NC2(), recname5));
         reportExpected(x2);
         assertEquals( originalCause(x2).getClass(), OpenDataException.class);
+
+        // test that a composite data that doesn't have all the records
+        // components prevents the record from being reconstructed.
+        var recname6 = new ObjectName("test:type=Records2,instance=6");
+        Records2 rec2 = new Records2();
+        var mbean6 = standard
+                ? new StandardMBean(rec2, Records2MXBean.class, true)
+                : rec2;
+        server.registerMBean(mbean6, recname6);
+        var cd6 = (CompositeData) server.getAttribute(recname6, "DataPoint");
+        var cdt6 = cd6.getCompositeType();
+        var itemNames6 = List.of("x", "mixed")
+                .toArray(String[]::new);
+        var itemDesc6 = Stream.of(itemNames6)
+                .map(cdt6::getDescription)
+                .toArray(String[]::new);
+        var itemTypes6 = Stream.of(itemNames6)
+                .map(cdt6::getType)
+                .toArray(OpenType<?>[]::new);
+        var notmappable = new CompositeType(cdt6.getTypeName(),
+                cdt6.getDescription(),
+                itemNames6,
+                itemDesc6,
+                itemTypes6);
+        var itemValues6 = Stream.of(itemNames6)
+                .map(cd6::get)
+                .toArray();
+        var cd6mod = new CompositeDataSupport(notmappable, itemNames6, itemValues6);
+        var attribute6 = new Attribute("DataPoint", cd6mod);
+        var x3 = expectThrows(MBeanException.class,
+                standard ? () -> ((StandardMBean)mbean6).setAttribute(attribute6)
+                         : () -> server.setAttribute(recname6, attribute6));
+        reportExpected(x3);
+        assertEquals(originalCause(x3).getClass(), InvalidObjectException.class);
 
     }
 
