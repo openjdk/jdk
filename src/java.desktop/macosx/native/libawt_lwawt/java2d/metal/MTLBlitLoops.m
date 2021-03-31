@@ -800,23 +800,60 @@ MTLBlitLoops_CopyArea(JNIEnv *env,
        (dstBounds.x1 < dstBounds.x2 && dstBounds.y1 < dstBounds.y2))
    {
         @autoreleasepool {
-            id<MTLCommandBuffer> cb = [mtlc createCommandBuffer];
-            id<MTLBlitCommandEncoder> blitEncoder = [cb blitCommandEncoder];
+            struct TxtVertex quadTxVerticesBuffer[6];
+            MTLPooledTextureHandle * interHandle =
+                [mtlc.texturePool getTexture:texWidth
+                                      height:texHeight
+                                      format:MTLPixelFormatBGRA8Unorm];
+            if (interHandle == nil) {
+                J2dTraceLn(J2D_TRACE_ERROR,
+                    "MTLBlitLoops_CopyArea: texture handle is null");
+                return;
+            }
+            [[mtlc getCommandBufferWrapper] registerPooledTexture:interHandle];
 
-            // Create an intrermediate buffer
-            int totalBuffsize = srcWidth * srcHeight * 4;
-            id <MTLBuffer> buff = [[mtlc.device newBufferWithLength:totalBuffsize options:MTLResourceStorageModePrivate] autorelease];
+            id<MTLTexture> interTexture = interHandle.texture;
 
-            [blitEncoder copyFromTexture:dstOps->pTexture
-                    sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(srcBounds.x1, srcBounds.y1, 0) sourceSize:MTLSizeMake(srcWidth, srcHeight, 1)
-                     toBuffer:buff destinationOffset:0 destinationBytesPerRow:(srcWidth * 4) destinationBytesPerImage:totalBuffsize];
+            id<MTLRenderCommandEncoder> interEncoder =
+                [mtlc.encoderManager getTextureEncoder:interTexture
+                                           isSrcOpaque:dstOps->isOpaque
+                                           isDstOpaque:dstOps->isOpaque
+            ];
 
-            [blitEncoder copyFromBuffer:buff
-                    sourceOffset:0 sourceBytesPerRow:srcWidth*4 sourceBytesPerImage:totalBuffsize sourceSize:MTLSizeMake(srcWidth, srcHeight, 1)
-                    toTexture:dstOps->pTexture destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(dstBounds.x1, dstBounds.y1, 0)];
-            [blitEncoder endEncoding];
+            fillTxQuad(quadTxVerticesBuffer, 0, 0,
+                texWidth, texHeight, texWidth, texHeight, 0,
+                0, texWidth, texHeight, texWidth, texHeight);
 
-            [cb commit];
+            [interEncoder setVertexBytes:quadTxVerticesBuffer
+                             length:sizeof(quadTxVerticesBuffer)
+                            atIndex:MeshVertexBuffer];
+            [interEncoder setFragmentTexture:dstOps->pTexture atIndex: 0];
+            [interEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0
+                                                             vertexCount:6];
+
+            id<MTLRenderCommandEncoder> finalEncoder =
+                [mtlc.encoderManager getTextureEncoder:dstOps->pTexture
+                                           isSrcOpaque:dstOps->isOpaque
+                                           isDstOpaque:dstOps->isOpaque
+            ];
+
+            fillTxQuad(quadTxVerticesBuffer, srcBounds.x1, srcBounds.y1,
+                srcBounds.x2, srcBounds.y2, texWidth, texHeight, dstBounds.x1,
+                dstBounds.y1, dstBounds.x2, dstBounds.y2, texWidth, texHeight);
+            [finalEncoder setVertexBytes:quadTxVerticesBuffer
+                             length:sizeof(quadTxVerticesBuffer)
+                            atIndex:MeshVertexBuffer];
+            [finalEncoder setFragmentTexture:interTexture atIndex: 0];
+            [finalEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0
+                                                             vertexCount:6];
+            [mtlc.encoderManager endEncoder];
+            MTLCommandBufferWrapper * cbwrapper =
+                [mtlc pullCommandBufferWrapper];
+            id<MTLCommandBuffer> commandbuf = [cbwrapper getCommandBuffer];
+            [commandbuf addCompletedHandler:^(id <MTLCommandBuffer> commandbuf) {
+                [cbwrapper release];
+            }];
+            [commandbuf commit];
         }
    }
 }
