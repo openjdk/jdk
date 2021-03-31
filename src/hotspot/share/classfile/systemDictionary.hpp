@@ -123,8 +123,7 @@ class SystemDictionary : AllStatic {
                                               TRAPS);
  private:
   // Parse the stream to create an unsafe anonymous or hidden class.
-  // Used by JVMTI RedefineClasses and by Unsafe_DefineAnonymousClass
-  // and jvm_lookup_define_class.
+  // Used by Unsafe_DefineAnonymousClass and jvm_lookup_define_class.
   static InstanceKlass* resolve_hidden_class_from_stream(ClassFileStream* st,
                                                          Symbol* class_name,
                                                          Handle class_loader,
@@ -140,7 +139,7 @@ class SystemDictionary : AllStatic {
                                                   TRAPS);
 
  public:
-  // Resolve either a hidden or normal class from a stream of bytes, based on passed ClassLoadInfo
+  // Resolve either a hidden or normal class from a stream of bytes, based on ClassLoadInfo
   static InstanceKlass* resolve_from_stream(ClassFileStream* st,
                                             Symbol* class_name,
                                             Handle class_loader,
