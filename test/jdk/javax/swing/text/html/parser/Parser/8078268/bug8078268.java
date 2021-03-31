@@ -39,6 +39,7 @@ public class bug8078268 {
     static volatile Exception exception;
 
     public static void main(String[] args) throws Exception {
+        long timeout = 10_000;
         long s = System.currentTimeMillis();
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -53,14 +54,14 @@ public class bug8078268 {
                 }
             }
         });
-        while (!parsingDone && exception == null && System.currentTimeMillis() - s < 5_000) {
+        while (!parsingDone && exception == null && System.currentTimeMillis() - s < timeout) {
             Thread.sleep(200);
         }
         final long took = System.currentTimeMillis() - s;
         if (exception != null) {
             throw exception;
         }
-        if (took > 5_000) {
+        if (took > timeout) {
             throw new RuntimeException("Parsing takes too long.");
         }
     }
