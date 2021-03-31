@@ -681,25 +681,6 @@ void JVMFlag::assert_valid_flag_enum(JVMFlagsEnum i) {
   assert(0 <= int(i) && int(i) < NUM_JVMFlagsEnum, "must be");
 }
 
-void JVMFlag::check_all_flag_declarations() {
-  for (JVMFlag* current = &flagTable[0]; current->_name != NULL; current++) {
-    int flags = static_cast<int>(current->_flags);
-    // Backwards compatibility. This will be relaxed/removed in JDK-7123237.
-    int mask = JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_MANAGEABLE | JVMFlag::KIND_EXPERIMENTAL;
-    if ((flags & mask) != 0) {
-      assert((flags & mask) == JVMFlag::KIND_DIAGNOSTIC ||
-             (flags & mask) == JVMFlag::KIND_MANAGEABLE ||
-             (flags & mask) == JVMFlag::KIND_EXPERIMENTAL,
-             "%s can be declared with at most one of "
-             "DIAGNOSTIC, MANAGEABLE or EXPERIMENTAL", current->_name);
-      assert((flags & KIND_NOT_PRODUCT) == 0 &&
-             (flags & KIND_DEVELOP) == 0,
-             "%s has an optional DIAGNOSTIC, MANAGEABLE or EXPERIMENTAL "
-             "attribute; it must be declared as a product flag", current->_name);
-    }
-  }
-}
-
 #endif // ASSERT
 
 void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges, bool skipDefaults) {

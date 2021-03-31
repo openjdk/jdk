@@ -179,7 +179,6 @@ public:
   static JVMFlag* fuzzy_match(const char* name, size_t length, bool allow_locked = false);
 
   static void assert_valid_flag_enum(JVMFlagsEnum i) NOT_DEBUG_RETURN;
-  static void check_all_flag_declarations() NOT_DEBUG_RETURN;
 
   inline JVMFlagsEnum flag_enum() const {
     JVMFlagsEnum i = static_cast<JVMFlagsEnum>(this - JVMFlag::flags);
