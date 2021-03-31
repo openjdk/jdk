@@ -1393,11 +1393,33 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
   for(uint i4 = 0; i4 < block->_num_succs; i4++ ) {
     Block *sb = block->_succs[i4];
     uint new_cnt = end - beg;
-    // Remove any newly created, but dead, nodes.
+    // Remove any newly created, but dead, nodes. In this context, a dead node
+    // is either a multi-node with all projections unused, or a non-projection
+    // single node that is unused. This definition avoids removing unused
+    // projections of partially-used multi-nodes.
     for( uint j = new_cnt; j > 0; j-- ) {
       Node *n = sb->get_node(j);
-      if (n->outcnt() == 0 &&
-          (!n->is_Proj() || n->as_Proj()->in(0)->outcnt() == 1) ){
+      if (n->is_Proj()) {
+        continue;
+      }
+      bool dead = true;
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* user = n->fast_out(i);
+        if (!user->is_Proj() || user->outcnt() > 0) {
+          dead = false;
+          break;
+        }
+      }
+      if (dead) {
+        // Remove projections if n is a dead multi-node.
+        for (uint k = j + n->outcnt(); sb->get_node(k)->is_Proj(); k--) {
+          assert(sb->get_node(k)->in(0) == n,
+                 "dead projection should correspond to current node");
+          sb->get_node(k)->disconnect_inputs(C);
+          sb->remove_node(k);
+          new_cnt--;
+        }
+        // Now remove the node itself.
         n->disconnect_inputs(C);
         sb->remove_node(j);
         new_cnt--;
