@@ -468,7 +468,7 @@ class InstanceKlass: public Klass {
   jushort nest_host_index() const { return _nest_host_index; }
   void set_nest_host_index(u2 i)  { _nest_host_index = i; }
   // dynamic nest member support
-  void set_nest_host(InstanceKlass* host, TRAPS);
+  void set_nest_host(InstanceKlass* host);
 
   // record components
   Array<RecordComponent*>* record_components() const { return _record_components; }
@@ -489,7 +489,7 @@ public:
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns NULL if there was no error.
-  const char* nest_host_error(TRAPS);
+  const char* nest_host_error();
   // Returns nest-host class, resolving and validating it if needed.
   // Returns NULL if resolution is not possible from the calling context.
   InstanceKlass* nest_host(TRAPS);
@@ -1270,8 +1270,7 @@ public:
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
 
-  // jvm support
-  jint compute_modifier_flags(TRAPS) const;
+  jint compute_modifier_flags() const;
 
 public:
   // JVMTI support

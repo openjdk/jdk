@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,43 +25,41 @@
 
 package com.sun.imageio.plugins.jpeg;
 
-import javax.imageio.IIOException;
-import javax.imageio.ImageWriter;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.IIOImage;
-import javax.imageio.ImageTypeSpecifier;
-import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.metadata.IIOMetadataFormatImpl;
-import javax.imageio.metadata.IIOInvalidTreeException;
-import javax.imageio.spi.ImageWriterSpi;
-import javax.imageio.stream.ImageOutputStream;
-import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
-import javax.imageio.plugins.jpeg.JPEGQTable;
-import javax.imageio.plugins.jpeg.JPEGHuffmanTable;
-
-import org.w3c.dom.Node;
-
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
-import java.awt.image.DataBufferByte;
-import java.awt.image.ColorModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.ColorConvertOp;
-import java.awt.image.RenderedImage;
-import java.awt.image.BufferedImage;
-import java.awt.color.ColorSpace;
-import java.awt.color.ICC_ColorSpace;
-import java.awt.color.ICC_Profile;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.Transparency;
-
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorConvertOp;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBufferByte;
+import java.awt.image.IndexColorModel;
+import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
+import java.awt.image.WritableRaster;
 import java.io.IOException;
-
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
+import javax.imageio.IIOException;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.metadata.IIOInvalidTreeException;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataFormatImpl;
+import javax.imageio.plugins.jpeg.JPEGHuffmanTable;
+import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
+import javax.imageio.plugins.jpeg.JPEGQTable;
+import javax.imageio.spi.ImageWriterSpi;
+import javax.imageio.stream.ImageOutputStream;
+
+import com.sun.imageio.plugins.common.ImageUtil;
+import org.w3c.dom.Node;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
@@ -687,7 +685,7 @@ public class JPEGImageWriter extends ImageWriter {
                 checkJFIF(jfif, destType, false);
                 // Do we want to write an ICC profile?
                 if ((jfif != null) && (ignoreJFIF == false)) {
-                    if (JPEG.isNonStandardICC(cs)) {
+                    if (ImageUtil.isNonStandardICCColorSpace(cs)) {
                         iccProfile = ((ICC_ColorSpace) cs).getProfile();
                     }
                 }
@@ -698,7 +696,7 @@ public class JPEGImageWriter extends ImageWriter {
                 if (JPEG.isJFIFcompliant(destType, false)) {
                     writeDefaultJFIF = true;
                     // Do we want to write an ICC profile?
-                    if (JPEG.isNonStandardICC(cs)) {
+                    if (ImageUtil.isNonStandardICCColorSpace(cs)) {
                         iccProfile = ((ICC_ColorSpace) cs).getProfile();
                     }
                 } else {
@@ -722,7 +720,7 @@ public class JPEGImageWriter extends ImageWriter {
                     if (metadata.findMarkerSegment
                         (JFIFMarkerSegment.class, true) != null) {
                         cs = rimage.getColorModel().getColorSpace();
-                        if (JPEG.isNonStandardICC(cs)) {
+                        if (ImageUtil.isNonStandardICCColorSpace(cs)) {
                             iccProfile = ((ICC_ColorSpace) cs).getProfile();
                         }
                     }
@@ -766,7 +764,7 @@ public class JPEGImageWriter extends ImageWriter {
                         case ColorSpace.TYPE_RGB:
                             if (jfif != null) {
                                 outCsType = JPEG.JCS_YCbCr;
-                                if (JPEG.isNonStandardICC(cs)
+                                if (ImageUtil.isNonStandardICCColorSpace(cs)
                                     || ((cs instanceof ICC_ColorSpace)
                                         && (jfif.iccSegment != null))) {
                                     iccProfile =

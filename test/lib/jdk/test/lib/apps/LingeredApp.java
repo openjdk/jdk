@@ -501,6 +501,43 @@ public class LingeredApp {
     }
 
     /**
+     * Support for creating a thread whose stack trace is always readable. There are
+     * occassional isues trying to get the stack trace for LingeredApp.main() since
+     * it sometimes wakes up from sleep and may breifly have an unreadable thread
+     * stack trace. The code below is used to create "SteadyStateThread" whose
+     * stack trace is always readable.
+     */
+
+    private static volatile boolean steadyStateReached = false;
+
+    private static void steadyState(Object steadyStateObj) {
+        steadyStateReached = true;
+        synchronized(steadyStateObj) {
+        }
+    }
+
+    private static void startSteadyStateThread(Object steadyStateObj) {
+        Thread steadyStateThread = new Thread() {
+            public void run() {
+                steadyState(steadyStateObj);
+            }
+        };
+        steadyStateThread.setName("SteadyStateThread");
+        steadyStateThread.start();
+
+        // Wait until the thread has started running.
+        while (!steadyStateReached) {
+            Thread.onSpinWait();
+        }
+
+        // Now wait until we get into the synchronized block.
+        while (steadyStateThread.getState() != Thread.State.BLOCKED) {
+            Thread.onSpinWait();
+        }
+    }
+
+
+    /**
      * This part is the application itself. First arg is optional "forceCrash".
      * Following arg is the lock file name.
      */
@@ -528,14 +565,18 @@ public class LingeredApp {
         Path path = Paths.get(theLockFileName);
 
         try {
-            if (forceCrash) {
-                System.loadLibrary("LingeredApp"); // location of native crash() method
-                crash();
-            }
-            while (Files.exists(path)) {
-                // Touch the lock to indicate our readiness
-                setLastModified(theLockFileName, epoch());
-                Thread.sleep(spinDelay);
+            Object steadyStateObj = new Object();
+            synchronized(steadyStateObj) {
+                startSteadyStateThread(steadyStateObj);
+                if (forceCrash) {
+                    System.loadLibrary("LingeredApp"); // location of native crash() method
+                    crash();
+                }
+                while (Files.exists(path)) {
+                    // Touch the lock to indicate our readiness
+                    setLastModified(theLockFileName, epoch());
+                    Thread.sleep(spinDelay);
+                }
             }
         } catch (IOException ex) {
             // Lock deleted while we are setting last modified time.

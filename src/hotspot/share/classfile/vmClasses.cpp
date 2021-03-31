@@ -117,7 +117,7 @@ void vmClasses::resolve_all(TRAPS) {
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
-  ClassLoader::classLoader_init2(CHECK);
+  ClassLoader::classLoader_init2(THREAD);
 
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;

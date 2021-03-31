@@ -261,8 +261,7 @@ static void pageFormatToSetup(JNIEnv *env, jobject job, jobject page,
 static WORD getOrientationFromDevMode2(HGLOBAL hDevMode);
 static WORD getOrientationFromDevMode(JNIEnv *env, jobject self);
 static void setOrientationInDevMode(HGLOBAL hDevMode, jboolean isPortrait);
-static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
-                        HDC printDC, jbyteArray imageArray,
+static void doPrintBand(JNIEnv *env, HDC printDC, jbyteArray imageArray,
                         jint x, jint y, jint width, jint height);
 static int bitsToDevice(HDC printDC, jbyte *image, long destX, long destY,
                         long width, long height);
@@ -1803,7 +1802,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_printBand
    jint width, jint height) {
 
     HDC printDC = AwtPrintControl::getPrintDC(env, self);
-    doPrintBand(env, JNI_FALSE, printDC, imageArray, x, y, width, height);
+    doPrintBand(env, printDC, imageArray, x, y, width, height);
 }
 
 /*
@@ -2904,14 +2903,10 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_drawDIBImage
 }
 
 /*
- * An utility function to print passed image byte array to
- * the printDC.
- * browserPrinting flag controls whether the image array
- * used as top-down (browserPrinting == JNI_TRUE) or
- * bottom-up (browserPrinting == JNI_FALSE) DIB.
+ * A utility function to print passed image byte array to the printDC.
+ * Prints as a bottom-up DIB.
  */
-static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
-                        HDC printDC, jbyteArray imageArray,
+static void doPrintBand(JNIEnv *env, HDC printDC, jbyteArray imageArray,
                         jint x, jint y, jint width, jint height) {
 
     TRY;
@@ -2926,15 +2921,9 @@ static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
         long startY = 0;
         long numLines = 0;
 
-        if (browserPrinting) {
-            /* for browser printing use top-down approach */
-            startImage =  image;
-        } else {
-            /* when printing to a real printer dc, the dib
-               should bottom-up */
-            startImage =  image + (scanLineStride * (height - 1));
-            scanLineStride = -scanLineStride;
-        }
+        /* when printing to a real printer dc, the dib should be bottom-up */
+        startImage =  image + (scanLineStride * (height - 1));
+        scanLineStride = -scanLineStride;
         do {
             startImage = findNonWhite(startImage, startY, width, height,
                                       scanLineStride, &numLines);
@@ -2943,15 +2932,7 @@ static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
                 startY += numLines;
                 endImage = findWhite(startImage, startY, width, height,
                                      scanLineStride, &numLines);
-                if (browserPrinting) {
-                    /* passing -numLines as height to indicate that
-                       we treat the image as a top-down DIB */
-                    bitsToDevice(printDC, startImage, x, y + startY, width,
-                                 -numLines);
-                } else {
-                    bitsToDevice(printDC, endImage, x, y + startY, width,
-                                 numLines);
-                }
+                bitsToDevice(printDC, endImage, x, y + startY, width, numLines);
                 startImage = endImage + scanLineStride;
                 startY += numLines;
             }

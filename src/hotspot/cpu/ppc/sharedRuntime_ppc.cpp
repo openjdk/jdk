@@ -564,17 +564,6 @@ bool SharedRuntime::is_wide_vector(int size) {
   return size > 8;
 }
 
-size_t SharedRuntime::trampoline_size() {
-  return Assembler::load_const_size + 8;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  Register Rtemp = R12;
-  __ load_const(Rtemp, destination);
-  __ mtctr(Rtemp);
-  __ bctr();
-}
-
 static int reg2slot(VMReg r) {
   return r->reg2stack() + SharedRuntime::out_preserve_stack_slots();
 }
@@ -2273,7 +2262,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   if (is_critical_native) {
     Label needs_safepoint;
     Register sync_state      = r_temp_5;
-    __ safepoint_poll(needs_safepoint, sync_state);
+    // Note: We should not reach here with active stack watermark. There's no safepoint between
+    //       start of the native wrapper and this check where it could have been added.
+    //       We don't check the watermark in the fast path.
+    __ safepoint_poll(needs_safepoint, sync_state, false /* at_return */, false /* in_nmethod */);
 
     Register suspend_flags   = r_temp_6;
     __ lwz(suspend_flags, thread_(suspend_flags));
@@ -2320,7 +2312,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // No synchronization in progress nor yet synchronized
     // (cmp-br-isync on one path, release (same as acquire on PPC64) on the other path).
-    __ safepoint_poll(sync, sync_state);
+    __ safepoint_poll(sync, sync_state, true /* at_return */, false /* in_nmethod */);
 
     // Not suspended.
     // TODO: PPC port assert(4 == Thread::sz_suspend_flags(), "unexpected field size");
@@ -3019,7 +3011,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   if (cause_return) {
     // Nothing to do here. The frame has already been popped in MachEpilogNode.
     // Register LR already contains the return pc.
-    return_pc_location = RegisterSaver::return_pc_is_lr;
+    return_pc_location = RegisterSaver::return_pc_is_pre_saved;
   } else {
     // Use thread()->saved_exception_pc() as return pc.
     return_pc_location = RegisterSaver::return_pc_is_thread_saved_exception_pc;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,30 @@ package sun.jvm.hotspot.tools;
 
 import java.io.*;
 import java.util.*;
+import sun.jvm.hotspot.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.debugger.remote.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.PlatformInfo;
 
 public class PStack extends Tool {
     // in non-verbose mode, Method*s are not printed in java frames
-   public PStack(boolean v, boolean concurrentLocks) {
+   public PStack(boolean v, boolean concurrentLocks, HotSpotAgent agent) {
+      super(agent);
       this.verbose = v;
       this.concurrentLocks = concurrentLocks;
    }
 
+   public PStack(boolean v, boolean concurrentLocks) {
+      this(v, concurrentLocks, null);
+   }
+
    public PStack() {
-      this(true, true);
+      this(true, true, null);
    }
 
    public PStack(JVMDebugger d) {
@@ -82,6 +89,7 @@ public class PStack extends Tool {
            return;
         }
          final boolean cdbgCanDemangle = cdbg.canDemangle();
+         String fillerForAddress = " ".repeat(2 + 2 * (int) VM.getVM().getAddressSize()) + "\t";
          for (Iterator<ThreadProxy> itr = l.iterator() ; itr.hasNext();) {
             ThreadProxy th = itr.next();
             try {
@@ -168,6 +176,9 @@ public class PStack extends Tool {
                       if (names != null && names.length != 0) {
                          // print java frame(s)
                          for (int i = 0; i < names.length; i++) {
+                             if (i > 0) {
+                                 out.print(fillerForAddress);
+                             }
                              out.println(names[i]);
                          }
                       }
@@ -187,7 +198,7 @@ public class PStack extends Tool {
          } // for threads
       } else {
           if (getDebugeeType() == DEBUGEE_REMOTE) {
-              out.println("remote configuration is not yet implemented");
+              out.print(((RemoteDebuggerClient)dbg).execCommandOnServer("pstack", Map.of("concurrentLocks", concurrentLocks)));
           } else {
               out.println("not yet implemented (debugger does not support CDebugger)!");
           }
@@ -278,5 +289,13 @@ public class PStack extends Tool {
       String[] res = new String[names.size()];
       System.arraycopy(names.toArray(), 0, res, 0, res.length);
       return res;
+   }
+
+   public void setVerbose(boolean verbose) {
+       this.verbose = verbose;
+   }
+
+   public void setConcurrentLocks(boolean concurrentLocks) {
+       this.concurrentLocks = concurrentLocks;
    }
 }

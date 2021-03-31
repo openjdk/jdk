@@ -171,7 +171,7 @@ private:
       }
     }
 
-    oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+    oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
     ShenandoahHeapRegion* fwd_reg = NULL;
 
@@ -204,7 +204,7 @@ private:
       check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + fwd->size()) <= fwd_reg->top(),
              "Forwardee end should be within the region");
 
-      oop fwd2 = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
+      oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
       check(ShenandoahAsserts::_safe_oop, obj, (fwd == fwd2),
              "Double forwarding");
     } else {
@@ -536,7 +536,7 @@ public:
   virtual void work_humongous(ShenandoahHeapRegion *r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
     size_t processed = 0;
     HeapWord* obj = r->bottom();
-    if (_heap->complete_marking_context()->is_marked((oop)obj)) {
+    if (_heap->complete_marking_context()->is_marked(cast_to_oop(obj))) {
       verify_and_follow(obj, stack, cl, &processed);
     }
     Atomic::add(&_processed, processed, memory_order_relaxed);
@@ -568,7 +568,7 @@ public:
 
       while (addr < limit) {
         verify_and_follow(addr, stack, cl, &processed);
-        addr += oop(addr)->size();
+        addr += cast_to_oop(addr)->size();
       }
     }
 
@@ -579,7 +579,7 @@ public:
     if (!_bitmap->par_mark(addr)) return;
 
     // Verify the object itself:
-    oop obj = oop(addr);
+    oop obj = cast_to_oop(addr);
     cl.verify_oop_standalone(obj);
 
     // Verify everything reachable from that object too, hopefully realizing
@@ -639,10 +639,22 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
       case _verify_gcstate_evacuation:
         enabled = true;
         expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::EVACUATION;
+        if (!_heap->is_stw_gc_in_progress()) {
+          // Only concurrent GC sets this.
+          expected |= ShenandoahHeap::WEAK_ROOTS;
+        }
         break;
       case _verify_gcstate_stable:
         enabled = true;
         expected = ShenandoahHeap::STABLE;
+        break;
+      case _verify_gcstate_stable_weakroots:
+        enabled = true;
+        expected = ShenandoahHeap::STABLE;
+        if (!_heap->is_stw_gc_in_progress()) {
+          // Only concurrent GC sets this.
+          expected |= ShenandoahHeap::WEAK_ROOTS;
+        }
         break;
       default:
         enabled = false;
@@ -799,7 +811,7 @@ void ShenandoahVerifier::verify_after_concmark() {
           _verify_cset_none,           // no references to cset anymore
           _verify_liveness_complete,   // liveness data must be complete here
           _verify_regions_disable,     // trash regions not yet recycled
-          _verify_gcstate_stable       // mark should have stabilized the heap
+          _verify_gcstate_stable_weakroots  // heap is still stable, weakroots are in progress
   );
 }
 
@@ -811,7 +823,7 @@ void ShenandoahVerifier::verify_before_evacuation() {
           _verify_cset_disable,                      // non-forwarded references to cset expected
           _verify_liveness_complete,                 // liveness data must be complete here
           _verify_regions_disable,                   // trash regions not yet recycled
-          _verify_gcstate_stable                     // mark should have stabilized the heap
+          _verify_gcstate_stable_weakroots           // heap is still stable, weakroots are in progress
   );
 }
 
@@ -906,7 +918,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       if (obj != fwd) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
                                          "Verify Roots", "Should not be forwarded", __FILE__, __LINE__);
@@ -938,7 +950,7 @@ private:
                 "Verify Roots In To-Space", "Should not be in collection set", __FILE__, __LINE__);
       }
 
-      oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       if (obj != fwd) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
                 "Verify Roots In To-Space", "Should not be forwarded", __FILE__, __LINE__);

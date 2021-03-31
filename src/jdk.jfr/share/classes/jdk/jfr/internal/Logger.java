@@ -25,8 +25,6 @@
 
 package jdk.jfr.internal;
 
-import java.util.function.Supplier;
-
 /**
  * JFR logger
  *
@@ -34,7 +32,7 @@ import java.util.function.Supplier;
 
 public final class Logger {
 
-    private final static int MAX_SIZE = 10000;
+    private static final int MAX_SIZE = 10000;
     static {
         // This will try to initialize the JVM logging system
         JVMSupport.tryToInitializeJVM();

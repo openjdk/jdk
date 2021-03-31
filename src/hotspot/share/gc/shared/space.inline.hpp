@@ -76,7 +76,7 @@ OffsetTableContigSpace::block_start_const(const void* p) const {
 }
 
 size_t CompactibleSpace::obj_size(const HeapWord* addr) const {
-  return oop(addr)->size();
+  return cast_to_oop(addr)->size();
 }
 
 #if INCLUDE_SERIALGC
@@ -116,7 +116,7 @@ public:
     if (_allowed_deadspace_words >= dead_length) {
       _allowed_deadspace_words -= dead_length;
       CollectedHeap::fill_with_object(dead_start, dead_length);
-      oop obj = oop(dead_start);
+      oop obj = cast_to_oop(dead_start);
       obj->set_mark(obj->mark().set_marked());
 
       assert(dead_length == (size_t)obj->size(), "bad filler object size");
@@ -163,11 +163,11 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
   HeapWord* scan_limit = space->scan_limit();
 
   while (cur_obj < scan_limit) {
-    if (space->scanned_block_is_obj(cur_obj) && oop(cur_obj)->is_gc_marked()) {
+    if (space->scanned_block_is_obj(cur_obj) && cast_to_oop(cur_obj)->is_gc_marked()) {
       // prefetch beyond cur_obj
       Prefetch::write(cur_obj, interval);
       size_t size = space->scanned_block_size(cur_obj);
-      compact_top = cp->space->forward(oop(cur_obj), size, cp, compact_top);
+      compact_top = cp->space->forward(cast_to_oop(cur_obj), size, cp, compact_top);
       cur_obj += size;
       end_of_live = cur_obj;
     } else {
@@ -177,12 +177,12 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
         // prefetch beyond end
         Prefetch::write(end, interval);
         end += space->scanned_block_size(end);
-      } while (end < scan_limit && (!space->scanned_block_is_obj(end) || !oop(end)->is_gc_marked()));
+      } while (end < scan_limit && (!space->scanned_block_is_obj(end) || !cast_to_oop(end)->is_gc_marked()));
 
       // see if we might want to pretend this object is alive so that
       // we don't have to compact quite as often.
       if (cur_obj == compact_top && dead_spacer.insert_deadspace(cur_obj, end)) {
-        oop obj = oop(cur_obj);
+        oop obj = cast_to_oop(cur_obj);
         compact_top = cp->space->forward(obj, obj->size(), cp, compact_top);
         end_of_live = end;
       } else {
@@ -230,10 +230,10 @@ inline void CompactibleSpace::scan_and_adjust_pointers(SpaceType* space) {
   debug_only(HeapWord* prev_obj = NULL);
   while (cur_obj < end_of_live) {
     Prefetch::write(cur_obj, interval);
-    if (cur_obj < first_dead || oop(cur_obj)->is_gc_marked()) {
+    if (cur_obj < first_dead || cast_to_oop(cur_obj)->is_gc_marked()) {
       // cur_obj is alive
       // point all the oops to the new location
-      size_t size = MarkSweep::adjust_pointers(oop(cur_obj));
+      size_t size = MarkSweep::adjust_pointers(cast_to_oop(cur_obj));
       size = space->adjust_obj_size(size);
       debug_only(prev_obj = cur_obj);
       cur_obj += size;
@@ -253,7 +253,7 @@ template <class SpaceType>
 inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
   HeapWord* cur_obj = space->bottom();
 
-  if (cur_obj < space->_end_of_live && space->_first_dead > cur_obj && !oop(cur_obj)->is_gc_marked()) {
+  if (cur_obj < space->_end_of_live && space->_first_dead > cur_obj && !cast_to_oop(cur_obj)->is_gc_marked()) {
      // we have a chunk of the space which hasn't moved and we've reinitialized
      // the mark word during the previous pass, so we can't use is_gc_marked for
      // the traversal.
@@ -261,7 +261,7 @@ inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
 
      while (cur_obj < space->_first_dead) {
        size_t size = space->obj_size(cur_obj);
-       assert(!oop(cur_obj)->is_gc_marked(), "should be unmarked (special dense prefix handling)");
+       assert(!cast_to_oop(cur_obj)->is_gc_marked(), "should be unmarked (special dense prefix handling)");
        prev_obj = cur_obj;
        cur_obj += size;
      }
@@ -298,7 +298,7 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
   HeapWord* const end_of_live = space->_end_of_live;
 
   assert(space->_first_dead <= end_of_live, "Invariant. _first_dead: " PTR_FORMAT " <= end_of_live: " PTR_FORMAT, p2i(space->_first_dead), p2i(end_of_live));
-  if (space->_first_dead == end_of_live && (bottom == end_of_live || !oop(bottom)->is_gc_marked())) {
+  if (space->_first_dead == end_of_live && (bottom == end_of_live || !cast_to_oop(bottom)->is_gc_marked())) {
     // Nothing to compact. The space is either empty or all live object should be left in place.
     clear_empty_region(space);
     return;
@@ -309,7 +309,7 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
 
   assert(bottom < end_of_live, "bottom: " PTR_FORMAT " should be < end_of_live: " PTR_FORMAT, p2i(bottom), p2i(end_of_live));
   HeapWord* cur_obj = bottom;
-  if (space->_first_dead > cur_obj && !oop(cur_obj)->is_gc_marked()) {
+  if (space->_first_dead > cur_obj && !cast_to_oop(cur_obj)->is_gc_marked()) {
     // All object before _first_dead can be skipped. They should not be moved.
     // A pointer to the first live object is stored at the memory location for _first_dead.
     cur_obj = *(HeapWord**)(space->_first_dead);
@@ -317,7 +317,7 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
 
   debug_only(HeapWord* prev_obj = NULL);
   while (cur_obj < end_of_live) {
-    if (!oop(cur_obj)->is_gc_marked()) {
+    if (!cast_to_oop(cur_obj)->is_gc_marked()) {
       debug_only(prev_obj = cur_obj);
       // The first word of the dead object contains a pointer to the next live object or end of space.
       cur_obj = *(HeapWord**)cur_obj;
@@ -328,7 +328,7 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
 
       // size and destination
       size_t size = space->obj_size(cur_obj);
-      HeapWord* compaction_top = cast_from_oop<HeapWord*>(oop(cur_obj)->forwardee());
+      HeapWord* compaction_top = cast_from_oop<HeapWord*>(cast_to_oop(cur_obj)->forwardee());
 
       // prefetch beyond compaction_top
       Prefetch::write(compaction_top, copy_interval);
@@ -336,8 +336,8 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
       // copy object and reinit its mark
       assert(cur_obj != compaction_top, "everything in this pass should be moving");
       Copy::aligned_conjoint_words(cur_obj, compaction_top, size);
-      oop(compaction_top)->init_mark();
-      assert(oop(compaction_top)->klass() != NULL, "should have a class");
+      cast_to_oop(compaction_top)->init_mark();
+      assert(cast_to_oop(compaction_top)->klass() != NULL, "should have a class");
 
       debug_only(prev_obj = cur_obj);
       cur_obj += size;
@@ -350,7 +350,7 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
 #endif // INCLUDE_SERIALGC
 
 size_t ContiguousSpace::scanned_block_size(const HeapWord* addr) const {
-  return oop(addr)->size();
+  return cast_to_oop(addr)->size();
 }
 
 template <typename OopClosureType>
@@ -365,7 +365,7 @@ void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
     while (p < t) {
       Prefetch::write(p, interval);
       debug_only(HeapWord* prev = p);
-      oop m = oop(p);
+      oop m = cast_to_oop(p);
       p += m->oop_iterate_size(blk);
     }
   } while (t < top());
