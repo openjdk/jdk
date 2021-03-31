@@ -348,37 +348,9 @@ static inline void log_circularity_error(PlaceholderEntry* probe) {
 //      super-class checks on its own thread to catch class circularity and
 //      to avoid deadlock.
 //
-// Take the case: A extends B extends A
-//
-// Single Threaded:
-//   1. forName/ConstantPool reference for A: calls resolve_or_fail for A
-//      Bootstrap and non-parallelCapable create placeholder for LOAD_INSTANCE T1 A
-//      loadClass A (parallelCapable loader locks A)
-//   2. defineClass A -> calls resolve_from_stream -> calls resolve_super_or_fail for B
-//      resolve_super_or_fail creates placeholder for LOAD_SUPER T1 A, superclass B
-//   3. resolve_or_fail for B
-//      Bootstrap and non-parallelCapable create placeholder LOAD_INSTANCE T1 B
-//      loadClass B (parallelCapable loader locks B)
-//   4. defineClass B -> calls resolve_from_stream -> calls resolve_super_or_fail for A
-//      resolve_super_or_fail creates placeholder for LOAD_SUPER T1 B, superclass A
-//   5. resolve_or_fail for A
-//      if Bootstrap and non-parallelCapable class loader:
-//         Finds placeholder for LOAD_INSTANCE T1 A -> throws ClassCircularityError
-//      else
-//         loadClass A
-//   6. defineClass A -> calls resolve_from_stream -> calls resolve_super_or_fail for B
-//      Finds placeholder LOAD_SUPER T1 A superclass B -> throws ClassCircularityError
-//
-// Class circularity checking for cases where classloading is delegated to
-// different threads and the classloader lock is released, is described below:
-//
-// Step 3: If loadClass B above stalls due to ClassLoader.wait() call, or bootstrap class
-// loading losing the race to acquire the SystemDictionary_lock, the second thread will attempt
-// to load B to detect CCE, then waits until the first thread completes loading 4-6 and then
-// resumes steps 4-6.
-//
-// For ParallelCapable class loaders, will call handle_parallel_super_load to attempt to load
-// the super class directly, then resume steps 4-6.
+// resolve_super_or_fail adds a LOAD_SUPER placeholder to the placeholder table before calling
+// resolve_instance_class_or_null. ClassCircularityError is detected when a LOAD_SUPER or LOAD_INSTANCE
+// placeholder for the same thread, class, classloader is found.
 //
 //
 InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
