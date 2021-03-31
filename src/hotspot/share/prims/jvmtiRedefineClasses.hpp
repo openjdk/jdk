@@ -302,12 +302,6 @@
 //
 // - How do we serialize the RedefineClasses() API without deadlocking?
 //
-// - KlassFactory::create_from_stream() was called with a NULL protection
-//   domain since the initial version. This has been changed to pass
-//   the_class->protection_domain(). This change has been tested with
-//   all NSK tests and nothing broke, but what will adding it now break
-//   in ways that we don't test?
-//
 // - GenerateOopMap::rewrite_load_or_store() has a comment in its
 //   (indirect) use of the Relocator class that the max instruction
 //   size is 4 bytes. goto_w and jsr_w are 5 bytes and wide/iinc is
