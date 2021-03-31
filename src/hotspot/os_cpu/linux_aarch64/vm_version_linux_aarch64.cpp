@@ -168,18 +168,22 @@ void VM_Version::get_os_cpu_info() {
   }
 }
 
-static bool read_fully(const char *fname, char *buf, int buflen) {
+static bool read_fully(const char *fname, char *buf, size_t buflen) {
   assert(buf != NULL, "invalid argument");
   assert(buflen >= 1, "invalid argument");
   int fd = open(fname, O_RDONLY);
   if (fd != -1) {
-    ssize_t read_sz = read(fd, buf, buflen - 1);
+    ssize_t read_sz = read(fd, buf, buflen);
     close(fd);
-    if ((read_sz > 0) && isgraph(*buf)) {
-      buf[read_sz] = '\0';
-      // Replace control chars to ' '
-      for (char *ch = buf; ch < buf + read_sz; ch++) {
-        if (iscntrl(*ch)) {
+
+    // Skip if the contents starts with '\n' because some machine only sets
+    // '\n' to the board name.
+    // (e.g. /sys/devices/virtual/dmi/id/board_name)
+    if ((read_sz > 0) && (*buf != '\n')) {
+      buf[read_sz - 1] = '\0';
+      // Replace '\0' to ' '
+      for (char *ch = buf; ch < buf + read_sz - 1; ch++) {
+        if (*ch == '\0') {
           *ch = ' ';
         }
       }
@@ -191,11 +195,16 @@ static bool read_fully(const char *fname, char *buf, int buflen) {
 }
 
 void VM_Version::get_compatible_board(char *buf, int buflen) {
-  if (read_fully("/proc/device-tree/compatible", buf, buflen)) {
-    return;
+  const char *board_name_file_list[] = {
+    "/proc/device-tree/compatible",
+    "/sys/devices/virtual/dmi/id/board_name",
+    "/sys/devices/virtual/dmi/id/product_name",
+    NULL
+  };
+
+  for (const char **fname = board_name_file_list; *fname != NULL; fname++) {
+    if (read_fully(*fname, buf, buflen)) {
+      return;
+    }
   }
-  if (read_fully("/sys/devices/virtual/dmi/id/board_name", buf, buflen)) {
-    return;
-  }
-  read_fully("/sys/devices/virtual/dmi/id/product_name", buf, buflen);
 }
