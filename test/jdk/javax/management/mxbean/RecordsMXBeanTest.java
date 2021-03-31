@@ -322,6 +322,20 @@ public class RecordsMXBeanTest {
         }
     }
 
+    public record NonCompliantR3() {
+    }
+    public interface NC3MXBean {
+        public NonCompliantR3 getNCR3();
+    }
+    public class NC3 implements NC3MXBean {
+        private volatile NonCompliantR3 ncr3 = new NonCompliantR3();
+
+        @Override
+        public NonCompliantR3 getNCR3() {
+            return ncr3;
+        }
+    }
+
     @DataProvider(name = "wrapInStandardMBean")
     Object[][] wrapInStandardMBean() {
         return new Object[][] {
@@ -548,39 +562,50 @@ public class RecordsMXBeanTest {
         reportExpected(x2);
         assertEquals( originalCause(x2).getClass(), OpenDataException.class);
 
+        // Test non compliant records: this one has no getters
+        // (not mappable to OpenType)
+        var recname6 = new ObjectName("test:type=NCR3");
+        var x3 = standard
+                ? expectThrows(IllegalArgumentException.class,
+                () -> new StandardMBean(new NC3(), NC3MXBean.class, true))
+                : expectThrows(NotCompliantMBeanException.class,
+                () -> server.registerMBean(new NC3(), recname6));
+        reportExpected(x3);
+        assertEquals( originalCause(x3).getClass(), OpenDataException.class);
+
         // test that a composite data that doesn't have all the records
         // components prevents the record from being reconstructed.
-        var recname6 = new ObjectName("test:type=Records2,instance=6");
+        var recname7 = new ObjectName("test:type=Records2,instance=6");
         Records2 rec2 = new Records2();
-        var mbean6 = standard
+        var mbean7 = standard
                 ? new StandardMBean(rec2, Records2MXBean.class, true)
                 : rec2;
-        server.registerMBean(mbean6, recname6);
-        var cd6 = (CompositeData) server.getAttribute(recname6, "DataPoint");
-        var cdt6 = cd6.getCompositeType();
-        var itemNames6 = List.of("x", "mixed")
+        server.registerMBean(mbean7, recname7);
+        var cd7 = (CompositeData) server.getAttribute(recname7, "DataPoint");
+        var cdt7 = cd7.getCompositeType();
+        var itemNames7 = List.of("x", "mixed")
                 .toArray(String[]::new);
-        var itemDesc6 = Stream.of(itemNames6)
-                .map(cdt6::getDescription)
+        var itemDesc7 = Stream.of(itemNames7)
+                .map(cdt7::getDescription)
                 .toArray(String[]::new);
-        var itemTypes6 = Stream.of(itemNames6)
-                .map(cdt6::getType)
+        var itemTypes7 = Stream.of(itemNames7)
+                .map(cdt7::getType)
                 .toArray(OpenType<?>[]::new);
-        var notmappable = new CompositeType(cdt6.getTypeName(),
-                cdt6.getDescription(),
-                itemNames6,
-                itemDesc6,
-                itemTypes6);
-        var itemValues6 = Stream.of(itemNames6)
-                .map(cd6::get)
+        var notmappable = new CompositeType(cdt7.getTypeName(),
+                cdt7.getDescription(),
+                itemNames7,
+                itemDesc7,
+                itemTypes7);
+        var itemValues7 = Stream.of(itemNames7)
+                .map(cd7::get)
                 .toArray();
-        var cd6mod = new CompositeDataSupport(notmappable, itemNames6, itemValues6);
-        var attribute6 = new Attribute("DataPoint", cd6mod);
-        var x3 = expectThrows(MBeanException.class,
-                standard ? () -> ((StandardMBean)mbean6).setAttribute(attribute6)
-                         : () -> server.setAttribute(recname6, attribute6));
-        reportExpected(x3);
-        assertEquals(originalCause(x3).getClass(), InvalidObjectException.class);
+        var notmappableVal = new CompositeDataSupport(notmappable, itemNames7, itemValues7);
+        var attribute6 = new Attribute("DataPoint", notmappableVal);
+        var x4 = expectThrows(MBeanException.class,
+                standard ? () -> ((StandardMBean)mbean7).setAttribute(attribute6)
+                         : () -> server.setAttribute(recname7, attribute6));
+        reportExpected(x4);
+        assertEquals(originalCause(x4).getClass(), InvalidObjectException.class);
 
     }
 
