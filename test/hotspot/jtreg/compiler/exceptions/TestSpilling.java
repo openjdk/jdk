@@ -27,8 +27,8 @@ package compiler.exceptions;
  * @test
  * @bug 8263227
  * @summary Tests that users of return values from exception-throwing method
- *          calls are placed in the call's fall-through path. The second run
- *          with a variable seed is added for test robustness.
+ *          calls are not duplicated in the call's exception path. The second
+ *          run with a variable seed is added for test robustness.
  * @library /test/lib /
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:+UnlockDiagnosticVMOptions
@@ -48,10 +48,10 @@ public class TestSpilling {
 
     public static void test() {
         int a = Integer.valueOf(42).intValue();
-        // The logic below should be placed in the fall-through path of
-        // java.lang.Integer::intValue(). Otherwise, it might be cloned in the
-        // exception path and cause live range splitting to create uses without
-        // reaching definitions if 'a' is spilled.
+        // After global code motion, the logic below should only be placed in
+        // the fall-through path of java.lang.Integer::intValue(). Otherwise,
+        // live range splitting might create uses without reaching definitions
+        // if 'a' is spilled.
         int b = (((a & 0x0000F000)) + 1);
         int c = a / b + ((a % b > 0) ? 1 : 0);
     }
