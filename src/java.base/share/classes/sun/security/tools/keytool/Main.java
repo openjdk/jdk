@@ -163,6 +163,8 @@ public final class Main {
     private String srcstoretype = null;
     private Set<char[]> passwords = new HashSet<>();
     private String startDate = null;
+    private String signerAlias = null;
+    private char[] signerKeyPass = null;
 
     private boolean tlsInfo = false;
 
@@ -209,6 +211,7 @@ public final class Main {
         GENKEYPAIR("Generates.a.key.pair",
             ALIAS, KEYALG, KEYSIZE, CURVENAME, SIGALG, DNAME,
             STARTDATE, EXT, VALIDITY, KEYPASS, KEYSTORE,
+            SIGNER, SIGNERKEYPASS,
             STOREPASS, STORETYPE, PROVIDERNAME, ADDPROVIDER,
             PROVIDERCLASS, PROVIDERPATH, V, PROTECTED),
         GENSECKEY("Generates.a.secret.key",
@@ -353,6 +356,8 @@ public final class Main {
         PROVIDERPATH("providerpath", "<list>", "provider.classpath"),
         RFC("rfc", null, "output.in.RFC.style"),
         SIGALG("sigalg", "<alg>", "signature.algorithm.name"),
+        SIGNER("signer", "<alias>", "signer.alias"),
+        SIGNERKEYPASS("signerkeypass", "<arg>", "signer.key.password"),
         SRCALIAS("srcalias", "<alias>", "source.alias"),
         SRCKEYPASS("srckeypass", "<arg>", "source.key.password"),
         SRCKEYSTORE("srckeystore", "<keystore>", "source.keystore.name"),
@@ -604,6 +609,11 @@ public final class Main {
                 keyAlgName = args[++i];
             } else if (collator.compare(flags, "-sigalg") == 0) {
                 sigAlgName = args[++i];
+            } else if (collator.compare(flags, "-signer") == 0) {
+                signerAlias = args[++i];
+            } else if (collator.compare(flags, "-signerkeypass") == 0) {
+                signerKeyPass = getPass(modifier, args[++i]);
+                passwords.add(signerKeyPass);
             } else if (collator.compare(flags, "-startdate") == 0) {
                 startDate = args[++i];
             } else if (collator.compare(flags, "-validity") == 0) {
@@ -1149,7 +1159,8 @@ public final class Main {
                 throw new Exception(rb.getString(
                         "keyalg.option.missing.error"));
             }
-            doGenKeyPair(alias, dname, keyAlgName, keysize, groupName, sigAlgName);
+            doGenKeyPair(alias, dname, keyAlgName, keysize, groupName, sigAlgName,
+                    signerAlias);
             kssave = true;
         } else if (command == GENSECKEY) {
             if (keyAlgName == null) {
@@ -1859,9 +1870,12 @@ public final class Main {
      * Creates a new key pair and self-signed certificate.
      */
     private void doGenKeyPair(String alias, String dname, String keyAlgName,
-                              int keysize, String groupName, String sigAlgName)
+                              int keysize, String groupName, String sigAlgName,
+                              String signerAlias)
         throws Exception
     {
+        boolean reqSigner = false; // -signer option is required
+        boolean signerFlag = false;
         if (groupName != null) {
             if (keysize != -1) {
                 throw new Exception(rb.getString("groupname.keysize.coexist"));
@@ -1880,6 +1894,18 @@ public final class Main {
                     keysize = 255;
                 } else if ("Ed448".equalsIgnoreCase(keyAlgName)) {
                     keysize = 448;
+                } else if ("XDH".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_XEC_KEY_SIZE;
+                    reqSigner = true;
+                } else if ("X25519".equalsIgnoreCase(keyAlgName)) {
+                    keysize = 255;
+                    reqSigner = true;
+                } else if ("X448".equalsIgnoreCase(keyAlgName)) {
+                    keysize = 448;
+                    reqSigner = true;
+                } else if ("DH".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_DH_KEY_SIZE;
+                    reqSigner = true;
                 }
             } else {
                 if ("EC".equalsIgnoreCase(keyAlgName)) {
@@ -1901,9 +1927,39 @@ public final class Main {
             throw new Exception(form.format(source));
         }
 
-        CertAndKeyGen keypair =
-                new CertAndKeyGen(keyAlgName, sigAlgName, providerName);
+        if (reqSigner && signerAlias == null) {
+            MessageFormat form = new MessageFormat(rb.getString
+                    ("The.signer.option.must.be.specified.for.the.key.algorithm.keyAlgName"));
+            Object[] source = {keyAlgName};
+            throw new Exception(form.format(source));
+        }
 
+        CertAndKeyGen keypair;
+        if (signerAlias != null) {
+            signerFlag = true;
+
+            if (keyStore.containsAlias(signerAlias) == false) {
+                MessageFormat form = new MessageFormat
+                        (rb.getString("Alias.of.signer.signerAlias.does.not.exist"));
+                Object[] source = {signerAlias};
+                throw new Exception(form.format(source));
+            }
+
+            PrivateKey signerPrivateKey =
+                    (PrivateKey)recoverKey(signerAlias, storePass, signerKeyPass).fst;
+            Certificate signerCert = keyStore.getCertificate(signerAlias);
+            byte[] encoded = signerCert.getEncoded();
+            X509CertImpl signerCertImpl = new X509CertImpl(encoded);
+            X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
+                    X509CertImpl.NAME + "." + X509CertImpl.INFO);
+            X500Name signerSubjectName = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "." +
+                    X509CertInfo.DN_NAME);
+
+            keypair = new CertAndKeyGen(keyAlgName, sigAlgName, providerName,
+                    signerPrivateKey, signerSubjectName);
+        } else {
+            keypair = new CertAndKeyGen(keyAlgName, sigAlgName, providerName);
+        }
 
         // If DN is provided, parse it. Otherwise, prompt the user for it.
         X500Name x500Name;
@@ -1922,22 +1978,56 @@ public final class Main {
         }
 
         PrivateKey privKey = keypair.getPrivateKey();
+        CertificateExtensions ext;
 
-        CertificateExtensions ext = createV3Extensions(
-                null,
-                null,
-                v3ext,
-                keypair.getPublicKeyAnyway(),
-                null);
+        if (signerFlag) {
+            Certificate signerCert = keyStore.getCertificate(signerAlias);
+
+            X509CertImpl certImpl;
+            if (signerCert instanceof X509CertImpl) {
+                    certImpl = (X509CertImpl) signerCert;
+            } else {
+                certImpl = new X509CertImpl(signerCert.getEncoded());
+            }
+
+            KeyIdentifier signerSubjectKeyId = certImpl.getSubjectKeyId();
+            if (signerSubjectKeyId == null) {
+                signerSubjectKeyId = new KeyIdentifier(signerCert.getPublicKey());
+            }
+
+            ext = createV3Extensions(
+                    null,
+                    null,
+                    v3ext,
+                    keypair.getPublicKeyAnyway(),
+                    signerSubjectKeyId);
+        } else {
+            ext = createV3Extensions(
+                    null,
+                    null,
+                    v3ext,
+                    keypair.getPublicKeyAnyway(),
+                    null);
+        }
 
         X509Certificate[] chain = new X509Certificate[1];
         chain[0] = keypair.getSelfCertificate(
                 x500Name, getStartDate(startDate), validity*24L*60L*60L, ext);
 
-        MessageFormat form = new MessageFormat(rb.getString
-            ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
+        MessageFormat form;
+        if (signerFlag) {
+            form = new MessageFormat(rb.getString
+                    ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.an.entry.specified.by.the.signer.option.with.a.validity.of.validality.days.for"));
+        } else {
+            form = new MessageFormat(rb.getString
+                    ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
+            if (groupName != null) {
+                keysize = KeyUtil.getKeySize(privKey);
+            }
+        }
+
         Object[] source = {
-                groupName == null ? keysize : KeyUtil.getKeySize(privKey),
+                keysize,
                 fullDisplayAlgName(privKey),
                 chain[0].getSigAlgName(),
                 validity,
@@ -1947,8 +2037,18 @@ public final class Main {
         if (keyPass == null) {
             keyPass = promptForKeyPass(alias, null, storePass);
         }
-        checkWeak(rb.getString("the.generated.certificate"), chain[0]);
-        keyStore.setKeyEntry(alias, privKey, keyPass, chain);
+
+        if (signerFlag) {
+            Certificate[] signerChain = keyStore.getCertificateChain(signerAlias);
+            Certificate[] tmpChain = new X509Certificate[signerChain.length + 1];
+            System.arraycopy(chain, 0, tmpChain, 0, 1);
+            System.arraycopy(signerChain, 0, tmpChain, 1, signerChain.length);
+            checkWeak(rb.getString("the.generated.certificate"), tmpChain);
+            keyStore.setKeyEntry(alias, privKey, keyPass, tmpChain);
+        } else {
+            checkWeak(rb.getString("the.generated.certificate"), chain[0]);
+            keyStore.setKeyEntry(alias, privKey, keyPass, chain);
+        }
     }
 
     private String ecGroupNameForSize(int size) throws Exception {
