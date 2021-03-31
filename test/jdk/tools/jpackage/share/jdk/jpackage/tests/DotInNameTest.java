@@ -47,7 +47,7 @@ public class DotInNameTest {
     @Test
     public void test() {
         JPackageCommand cmd = JPackageCommand.helloAppImage("Hello");
-        
+
         cmd.setArgumentValue("--name",
                 cmd.getArgumentValue("--name") + ".with.dot");
         // run the jpackage command
