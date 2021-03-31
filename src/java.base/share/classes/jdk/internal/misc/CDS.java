@@ -308,7 +308,7 @@ public class CDS {
             proc.waitFor();
             // done, delete classlist file.
             if (fileList.exists()) {
-                // fileList.delete();
+                fileList.delete();
             }
             // Check if archive has been successfully dumped. We won't reach here if exception happens.
             // Throw exception if file is not created.
