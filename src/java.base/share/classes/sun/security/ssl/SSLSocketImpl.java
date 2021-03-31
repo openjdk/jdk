@@ -1417,8 +1417,10 @@ public final class SSLSocketImpl
                         conContext.isNegotiated) {
                     return 0;
                 }
-            } catch (SSLException | InterruptedIOException | SocketException se) {
-                // don't change exception in case of timeouts or interrupts or SocketException
+            } catch (SSLException |
+                    InterruptedIOException | SocketException se) {
+                // Don't change exception in case of timeouts or interrupts
+                // or SocketException.
                 throw se;
             } catch (IOException ioe) {
                 throw new SSLException("readHandshakeRecord", ioe);
@@ -1474,8 +1476,10 @@ public final class SSLSocketImpl
                         buffer.position() > 0) {
                     return buffer;
                 }
-            } catch (SSLException | InterruptedIOException | SocketException se) {
-                // don't change exception in case of timeouts or interrupts or SocketException.
+            } catch (SSLException |
+                    InterruptedIOException | SocketException se) {
+                // Don't change exception in case of timeouts or interrupts
+                // or SocketException.
                 throw se;
             } catch (IOException ioe) {
                 throw new SSLException("readApplicationRecord", ioe);
@@ -1483,7 +1487,8 @@ public final class SSLSocketImpl
         }
 
         //
-        // couldn't read, due to some kind of error
+        // Couldn't read, due to some kind of error or inbound
+        // has been closed.
         //
         return null;
     }
@@ -1686,7 +1691,7 @@ public final class SSLSocketImpl
 
         if (cause instanceof SocketException) {
             try {
-                conContext.fatal(alert, cause);
+                throw conContext.fatal(alert, cause);
             } catch (Exception e) {
                 // Just delivering the fatal alert, re-throw the socket exception instead.
             }
@@ -1748,7 +1753,8 @@ public final class SSLSocketImpl
                 // If conContext.isInputCloseNotified is false, close the
                 // connection, no wait for more peer response.  Otherwise,
                 // may wait for peer close_notify.
-                closeSocket(!conContext.isInputCloseNotified);
+                closeSocket(conContext.isNegotiated &&
+                        !conContext.isInputCloseNotified);
             } finally {
                 tlsIsClosed = true;
             }
