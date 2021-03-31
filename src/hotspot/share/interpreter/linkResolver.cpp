@@ -675,7 +675,7 @@ void LinkResolver::check_method_loader_constraints(const LinkInfo& link_info,
     SystemDictionary::check_signature_loaders(link_info.signature(),
                                               /*klass_being_linked*/ NULL, // We are not linking class
                                               current_loader,
-                                              resolved_loader, true, CHECK);
+                                              resolved_loader, true);
   if (failed_type_symbol != NULL) {
     Klass* current_class = link_info.current_klass();
     ClassLoaderData* current_loader_data = current_class->class_loader_data();
@@ -712,8 +712,7 @@ void LinkResolver::check_field_loader_constraints(Symbol* field, Symbol* sig,
     SystemDictionary::check_signature_loaders(sig,
                                               /*klass_being_linked*/ NULL, // We are not linking class
                                               ref_loader, sel_loader,
-                                              false,
-                                              CHECK);
+                                              false);
   if (failed_type_symbol != NULL) {
     stringStream ss;
     const char* failed_type_name = failed_type_symbol->as_klass_external_name();

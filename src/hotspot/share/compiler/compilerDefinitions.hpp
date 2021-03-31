@@ -55,8 +55,8 @@ enum MethodCompilation {
 
 // Enumeration to distinguish tiers of compilation
 enum CompLevel {
-  CompLevel_any               = -2,
-  CompLevel_all               = -2,
+  CompLevel_any               = -2,        // Used for querying the state
+  CompLevel_all               = -2,        // Used for changing the state
   CompLevel_aot               = -1,
   CompLevel_none              = 0,         // Interpreter
   CompLevel_simple            = 1,         // C1

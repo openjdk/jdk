@@ -1038,7 +1038,7 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
 void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // cpu
   st->print("CPU:");
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(ZERO)
    if (VM_Version::is_cpu_emulated()) {
      st->print(" (EMULATED)");
    }

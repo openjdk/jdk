@@ -1081,6 +1081,9 @@ JavaThread::JavaThread() :
   _pending_failed_speculation(0),
   _jvmci{nullptr},
   _jvmci_counters(nullptr),
+  _jvmci_reserved0(nullptr),
+  _jvmci_reserved1(nullptr),
+  _jvmci_reserved_oop0(nullptr),
 #endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
@@ -2011,6 +2014,9 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   f->do_oop((oop*) &_vm_result);
   f->do_oop((oop*) &_exception_oop);
   f->do_oop((oop*) &_pending_async_exception);
+#if INCLUDE_JVMCI
+  f->do_oop((oop*) &_jvmci_reserved_oop0);
+#endif
 
   if (jvmti_thread_state() != NULL) {
     jvmti_thread_state()->oops_do(f, cf);
@@ -3646,17 +3652,6 @@ public:
 void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf) {
   ParallelOopsDoThreadClosure tc(f, cf);
   possibly_parallel_threads_do(is_par, &tc);
-}
-
-void Threads::nmethods_do(CodeBlobClosure* cf) {
-  ALL_JAVA_THREADS(p) {
-    // This is used by the code cache sweeper to mark nmethods that are active
-    // on the stack of a Java thread. Ignore the sweeper thread itself to avoid
-    // marking CodeCacheSweeperThread::_scanned_compiled_method as active.
-    if(!p->is_Code_cache_sweeper_thread()) {
-      p->nmethods_do(cf);
-    }
-  }
 }
 
 void Threads::metadata_do(MetadataClosure* f) {

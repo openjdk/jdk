@@ -984,7 +984,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // 1) the class is loaded by custom class loader or
       // 2) the class is loaded by built-in class loader but failed to add archived loader constraints
       bool need_init_table = true;
-      if (is_shared() && SystemDictionaryShared::check_linking_constraints(this, THREAD)) {
+      if (is_shared() && SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
         need_init_table = false;
       }
       if (need_init_table) {
