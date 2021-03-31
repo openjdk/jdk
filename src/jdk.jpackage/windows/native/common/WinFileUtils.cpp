@@ -658,4 +658,14 @@ void FileWriter::finalize() {
     cleaner.cancel();
 }
 
+tstring extractName(const tstring& path) {
+    // for windows - there is a ".exe" suffix to remove
+    tstring name = basename(path);
+    const tstring::size_type pos = name.rfind(_T(".exe"));
+    if (pos == tstring::npos) {
+        return name;
+    }
+    return name.substr(0, pos);
+}
+
 } //  namespace FileUtils

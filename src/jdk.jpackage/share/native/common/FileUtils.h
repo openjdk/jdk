@@ -72,6 +72,9 @@ namespace FileUtils {
      */
     tstring replaceSuffix(const tstring& path, const tstring& suffix=tstring());
 
+    // extract the name from the launcher path
+    tstring extractName(const tstring& path);
+
     /**
      * Returns absolute path of the given path.
      * If the given string is empty, returns absolute path to the current

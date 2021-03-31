@@ -62,4 +62,9 @@ tstring toAbsolutePath(const tstring& path) {
     return mkpath() << toAbsolutePath("") << path;
 }
 
+tstring extractName(const tstring& path) {
+    // for unix - there is no suffix to remove
+    return basename(path);
+}
+
 } //  namespace FileUtils

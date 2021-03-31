@@ -92,10 +92,10 @@ tstring findJvmLib(const CfgFile& cfgFile, const tstring& defaultRuntimePath,
 } // namespace
 
 Jvm* AppLauncher::createJvmLauncher() const {
+    const tstring appName = FileUtils::extractName(launcherPath);
     const tstring cfgFilePath = FileUtils::mkpath()
         << appDirPath
-        << FileUtils::basename(FileUtils::replaceSuffix(
-                launcherPath, _T(".cfg")));
+        << tstring().append(appName).append(_T(".cfg"));
 
     LOG_TRACE(tstrings::any() << "Launcher config file path: \""
             << cfgFilePath << "\"");
