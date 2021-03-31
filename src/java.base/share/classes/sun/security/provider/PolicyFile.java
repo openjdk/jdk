@@ -765,7 +765,7 @@ public class PolicyFile extends java.security.Policy {
                     }
                 } catch (java.lang.reflect.InvocationTargetException ite) {
                     Object[] source = {pe.permission,
-                                       ite.getTargetException().toString()};
+                                       ite.getCause().toString()};
                     System.err.println(
                         LocalizedMessage.getNonlocalized(
                             POLICY + ".error.adding.Permission.perm.message",

@@ -602,17 +602,13 @@ void MetaspaceShared::prepare_for_dumping() {
   Arguments::assert_is_dumping_archive();
   Arguments::check_unsupported_dumping_properties();
 
-  EXCEPTION_MARK;
-  ClassLoader::initialize_shared_path(THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
-    vm_exit_during_initialization("ClassLoader::initialize_shared_path() failed unexpectedly");
-  }
+  ClassLoader::initialize_shared_path(Thread::current());
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
-void MetaspaceShared::preload_and_dump(TRAPS) {
+void MetaspaceShared::preload_and_dump() {
+  EXCEPTION_MARK;
   ResourceMark rm(THREAD);
   preload_and_dump_impl(THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -1332,6 +1328,34 @@ void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
   }
 }
 
+// For -XX:PrintSharedArchiveAndExit
+class CountSharedSymbols : public SymbolClosure {
+ private:
+   int _count;
+ public:
+   CountSharedSymbols() : _count(0) {}
+  void do_symbol(Symbol** sym) {
+    _count++;
+  }
+  int total() { return _count; }
+
+};
+
+// For -XX:PrintSharedArchiveAndExit
+class CountSharedStrings : public OopClosure {
+ private:
+  int _count;
+ public:
+  CountSharedStrings() : _count(0) {}
+  void do_oop(oop* p) {
+    _count++;
+  }
+  void do_oop(narrowOop* p) {
+    _count++;
+  }
+  int total() { return _count; }
+};
+
 // Read the miscellaneous data from the shared file, and
 // serialize it out to its various destinations.
 
@@ -1366,10 +1390,30 @@ void MetaspaceShared::initialize_shared_spaces() {
   }
 
   if (PrintSharedArchiveAndExit) {
-    if (PrintSharedDictionary) {
-      tty->print_cr("\nShared classes:\n");
-      SystemDictionaryShared::print_on(tty);
+    // Print archive names
+    if (dynamic_mapinfo != nullptr) {
+      tty->print_cr("\n\nBase archive name: %s", Arguments::GetSharedArchivePath());
+      tty->print_cr("Base archive version %d", static_mapinfo->version());
+    } else {
+      tty->print_cr("Static archive name: %s", static_mapinfo->full_path());
+      tty->print_cr("Static archive version %d", static_mapinfo->version());
     }
+
+    SystemDictionaryShared::print_shared_archive(tty);
+    if (dynamic_mapinfo != nullptr) {
+      tty->print_cr("\n\nDynamic archive name: %s", dynamic_mapinfo->full_path());
+      tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
+      SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
+    }
+
+    // collect shared symbols and strings
+    CountSharedSymbols cl;
+    SymbolTable::shared_symbols_do(&cl);
+    tty->print_cr("Number of shared symbols: %d", cl.total());
+    CountSharedStrings cs;
+    StringTable::shared_oops_do(&cs);
+    tty->print_cr("Number of shared strings: %d", cs.total());
+    tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
     if (FileMapInfo::current_info() == NULL || _archive_loading_failed) {
       tty->print_cr("archive is invalid");
       vm_exit(1);

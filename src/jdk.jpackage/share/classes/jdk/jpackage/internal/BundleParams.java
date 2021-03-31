@@ -31,7 +31,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 
 public class BundleParams {
 
-    final protected Map<String, ? super Object> params;
+    protected final Map<String, ? super Object> params;
 
     /**
      * create a new bundle with all default values

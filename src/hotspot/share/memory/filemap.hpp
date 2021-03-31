@@ -544,6 +544,10 @@ public:
     header()->print(st);
   }
 
+  const char* vm_version() {
+    return header()->jvm_ident();
+  }
+
  private:
   void  seek_to_position(size_t pos);
   char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);

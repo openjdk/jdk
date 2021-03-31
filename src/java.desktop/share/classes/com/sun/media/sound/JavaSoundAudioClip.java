@@ -57,7 +57,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  * @author Arthur van Hoff, Kara Kytle, Jan Borgersen
  * @author Florian Bomers
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "removal"})
 public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineListener {
 
     private long lastPlayCall = 0;
