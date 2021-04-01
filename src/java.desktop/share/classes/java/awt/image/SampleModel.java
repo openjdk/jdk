@@ -116,11 +116,9 @@ public abstract class SampleModel
      * @throws IllegalArgumentException if the product of {@code w}
      *         and {@code h} is greater than {@code Integer.MAX_VALUE}
      * @throws IllegalArgumentException if {@code dataType} is not
-     *         one of the supported data types
-     * @throws IllegalArgumentException if {@code numBands} is less than 1
-     * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the pre-defined data type tags in the
      *         {@code DataBuffer} class
+     * @throws IllegalArgumentException if {@code numBands} is less than 1
      */
     public SampleModel(int dataType, int w, int h, int numBands)
     {

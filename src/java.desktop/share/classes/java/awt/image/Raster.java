@@ -316,7 +316,7 @@ public class Raster {
      * Creates a Raster based on a BandedSampleModel with the
      * specified data type, width, height, and number of bands.
      *
-     * <p> The upper left corner of the Raster is given by the,
+     * <p> The upper left corner of the Raster is given by the
      * location argument.  If location is null, (0, 0) will be used.
      * The dataType parameter should be one of the enumerated values
      * defined in the DataBuffer class.
