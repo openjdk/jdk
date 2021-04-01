@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,8 @@ public abstract class Number implements java.io.Serializable {
     /**
      * Returns the value of the specified number as a {@code byte}.
      *
-     * <p>This implementation returns the result of {@link #intValue} cast
+     * @implSpec
+     * The default implementation returns the result of {@link #intValue} cast
      * to a {@code byte}.
      *
      * @return  the numeric value represented by this object after conversion
