@@ -72,7 +72,7 @@ namespace FileUtils {
      */
     tstring replaceSuffix(const tstring& path, const tstring& suffix=tstring());
 
-    // remove the executable suffix if there is one 
+    // remove the executable suffix if there is one
     tstring stripExeSuffix(const tstring& path);
 
     /**
