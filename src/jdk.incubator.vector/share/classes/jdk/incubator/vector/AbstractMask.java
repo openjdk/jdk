@@ -150,6 +150,11 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         return bOp(m, (i, a, b) -> a == b);
     }
 
+    @Override
+    public VectorMask<E> andNot(VectorMask<E> m) {
+        return and(m.not());
+    }
+
     /*package-private*/
     static boolean anyTrueHelper(boolean[] bits) {
         // FIXME: Maybe use toLong() != 0 here.

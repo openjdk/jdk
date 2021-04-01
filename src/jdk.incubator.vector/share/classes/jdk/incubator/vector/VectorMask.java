@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,9 +425,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * @param m the second input mask
      * @return the result of logically subtracting the second mask from this mask
      */
-    public final VectorMask<E> andNot(VectorMask<E> m) {
-        return and(m.not());
-    }
+    public abstract VectorMask<E> andNot(VectorMask<E> m);
 
     /**
      * Logically negates this mask.
