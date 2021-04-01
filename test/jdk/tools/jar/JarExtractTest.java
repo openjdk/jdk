@@ -328,7 +328,12 @@ public class JarExtractTest {
         Assert.assertEquals(exitCode, 0, "Failed to extract " + testJarPath);
         // make sure only the specific files were extracted
         final Stream<Path> paths = Files.walk(Path.of(tmpDir));
-        Assert.assertEquals(paths.count(), 6, "Unexpected number of files/dirs in " + tmpDir);
+        // files/dirs count expected to be found when the location to which the jar was extracted
+        // is walked.
+        // 1) The top level dir being walked 2) f1.txt file 3) d1 dir 4) d1/d2 dir
+        // 5) d1/d2/d3 dir 6) d1/d2/d3/f2.txt file
+        final int numExpectedFiles = 6;
+        Assert.assertEquals(paths.count(), numExpectedFiles, "Unexpected number of files/dirs in " + tmpDir);
         final Path f1 = Paths.get(tmpDir, "f1.txt");
         Assert.assertTrue(Files.isRegularFile(f1), f1.toString() + " wasn't extracted from " + testJarPath);
         Assert.assertEquals(Files.readAllBytes(f1), FILE_CONTENT, "Unexpected content in file " + f1);
