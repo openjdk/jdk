@@ -1032,6 +1032,10 @@ static void create_default_methods(InstanceKlass* klass,
   Method::sort_methods(total_default_methods, /*set_idnums=*/false);
 
   klass->set_default_methods(total_default_methods);
+  // Create an array for mapping default methods to their vtable indices in
+  // this class, since default methods vtable indices are the indices for
+  // the defining class.
+  klass->create_new_default_vtable_indices(new_size, CHECK);
 }
 
 static void sort_methods(GrowableArray<Method*>* methods) {
