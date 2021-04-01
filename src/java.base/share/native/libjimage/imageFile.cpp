@@ -212,6 +212,11 @@ ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
 }
 
 ImageFileReaderTable::~ImageFileReaderTable() {
+// Bug 8166727
+//
+// WARNING: Should never close the jimage file.
+//          Threads may still be running at shutdown.
+#if 0
     for (u4 i = 0; i < _count; i++) {
         ImageFileReader* image = _table[i];
 
@@ -220,6 +225,7 @@ ImageFileReaderTable::~ImageFileReaderTable() {
         }
     }
     free(_table);
+#endif
 }
 
 // Add a new image entry to the table.
