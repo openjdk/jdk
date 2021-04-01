@@ -52,7 +52,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (!type.isAnnotation() ||
             superInterfaces.length != 1 ||
             superInterfaces[0] != java.lang.annotation.Annotation.class)
-            throw new AnnotationFormatError("Attempt to create proxy for a non-annotation type.");
+            throw new AnnotationFormatError("Attempt to create proxy for a non-annotation type: " +
+					    type.getName());
         this.type = type;
         this.memberValues = memberValues;
     }
@@ -492,7 +493,9 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
          * 9.6.1. Annotation Type Elements
          */
         boolean valid = true;
+        Method currentMethod = null;
         for(Method method : memberMethods) {
+            currentMethod = method;
             int modifiers = method.getModifiers();
             // Skip over methods that may be a static initializer or
             // similar construct. A static initializer may be used for
@@ -575,7 +578,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (valid)
             return;
         else
-            throw new AnnotationFormatError("Malformed method on an annotation type");
+            throw new AnnotationFormatError("Malformed method on an annotation type: " +
+					    currentMethod.toString());
     }
 
     /**
