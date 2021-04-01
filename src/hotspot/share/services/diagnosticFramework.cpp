@@ -518,6 +518,9 @@ int DCmdFactory::register_DCmdFactory(DCmdFactory* factory) {
       && (factory->_export_flags & DCmd_Source_MBean)) {
     DCmdFactory::push_jmx_notification_request();
   }
+  if (UseNewCode) {
+    tty->print_cr("CMD %s = %d", factory->name(), factory->num_arguments());
+  }
   return 0; // Actually, there's no checks for duplicates
 }
 

@@ -69,7 +69,6 @@ public:
                         "java.vm.version", "read"};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -86,7 +85,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS) {
     Arguments::print_on(_output);
   }
@@ -108,7 +106,6 @@ public:
                           "*", "read"};
       return p;
     }
-    static int num_arguments() { return 0; }
     virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -172,7 +169,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -252,7 +248,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -266,7 +261,6 @@ public:
     static const char* impact() {
       return "Medium: Depends on Java heap size and content.";
     }
-    static int num_arguments() { return 0; }
     virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -280,7 +274,6 @@ public:
     static const char* impact() {
       return "Medium: Depends on Java content.";
     }
-    static int num_arguments() { return 0; }
     virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -294,7 +287,6 @@ public:
   static const char* impact() {
     return "Medium";
   }
-  static int num_arguments() { return 0; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
       "monitor", NULL};
@@ -314,7 +306,6 @@ public:
   static const char* impact() {
     return "Medium";
   }
-  static int num_arguments() { return 0; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
       "monitor", NULL};
@@ -573,7 +564,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -595,7 +585,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 #endif // LINUX
@@ -617,7 +606,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -638,7 +626,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -686,7 +673,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -707,7 +693,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -751,7 +736,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -884,7 +868,6 @@ public:
     JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
     return p;
   }
-  static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 #endif // INCLUDE_JVMTI

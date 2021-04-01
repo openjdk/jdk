@@ -27,10 +27,12 @@
 
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ostream.hpp"
+#include <type_traits>
 
 
 enum DCmdSource {
@@ -274,6 +276,12 @@ public:
     JavaPermission p = {NULL, NULL, NULL};
     return p;
   }
+  // num_arguments() is used by the DCmdFactoryImpl::get_num_arguments() template functions.
+  // By default:
+  //   - Direct subclasses of DCmd have zero arguments.
+  //   - For subclasses of DCmdWithParser, it's calculated by DCmdParser::num_arguments()
+  // If your Dcmd class needs a different value, it should define its
+  // own version of this static method.
   static int num_arguments()        { return 0; }
   outputStream* output() const      { return _output; }
   bool is_heap_allocated() const    { return _is_heap_allocated; }
@@ -321,6 +329,9 @@ public:
   virtual void print_help(const char* name) const;
   virtual GrowableArray<const char*>* argument_name_array() const;
   virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array() const;
+  DCmdParser* dcmdparser() {
+    return &_dcmdparser;
+  }
 };
 
 class DCmdMark : public StackObj {
@@ -404,7 +415,7 @@ private:
 template <class DCmdClass> class DCmdFactoryImpl : public DCmdFactory {
 public:
   DCmdFactoryImpl(uint32_t flags, bool enabled, bool hidden) :
-    DCmdFactory(DCmdClass::num_arguments(), flags, enabled, hidden) { }
+    DCmdFactory(get_num_arguments<DCmdClass>(), flags, enabled, hidden) { }
   // Returns a resourceArea allocated instance
   DCmd* create_resource_instance(outputStream* output) const {
     return new DCmdClass(output, false);
@@ -423,6 +434,24 @@ public:
   }
   const char* disabled_message() const {
      return DCmdClass::disabled_message();
+  }
+
+private:
+  template <typename T, ENABLE_IF(!std::is_base_of<DCmdWithParser, T>::value)>
+  static int get_num_arguments() {
+    return T::num_arguments();
+  }
+
+  template <typename T, ENABLE_IF(std::is_base_of<DCmdWithParser, T>::value)>
+  static int get_num_arguments() {
+    ResourceMark rm;
+    DCmdClass* dcmd = new DCmdClass(NULL, false);
+    if (dcmd != NULL) {
+      DCmdMark mark(dcmd);
+      return dcmd->dcmdparser()->num_arguments();
+    } else {
+      return 0;
+    }
   }
 };
 
