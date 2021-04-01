@@ -166,6 +166,7 @@ public class JarExtractTest {
      */
     @Test(dataProvider = "relExtractLocations")
     public void testExtractToRelativeDir(final String dest) throws Exception {
+        testLongFormExtract(dest);
         testExtract(dest);
     }
 
@@ -177,6 +178,7 @@ public class JarExtractTest {
     @Test(dataProvider = "absExtractLocations")
     public void testExtractToAbsoluteDir(final String dest) throws Exception {
         testExtract(dest);
+        testLongFormExtract(dest);
     }
 
     /**
@@ -187,13 +189,14 @@ public class JarExtractTest {
     @Test(dataProvider = "absNormalizedExtractLocations")
     public void testExtractToAbsoluteNormalizedDir(final String dest) throws Exception {
         testExtract(dest);
+        testLongFormExtract(dest);
     }
 
     /**
      * Test that extracting a jar with {@code jar -x -f --dir} works as expected
      */
     @Test
-    public void testExtractLongForm() throws Exception {
+    public void testExtractLongFormDir() throws Exception {
         final String dest = "foo-bar";
         System.out.println("Extracting " + testJarPath + " to " + dest);
         final int exitCode = JAR_TOOL.run(System.out, System.err, "-x", "-f", testJarPath.toString(),
@@ -230,6 +233,18 @@ public class JarExtractTest {
     }
 
     /**
+     * Tests that {@code jar --extract -f} command works fine even when the -C or --dir option
+     * isn't specified
+     */
+    @Test
+    public void testLongFormExtractWithoutOutputDir() throws Exception {
+        final int exitCode = JAR_TOOL.run(System.out, System.err, "--extract", "-f", testJarPath.toString());
+        Assert.assertEquals(exitCode, 0, "Failed to extract " + testJarPath);
+        // the content would have been extracted to current dir
+        verifyExtractedContent(".");
+    }
+
+    /**
      * Tests that extracting a jar using {@code -P} flag and without any explicit destination
      * directory works correctly if the jar contains entries with leading slashes and/or {@code ..}
      * parts preserved.
@@ -238,23 +253,26 @@ public class JarExtractTest {
     public void testExtractNoDestDirWithPFlag() throws Exception {
         // create a jar which has leading slash (/) and dot-dot (..) preserved in entry names
         final Path jarPath = createJarWithPFlagSemantics();
-        // extract with -P flag without any explicit destination directory (expect the extraction to work fine)
-        final String[] args = new String[]{"-xvfP", jarPath.toString()};
-        printJarCommand(args);
-        final int exitCode = JAR_TOOL.run(System.out, System.err, args);
-        Assert.assertEquals(exitCode, 0, "Failed to extract " + jarPath);
-        final String dest = ".";
-        Assert.assertTrue(Files.isDirectory(Paths.get(dest)), dest + " is not a directory");
-        final Path d1 = Paths.get(dest, "d1");
-        Assert.assertTrue(Files.isDirectory(d1), d1 + " directory is missing or not a directory");
-        final Path d2 = Paths.get(dest, "d1", "d2");
-        Assert.assertTrue(Files.isDirectory(d2), d2 + " directory is missing or not a directory");
-        final Path f1 = Paths.get(LEADING_SLASH_PRESERVED_ENTRY);
-        Assert.assertTrue(Files.isRegularFile(f1), f1 + " is missing or not a file");
-        Assert.assertEquals(Files.readAllBytes(f1), FILE_CONTENT, "Unexpected content in file " + f1);
-        final Path f2 = Paths.get("d1/d2/../f2.txt");
-        Assert.assertTrue(Files.isRegularFile(f2), f2 + " is missing or not a file");
-        Assert.assertEquals(Files.readAllBytes(f2), FILE_CONTENT, "Unexpected content in file " + f2);
+        final List<String[]> cmdArgs = new ArrayList<>();
+        cmdArgs.add(new String[]{"-xvfP", jarPath.toString()});
+        cmdArgs.add(new String[]{"--extract", "-v", "-P", "-f", jarPath.toString()});
+        for (final String[] args : cmdArgs) {
+            printJarCommand(args);
+            final int exitCode = JAR_TOOL.run(System.out, System.err, args);
+            Assert.assertEquals(exitCode, 0, "Failed to extract " + jarPath);
+            final String dest = ".";
+            Assert.assertTrue(Files.isDirectory(Paths.get(dest)), dest + " is not a directory");
+            final Path d1 = Paths.get(dest, "d1");
+            Assert.assertTrue(Files.isDirectory(d1), d1 + " directory is missing or not a directory");
+            final Path d2 = Paths.get(dest, "d1", "d2");
+            Assert.assertTrue(Files.isDirectory(d2), d2 + " directory is missing or not a directory");
+            final Path f1 = Paths.get(LEADING_SLASH_PRESERVED_ENTRY);
+            Assert.assertTrue(Files.isRegularFile(f1), f1 + " is missing or not a file");
+            Assert.assertEquals(Files.readAllBytes(f1), FILE_CONTENT, "Unexpected content in file " + f1);
+            final Path f2 = Paths.get("d1/d2/../f2.txt");
+            Assert.assertTrue(Files.isRegularFile(f2), f2 + " is missing or not a file");
+            Assert.assertEquals(Files.readAllBytes(f2), FILE_CONTENT, "Unexpected content in file " + f2);
+        }
     }
 
     /**
@@ -273,6 +291,10 @@ public class JarExtractTest {
         cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "-P", "-C", "."});
         cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "-P", "--dir", "."});
         cmdArgs.add(new String[]{"-xvfP", testJarPath.toString(), "-C", tmpDir});
+        cmdArgs.add(new String[]{"--extract", "-f", testJarPath.toString(), "-P", "-C", tmpDir});
+        cmdArgs.add(new String[]{"--extract", "-f", testJarPath.toString(), "-P", "--dir", tmpDir});
+        cmdArgs.add(new String[]{"--extract", "-f", testJarPath.toString(), "-P", "-C", "."});
+        cmdArgs.add(new String[]{"--extract", "-f", testJarPath.toString(), "-P", "--dir", "."});
         for (final String[] args : cmdArgs) {
             final ByteArrayOutputStream err = new ByteArrayOutputStream();
             printJarCommand(args);
@@ -310,6 +332,9 @@ public class JarExtractTest {
         cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "-C", tmpDir, "-C", tmpDir});
         cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "--dir", tmpDir, "--dir", tmpDir});
         cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "--dir", tmpDir, "-C", tmpDir});
+        cmdArgs.add(new String[]{"--extract", "-f", testJarPath.toString(), "-C", tmpDir, "-C", tmpDir});
+        cmdArgs.add(new String[]{"--extract", "-f", testJarPath.toString(), "--dir", tmpDir, "--dir", tmpDir});
+        cmdArgs.add(new String[]{"--extract", "-f", testJarPath.toString(), "--dir", tmpDir, "-C", tmpDir});
         for (final String[] args : cmdArgs) {
             final ByteArrayOutputStream err = new ByteArrayOutputStream();
             printJarCommand(args);
@@ -326,24 +351,37 @@ public class JarExtractTest {
      */
     @Test
     public void testExtractPartialContent() throws Exception {
-        final String tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toString();
-        final String[] cmdArgs = new String[]{"-x", "-f", testJarPath.toString(), "--dir", tmpDir,
+        String tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toString();
+        String[] cmdArgs = new String[]{"-x", "-f", testJarPath.toString(), "--dir", tmpDir,
                 "f1.txt", "d1/d2/d3/f2.txt"};
-        printJarCommand(cmdArgs);
-        final int exitCode = JAR_TOOL.run(System.out, System.err, cmdArgs);
+        testExtractPartialContent(tmpDir, cmdArgs);
+
+        tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toString();
+        cmdArgs = new String[]{"--extract", "-f", testJarPath.toString(), "--dir", tmpDir,
+                "f1.txt", "d1/d2/d3/f2.txt"};
+        testExtractPartialContent(tmpDir, cmdArgs);
+
+    }
+
+    /**
+     * Extract to destDir using the passed command arguments and verify the extracted content
+     */
+    private void testExtractPartialContent(final String destDir, final String[] extractArgs) throws Exception {
+        printJarCommand(extractArgs);
+        final int exitCode = JAR_TOOL.run(System.out, System.err, extractArgs);
         Assert.assertEquals(exitCode, 0, "Failed to extract " + testJarPath);
         // make sure only the specific files were extracted
-        final Stream<Path> paths = Files.walk(Path.of(tmpDir));
+        final Stream<Path> paths = Files.walk(Path.of(destDir));
         // files/dirs count expected to be found when the location to which the jar was extracted
         // is walked.
         // 1) The top level dir being walked 2) f1.txt file 3) d1 dir 4) d1/d2 dir
         // 5) d1/d2/d3 dir 6) d1/d2/d3/f2.txt file
         final int numExpectedFiles = 6;
-        Assert.assertEquals(paths.count(), numExpectedFiles, "Unexpected number of files/dirs in " + tmpDir);
-        final Path f1 = Paths.get(tmpDir, "f1.txt");
+        Assert.assertEquals(paths.count(), numExpectedFiles, "Unexpected number of files/dirs in " + destDir);
+        final Path f1 = Paths.get(destDir, "f1.txt");
         Assert.assertTrue(Files.isRegularFile(f1), f1.toString() + " wasn't extracted from " + testJarPath);
         Assert.assertEquals(Files.readAllBytes(f1), FILE_CONTENT, "Unexpected content in file " + f1);
-        final Path d1 = Paths.get(tmpDir, "d1");
+        final Path d1 = Paths.get(destDir, "d1");
         Assert.assertTrue(Files.isDirectory(d1), d1.toString() + " wasn't extracted from " + testJarPath);
         Assert.assertEquals(Files.walk(d1, 1).count(), 2, "Unexpected number " +
                 "of files/dirs in " + d1);
@@ -361,10 +399,22 @@ public class JarExtractTest {
     }
 
     /**
-     * Extracts the jar file using {@code jar -x -f <jarfile> -C <dest>}
+     * Extracts the jar file using {@code jar -x -f <jarfile> -C <dest>} and verifies the extracted content
      */
     private void testExtract(final String dest) throws Exception {
         final String[] args = new String[]{"-x", "-f", testJarPath.toString(), "-C", dest};
+        printJarCommand(args);
+        final int exitCode = JAR_TOOL.run(System.out, System.err, args);
+        Assert.assertEquals(exitCode, 0, "Failed to extract " + testJarPath + " to " + dest);
+        verifyExtractedContent(dest);
+    }
+
+    /**
+     * Extracts the jar file using {@code jar --extract -f <jarfile> -C <dest>} and verifies the
+     * extracted content
+     */
+    private void testLongFormExtract(final String dest) throws Exception {
+        final String[] args = new String[]{"--extract", "-f", testJarPath.toString(), "-C", dest};
         printJarCommand(args);
         final int exitCode = JAR_TOOL.run(System.out, System.err, args);
         Assert.assertEquals(exitCode, 0, "Failed to extract " + testJarPath + " to " + dest);
