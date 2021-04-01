@@ -42,46 +42,101 @@ public class TestOpaqueListTable {
                 UIManager.setLookAndFeel(LF.getClassName());
                 SwingUtilities.invokeAndWait(() -> {
                     JList list = new JList();
-                    if (list.isOpaque() == false) {
+                    JTable table = new JTable();
+                    JTree tree = new JTree();
+                    JToolTip toolTip = new JToolTip();
+                    JViewport viewport = new JViewport();
+                    String opaqueValue =  new String(" ");
+
+                    if (!list.isOpaque()) {
+                        opaqueValue += "JList, ";
+                    }
+                    if (!table.isOpaque()) {
+                        opaqueValue += "JTable, ";
+                    }
+                    if (!tree.isOpaque()) {
+                        opaqueValue += "JTree, ";
+                    }
+                    if (!toolTip.isOpaque()) {
+                        opaqueValue += "JToolTip, ";
+
+                    }
+                    if (!viewport.isOpaque()) {
+                        opaqueValue += "JViewport, ";
+                    }
+
+                    if(!opaqueValue.equals(" ")) {
                         throw new RuntimeException("Default value of " +
-                                "\"opaque\" property for JList is changed ");
+                                "\"opaque\" property for " + opaqueValue
+                                + " is changed ");
                     }
 
                     LookAndFeel.installProperty(list, "opaque", false);
-                    if (list.isOpaque()) {
-                        throw new RuntimeException(
-                                "setUIProperty failed to clear JList opaque" +
-                                        " when opaque is not set by client");
-                    }
-
-                    JTable table = new JTable();
-                    if (table.isOpaque() == false) {
-                        throw new RuntimeException("Default value of " +
-                                "\"opaque\" property for JTable is changed ");
-                    }
-
                     LookAndFeel.installProperty(table, "opaque", false);
+                    LookAndFeel.installProperty(tree, "opaque", false);
+                    LookAndFeel.installProperty(toolTip,"opaque",false);
+                    LookAndFeel.installProperty(viewport,"opaque",false);
+
+                    opaqueValue = " ";
+                    if (list.isOpaque()) {
+                        opaqueValue += "JList, ";
+                    }
                     if (table.isOpaque()) {
+                        opaqueValue += "JTable, ";
+                    }
+                    if (tree.isOpaque()) {
+                        opaqueValue += "JTree, ";
+                    }
+                    if (toolTip.isOpaque()) {
+                        opaqueValue += "JToolTip, ";
+                    }
+                    if (viewport.isOpaque()) {
+                        opaqueValue += "JViewport, ";
+                    }
+                    if (!opaqueValue.equals(" ")) {
                         throw new RuntimeException(
-                                "setUIProperty failed to clear JTable opaque" +
+                                "setUIProperty failed to clear " +
+                                        opaqueValue +" opaque" +
                                         " when opaque is not set by client");
                     }
+
 
                     list.setOpaque(true);
+                    table.setOpaque(true);
+                    tree.setOpaque(true);
+                    toolTip.setOpaque(true);
+                    viewport.setOpaque(true);
+
                     LookAndFeel.installProperty(list,"opaque",false);
+                    LookAndFeel.installProperty(table, "opaque", false);
+                    LookAndFeel.installProperty(tree, "opaque", false);
+                    LookAndFeel.installProperty(toolTip, "opaque", false);
+                    LookAndFeel.installProperty(viewport, "opaque", false);
+
+                    opaqueValue = " ";
+
                     if (!list.isOpaque()) {
-                        throw new RuntimeException(
-                                "setUIProperty cleared the JList Opaque" +
-                                        " when opaque is set by client");
+                        opaqueValue += "JList";
+                    }
+                    if (!table.isOpaque()) {
+                        opaqueValue += "JTable";
+                    }
+                    if (!tree.isOpaque()) {
+                        opaqueValue += "JTree";
+                    }
+                    if (!toolTip.isOpaque()) {
+                        opaqueValue += "JToolTip";
+                    }
+                    if (!viewport.isOpaque()) {
+                        opaqueValue += "JViewport";
                     }
 
-                    table.setOpaque(true);
-                    LookAndFeel.installProperty(table, "opaque", false);
-                    if (!table.isOpaque()) {
+                    if (!opaqueValue.equals(" ")) {
                         throw new RuntimeException("" +
-                                "setUIProperty cleared the JTable Opaque" +
-                                " when opaque is set by client");
+                                "setUIProperty cleared the " +opaqueValue +
+                                " Opaque when opaque is set by client");
                     }
+
                 });
             } catch (UnsupportedLookAndFeelException e) {
                 System.out.println("Note: LookAndFeel " + LF.getClassName()
