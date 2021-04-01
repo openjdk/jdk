@@ -1244,7 +1244,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
         asCollectorChecks(arrayType, collectArgPos, arrayLength);
         BoundMethodHandle mh = rebind();
         MethodType resultType = type().asCollectorType(arrayType, collectArgPos, arrayLength);
-        MethodHandle collector = MethodHandleImpl.makeCollector(arrayType, arrayLength);
+        MethodHandle collector = MethodHandleImpl.varargsArray(arrayType, arrayLength);
         LambdaForm lform = mh.editor().collectArgumentsForm(1 + collectArgPos, collector.type().basicType());
         return mh.copyWithExtendL(resultType, lform, collector);
     }

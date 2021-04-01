@@ -39,7 +39,6 @@ import sun.reflect.misc.ReflectUtil;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -870,13 +869,6 @@ class InvokerBytecodeGenerator {
                     onStack = emitLoop(i);
                     i += 2; // jump to the end of the LOOP idiom
                     continue;
-                case NEW_ARRAY:
-                    Class<?> rtype = name.function.methodType().returnType();
-                    if (isStaticallyNameable(rtype)) {
-                        emitNewArray(name);
-                        continue;
-                    }
-                    break;
                 case ARRAY_LOAD:
                     emitArrayLoad(name);
                     continue;
@@ -893,9 +885,6 @@ class InvokerBytecodeGenerator {
                 case ZERO:
                     assert(name.arguments.length == 0);
                     emitConst(name.type.basicTypeWrapper().zero());
-                    continue;
-                case COLLECTOR:
-                    emitCollector(name);
                     continue;
                 case NONE:
                     // no intrinsic associated
@@ -917,6 +906,7 @@ class InvokerBytecodeGenerator {
 
         methodEpilogue();
     }
+
     /*
      * @throws BytecodeGenerationException if something goes wrong when
      *         generating the byte code
@@ -1115,43 +1105,6 @@ class InvokerBytecodeGenerator {
         }
     }
 
-    void emitNewArray(Name name) throws InternalError {
-        Class<?> rtype = name.function.methodType().returnType();
-        if (name.arguments.length == 0) {
-            // The array will be a constant.
-            Object emptyArray;
-            try {
-                emptyArray = name.function.resolvedHandle().invoke();
-            } catch (Throwable ex) {
-                throw uncaughtException(ex);
-            }
-            assert(java.lang.reflect.Array.getLength(emptyArray) == 0);
-            assert(emptyArray.getClass() == rtype);  // exact typing
-            mv.visitFieldInsn(Opcodes.GETSTATIC, className, classData(emptyArray), "Ljava/lang/Object;");
-            emitReferenceCast(rtype, emptyArray);
-            return;
-        }
-        Class<?> arrayElementType = rtype.getComponentType();
-        assert(arrayElementType != null);
-        emitIconstInsn(name.arguments.length);
-        int xas = Opcodes.AASTORE;
-        if (!arrayElementType.isPrimitive()) {
-            mv.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(arrayElementType));
-        } else {
-            byte tc = arrayTypeCode(Wrapper.forPrimitiveType(arrayElementType));
-            xas = arrayInsnOpcode(tc, xas);
-            mv.visitIntInsn(Opcodes.NEWARRAY, tc);
-        }
-        // store arguments
-        for (int i = 0; i < name.arguments.length; i++) {
-            mv.visitInsn(Opcodes.DUP);
-            emitIconstInsn(i);
-            emitPushArgument(name, i);
-            mv.visitInsn(xas);
-        }
-        // the array is left on the stack
-        assertStaticType(rtype, name);
-    }
     int refKindOpcode(byte refKind) {
         switch (refKind) {
         case REF_invokeVirtual:      return Opcodes.INVOKEVIRTUAL;
@@ -1612,39 +1565,6 @@ class InvokerBytecodeGenerator {
         mv.visitLabel(lDone);
 
         return result;
-    }
-
-    private void emitCollector(Name name) {
-        Class<?> arrayType = (Class<?>) name.function.intrinsicData();
-        Class<?> arrayElementType = arrayType.getComponentType();
-        int collectorArgs = name.arguments.length - 1; // drop invoker
-        if (collectorArgs == 0) {
-            Object emptyArray = Array.newInstance(arrayElementType, 0);
-            assert(java.lang.reflect.Array.getLength(emptyArray) == 0);
-            assert(emptyArray.getClass() == arrayType);  // exact typing
-            mv.visitFieldInsn(Opcodes.GETSTATIC, className, classData(emptyArray), "Ljava/lang/Object;");
-            emitReferenceCast(arrayType, emptyArray);
-            return;
-        }
-        assert(arrayElementType != null);
-        emitIconstInsn(collectorArgs);
-        int xas = Opcodes.AASTORE;
-        if (!arrayElementType.isPrimitive()) {
-            mv.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(arrayElementType));
-        } else {
-            byte tc = arrayTypeCode(Wrapper.forPrimitiveType(arrayElementType));
-            xas = arrayInsnOpcode(tc, xas);
-            mv.visitIntInsn(Opcodes.NEWARRAY, tc);
-        }
-        // store arguments
-        for (int i = 0; i < collectorArgs; i++) {
-            mv.visitInsn(Opcodes.DUP);
-            emitIconstInsn(i);
-            emitPushArgument(name, i + 1); // skip invoker
-            mv.visitInsn(xas);
-        }
-        // the array is left on the stack
-        assertStaticType(arrayType, name);
     }
 
     private int extendLocalsMap(Class<?>[] types) {

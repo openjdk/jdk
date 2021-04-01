@@ -90,8 +90,7 @@ final class MethodTypeForm {
             LF_VH_EX_INVOKER           = 22,  // VarHandle exact invoker
             LF_VH_GEN_INVOKER          = 23,  // VarHandle generic invoker
             LF_VH_GEN_LINKER           = 24,  // VarHandle generic linker
-            LF_COLLECTOR               = 25,  // collector
-            LF_LIMIT                   = 26;
+            LF_LIMIT                   = 25;
 
     /** Return the type corresponding uniquely (1-1) to this MT-form.
      *  It might have any primitive returns or arguments, but will have no references except Object.

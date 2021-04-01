@@ -1068,28 +1068,20 @@ class LambdaForm {
         private @Stable MethodHandle resolvedHandle;
         @Stable MethodHandle invoker;
         private final MethodHandleImpl.Intrinsic intrinsicName;
-        private final Object intrinsicData;
 
         NamedFunction(MethodHandle resolvedHandle) {
             this(resolvedHandle.internalMemberName(), resolvedHandle, MethodHandleImpl.Intrinsic.NONE);
         }
         NamedFunction(MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic) {
-            this(resolvedHandle.internalMemberName(), resolvedHandle, intrinsic, null);
-        }
-        NamedFunction(MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic, Object intrinsicData) {
-            this(resolvedHandle.internalMemberName(), resolvedHandle, intrinsic, intrinsicData);
+            this(resolvedHandle.internalMemberName(), resolvedHandle, intrinsic);
         }
         NamedFunction(MemberName member, MethodHandle resolvedHandle) {
             this(member, resolvedHandle, MethodHandleImpl.Intrinsic.NONE);
         }
         NamedFunction(MemberName member, MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic) {
-            this(member, resolvedHandle, intrinsic, null);
-        }
-        NamedFunction(MemberName member, MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic, Object intrinsicData) {
             this.member = member;
             this.resolvedHandle = resolvedHandle;
             this.intrinsicName = intrinsic;
-            this.intrinsicData = intrinsicData;
             assert(resolvedHandle == null ||
                    resolvedHandle.intrinsicName() == MethodHandleImpl.Intrinsic.NONE ||
                    resolvedHandle.intrinsicName() == intrinsic) : resolvedHandle.intrinsicName() + " != " + intrinsic;
@@ -1106,7 +1098,6 @@ class LambdaForm {
                 this.member = Invokers.invokeBasicMethod(basicInvokerType);
             }
             this.intrinsicName = MethodHandleImpl.Intrinsic.NONE;
-            this.intrinsicData = null;
             assert(isInvokeBasic(member));
         }
 
@@ -1260,10 +1251,6 @@ class LambdaForm {
 
         public MethodHandleImpl.Intrinsic intrinsicName() {
             return intrinsicName;
-        }
-
-        public Object intrinsicData() {
-            return intrinsicData;
         }
     }
 
