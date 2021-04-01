@@ -1090,6 +1090,8 @@ public:
   void kmovwl(Register dst, KRegister src) { Assembler::kmovwl(dst, src); }
   void kmovwl(KRegister dst, Address src) { Assembler::kmovwl(dst, src); }
   void kmovwl(KRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
+  void kmovwl(Address dst,  KRegister src) { Assembler::kmovwl(dst, src); }
+  void kmovwl(KRegister dst, KRegister src) { Assembler::kmovwl(dst, src); }
 
   void kmovql(KRegister dst, KRegister src) { Assembler::kmovql(dst, src); }
   void kmovql(KRegister dst, Register src) { Assembler::kmovql(dst, src); }
@@ -1097,6 +1099,14 @@ public:
   void kmovql(KRegister dst, Address src) { Assembler::kmovql(dst, src); }
   void kmovql(Address  dst, KRegister src) { Assembler::kmovql(dst, src); }
   void kmovql(KRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
+
+  // Safe move operation, lowers down to 16bit moves for targets supporting
+  // AVX512F feature and 64bit moves for targets supporting AVX512BW feature.
+  void kmov(Address  dst, KRegister src);
+  void kmov(KRegister dst, Address src);
+  void kmov(KRegister dst, KRegister src);
+  void kmov(Register dst, KRegister src);
+  void kmov(KRegister dst, Register src);
 
   // AVX Unaligned forms
   void vmovdqu(Address     dst, XMMRegister src);

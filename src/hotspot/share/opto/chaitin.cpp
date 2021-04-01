@@ -825,7 +825,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           }
         }
         assert(n_type->isa_vect() == NULL || lrg._is_vector ||
-               ireg == Op_RegD || ireg == Op_RegL  || ireg == Op_RegVMask,
+               ireg == Op_RegD || ireg == Op_RegL  || ireg == Op_RegVectMask,
                "vector must be in vector registers");
 
         // Check for bound register masks
@@ -918,8 +918,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
             lrg._is_bound = 1;
           }
           break;
-        case Op_RegVMask:
-          lrg.set_num_regs(RegMask::SlotsPerRegVMask);
+        case Op_RegVectMask:
+          lrg.set_num_regs(RegMask::SlotsPerRegVectMask);
           lrg.set_reg_pressure(1);
           break;
         case Op_RegF:
@@ -1042,7 +1042,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         uint kreg = n->in(k)->ideal_reg();
         bool is_vect = RegMask::is_vector(kreg);
         assert(n->in(k)->bottom_type()->isa_vect() == NULL || is_vect ||
-               kreg == Op_RegD || kreg == Op_RegL || kreg == Op_RegVMask,
+               kreg == Op_RegD || kreg == Op_RegL || kreg == Op_RegVectMask,
                "vector must be in vector registers");
         if (lrgmask.is_bound(kreg))
           lrg._is_bound = 1;

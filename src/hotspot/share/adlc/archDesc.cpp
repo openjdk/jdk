@@ -945,8 +945,8 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
     }
   }
 
-  if (strncmp(idealOp, "RegVMask", 8) == 0) {
-    return "TypeVect::VMASK";
+  if (strncmp(idealOp, "RegVectMask", 8) == 0) {
+    return "TypeVect::VECTMASK";
   }
 
   // !!!!!

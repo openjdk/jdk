@@ -234,7 +234,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       __ subptr(rsp, opmask_state_bytes);
       // Save opmask registers
       for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
-        __ kmovql(Address(rsp, n*8), as_KRegister(n));
+        __ kmov(Address(rsp, n*8), as_KRegister(n));
       }
     }
   }
@@ -340,7 +340,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
         __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32+off));
       }
       for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
-        __ kmovql(as_KRegister(n), Address(rsp, n*8));
+        __ kmov(as_KRegister(n), Address(rsp, n*8));
       }
     }
     __ addptr(rsp, additional_frame_bytes);

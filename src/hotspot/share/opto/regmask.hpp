@@ -105,7 +105,7 @@ class RegMask {
          SlotsPerVecX = 4,
          SlotsPerVecY = 8,
          SlotsPerVecZ = 16,
-         SlotsPerRegVMask = X86_ONLY(2) NOT_X86(1)
+         SlotsPerRegVectMask = X86_ONLY(2) NOT_X86(1)
          };
 
   // A constructor only used by the ADLC output.  All mask fields are filled

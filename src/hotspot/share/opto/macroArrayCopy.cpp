@@ -233,7 +233,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   inline_block  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
   stub_block = *ctrl;
 
-  Node* mask_gen =  new VectorMaskGenNode(length, TypeVect::VMASK, Type::get_const_basic_type(type));
+  Node* mask_gen =  new VectorMaskGenNode(length, TypeVect::VECTMASK, Type::get_const_basic_type(type));
   transform_later(mask_gen);
 
   unsigned vec_size = lane_count *  type2aelembytes(type);

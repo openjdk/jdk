@@ -91,7 +91,7 @@ public:
     Tuple,                      // Method signature or object layout
     Array,                      // Array types
 
-    VectorM,                    // Vector predicate/mask type
+    VectorMask,                 // Vector predicate/mask type
     VectorA,                    // (Scalable) Vector types for vector length agnostic
     VectorS,                    //  32bit Vector types
     VectorD,                    //  64bit Vector types
@@ -821,7 +821,7 @@ public:
   static const TypeVect *VECTX;
   static const TypeVect *VECTY;
   static const TypeVect *VECTZ;
-  static const TypeVect *VMASK;
+  static const TypeVect *VECTMASK;
 
 #ifndef PRODUCT
   virtual void dump2(Dict &d, uint, outputStream *st) const; // Specialized per-Type dumping
@@ -861,7 +861,7 @@ class TypeVectZ : public TypeVect {
 class TypeVectMask : public TypeVect {
 public:
   friend class TypeVect;
-  TypeVectMask(const Type* elem, uint length) : TypeVect(VectorM, elem, length) {}
+  TypeVectMask(const Type* elem, uint length) : TypeVect(VectorMask, elem, length) {}
   virtual bool eq(const Type *t) const;
   virtual const Type *xdual() const;
 };
@@ -1704,21 +1704,21 @@ inline const TypeAry *Type::isa_ary() const {
 }
 
 inline const TypeVectMask *Type::is_vectmask() const {
-  assert( _base == VectorM, "Not a Vector Mask" );
+  assert( _base == VectorMask, "Not a Vector Mask" );
   return (TypeVectMask*)this;
 }
 
 inline const TypeVectMask *Type::isa_vectmask() const {
-  return (_base == VectorM) ? (TypeVectMask*)this : NULL;
+  return (_base == VectorMask) ? (TypeVectMask*)this : NULL;
 }
 
 inline const TypeVect *Type::is_vect() const {
-  assert( _base >= VectorM && _base <= VectorZ, "Not a Vector" );
+  assert( _base >= VectorMask && _base <= VectorZ, "Not a Vector" );
   return (TypeVect*)this;
 }
 
 inline const TypeVect *Type::isa_vect() const {
-  return (_base >= VectorM && _base <= VectorZ) ? (TypeVect*)this : NULL;
+  return (_base >= VectorMask && _base <= VectorZ) ? (TypeVect*)this : NULL;
 }
 
 inline const TypePtr *Type::is_ptr() const {

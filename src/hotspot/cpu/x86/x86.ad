@@ -695,21 +695,21 @@ alloc_class chunk2(K7, K7_H,
                    K2, K2_H,
                    K1, K1_H);
 
-reg_class  opmask_reg(K1, K1_H,
-                      K2, K2_H,
-                      K3, K3_H,
-                      K4, K4_H,
-                      K5, K5_H,
-                      K6, K6_H,
-                      K7, K7_H);
+reg_class  vectmask_reg(K1, K1_H,
+                        K2, K2_H,
+                        K3, K3_H,
+                        K4, K4_H,
+                        K5, K5_H,
+                        K6, K6_H,
+                        K7, K7_H);
 
-reg_class opmask_reg_K1(K1, K1_H);
-reg_class opmask_reg_K2(K2, K2_H);
-reg_class opmask_reg_K3(K3, K3_H);
-reg_class opmask_reg_K4(K4, K4_H);
-reg_class opmask_reg_K5(K5, K5_H);
-reg_class opmask_reg_K6(K6, K6_H);
-reg_class opmask_reg_K7(K7, K7_H);
+reg_class vectmask_reg_K1(K1, K1_H);
+reg_class vectmask_reg_K2(K2, K2_H);
+reg_class vectmask_reg_K3(K3, K3_H);
+reg_class vectmask_reg_K4(K4, K4_H);
+reg_class vectmask_reg_K5(K5, K5_H);
+reg_class vectmask_reg_K6(K6, K6_H);
+reg_class vectmask_reg_K7(K7, K7_H);
 
 // flags allocation class should be last.
 alloc_class chunk3(RFLAGS);
@@ -1883,7 +1883,7 @@ const bool Matcher::has_predicated_vectors(void) {
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
-  return &_OPMASK_REG_mask;
+  return &_VECTMASK_REG_mask;
 }
 
 const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
@@ -3687,12 +3687,11 @@ instruct evgather(vec dst, memory mem, vec idx, rRegP tmp, kReg ktmp) %{
 // Scatter INT, LONG, FLOAT, DOUBLE
 
 instruct scatter(memory mem, vec src, vec idx, rRegP tmp, kReg ktmp) %{
+  predicate(UseAVX > 2);
   match(Set mem (StoreVectorScatter mem (Binary src idx)));
   effect(TEMP tmp, TEMP ktmp);
   format %{ "store_vector_scatter $mem, $idx, $src\t! using k2 and $tmp as TEMP" %}
   ins_encode %{
-    assert(UseAVX > 2, "sanity");
-
     int vlen_enc = vector_length_encoding(this, $src);
     BasicType elem_bt = vector_element_basic_type(this, $src);
 
@@ -7281,8 +7280,24 @@ instruct vptest_alltrue_lt16(rRegI dst, legVec src1, legVec src2, legVec vtmp1, 
   ins_pipe( pipe_slow );
 %}
 
-instruct vptest_alltrue(rRegI dst, legVec src1, legVec src2, kReg ktmp, rFlagsReg cr) %{
+instruct vptest_alltrue(rRegI dst, legVec src1, legVec src2, rFlagsReg cr) %{
   predicate(vector_length_in_bytes(n->in(1)) >= 16 &&
+            vector_length_in_bytes(n->in(1)) <  64 &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
+  match(Set dst (VectorTest src1 src2 ));
+  effect(KILL cr);
+  format %{ "vector_test $dst,$src1, $src2\t! using $cr as TEMP" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::overflow, vlen, $src1$$XMMRegister, $src2$$XMMRegister, xnoreg, xnoreg, knoreg);
+    __ setb(Assembler::carrySet, $dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vptest_alltrue_evex(rRegI dst, legVec src1, legVec src2, kReg ktmp, rFlagsReg cr) %{
+  predicate(vector_length_in_bytes(n->in(1)) == 64 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
   match(Set dst (VectorTest src1 src2 ));
   effect(KILL cr, TEMP ktmp);
@@ -7312,8 +7327,24 @@ instruct vptest_anytrue_lt16(rRegI dst, legVec src1, legVec src2, legVec vtmp, r
   ins_pipe( pipe_slow );
 %}
 
-instruct vptest_anytrue(rRegI dst, legVec src1, legVec src2, kReg ktmp, rFlagsReg cr) %{
+instruct vptest_anytrue(rRegI dst, legVec src1, legVec src2, rFlagsReg cr) %{
   predicate(vector_length_in_bytes(n->in(1)) >= 16 &&
+            vector_length_in_bytes(n->in(1)) < 64  &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
+  match(Set dst (VectorTest src1 src2 ));
+  effect(KILL cr);
+  format %{ "vector_test_any_true $dst,$src1,$src2\t! using $cr as TEMP" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister, xnoreg, xnoreg, knoreg);
+    __ setb(Assembler::notZero, $dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vptest_anytrue_evex(rRegI dst, legVec src1, legVec src2, kReg ktmp, rFlagsReg cr) %{
+  predicate(vector_length_in_bytes(n->in(1)) == 64 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
   match(Set dst (VectorTest src1 src2 ));
   effect(KILL cr, TEMP ktmp);
@@ -7341,8 +7372,21 @@ instruct cmpvptest_anytrue_lt16(rFlagsReg cr, legVec src1, legVec src2, immI_0 z
   ins_pipe( pipe_slow );
 %}
 
-instruct cmpvptest_anytrue(rFlagsReg cr, legVec src1, legVec src2, immI_0 zero, kReg ktmp) %{
+instruct cmpvptest_anytrue(rFlagsReg cr, legVec src1, legVec src2, immI_0 zero) %{
   predicate(vector_length_in_bytes(n->in(1)->in(1)) >= 16 &&
+            vector_length_in_bytes(n->in(1)->in(1)) <  64 &&
+            static_cast<const VectorTestNode*>(n->in(1))->get_predicate() == BoolTest::ne);
+  match(Set cr (CmpI (VectorTest src1 src2) zero));
+  format %{ "cmp_vector_test_any_true $src1,$src2\t!" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister, xnoreg, xnoreg, knoreg);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct cmpvptest_anytrue_evex(rFlagsReg cr, legVec src1, legVec src2, immI_0 zero, kReg ktmp) %{
+  predicate(vector_length_in_bytes(n->in(1)->in(1)) == 64 &&
             static_cast<const VectorTestNode*>(n->in(1))->get_predicate() == BoolTest::ne);
   match(Set cr (CmpI (VectorTest src1 src2) zero));
   effect(TEMP ktmp);

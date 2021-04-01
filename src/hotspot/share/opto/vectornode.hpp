@@ -846,7 +846,7 @@ class VectorMaskGenNode : public TypeNode {
   const Type* get_elem_type()  { return _elemType;}
   virtual  uint  size_of() const { return sizeof(VectorMaskGenNode); }
   virtual uint  ideal_reg() const {
-    return Op_RegVMask;
+    return Op_RegVectMask;
   }
 
   private:

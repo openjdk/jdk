@@ -504,8 +504,10 @@ private:
       } else if (vm_reg->is_KRegister()) {
         // All opmask registers are caller saved, thus spill the ones
         // which are live.
-        _opmask_registers.append(vm_reg->as_KRegister());
-        opmask_spill_size += 8;
+        if (_opmask_registers.find(vm_reg->as_KRegister()) == -1) {
+          _opmask_registers.append(vm_reg->as_KRegister());
+          opmask_spill_size += 8;
+        }
       } else if (vm_reg->is_XMMRegister()) {
         // We encode in the low order 4 bits of the opto_reg, how large part of the register is live
         const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~15);

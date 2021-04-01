@@ -218,6 +218,8 @@ class KRegisterImpl : public AbstractRegisterImpl {
 public:
   enum {
     number_of_registers = 8,
+    // opmask registers are 64bit wide on both 32 and 64 bit targets.
+    // thus two slots are reserved per register.
     max_slots_per_register = 2
   };
 
@@ -256,6 +258,10 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   // There is no requirement that any ordering here matches any ordering c2 gives
   // it's optoregs.
 
+  // x86_32.ad defines additional dummy FILL0-FILL7 registers, in order to tally
+  // REG_COUNT (computed by ADLC based on the number of reg_defs seen in .ad files)
+  // with ConcreteRegisterImpl::number_of_registers additional count of 8 is being
+  // added for 32 bit jvm.
     number_of_registers = RegisterImpl::number_of_registers * RegisterImpl::max_slots_per_register +
       2 * FloatRegisterImpl::number_of_registers + NOT_LP64(8) LP64_ONLY(0) +
       XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers +

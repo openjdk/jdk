@@ -411,7 +411,7 @@ uint PhaseChaitin::count_int_pressure(IndexSet* liveout) {
         !lrg.is_float_or_vector() &&
         (lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
          (Matcher::has_predicated_vectors() &&
-          lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegVMask])))) {
+          lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegVectMask])))) {
       cnt += lrg.reg_pressure();
     }
     lidx = elements.next();
@@ -449,7 +449,7 @@ void PhaseChaitin::lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* l
       const RegMask& r = lrg.mask();
       if (r.overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
            (Matcher::has_predicated_vectors() &&
-            r.overlap(*Matcher::idealreg2regmask[Op_RegVMask]))) {
+            r.overlap(*Matcher::idealreg2regmask[Op_RegVectMask]))) {
         int_pressure.lower(lrg, location);
       }
     }
@@ -506,7 +506,7 @@ void PhaseChaitin::raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pr
       const RegMask& rm = lrg.mask();
       if (rm.overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
            (Matcher::has_predicated_vectors() &&
-            rm.overlap(*Matcher::idealreg2regmask[Op_RegVMask]))) {
+            rm.overlap(*Matcher::idealreg2regmask[Op_RegVectMask]))) {
         int_pressure.raise(lrg);
       }
     }

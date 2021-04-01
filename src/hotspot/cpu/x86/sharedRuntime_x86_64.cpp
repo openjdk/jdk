@@ -223,7 +223,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
       off = 0;
       for(int n = 0; n < KRegisterImpl::number_of_registers; n++) {
-        __ kmovql(Address(rsp, base_addr+(off++*8)), as_KRegister(n));
+        __ kmov(Address(rsp, base_addr+(off++*8)), as_KRegister(n));
       }
 #endif
     }
@@ -239,7 +239,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
       off = 0;
       for(int n = 0; n < KRegisterImpl::number_of_registers; n++) {
-        __ kmovql(Address(rsp, base_addr+(off++*8)), as_KRegister(n));
+        __ kmov(Address(rsp, base_addr+(off++*8)), as_KRegister(n));
       }
 #endif
     }
@@ -405,7 +405,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
       off = 0;
       for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
-        __ kmovql(as_KRegister(n), Address(rsp, base_addr+(off++*8)));
+        __ kmov(as_KRegister(n), Address(rsp, base_addr+(off++*8)));
       }
 #endif
     }
@@ -421,7 +421,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
       off = 0;
       for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
-        __ kmovql(as_KRegister(n), Address(rsp, base_addr+(off++*8)));
+        __ kmov(as_KRegister(n), Address(rsp, base_addr+(off++*8)));
       }
 #endif
     }

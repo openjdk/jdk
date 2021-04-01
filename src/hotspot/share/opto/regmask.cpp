@@ -67,8 +67,8 @@ int RegMask::num_registers(uint ireg) {
       return SlotsPerVecX;
     case Op_VecD:
       return SlotsPerVecD;
-    case Op_RegVMask:
-      return SlotsPerRegVMask;
+    case Op_RegVectMask:
+      return SlotsPerRegVectMask;
     case Op_RegD:
     case Op_RegL:
 #ifdef _LP64

@@ -2525,6 +2525,51 @@ void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scrat
   }
 }
 
+void MacroAssembler::kmov(KRegister dst, Address src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
+void MacroAssembler::kmov(Address dst, KRegister src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
+void MacroAssembler::kmov(KRegister dst, KRegister src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
+void MacroAssembler::kmov(Register dst, KRegister src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
+void MacroAssembler::kmov(KRegister dst, Register src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
 void MacroAssembler::kmovql(KRegister dst, AddressLiteral src, Register scratch_reg) {
   if (reachable(src)) {
     kmovql(dst, as_Address(src));
