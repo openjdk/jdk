@@ -156,7 +156,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         if (printServices != null) {
             for (int j=0; j < printServices.length; j++) {
                 if ((printServices[j] instanceof Win32PrintService) &&
-                            (!printServices[j].equals(defaultPrintService))) {
+                    (!printServices[j].equals(defaultPrintService))) {
                     ((Win32PrintService)printServices[j]).invalidateService();
                 }
             }
