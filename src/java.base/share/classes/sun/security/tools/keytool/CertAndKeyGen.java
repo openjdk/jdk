@@ -101,8 +101,8 @@ public final class CertAndKeyGen {
      *          algorithm matching the private key or signer's private
      *          key will be chosen after the first keypair is generated.
      * @param providerName name of the provider
-     * @param signerPrivateKey signer's private key
-     * @param signerSubjectName signer's subject name
+     * @param signerPrivateKey (optional) signer's private key
+     * @param signerSubjectName (optional) signer's subject name
      * @exception NoSuchAlgorithmException on unrecognized algorithms.
      * @exception NoSuchProviderException on unrecognized providers.
      */

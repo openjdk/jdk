@@ -1874,7 +1874,6 @@ public final class Main {
                               String signerAlias)
         throws Exception
     {
-        boolean signerFlag = false;
         if (groupName != null) {
             if (keysize != -1) {
                 throw new Exception(rb.getString("groupname.keysize.coexist"));
@@ -1923,9 +1922,8 @@ public final class Main {
         }
 
         CertAndKeyGen keypair;
+        KeyIdentifier signerSubjectKeyId = null;
         if (signerAlias != null) {
-            signerFlag = true;
-
             PrivateKey signerPrivateKey =
                     (PrivateKey)recoverKey(signerAlias, storePass, signerKeyPass).fst;
             Certificate signerCert = keyStore.getCertificate(signerAlias);
@@ -1944,6 +1942,11 @@ public final class Main {
 
             keypair = new CertAndKeyGen(keyAlgName, sigAlgName, providerName,
                     signerPrivateKey, signerSubjectName);
+
+            signerSubjectKeyId = signerCertImpl.getSubjectKeyId();
+            if (signerSubjectKeyId == null) {
+                signerSubjectKeyId = new KeyIdentifier(signerCert.getPublicKey());
+            }
         } else {
             keypair = new CertAndKeyGen(keyAlgName, sigAlgName, providerName);
         }
@@ -1964,24 +1967,8 @@ public final class Main {
             keypair.generate(keysize);
         }
 
-        PrivateKey privKey = keypair.getPrivateKey();
         CertificateExtensions ext;
-
-        if (signerFlag) {
-            Certificate signerCert = keyStore.getCertificate(signerAlias);
-
-            X509CertImpl certImpl;
-            if (signerCert instanceof X509CertImpl) {
-                    certImpl = (X509CertImpl) signerCert;
-            } else {
-                certImpl = new X509CertImpl(signerCert.getEncoded());
-            }
-
-            KeyIdentifier signerSubjectKeyId = certImpl.getSubjectKeyId();
-            if (signerSubjectKeyId == null) {
-                signerSubjectKeyId = new KeyIdentifier(signerCert.getPublicKey());
-            }
-
+        if (signerAlias != null) {
             ext = createV3Extensions(
                     null,
                     null,
@@ -1997,13 +1984,14 @@ public final class Main {
                     null);
         }
 
+        PrivateKey privKey = keypair.getPrivateKey();
         X509Certificate newCert = keypair.getSelfCertificate(
                 x500Name, getStartDate(startDate), validity*24L*60L*60L, ext);
 
         MessageFormat form;
-        if (signerFlag) {
+        if (signerAlias != null) {
             form = new MessageFormat(rb.getString
-                    ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.an.entry.signerAlias.specified.by.the.signer.option.with.a.validity.of.validality.days.for"));
+                    ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.an.entry.signerAlias.with.a.validity.of.validality.days.for"));
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
                     fullDisplayAlgName(privKey),
@@ -2029,7 +2017,7 @@ public final class Main {
         }
 
         Certificate[] finalChain;
-        if (signerFlag) {
+        if (signerAlias != null) {
             Certificate[] signerChain = keyStore.getCertificateChain(signerAlias);
             finalChain = new X509Certificate[signerChain.length + 1];
             finalChain[0] = newCert;
