@@ -329,10 +329,10 @@ JVMFlag::Error JVMFlagAccess::set_or_assert(JVMFlagsEnum flag_enum, int type_enu
   JVMFlag* flag = JVMFlag::flag_from_enum(flag_enum);
   if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
     assert(flag->is_ccstr(), "must be");
-    return ccstrAtPut(flag, (ccstr*)value, origin);
+    return set_ccstr(flag, (ccstr*)value, origin);
   } else {
     assert(flag->type() == type_enum, "wrong flag type");
-    return set_impl(flag, type_enum, value, origin);
+    return set_impl(flag, value, origin);
   }
 }
 
