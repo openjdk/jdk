@@ -1002,7 +1002,13 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
   }
   if (self_index >= 0) {
     if (!JvmtiSuspendControl::suspend(current)) {
-      results[self_index] = JVMTI_ERROR_THREAD_NOT_ALIVE;
+      // Either the thread is already suspended or
+      // the thread was in the process of exiting:
+      if (current->is_exiting()) {
+        results[self_index] = JVMTI_ERROR_THREAD_NOT_ALIVE;
+      } else {
+        results[self_index] =  JVMTI_ERROR_THREAD_SUSPENDED;
+      }
     } else {
       results[self_index] = JVMTI_ERROR_NONE;  // indicate successful suspend
     }

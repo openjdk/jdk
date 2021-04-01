@@ -79,7 +79,6 @@ void SafepointMechanism::default_initialize() {
 void SafepointMechanism::process(JavaThread *thread) {
   bool need_rechecking;
   do {
-    need_rechecking = false;
     if (global_poll()) {
       // Any load in ::block() must not pass the global poll load.
       // Otherwise we might load an old safepoint counter (for example).
@@ -95,10 +94,8 @@ void SafepointMechanism::process(JavaThread *thread) {
     // 3) Before the handshake code is run
     StackWatermarkSet::on_safepoint(thread);
 
-    if (thread->handshake_state()->should_process() &&
-        !thread->handshake_state()->process_by_self()) {
-      need_rechecking = true;
-    }
+    need_rechecking = thread->handshake_state()->should_process() && thread->handshake_state()->process_by_self();
+
   } while (need_rechecking);
 }
 

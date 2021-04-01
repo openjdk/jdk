@@ -241,7 +241,6 @@ bool Monitor::wait(int64_t timeout) {
 
     wait_status = _lock.wait(timeout);
     in_flight_mutex = this;  // save for ~ThreadBlockInVM
-
   }
 
   if (in_flight_mutex != NULL) {
@@ -372,10 +371,9 @@ void Mutex::check_rank(Thread* thread) {
     }
   }
 
-  // Locks with rank native or suspend_resume are an exception and are not
+  // Locks with rank native are an exception and are not
   // subject to the verification rules.
-  bool check_can_be_skipped = this->rank() == Mutex::native || this->rank() == Mutex::suspend_resume
-                              || SafepointSynchronize::is_at_safepoint();
+  bool check_can_be_skipped = this->rank() == Mutex::native || SafepointSynchronize::is_at_safepoint();
   if (owned_by_self()) {
     // wait() case
     Mutex* least = get_least_ranked_lock_besides_this(locks_owned);

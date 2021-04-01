@@ -81,10 +81,6 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
       // will be handled by safepoint correctly when this thread is
       // notified at a safepoint.
 
-      // This ThreadBlockInVM object is not also considered to be
-      // suspend-equivalent because MonitorDeflationThread is not
-      // visible to external suspension.
-
       ThreadBlockInVM tbivm(jt);
 
       MonitorLocker ml(MonitorDeflation_lock, Mutex::_no_safepoint_check_flag);

@@ -1584,7 +1584,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   // will fail because the thread is no longer a JavaThread as the ~JavaThread
   // destructor has completed.
 
-  if (thread->is_Java_thread() && thread->as_Java_thread()->is_terminated()) {
+  if (thread->has_terminated()) {
     return;
   }
 

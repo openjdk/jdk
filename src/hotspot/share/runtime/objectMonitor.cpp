@@ -413,7 +413,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
       EnterI(current);
       current->set_thread_state_fence(_thread_blocked_trans);
       if (SafepointMechanism::should_process(current) &&
-        current->suspend_request_pending()) {
+        current->is_suspended()) {
         // We have acquired the contended monitor, but while we were
         // waiting another thread suspended us. We don't want to enter
         // the monitor while suspended because that would surprise the
@@ -425,22 +425,24 @@ bool ObjectMonitor::enter(JavaThread* current) {
         // Since we are going to _thread_blocked we skip setting _thread_in_vm here.
       } else {
         // Only exit path from for loop
-        SafepointMechanism::process_if_requested(current);
-        current->set_thread_state(_thread_in_vm);
         break;
       }
     }
 
     current->set_current_pending_monitor(NULL);
-
+    
     // We cleared the pending monitor info since we've just gotten past
     // the enter-check-for-suspend dance and we now own the monitor free
-    // and clear, i.e., it is no longer pending. The ThreadBlockInVM
-    // destructor can go to a safepoint at the end of this block. If we
+    // and clear, i.e., it is no longer pending.
+    // We can go to a safepoint at the end of this block. If we
     // do a thread dump during that safepoint, then this thread will show
     // as having "-locked" the monitor, but the OS and java.lang.Thread
     // states will still report that the thread is blocked trying to
     // acquire it.
+
+    // Completed the tranisition.    
+    SafepointMechanism::process_if_requested(current);
+    current->set_thread_state(_thread_in_vm);
   }
 
   add_to_contentions(-1);

@@ -871,16 +871,9 @@ int os::random() {
 // locking.
 
 void os::start_thread(Thread* thread) {
-  if (thread->is_Java_thread()) {
-    JavaThread* jt = thread->as_Java_thread();
-    OSThread* osthread = jt->osthread();
-    osthread->set_state(RUNNABLE);
-    pd_start_thread(jt);
-  } else {
-    OSThread* osthread = thread->osthread();
-    osthread->set_state(RUNNABLE);
-    pd_start_thread(thread);
-  }
+  OSThread* osthread = thread->osthread();
+  osthread->set_state(RUNNABLE);
+  pd_start_thread(thread);
 }
 
 void os::abort(bool dump_core) {

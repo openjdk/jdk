@@ -67,8 +67,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
        access         = event          +   1,
        tty            = access         +   2,
        special        = tty            +   3,
-       suspend_resume = special        +   1,
-       oopstorage     = suspend_resume +   2,
+       oopstorage     = special        +   3,
        leaf           = oopstorage     +   2,
        safepoint      = leaf           +  10,
        barrier        = safepoint      +   1,
@@ -123,7 +122,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
  public:
   static const bool _allow_vm_block_flag        = true;
-  static const bool _as_suspend_equivalent_flag = true;
 
   // Locks can be acquired with or without a safepoint check. NonJavaThreads do not follow
   // the safepoint protocol when acquiring locks.

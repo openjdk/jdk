@@ -323,7 +323,7 @@ void WatcherThread::stop() {
   MonitorLocker mu(Terminator_lock);
 
   while (watcher_thread() != NULL) {
-    // This wait should make safepoint checks, wait without a timeout.
+    // This wait should make safepoint checks and wait without a timeout.
     mu.wait(0);
   }
 }

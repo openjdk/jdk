@@ -33,8 +33,8 @@
 
 class HandshakeOperation;
 class JavaThread;
-class ThreadSuspensionHandshake;
 class SuspendThreadHandshake;
+class ThreadSuspensionHandshake;
 
 // A handshake closure is a callback that is executed for a JavaThread
 // while it is in a safepoint/handshake-safe state. Depending on the
@@ -91,6 +91,12 @@ class HandshakeState {
   bool claim_handshake();
   bool possibly_can_process_handshake();
   bool can_process_handshake();
+
+  // Returns false if the JavaThread finished all its handshake operations.
+  // If the method returns true there is still potential work to be done,
+  // but we need to check for a safepoint before.
+  // (this is due to a suspension handshake which put the JavaThread in blocked
+  // state so a safepoint may be in-progress)
   bool process_self_inner();
 
   bool have_non_self_executable_operation();
@@ -119,7 +125,11 @@ class HandshakeState {
   // while handshake operations are being executed, the _handshakee
   // must take slow path, process_by_self(), if _lock is held.
   bool should_process() {
-    return !_queue.is_empty() || _lock.is_locked();
+    if (_lock.is_locked()) {
+      return true;
+    }
+    OrderAccess::loadload();
+    return !_queue.is_empty();
   }
 
   bool process_by_self();
@@ -138,24 +148,29 @@ class HandshakeState {
 
   // Suspend/resume support
  private:
+  // This flag is true when the thread owning this
+  // HandshakeState (the _handshakee) is suspended.
   volatile bool _suspended;
-  volatile bool _suspend_requested;
+  // This flag is true while there is async handshake (trap)
+  // on queue. Since we do only need one, we can reuse it if
+  // thread thread gets suspended again (after a resume)
+  // and have not yet processed it.
+  bool _async_suspend_handshake;
 
   // Called from the suspend handshake.
-  bool handshake_suspend();
+  bool suspend_with_handshake();
   // Called from the async handshake (the trap)
-  // to stop a thread from continuing executing when suspended.
-  void suspend_in_handshake();
+  // to stop a thread from continuing execution when suspended.
+  void self_suspened();
 
-  bool is_suspended()                 { return Atomic::load(&_suspended); }
-  void set_suspend(bool to)           { return Atomic::store(&_suspended, to); }
-  bool is_suspend_requested()         { return Atomic::load(&_suspend_requested); }
-  void set_suspend_requested(bool to) { return Atomic::store(&_suspend_requested, to); }
+  bool is_suspended()                       { return Atomic::load(&_suspended); }
+  void set_suspended(bool to)               { return Atomic::store(&_suspended, to); }
+  bool has_async_suspend_handshake()        { return _async_suspend_handshake; }
+  void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }
 
   bool suspend();
   bool resume();
   void thread_exit();
-  bool suspend_request_pending();
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP

@@ -738,9 +738,11 @@ protected:
  public:
   volatile intptr_t _Stalled;
   volatile int _TypeTag;
-  ParkEvent * _ParkEvent;                     // for Object monitors, JVMTI raw monitors,
+  ParkEvent * volatile _ParkEvent;            // for Object monitors, JVMTI raw monitors,
                                               // and ObjectSynchronizer::read_stable_mark
-  int NativeSyncRecursion;                    // diagnostic
+
+                                              // _ParkEvent is cleared
+  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == NULL; };
 
   volatile int _OnTrap;                       // Resume-at IP delta
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
@@ -1138,15 +1140,14 @@ class JavaThread: public Thread {
   // Suspend/resume support for JavaThread
   bool java_suspend(); // higher-level suspension logic called by the public APIs
   bool java_resume();  // higher-level resume logic called by the public APIs
-  bool is_suspended()                 { return _handshake.is_suspended(); }
-  bool suspend_request_pending()      { return _handshake.suspend_request_pending(); }
+  bool is_suspended()     { return _handshake.is_suspended(); }
 
   static void check_safepoint_and_suspend_for_native_trans(JavaThread *thread);
-  // Check for async exception in addition to safepoint and suspend request.
+  // Check for async exception in addition to safepoint.
   static void check_special_condition_for_native_trans(JavaThread *thread);
 
   // Whenever a thread transitions from native to vm/java it must suspend
-  // if external|deopt suspend is present.
+  // if deopt suspend is present.
   bool is_suspend_after_native() const {
     return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }

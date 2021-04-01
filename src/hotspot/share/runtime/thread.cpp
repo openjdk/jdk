@@ -450,7 +450,9 @@ Thread::~Thread() {
 
   // It's possible we can encounter a null _ParkEvent, etc., in stillborn threads.
   // We NULL out the fields for good hygiene.
-  ParkEvent::Release(_ParkEvent); _ParkEvent   = NULL;
+  ParkEvent::Release(_ParkEvent);
+  // Can be racingly loaded in signal handler via has_terminated()
+  Atomic::store(&_ParkEvent, (ParkEvent*)NULL);
 
   delete handle_area();
   delete metadata_handles();
@@ -1806,16 +1808,15 @@ bool JavaThread::java_resume() {
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
 // this thread.
-// This method is very similar to JavaThread::java_suspend_self_with_safepoint_check()
-// and has the same callers. It also performs a raw thread state transition to
-// _thread_blocked and back again to the original state before returning. The current
-// thread is required to change to _thread_blocked in order to be seen to be
-// safepoint/handshake safe whilst suspended and only after becoming handshake safe,
-// the other thread can complete the handshake used to synchronize with this thread
-// and then perform the reallocation and relocking. We cannot use the thread state
-// transition helpers because we arrive here in various states and also because the
-// helpers indirectly call this method.  After leaving _thread_blocked we have to
-// check for safepoint/handshake, except if _thread_in_native. The thread is safe
+// Raw thread state transition to _thread_blocked and back again to the original
+// state before returning are performed. The current thread is required to
+// change to _thread_blocked in order to be seen to be safepoint/handshake safe
+// whilst suspended and only after becoming handshake safe, the other thread can
+// complete the handshake used to synchronize with this thread and then perform
+// the reallocation and relocking. We cannot use the thread state transition
+// helpers because we arrive here in various states and also because the helpers
+// indirectly call this method.  After leaving _thread_blocked we have to check
+// for safepoint/handshake, except if _thread_in_native. The thread is safe
 // without blocking then. Allowed states are enumerated in
 // SafepointSynchronize::block(). See also EscapeBarrier::sync_and_suspend_*()
 

@@ -760,10 +760,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
                                                                                                                                      \
-  /*********************************/                                                                                                \
-  /* JavaThread (NOTE: incomplete) */                                                                                                \
-  /*********************************/                                                                                                \
-                                                                                                                                     \
   /************/                                                                                                                     \
   /* OSThread */                                                                                                                     \
   /************/                                                                                                                     \

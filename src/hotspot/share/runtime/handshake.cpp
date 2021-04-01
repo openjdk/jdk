@@ -407,7 +407,7 @@ HandshakeState::HandshakeState(JavaThread* target) :
   _lock(Monitor::leaf, "HandshakeState", Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never),
   _active_handshaker(),
   _suspended(false),
-  _suspend_requested(false)
+  _async_suspend_handshake(false)
 {
 }
 
@@ -481,18 +481,19 @@ bool HandshakeState::process_self_inner() {
         PreserveExceptionMark pem(_handshakee);
         op->do_handshake(_handshakee);
       } else {
-        // Asynchronous may block so they may not execute ~PreserveExceptionMark before safepointing
-        // in outer loop.
+        // An asynchronous handshake may put the JavaThread in blocked state (safepoint safe).
+        // The destructor ~PreserveExceptionMark touches the exception oop so it must not be executed,
+        // since a safepoint may be in-progress when returning from the async handshake.
         op->do_handshake(_handshakee);
         log_handshake_info(((AsyncHandshakeOperation*)op)->start_time(), op->name(), 1, 0, "asynchronous");
         delete op;
-        return false; // Must check for safepoints
+        return true; // Must check for safepoints
       }
     } else {
-      return true;
+      return false;
     }
   }
-  return true;
+  return false;
 }
 
 bool HandshakeState::can_process_handshake() {
@@ -614,9 +615,9 @@ void HandshakeState::thread_exit() {
   while (true) {
     {
       MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-      if (!is_suspend_requested()) {
+      // If we have any safepoint or handshake pending deal with it else set exit.
+      if (!SafepointMechanism::should_process(_handshakee)) {
         _handshakee->set_exiting();
-        // No more external suspends are allowed at this point.
         return;
       }
     }
@@ -628,14 +629,7 @@ void HandshakeState::thread_exit() {
   }
 }
 
-bool HandshakeState::suspend_request_pending() {
-  assert(JavaThread::current()->thread_state() != _thread_blocked, "should not be in a blocked state");
-  assert(JavaThread::current()->thread_state() != _thread_in_native, "should not be in native");
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  return is_suspend_requested();
-}
-
-void HandshakeState::suspend_in_handshake() {
+void HandshakeState::self_suspened() {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(!_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable(), "should have walkable stack");
@@ -646,7 +640,7 @@ void HandshakeState::suspend_in_handshake() {
     _lock.wait_without_safepoint_check();
   }
   _handshakee->set_thread_state(jts);
-  set_suspend_requested(false);
+  set_async_suspend_handshake(false);
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " resumed", p2i(_handshakee));
 }
 
@@ -657,17 +651,17 @@ class ThreadSuspensionHandshake : public AsyncHandshakeClosure {
   ThreadSuspensionHandshake() : AsyncHandshakeClosure("ThreadSuspension") {}
   void do_thread(Thread* thr) {
     JavaThread* target = thr->as_Java_thread();
-    target->handshake_state()->suspend_in_handshake();
+    target->handshake_state()->self_suspened();
   }
 };
 
-bool HandshakeState::handshake_suspend() {
+bool HandshakeState::suspend_with_handshake() {
   if (_handshakee->is_exiting() ||
      _handshakee->threadObj() == NULL) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
     return false;
   }
-  if (is_suspend_requested()) {
+  if (has_async_suspend_handshake()) {
     if (is_suspended()) {
       // Target is already suspended.
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(_handshakee));
@@ -676,7 +670,7 @@ bool HandshakeState::handshake_suspend() {
       // Target is going to wake up and leave suspension.
       // Let's just stop the thread from doing that.
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(_handshakee));
-      set_suspend(true);
+      set_suspended(true);
       return true;
     }
   }
@@ -684,8 +678,8 @@ bool HandshakeState::handshake_suspend() {
   assert(!is_suspended(), "cannot be suspended without a suspend request");
   // Thread is safe, so it must execute the request, thus we can count it as suspended
   // from this point.
-  set_suspend(true);
-  set_suspend_requested(true);
+  set_suspended(true);
+  set_async_suspend_handshake(true);
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_handshakee));
   ThreadSuspensionHandshake* ts = new ThreadSuspensionHandshake();
   Handshake::execute(ts, _handshakee);
@@ -699,7 +693,7 @@ public:
   SuspendThreadHandshake() : HandshakeClosure("SuspendThread"), _did_suspend(false) {}
   void do_thread(Thread* thr) {
     JavaThread* target = thr->as_Java_thread();
-    _did_suspend = target->handshake_state()->handshake_suspend();
+    _did_suspend = target->handshake_state()->suspend_with_handshake();
   }
   bool did_suspend() { return _did_suspend; }
 };
@@ -711,18 +705,16 @@ bool HandshakeState::suspend() {
 }
 
 bool HandshakeState::resume() {
-  // Can't be suspended if there is no suspend request.
-  if (!is_suspend_requested()) {
+  if (!is_suspended()) {
     return false;
   }
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  // Can't be suspended if there is no suspend request.
-  if (!is_suspend_requested()) {
+  if (!is_suspended()) {
     assert(!_handshakee->is_suspended(), "cannot be suspended without a suspend request");
     return false;
   }
   // Resume the thread.
-  set_suspend(false);
+  set_suspended(false);
   _lock.notify();
   return true;
 }

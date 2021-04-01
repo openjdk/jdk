@@ -316,11 +316,11 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
   if (self->is_Java_thread()) {
     jt = self->as_Java_thread();
     while (true) {
-      // To pause suspend requests while in native we must block handshakes.
+      // To pause suspend requests while in blocked we must block handshakes.
       jt->handshake_state()->lock();
       // Suspend request flag can only be set in handshakes.
       // By blocking handshakes, suspend request flag cannot change its value.
-      if (!jt->handshake_state()->is_suspend_requested()) {
+      if (!jt->handshake_state()->is_suspended()) {
         contended = Atomic::cmpxchg(&_owner, (Thread*)NULL, jt);
         jt->handshake_state()->unlock();
         break;
@@ -362,7 +362,11 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
     for (;;) {
       simple_enter(jt);
       if (!SafepointMechanism::should_process(jt)) {
-        // Not suspended so we're done here:
+        // Not suspended so we're done here.
+        break;
+      }
+      if (!jt->is_suspended()) {
+        // Not suspended so we're done here.
         break;
       }
       simple_exit(jt);
@@ -425,6 +429,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
       simple_exit(jt);
       jt->set_thread_state_fence(_thread_in_native_trans);
       SafepointMechanism::process_if_requested(jt);
+      jt->set_thread_state(_thread_in_vm);
       if (jt->is_interrupted(true)) {
         ret = M_INTERRUPTED;
       }
