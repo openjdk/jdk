@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,10 +352,10 @@ public class PerfDataEntry extends VMObject {
         } else { // vector
             if (dataType == BasicType.getTBoolean()) {
                 boolean[] res = booleanArrayValue();
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 buf.append('[');
                 for (int i = 0; i < res.length; i++) {
-                    buf.append(Boolean.toString(res[i]));
+                    buf.append(res[i]);
                     buf.append(", ");
                 }
                 buf.append(']');
@@ -369,50 +369,50 @@ public class PerfDataEntry extends VMObject {
                                                  StandardCharsets.US_ASCII);
             } else if (dataType == BasicType.getTShort()) {
                 short[] res = shortArrayValue();
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 buf.append('[');
                 for (int i = 0; i < res.length; i++) {
-                    buf.append(Short.toString(res[i]));
+                    buf.append(res[i]);
                     buf.append(", ");
                 }
                 buf.append(']');
                 str = buf.toString();
             } else if (dataType ==  BasicType.getTInt()) {
                 int[] res = intArrayValue();
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 buf.append('[');
                 for (int i = 0; i < res.length; i++) {
-                    buf.append(Integer.toString(res[i]));
+                    buf.append(res[i]);
                     buf.append(", ");
                 }
                 buf.append(']');
                 str = buf.toString();
             } else if (dataType == BasicType.getTLong()) {
                 long[] res = longArrayValue();
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 buf.append('[');
                 for (int i = 0; i < res.length; i++) {
-                    buf.append(Long.toString(res[i]));
+                    buf.append(res[i]);
                     buf.append(", ");
                 }
                 buf.append(']');
                 str = buf.toString();
             } else if (dataType == BasicType.getTFloat()) {
                 float[] res = floatArrayValue();
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 buf.append('[');
                 for (int i = 0; i < res.length; i++) {
-                    buf.append(Float.toString(res[i]));
+                    buf.append(res[i]);
                     buf.append(", ");
                 }
                 buf.append(']');
                 str = buf.toString();
             } else if (dataType == BasicType.getTDouble()) {
                 double[] res = doubleArrayValue();
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 buf.append('[');
                 for (int i = 0; i < res.length; i++) {
-                    buf.append(Double.toString(res[i]));
+                    buf.append(res[i]);
                     buf.append(", ");
                 }
                 buf.append(']');

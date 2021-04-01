@@ -86,7 +86,7 @@ public class ObjectHistogramElement {
           ObjArrayKlass oak = (ObjArrayKlass) ak;
           Klass bottom = oak.getBottomKlass();
           int dim = (int) oak.getDimension();
-          StringBuffer buf = new StringBuffer();
+          StringBuilder buf = new StringBuilder();
           if (bottom instanceof TypeArrayKlass) {
             buf.append(((TypeArrayKlass) bottom).getElementTypeName());
           } else if (bottom instanceof InstanceKlass) {
