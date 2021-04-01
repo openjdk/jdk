@@ -23,8 +23,8 @@
 
 import jdk.test.lib.util.JarBuilder;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -61,7 +61,7 @@ public class JarExtractTest {
     private static Path testJarPath;
     private static Collection<Path> filesToDelete = new ArrayList<>();
 
-    @BeforeClass
+    @BeforeTest
     public static void createTestJar() throws Exception {
         Files.deleteIfExists(Path.of(LEADING_SLASH_PRESERVED_ENTRY));
 
@@ -86,7 +86,7 @@ public class JarExtractTest {
         filesToDelete.add(Path.of(LEADING_SLASH_PRESERVED_ENTRY));
     }
 
-    @AfterClass
+    @AfterTest
     public void cleanup() {
         for (final Path p : filesToDelete) {
             try {
