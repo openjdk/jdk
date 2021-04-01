@@ -11524,10 +11524,10 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 
 // =======================================================================
 // fast clearing of an array
+// Small ClearArray non-AVX512.
 instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
-              ((UseAVX <= 2 || !VM_Version::supports_avx512vlbw()) &&
-                !n->in(2)->bottom_type()->is_int()->is_con()));
+              (UseAVX <= 2 || !VM_Version::supports_avx512vlbw()));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11585,6 +11585,7 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe du
   ins_pipe( pipe_slow );
 %}
 
+// Small ClearArray AVX512 non-constant length.
 instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
                UseAVX > 2 && !VM_Version::supports_avx512vlbw() &&
@@ -11646,6 +11647,7 @@ instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI z
   ins_pipe( pipe_slow );
 %}
 
+// Large ClearArray non-AVX512.
 instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(UseAVX <= 2 && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
@@ -11695,6 +11697,7 @@ instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Unive
   ins_pipe( pipe_slow );
 %}
 
+// Large ClearArray AVX512.
 instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(UseAVX > 2 && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
@@ -11743,6 +11746,8 @@ instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAX
   %}
   ins_pipe( pipe_slow );
 %}
+
+// Small ClearArray AVX512 constant length.
 instruct rep_stos_im(immI cnt, kReg ktmp, eRegP base, regD tmp, rRegI zero, Universe dummy, eFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX > 2 && VM_Version::supports_avx512vlbw() && n->in(2)->bottom_type()->is_int()->is_con()));

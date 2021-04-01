@@ -10941,12 +10941,12 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 %}
 
 // Fast clearing of an array
+// Small ClearArray non-AVX512.
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                   Universe dummy, rFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
-              ((UseAVX <= 2 || !VM_Version::supports_avx512vlbw()) &&
-               !n->in(2)->bottom_type()->is_long()->is_con()));
+              (UseAVX <= 2 || !VM_Version::supports_avx512vlbw()));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11002,6 +11002,7 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_pipe(pipe_slow);
 %}
 
+// Small ClearArray AVX512 non-constant length.
 instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, rax_RegI zero,
                        Universe dummy, rFlagsReg cr)
 %{
@@ -11063,6 +11064,7 @@ instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, rax_Reg
   ins_pipe(pipe_slow);
 %}
 
+// Large ClearArray non-AVX512.
 instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                         Universe dummy, rFlagsReg cr)
 %{
@@ -11113,6 +11115,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_pipe(pipe_slow);
 %}
 
+// Large ClearArray AVX512.
 instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, rax_RegI zero,
                              Universe dummy, rFlagsReg cr)
 %{
@@ -11163,6 +11166,7 @@ instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, r
   ins_pipe(pipe_slow);
 %}
 
+// Small ClearArray AVX512 constant length.
 instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rRegI zero, kReg ktmp, Universe dummy, rFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
