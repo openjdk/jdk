@@ -66,7 +66,7 @@ public class JarExtractTest {
         Files.deleteIfExists(Path.of(LEADING_SLASH_PRESERVED_ENTRY));
 
         final String tmpDir = Files.createTempDirectory("8173970-").toString();
-        testJarPath = Paths.get(tmpDir,"8173970-test.jar");
+        testJarPath = Paths.get(tmpDir, "8173970-test.jar");
         final JarBuilder builder = new JarBuilder(testJarPath.toString());
         // d1
         //  |--- d2
@@ -98,6 +98,9 @@ public class JarExtractTest {
         }
     }
 
+    /**
+     * Creates and returns various relative paths, to which the jar will be extracted in the tests
+     */
     @DataProvider(name = "relExtractLocations")
     private Object[][] provideRelativeExtractLocations() throws Exception {
         // create some dirs so that they already exist when the jar is being extracted
@@ -128,6 +131,9 @@ public class JarExtractTest {
         };
     }
 
+    /**
+     * Creates and returns various absolute paths, to which the jar will be extracted in the tests
+     */
     @DataProvider(name = "absExtractLocations")
     private Object[][] provideAbsoluteExtractLocations() throws Exception {
         final Object[][] relative = provideRelativeExtractLocations();
@@ -139,6 +145,9 @@ public class JarExtractTest {
         return abs;
     }
 
+    /**
+     * Creates and returns various normalized paths, to which the jar will be extracted in the tests
+     */
     @DataProvider(name = "absNormalizedExtractLocations")
     private Object[][] provideAbsoluteNormalizedExtractLocations() throws Exception {
         final Object[][] relative = provideAbsoluteExtractLocations();
@@ -150,23 +159,38 @@ public class JarExtractTest {
         return abs;
     }
 
+    /**
+     * Extracts a jar to various relative paths, using the -C/--dir option and then
+     * verifies that the extracted content is at the expected locations with the correct
+     * content
+     */
     @Test(dataProvider = "relExtractLocations")
     public void testExtractToRelativeDir(final String dest) throws Exception {
         testExtract(dest);
     }
 
+    /**
+     * Extracts a jar to various absolute paths, using the -C/--dir option and then
+     * verifies that the extracted content is at the expected locations with the correct
+     * content
+     */
     @Test(dataProvider = "absExtractLocations")
     public void testExtractToAbsoluteDir(final String dest) throws Exception {
         testExtract(dest);
     }
 
+    /**
+     * Extracts a jar to various normalized paths (i.e. no {@code .} or @{code ..} in the path components),
+     * using the -C/--dir option and then verifies that the extracted content is at the expected locations
+     * with the correct content
+     */
     @Test(dataProvider = "absNormalizedExtractLocations")
     public void testExtractToAbsoluteNormalizedDir(final String dest) throws Exception {
         testExtract(dest);
     }
 
     /**
-     * Test that {@code jar -x -f --dir} works as expected
+     * Test that extracting a jar with {@code jar -x -f --dir} works as expected
      */
     @Test
     public void testExtractLongForm() throws Exception {
@@ -364,9 +388,13 @@ public class JarExtractTest {
         Assert.assertEquals(Files.readAllBytes(f2), FILE_CONTENT, "Unexpected content in file " + f2);
     }
 
+    /**
+     * Creates a jar whose entries have a leading slash and the dot-dot character preserved.
+     * This is the same as creating a jar using {@code jar -cfP somejar.jar <file1> <file2> ...}
+     */
     private static Path createJarWithPFlagSemantics() throws IOException {
         final String tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toString();
-        final Path jarPath = Paths.get(tmpDir,"8173970-test-withpflag.jar");
+        final Path jarPath = Paths.get(tmpDir, "8173970-test-withpflag.jar");
         final JarBuilder builder = new JarBuilder(jarPath.toString());
         builder.addEntry("d1/", new byte[0]);
         builder.addEntry("d1/d2/", new byte[0]);
