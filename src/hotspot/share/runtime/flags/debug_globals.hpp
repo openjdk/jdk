@@ -38,6 +38,8 @@
 // just in case someone may add such a flag in the future.
 //
 
+#ifndef ASSERT
+
 #define DEBUG_RUNTIME_FLAGS(develop,                                        \
                             develop_pd,                                     \
                             product,                                        \
@@ -46,11 +48,24 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  notproduct(ccstr, DummyManageableStringFlag, NULL, MANAGEABLE,            \
+
+#else
+
+#define DEBUG_RUNTIME_FLAGS(develop,                                        \
+                            develop_pd,                                     \
+                            product,                                        \
+                            product_pd,                                     \
+                            notproduct,                                     \
+                            range,                                          \
+                            constraint)                                     \
+                                                                            \
+  product(ccstr, DummyManageableStringFlag, NULL, MANAGEABLE,               \
           "Dummy flag for testing string handling in WriteableFlags")       \
                                                                             \
 
 // end of DEBUG_RUNTIME_FLAGS
+
+#endif // ASSERT
 
 DECLARE_FLAGS(DEBUG_RUNTIME_FLAGS)
 
