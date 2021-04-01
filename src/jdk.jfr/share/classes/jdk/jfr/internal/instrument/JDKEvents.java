@@ -200,12 +200,10 @@ public final class JDKEvents {
         if (containerMetrics != null) {
             ContainerMemoryUsageEvent event = new ContainerMemoryUsageEvent();
 
-            if (event.shouldCommit()) {
-                event.memoryFailCount = containerMetrics.getMemoryFailCount();
-                event.memoryUsage = containerMetrics.getMemoryUsage();
-                event.swapMemoryUsage = containerMetrics.getMemoryAndSwapUsage();
-                event.commit();
-            }
+            event.memoryFailCount = containerMetrics.getMemoryFailCount();
+            event.memoryUsage = containerMetrics.getMemoryUsage();
+            event.swapMemoryUsage = containerMetrics.getMemoryAndSwapUsage();
+            event.commit();
         }
     }
 
