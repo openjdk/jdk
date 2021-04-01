@@ -1115,13 +1115,7 @@ JRT_ENTRY(void, InterpreterRuntime::update_mdp_for_ret(JavaThread* thread, int r
 JRT_END
 
 JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread* thread, Method* m))
-  MethodCounters* mcs = Method::build_method_counters(m, thread);
-  if (HAS_PENDING_EXCEPTION) {
-    // Only metaspace OOM is expected. No Java code executed.
-    assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
-    CLEAR_PENDING_EXCEPTION;
-  }
-  return mcs;
+  return Method::build_method_counters(thread, m);
 JRT_END
 
 

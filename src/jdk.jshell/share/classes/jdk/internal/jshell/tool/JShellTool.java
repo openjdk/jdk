@@ -2802,14 +2802,11 @@ public class JShellTool implements MessageHandler {
          */
         int order(String id) {
             try {
-                switch (id.charAt(0)) {
-                    case 's':
-                        return Integer.parseInt(id.substring(1));
-                    case 'e':
-                        return 0x40000000 + Integer.parseInt(id.substring(1));
-                    default:
-                        return 0x20000000 + Integer.parseInt(id);
-                }
+                return switch (id.charAt(0)) {
+                    case 's' -> Integer.parseInt(id.substring(1));
+                    case 'e' -> 0x40000000 + Integer.parseInt(id.substring(1));
+                    default -> 0x20000000 + Integer.parseInt(id);
+                };
             } catch (Exception ex) {
                 return 0x60000000;
             }

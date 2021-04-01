@@ -716,6 +716,10 @@ void* Universe::non_oop_word() {
   return (void*)_non_oop_bits;
 }
 
+bool Universe::contains_non_oop_word(void* p) {
+  return *(void**)p == non_oop_word();
+}
+
 static void initialize_global_behaviours() {
   CompiledICProtectionBehaviour::set_current(new DefaultICProtectionBehaviour());
 }
