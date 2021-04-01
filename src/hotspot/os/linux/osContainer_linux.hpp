@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,10 @@ class OSContainer: AllStatic {
   static bool   _is_initialized;
   static bool   _is_containerized;
   static int    _active_processor_count;
-  static const char * _runtime;
 
  public:
   static void init();
   static inline bool is_containerized();
-  static inline const char * runtime();
   static const char * container_type();
 
   static jlong memory_limit_in_bytes();
@@ -68,10 +66,6 @@ class OSContainer: AllStatic {
 
 inline bool OSContainer::is_containerized() {
   return _is_containerized;
-}
-
-inline const char * OSContainer::runtime() {
-  return _runtime;
 }
 
 #endif // OS_LINUX_OSCONTAINER_LINUX_HPP

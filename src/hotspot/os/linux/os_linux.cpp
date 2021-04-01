@@ -2221,11 +2221,8 @@ bool os::Linux::print_container_info(outputStream* st) {
 
   st->print_cr("cgroup information:");
 
-  const char *cp = OSContainer::container_type();
-  st->print_cr("cgroup_type: %s", cp != NULL ? cp : "not supported");
-
-  cp = OSContainer::runtime();
-  st->print_cr("container runtime: %s", cp != NULL ? cp : "none");
+  const char *p_ct = OSContainer::container_type();
+  st->print_cr("cgroup_type: %s", p_ct != NULL ? p_ct : "not supported");
 
   char *p = OSContainer::cpu_cpuset_cpus();
   st->print_cr("cpu_cpuset_cpus: %s", p != NULL ? p : "not supported");

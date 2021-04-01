@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 
 bool  OSContainer::_is_initialized   = false;
 bool  OSContainer::_is_containerized = false;
-const char * OSContainer::_runtime = NULL;
 CgroupSubsystem* cgroup_subsystem;
 
 /* init
@@ -49,7 +48,6 @@ void OSContainer::init() {
 
   _is_initialized = true;
   _is_containerized = false;
-  _runtime = NULL;
 
   log_trace(os, container)("OSContainer::init: Initializing Container Support");
   if (!UseContainerSupport) {
@@ -70,29 +68,6 @@ void OSContainer::init() {
 
   _is_containerized = true;
 
-  if (getpid() == 1) {
-    // This process is in container
-    _runtime = os::strdup_check_oom(getenv("container"));
-  } else {
-    // This process might be child of container process.
-    // So we check environment variable in PID 1.
-    int env_fd = open("/proc/1/environ", O_RDONLY);
-    if (env_fd != -1) {
-      const int buf_sz = 8192;
-      char buf[buf_sz];
-      int read_sz = read(env_fd, buf, buf_sz);
-      close(env_fd);
-      if (read_sz > 0) {
-        buf[read_sz - 1] = '\0';
-        const char *envname = "container=";
-        char *container_env = (char *)memmem(buf, read_sz, envname, strlen(envname));
-        if (container_env != NULL) {
-          _runtime = os::strdup_check_oom(container_env + strlen(envname));
-        }
-      }
-    }
-  }
-  log_info(os, container)("Container runtime: %s", _runtime == NULL ? "none" : _runtime);
 }
 
 const char * OSContainer::container_type() {
