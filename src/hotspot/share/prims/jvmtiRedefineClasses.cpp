@@ -4369,9 +4369,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // compare_and_normalize_class_versions has already checked:
   //  - classloaders unchanged, signatures unchanged
   //  - all instanceKlasses for redefined classes reused & contents updated
-  the_class->vtable().initialize_vtable(false, THREAD);
-  the_class->itable().initialize_itable(false, THREAD);
-  assert(!HAS_PENDING_EXCEPTION || (THREAD->pending_exception()->is_a(vmClasses::ThreadDeath_klass())), "redefine exception");
+  the_class->vtable().initialize_vtable();
+  the_class->itable().initialize_itable();
 
   // Leave arrays of jmethodIDs and itable index cache unchanged
 
