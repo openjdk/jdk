@@ -53,7 +53,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
             superInterfaces.length != 1 ||
             superInterfaces[0] != java.lang.annotation.Annotation.class)
             throw new AnnotationFormatError("Attempt to create proxy for a non-annotation type: " +
-					    type.getName());
+                                            type.getName());
         this.type = type;
         this.memberValues = memberValues;
     }
@@ -579,7 +579,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
             return;
         else
             throw new AnnotationFormatError("Malformed method on an annotation type: " +
-					    currentMethod.toString());
+                                            currentMethod.toString());
     }
 
     /**
