@@ -135,7 +135,7 @@ public class WixPipeline {
                 workDir != null ? workDir.toFile() : null)).executeExpectSuccess();
     }
 
-    private final static class WixSource {
+    private static final class WixSource {
         Path source;
         Map<String, String> variables;
     }

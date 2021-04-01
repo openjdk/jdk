@@ -264,9 +264,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_CDS],
 [
   JVM_FEATURES_CHECK_AVAILABILITY(cds, [
     AC_MSG_CHECKING([if platform is supported by CDS])
-    if test "x$OPENJDK_TARGET_OS" = xaix || \
-        ( test "x$OPENJDK_TARGET_OS" = "xmacosx" && \
-        test "x$OPENJDK_TARGET_CPU" = "xaarch64" ) ; then
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
       AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
       AVAILABLE=false
     else

@@ -3195,7 +3195,7 @@ public abstract class ResourceBundle {
                         } catch (InvocationTargetException e) {
                             uncheckedThrow(e);
                         } catch (PrivilegedActionException e) {
-                            assert e.getException() instanceof NoSuchMethodException;
+                            assert e.getCause() instanceof NoSuchMethodException;
                             throw new InstantiationException("public no-arg constructor " +
                                 "does not exist in " + bundleClass.getName());
                         }
@@ -3230,7 +3230,7 @@ public abstract class ResourceBundle {
                             }
                         });
                 } catch (PrivilegedActionException e) {
-                    throw (IOException) e.getException();
+                    throw (IOException) e.getCause();
                 }
                 if (stream != null) {
                     try {
