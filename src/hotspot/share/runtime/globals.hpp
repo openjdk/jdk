@@ -2027,6 +2027,9 @@ const intx ObjectAlignmentInBytes = 8;
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
+  product(bool, AsyncLogging, false,                                        \
+          "Enble asynchronous mode for all file-based log outputs")         \
+                                                                            \
   product(intx, LogAsyncInterval, 300,                                      \
           "Milliseconds between asynchronous log flushing")                 \
           range(PeriodicTask::min_interval, max_jint)                       \

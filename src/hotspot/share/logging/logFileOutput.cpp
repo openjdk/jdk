@@ -47,7 +47,7 @@ char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 LogFileOutput::LogFileOutput(const char* name)
     : LogFileStreamOutput(NULL), _name(os::strdup_check_oom(name, mtLogging)),
       _file_name(NULL), _archive_name(NULL), _current_file(0),
-      _file_count(DefaultFileCount), _is_default_file_count(true), _async_mode(false), _archive_name_len(0),
+      _file_count(DefaultFileCount), _is_default_file_count(true), _async_mode(AsyncLogging), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
   _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
