@@ -153,11 +153,8 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::should_compact(HeapRegion*
   }
   size_t live_words = _collector->live_words(hr->hrm_index());
   size_t live_words_threshold = _collector->scope()->region_compaction_threshold();
-  if (live_words <= live_words_threshold) {
-    return true;
-  }
   // High live ratio region will not be compacted.
-  return false;
+  return live_words <= live_words_threshold;
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
