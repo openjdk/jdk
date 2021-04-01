@@ -1874,7 +1874,6 @@ public final class Main {
                               String signerAlias)
         throws Exception
     {
-        boolean reqSigner = false; // -signer option is required
         boolean signerFlag = false;
         if (groupName != null) {
             if (keysize != -1) {
@@ -1896,16 +1895,12 @@ public final class Main {
                     keysize = 448;
                 } else if ("XDH".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_XEC_KEY_SIZE;
-                    reqSigner = true;
                 } else if ("X25519".equalsIgnoreCase(keyAlgName)) {
                     keysize = 255;
-                    reqSigner = true;
                 } else if ("X448".equalsIgnoreCase(keyAlgName)) {
                     keysize = 448;
-                    reqSigner = true;
                 } else if ("DH".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_DH_KEY_SIZE;
-                    reqSigner = true;
                 }
             } else {
                 if ("EC".equalsIgnoreCase(keyAlgName)) {
@@ -1927,29 +1922,27 @@ public final class Main {
             throw new Exception(form.format(source));
         }
 
-        if (reqSigner && signerAlias == null) {
-            MessageFormat form = new MessageFormat(rb.getString
-                    ("The.signer.option.must.be.specified.for.the.key.algorithm.keyAlgName"));
-            Object[] source = {keyAlgName};
-            throw new Exception(form.format(source));
-        }
-
         CertAndKeyGen keypair;
         if (signerAlias != null) {
             signerFlag = true;
 
-            if (keyStore.containsAlias(signerAlias) == false) {
-                MessageFormat form = new MessageFormat
-                        (rb.getString("Alias.of.signer.signerAlias.does.not.exist"));
-                Object[] source = {signerAlias};
-                throw new Exception(form.format(source));
-            }
-
             PrivateKey signerPrivateKey =
                     (PrivateKey)recoverKey(signerAlias, storePass, signerKeyPass).fst;
             Certificate signerCert = keyStore.getCertificate(signerAlias);
-            byte[] encoded = signerCert.getEncoded();
-            X509CertImpl signerCertImpl = new X509CertImpl(encoded);
+            if (signerCert == null) {
+                MessageFormat form = new MessageFormat
+                        (rb.getString("alias.has.no.public.key.certificate."));
+                Object[] source = {signerCert};
+                throw new Exception(form.format(source));
+            }
+
+            X509CertImpl signerCertImpl;
+            if (signerCert instanceof X509CertImpl) {
+                signerCertImpl = (X509CertImpl) signerCert;
+            } else {
+                signerCertImpl = new X509CertImpl(signerCert.getEncoded());
+            }
+
             X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
                     X509CertImpl.NAME + "." + X509CertImpl.INFO);
             X500Name signerSubjectName = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "." +
@@ -2017,22 +2010,26 @@ public final class Main {
         MessageFormat form;
         if (signerFlag) {
             form = new MessageFormat(rb.getString
-                    ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.an.entry.specified.by.the.signer.option.with.a.validity.of.validality.days.for"));
+                    ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.an.entry.signerAlias.specified.by.the.signer.option.with.a.validity.of.validality.days.for"));
+            Object[] source = {
+                    groupName == null ? keysize : KeyUtil.getKeySize(privKey),
+                    fullDisplayAlgName(privKey),
+                    chain[0].getSigAlgName(),
+                    signerAlias,
+                    validity,
+                    x500Name};
+            System.err.println(form.format(source));
         } else {
             form = new MessageFormat(rb.getString
                     ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
-            if (groupName != null) {
-                keysize = KeyUtil.getKeySize(privKey);
-            }
+            Object[] source = {
+                    groupName == null ? keysize : KeyUtil.getKeySize(privKey),
+                    fullDisplayAlgName(privKey),
+                    chain[0].getSigAlgName(),
+                    validity,
+                    x500Name};
+            System.err.println(form.format(source));
         }
-
-        Object[] source = {
-                keysize,
-                fullDisplayAlgName(privKey),
-                chain[0].getSigAlgName(),
-                validity,
-                x500Name};
-        System.err.println(form.format(source));
 
         if (keyPass == null) {
             keyPass = promptForKeyPass(alias, null, storePass);
@@ -2040,11 +2037,11 @@ public final class Main {
 
         if (signerFlag) {
             Certificate[] signerChain = keyStore.getCertificateChain(signerAlias);
-            Certificate[] tmpChain = new X509Certificate[signerChain.length + 1];
-            System.arraycopy(chain, 0, tmpChain, 0, 1);
-            System.arraycopy(signerChain, 0, tmpChain, 1, signerChain.length);
-            checkWeak(rb.getString("the.generated.certificate"), tmpChain);
-            keyStore.setKeyEntry(alias, privKey, keyPass, tmpChain);
+            Certificate[] finalChain = new X509Certificate[signerChain.length + 1];
+            System.arraycopy(chain, 0, finalChain, 0, 1);
+            System.arraycopy(signerChain, 0, finalChain, 1, signerChain.length);
+            checkWeak(rb.getString("the.generated.certificate"), finalChain);
+            keyStore.setKeyEntry(alias, privKey, keyPass, finalChain);
         } else {
             checkWeak(rb.getString("the.generated.certificate"), chain[0]);
             keyStore.setKeyEntry(alias, privKey, keyPass, chain);

@@ -74,14 +74,17 @@ public class GenKeyPairSigner {
          */
         System.out.println("Testing the signer alias that is stored in the PKCS12 keystore");
         System.out.println("Generating a root cert with SubjectKeyIdentifier extension");
-        kt("-genkeypair -keyalg EdDSA -alias ca -dname CN=CA -ext bc:c " +
-                "-ext 2.5.29.14=04:14:00:01:02:03:04:05:06:07:08:09:10:11:12:13:14:15:16:17:18:19",
-                "ks");
+        SecurityTools.keytool("-keystore ks -storepass changeit " +
+                "-genkeypair -keyalg EdDSA -alias ca -dname CN=CA -ext bc:c " +
+                "-ext 2.5.29.14=04:14:00:01:02:03:04:05:06:07:08:09:10:11:12:13:14:15:16:17:18:19")
+                .shouldContain("Generating 255 bit Ed25519 key pair and self-signed certificate (Ed25519) with a validity of 90 days")
+                .shouldContain("for: CN=CA")
+                .shouldHaveExitValue(0);
 
         System.out.println("Generating an XDH cert with -signer option");
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg XDH -alias e1 -dname CN=E1 -signer ca")
-                .shouldContain("Generating 255 bit XDH key pair and a certificate (Ed25519) issued by an entry specified by the -signer option with a validity of 90 days")
+                .shouldContain("Generating 255 bit XDH key pair and a certificate (Ed25519) issued by an entry <ca> specified by the -signer option with a validity of 90 days")
                 .shouldContain("for: CN=E1")
                 .shouldHaveExitValue(0);
 
@@ -154,7 +157,7 @@ public class GenKeyPairSigner {
         System.out.println("Generating an X448 cert with -signer option");
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg X448 -alias e2 -dname CN=E2 -sigalg SHA384withRSA -signer ca2")
-                .shouldContain("Generating 448 bit XDH key pair and a certificate (SHA384withRSA) issued by an entry specified by the -signer option with a validity of 90 days")
+                .shouldContain("Generating 448 bit XDH key pair and a certificate (SHA384withRSA) issued by an entry <ca2> specified by the -signer option with a validity of 90 days")
                 .shouldContain("for: CN=E2")
                 .shouldHaveExitValue(0);
 
@@ -193,7 +196,7 @@ public class GenKeyPairSigner {
         System.out.println("Generating a DH cert with -signer option");
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg DH -alias e3 -dname CN=E3 -signer ca3")
-                .shouldContain("Generating 2,048 bit DH key pair and a certificate (SHA256withDSA) issued by an entry specified by the -signer option with a validity of 90 days")
+                .shouldContain("Generating 2,048 bit DH key pair and a certificate (SHA256withDSA) issued by an entry <ca3> specified by the -signer option with a validity of 90 days")
                 .shouldContain("for: CN=E3")
                 .shouldHaveExitValue(0);
 
@@ -236,6 +239,10 @@ public class GenKeyPairSigner {
 
         /*
          * The signer alias is stored in the JKS keystore
+         * Using JKS keystore here is to test the scenario when the private key
+         * of the signer entry is protected by a password different from the
+         * store password, and -signerkeypass option needs to be specified
+         * along with -signer option.
          */
         System.out.println("Testing the signer alias that is stored in the JKS keystore");
         ktjks("-genkeypair -keyalg RSA -keysize 1024 -alias ca -dname CN=CA -ext bc:c",
@@ -245,7 +252,7 @@ public class GenKeyPairSigner {
         SecurityTools.keytool("-keystore ksjks -storepass changeit -storetype jks " +
                 "-genkeypair -keyalg DSA -keysize 1024 -alias ca1 -dname CN=CA1 " +
                 "-keypass ca1keypass -signer ca -signerkeypass cakeypass")
-                .shouldContain("Generating 1,024 bit DSA key pair and a certificate (SHA256withRSA) issued by an entry specified by the -signer option with a validity of 90 days")
+                .shouldContain("Generating 1,024 bit DSA key pair and a certificate (SHA256withRSA) issued by an entry <ca> specified by the -signer option with a validity of 90 days")
                 .shouldContain("for: CN=CA1")
                 .shouldContain("The generated certificate #1 of 2 uses a 1024-bit DSA key which is considered a security risk")
                 .shouldContain("The generated certificate #2 of 2 uses a 1024-bit RSA key which is considered a security risk")
@@ -255,7 +262,7 @@ public class GenKeyPairSigner {
         SecurityTools.keytool("-keystore ksjks -storepass changeit -storetype jks " +
                 "-genkeypair -keyalg XDH -alias e1 -dname CN=E1 " +
                 "-keypass e1keypass -signer ca1 -signerkeypass ca1keypass")
-                .shouldContain("Generating 255 bit XDH key pair and a certificate (SHA256withDSA) issued by an entry specified by the -signer option with a validity of 90 days")
+                .shouldContain("Generating 255 bit XDH key pair and a certificate (SHA256withDSA) issued by an entry <ca1> specified by the -signer option with a validity of 90 days")
                 .shouldContain("for: CN=E1")
                 .shouldContain("The generated certificate #2 of 3 uses a 1024-bit DSA key which is considered a security risk")
                 .shouldContain("The generated certificate #3 of 3 uses a 1024-bit RSA key which is considered a security risk")
@@ -303,12 +310,12 @@ public class GenKeyPairSigner {
 
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg X25519 -alias e4 -dname CN=E4")
-                .shouldContain("The -signer option must be specified")
+                .shouldContain("Cannot derive signature algorithm from XDH")
                 .shouldHaveExitValue(1);
 
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg X448 -alias e4 -dname CN=E4 -signer noca")
-                .shouldContain("Alias of signer <noca> does not exist")
+                .shouldContain("Alias <noca> does not exist")
                 .shouldHaveExitValue(1);
 
         SecurityTools.keytool("-genkeypair --help")

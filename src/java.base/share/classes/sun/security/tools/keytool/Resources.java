@@ -298,8 +298,6 @@ public class Resources extends java.util.ListResourceBundle {
                 "Alias <{0}> does not exist"},
         {"Alias.alias.has.no.certificate",
                 "Alias <{0}> has no certificate"},
-        {"Alias.of.signer.signerAlias.does.not.exist",
-                "Alias of signer <{0}> does not exist"},
         {"groupname.keysize.coexist",
                 "Cannot specify both -groupname and -keysize"},
         {"deprecate.keysize.for.ec",
@@ -308,8 +306,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "Key pair not generated, alias <{0}> already exists"},
         {"Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
                 "Generating {0} bit {1} key pair and self-signed certificate ({2}) with a validity of {3} days\n\tfor: {4}"},
-        {"Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.an.entry.specified.by.the.signer.option.with.a.validity.of.validality.days.for",
-                "Generating {0} bit {1} key pair and a certificate ({2}) issued by an entry specified by the -signer option with a validity of {3} days\n\tfor: {4}"},
+        {"Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.an.entry.signerAlias.specified.by.the.signer.option.with.a.validity.of.validality.days.for",
+                "Generating {0} bit {1} key pair and a certificate ({2}) issued by an entry <{3}> specified by the -signer option with a validity of {4} days\n\tfor: {5}"},
         {"Enter.key.password.for.alias.", "Enter key password for <{0}>"},
         {".RETURN.if.same.as.keystore.password.",
                 "\t(RETURN if same as keystore password):  "},
@@ -489,7 +487,6 @@ public class Resources extends java.util.ListResourceBundle {
         {"backup.keystore.warning", "The original keystore \"%1$s\" is backed up as \"%3$s\"..."},
         {"importing.keystore.status", "Importing keystore %1$s to %2$s..."},
         {"keyalg.option.missing.error", "The -keyalg option must be specified."},
-        {"The.signer.option.must.be.specified.for.the.key.algorithm.keyAlgName", "The -signer option must be specified for the key algorithm {0}"},
         {"showinfo.no.option", "Missing option for -showinfo. Try \"keytool -showinfo -tls\"."},
     };
 

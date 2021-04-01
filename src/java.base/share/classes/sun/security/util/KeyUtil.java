@@ -36,6 +36,7 @@ import java.security.interfaces.DSAKey;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.XECKey;
 import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
@@ -99,12 +100,17 @@ public final class KeyUtil {
             DHKey pubk = (DHKey)key;
             size = pubk.getParams().getP().bitLength();
         } else if (key instanceof XECKey) {
-            String name = ((NamedParameterSpec)((XECKey) key).getParams()).getName();
-            if (name.equalsIgnoreCase(NamedParameterSpec.X25519.getName())) {
-                size = 255;
-            } else if (name.equalsIgnoreCase(
-                    NamedParameterSpec.X448.getName())) {
-                size = 448;
+            XECKey pubk = (XECKey)key;
+            AlgorithmParameterSpec params = pubk.getParams();
+            if (params instanceof NamedParameterSpec) {
+                String name = ((NamedParameterSpec) params).getName();
+                if (name.equalsIgnoreCase(NamedParameterSpec.X25519.getName())) {
+                    size = 255;
+                } else if (name.equalsIgnoreCase(NamedParameterSpec.X448.getName())) {
+                    size = 448;
+                } else {
+                    size = -1;
+                }
             } else {
                 size = -1;
             }

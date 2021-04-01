@@ -82,45 +82,27 @@ public final class CertAndKeyGen {
     }
 
     /**
-     * Creates a CertAndKeyGen object for a particular key type,
-     * signature algorithm, and provider.
-     *
-     * @param keyType type of key, e.g. "RSA", "DSA"
-     * @param sigAlg name of the signature algorithm, e.g. "MD5WithRSA",
-     *          "MD2WithRSA", "SHAwithDSA". If set to null, a default
-     *          algorithm matching the private key will be chosen after
-     *          the first keypair is generated.
-     * @param providerName name of the provider
-     * @exception NoSuchAlgorithmException on unrecognized algorithms.
-     * @exception NoSuchProviderException on unrecognized providers.
+     * See doc comments at:
+     * constructor CertAndKeyGen(String keyType, String sigAlg,
+     * String providerName, PrivateKey signerPrivateKey,
+     * X500Name signerSubjectName)
      */
     public CertAndKeyGen (String keyType, String sigAlg, String providerName)
     throws NoSuchAlgorithmException, NoSuchProviderException
     {
-        if (providerName == null) {
-            keyGen = KeyPairGenerator.getInstance(keyType);
-        } else {
-            try {
-                keyGen = KeyPairGenerator.getInstance(keyType, providerName);
-            } catch (Exception e) {
-                // try first available provider instead
-                keyGen = KeyPairGenerator.getInstance(keyType);
-            }
-        }
-        this.sigAlg = sigAlg;
-        this.keyType = keyType;
+        this(keyType, sigAlg, providerName, null, null);
     }
 
     /**
      * Creates a CertAndKeyGen object for a particular key type,
      * signature algorithm, and provider. The newly generated cert will
-     * be signed by the signer's private key.
+     * be signed by the signer's private key when it is provided.
      *
      * @param keyType type of key, e.g. "RSA", "DSA", "X25519", "DH", etc.
      * @param sigAlg name of the signature algorithm, e.g. "SHA384WithRSA",
      *          "SHA256withDSA", etc. If set to null, a default
-     *          algorithm matching the signer's private key will be
-     *          chosen after the first keypair is generated.
+     *          algorithm matching the private key or signer's private
+     *          key will be chosen after the first keypair is generated.
      * @param providerName name of the provider
      * @param signerPrivateKey signer's private key
      * @param signerSubjectName signer's subject name
@@ -143,9 +125,11 @@ public final class CertAndKeyGen {
         }
         this.sigAlg = sigAlg;
         this.keyType = keyType;
-        this.signerFlag = true;
         this.signerPrivateKey = signerPrivateKey;
         this.signerSubjectName = signerSubjectName;
+        if (signerPrivateKey != null) {
+            this.signerFlag = true;
+        }
     }
 
     /**
@@ -226,13 +210,18 @@ public final class CertAndKeyGen {
         if (sigAlg == null) {
             if (signerFlag) {
                 sigAlg = SignatureUtil.getDefaultSigAlgForKey(signerPrivateKey);
+                if (sigAlg == null) {
+                    throw new IllegalArgumentException(
+                            "Cannot derive signature algorithm from "
+                                    + signerPrivateKey.getAlgorithm());
+                }
             } else {
                 sigAlg = SignatureUtil.getDefaultSigAlgForKey(privateKey);
-            }
-            if (sigAlg == null) {
-                throw new IllegalArgumentException(
-                        "Cannot derive signature algorithm from "
-                                + privateKey.getAlgorithm());
+                if (sigAlg == null) {
+                    throw new IllegalArgumentException(
+                            "Cannot derive signature algorithm from "
+                                    + privateKey.getAlgorithm());
+                }
             }
         }
     }
