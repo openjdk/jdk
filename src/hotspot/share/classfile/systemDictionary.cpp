@@ -322,10 +322,10 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
   return k;
 }
 
-static inline void log_circularity_error(PlaceholderEntry* probe) {
+static inline void log_circularity_error(Thread* thread, PlaceholderEntry* probe) {
   LogTarget(Debug, class, load, placeholders) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
+    ResourceMark rm(thread);
     LogStream ls(lt);
     ls.print("ClassCircularityError detected for placeholder ");
     probe->print_entry(&ls);
@@ -333,11 +333,11 @@ static inline void log_circularity_error(PlaceholderEntry* probe) {
   }
 }
 
-// Must be called for any super-class or super-interface resolution
+// Must be called for any superclass or superinterface resolution
 // during class definition to allow class circularity checking
-// super-interface callers:
+// superinterface callers:
 //    parse_interfaces - from defineClass
-// super-class callers:
+// superclass callers:
 //   ClassFileParser - from defineClass
 //   load_shared_class - while loading a class from shared archive
 //   resolve_instance_class_or_null:
@@ -345,7 +345,7 @@ static inline void log_circularity_error(PlaceholderEntry* probe) {
 //      when resolving a class that has an existing placeholder with
 //      a saved superclass [i.e. a defineClass is currently in progress]
 //      If another thread is trying to resolve the class, it must do
-//      super-class checks on its own thread to catch class circularity and
+//      superclass checks on its own thread to catch class circularity and
 //      to avoid deadlock.
 //
 // resolve_super_or_fail adds a LOAD_SUPER placeholder to the placeholder table before calling
@@ -360,8 +360,8 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
                                                        bool is_superclass,
                                                        TRAPS) {
 
-  assert(super_name != NULL, "null super class for resolving");
-  assert(!Signature::is_array(super_name), "invalid super class name");
+  assert(super_name != NULL, "null superclass for resolving");
+  assert(!Signature::is_array(super_name), "invalid superclass name");
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
     // Special processing for handling UNREGISTERED shared classes.
@@ -373,7 +373,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   }
 #endif // INCLUDE_CDS
 
-  // If klass is already loaded, just return the super class or interface.
+  // If klass is already loaded, just return the superclass or superinterface.
   // Make sure there's a placeholder for the class_name before resolving.
   // This is used as a claim that this thread is currently loading superclass/classloader
   // and for ClassCircularity checks.
@@ -398,10 +398,10 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
             (quicksuperk->class_loader() == class_loader()))) {
            return quicksuperk;
     } else {
-      // Must check ClassCircularity before checking if super class is already loaded.
+      // Must check ClassCircularity before checking if superclass is already loaded.
       PlaceholderEntry* probe = placeholders()->get_entry(name_hash, class_name, loader_data);
       if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::LOAD_SUPER)) {
-          log_circularity_error(probe);
+          log_circularity_error(THREAD, probe);
           throw_circularity_error = true;
       }
     }
@@ -421,7 +421,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
       THROW_MSG_NULL(vmSymbols::java_lang_ClassCircularityError(), class_name->as_C_string());
   }
 
-  // Resolve the super class or interface, check results on return
+  // Resolve the superclass or superinterface, check results on return
   InstanceKlass* superk =
     SystemDictionary::resolve_instance_class_or_null_helper(super_name,
                                                             class_loader,
@@ -488,8 +488,8 @@ static void double_lock_wait(JavaThread* thread, Handle lockObject) {
 // For cases where the application changes threads to load classes, it
 // is critical to ClassCircularity detection that we try loading
 // the superclass on the new thread internally, so we do parallel
-// super class loading here.  This avoids deadlock for ClassCircularity
-// detection for parallelCapable class loaders that lock a per-class lock.
+// superclass loading here.  This avoids deadlock for ClassCircularity
+// detection for parallelCapable class loaders that lock on a per-class lock.
 static void handle_parallel_super_load(Symbol* name,
                                        Symbol* superclassname,
                                        Handle class_loader,
@@ -523,12 +523,12 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
     // only need check_seen_thread once, not on each loop
     // 6341374 java/lang/Instrument with -Xcomp
     if (oldprobe->check_seen_thread(current, PlaceholderTable::LOAD_INSTANCE)) {
-      log_circularity_error(oldprobe);
+      log_circularity_error(THREAD, oldprobe);
       *throw_circularity_error = true;
       return NULL;
     } else {
       // Wait until the first thread has finished loading this class. Also wait until all the
-      // threads trying to load its super class have removed their placeholders.
+      // threads trying to load its superclass have removed their placeholders.
       while (oldprobe != NULL &&
              (oldprobe->instance_load_in_progress() || oldprobe->super_load_in_progress())) {
 
@@ -648,7 +648,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   }
 
   // If the class is in the placeholder table with super_class set,
-  // handle super class loading in progress.
+  // handle superclass loading in progress.
   if (super_load_in_progress) {
     handle_parallel_super_load(name, superclassname,
                                class_loader,
@@ -968,7 +968,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 
 #if INCLUDE_CDS
 // Load a class for boot loader from the shared spaces. This also
-// forces the super class and all interfaces to be loaded.
+// forces the superclass and all interfaces to be loaded.
 InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
                                                         PackageEntry* pkg_entry,
                                                         TRAPS) {
@@ -1078,7 +1078,7 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
   //   super_type->class_loader_data() could be stale.
   // + Don't check if loader data is NULL, ie. the super_type isn't fully loaded.
   if (!super_type->is_shared_unregistered_class() && super_type->class_loader_data() != NULL) {
-    // Check if the super class is loaded by the current class_loader
+    // Check if the superclass is loaded by the current class_loader
     Symbol* name = super_type->name();
     InstanceKlass* check = find_instance_klass(name, class_loader, protection_domain);
     if (check == super_type) {
