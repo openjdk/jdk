@@ -121,21 +121,29 @@ class SystemDictionary : AllStatic {
                                               Handle protection_domain,
                                               bool is_superclass,
                                               TRAPS);
+ private:
+  // Parse the stream to create an unsafe anonymous or hidden class.
+  // Used by Unsafe_DefineAnonymousClass and jvm_lookup_define_class.
+  static InstanceKlass* resolve_hidden_class_from_stream(ClassFileStream* st,
+                                                         Symbol* class_name,
+                                                         Handle class_loader,
+                                                         const ClassLoadInfo& cl_info,
+                                                         TRAPS);
 
-  // Parse new stream. This won't update the dictionary or class
-  // hierarchy, simply parse the stream. Used by JVMTI RedefineClasses
-  // and by Unsafe_DefineAnonymousClass and jvm_lookup_define_class.
-  static InstanceKlass* parse_stream(Symbol* class_name,
-                                     Handle class_loader,
-                                     ClassFileStream* st,
-                                     const ClassLoadInfo& cl_info,
-                                     TRAPS);
+  // Resolve a class from stream (called by jni_DefineClass and JVM_DefineClass)
+  // This class is added to the SystemDictionary.
+  static InstanceKlass* resolve_class_from_stream(ClassFileStream* st,
+                                                  Symbol* class_name,
+                                                  Handle class_loader,
+                                                  const ClassLoadInfo& cl_info,
+                                                  TRAPS);
 
-  // Resolve from stream (called by jni_DefineClass and JVM_DefineClass)
-  static InstanceKlass* resolve_from_stream(Symbol* class_name,
+ public:
+  // Resolve either a hidden or normal class from a stream of bytes, based on ClassLoadInfo
+  static InstanceKlass* resolve_from_stream(ClassFileStream* st,
+                                            Symbol* class_name,
                                             Handle class_loader,
-                                            Handle protection_domain,
-                                            ClassFileStream* st,
+                                            const ClassLoadInfo& cl_info,
                                             TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.

@@ -123,7 +123,7 @@ public enum WixTool {
                 })::validate;
     }
 
-    private final static DottedVersion MINIMAL_VERSION = DottedVersion.lazy("3.0");
+    private static final DottedVersion MINIMAL_VERSION = DottedVersion.lazy("3.0");
 
     static Path getSystemDir(String envVar, String knownDir) {
         return Optional

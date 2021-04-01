@@ -402,7 +402,7 @@ public class AnnotatedMemoryPanel extends JPanel {
   }
 
   private String bigIntToHexString(BigInteger bi) {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append("0x");
     String val = bi.toString(16);
     for (int i = 0; i < ((2 * addressSize) - val.length()); i++) {

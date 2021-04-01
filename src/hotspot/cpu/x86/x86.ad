@@ -3232,73 +3232,26 @@ instruct negD_reg_reg(vlRegD dst, vlRegD src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct sqrtF_reg(regF dst, regF src) %{
+// sqrtss instruction needs destination register to be pre initialized for best performance
+// Therefore only the instruct rule where the input is pre-loaded into dst register is defined below
+instruct sqrtF_reg(regF dst) %{
   predicate(UseSSE>=1);
-  match(Set dst (SqrtF src));
-
-  format %{ "sqrtss  $dst, $src" %}
-  ins_cost(150);
+  match(Set dst (SqrtF dst));
+  format %{ "sqrtss  $dst, $dst" %}
   ins_encode %{
-    __ sqrtss($dst$$XMMRegister, $src$$XMMRegister);
+    __ sqrtss($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct sqrtF_mem(regF dst, memory src) %{
-  predicate(UseSSE>=1);
-  match(Set dst (SqrtF (LoadF src)));
-
-  format %{ "sqrtss  $dst, $src" %}
-  ins_cost(150);
-  ins_encode %{
-    __ sqrtss($dst$$XMMRegister, $src$$Address);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtF_imm(regF dst, immF con) %{
-  predicate(UseSSE>=1);
-  match(Set dst (SqrtF con));
-
-  format %{ "sqrtss  $dst, [$constantaddress]\t# load from constant table: float=$con" %}
-  ins_cost(150);
-  ins_encode %{
-    __ sqrtss($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtD_reg(regD dst, regD src) %{
+// sqrtsd instruction needs destination register to be pre initialized for best performance
+// Therefore only the instruct rule where the input is pre-loaded into dst register is defined below
+instruct sqrtD_reg(regD dst) %{
   predicate(UseSSE>=2);
-  match(Set dst (SqrtD src));
-
-  format %{ "sqrtsd  $dst, $src" %}
-  ins_cost(150);
+  match(Set dst (SqrtD dst));
+  format %{ "sqrtsd  $dst, $dst" %}
   ins_encode %{
-    __ sqrtsd($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtD_mem(regD dst, memory src) %{
-  predicate(UseSSE>=2);
-  match(Set dst (SqrtD (LoadD src)));
-
-  format %{ "sqrtsd  $dst, $src" %}
-  ins_cost(150);
-  ins_encode %{
-    __ sqrtsd($dst$$XMMRegister, $src$$Address);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtD_imm(regD dst, immD con) %{
-  predicate(UseSSE>=2);
-  match(Set dst (SqrtD con));
-  format %{ "sqrtsd  $dst, [$constantaddress]\t# load from constant table: double=$con" %}
-  ins_cost(150);
-  ins_encode %{
-    __ sqrtsd($dst$$XMMRegister, $constantaddress($con));
+    __ sqrtsd($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}

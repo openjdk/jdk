@@ -1807,7 +1807,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
           for (DUIterator_Fast jmax, j = be->fast_outs(jmax); j < jmax; j++) {
             Node* n = be->fast_out(j);
             if (n->is_Load()) {
-              assert(n->in(0) == be, "should be on the backedge");
+              assert(n->in(0) == be || n->find_prec_edge(be) > 0, "should be on the backedge");
               do {
                 n = n->raw_out(0);
               } while (!n->is_Phi());
@@ -5042,7 +5042,8 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
             for (uint j = 1; j < s->req(); j++) {
               Node* in = s->in(j);
               Node* r_in = r->in(j);
-              if ((worklist.member(in) || in == mem) && is_dominator(early, r_in)) {
+              // We can't reach any node from a Phi because we don't enqueue Phi's uses above
+              if (((worklist.member(in) && !in->is_Phi()) || in == mem) && is_dominator(early, r_in)) {
                 LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
               }
             }
