@@ -2092,65 +2092,32 @@ abstract class MethodHandleImpl {
         return r;
     }
 
-    private static class CollectorCacheKey {
-        final Class<?> arrayType;
-        final int numArgs;
+    static MethodHandle makeCollector(Class<?> arrayType, int parameterCount) {
+        MethodType type = MethodType.methodType(arrayType, Collections.nCopies(parameterCount, arrayType.componentType()));
+        MethodHandle newArray = MethodHandles.arrayConstructor(arrayType);
+        newArray = MethodHandles.insertArguments(newArray, 0, parameterCount);
 
-        public CollectorCacheKey(Class<?> arrayType, int numArgs) {
-            this.arrayType = arrayType;
-            this.numArgs = numArgs;
-        }
+        MethodHandle storeFunc = getStoreFunc(arrayType);
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            CollectorCacheKey that = (CollectorCacheKey) o;
-            return numArgs == that.numArgs && Objects.equals(arrayType, that.arrayType);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(arrayType, numArgs);
-        }
-    }
-
-    private static final Map<CollectorCacheKey, MethodHandle> COLLECTOR_CACHE = new ConcurrentHashMap<>();
-
-    public static MethodHandle makeCollector(Class<?> arrayType, int parameterCount) {
-        CollectorCacheKey key = new CollectorCacheKey(arrayType, parameterCount);
-        MethodHandle handle = COLLECTOR_CACHE.get(key);
-        if (handle != null) {
-            return handle;
-        }
-
-        int argSlotCount = arrayType == double[].class || arrayType == long[].class ? 2 : 1;
-        if (parameterCount * argSlotCount >= MAX_ARITY - 1) { // jumbo arity workaround
-            MethodHandle collector = makeCollector(arrayType, parameterCount - 1);
-            // collect into MAX_ARITY - 2 array, and then adjoin a single element (with an array copy, sorry)
-            MethodHandle adjoiner = getConstantHandle(MH_adjoinElement);
-            adjoiner = adjoiner.asType(MethodType.methodType(arrayType, arrayType, arrayType.componentType()));
-            return MethodHandles.collectArguments(adjoiner, 0, collector);
-        }
-
-        MethodHandle collector = varargsArray(arrayType, parameterCount);
-        MethodType type = collector.type();
-
-        LambdaForm form = makeCollectorForm(type.basicType(), arrayType);
+        LambdaForm form = makeCollectorForm(type.basicType(), storeFunc);
 
         BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
         BoundMethodHandle mh;
         try {
-            mh = (BoundMethodHandle) data.factory().invokeBasic(type, form, (Object) collector);
+            mh = (BoundMethodHandle) data.factory().invokeBasic(type, form, (Object) newArray);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
         assert(mh.type() == type);
-        MethodHandle prev = COLLECTOR_CACHE.putIfAbsent(key, mh);
-        return prev == null ? mh : prev;
+        return mh;
     }
 
-    private static LambdaForm makeCollectorForm(MethodType basicType, Class<?> arrayType) {
+    private static LambdaForm makeCollectorForm(MethodType basicType, MethodHandle storeFunc) {
+        LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_COLLECTOR);
+        if (lform != null) {
+            return lform;
+        }
+
         MethodType lambdaType = basicType.invokerType();
 
         final int THIS_MH      = 0;  // the BMH_L
@@ -2158,22 +2125,32 @@ abstract class MethodHandleImpl {
         final int ARG_LIMIT    = ARG_BASE + basicType.parameterCount();
 
         int nameCursor = ARG_LIMIT;
-        final int GET_COLLECTOR    = nameCursor++;
-        final int CALL_COLLECTOR   = nameCursor++;
+        final int GET_NEW_ARRAY       = nameCursor++;
+        final int CALL_NEW_ARRAY      = nameCursor++;
+        final int STORE_ELEMENT_BASE  = nameCursor;
+        final int STORE_ELEMENT_LIMIT = STORE_ELEMENT_BASE + basicType.parameterCount();
+        nameCursor = STORE_ELEMENT_LIMIT;
 
         Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
 
         BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
         names[THIS_MH]          = names[THIS_MH].withConstraint(data);
-        names[GET_COLLECTOR]    = new Name(data.getterFunction(0), names[THIS_MH]);
+        names[GET_NEW_ARRAY]    = new Name(data.getterFunction(0), names[THIS_MH]);
 
-        MethodHandle invokeBasic = MethodHandles.basicInvoker(basicType);
-        Object[] args = new Object[invokeBasic.type().parameterCount()];
-        args[0] = names[GET_COLLECTOR];
-        System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT-ARG_BASE);
-        names[CALL_COLLECTOR] = new Name(new NamedFunction(invokeBasic, Intrinsic.COLLECTOR, arrayType), args);
+        MethodHandle invokeBasic = MethodHandles.basicInvoker(MethodType.methodType(Object.class));
+        names[CALL_NEW_ARRAY] = new Name(new NamedFunction(invokeBasic), names[GET_NEW_ARRAY]);
+        for (int storeIndex = 0,
+             storeNameCursor = STORE_ELEMENT_BASE,
+             argCursor = ARG_BASE;
+             storeNameCursor < STORE_ELEMENT_LIMIT;
+             storeIndex++, storeNameCursor++, argCursor++){
 
-        return new LambdaForm(lambdaType.parameterCount(), names, Kind.COLLECTOR);
+            names[storeNameCursor] = new Name(new NamedFunction(storeFunc),
+                    names[CALL_NEW_ARRAY], storeIndex, names[argCursor]);
+        }
+
+        lform = new LambdaForm(lambdaType.parameterCount(), names, CALL_NEW_ARRAY, Kind.COLLECTOR);
+        return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_COLLECTOR, lform);
     }
 
     private static Object adjoinElement(Object array, Object element) {
@@ -2183,6 +2160,49 @@ abstract class MethodHandleImpl {
         System.arraycopy(array, 0, newArray, 0, arrayLength);
         Array.set(newArray, arrayLength, element);
         return newArray;
+    }
+
+    @ForceInline private static void arrayStore(Object[] arr, int storeIndex, Object element) {
+        arr[storeIndex] = element;
+    }
+    @ForceInline private static void arrayStore(byte[] arr, int storeIndex, byte element) {
+        arr[storeIndex] = element;
+    }
+    @ForceInline private static void arrayStore(short[] arr, int storeIndex, short element) {
+        arr[storeIndex] = element;
+    }
+    @ForceInline private static void arrayStore(char[] arr, int storeIndex, char element) {
+        arr[storeIndex] = element;
+    }
+    @ForceInline private static void arrayStore(int[] arr, int storeIndex, int element) {
+        arr[storeIndex] = element;
+    }
+    @ForceInline private static void arrayStore(long[] arr, int storeIndex, long element) {
+        arr[storeIndex] = element;
+    }
+    @ForceInline private static void arrayStore(float[] arr, int storeIndex, float element) {
+        arr[storeIndex] = element;
+    }
+    @ForceInline private static void arrayStore(double[] arr, int storeIndex, double element) {
+        arr[storeIndex] = element;
+    }
+    @ForceInline private static void arrayStore(boolean[] arr, int storeIndex, boolean element) {
+        arr[storeIndex] = element;
+    }
+
+    private static MethodHandle getStoreFunc(Class<?> arrayType) {
+        Class<?> componentType = arrayType.componentType();
+        if (!componentType.isPrimitive() && componentType != Object.class) {
+            // erase reference stores
+            componentType = Object.class;
+            arrayType = Object[].class;
+        }
+        try {
+            return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "arrayStore",
+                    MethodType.methodType(void.class, arrayType, int.class, componentType));
+        } catch (ReflectiveOperationException e) {
+            throw newInternalError(e);
+        }
     }
 
     // Indexes into constant method handles:
