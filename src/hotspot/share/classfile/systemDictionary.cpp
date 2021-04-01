@@ -351,7 +351,7 @@ static inline void log_circularity_error(PlaceholderEntry* probe) {
 // resolve_super_or_fail adds a LOAD_SUPER placeholder to the placeholder table before calling
 // resolve_instance_class_or_null. ClassCircularityError is detected when a LOAD_SUPER or LOAD_INSTANCE
 // placeholder for the same thread, class, classloader is found.
-//
+// This can be seen with logging option: -Xlog:class+load+placeholders=debug.
 //
 InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
                                                        Symbol* super_name,
