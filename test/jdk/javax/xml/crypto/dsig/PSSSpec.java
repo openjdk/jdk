@@ -99,9 +99,15 @@ public class PSSSpec {
         Utils.runAndCheckException(
                 () -> getSpec(XMLUtils.withText(doc, P2PSS + "/pss:SaltLength", "big")),
                 e -> Asserts.assertTrue(e instanceof MarshalException && e.getMessage().contains("Invalid salt length supplied"), e.getMessage()));
+        Utils.runAndCheckException(
+                () -> getSpec(XMLUtils.withText(doc, P2PSS + "/pss:SaltLength", "-1")),
+                e -> Asserts.assertTrue(e instanceof MarshalException && e.getMessage().contains("Invalid salt length supplied"), e.getMessage()));
         // Invalid TrailerField
         Utils.runAndCheckException(
                 () -> getSpec(XMLUtils.withText(doc, P2PSS + "/pss:TrailerField", "small")),
+                e -> Asserts.assertTrue(e instanceof MarshalException && e.getMessage().contains("Invalid trailer field supplied"), e.getMessage()));
+        Utils.runAndCheckException(
+                () -> getSpec(XMLUtils.withText(doc, P2PSS + "/pss:TrailerField", "-1")),
                 e -> Asserts.assertTrue(e instanceof MarshalException && e.getMessage().contains("Invalid trailer field supplied"), e.getMessage()));
 
         // Spec in original doc

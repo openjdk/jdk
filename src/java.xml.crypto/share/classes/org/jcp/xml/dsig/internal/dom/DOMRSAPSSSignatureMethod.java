@@ -232,14 +232,14 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
 
             int saltLength;
             try {
-                saltLength = saltLengthNode == null ? digestAlgorithm.getSaltLength() : Integer.parseInt(saltLengthNode.getTextContent());
+                saltLength = saltLengthNode == null ? digestAlgorithm.getSaltLength() : Integer.parseUnsignedInt(saltLengthNode.getTextContent());
             } catch (NumberFormatException ex) {
                 throw new MarshalException("Invalid salt length supplied: " + saltLengthNode.getTextContent());
             }
 
             int trailerField;
             try {
-                trailerField = trailerFieldNode == null ? 1 : Integer.parseInt(trailerFieldNode.getTextContent());
+                trailerField = trailerFieldNode == null ? 1 : Integer.parseUnsignedInt(trailerFieldNode.getTextContent());
             } catch (NumberFormatException ex) {
                 throw new MarshalException("Invalid trailer field supplied: " + trailerFieldNode.getTextContent());
             }

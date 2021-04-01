@@ -163,10 +163,12 @@ public class XMLUtils {
     }
 
     // Returns a new document without a child element
-    public static Document withoutNode(Document d, String path) throws Exception {
+    public static Document withoutNode(Document d, String... paths) throws Exception {
         d = clone(d);
-        Element e = sub(d, path);
-        e.getParentNode().removeChild(e);
+        for (String path : paths) {
+            Element e = sub(d, path);
+            e.getParentNode().removeChild(e);
+        }
         return d;
     }
 
