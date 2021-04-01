@@ -1083,9 +1083,6 @@ extern "C" typedef char const* (JNICALL *debugInit_startDebuggingViaCommandPtr)(
                                                                                 char const** address, jboolean* first_start);
 static debugInit_startDebuggingViaCommandPtr dvc_start_ptr = NULL;
 
-DebugOnCmdStartDCmd::DebugOnCmdStartDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap) {
-}
-
 void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
   char const* transport = NULL;
   char const* addr = NULL;

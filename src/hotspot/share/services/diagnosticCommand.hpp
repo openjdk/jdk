@@ -852,9 +852,9 @@ public:
 };
 
 #if INCLUDE_JVMTI
-class DebugOnCmdStartDCmd : public DCmdWithParser {
+class DebugOnCmdStartDCmd : public DCmd {
 public:
-  DebugOnCmdStartDCmd(outputStream* output, bool heap);
+  DebugOnCmdStartDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
   static const char* name() {
     return "VM.start_java_debugging";
   }
