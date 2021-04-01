@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,8 @@ public class ObjectHistogram implements HeapVisitor {
     ObjectHistogramElement.titleOn(tty);
     Iterator<ObjectHistogramElement> iterator = list.listIterator();
     int num=0;
-    int totalCount=0;
-    int totalSize=0;
+    long totalCount=0;
+    long totalSize=0;
     while (iterator.hasNext()) {
       ObjectHistogramElement el = iterator.next();
       num++;

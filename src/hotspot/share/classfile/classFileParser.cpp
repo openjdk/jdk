@@ -6256,8 +6256,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                                                     _major_version,
                                                     loader,
                                                     _class_name,
-                                                    _local_interfaces,
-                                                    CHECK);
+                                                    _local_interfaces);
 
   // Size of Java itable (in words)
   _itable_size = _access_flags.is_interface() ? 0 :

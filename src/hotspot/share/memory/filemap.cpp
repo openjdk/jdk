@@ -53,7 +53,6 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
@@ -1236,17 +1235,14 @@ void FileMapInfo::open_for_write(const char* path) {
 void FileMapInfo::write_header() {
   _file_offset = 0;
   seek_to_position(_file_offset);
-  char* base_archive_name = NULL;
-  if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
-    base_archive_name = (char*)Arguments::GetSharedArchivePath();
-    header()->set_base_archive_name_size(strlen(base_archive_name) + 1);
-    header()->set_base_archive_is_default(FLAG_IS_DEFAULT(SharedArchiveFile));
-  }
-
   assert(is_file_position_aligned(), "must be");
   write_bytes(header(), header()->header_size());
-  if (base_archive_name != NULL) {
-    write_bytes(base_archive_name, header()->base_archive_name_size());
+
+  if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
+    char* base_archive_name = (char*)Arguments::GetSharedArchivePath();
+    if (base_archive_name != NULL) {
+      write_bytes(base_archive_name, header()->base_archive_name_size());
+    }
   }
 }
 
@@ -1657,7 +1653,7 @@ char* FileMapInfo::map_bitmap_region() {
     return NULL;
   }
 
-  if (VerifySharedSpaces && !region_crc_check(bitmap_base, si->used_aligned(), si->crc())) {
+  if (VerifySharedSpaces && !region_crc_check(bitmap_base, si->used(), si->crc())) {
     log_error(cds)("relocation bitmap CRC error");
     if (!os::unmap_memory(bitmap_base, si->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
