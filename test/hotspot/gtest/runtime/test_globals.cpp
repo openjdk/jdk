@@ -28,6 +28,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
 #include "unittest.hpp"
 
 #define TEST_FLAG(f, type, value)                                \
@@ -93,4 +94,32 @@ TEST_VM(FlagAccess, ccstr_flag) {
   FLAG_SET_ERGO(SharedArchiveConfigFile, "xyz");
   ASSERT_EQ(FLAG_IS_ERGO(SharedArchiveConfigFile), true);
   ASSERT_EQ(strcmp(SharedArchiveConfigFile, "xyz"), 0);
+}
+
+template <typename T>
+static JVMFlag::Error get_flag(const char* name) {
+  JVMFlag* flag = (name == NULL) ? NULL : JVMFlag::find_flag(name);
+
+  T val;
+  return JVMFlagAccess::get(flag, &val);
+}
+
+enum MyEnum : bool {};
+class MyClass {};
+
+TEST_VM(FlagAccess, wrong_format) {
+  ASSERT_EQ(get_flag<int>(NULL), JVMFlag::INVALID_FLAG);
+
+  // MaxRAMPercentage is a double flag
+  ASSERT_EQ(get_flag<bool>    ("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ(get_flag<int>     ("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ(get_flag<uint>    ("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ(get_flag<intx>    ("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ(get_flag<uintx>   ("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ(get_flag<uint64_t>("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ(get_flag<size_t>  ("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ(get_flag<double>  ("MaxRAMPercentage"), JVMFlag::SUCCESS);
+  ASSERT_EQ(get_flag<MyEnum>  ("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ(get_flag<MyClass> ("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ(get_flag<MyClass*>("MaxRAMPercentage"), JVMFlag::WRONG_FORMAT);
 }
