@@ -1929,12 +1929,6 @@ public final class Main {
             PrivateKey signerPrivateKey =
                     (PrivateKey)recoverKey(signerAlias, storePass, signerKeyPass).fst;
             Certificate signerCert = keyStore.getCertificate(signerAlias);
-            if (signerCert == null) {
-                MessageFormat form = new MessageFormat
-                        (rb.getString("alias.has.no.public.key.certificate."));
-                Object[] source = {signerCert};
-                throw new Exception(form.format(source));
-            }
 
             X509CertImpl signerCertImpl;
             if (signerCert instanceof X509CertImpl) {
@@ -2003,8 +1997,7 @@ public final class Main {
                     null);
         }
 
-        X509Certificate[] chain = new X509Certificate[1];
-        chain[0] = keypair.getSelfCertificate(
+        X509Certificate newCert = keypair.getSelfCertificate(
                 x500Name, getStartDate(startDate), validity*24L*60L*60L, ext);
 
         MessageFormat form;
@@ -2014,7 +2007,7 @@ public final class Main {
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
                     fullDisplayAlgName(privKey),
-                    chain[0].getSigAlgName(),
+                    newCert.getSigAlgName(),
                     signerAlias,
                     validity,
                     x500Name};
@@ -2025,7 +2018,7 @@ public final class Main {
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
                     fullDisplayAlgName(privKey),
-                    chain[0].getSigAlgName(),
+                    newCert.getSigAlgName(),
                     validity,
                     x500Name};
             System.err.println(form.format(source));
@@ -2035,17 +2028,17 @@ public final class Main {
             keyPass = promptForKeyPass(alias, null, storePass);
         }
 
+        Certificate[] finalChain;
         if (signerFlag) {
             Certificate[] signerChain = keyStore.getCertificateChain(signerAlias);
-            Certificate[] finalChain = new X509Certificate[signerChain.length + 1];
-            System.arraycopy(chain, 0, finalChain, 0, 1);
+            finalChain = new X509Certificate[signerChain.length + 1];
+            finalChain[0] = newCert;
             System.arraycopy(signerChain, 0, finalChain, 1, signerChain.length);
-            checkWeak(rb.getString("the.generated.certificate"), finalChain);
-            keyStore.setKeyEntry(alias, privKey, keyPass, finalChain);
         } else {
-            checkWeak(rb.getString("the.generated.certificate"), chain[0]);
-            keyStore.setKeyEntry(alias, privKey, keyPass, chain);
+            finalChain = new Certificate[] { newCert };
         }
+        checkWeak(rb.getString("the.generated.certificate"), finalChain);
+        keyStore.setKeyEntry(alias, privKey, keyPass, finalChain);
     }
 
     private String ecGroupNameForSize(int size) throws Exception {

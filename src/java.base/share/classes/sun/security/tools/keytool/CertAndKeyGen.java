@@ -82,10 +82,7 @@ public final class CertAndKeyGen {
     }
 
     /**
-     * See doc comments at:
-     * constructor CertAndKeyGen(String keyType, String sigAlg,
-     * String providerName, PrivateKey signerPrivateKey,
-     * X500Name signerSubjectName)
+     * @see #CertAndKeyGen(String, String, String, PrivateKey, X500Name)
      */
     public CertAndKeyGen (String keyType, String sigAlg, String providerName)
     throws NoSuchAlgorithmException, NoSuchProviderException
@@ -127,9 +124,7 @@ public final class CertAndKeyGen {
         this.keyType = keyType;
         this.signerPrivateKey = signerPrivateKey;
         this.signerSubjectName = signerSubjectName;
-        if (signerPrivateKey != null) {
-            this.signerFlag = true;
-        }
+        this.signerFlag = signerPrivateKey != null;
     }
 
     /**
