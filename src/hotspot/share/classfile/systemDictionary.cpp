@@ -523,7 +523,7 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
     // only need check_seen_thread once, not on each loop
     // 6341374 java/lang/Instrument with -Xcomp
     if (oldprobe->check_seen_thread(current, PlaceholderTable::LOAD_INSTANCE)) {
-      log_circularity_error(THREAD, oldprobe);
+      log_circularity_error(current, oldprobe);
       *throw_circularity_error = true;
       return NULL;
     } else {
