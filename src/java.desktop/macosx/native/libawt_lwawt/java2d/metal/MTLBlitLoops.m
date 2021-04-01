@@ -816,43 +816,21 @@ MTLBlitLoops_CopyArea(JNIEnv *env,
 
             /*
              * We need to consider common states like clipping while
-             * performing copyArea, thats why we need to query encoder with
-             * appropriate state from EncoderManager and not use
-             * direct MTLBlitCommandEncoder for texture copy.
+             * performing copyArea, thats why we use drawTex2Tex and
+             * get encoder with appropriate state from EncoderManager
+             * and not directly use MTLBlitCommandEncoder for texture copy.
              */
 
-            id<MTLRenderCommandEncoder> interEncoder =
-                [mtlc.encoderManager getTextureEncoder:interTexture
-                                           isSrcOpaque:dstOps->isOpaque
-                                           isDstOpaque:dstOps->isOpaque
-            ];
+            // copy content to intermediate texture
+            drawTex2Tex(mtlc, dstOps->pTexture, interTexture, dstOps->isOpaque,
+                        JNI_FALSE, INTERPOLATION_NEAREST_NEIGHBOR,
+                        0, 0, texWidth, texHeight, 0, 0, texWidth, texHeight);
 
-            fillTxQuad(quadTxVerticesBuffer, 0, 0,
-                texWidth, texHeight, texWidth, texHeight, 0,
-                0, texWidth, texHeight, texWidth, texHeight);
-
-            [interEncoder setVertexBytes:quadTxVerticesBuffer
-                             length:sizeof(quadTxVerticesBuffer)
-                            atIndex:MeshVertexBuffer];
-            [interEncoder setFragmentTexture:dstOps->pTexture atIndex: 0];
-            [interEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0
-                                                             vertexCount:6];
-
-            id<MTLRenderCommandEncoder> finalEncoder =
-                [mtlc.encoderManager getTextureEncoder:dstOps->pTexture
-                                           isSrcOpaque:dstOps->isOpaque
-                                           isDstOpaque:dstOps->isOpaque
-            ];
-
-            fillTxQuad(quadTxVerticesBuffer, srcBounds.x1, srcBounds.y1,
-                srcBounds.x2, srcBounds.y2, texWidth, texHeight, dstBounds.x1,
-                dstBounds.y1, dstBounds.x2, dstBounds.y2, texWidth, texHeight);
-            [finalEncoder setVertexBytes:quadTxVerticesBuffer
-                             length:sizeof(quadTxVerticesBuffer)
-                            atIndex:MeshVertexBuffer];
-            [finalEncoder setFragmentTexture:interTexture atIndex: 0];
-            [finalEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0
-                                                             vertexCount:6];
+            // copy content with appropriate bounds to destination texture
+            drawTex2Tex(mtlc, interTexture, dstOps->pTexture, JNI_FALSE,
+                        dstOps->isOpaque, INTERPOLATION_NEAREST_NEIGHBOR,
+                        srcBounds.x1, srcBounds.y1, srcBounds.x2, srcBounds.y2,
+                        dstBounds.x1, dstBounds.y1, dstBounds.x2, dstBounds.y2);
             [mtlc.encoderManager endEncoder];
             MTLCommandBufferWrapper * cbwrapper =
                 [mtlc pullCommandBufferWrapper];
