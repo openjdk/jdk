@@ -194,8 +194,7 @@ public:
 
 #define JVM_FLAG_TYPE_ACCESSOR(t)                                                                 \
   bool is_##t() const                      { return _type == TYPE_##t;}                           \
-  t get_##t() const                        { assert(is_##t(), "sanity"); return *((t*) _addr); }  \
-  void set_##t(t value)                    { assert(is_##t(), "sanity"); *((t*) _addr) = value; }
+  t get_##t() const                        { assert(is_##t(), "sanity"); return *((t*) _addr); }
 
   JVM_FLAG_NON_STRING_TYPES_DO(JVM_FLAG_TYPE_ACCESSOR)
 
