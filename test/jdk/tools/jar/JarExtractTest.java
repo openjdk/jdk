@@ -211,6 +211,8 @@ public class JarExtractTest {
         final int exitCode = JAR_TOOL.run(new PrintStream(outStream), System.err, "--help");
         Assert.assertEquals(exitCode, 0, "jar --help command failed");
         final String output = outStream.toString();
+        // this message is expected to be the one from the jar --help output which is sourced from
+        // jar.properties
         final String expectedMsg = "--dir                    Directory into which the jar will be extracted";
         Assert.assertTrue(output.contains(expectedMsg), "jar --help didn't contain --dir option");
     }
@@ -261,7 +263,9 @@ public class JarExtractTest {
      */
     @Test
     public void testExtractWithDirPFlagNotAllowed() throws Exception {
-        final String expectedErrMsg = "-P option cannot be used when extracting a jar to a specific location";
+        // this error message is expected to be the one from the jar --help output which is sourced from
+        // jar.properties
+        final String expectedErrMsg = "You may not specify '-Px' with the '-C' or '--dir' options";
         final String tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toString();
         final List<String[]> cmdArgs = new ArrayList<>();
         cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "-P", "-C", tmpDir});
@@ -298,7 +302,9 @@ public class JarExtractTest {
      */
     @Test
     public void testExtractFailWithMultipleDir() throws Exception {
-        final String expectedErrMsg = "You may not specify more than one directory for extracting the jar";
+        // this error message is expected to be the one from the jar --help output which is sourced from
+        // jar.properties
+        final String expectedErrMsg = "You may not specify the '-C' or '--dir' option more than once with the '-x' option";
         final String tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toString();
         final List<String[]> cmdArgs = new ArrayList<>();
         cmdArgs.add(new String[]{"-x", "-f", testJarPath.toString(), "-C", tmpDir, "-C", tmpDir});
