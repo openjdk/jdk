@@ -736,6 +736,9 @@ public class LWWindowPeer
             handleMove(x, y, true);
         }
         if (tResized || pResized || invalid || isNewDevice) {
+            if (CGraphicsDevice.usingMetalPipeline() && invalid) {
+                replaceSurfaceData();
+            }
             handleResize(w, h, true);
             repaintPeer();
         }
