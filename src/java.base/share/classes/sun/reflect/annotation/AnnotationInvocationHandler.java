@@ -492,9 +492,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
          * 9.6.1. Annotation Type Elements
          */
         boolean valid = true;
-        Method currentMethod = null;
         for(Method method : memberMethods) {
-            currentMethod = method;
             int modifiers = method.getModifiers();
             // Skip over methods that may be a static initializer or
             // similar construct. A static initializer may be used for
