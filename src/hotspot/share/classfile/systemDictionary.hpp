@@ -46,9 +46,7 @@
 // be done concurrently, but only by different loaders.
 //
 // During loading a placeholder (name, loader) is temporarily placed in
-// a side data structure, and is used to detect ClassCircularityErrors
-// and to perform verification during GC.  A GC can occur in the midst
-// of class loading, as we call out to Java, have to take locks, etc.
+// a side data structure, and is used to detect ClassCircularityErrors.
 //
 // When class loading is finished, a new entry is added to the dictionary
 // of the class loader and the placeholder is removed. Note that the protection
@@ -58,9 +56,8 @@
 // Clients of this class who are interested in finding if a class has
 // been completely loaded -- not classes in the process of being loaded --
 // can read the dictionary unlocked. This is safe because
-//    - entries are only deleted at safepoints
-//    - readers cannot come to a safepoint while actively examining
-//         an entry  (an entry cannot be deleted from under a reader)
+//    - entries are only deleted when the class loader is not alive, when the
+//      entire dictionary is deleted.
 //    - entries must be fully formed before they are available to concurrent
 //         readers (we must ensure write ordering)
 //
@@ -340,21 +337,21 @@ private:
   static Klass* resolve_array_class_or_null(Symbol* class_name,
                                             Handle class_loader,
                                             Handle protection_domain, TRAPS);
-  static InstanceKlass* handle_parallel_super_load(Symbol* class_name,
-                                                   Symbol* supername,
-                                                   Handle class_loader,
-                                                   Handle protection_domain,
-                                                   Handle lockObject, TRAPS);
-  // Wait on SystemDictionary_lock; unlocks lockObject before
-  // waiting; relocks lockObject with correct recursion count
-  // after waiting, but before reentering SystemDictionary_lock
-  // to preserve lock order semantics.
-  static void double_lock_wait(JavaThread* thread, Handle lockObject);
+  static InstanceKlass* handle_parallel_loading(JavaThread* current,
+                                                unsigned int name_hash,
+                                                Symbol* name,
+                                                ClassLoaderData* loader_data,
+                                                Handle lockObject,
+                                                bool* throw_circularity_error);
+
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
   static InstanceKlass* find_or_define_helper(Symbol* class_name,
                                               Handle class_loader,
                                               InstanceKlass* k, TRAPS);
-  static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
+  static InstanceKlass* load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS);
+  static InstanceKlass* load_instance_class(unsigned int name_hash,
+                                            Symbol* class_name,
+                                            Handle class_loader, TRAPS);
 
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
                                       PackageEntry* pkg_entry,
