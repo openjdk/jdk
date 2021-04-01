@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,11 +277,9 @@ public:
     return p;
   }
   // num_arguments() is used by the DCmdFactoryImpl::get_num_arguments() template functions.
-  // By default:
-  //   - Direct subclasses of DCmd have zero arguments.
-  //   - For subclasses of DCmdWithParser, it's calculated by DCmdParser::num_arguments()
-  // If your Dcmd class needs a different value, it should define its
-  // own version of this static method.
+  // - For subclasses of DCmdWithParser, it's calculated by DCmdParser::num_arguments().
+  // - Other subclasses of DCmd have zero arguments by default. You can change this
+  //   by defining your own version of MyDCmd::num_arguments().
   static int num_arguments()        { return 0; }
   outputStream* output() const      { return _output; }
   bool is_heap_allocated() const    { return _is_heap_allocated; }

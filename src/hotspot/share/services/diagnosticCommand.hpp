@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ public:
            "'help all' will show help for all commands.";
   }
   static const char* impact() { return "Low"; }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -127,7 +126,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -150,7 +148,6 @@ public:
                         "control", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -190,7 +187,6 @@ public:
                         "control", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 #endif // INCLUDE_JVMTI
@@ -213,9 +209,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments() {
-    return 0;
-  };
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -231,7 +224,6 @@ public:
   static const char* impact() {
     return "Low";
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -339,7 +331,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 #endif // INCLUDE_SERVICES
@@ -364,7 +355,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -391,13 +381,12 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class TouchedMethodsDCmd : public DCmdWithParser {
+class TouchedMethodsDCmd : public DCmd {
 public:
-  TouchedMethodsDCmd(outputStream* output, bool heap);
+  TouchedMethodsDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
   static const char* name() {
     return "VM.print_touched_methods";
   }
@@ -407,7 +396,6 @@ public:
   static const char* impact() {
     return "Medium: Depends on Java content.";
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -430,7 +418,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -479,10 +466,7 @@ public:
     return "Start remote management agent.";
   }
 
-  static int num_arguments();
-
   virtual void execute(DCmdSource source, TRAPS);
-
 };
 
 class JMXStartLocalDCmd : public DCmd {
@@ -651,7 +635,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 //---<  END  >--- CodeHeap State Analytics.
@@ -715,7 +698,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -801,7 +783,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -824,7 +805,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -847,7 +827,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
@@ -892,7 +871,6 @@ public:
                         "monitor", NULL};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
