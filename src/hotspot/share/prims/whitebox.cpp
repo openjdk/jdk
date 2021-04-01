@@ -1780,8 +1780,14 @@ WB_ENTRY(jlong, WB_MetaspaceCapacityUntilGC(JNIEnv* env, jobject wb))
   return (jlong) MetaspaceGC::capacity_until_GC();
 WB_END
 
+// The function is only valid when CDS is available.
 WB_ENTRY(jlong, WB_MetaspaceSharedRegionAlignment(JNIEnv* env, jobject wb))
+#if INCLUDE_CDS
   return (jlong)MetaspaceShared::core_region_alignment();
+#else
+  ShouldNotReachHere();
+  return 0L;
+#endif
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
