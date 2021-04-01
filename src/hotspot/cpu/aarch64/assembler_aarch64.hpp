@@ -2184,13 +2184,13 @@ public:
     if (value)
       fmov_imm(Vn, value, 0b00);
     else
-      fmovs(Vn, zr);
+      movi(Vn, T2S, 0);
   }
   void fmovd(FloatRegister Vn, double value) {
     if (value)
       fmov_imm(Vn, value, 0b01);
     else
-      fmovd(Vn, zr);
+      movi(Vn, T1D, 0);
   }
 
    // Floating-point rounding
