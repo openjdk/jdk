@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +107,7 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -323,6 +325,8 @@ Thread::Thread() {
     // If the main thread creates other threads before the barrier set that is an error.
     assert(Thread::current_or_null() == NULL, "creating thread before barrier set");
   }
+
+  MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
 
 void Thread::initialize_tlab() {
@@ -385,6 +389,8 @@ void Thread::call_run() {
   // Perform common initialization actions
 
   register_thread_stack_with_NMT();
+
+  MACOS_AARCH64_ONLY(this->init_wx());
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
@@ -940,17 +946,20 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                                       JavaThreadStatus::RUNNABLE);
 }
 
-char java_version[64] = "";
-char java_runtime_name[128] = "";
-char java_runtime_version[128] = "";
-char java_runtime_vendor_version[128] = "";
-char java_runtime_vendor_vm_bug_url[128] = "";
+static char java_version[64] = "";
+static char java_runtime_name[128] = "";
+static char java_runtime_version[128] = "";
+static char java_runtime_vendor_version[128] = "";
+static char java_runtime_vendor_vm_bug_url[128] = "";
 
-// extract the JRE version string from java.lang.VersionProps.java_version
-static const char* get_java_version(InstanceKlass* ik) {
+// Extract version and vendor specific information.
+static const char* get_java_version_info(InstanceKlass* ik,
+                                         Symbol* field_name,
+                                         char* buffer,
+                                         int buffer_size) {
   fieldDescriptor fd;
   bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_version_name(),
+               ik->find_local_field(field_name,
                                     vmSymbols::string_signature(), &fd);
   if (found) {
     oop name_oop = ik->java_mirror()->obj_field(fd.offset());
@@ -958,88 +967,8 @@ static const char* get_java_version(InstanceKlass* ik) {
       return NULL;
     }
     const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_version,
-                                                        sizeof(java_version));
-    return name;
-  } else {
-    return NULL;
-  }
-}
-
-// extract the JRE name from java.lang.VersionProps.java_runtime_name
-static const char* get_java_runtime_name(InstanceKlass* ik) {
-  fieldDescriptor fd;
-  bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_runtime_name_name(),
-                                    vmSymbols::string_signature(), &fd);
-  if (found) {
-    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
-    }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_runtime_name,
-                                                        sizeof(java_runtime_name));
-    return name;
-  } else {
-    return NULL;
-  }
-}
-
-// extract the JRE version from java.lang.VersionProps.java_runtime_version
-static const char* get_java_runtime_version(InstanceKlass* ik) {
-  fieldDescriptor fd;
-  bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_runtime_version_name(),
-                                    vmSymbols::string_signature(), &fd);
-  if (found) {
-    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
-    }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_runtime_version,
-                                                        sizeof(java_runtime_version));
-    return name;
-  } else {
-    return NULL;
-  }
-}
-
-// extract the JRE vendor version from java.lang.VersionProps.VENDOR_VERSION
-static const char* get_java_runtime_vendor_version(InstanceKlass* ik) {
-  fieldDescriptor fd;
-  bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_runtime_vendor_version_name(),
-                                    vmSymbols::string_signature(), &fd);
-  if (found) {
-    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
-    }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_runtime_vendor_version,
-                                                        sizeof(java_runtime_vendor_version));
-    return name;
-  } else {
-    return NULL;
-  }
-}
-
-// extract the JRE vendor VM bug URL from java.lang.VersionProps.VENDOR_URL_VM_BUG
-static const char* get_java_runtime_vendor_vm_bug_url(InstanceKlass* ik) {
-  fieldDescriptor fd;
-  bool found = ik != NULL &&
-               ik->find_local_field(vmSymbols::java_runtime_vendor_vm_bug_url_name(),
-                                    vmSymbols::string_signature(), &fd);
-  if (found) {
-    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
-    }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        java_runtime_vendor_vm_bug_url,
-                                                        sizeof(java_runtime_vendor_vm_bug_url));
+                                                        buffer,
+                                                        buffer_size);
     return name;
   } else {
     return NULL;
@@ -1273,6 +1202,9 @@ JavaThread::JavaThread() :
   _pending_failed_speculation(0),
   _jvmci{nullptr},
   _jvmci_counters(nullptr),
+  _jvmci_reserved0(nullptr),
+  _jvmci_reserved1(nullptr),
+  _jvmci_reserved_oop0(nullptr),
 #endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
@@ -2234,6 +2166,9 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
 // Note only the native==>VM/Java barriers can call this function and when
 // thread state is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
+  // Enable WXWrite: called directly from interpreter native wrapper.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+
   check_safepoint_and_suspend_for_native_trans(thread);
 
   // After returning from native, it could be that the stack frames are not
@@ -2378,6 +2313,9 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   f->do_oop((oop*) &_vm_result);
   f->do_oop((oop*) &_exception_oop);
   f->do_oop((oop*) &_pending_async_exception);
+#if INCLUDE_JVMCI
+  f->do_oop((oop*) &_jvmci_reserved_oop0);
+#endif
 
   if (jvmti_thread_state() != NULL) {
     jvmti_thread_state()->oops_do(f, cf);
@@ -3054,11 +2992,23 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // get the Java runtime name, version, and vendor info after java.lang.System is initialized
   InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
                                                             Handle(), Handle());
-  JDK_Version::set_java_version(get_java_version(ik));
-  JDK_Version::set_runtime_name(get_java_runtime_name(ik));
-  JDK_Version::set_runtime_version(get_java_runtime_version(ik));
-  JDK_Version::set_runtime_vendor_version(get_java_runtime_vendor_version(ik));
-  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_runtime_vendor_vm_bug_url(ik));
+
+  JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name(),
+                                                      java_version, sizeof(java_version)));
+
+  JDK_Version::set_runtime_name(get_java_version_info(ik, vmSymbols::java_runtime_name_name(),
+                                                      java_runtime_name, sizeof(java_runtime_name)));
+
+  JDK_Version::set_runtime_version(get_java_version_info(ik, vmSymbols::java_runtime_version_name(),
+                                                         java_runtime_version, sizeof(java_runtime_version)));
+
+  JDK_Version::set_runtime_vendor_version(get_java_version_info(ik, vmSymbols::java_runtime_vendor_version_name(),
+                                                                java_runtime_vendor_version,
+                                                                sizeof(java_runtime_vendor_version)));
+
+  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name(),
+                                                                   java_runtime_vendor_vm_bug_url,
+                                                                   sizeof(java_runtime_vendor_vm_bug_url)));
 
   // an instance of OutOfMemory exception has been allocated earlier
   initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK);
@@ -3103,6 +3053,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize the os module
   os::init();
+
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -3197,7 +3149,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif // INCLUDE_JVMCI
 
   // Initialize OopStorage for threadObj
-  _thread_oop_storage = OopStorageSet::create_strong("Thread OopStorage");
+  _thread_oop_storage = OopStorageSet::create_strong("Thread OopStorage", mtThread);
 
   // Attach the main thread to this os thread
   JavaThread* main_thread = new JavaThread();
@@ -3207,6 +3159,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
+  MACOS_AARCH64_ONLY(main_thread->init_wx());
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(
@@ -3466,7 +3419,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
   if (DumpSharedSpaces) {
-    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+    MetaspaceShared::preload_and_dump();
     ShouldNotReachHere();
   }
 
@@ -4006,17 +3959,6 @@ public:
 void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf) {
   ParallelOopsDoThreadClosure tc(f, cf);
   possibly_parallel_threads_do(is_par, &tc);
-}
-
-void Threads::nmethods_do(CodeBlobClosure* cf) {
-  ALL_JAVA_THREADS(p) {
-    // This is used by the code cache sweeper to mark nmethods that are active
-    // on the stack of a Java thread. Ignore the sweeper thread itself to avoid
-    // marking CodeCacheSweeperThread::_scanned_compiled_method as active.
-    if(!p->is_Code_cache_sweeper_thread()) {
-      p->nmethods_do(cf);
-    }
-  }
 }
 
 void Threads::metadata_do(MetadataClosure* f) {

@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -70,6 +71,7 @@ public class HtmlIds {
     static final HtmlId ANNOTATION_TYPE_ELEMENT_DETAIL = HtmlId.of("annotation-interface-element-detail");
     static final HtmlId ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY = HtmlId.of("annotation-interface-optional-element-summary");
     static final HtmlId ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY = HtmlId.of("annotation-interface-required-element-summary");
+    static final HtmlId CLASS_DESCRIPTION = HtmlId.of("class-description");
     static final HtmlId CONSTRUCTOR_DETAIL = HtmlId.of("constructor-detail");
     static final HtmlId CONSTRUCTOR_SUMMARY = HtmlId.of("constructor-summary");
     static final HtmlId ENUM_CONSTANT_DETAIL = HtmlId.of("enum-constant-detail");
@@ -77,6 +79,9 @@ public class HtmlIds {
     static final HtmlId FIELD_DETAIL = HtmlId.of("field-detail");
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
+    static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
+    static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
+    static final HtmlId HELP_SEARCH = HtmlId.of("help-search");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
@@ -90,6 +95,8 @@ public class HtmlIds {
     static final HtmlId PACKAGE_SUMMARY_TABLE = HtmlId.of("package-summary-table");
     static final HtmlId PROPERTY_DETAIL = HtmlId.of("property-detail");
     static final HtmlId PROPERTY_SUMMARY = HtmlId.of("property-summary");
+    static final HtmlId RESET_BUTTON = HtmlId.of("reset-button");
+    static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
     static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
@@ -441,11 +448,29 @@ public class HtmlIds {
     }
 
 
+    /**
+     * Returns an id for the "preview" section for an element.
+     *
+     * @param el the element
+     *
+     * @return the id
+     */
     public HtmlId forPreviewSection(Element el) {
         return HtmlId.of("preview-" + switch (el.getKind()) {
             case CONSTRUCTOR, METHOD -> forMember((ExecutableElement) el).name();
             case PACKAGE -> forPackage((PackageElement) el).name();
             default -> utils.getFullyQualifiedName(el, false);
         });
+    }
+
+    /**
+     * Returns an id for the entry on the HELP page for a kind of generated page.
+     *
+     * @param page the kind of page
+     *
+     * @return the id
+     */
+    public HtmlId forPage(Navigation.PageMode page) {
+        return HtmlId.of(page.name().toLowerCase(Locale.ROOT).replace("_", "-"));
     }
 }

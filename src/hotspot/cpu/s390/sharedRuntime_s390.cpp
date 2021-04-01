@@ -556,16 +556,6 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
   }
 }
 
-size_t SharedRuntime::trampoline_size() {
-  return MacroAssembler::load_const_size() + 2;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  // Think about using pc-relative branch.
-  __ load_const(Z_R1_scratch, destination);
-  __ z_br(Z_R1_scratch);
-}
-
 // ---------------------------------------------------------------------------
 void SharedRuntime::save_native_result(MacroAssembler * masm,
                                        BasicType ret_type,
@@ -3468,10 +3458,12 @@ int SpinPause() {
   return 0;
 }
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
-                                               int shadow_space_bytes,
-                                               const GrowableArray<VMReg>& input_registers,
-                                               const GrowableArray<VMReg>& output_registers) {
+#ifdef COMPILER2
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
+                                                int shadow_space_bytes,
+                                                const GrowableArray<VMReg>& input_registers,
+                                                const GrowableArray<VMReg>& output_registers) {
   Unimplemented();
   return nullptr;
 }
+#endif

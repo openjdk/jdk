@@ -36,6 +36,8 @@ static jmethodID sjm_getAccessibleComponent = NULL;
            "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleComponent;", ret);
 
 static NSMutableDictionary * _Nullable rolesMap;
+NSString *const IgnoreClassName = @"IgnoreAccessibility";
+static jobject sAccessibilityClass = NULL;
 
 /*
  * Common ancestor for all the accessibility peers that implements the new method-based accessibility API
@@ -46,7 +48,7 @@ static NSMutableDictionary * _Nullable rolesMap;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:9];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:27];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
@@ -57,6 +59,63 @@ static NSMutableDictionary * _Nullable rolesMap;
     [rolesMap setObject:@"RadiobuttonAccessibility" forKey:@"radiobutton"];
     [rolesMap setObject:@"CheckboxAccessibility" forKey:@"checkbox"];
     [rolesMap setObject:@"SliderAccessibility" forKey:@"slider"];
+
+    /*
+     * All the components below should be ignored by the accessibility subsystem,
+     * If any of the enclosed component asks for a parent the first ancestor
+     * participating in accessibility exchange should be returned.
+     */
+    [rolesMap setObject:IgnoreClassName forKey:@"alert"];
+    [rolesMap setObject:IgnoreClassName forKey:@"colorchooser"];
+    [rolesMap setObject:IgnoreClassName forKey:@"desktoppane"];
+    [rolesMap setObject:IgnoreClassName forKey:@"dialog"];
+    [rolesMap setObject:IgnoreClassName forKey:@"directorypane"];
+    [rolesMap setObject:IgnoreClassName forKey:@"filechooser"];
+    [rolesMap setObject:IgnoreClassName forKey:@"filler"];
+    [rolesMap setObject:IgnoreClassName forKey:@"fontchooser"];
+    [rolesMap setObject:IgnoreClassName forKey:@"frame"];
+    [rolesMap setObject:IgnoreClassName forKey:@"glasspane"];
+    [rolesMap setObject:IgnoreClassName forKey:@"layeredpane"];
+    [rolesMap setObject:IgnoreClassName forKey:@"optionpane"];
+    [rolesMap setObject:IgnoreClassName forKey:@"panel"];
+    [rolesMap setObject:IgnoreClassName forKey:@"rootpane"];
+    [rolesMap setObject:IgnoreClassName forKey:@"separator"];
+    [rolesMap setObject:IgnoreClassName forKey:@"tooltip"];
+    [rolesMap setObject:IgnoreClassName forKey:@"viewport"];
+    [rolesMap setObject:IgnoreClassName forKey:@"window"];
+
+    /*
+     * Initialize CAccessibility instance
+     */
+#ifdef JAVA_AX_NO_IGNORES
+    NSArray *ignoredKeys = [NSArray array];
+#else
+    NSArray *ignoredKeys = [rolesMap allKeysForObject:IgnoreClassName];
+#endif
+
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CACCESSIBILITY_CLASS();
+    DECLARE_STATIC_METHOD(jm_getAccessibility, sjc_CAccessibility, "getAccessibility", "([Ljava/lang/String;)Lsun/lwawt/macosx/CAccessibility;");
+    jobjectArray result = NULL;
+    jsize count = [ignoredKeys count];
+
+    DECLARE_CLASS(jc_String, "java/lang/String");
+    result = (*env)->NewObjectArray(env, count, jc_String, NULL);
+    CHECK_EXCEPTION();
+    if (!result) {
+        NSLog(@"In %s, can't create Java array of String objects", __FUNCTION__);
+        return;
+    }
+
+    NSInteger i;
+    for (i = 0; i < count; i++) {
+        jstring jString = NSStringToJavaString(env, [ignoredKeys objectAtIndex:i]);
+        (*env)->SetObjectArrayElement(env, result, i, jString);
+        (*env)->DeleteLocalRef(env, jString);
+    }
+
+    sAccessibilityClass = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibility, result);
+    CHECK_EXCEPTION();
 }
 
 /*
@@ -116,6 +175,10 @@ static NSMutableDictionary * _Nullable rolesMap;
     CHECK_EXCEPTION();
 
     return TRUE;
+}
+
+- (BOOL)isAccessibilityElement {
+    return YES;
 }
 
 @end

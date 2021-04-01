@@ -184,7 +184,7 @@ class CompilationPolicy : AllStatic {
   // loop_event checks if a method should be OSR compiled at a different
   // level.
   static CompLevel loop_event(const methodHandle& method, CompLevel cur_level, Thread* thread);
-  static void print_counters(const char* prefix, Method* m);
+  static void print_counters(const char* prefix, const Method* m);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
   // very low activity (see select_task()).
@@ -216,7 +216,7 @@ class CompilationPolicy : AllStatic {
   static void set_c2_count(int x) { _c2_count = x;    }
 
   enum EventType { CALL, LOOP, COMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
-  static void print_event(EventType type, Method* m, Method* im, int bci, CompLevel level);
+  static void print_event(EventType type, const Method* m, const Method* im, int bci, CompLevel level);
   // Check if the method can be compiled, change level if necessary
   static void compile(const methodHandle& mh, int bci, CompLevel level, TRAPS);
   // Simple methods are as good being compiled with C1 as C2.
@@ -237,7 +237,7 @@ class CompilationPolicy : AllStatic {
   static jlong start_time()           { return _start_time; }
 
   // m must be compiled before executing it
-  static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_all);
+  static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
 public:
   static int c1_count() { return _c1_count; }
   static int c2_count() { return _c2_count; }
@@ -248,9 +248,9 @@ public:
   static void compile_if_required(const methodHandle& m, TRAPS);
 
   // m is allowed to be compiled
-  static bool can_be_compiled(const methodHandle& m, int comp_level = CompLevel_all);
+  static bool can_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
   // m is allowed to be osr compiled
-  static bool can_be_osr_compiled(const methodHandle& m, int comp_level = CompLevel_all);
+  static bool can_be_osr_compiled(const methodHandle& m, int comp_level = CompLevel_any);
   static bool is_compilation_enabled();
 
   static void do_safepoint_work() { }

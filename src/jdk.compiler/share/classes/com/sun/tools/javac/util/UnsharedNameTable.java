@@ -38,7 +38,7 @@ import java.lang.ref.WeakReference;
  *  deletion without notice.</b>
  */
 public class UnsharedNameTable extends Name.Table {
-    static public Name.Table create(Names names) {
+    public static Name.Table create(Names names) {
         return new UnsharedNameTable(names);
     }
 

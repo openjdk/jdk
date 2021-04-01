@@ -342,7 +342,11 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 #endif
 
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
+  int flags = ShenandoahHeap::HAS_FORWARDED;
+  if (!is_strong) {
+    flags |= ShenandoahHeap::WEAK_ROOTS;
+  }
+  __ testb(gc_state, flags);
   __ jcc(Assembler::zero, heap_stable);
 
   Register tmp1 = noreg, tmp2 = noreg;

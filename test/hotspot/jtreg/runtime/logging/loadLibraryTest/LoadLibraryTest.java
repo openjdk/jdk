@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,18 @@
  * @test
  * @bug 8187305
  * @summary Tests logging of shared library loads and unloads.
- * @library /runtime/testlibrary /test/lib
+ * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main LoadLibraryTest
  */
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
 
 import sun.hotspot.WhiteBox;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class LoadLibraryTest {
 
@@ -86,18 +81,6 @@ public class LoadLibraryTest {
 
         public static class MyClassLoader extends ClassLoader {
 
-            static ByteBuffer readClassFile(String name) {
-                File f = new File(testClasses, name);
-                try (FileInputStream fin = new FileInputStream(f);
-                     FileChannel fc = fin.getChannel())
-                {
-                    return fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
-                } catch (IOException e) {
-                    throw new RuntimeException("Can't open file: " + name +
-                                               ", exception: " + e.toString());
-                }
-            }
-
             protected Class<?> loadClass(String name, boolean resolve)
                 throws ClassNotFoundException {
                 Class<?> c;
@@ -117,7 +100,8 @@ public class LoadLibraryTest {
                 if (!CLASS_NAME.equals(name)) {
                     throw new ClassNotFoundException("Unexpected class: " + name);
                 }
-                return defineClass(name, readClassFile(name + ".class"), null);
+                byte[] class_bytes = ClassUnloadCommon.getClassData(name);
+                return defineClass(name, class_bytes, 0, class_bytes.length);
             }
         } // MyClassLoader
     }

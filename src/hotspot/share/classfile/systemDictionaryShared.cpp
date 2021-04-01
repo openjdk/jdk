@@ -736,7 +736,7 @@ Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TR
     // ByteArrayInputStream bais = new ByteArrayInputStream(buf);
     const char* src = ent->manifest();
     assert(src != NULL, "No Manifest data");
-    manifest = create_jar_manifest(src, size, THREAD);
+    manifest = create_jar_manifest(src, size, CHECK_NH);
     atomic_set_shared_jar_manifest(shared_path_index, manifest());
   }
   manifest = Handle(THREAD, shared_jar_manifest(shared_path_index));
@@ -757,7 +757,7 @@ Handle SystemDictionaryShared::get_shared_jar_url(int shared_path_index, TRAPS) 
                            vmSymbols::toFileURL_signature(),
                            path_string, CHECK_(url_h));
 
-    atomic_set_shared_jar_url(shared_path_index, (oop)result.get_jobject());
+    atomic_set_shared_jar_url(shared_path_index, result.get_oop());
   }
 
   url_h = Handle(THREAD, shared_jar_url(shared_path_index));
@@ -819,7 +819,7 @@ Handle SystemDictionaryShared::get_protection_domain_from_classloader(Handle cla
                           vmSymbols::getProtectionDomain_name(),
                           vmSymbols::getProtectionDomain_signature(),
                           cs, CHECK_NH);
-  return Handle(THREAD, (oop)obj_result.get_jobject());
+  return Handle(THREAD, obj_result.get_oop());
 }
 
 // Returns the ProtectionDomain associated with the JAR file identified by the url.
@@ -862,7 +862,7 @@ Handle SystemDictionaryShared::get_shared_protection_domain(Handle class_loader,
         JavaCalls::call_static(&result, classLoaders_klass, vmSymbols::toFileURL_name(),
                                vmSymbols::toFileURL_signature(),
                                location_string, CHECK_NH);
-        url = Handle(THREAD, (oop)result.get_jobject());
+        url = Handle(THREAD, result.get_oop());
       }
 
       Handle pd = get_protection_domain_from_classloader(class_loader, url,
@@ -896,7 +896,7 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
       // Modules::define_module().
       assert(pkg_entry != NULL, "archived class in module image cannot be from unnamed package");
       ModuleEntry* mod_entry = pkg_entry->module();
-      pd = get_shared_protection_domain(class_loader, mod_entry, THREAD);
+      pd = get_shared_protection_domain(class_loader, mod_entry, CHECK_(pd));
     } else {
       // For shared app/platform classes originated from JAR files on the class path:
       //   Each of the 3 SystemDictionaryShared::_shared_xxx arrays has the same length
@@ -1180,7 +1180,7 @@ class LoadedUnregisteredClassesTable : public ResourceHashtable<
 
 static LoadedUnregisteredClassesTable* _loaded_unregistered_classes = NULL;
 
-bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
+bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* k) {
   // We don't allow duplicated unregistered classes of the same name.
   assert(DumpSharedSpaces, "only when dumping");
   Symbol* name = k->name();
@@ -1190,7 +1190,7 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   bool created = false;
   _loaded_unregistered_classes->put_if_absent(name, true, &created);
   if (created) {
-    MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
+    MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k);
   }
   return created;
@@ -1602,7 +1602,8 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
 
   lambda_ik->assign_class_loader_type();
   lambda_ik->set_shared_classpath_index(caller_ik->shared_classpath_index());
-  InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
+  InstanceKlass* nest_host = caller_ik->nest_host(CHECK);
+  assert(nest_host != NULL, "unexpected NULL nest_host");
 
   DumpTimeSharedClassInfo* info = _dumptime_table->get(lambda_ik);
   if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)
@@ -1677,7 +1678,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
                                                                          InstanceKlass* caller_ik, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
-  PackageEntry* pkg_entry = get_package_entry_from_class(caller_ik, class_loader);
+  PackageEntry* pkg_entry = caller_ik->package();
   if (caller_ik->class_loader() != NULL) {
     protection_domain = SystemDictionaryShared::init_security_info(class_loader, caller_ik, pkg_entry, CHECK_NULL);
   }
@@ -1822,7 +1823,7 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
 // InstanceKlass::link_class(), so that these can be checked quickly
 // at runtime without laying out the vtable/itables.
 void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKlass* klass,
-                                                    Handle loader1, Handle loader2, TRAPS) {
+                                                    Handle loader1, Handle loader2) {
   // A linking constraint check is executed when:
   //   - klass extends or implements type S
   //   - klass overrides method S.M(...) with X.M
@@ -1860,13 +1861,14 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
     return;
   }
 
-  if (THREAD->is_VM_thread()) {
-    assert(DynamicDumpSharedSpaces, "must be");
+  if (DynamicDumpSharedSpaces && Thread::current()->is_VM_thread()) {
     // We are re-laying out the vtable/itables of the *copy* of
     // a class during the final stage of dynamic dumping. The
     // linking constraints for this class has already been recorded.
     return;
   }
+  assert(!Thread::current()->is_VM_thread(), "must be");
+
   Arguments::assert_is_dumping_archive();
   DumpTimeSharedClassInfo* info = find_or_allocate_info_for(klass);
   if (info != NULL) {
@@ -1876,7 +1878,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
 
 // returns true IFF there's no need to re-initialize the i/v-tables for klass for
 // the purpose of checking class loader constraints.
-bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRAPS) {
+bool SystemDictionaryShared::check_linking_constraints(Thread* current, InstanceKlass* klass) {
   assert(!DumpSharedSpaces && UseSharedSpaces, "called at run time with CDS enabled only");
   LogTarget(Info, class, loader, constraints) log;
   if (klass->is_shared_boot_class()) {
@@ -1887,20 +1889,20 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
     RunTimeSharedClassInfo* info = RunTimeSharedClassInfo::get_for(klass);
     assert(info != NULL, "Sanity");
     if (info->_num_loader_constraints > 0) {
-      HandleMark hm(THREAD);
+      HandleMark hm(current);
       for (int i = 0; i < info->_num_loader_constraints; i++) {
         RunTimeSharedClassInfo::RTLoaderConstraint* lc = info->loader_constraint_at(i);
         Symbol* name = lc->constraint_name();
-        Handle loader1(THREAD, get_class_loader_by(lc->_loader_type1));
-        Handle loader2(THREAD, get_class_loader_by(lc->_loader_type2));
+        Handle loader1(current, get_class_loader_by(lc->_loader_type1));
+        Handle loader2(current, get_class_loader_by(lc->_loader_type2));
         if (log.is_enabled()) {
-          ResourceMark rm(THREAD);
+          ResourceMark rm(current);
           log.print("[CDS add loader constraint for class %s symbol %s loader[0] %s loader[1] %s",
                     klass->external_name(), name->as_C_string(),
                     ClassLoaderData::class_loader_data(loader1())->loader_name_and_id(),
                     ClassLoaderData::class_loader_data(loader2())->loader_name_and_id());
         }
-        if (!SystemDictionary::add_loader_constraint(name, klass, loader1, loader2, THREAD)) {
+        if (!SystemDictionary::add_loader_constraint(name, klass, loader1, loader2)) {
           // Loader constraint violation has been found. The caller
           // will re-layout the vtable/itables to produce the correct
           // exception.
@@ -1917,7 +1919,7 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
     }
   }
   if (log.is_enabled()) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     log.print("[CDS has not recorded loader constraint for class %s]", klass->external_name());
   }
   return false;
@@ -2222,6 +2224,24 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   info->_id = id;
 }
 
+const char* class_loader_name_for_shared(Klass* k) {
+  assert(k != nullptr, "Sanity");
+  assert(k->is_shared(), "Must be");
+  assert(k->is_instance_klass(), "Must be");
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->is_shared_boot_class()) {
+    return "boot_loader";
+  } else if (ik->is_shared_platform_class()) {
+    return "platform_loader";
+  } else if (ik->is_shared_app_class()) {
+    return "app_loader";
+  } else if (ik->is_shared_unregistered_class()) {
+    return "unregistered_loader";
+  } else {
+    return "unknown loader";
+  }
+}
+
 class SharedDictionaryPrinter : StackObj {
   outputStream* _st;
   int _index;
@@ -2230,23 +2250,27 @@ public:
 
   void do_value(const RunTimeSharedClassInfo* record) {
     ResourceMark rm;
-    _st->print_cr("%4d:  %s", (_index++), record->_klass->external_name());
+    _st->print_cr("%4d: %s %s", (_index++), record->_klass->external_name(),
+        class_loader_name_for_shared(record->_klass));
   }
+  int index() const { return _index; }
 };
 
 class SharedLambdaDictionaryPrinter : StackObj {
   outputStream* _st;
   int _index;
 public:
-  SharedLambdaDictionaryPrinter(outputStream* st) : _st(st), _index(0) {}
+  SharedLambdaDictionaryPrinter(outputStream* st, int idx) : _st(st), _index(idx) {}
 
   void do_value(const RunTimeLambdaProxyClassInfo* record) {
-    ResourceMark rm;
-    _st->print_cr("%4d:  %s", (_index++), record->proxy_klass_head()->external_name());
-    Klass* k = record->proxy_klass_head()->next_link();
-    while (k != NULL) {
-      _st->print_cr("%4d:  %s", (_index++), k->external_name());
-      k = k->next_link();
+    if (record->proxy_klass_head()->lambda_proxy_is_available()) {
+      ResourceMark rm;
+      Klass* k = record->proxy_klass_head();
+      while (k != nullptr) {
+        _st->print_cr("%4d: %s %s", (++_index), k->external_name(),
+                      class_loader_name_for_shared(k));
+        k = k->next_link();
+      }
     }
   }
 };
@@ -2258,12 +2282,27 @@ void SystemDictionaryShared::print_on(const char* prefix,
                                       outputStream* st) {
   st->print_cr("%sShared Dictionary", prefix);
   SharedDictionaryPrinter p(st);
+  st->print_cr("%sShared Builtin Dictionary", prefix);
   builtin_dictionary->iterate(&p);
+  st->print_cr("%sShared Unregistered Dictionary", prefix);
   unregistered_dictionary->iterate(&p);
   if (!lambda_dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
-    SharedLambdaDictionaryPrinter ldp(st);
+    SharedLambdaDictionaryPrinter ldp(st, p.index());
     lambda_dictionary->iterate(&ldp);
+  }
+}
+
+void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
+  if (UseSharedSpaces) {
+    if (is_static) {
+      print_on("", &_builtin_dictionary, &_unregistered_dictionary, &_lambda_proxy_class_dictionary, st);
+    } else {
+      if (DynamicArchive::is_mapped()) {
+        print_on("", &_dynamic_builtin_dictionary, &_dynamic_unregistered_dictionary,
+               &_dynamic_lambda_proxy_class_dictionary, st);
+      }
+    }
   }
 }
 

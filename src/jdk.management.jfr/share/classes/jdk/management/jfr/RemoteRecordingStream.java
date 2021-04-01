@@ -123,7 +123,7 @@ public final class RemoteRecordingStream implements EventStream {
     }
 
     // Reference to stream is released when EventStream::close is called
-    final static class ChunkConsumer implements Consumer<Long> {
+    static final class ChunkConsumer implements Consumer<Long> {
 
         private final DiskRepository repository;
 

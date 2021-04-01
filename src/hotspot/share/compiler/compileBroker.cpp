@@ -1432,8 +1432,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // Note: A native method implies non-osr compilation which is
   //       checked with an assertion at the entry of this method.
   if (method->is_native() && !method->is_method_handle_intrinsic()) {
-    bool in_base_library;
-    address adr = NativeLookup::lookup(method, in_base_library, THREAD);
+    address adr = NativeLookup::lookup(method, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // In case of an exception looking up the method, we just forget
       // about it. The interpreter will kick-in and throw the exception.
