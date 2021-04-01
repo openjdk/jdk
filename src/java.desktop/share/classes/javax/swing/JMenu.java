@@ -1260,7 +1260,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * determined by the {@code ComponentOrientation} argument.
      *
      * @param o the new orientation for this menu and
-     *        its associated popup menu contained within it.
+     *          its associated popup menu.
      */
     public void setComponentOrientation(ComponentOrientation o) {
         super.setComponentOrientation(o);
