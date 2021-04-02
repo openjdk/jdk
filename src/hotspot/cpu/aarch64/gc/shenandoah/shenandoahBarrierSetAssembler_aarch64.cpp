@@ -390,15 +390,11 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
 
   if (UseCondCardMark) {
     Label L_already_dirty;
-    __ membar(Assembler::StoreLoad);
     __ ldrb(rscratch2,  Address(obj, rscratch1));
     __ cbz(rscratch2, L_already_dirty);
     __ strb(zr, Address(obj, rscratch1));
     __ bind(L_already_dirty);
   } else {
-    // if (ct->scanned_concurrently()) {
-    //  __ membar(Assembler::StoreStore);
-    // }
     __ strb(zr, Address(obj, rscratch1));
   }
 }
@@ -647,9 +643,6 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
 
   __ load_byte_map_base(scratch);
   __ add(start, start, scratch);
-  // if (ct->scanned_concurrently()) {
-  //   __ membar(__ StoreStore);
-  // }
   __ bind(L_loop);
   __ strb(zr, Address(start, count));
   __ subs(count, count, 1);

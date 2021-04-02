@@ -522,10 +522,6 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
   Node*   zero = __ ConI(0); // Dirty card value
 
   if (UseCondCardMark) {
-//    if (ct->scanned_concurrently()) {
-//      kit->insert_mem_bar(Op_MemBarVolatile, oop_store);
-//      __ sync_kit(kit);
-//    }
     // The classic GC reference write barrier is typically implemented
     // as a store into the global card mark table.  Unfortunately
     // unconditional stores can result in false sharing and excessive
@@ -538,12 +534,7 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
   }
 
   // Smash zero into card
-//  if(!ct->scanned_concurrently()) {
-    __ store(__ ctrl(), card_adr, zero, T_BYTE, adr_type, MemNode::unordered);
-//  } else {
-//    // Specialized path for CM store barrier
-//    __ storeCM(__ ctrl(), card_adr, zero, oop_store, adr_idx, T_BYTE, adr_type);
-//  }
+  __ store(__ ctrl(), card_adr, zero, T_BYTE, adr_type, MemNode::unordered);
 
   if (UseCondCardMark) {
     __ end_if();

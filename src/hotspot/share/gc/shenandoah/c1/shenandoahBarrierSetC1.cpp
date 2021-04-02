@@ -353,9 +353,6 @@ void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, 
   LIR_Opr dirty = LIR_OprFact::intConst(CardTable::dirty_card_val());
   if (UseCondCardMark) {
     LIR_Opr cur_value = gen->new_register(T_INT);
-//    if (ct->scanned_concurrently()) {
-//      __ membar_storeload();
-//    }
     __ move(card_addr, cur_value);
 
     LabelObj* L_already_dirty = new LabelObj();
@@ -364,9 +361,6 @@ void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, 
     __ move(dirty, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
-//    if (ct->scanned_concurrently()) {
-//      __ membar_storestore();
-//    }
     __ move(dirty, card_addr);
   }
 }

@@ -196,12 +196,7 @@ template <DecoratorSet decorators, typename T>
 inline void ShenandoahBarrierSet::write_ref_field_post(T* field, oop newVal) {
   if (ShenandoahHeap::heap()->mode()->is_generational()) {
     volatile CardTable::CardValue* byte = card_table()->byte_for(field);
-    // if (card_table()->scanned_concurrently()) {
-    //   // Perform a releasing store if the card table is scanned concurrently
-    //   Atomic::release_store(byte, CardTable::dirty_card_val());
-    // } else {
-      *byte = CardTable::dirty_card_val();
-    // }
+    *byte = CardTable::dirty_card_val();
   }
 }
 
