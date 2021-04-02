@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.CRC32;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.GZIPHeaderData;
 
 /**
  * @test
@@ -48,30 +49,81 @@ public class GZIPOutputStreamHeaderTest {
     private static final int FEXTRA     = 4;    // Extra field
     private static final int FNAME      = 8;    // File name
     private static final int FCOMMENT   = 16;   // File comment
+
+    /**
+     * Test that the {@code OS} header field in the GZIP output stream
+     * has a value of {@code 255} which represents "unknown"
+     */
+    @Test
+    public void testOSHeaderWithDefaultMembers() throws Exception {
+        final String data = "Hello world!!!";
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (final GZIPOutputStream gzipOutputStream = new GZIPOutputStream(baos);) {
+            gzipOutputStream.write(data.getBytes(StandardCharsets.UTF_8));
+        }
+        final byte[] compressed = baos.toByteArray();
+        Assert.assertNotNull(compressed, "Compressed data is null");
+        Assert.assertEquals(toUnsignedByte(compressed[OS_HEADER_INDEX]), HEADER_VALUE_OS_UNKNOWN,
+                "Unexpected value for OS header");
+        // finally verify that the compressed data is readable back to the original
+        final String uncompressed;
+        try (final ByteArrayOutputStream os = new ByteArrayOutputStream();
+             final ByteArrayInputStream bis = new ByteArrayInputStream(compressed);
+             final GZIPInputStream gzipInputStream = new GZIPInputStream(bis)) {
+            gzipInputStream.transferTo(os);
+            uncompressed = new String(os.toByteArray(), StandardCharsets.UTF_8);
+        }
+        Assert.assertEquals(uncompressed, data, "Unexpected data read from GZIPInputStream");
+    }
+
     /**
      * Test that the {@code OS} header field in the GZIP output stream
      * has a value of {@code 255} which represents "unknown", and test
      * that the flags and header crc16 field could be successfully set.
      */
     @Test
-    public void testOSHeader() throws Exception {
+    public void testOSHeaderWithField() throws Exception {
         final String data = "Hello world!!!";
         // header fields
         boolean generateHeaderCrc = true;
-        // extra field
-        byte[] xfield = "extraFieldBytesTest".getBytes();
+        /* extra field
+         * per RFC 1952:
+         * If the FLG.FEXTRA bit is set, an "extra field" is present in
+         * the header, with total length XLEN bytes.  It consists of a
+         * series of subfields, each of the form:
+         *
+         *   +---+---+---+---+==================================+
+         *   |SI1|SI2|  LEN  |... LEN bytes of subfield data ...|
+         *   +---+---+---+---+==================================+
+         *
+         * SI1 and SI2 provide a subfield ID, typically two ASCII letters
+         * with some mnemonic value.
+         *
+         * Subfield
+         * IDs with SI2 = 0 are reserved for future use.  The following
+         * IDs are currently defined:
+         *
+         *   SI1         SI2         Data
+         *   ----------  ----------  ----
+         *   0x41 ('A')  0x70 ('P')  Apollo file type information
+         */
+        ByteArrayOutputStream fieldStream = new ByteArrayOutputStream();
+        fieldStream.write("AP".getBytes());
+        String xFieldData = "Apollo file type information";
+        int len = xFieldData.length();
+        fieldStream.write((byte)(len & 0xff));
+        fieldStream.write((byte) (len >> 8) & 0xff);
+        fieldStream.write(xFieldData.getBytes());
+        byte[] xfield = fieldStream.toByteArray();
         // file name
-        byte[] fname = "FileNameTest.tmp".getBytes();
+        String fname = "FileNameTest.tmp";
         // file comment
-        byte[] fcomment = "FileCommentTest".getBytes();
+        String fcomment = "FileCommentTest";
         CRC32 crc = new CRC32();
         crc.reset();
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (final GZIPOutputStream gzipOutputStream = new GZIPOutputStream(baos,
-                                                                            generateHeaderCrc,
-                                                                            xfield,
-                                                                            fname,
-                                                                            fcomment);) {
+        GZIPHeaderData headerData = new GZIPHeaderData(generateHeaderCrc, xfield, fname, fcomment);
+        try (final GZIPOutputStream gzipOutputStream = new GZIPOutputStream(baos, headerData);) {
             gzipOutputStream.write(data.getBytes(StandardCharsets.UTF_8));
         }
         final byte[] compressed = baos.toByteArray();
@@ -94,14 +146,14 @@ public class GZIPOutputStreamHeaderTest {
         index += expectedFieldLen;
 
         // test file name
-        int fnameLen = fname.length;
+        int fnameLen = fname.length();
         String fn = new String(compressed, index, fnameLen);
         Assert.assertEquals(fn, new String(fname), "Unexpected file name in header");
         index += fnameLen;
         Assert.assertEquals(compressed[index++], 0, "File name in header must be end with 0");
 
         // test file comment
-        int fcommLen = fcomment.length;
+        int fcommLen = fcomment.length();
         String fc = new String(compressed, index, fcommLen);
         Assert.assertEquals(fc, new String(fcomment), "Unexpected file name in header");
         index += fcommLen;
