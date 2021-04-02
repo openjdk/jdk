@@ -1227,6 +1227,7 @@ abstract class MethodHandleImpl {
         GUARD_WITH_CATCH,
         TRY_FINALLY,
         LOOP,
+        NEW_ARRAY,
         ARRAY_LOAD,
         ARRAY_STORE,
         ARRAY_LENGTH,
@@ -1274,8 +1275,8 @@ abstract class MethodHandleImpl {
         public MethodHandle asCollector(Class<?> arrayType, int arrayLength) {
             if (intrinsicName == Intrinsic.IDENTITY) {
                 MethodType resultType = type().asCollectorType(arrayType, type().parameterCount() - 1, arrayLength);
-                MethodHandle collector = MethodHandleImpl.makeCollector(arrayType, arrayLength);
-                return collector.asType(resultType);
+                MethodHandle newArray = MethodHandleImpl.varargsArray(arrayType, arrayLength);
+                return newArray.asType(resultType);
             }
             return super.asCollector(arrayType, arrayLength);
         }
@@ -1337,11 +1338,6 @@ abstract class MethodHandleImpl {
     private static boolean assertCorrectArity(MethodHandle mh, int arity) {
         assert(mh.type().parameterCount() == arity) : "arity != "+arity+": "+mh;
         return true;
-    }
-
-    // Array identity function (used as getConstantHandle(MH_arrayIdentity)).
-    static <T> T[] identity(T[] x) {
-        return x;
     }
 
     static final int MAX_JVM_ARITY = 255;  // limit imposed by the JVM
@@ -1884,32 +1880,26 @@ abstract class MethodHandleImpl {
     private static MethodHandle makeCollector(Class<?> arrayType, int parameterCount) {
         MethodType type = MethodType.methodType(arrayType, Collections.nCopies(parameterCount, arrayType.componentType()));
 
-        MethodHandle newArray = MethodHandles.arrayConstructor(arrayType);
-        MethodHandle storeFunc = ArrayAccessor.getAccessor(arrayType, ArrayAccess.SET);
+        MethodHandle storeFunc = makeArrayElementAccessor(arrayType, ArrayAccess.SET);
+        LambdaForm form = makeCollectorForm(type.basicType(), arrayType.componentType(), storeFunc);
 
-        LambdaForm form = makeCollectorForm(type.basicType(), storeFunc);
-
-        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
-        BoundMethodHandle mh;
-        try {
-            mh = (BoundMethodHandle) data.factory().invokeBasic(type, form, (Object) newArray);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
-        assert(mh.type() == type);
-        return mh;
+        return SimpleMethodHandle.make(type, form);
     }
 
-    private static LambdaForm makeCollectorForm(MethodType basicType, MethodHandle storeFunc) {
+    private static LambdaForm makeCollectorForm(MethodType basicType, Class<?> componentType, MethodHandle storeFunc) {
         MethodType lambdaType = basicType.invokerType();
         int parameterCount = basicType.parameterCount();
 
-        final int THIS_MH      = 0;  // the BMH_L
-        final int ARG_BASE     = 1;  // start of incoming arguments
+        // It might be possible to share this lambda form for all reference types - since they
+        // use the same underlying store function - by injecting an array creation handle as a
+        // field of the receiver handle.
+        // This is left as a followup enhancement, as it needs to be investigated if this causes
+        // profile pollution.
+
+        final int ARG_BASE     = 1;  // start of incoming arguments (skipped receiver handle)
         final int ARG_LIMIT    = ARG_BASE + parameterCount;
 
         int nameCursor = ARG_LIMIT;
-        final int GET_NEW_ARRAY       = nameCursor++;
         final int CALL_NEW_ARRAY      = nameCursor++;
         final int STORE_ELEMENT_BASE  = nameCursor;
         final int STORE_ELEMENT_LIMIT = STORE_ELEMENT_BASE + parameterCount;
@@ -1917,19 +1907,16 @@ abstract class MethodHandleImpl {
 
         Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
 
-        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
-        names[THIS_MH]          = names[THIS_MH].withConstraint(data);
-        names[GET_NEW_ARRAY]    = new Name(data.getterFunction(0), names[THIS_MH]);
+        NamedFunction newArray = new NamedFunction(getConstantHandle(MH_Array_newInstance), Intrinsic.NEW_ARRAY);
+        names[CALL_NEW_ARRAY] = new Name(newArray, componentType, parameterCount);
 
-        MethodHandle invokeBasic = MethodHandles.basicInvoker(MethodType.methodType(Object.class, int.class));
-        names[CALL_NEW_ARRAY] = new Name(new NamedFunction(invokeBasic), names[GET_NEW_ARRAY], parameterCount);
         for (int storeIndex = 0,
              storeNameCursor = STORE_ELEMENT_BASE,
              argCursor = ARG_BASE;
              storeNameCursor < STORE_ELEMENT_LIMIT;
              storeIndex++, storeNameCursor++, argCursor++){
 
-            names[storeNameCursor] = new Name(new NamedFunction(storeFunc),
+            names[storeNameCursor] = new Name(new NamedFunction(storeFunc, Intrinsic.ARRAY_STORE),
                     names[CALL_NEW_ARRAY], storeIndex, names[argCursor]);
         }
 
