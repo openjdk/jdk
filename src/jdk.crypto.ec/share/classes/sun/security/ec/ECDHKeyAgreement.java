@@ -149,7 +149,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         return null;
     }
 
-    // Verify that x and y are integers in the interval [0, p − 1].
+    // Verify that x and y are integers in the interval [0, p - 1].
     private static void validateCoordinate(BigInteger c, BigInteger mod)
         throws InvalidKeyException{
         if (c.compareTo(BigInteger.ZERO) < 0) {
