@@ -2572,7 +2572,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         this.saturate = null;
         this.workerNamePrefix = null;
         int p = Math.min(Math.max(parallelism, 0), MAX_CAP), size;
-        this.mode = 0;
+        this.mode = p;
         if (p > 0) {
             size = 1 << (33 - Integer.numberOfLeadingZeros(p - 1));
             this.bounds = ((1 - p) & SMASK) | (COMMON_MAX_SPARES << SWIDTH);
