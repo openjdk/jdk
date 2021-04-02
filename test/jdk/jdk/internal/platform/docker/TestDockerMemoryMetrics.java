@@ -102,6 +102,21 @@ public class TestDockerMemoryMetrics {
 
     private static void testMemoryFailCount(String value) throws Exception {
         Common.logNewTestCase("testMemoryFailCount" + value);
+
+        // Check whether swapping really works for this test
+        DockerRunOptions preOpts =
+                new DockerRunOptions(imageName, "/jdk/bin/java", "-version");
+        preOpts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+                .addDockerOpts("--memory=" + value)
+                .addJavaOpts("-Xms" + value)
+                .addJavaOpts("-Xmx" + value);
+        OutputAnalyzer oa = DockerTestUtils.dockerRunJava(preOpts);
+        String output = oa.getOutput();
+        if (!output.contains("version")) {
+            System.out.println("Swapping doesn't work for this test.");
+            return;
+        }
+
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
@@ -110,14 +125,13 @@ public class TestDockerMemoryMetrics {
                 .addJavaOpts("-cp", "/test-classes/")
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
                 .addClassOptions("failcount");
-
-        OutputAnalyzer oa = DockerTestUtils.dockerRunJava(opts);
-        String output = oa.getOutput();
-        if (output.contains("Not OOM killed")) {
-            if (!output.contains("Ignoring test")) {
-                oa.shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
-            }
+        oa = DockerTestUtils.dockerRunJava(opts);
+        output = oa.getOutput();
+        if (output.contains("Ignoring test")) {
+            System.out.println("Ignored by the tester");
+            return;
         }
+        oa.shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
     }
 
     private static void testMemoryAndSwapLimit(String memory, String memandswap) throws Exception {
