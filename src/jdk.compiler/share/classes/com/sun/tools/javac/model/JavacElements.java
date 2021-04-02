@@ -715,6 +715,12 @@ public class JavacElements implements Elements {
         }
     }
 
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public boolean isAutomaticModule(ModuleElement module) {
+	ModuleSymbol msym = (ModuleSymbol) module;
+	return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0; 
+    }
+
     /**
      * Returns the tree node and compilation unit corresponding to this
      * element, or null if they can't be found.

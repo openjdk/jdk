@@ -657,6 +657,22 @@ public interface Elements {
     boolean isFunctionalInterface(TypeElement type);
 
     /**
+     * {@return {@code true} if the module element is an automatic
+     * module, {@code false} otherwise}
+     *
+     * @implSpec
+     * The default implementation of this method returns {@code
+     * false}.
+     *
+     * @param module the module element being examined
+     * @jls 7.7.1 Dependences
+     * @since 17
+     */
+    default boolean isAutomaticModule(ModuleElement module) {
+	return false;
+    }
+
+    /**
      * Returns the record component for the given accessor. Returns null if the
      * given method is not a record component accessor.
      *
