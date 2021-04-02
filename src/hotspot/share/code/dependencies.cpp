@@ -1395,18 +1395,27 @@ bool Dependencies::is_concrete_klass(Klass* k) {
   return true;
 }
 
-bool Dependencies::is_concrete_method(Method* m, Klass * k) {
-  // NULL is not a concrete method,
-  // statics are irrelevant to virtual call sites,
-  // abstract methods are not concrete,
-  // overpass (error) methods are not concrete if k is abstract
-  //
-  // note "true" is conservative answer --
-  //     overpass clause is false if k == NULL, implies return true if
-  //     answer depends on overpass clause.
-  return ! ( m == NULL || m -> is_static() || m -> is_abstract() ||
-             (m->is_overpass() && k != NULL && k -> is_abstract()) );
-}
+bool Dependencies::is_concrete_method(Method* m, Klass* k) {
+  // NULL is not a concrete method.
+  if (m == NULL) {
+    return false;
+  }
+  // Statics are irrelevant to virtual call sites.
+  if (m->is_static()) {
+    return false;
+  }
+  // Abstract methods are not concrete.
+  if (m->is_abstract()) {
+    return false;
+  }
+  // Overpass (error) methods are not concrete if k is abstract.
+  if (m->is_overpass() && k != NULL) {
+     return !k->is_abstract();
+  }
+  // Note "true" is conservative answer: overpass clause is false if k == NULL,
+  // implies return true if answer depends on overpass clause.
+  return true;
+ }
 
 
 Klass* Dependencies::find_finalizable_subclass(Klass* k) {
