@@ -333,6 +333,7 @@ class Dependencies: public ResourceObj {
   void assert_leaf_type(ciKlass* ctxk);
   void assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, ciKlass* conck);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
+  void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
   void assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle);
 
@@ -419,7 +420,9 @@ class Dependencies: public ResourceObj {
 
   // Detecting possible new assertions:
   static Klass*  find_unique_concrete_subtype(InstanceKlass* ctxk);
-  static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m);
+  static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m,
+                                             Klass** participant = NULL); // out parameter
+  static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m, Klass* resolved_klass, Method* resolved_method);
 
 #ifdef ASSERT
   static bool verify_method_context(InstanceKlass* ctxk, Method* m);

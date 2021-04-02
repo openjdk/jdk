@@ -106,6 +106,12 @@ void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm)
   assert_common_2(unique_concrete_method, ctxk, uniqm);
 }
 
+void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method) {
+  check_ctxk(ctxk);
+  check_unique_method(ctxk, uniqm);
+  assert_common_2(unique_concrete_method, ctxk, uniqm);
+}
+
 void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
   check_ctxk(ctxk);
   assert_common_1(no_finalizable_subclasses, ctxk);
@@ -1590,7 +1596,15 @@ Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
 // (The method m must be defined or inherited in ctxk.)
 // Include m itself in the set, unless it is abstract.
 // If this set has exactly one element, return that element.
-Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m) {
+Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m, Klass* resolved_klass, Method* resolved_method) {
+  return find_unique_concrete_method(ctxk, m);
+}
+
+// Find the set of all non-abstract methods under ctxk that match m.
+// (The method m must be defined or inherited in ctxk.)
+// Include m itself in the set, unless it is abstract.
+// If this set has exactly one element, return that element.
+Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m, Klass** participant) {
   // Return NULL if m is marked old; must have been a redefined method.
   if (m->is_old()) {
     return NULL;
@@ -1601,6 +1615,9 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
   Klass* wit = wf.find_witness(ctxk);
   if (wit != NULL)  return NULL;  // Too many witnesses.
   Method* fm = wf.found_method(0);  // Will be NULL if num_parts == 0.
+  if (participant != NULL) {
+    (*participant) = wf.participant(0);
+  }
   if (Dependencies::is_concrete_method(m, ctxk)) {
     if (fm == NULL) {
       // It turns out that m was always the only implementation.
