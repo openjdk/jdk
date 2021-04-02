@@ -265,9 +265,12 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
     fi
   fi
 
-  if test "x$OPENJDK_TARGET_OS" = xmacosx &&
-      test "x$OPENJDK_TARGET_CPU" = xaarch64; then
-    MACHINE_FLAG="$MACHINE_FLAG -arch arm64"
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+      MACHINE_FLAG="$MACHINE_FLAG -arch arm64"
+    elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+      MACHINE_FLAG="$MACHINE_FLAG -arch x86_64"
+    fi
   fi
 
   # FIXME: global flags are not used yet...
