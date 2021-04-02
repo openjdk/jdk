@@ -35,7 +35,7 @@
  * @build Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run main/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. SharedRegionAlignmentTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. SharedRegionAlignmentTest
  */
 
 
@@ -45,7 +45,6 @@ import sun.hotspot.WhiteBox;
 
 public class SharedRegionAlignmentTest {
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");
-    static String regionAlignmentString = "Core region alignment: ";
     static String mainClass = "Hello";
     static String logArg = "-Xlog:cds";
 
@@ -54,7 +53,8 @@ public class SharedRegionAlignmentTest {
         // Dump (3 combinations): largePageArgs
         // Run  (3 combinations): largePageArgs
         String UseLargePages = "-XX:+UseLargePages";
-        long regionAlignment = WhiteBox.getWhiteBox().metaspaceSharedRegionAlignment();
+        String checkString = "Core region alignment: " +
+                             WhiteBox.getWhiteBox().metaspaceSharedRegionAlignment();
 
         String [][] largePageArgs = {
             {}, // default
@@ -71,8 +71,8 @@ public class SharedRegionAlignmentTest {
             OutputAnalyzer out = TestCommon.dump(appJar,
                                                  TestCommon.list(mainClass),
                                                  TestCommon.concat(dumpLP, logArg));
-            out.shouldContain("Dumping shared data to file");
-            boolean is_alignment_logged = out.getStdout().contains(regionAlignmentString + regionAlignment);
+            out.shouldContain("Dumping shared data to file")
+               .shouldContain(checkString);
 
             int runCase = 0;
             for (String[] runLP: largePageArgs) {
@@ -83,10 +83,8 @@ public class SharedRegionAlignmentTest {
 
                 TestCommon.run(TestCommon.concat(runLP, "-cp", appJar, logArg, mainClass))
                     .assertNormalExit(output -> {
-                            if (is_alignment_logged) {
-                                output.shouldContain(regionAlignmentString + regionAlignment);
-                            }
-                            output.shouldContain("Hello World");
+                            output.shouldContain(checkString)
+                                  .shouldContain("Hello World");
                         });
             }
         }
