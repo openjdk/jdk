@@ -705,8 +705,8 @@ public class CreateRasterExceptionTest {
              */
             Point pt = new Point(5, 1);
             Raster.createBandedRaster(DataBuffer.TYPE_INT,
-                    Integer.MAX_VALUE-2, Integer.MAX_VALUE,
-                    Integer.MAX_VALUE, bankIndices, bandOffsets, pt);
+                    Integer.MAX_VALUE-2, 1,
+                    Integer.MAX_VALUE-2, bankIndices, bandOffsets, pt);
             noException();
         } catch (IllegalArgumentException t) {
             System.out.println("Got expected exception for overflow");

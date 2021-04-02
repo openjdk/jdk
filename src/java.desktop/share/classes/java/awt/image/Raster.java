@@ -294,6 +294,17 @@ public class Raster {
         int size = scanlineStride * (h - 1) + // fisrt (h - 1) scans
             pixelStride * w; // last scan
 
+        if (location == null) {
+            location = new Point(0, 0);
+        } else {
+            if ((w + location.getX() > Integer.MAX_VALUE) ||
+                (h + location.getY() > Integer.MAX_VALUE)) {
+              throw new RasterFormatException(
+                 "location.x + w and location.y + h " +
+                 " cannot exceed Integer.MAX_VALUE");
+            }
+        }
+
         switch(dataType) {
         case DataBuffer.TYPE_BYTE:
             d = new DataBufferByte(size);
@@ -706,9 +717,18 @@ public class Raster {
         if (dataBuffer == null) {
             throw new NullPointerException("DataBuffer cannot be null");
         }
+
         if (location == null) {
             location = new Point(0, 0);
+        } else {
+            if ((w + location.getX() > Integer.MAX_VALUE) ||
+                (h + location.getY() > Integer.MAX_VALUE)) {
+              throw new RasterFormatException(
+                 "location.x + w and location.y + h " +
+                 " cannot exceed Integer.MAX_VALUE");
+            }
         }
+
         int dataType = dataBuffer.getDataType();
 
         PixelInterleavedSampleModel csm =
@@ -806,6 +826,13 @@ public class Raster {
 
         if (location == null) {
            location = new Point(0,0);
+        } else {
+            if ((w + location.getX() > Integer.MAX_VALUE) ||
+                (h + location.getY() > Integer.MAX_VALUE)) {
+              throw new RasterFormatException(
+                 "location.x + w and location.y + h " +
+                 " cannot exceed Integer.MAX_VALUE");
+            }
         }
 
         int dataType = dataBuffer.getDataType();
