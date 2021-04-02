@@ -1372,17 +1372,15 @@ WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring 
     ccstrValue = env->GetStringUTFChars(value, NULL);
     CHECK_JNI_EXCEPTION(env);
   }
-  ccstr ccstrResult = ccstrValue;
-  bool needFree;
   {
+    ccstr param = ccstrValue;
     ThreadInVMfromNative ttvfn(thread); // back to VM
-    needFree = SetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &ccstrResult);
+    if (SetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &param)) {
+      assert(param == NULL, "old value is freed automatically and not returned");
+    }
   }
   if (value != NULL) {
     env->ReleaseStringUTFChars(value, ccstrValue);
-  }
-  if (needFree) {
-    FREE_C_HEAP_ARRAY(char, ccstrResult);
   }
 WB_END
 

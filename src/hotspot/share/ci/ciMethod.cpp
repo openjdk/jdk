@@ -709,9 +709,8 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   methodHandle target;
   {
     MutexLocker locker(Compile_lock);
-    Klass* context = actual_recv->get_Klass();
-    target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context,
-                                                       root_m->get_Method()));
+    InstanceKlass* context = actual_recv->get_instanceKlass();
+    target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context, root_m->get_Method()));
     // %%% Should upgrade this ciMethod API to look for 1 or 2 concrete methods.
   }
 
