@@ -31,24 +31,27 @@ import com.sun.net.httpserver.*;
 
 public class UnmodifiableHeaders extends Headers {
 
-    private final Headers headers;  // mutable, but no reference to it escapes
-    private final Map<String, List<String>> map;
+    private final Headers headers;  // modifiable, but no reference to it escapes
+    private final Map<String, List<String>> map;  // unmodifiable
 
     public UnmodifiableHeaders(Headers headers) {
         var h = headers;
-        Map<String, List<String>> unmodListMap = new HashMap<>();
-        h.forEach((k, v) -> unmodListMap.put(k, Collections.unmodifiableList(v)));
-        this.map = Collections.unmodifiableMap(unmodListMap);
+        var unmodHeaders = new Headers();
+        h.forEach((k, v) -> {
+                List<String> l = v == null ? List.of() : Collections.unmodifiableList(v);
+                unmodHeaders.put(k, l);
+        });
+        this.map = Collections.unmodifiableMap(unmodHeaders);
         this.headers = h;
     }
 
-    public int size() {return map.size();}
+    public int size() {return headers.size();}
 
-    public boolean isEmpty() {return map.isEmpty();}
+    public boolean isEmpty() {return headers.isEmpty();}
 
-    public boolean containsKey(Object key) { return map.containsKey (key); }
+    public boolean containsKey(Object key) { return headers.containsKey(key); }
 
-    public boolean containsValue(Object value) { return map.containsValue(value); }
+    public boolean containsValue(Object value) { return headers.containsValue(value); }
 
     public List<String> get(Object key) { return map.get(key); }
 
@@ -98,7 +101,7 @@ public class UnmodifiableHeaders extends Headers {
         throw new UnsupportedOperationException ("unsupported operation");
     }
 
-    public boolean equals(Object o) {return map.equals(o);}
+    public boolean equals(Object o) {return headers.equals(o);}
 
-    public int hashCode() {return map.hashCode();}
+    public int hashCode() {return headers.hashCode();}
 }
