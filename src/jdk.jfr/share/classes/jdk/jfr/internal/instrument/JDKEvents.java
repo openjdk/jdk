@@ -160,7 +160,7 @@ public final class JDKEvents {
 
     private static void initializeContainerEvents() {
         containerMetrics = Container.metrics();
-        if (containerMetrics == null) {
+        if (containerMetrics != null) {
             SecuritySupport.registerEvent(ContainerConfigurationEvent.class);
             SecuritySupport.registerEvent(ContainerCPUUsageEvent.class);
             SecuritySupport.registerEvent(ContainerCPUThrottlingEvent.class);
@@ -266,7 +266,7 @@ public final class JDKEvents {
         RequestEngine.removeHook(emitExceptionStatistics);
         RequestEngine.removeHook(emitDirectBufferStatistics);
 
-        if (containerMetrics == null) {
+        if (containerMetrics != null) {
             RequestEngine.removeHook(emitContainerConfiguration);
             RequestEngine.removeHook(emitContainerCPUUsage);
             RequestEngine.removeHook(emitContainerCPUThrottling);
