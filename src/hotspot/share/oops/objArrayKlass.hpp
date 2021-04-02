@@ -154,8 +154,7 @@ class ObjArrayKlass : public ArrayKlass {
   inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, MemRegion mr);
 
  public:
-  // JVM support
-  jint compute_modifier_flags(TRAPS) const;
+  jint compute_modifier_flags() const;
 
  public:
   // Printing

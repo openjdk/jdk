@@ -41,6 +41,7 @@
 #include "jfr/writers/jfrTypeWriterHost.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -63,6 +64,7 @@ static JfrArtifactSet* _artifacts = NULL;
 static JfrArtifactClosure* _subsystem_callback = NULL;
 static bool _class_unload = false;
 static bool _flushpoint = false;
+static bool _clear_artifacts = false;
 
 // incremented on each rotation
 static u8 checkpoint_id = 1;
@@ -83,6 +85,10 @@ static bool previous_epoch() {
   return !current_epoch();
 }
 
+static bool is_initial_typeset_for_chunk() {
+  return _clear_artifacts && !_class_unload;
+}
+
 static bool is_complete() {
   return !_artifacts->has_klass_entries() && current_epoch();
 }
@@ -97,6 +103,35 @@ static traceid mark_symbol(Symbol* symbol, bool leakp) {
 
 static traceid get_bootstrap_name(bool leakp) {
   return create_symbol_id(_artifacts->bootstrap_name(leakp));
+}
+
+static const char* primitive_name(KlassPtr type_array_klass) {
+  switch (type_array_klass->name()->base()[1]) {
+    case JVM_SIGNATURE_BOOLEAN: return "boolean";
+    case JVM_SIGNATURE_BYTE: return "byte";
+    case JVM_SIGNATURE_CHAR: return "char";
+    case JVM_SIGNATURE_SHORT: return "short";
+    case JVM_SIGNATURE_INT: return "int";
+    case JVM_SIGNATURE_LONG: return "long";
+    case JVM_SIGNATURE_FLOAT: return "float";
+    case JVM_SIGNATURE_DOUBLE: return "double";
+  }
+  assert(false, "invalid type array klass");
+  return NULL;
+}
+
+static Symbol* primitive_symbol(KlassPtr type_array_klass) {
+  if (type_array_klass == NULL) {
+    // void.class
+    static Symbol* const void_class_name = SymbolTable::probe("void", 4);
+    assert(void_class_name != NULL, "invariant");
+    return void_class_name;
+  }
+  const char* const primitive_type_str = primitive_name(type_array_klass);
+  assert(primitive_type_str != NULL, "invariant");
+  Symbol* const primitive_type_sym = SymbolTable::probe(primitive_type_str, (int)strlen(primitive_type_str));
+  assert(primitive_type_sym != NULL, "invariant");
+  return primitive_type_sym;
 }
 
 template <typename T>
@@ -152,6 +187,11 @@ template <typename T>
 static s4 get_flags(const T* ptr) {
   assert(ptr != NULL, "invariant");
   return ptr->access_flags().get_flags();
+}
+
+// Same as JVM_GetClassModifiers
+static u4 get_primitive_flags() {
+  return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
 }
 
 static bool is_unsafe_anonymous(const Klass* klass) {
@@ -225,6 +265,27 @@ static void do_klass(Klass* klass) {
   _subsystem_callback->do_artifact(klass);
 }
 
+
+static traceid primitive_id(KlassPtr array_klass) {
+  if (array_klass == NULL) {
+    // The first klass id is reserved for the void.class.
+    return LAST_TYPE_ID + 1;
+  }
+  // Derive the traceid for a primitive mirror from its associated array klass (+1).
+  return JfrTraceId::load_raw(array_klass) + 1;
+}
+
+static void write_primitive(JfrCheckpointWriter* writer, KlassPtr type_array_klass) {
+  assert(writer != NULL, "invariant");
+  assert(_artifacts != NULL, "invariant");
+  writer->write(primitive_id(type_array_klass));
+  writer->write(cld_id(get_cld(Universe::boolArrayKlassObj()), false));
+  writer->write(mark_symbol(primitive_symbol(type_array_klass), false));
+  writer->write(package_id(Universe::boolArrayKlassObj(), false));
+  writer->write(get_primitive_flags());
+  writer->write<bool>(false);
+}
+
 static void do_loader_klass(const Klass* klass) {
   if (klass != NULL && _artifacts->should_do_loader_klass(klass)) {
     if (_leakp_writer != NULL) {
@@ -295,6 +356,28 @@ static void do_classloaders() {
   assert(mark_stack.is_empty(), "invariant");
 }
 
+static int primitives_count = 9;
+
+// A mirror representing a primitive class (e.g. int.class) has no reified Klass*,
+// instead it has an associated TypeArrayKlass* (e.g. int[].class).
+// We can use the TypeArrayKlass* as a proxy for deriving the id of the primitive class.
+// The exception is the void.class, which has neither a Klass* nor a TypeArrayKlass*.
+// It will use a reserved constant.
+static void do_primitives() {
+  // Only write the primitive classes once per chunk.
+  if (is_initial_typeset_for_chunk()) {
+    write_primitive(_writer, Universe::boolArrayKlassObj());
+    write_primitive(_writer, Universe::byteArrayKlassObj());
+    write_primitive(_writer, Universe::charArrayKlassObj());
+    write_primitive(_writer, Universe::shortArrayKlassObj());
+    write_primitive(_writer, Universe::intArrayKlassObj());
+    write_primitive(_writer, Universe::longArrayKlassObj());
+    write_primitive(_writer, Universe::floatArrayKlassObj());
+    write_primitive(_writer, Universe::doubleArrayKlassObj());
+    write_primitive(_writer, NULL); // void.class
+  }
+}
+
 static void do_object() {
   SET_TRANSIENT(vmClasses::Object_klass());
   do_klass(vmClasses::Object_klass());
@@ -307,6 +390,7 @@ static void do_klasses() {
   }
   JfrTraceIdLoadBarrier::do_klasses(&do_klass, previous_epoch());
   do_classloaders();
+  do_primitives();
   do_object();
 }
 
@@ -341,16 +425,19 @@ static bool write_klasses() {
   KlassWriter kw(_writer, _class_unload);
   KlassWriterRegistration kwr(&kw, &reg);
   if (_leakp_writer == NULL) {
-    KlassCallback callback(&kwr);
-    _subsystem_callback = &callback;
+    KlassCallback callback(&_subsystem_callback, &kwr);
     do_klasses();
   } else {
     LeakKlassWriter lkw(_leakp_writer, _class_unload);
     CompositeKlassWriter ckw(&lkw, &kw);
     CompositeKlassWriterRegistration ckwr(&ckw, &reg);
-    CompositeKlassCallback callback(&ckwr);
-    _subsystem_callback = &callback;
+    CompositeKlassCallback callback(&_subsystem_callback, &ckwr);
     do_klasses();
+  }
+  if (is_initial_typeset_for_chunk()) {
+    // Because the set of primitives is written outside the callback,
+    // their count is not automatically incremented.
+    kw.add(primitives_count);
   }
   if (is_complete()) {
     return false;
@@ -385,8 +472,7 @@ static void register_klass(Klass* klass) {
 static void register_klasses() {
   assert(!_artifacts->has_klass_entries(), "invariant");
   KlassArtifactRegistrator reg(_artifacts);
-  RegisterKlassCallback callback(&reg);
-  _subsystem_callback = &callback;
+  RegisterKlassCallback callback(&_subsystem_callback, &reg);
   ClassLoaderDataGraph::classes_do(&register_klass);
 }
 
@@ -463,8 +549,7 @@ static void write_packages() {
     _artifacts->iterate_klasses(kpw);
     ClearArtifact<PkgPtr> clear;
     PackageWriterWithClear pwwc(&pw, &clear);
-    PackageCallback callback(&pwwc);
-    _subsystem_callback = &callback;
+    PackageCallback callback(&_subsystem_callback, &pwwc);
     do_packages();
   } else {
     LeakPackageWriter lpw(_leakp_writer, _class_unload);
@@ -473,8 +558,7 @@ static void write_packages() {
     _artifacts->iterate_klasses(kcpw);
     ClearArtifact<PkgPtr> clear;
     CompositePackageWriterWithClear cpwwc(&cpw, &clear);
-    CompositePackageCallback callback(&cpwwc);
-    _subsystem_callback = &callback;
+    CompositePackageCallback callback(&_subsystem_callback, &cpwwc);
     do_packages();
   }
   _artifacts->tally(pw);
@@ -484,8 +568,7 @@ typedef JfrArtifactCallbackHost<PkgPtr, ClearArtifact<PkgPtr> > ClearPackageCall
 
 static void clear_packages() {
   ClearArtifact<PkgPtr> clear;
-  ClearPackageCallback callback(&clear);
-  _subsystem_callback = &callback;
+  ClearPackageCallback callback(&_subsystem_callback, &clear);
   do_packages();
 }
 
@@ -562,8 +645,7 @@ static void write_modules() {
     _artifacts->iterate_klasses(kmw);
     ClearArtifact<ModPtr> clear;
     ModuleWriterWithClear mwwc(&mw, &clear);
-    ModuleCallback callback(&mwwc);
-    _subsystem_callback = &callback;
+    ModuleCallback callback(&_subsystem_callback, &mwwc);
     do_modules();
   } else {
     LeakModuleWriter lmw(_leakp_writer, _class_unload);
@@ -572,8 +654,7 @@ static void write_modules() {
     _artifacts->iterate_klasses(kcpw);
     ClearArtifact<ModPtr> clear;
     CompositeModuleWriterWithClear cmwwc(&cmw, &clear);
-    CompositeModuleCallback callback(&cmwwc);
-    _subsystem_callback = &callback;
+    CompositeModuleCallback callback(&_subsystem_callback, &cmwwc);
     do_modules();
   }
   _artifacts->tally(mw);
@@ -583,8 +664,7 @@ typedef JfrArtifactCallbackHost<ModPtr, ClearArtifact<ModPtr> > ClearModuleCallb
 
 static void clear_modules() {
   ClearArtifact<ModPtr> clear;
-  ClearModuleCallback callback(&clear);
-  _subsystem_callback = &callback;
+  ClearModuleCallback callback(&_subsystem_callback, &clear);
   do_modules();
 }
 
@@ -696,8 +776,7 @@ static void write_classloaders() {
     _artifacts->iterate_klasses(kmcw);
     ClearArtifact<CldPtr> clear;
     CldWriterWithClear cldwwc(&cldw, &clear);
-    CldCallback callback(&cldwwc);
-    _subsystem_callback = &callback;
+    CldCallback callback(&_subsystem_callback, &cldwwc);
     do_class_loaders();
   } else {
     LeakCldWriter lcldw(_leakp_writer, _class_unload);
@@ -708,8 +787,7 @@ static void write_classloaders() {
     _artifacts->iterate_klasses(kmccldw);
     ClearArtifact<CldPtr> clear;
     CompositeCldWriterWithClear ccldwwc(&ccldw, &clear);
-    CompositeCldCallback callback(&ccldwwc);
-    _subsystem_callback = &callback;
+    CompositeCldCallback callback(&_subsystem_callback, &ccldwwc);
     do_class_loaders();
   }
   _artifacts->tally(cldw);
@@ -719,8 +797,7 @@ typedef JfrArtifactCallbackHost<CldPtr, ClearArtifact<CldPtr> > ClearCLDCallback
 
 static void clear_classloaders() {
   ClearArtifact<CldPtr> clear;
-  ClearCLDCallback callback(&clear);
-  _subsystem_callback = &callback;
+  ClearCLDCallback callback(&_subsystem_callback, &clear);
   do_class_loaders();
 }
 
@@ -979,8 +1056,6 @@ typedef Wrapper<KlassPtr, ClearArtifact> ClearKlassBits;
 typedef Wrapper<MethodPtr, ClearArtifact> ClearMethodFlag;
 typedef MethodIteratorHost<ClearMethodFlag, ClearKlassBits, AlwaysTrue, false> ClearKlassAndMethods;
 
-static bool clear_artifacts = false;
-
 static void clear_klasses_and_methods() {
   ClearKlassAndMethods clear(_writer);
   _artifacts->iterate_klasses(clear);
@@ -992,8 +1067,10 @@ static size_t teardown() {
   if (previous_epoch()) {
     clear_klasses_and_methods();
     JfrKlassUnloading::clear();
-    clear_artifacts = true;
+    _clear_artifacts = true;
     ++checkpoint_id;
+  } else {
+    _clear_artifacts = false;
   }
   return total_count;
 }
@@ -1006,12 +1083,11 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
   if (_artifacts == NULL) {
     _artifacts = new JfrArtifactSet(class_unload);
   } else {
-    _artifacts->initialize(class_unload, clear_artifacts);
+    _artifacts->initialize(class_unload, _clear_artifacts);
   }
   if (!_class_unload) {
     JfrKlassUnloading::sort(previous_epoch());
   }
-  clear_artifacts = false;
   assert(_artifacts != NULL, "invariant");
   assert(!_artifacts->has_klass_entries(), "invariant");
 }
@@ -1042,7 +1118,7 @@ size_t JfrTypeSet::serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* l
 void JfrTypeSet::clear() {
   ResourceMark rm;
   JfrKlassUnloading::clear();
-  clear_artifacts = true;
+  _clear_artifacts = true;
   setup(NULL, NULL, false, false);
   register_klasses();
   clear_packages();

@@ -43,7 +43,7 @@ import jdk.jfr.internal.Utils;
 @Name(Type.SETTINGS_PREFIX + "Cutoff")
 @Timespan
 public final class CutoffSetting extends JDKSettingControl {
-    private final static long typeId = Type.getTypeId(CutoffSetting.class);
+    private static final long typeId = Type.getTypeId(CutoffSetting.class);
 
     private String value = "0 ns";
     private final PlatformEventType eventType;

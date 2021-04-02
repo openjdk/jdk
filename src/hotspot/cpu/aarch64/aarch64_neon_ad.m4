@@ -59,7 +59,7 @@ dnl
 // ------------------------------ Load/store/reinterpret -----------------------
 define(`VLoadStore', `
 // ifelse(load, $3, Load, Store) Vector ($6 bits)
-instruct $3V$4`'(vec$5 $7, ifelse($4, 2, memory, vmem$4) mem)
+instruct $3V$4`'(vec$5 $7, vmem$4 mem)
 %{
   predicate($8`n->as_'ifelse(load, $3, Load, Store)Vector()->memory_size() == $4);
   match(Set ifelse(load, $3, dst (LoadVector mem), mem (StoreVector mem src)));
@@ -70,7 +70,13 @@ instruct $3V$4`'(vec$5 $7, ifelse($4, 2, memory, vmem$4) mem)
 %}')dnl
 dnl        $1    $2 $3     $4  $5 $6   $7   $8
 VLoadStore(ldrh, H, load,  2,  D, 16,  dst, )
+VLoadStore(ldrs, S, load,  4,  D, 32,  dst, )
+VLoadStore(ldrd, D, load,  8,  D, 64,  dst, )
+VLoadStore(ldrq, Q, load, 16,  X, 128, dst, UseSVE == 0 && )
 VLoadStore(strh, H, store, 2,  D, 16,  src, )
+VLoadStore(strs, S, store, 4,  D, 32,  src, )
+VLoadStore(strd, D, store, 8,  D, 64,  src, )
+VLoadStore(strq, Q, store, 16, X, 128, src, )
 dnl
 define(`REINTERPRET', `
 instruct reinterpret$1`'(vec$1 dst)
@@ -1409,11 +1415,12 @@ instruct anytrue_in_mask$1B`'(iRegINoSp dst, vec$2 src1, vec$2 src2, vec$2 tmp, 
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "addv  $tmp, T$1B, $src1\t# src1 and src2 are the same\n\t"
+  format %{ "addv  $tmp, T$1B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
             "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cset  $dst\t# anytrue $1B" %}
   ins_encode %{
+    // No need to use src2.
     __ addv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, zr);
@@ -1432,19 +1439,15 @@ instruct alltrue_in_mask$1B`'(iRegINoSp dst, vec$2 src1, vec$2 src2, vec$2 tmp, 
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "andr  $tmp, T$1B, $src1, $src2\t# src2 is maskAllTrue\n\t"
-            "notr  $tmp, T$1B, $tmp\n\t"
-            "addv  $tmp, T$1B, $tmp\n\t"
+  format %{ "uminv $tmp, T$1B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cmp   $dst, 0xff\n\t"
+            "cset  $dst\t# alltrue $1B" %}
   ins_encode %{
-    __ andr(as_FloatRegister($tmp$$reg), __ T$1B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($tmp$$reg));
-    __ addv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($tmp$$reg));
+    // No need to use src2.
+    __ uminv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
-    __ cmpw($dst$$Register, zr);
+    __ cmpw($dst$$Register, 0xff);
     __ csetw($dst$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -1498,13 +1501,6 @@ dnl   $1    $2    $3 $4 $5 $6 $7
 VFABD(fabd, fabd, 2, F, D, S, 64)
 VFABD(fabd, fabd, 4, F, X, S, 128)
 VFABD(fabd, fabd, 2, D, X, D, 128)
-dnl
-VLoadStore(ldrs, S, load,  4,  D, 32,  dst, )
-VLoadStore(ldrd, D, load,  8,  D, 64,  dst, )
-VLoadStore(ldrq, Q, load, 16,  X, 128, dst, UseSVE == 0 && )
-VLoadStore(strs, S, store, 4,  D, 32,  src, )
-VLoadStore(strd, D, store, 8,  D, 64,  src, )
-VLoadStore(strq, Q, store, 16, X, 128, src, )
 dnl
 define(`VREPLICATE', `
 instruct replicate$3$4$5`'(vec$6 dst, $7 ifelse($7, immI0, zero, $7, immI, con, src))

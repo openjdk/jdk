@@ -3705,17 +3705,15 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
           // In strip-mined counted loops, the CountedLoopNode may be
           // used by the address polling node of the outer safepoint.
           // Skip this use because it's safe.
-#ifdef ASSERT
           Node* sfpt = n->as_CountedLoop()->outer_safepoint();
           Node* polladr = sfpt->in(TypeFunc::Parms+0);
-          assert(use == polladr, "the use should be a safepoint polling");
-#endif
-          continue;
-        } else {
-          msg = "node is used outside loop";
-          msg_node = n;
-          break;
+          if (use == polladr) {
+            continue;
+          }
         }
+        msg = "node is used outside loop";
+        msg_node = n;
+        break;
       }
     }
   }

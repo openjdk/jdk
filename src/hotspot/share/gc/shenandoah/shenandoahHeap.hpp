@@ -126,6 +126,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
   friend class ShenandoahFullGC;
+  friend class ShenandoahUnload;
 
 // ---------- Locks that guard important data structures in Heap
 //
@@ -148,6 +149,7 @@ public:
   ShenandoahHeap(ShenandoahCollectorPolicy* policy);
   jint initialize();
   void post_initialize();
+  void initialize_mode();
   void initialize_heuristics();
 
   void initialize_serviceability();
@@ -370,8 +372,8 @@ private:
   void update_heap_region_states(bool concurrent);
   void rebuild_free_set(bool concurrent);
 
+  void rendezvous_threads();
   void recycle_trash();
-
 public:
   void notify_gc_progress()    { _progress_last_gc.set();   }
   void notify_gc_no_progress() { _progress_last_gc.unset(); }

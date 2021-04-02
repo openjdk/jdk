@@ -53,7 +53,6 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
@@ -657,7 +656,7 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
   jint manifest_size;
 
   assert(cpe->is_jar_file() && ent->is_jar(), "the shared class path entry is not a JAR file");
-  char* manifest = ClassLoaderExt::read_manifest(cpe, &manifest_size, CHECK);
+  char* manifest = ClassLoaderExt::read_manifest(THREAD, cpe, &manifest_size);
   if (manifest != NULL) {
     ManifestStream* stream = new ManifestStream((u1*)manifest,
                                                 manifest_size);
@@ -665,7 +664,7 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
       ent->set_is_signed();
     } else {
       // Copy the manifest into the shared archive
-      manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
+      manifest = ClassLoaderExt::read_raw_manifest(THREAD, cpe, &manifest_size);
       Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
                                                       manifest_size,
                                                       CHECK);
@@ -1236,17 +1235,14 @@ void FileMapInfo::open_for_write(const char* path) {
 void FileMapInfo::write_header() {
   _file_offset = 0;
   seek_to_position(_file_offset);
-  char* base_archive_name = NULL;
-  if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
-    base_archive_name = (char*)Arguments::GetSharedArchivePath();
-    header()->set_base_archive_name_size(strlen(base_archive_name) + 1);
-    header()->set_base_archive_is_default(FLAG_IS_DEFAULT(SharedArchiveFile));
-  }
-
   assert(is_file_position_aligned(), "must be");
   write_bytes(header(), header()->header_size());
-  if (base_archive_name != NULL) {
-    write_bytes(base_archive_name, header()->base_archive_name_size());
+
+  if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
+    char* base_archive_name = (char*)Arguments::GetSharedArchivePath();
+    if (base_archive_name != NULL) {
+      write_bytes(base_archive_name, header()->base_archive_name_size());
+    }
   }
 }
 
@@ -1310,7 +1306,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else if (HeapShared::is_heap_region(region)) {
     assert(!DynamicDumpSharedSpaces, "must be");
     requested_base = base;
-    mapping_offset = (size_t)CompressedOops::encode_not_null((oop)base);
+    mapping_offset = (size_t)CompressedOops::encode_not_null(cast_to_oop(base));
     assert(mapping_offset == (size_t)(uint32_t)mapping_offset, "must be 32-bit only");
   } else {
     char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
@@ -1657,7 +1653,7 @@ char* FileMapInfo::map_bitmap_region() {
     return NULL;
   }
 
-  if (VerifySharedSpaces && !region_crc_check(bitmap_base, si->used_aligned(), si->crc())) {
+  if (VerifySharedSpaces && !region_crc_check(bitmap_base, si->used(), si->crc())) {
     log_error(cds)("relocation bitmap CRC error");
     if (!os::unmap_memory(bitmap_base, si->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
@@ -2336,11 +2332,16 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
       const char* path = scpe->name();
       struct stat st;
       if (os::stat(path, &st) != 0) {
-        char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128); ;
-        jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
+        char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
+        jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
         THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
       } else {
-        ent = ClassLoader::create_class_path_entry(path, &st, /*throw_exception=*/true, false, false, CHECK_NULL);
+        ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false);
+        if (ent == NULL) {
+          char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
+          jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
+          THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
+        }
       }
     }
 
@@ -2370,9 +2371,8 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
   const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
-  ClassFileStream* cfs = cpe->open_stream_for_loader(file_name, loader_data, THREAD);
-  assert(!HAS_PENDING_EXCEPTION &&
-         cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
+  ClassFileStream* cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
+  assert(cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
   log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
                         cfs->source(), cfs->length());
   return cfs;
