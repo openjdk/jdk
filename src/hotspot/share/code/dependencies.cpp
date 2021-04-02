@@ -247,6 +247,36 @@ void Dependencies::assert_common_2(DepType dept,
   deps->append(x1);
 }
 
+void Dependencies::assert_common_4(DepType dept,
+                                   ciKlass* ctxk, ciBaseObject* x1, ciBaseObject* x2, ciBaseObject* x3) {
+  assert(has_explicit_context_arg(dept), "sanity");
+  assert(dep_context_arg(dept) == 0, "sanity");
+  assert(dep_args(dept) == 4, "sanity");
+  log_dependency(dept, ctxk, x1, x2, x3);
+  GrowableArray<ciBaseObject*>* deps = _deps[dept];
+
+  // see if the same (or a similar) dep is already recorded
+  if (note_dep_seen(dept, x1) && note_dep_seen(dept, x2) && note_dep_seen(dept, x3)) {
+    // look in this bucket for redundant assertions
+    const int stride = 4;
+    for (int i = deps->length(); (i -= stride) >= 0; ) {
+      ciBaseObject* y1 = deps->at(i+1);
+      ciBaseObject* y2 = deps->at(i+2);
+      ciBaseObject* y3 = deps->at(i+3);
+      if (x1 == y1 && x2 == y2 && x3 == y3) {  // same subjects; check the context
+        if (maybe_merge_ctxk(deps, i+0, ctxk)) {
+          return;
+        }
+      }
+    }
+  }
+  // append the assertion in the correct bucket:
+  deps->append(ctxk);
+  deps->append(x1);
+  deps->append(x2);
+  deps->append(x3);
+}
+
 #if INCLUDE_JVMCI
 bool Dependencies::maybe_merge_ctxk(GrowableArray<DepValue>* deps,
                                     int ctxk_i, DepValue ctxk2_dv) {
@@ -343,6 +373,8 @@ static int sort_dep_arg_2(ciBaseObject** p1, ciBaseObject** p2)
 { return sort_dep(p1, p2, 2); }
 static int sort_dep_arg_3(ciBaseObject** p1, ciBaseObject** p2)
 { return sort_dep(p1, p2, 3); }
+static int sort_dep_arg_4(ciBaseObject** p1, ciBaseObject** p2)
+{ return sort_dep(p1, p2, 4); }
 
 #if INCLUDE_JVMCI
 // metadata deps are sorted before object deps
@@ -386,6 +418,7 @@ void Dependencies::sort_all_deps() {
     case 1: deps->sort(sort_dep_arg_1, 1); break;
     case 2: deps->sort(sort_dep_arg_2, 2); break;
     case 3: deps->sort(sort_dep_arg_3, 3); break;
+    case 4: deps->sort(sort_dep_arg_4, 4); break;
     default: ShouldNotReachHere(); break;
     }
   }

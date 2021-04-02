@@ -156,7 +156,7 @@ class Dependencies: public ResourceObj {
     implicit_ctxk_types = 0,
     explicit_ctxk_types = all_types & ~(non_ctxk_types | implicit_ctxk_types),
 
-    max_arg_count = 3,   // current maximum number of arguments (incl. ctxk)
+    max_arg_count = 4,   // current maximum number of arguments (incl. ctxk)
 
     // A "context type" is a class or interface that
     // provides context for evaluating a dependency.
@@ -325,6 +325,7 @@ class Dependencies: public ResourceObj {
 
   void assert_common_1(DepType dept, ciBaseObject* x);
   void assert_common_2(DepType dept, ciBaseObject* x0, ciBaseObject* x1);
+  void assert_common_4(DepType dept, ciKlass* ctxk, ciBaseObject* x1, ciBaseObject* x2, ciBaseObject* x3);
 
  public:
   // Adding assertions to a new dependency set at compile time:
@@ -456,7 +457,8 @@ class Dependencies: public ResourceObj {
   void log_dependency(DepType dept,
                       ciBaseObject* x0,
                       ciBaseObject* x1 = NULL,
-                      ciBaseObject* x2 = NULL) {
+                      ciBaseObject* x2 = NULL,
+                      ciBaseObject* x3 = NULL) {
     if (log() == NULL) {
       return;
     }
@@ -471,6 +473,9 @@ class Dependencies: public ResourceObj {
     }
     if (x2 != NULL) {
       ciargs->push(x2);
+    }
+    if (x3 != NULL) {
+      ciargs->push(x3);
     }
     assert(ciargs->length() == dep_args(dept), "");
     log_dependency(dept, ciargs);
