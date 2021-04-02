@@ -529,13 +529,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   vm_direct_exit(0);
 }
 
-static GrowableArray<ClassLoaderData*>* _loaded_cld = NULL;
-
 class CollectCLDClosure : public CLDClosure {
+  GrowableArray<ClassLoaderData*>* _loaded_cld;
+public:
+  CollectCLDClosure(GrowableArray<ClassLoaderData*>* loaded_cld) : _loaded_cld(loaded_cld){}
+
   void do_cld(ClassLoaderData* cld) {
-    if (_loaded_cld == NULL) {
-      _loaded_cld = new (ResourceObj::C_HEAP, mtClassShared)GrowableArray<ClassLoaderData*>(10, mtClassShared);
-    }
     if (!cld->is_unloading()) {
       cld->inc_keep_alive();
       _loaded_cld->append(cld);
@@ -565,7 +564,9 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
-  CollectCLDClosure collect_cld;
+  ResourceMark rm;
+  GrowableArray<ClassLoaderData*> loaded_cld;
+  CollectCLDClosure collect_cld(&loaded_cld);
   {
     MutexLocker lock(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::loaded_cld_do(&collect_cld);
@@ -573,8 +574,8 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
 
   while (true) {
     bool has_linked = false;
-    for (int i = 0; i < _loaded_cld->length(); i++) {
-      ClassLoaderData* cld = _loaded_cld->at(i);
+    for (int i = 0; i < loaded_cld.length(); i++) {
+      ClassLoaderData* cld = loaded_cld.at(i);
       for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
         if (klass->is_instance_klass()) {
           InstanceKlass* ik = InstanceKlass::cast(klass);
@@ -592,10 +593,11 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
     // Keep scanning until we have linked no more classes.
   }
 
-  for (int i = 0; i < _loaded_cld->length(); i++) {
-    ClassLoaderData* cld = _loaded_cld->at(i);
+  for (int i = 0; i < loaded_cld.length(); i++) {
+    ClassLoaderData* cld = loaded_cld.at(i);
     cld->dec_keep_alive();
   }
+  loaded_cld.trunc_to(0);
 }
 
 void MetaspaceShared::prepare_for_dumping() {
