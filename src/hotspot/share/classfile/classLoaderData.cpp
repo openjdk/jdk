@@ -930,20 +930,56 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
 void ClassLoaderData::print_value() const { print_value_on(tty); }
 
 #ifndef PRODUCT
-void ClassLoaderData::print_on(outputStream* out) const {
-  out->print("ClassLoaderData CLD: " PTR_FORMAT ", loader: " PTR_FORMAT ", loader_klass: %s {",
-              p2i(this), p2i(_class_loader.ptr_raw()), loader_name_and_id());
-  if (has_class_mirror_holder()) out->print(" has a class holder");
-  if (claimed()) out->print(" claimed");
-  if (is_unloading()) out->print(" unloading");
-  out->print(" metaspace: " INTPTR_FORMAT, p2i(metaspace_or_null()));
+class PrintKlassClosure: public KlassClosure {
+  outputStream* _out;
+public:
+  PrintKlassClosure(outputStream* out): _out(out) { }
 
-  if (_jmethod_ids != NULL) {
-    Method::print_jmethod_ids(this, out);
+  void do_klass(Klass* k) {
+    ResourceMark rm;
+    _out->print("%s,", k->external_name());
   }
-  out->print(" handles count %d", _handles.count());
-  out->print(" dependencies %d", _dependency_count);
-  out->print_cr("}");
+};
+void ClassLoaderData::print_on(outputStream* out) const {
+  ResourceMark rm;
+  out->print_cr("ClassLoaderData(" PTR_FORMAT ")", p2i(this));
+  out->print_cr(" - name                %s", loader_name_and_id());
+  if (!_holder.is_null()) {
+  out->print   (" - holder              ");
+  _holder.print_on(out);
+  out->print_cr("");
+  }
+  out->print_cr(" - class loader        %p", _class_loader.ptr_raw());
+  out->print_cr(" - metaspace           %p", _metaspace);
+  out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
+  out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
+  out->print_cr(" - modified oops       %s", _modified_oops ? "true" : "false");
+  out->print_cr(" - keep alive          %d", _keep_alive);
+  out->print   (" - claim               ");
+  switch(_claim) {
+    case _claim_none:       out->print_cr("none"); break;
+    case _claim_finalizable:out->print_cr("finalizable"); break;
+    case _claim_strong:     out->print_cr("strong"); break;
+    case _claim_other:      out->print_cr("other"); break;
+    default:                ShouldNotReachHere();
+  }
+  out->print_cr(" - handles             %d", _handles.count());
+  out->print_cr(" - dependency count    %d", _dependency_count);
+  out->print   (" - klasses             {");
+  PrintKlassClosure closure(out);
+  ((ClassLoaderData*)this)->classes_do(&closure);
+  out->print_cr(" }");
+  out->print_cr(" - packages            %p", _packages);
+  out->print_cr(" - module              %p", _modules);
+  out->print_cr(" - unnamed module      %p", _unnamed_module);
+  out->print_cr(" - dictionary          %p", _dictionary);
+  if (_jmethod_ids != NULL) {
+  out->print   (" - jmethod count       ");
+  Method::print_jmethod_ids(this, out);
+  out->print_cr("");
+  }
+  out->print_cr(" - deallocate list     %p", _deallocate_list);
+  out->print_cr(" - next CLD            %p", _next);
 }
 #endif // PRODUCT
 
