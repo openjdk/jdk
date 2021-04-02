@@ -420,6 +420,10 @@ class Dependencies: public ResourceObj {
   static Klass*  find_unique_concrete_subtype(InstanceKlass* ctxk);
   static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m);
 
+#ifdef ASSERT
+  static bool verify_method_context(InstanceKlass* ctxk, Method* m);
+#endif // ASSERT
+
   // Create the encoding which will be stored in an nmethod.
   void encode_content_bytes();
 
