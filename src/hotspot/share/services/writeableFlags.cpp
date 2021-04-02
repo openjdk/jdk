@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
@@ -244,6 +245,9 @@ JVMFlag::Error WriteableFlags::set_double_flag(const char* name, double value, J
 JVMFlag::Error WriteableFlags::set_ccstr_flag(const char* name, const char* value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::Error err = JVMFlagAccess::ccstrAtPut(flag, &value, origin);
+  if (err == JVMFlag::SUCCESS) {
+    assert(value == NULL, "old value is freed automatically and not returned");
+  }
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -357,11 +361,9 @@ JVMFlag::Error WriteableFlags::set_flag_from_jvalue(JVMFlag* f, const void* valu
       err_msg.print("flag value is missing");
       return JVMFlag::MISSING_VALUE;
     }
+    ResourceMark rm;
     ccstr svalue = java_lang_String::as_utf8_string(str);
     JVMFlag::Error ret = WriteableFlags::set_ccstr_flag(f->name(), svalue, origin, err_msg);
-    if (ret != JVMFlag::SUCCESS) {
-      FREE_C_HEAP_ARRAY(char, svalue);
-    }
     return ret;
   } else {
     ShouldNotReachHere();
