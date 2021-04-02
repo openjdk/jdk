@@ -43,7 +43,7 @@ public class SharedNameTable extends Name.Table {
     // maintain a freelist of recently used name tables for reuse.
     private static List<SoftReference<SharedNameTable>> freelist = List.nil();
 
-    static public synchronized SharedNameTable create(Names names) {
+    public static synchronized SharedNameTable create(Names names) {
         while (freelist.nonEmpty()) {
             SharedNameTable t = freelist.head.get();
             freelist = freelist.tail;
@@ -54,7 +54,7 @@ public class SharedNameTable extends Name.Table {
         return new SharedNameTable(names);
     }
 
-    static private synchronized void dispose(SharedNameTable t) {
+    private static synchronized void dispose(SharedNameTable t) {
         freelist = freelist.prepend(new SoftReference<>(t));
     }
 

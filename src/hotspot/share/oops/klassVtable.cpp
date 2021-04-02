@@ -159,15 +159,16 @@ int klassVtable::initialize_from_super(Klass* super) {
 
 //
 // Revised lookup semantics   introduced 1.3 (Kestrel beta)
-void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
+void klassVtable::initialize_vtable(GrowableArray<InstanceKlass*>* supers) {
 
   // Note:  Arrays can have intermediate array supers.  Use java_super to skip them.
   InstanceKlass* super = _klass->java_super();
 
   bool is_shared = _klass->is_shared();
+  Thread* current = Thread::current();
 
   if (!_klass->is_array_klass()) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     log_develop_debug(vtables)("Initializing: %s", _klass->name()->as_C_string());
   }
 
@@ -198,9 +199,9 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
     // if override, replace in copy of super vtable, otherwise append to end
     for (int i = 0; i < len; i++) {
       // update_inherited_vtable can stop for gc - ensure using handles
-      methodHandle mh(THREAD, methods->at(i));
+      methodHandle mh(current, methods->at(i));
 
-      bool needs_new_entry = update_inherited_vtable(mh, super_vtable_len, -1, checkconstraints, CHECK);
+      bool needs_new_entry = update_inherited_vtable(current, mh, super_vtable_len, -1, supers);
 
       if (needs_new_entry) {
         put_method_at(mh(), initialized);
@@ -214,22 +215,18 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
     if (default_methods != NULL) {
       len = default_methods->length();
       if (len > 0) {
-        Array<int>* def_vtable_indices = NULL;
-        if ((def_vtable_indices = ik()->default_vtable_indices()) == NULL) {
-          assert(!is_shared, "shared class def_vtable_indices does not exist");
-          def_vtable_indices = ik()->create_new_default_vtable_indices(len, CHECK);
-        } else {
-          assert(def_vtable_indices->length() == len, "reinit vtable len?");
-        }
+        Array<int>* def_vtable_indices = ik()->default_vtable_indices();
+        assert(def_vtable_indices != NULL, "should be created");
+        assert(def_vtable_indices->length() == len, "reinit vtable len?");
         for (int i = 0; i < len; i++) {
           bool needs_new_entry;
           {
             // Reduce the scope of this handle so that it is fetched again.
             // The methodHandle keeps it from being deleted by RedefineClasses while
             // we're using it.
-            methodHandle mh(THREAD, default_methods->at(i));
+            methodHandle mh(current, default_methods->at(i));
             assert(!mh->is_private(), "private interface method in the default method list");
-            needs_new_entry = update_inherited_vtable(mh, super_vtable_len, i, checkconstraints, CHECK);
+            needs_new_entry = update_inherited_vtable(current, mh, super_vtable_len, i, supers);
           }
 
           // needs new entry
@@ -257,7 +254,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
     // Interfaces do not need interface methods in their vtables
     // This includes miranda methods and during later processing, default methods
     if (!ik()->is_interface()) {
-      initialized = fill_in_mirandas(THREAD, initialized);
+      initialized = fill_in_mirandas(current, initialized);
     }
 
     // In class hierarchies where the accessibility is not increasing (i.e., going from private ->
@@ -357,11 +354,10 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
 }
 
 static void log_vtables(int i, bool overrides, const methodHandle& target_method,
-                        Klass* target_klass, Method* super_method,
-                        Thread* thread) {
+                        Klass* target_klass, Method* super_method) {
 #ifndef PRODUCT
   if (log_develop_is_enabled(Trace, vtables)) {
-    ResourceMark rm(thread);
+    ResourceMark rm;
     LogTarget(Trace, vtables) lt;
     LogStream ls(lt);
     char* sig = target_method()->name_and_sig_as_C_string();
@@ -384,10 +380,10 @@ static void log_vtables(int i, bool overrides, const methodHandle& target_method
 // OR return true if a new vtable entry is required.
 // Only called for InstanceKlass's, i.e. not for arrays
 // If that changed, could not use _klass as handle for klass
-bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
+bool klassVtable::update_inherited_vtable(Thread* current,
+                                          const methodHandle& target_method,
                                           int super_vtable_len, int default_index,
-                                          bool checkconstraints, TRAPS) {
-  ResourceMark rm(THREAD);
+                                          GrowableArray<InstanceKlass*>* supers) {
   bool allocate_new = true;
 
   InstanceKlass* klass = ik();
@@ -460,8 +456,8 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
     target_klass = _klass;
   }
 
-  HandleMark hm(THREAD);
-  Handle target_loader(THREAD, target_klass->class_loader());
+  HandleMark hm(current);
+  Handle target_loader(current, target_klass->class_loader());
 
   Symbol* target_classname = target_klass->name();
   for(int i = 0; i < super_vtable_len; i++) {
@@ -507,42 +503,9 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
         // redefines this method if this method is a default method belonging to a
         // super class or interface.
         put_method_at(target_method(), i);
-
-        // Do not check loader constraints for overpass methods because overpass
-        // methods are created by the jvm to throw exceptions.
-        if (checkconstraints && !target_method->is_overpass()) {
-          // Override vtable entry if passes loader constraint check
-          // if loader constraint checking requested
-          // No need to visit his super, since he and his super
-          // have already made any needed loader constraints.
-          // Since loader constraints are transitive, it is enough
-          // to link to the first super, and we get all the others.
-          Handle super_loader(THREAD, super_klass->class_loader());
-
-          if (target_loader() != super_loader()) {
-            ResourceMark rm(THREAD);
-            Symbol* failed_type_symbol =
-              SystemDictionary::check_signature_loaders(signature, _klass,
-                                                        target_loader, super_loader,
-                                                        true);
-            if (failed_type_symbol != NULL) {
-              stringStream ss;
-              ss.print("loader constraint violation for class %s: when selecting "
-                       "overriding method '", klass->external_name());
-              target_method->print_external_name(&ss),
-              ss.print("' the class loader %s of the "
-                       "selected method's type %s, and the class loader %s for its super "
-                       "type %s have different Class objects for the type %s used in the signature (%s; %s)",
-                       target_klass->class_loader_data()->loader_name_and_id(),
-                       target_klass->external_name(),
-                       super_klass->class_loader_data()->loader_name_and_id(),
-                       super_klass->external_name(),
-                       failed_type_symbol->as_klass_external_name(),
-                       target_klass->class_in_module_of_loader(false, true),
-                       super_klass->class_in_module_of_loader(false, true));
-              THROW_MSG_(vmSymbols::java_lang_LinkageError(), ss.as_string(), false);
-            }
-          }
+        // Save super for constraint checking.
+        if (supers != NULL) {
+          supers->at_put(i, super_klass);
         }
 
         overrides = true;
@@ -566,7 +529,7 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
       } else {
         overrides = false;
       }
-      log_vtables(i, overrides, target_method, target_klass, super_method, THREAD);
+      log_vtables(i, overrides, target_method, target_klass, super_method);
     }
   }
   return allocate_new;
@@ -597,6 +560,66 @@ void klassVtable::put_method_at(Method* m, int index) {
     table()[index].set(m);
   }
 }
+
+void klassVtable::check_constraints(GrowableArray<InstanceKlass*>* supers, TRAPS) {
+  assert(supers->length() == length(), "lengths are different");
+  // For each method in the vtable, check constraints against any super class
+  // if overridden.
+  for (int i = 0; i < length(); i++) {
+    methodHandle target_method(THREAD, unchecked_method_at(i));
+    InstanceKlass* super_klass = supers->at(i);
+    if (target_method() != NULL && super_klass != NULL) {
+      // Do not check loader constraints for overpass methods because overpass
+      // methods are created by the jvm to throw exceptions.
+      if (!target_method->is_overpass()) {
+        // Override vtable entry if passes loader constraint check
+        // if loader constraint checking requested
+        // No need to visit his super, since he and his super
+        // have already made any needed loader constraints.
+        // Since loader constraints are transitive, it is enough
+        // to link to the first super, and we get all the others.
+        Handle super_loader(THREAD, super_klass->class_loader());
+        InstanceKlass* target_klass = target_method->method_holder();
+        Handle target_loader(THREAD, target_klass->class_loader());
+
+        if (target_loader() != super_loader()) {
+          ResourceMark rm(THREAD);
+          Symbol* failed_type_symbol =
+            SystemDictionary::check_signature_loaders(target_method->signature(),
+                                                      _klass,
+                                                      target_loader, super_loader,
+                                                      true);
+          if (failed_type_symbol != NULL) {
+            stringStream ss;
+            ss.print("loader constraint violation for class %s: when selecting "
+                     "overriding method '", _klass->external_name());
+            target_method->print_external_name(&ss),
+            ss.print("' the class loader %s of the "
+                     "selected method's type %s, and the class loader %s for its super "
+                     "type %s have different Class objects for the type %s used in the signature (%s; %s)",
+                     target_klass->class_loader_data()->loader_name_and_id(),
+                     target_klass->external_name(),
+                     super_klass->class_loader_data()->loader_name_and_id(),
+                     super_klass->external_name(),
+                     failed_type_symbol->as_klass_external_name(),
+                     target_klass->class_in_module_of_loader(false, true),
+                     super_klass->class_in_module_of_loader(false, true));
+            THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
+          }
+        }
+      }
+    }
+  }
+}
+
+void klassVtable::initialize_vtable_and_check_constraints(TRAPS) {
+  // Save a superclass from each vtable entry to do constraint checking
+  ResourceMark rm(THREAD);
+  GrowableArray<InstanceKlass*>* supers = new GrowableArray<InstanceKlass*>(_length, _length, NULL);
+  initialize_vtable(supers);
+  check_constraints(supers, CHECK);
+}
+
 
 // Find out if a method "m" with superclass "super", loader "classloader" and
 // name "classname" needs a new vtable entry.  Let P be a class package defined
@@ -1107,11 +1130,11 @@ klassItable::klassItable(InstanceKlass* klass) {
 static int initialize_count = 0;
 
 // Initialization
-void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
+void klassItable::initialize_itable(GrowableArray<Method*>* supers) {
   if (_klass->is_interface()) {
     // This needs to go after vtable indices are assigned but
     // before implementors need to know the number of itable indices.
-    assign_itable_indices_for_interface(THREAD, InstanceKlass::cast(_klass));
+    assign_itable_indices_for_interface(InstanceKlass::cast(_klass));
   }
 
   // Cannot be setup doing bootstrapping, interfaces don't have
@@ -1124,27 +1147,82 @@ void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
   guarantee(size_offset_table() >= 1, "too small");
   int num_interfaces = size_offset_table() - 1;
   if (num_interfaces > 0) {
-    ResourceMark rm(THREAD);
-    log_develop_debug(itables)("%3d: Initializing itables for %s", ++initialize_count,
+    if (log_develop_is_enabled(Debug, itables)) {
+      ResourceMark rm;
+      log_develop_debug(itables)("%3d: Initializing itables for %s", ++initialize_count,
                        _klass->name()->as_C_string());
-
-
-    // Iterate through all interfaces
-    int i;
-    for(i = 0; i < num_interfaces; i++) {
-      itableOffsetEntry* ioe = offset_entry(i);
-      HandleMark hm(THREAD);
-      InstanceKlass* interf = ioe->interface_klass();
-      assert(interf != NULL && ioe->offset() != 0, "bad offset entry in itable");
-      initialize_itable_for_interface(ioe->offset(), interf, checkconstraints, CHECK);
     }
 
+    // Iterate through all interfaces
+    for(int i = 0; i < num_interfaces; i++) {
+      itableOffsetEntry* ioe = offset_entry(i);
+      InstanceKlass* interf = ioe->interface_klass();
+      assert(interf != NULL && ioe->offset() != 0, "bad offset entry in itable");
+      initialize_itable_for_interface(ioe->offset(), interf, supers,
+                       (ioe->offset() - offset_entry(0)->offset())/wordSize);
+    }
   }
   // Check that the last entry is empty
   itableOffsetEntry* ioe = offset_entry(size_offset_table() - 1);
   guarantee(ioe->interface_klass() == NULL && ioe->offset() == 0, "terminator entry missing");
 }
 
+void klassItable::check_constraints(GrowableArray<Method*>* supers, TRAPS) {
+
+  assert(_size_method_table == supers->length(), "wrong size");
+  itableMethodEntry* ime = method_entry(0);
+  for (int i = 0; i < _size_method_table; i++) {
+    Method* target = ime->method();
+    Method* interface_method = supers->at(i); // method overridden
+
+    if (target != NULL && interface_method != NULL) {
+      InstanceKlass* method_holder = target->method_holder();
+      InstanceKlass* interf = interface_method->method_holder();
+      HandleMark hm(THREAD);
+      Handle method_holder_loader(THREAD, method_holder->class_loader());
+      Handle interface_loader(THREAD, interf->class_loader());
+
+      if (method_holder_loader() != interface_loader()) {
+        ResourceMark rm(THREAD);
+        Symbol* failed_type_symbol =
+          SystemDictionary::check_signature_loaders(target->signature(),
+                                                    _klass,
+                                                    method_holder_loader,
+                                                    interface_loader,
+                                                    true);
+        if (failed_type_symbol != NULL) {
+          stringStream ss;
+          ss.print("loader constraint violation in interface itable"
+                   " initialization for class %s: when selecting method '",
+                   _klass->external_name());
+          interface_method->print_external_name(&ss),
+          ss.print("' the class loader %s for super interface %s, and the class"
+                   " loader %s of the selected method's %s, %s have"
+                   " different Class objects for the type %s used in the signature (%s; %s)",
+                   interf->class_loader_data()->loader_name_and_id(),
+                   interf->external_name(),
+                   method_holder->class_loader_data()->loader_name_and_id(),
+                   method_holder->external_kind(),
+                   method_holder->external_name(),
+                   failed_type_symbol->as_klass_external_name(),
+                   interf->class_in_module_of_loader(false, true),
+                   method_holder->class_in_module_of_loader(false, true));
+          THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
+        }
+      }
+    }
+    ime++;
+  }
+}
+
+void klassItable::initialize_itable_and_check_constraints(TRAPS) {
+  // Save a super interface from each itable entry to do constraint checking
+  ResourceMark rm(THREAD);
+  GrowableArray<Method*>* supers =
+    new GrowableArray<Method*>(_size_method_table, _size_method_table, NULL);
+  initialize_itable(supers);
+  check_constraints(supers, CHECK);
+}
 
 inline bool interface_method_needs_itable_index(Method* m) {
   if (m->is_static())           return false;   // e.g., Stream.empty
@@ -1157,11 +1235,14 @@ inline bool interface_method_needs_itable_index(Method* m) {
   return true;
 }
 
-int klassItable::assign_itable_indices_for_interface(Thread* current, InstanceKlass* klass) {
+int klassItable::assign_itable_indices_for_interface(InstanceKlass* klass) {
   // an interface does not have an itable, but its methods need to be numbered
-  ResourceMark rm(current);
-  log_develop_debug(itables)("%3d: Initializing itable indices for interface %s",
-                             ++initialize_count, klass->name()->as_C_string());
+  if (log_develop_is_enabled(Trace, itables)) {
+    ResourceMark rm;
+    log_develop_debug(itables)("%3d: Initializing itable indices for interface %s",
+                               ++initialize_count, klass->name()->as_C_string());
+  }
+
   Array<Method*>* methods = klass->methods();
   int nof_methods = methods->length();
   int ime_num = 0;
@@ -1171,6 +1252,7 @@ int klassItable::assign_itable_indices_for_interface(Thread* current, InstanceKl
       assert(!m->is_final_method(), "no final interface methods");
       // If m is already assigned a vtable index, do not disturb it.
       if (log_develop_is_enabled(Trace, itables)) {
+        ResourceMark rm;
         LogTarget(Trace, itables) lt;
         LogStream ls(lt);
         assert(m != NULL, "methods can never be null");
@@ -1225,12 +1307,12 @@ int klassItable::method_count_for_interface(InstanceKlass* interf) {
 }
 
 
-void klassItable::initialize_itable_for_interface(int method_table_offset, InstanceKlass* interf, bool checkconstraints, TRAPS) {
+void klassItable::initialize_itable_for_interface(int method_table_offset, InstanceKlass* interf,
+                                                  GrowableArray<Method*>* supers,
+                                                  int start_offset) {
   assert(interf->is_interface(), "must be");
   Array<Method*>* methods = interf->methods();
   int nof_methods = methods->length();
-  HandleMark hm(THREAD);
-  Handle interface_loader (THREAD, interf->class_loader());
 
   int ime_count = method_count_for_interface(interf);
   for (int i = 0; i < nof_methods; i++) {
@@ -1256,47 +1338,19 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
             initialize(Universe::throw_illegal_access_error());
       }
     } else {
-      // Entry did resolve, check loader constraints before initializing
-      // if checkconstraints requested
-      if (checkconstraints) {
-        Handle method_holder_loader (THREAD, target->method_holder()->class_loader());
-        InstanceKlass* method_holder = target->method_holder();
-        if (method_holder_loader() != interface_loader()) {
-          ResourceMark rm(THREAD);
-          Symbol* failed_type_symbol =
-            SystemDictionary::check_signature_loaders(m->signature(),
-                                                      _klass,
-                                                      method_holder_loader,
-                                                      interface_loader,
-                                                      true);
-          if (failed_type_symbol != NULL) {
-            stringStream ss;
-            ss.print("loader constraint violation in interface itable"
-                     " initialization for class %s: when selecting method '",
-                     _klass->external_name());
-            m->print_external_name(&ss),
-            ss.print("' the class loader %s for super interface %s, and the class"
-                     " loader %s of the selected method's %s, %s have"
-                     " different Class objects for the type %s used in the signature (%s; %s)",
-                     interf->class_loader_data()->loader_name_and_id(),
-                     interf->external_name(),
-                     method_holder->class_loader_data()->loader_name_and_id(),
-                     method_holder->external_kind(),
-                     method_holder->external_name(),
-                     failed_type_symbol->as_klass_external_name(),
-                     interf->class_in_module_of_loader(false, true),
-                     method_holder->class_in_module_of_loader(false, true));
-            THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
-          }
-        }
-      }
 
-      // ime may have moved during GC so recalculate address
       int ime_num = m->itable_index();
       assert(ime_num < ime_count, "oob");
+
+      // Save super interface method to perform constraint checks.
+      // The method is in the error message, that's why.
+      if (supers != NULL) {
+        supers->at_put(start_offset + ime_num, m);
+      }
+
       itableOffsetEntry::method_entry(_klass, method_table_offset)[ime_num].initialize(target);
       if (log_develop_is_enabled(Trace, itables)) {
-        ResourceMark rm(THREAD);
+        ResourceMark rm;
         if (target != NULL) {
           LogTarget(Trace, itables) lt;
           LogStream ls(lt);
