@@ -945,9 +945,9 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr("ClassLoaderData(" PTR_FORMAT ")", p2i(this));
   out->print_cr(" - name                %s", loader_name_and_id());
   if (!_holder.is_null()) {
-  out->print   (" - holder              ");
-  _holder.print_on(out);
-  out->print_cr("");
+    out->print   (" - holder              ");
+    _holder.print_on(out);
+    out->print_cr("");
   }
   out->print_cr(" - class loader        %p", _class_loader.ptr_raw());
   out->print_cr(" - metaspace           %p", _metaspace);
@@ -974,9 +974,9 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr(" - unnamed module      %p", _unnamed_module);
   out->print_cr(" - dictionary          %p", _dictionary);
   if (_jmethod_ids != NULL) {
-  out->print   (" - jmethod count       ");
-  Method::print_jmethod_ids(this, out);
-  out->print_cr("");
+    out->print   (" - jmethod count       ");
+    Method::print_jmethod_ids(this, out);
+    out->print_cr("");
   }
   out->print_cr(" - deallocate list     %p", _deallocate_list);
   out->print_cr(" - next CLD            %p", _next);
