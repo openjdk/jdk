@@ -968,14 +968,14 @@ class ClassHierarchyWalker {
   Symbol* _signature;
 
   // special classes which are not allowed to be witnesses:
-  Klass*    _participants[PARTICIPANT_LIMIT+1];
-  int       _num_participants;
+  Klass*  _participants[PARTICIPANT_LIMIT+1];
+  uint    _num_participants;
 
   // cache of method lookups
   Method* _found_methods[PARTICIPANT_LIMIT+1];
 
   // if non-zero, tells how many witnesses to convert to participants
-  int       _record_witnesses;
+  uint    _record_witnesses;
 
   void initialize(Klass* participant) {
     _record_witnesses = 0;
@@ -1012,11 +1012,11 @@ class ClassHierarchyWalker {
     _signature = NULL;
     initialize(participant);
   }
-  ClassHierarchyWalker(Klass* participants[], int num_participants) {
+  ClassHierarchyWalker(Klass* participants[], uint num_participants) {
     _name      = NULL;
     _signature = NULL;
     initialize(NULL);
-    for (int i = 0; i < num_participants; ++i) {
+    for (uint i = 0; i < num_participants; ++i) {
       add_participant(participants[i]);
     }
   }
@@ -1028,14 +1028,14 @@ class ClassHierarchyWalker {
   }
 
   int num_participants() { return _num_participants; }
-  Klass* participant(int n) {
-    assert((uint)n <= (uint)_num_participants, "oob");
+  Klass* participant(uint n) {
+    assert(n <= _num_participants, "oob");
     return _participants[n];
   }
 
   // Note:  If n==num_participants, returns NULL.
-  Method* found_method(int n) {
-    assert((uint)n <= (uint)_num_participants, "oob");
+  Method* found_method(uint n) {
+    assert(n <= _num_participants, "oob");
     Method* fm = _found_methods[n];
     assert(n == _num_participants || fm != NULL, "proper usage");
     if (fm != NULL && fm->method_holder() != _participants[n]) {
@@ -1104,13 +1104,13 @@ class ClassHierarchyWalker {
 
   void add_participant(Klass* participant) {
     assert(_num_participants + _record_witnesses < PARTICIPANT_LIMIT, "oob");
-    int np = _num_participants++;
+    uint np = _num_participants++;
     _participants[np] = participant;
     _participants[np+1] = NULL;
     _found_methods[np+1] = NULL;
   }
 
-  void record_witnesses(int add) {
+  void record_witnesses(uint add) {
     if (add > PARTICIPANT_LIMIT)  add = PARTICIPANT_LIMIT;
     assert(_num_participants + add < PARTICIPANT_LIMIT, "oob");
     _record_witnesses = add;
