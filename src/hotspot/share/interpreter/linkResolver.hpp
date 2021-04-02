@@ -317,7 +317,7 @@ class LinkResolver: AllStatic {
   static Method* resolve_static_call_or_null(const LinkInfo& link_info);
   static Method* resolve_special_call_or_null(const LinkInfo& link_info);
 
-  static int vtable_index_of_interface_method(Klass* klass, const methodHandle& resolved_method);
+  static int vtable_index_of_interface_method(Klass* klass, Method* resolved_method);
 
   // same as above for compile-time resolution; returns vtable_index if current_klass if linked
   static int resolve_virtual_vtable_index  (Klass* receiver_klass,

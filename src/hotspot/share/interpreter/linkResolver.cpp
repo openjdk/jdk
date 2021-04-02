@@ -149,8 +149,7 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass, TRAPS) {
     kind = CallInfo::vtable_call;
   } else if (!resolved_klass->is_interface()) {
     // A default or miranda method.  Compute the vtable index.
-    index = LinkResolver::vtable_index_of_interface_method(resolved_klass,
-                           _resolved_method);
+    index = LinkResolver::vtable_index_of_interface_method(resolved_klass, resolved_method);
     assert(index >= 0 , "we should have valid vtable index at this point");
 
     kind = CallInfo::vtable_call;
@@ -405,8 +404,7 @@ Method* LinkResolver::lookup_instance_method_in_klasses(Klass* klass,
   return result;
 }
 
-int LinkResolver::vtable_index_of_interface_method(Klass* klass,
-                                                   const methodHandle& resolved_method) {
+int LinkResolver::vtable_index_of_interface_method(Klass* klass, Method* resolved_method) {
 
   int vtable_index = Method::invalid_vtable_index;
   Symbol* name = resolved_method->name();
@@ -1391,7 +1389,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
 
   // do lookup based on receiver klass using the vtable index
   if (resolved_method->method_holder()->is_interface()) { // default or miranda method
-    vtable_index = vtable_index_of_interface_method(resolved_klass, resolved_method);
+    vtable_index = vtable_index_of_interface_method(resolved_klass, resolved_method());
     assert(vtable_index >= 0 , "we should have valid vtable index at this point");
 
     selected_method = methodHandle(THREAD, recv_klass->method_at_vtable(vtable_index));
