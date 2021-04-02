@@ -265,6 +265,11 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
     fi
   fi
 
+  if test "x$OPENJDK_TARGET_OS" = xmacosx &&
+      test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    MACHINE_FLAG="-arch arm64"
+  fi
+
   # FIXME: global flags are not used yet...
   # The "global" flags will *always* be set. Without them, it is not possible to
   # get a working compilation.
