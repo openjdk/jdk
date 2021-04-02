@@ -408,16 +408,16 @@ public final class RSACore {
             if ((this.e != null && this.e.equals(e)) ||
                 (this.d != null && this.d.equals(d))) {
 
-                BlindingRandomPair brp = null;
-                if (!u.equals(BigInteger.ZERO) &&
-                    !v.equals(BigInteger.ZERO)) {
-
-                    brp = new BlindingRandomPair(u, v);
-                    if (isReusable()) {
-                        u = u.modPow(BIG_TWO, n);
-                        v = v.modPow(BIG_TWO, n);
-                    }
-                } // Otherwise, need to reset the random pair.
+                BlindingRandomPair brp = new BlindingRandomPair(u, v);
+                if (u.compareTo(BigInteger.ONE) <= 0 ||
+                    v.compareTo(BigInteger.ONE) <= 0) {
+                    // Reset so the parameters will be not queued later
+                    u = BigInteger.ZERO;
+                    v = BigInteger.ZERO;
+                } else {
+                    u = u.modPow(BIG_TWO, n);
+                    v = v.modPow(BIG_TWO, n);
+                }
 
                 return brp;
             }
@@ -425,9 +425,9 @@ public final class RSACore {
             return null;
         }
 
+        // Check if reusable, return true if both u & v are not zero.
         boolean isReusable() {
-            return u.compareTo(BigInteger.ONE) > 0 && v.compareTo(
-                BigInteger.ONE) > 0;
+            return !u.equals(BigInteger.ZERO) && !v.equals(BigInteger.ZERO);
         }
     }
 
