@@ -1103,7 +1103,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
     is_static = JNI_FALSE;
     output()->print_cr("Dynamic dump:");
     if (!UseSharedSpaces) {
-      output()->print_cr("CDS is not available for the JDK");
+      output()->print_cr("Dynamic dump is unsupported when base CDS archive is not loaded");
       return;
     }
     if (!RecordDynamicDumpInfo) {
@@ -1122,7 +1122,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   }
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
-  JavaValue result(T_OBJECT);
+  JavaValue result(T_VOID);
   JavaCallArguments args;
   args.push_int(is_static);
   args.push_oop(fileh);
@@ -1130,7 +1130,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
                          cds_klass,
                          vmSymbols::dumpSharedArchive(),
                          vmSymbols::dumpSharedArchive_signature(),
-                         &args, THREAD);
+                         &args, CHECK);
 }
 
 int DumpSharedArchiveDCmd::num_arguments() {

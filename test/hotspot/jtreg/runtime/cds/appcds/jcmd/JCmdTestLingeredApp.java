@@ -23,9 +23,11 @@
 
 import jdk.test.lib.apps.LingeredApp;
 
-public class LingeredTestApp extends LingeredApp {
-    // Do not use default test.class.path in class path.
-    public boolean useDefaultClasspath() { return false; }
+public class JCmdTestLingeredApp extends LingeredApp {
+    public JCmdTestLingeredApp() {
+        // Do not use default test.class.path in class path.
+        setUseDefaultClasspath(false);
+    }
 
     public static void main(String args[]) {
         try {

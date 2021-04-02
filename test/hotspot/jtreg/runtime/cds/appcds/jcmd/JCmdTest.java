@@ -31,8 +31,8 @@
  * @modules jdk.jcmd/sun.tools.common:+open
  * @compile ../test-classes/Hello.java
  * @build sun.hotspot.WhiteBox
- * @build LingeredTestApp JCmdTest
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @build JCmdTestLingeredApp JCmdTest
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JCmdTest
  */
 
@@ -57,7 +57,9 @@ import java.io.InputStreamReader;
 import java.io.BufferedReader;
 
 public class JCmdTest {
-    static final String TEST_CLASSES[]      = {"LingeredTestApp", "jdk/test/lib/apps/LingeredApp", "Hello"};
+    static final String TEST_CLASSES[]      = {"JCmdTestLingeredApp",
+                                               "jdk/test/lib/apps/LingeredApp",
+                                               "jdk/test/lib/apps/LingeredApp$1"};
     static final String BOOT_CLASSES[]      = {"Hello"};
     static final String SUBCMD_STATIC_DUMP  = "static_dump";
     static final String SUBCMD_DYNAMIC_DUMP = "dynamic_dump";
@@ -66,10 +68,10 @@ public class JCmdTest {
     static final String DYNAMIC_DUMP_FILE   = "mydynamic";
 
 
-    static final String[] STATIC_MESSAGES   = {"LingeredTestApp source: shared objects file",
+    static final String[] STATIC_MESSAGES   = {"JCmdTestLingeredApp source: shared objects file",
                                                "LingeredApp source: shared objects file",
                                                "Hello source: shared objects file"};
-    static final String[] DYNAMIC_MESSAGES  = {"LingeredTestApp source: shared objects file (top)",
+    static final String[] DYNAMIC_MESSAGES  = {"JCmdTestLingeredApp source: shared objects file (top)",
                                                "LingeredApp source: shared objects file (top)",
                                                "Hello source: shared objects file (top)"};
 
@@ -108,7 +110,7 @@ public class JCmdTest {
     }
 
     private static LingeredApp createLingeredApp(String... args) throws Exception {
-        LingeredTestApp app  = new LingeredTestApp();
+        JCmdTestLingeredApp app  = new JCmdTestLingeredApp();
         try {
             LingeredApp.startAppExactJvmOpts(app, args);
         } catch (Exception e) {
@@ -341,7 +343,7 @@ public class JCmdTest {
 
         if (app != null) {
             if (app.getProcess().isAlive()) {
-                throw new RuntimeException("The LingeredTestApp should not start up!");
+                throw new RuntimeException("The JCmdTestLingeredApp should not start up!");
             }
         }
     }

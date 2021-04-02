@@ -208,24 +208,26 @@ public class CDS {
     private static native void dumpClassList(String listFileName);
     private static native void dumpDynamicArchive(String archiveFileName);
 
-    private static void outputStdStream(InputStream stream, String fileName, List<String> cmds) {
-        String line;
-        InputStreamReader isr = new InputStreamReader(stream);
-        BufferedReader rdr = new BufferedReader(isr);
-
-        try {
-            PrintStream prt = new PrintStream(fileName);
-            prt.println("Command:");
-            for (String s : cmds) {
-                prt.print(s + " ");
-            }
-            prt.println("");
-            while((line = rdr.readLine()) != null) {
-                prt.println(line);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("IOExeption happens during drain stream " + e.getMessage());
-        }
+    private static String drainOutput(InputStream stream, long pid, String tail, List<String> cmds) {
+        String fileName  = "java_pid" + pid + "_" + tail;
+        new Thread( ()-> {
+            try (InputStreamReader isr = new InputStreamReader(stream);
+                 BufferedReader rdr = new BufferedReader(isr);
+                 PrintStream prt = new PrintStream(fileName)) {
+                prt.println("Command:");
+                for (String s : cmds) {
+                    prt.print(s + " ");
+                }
+                prt.println("");
+                String line;
+                while((line = rdr.readLine()) != null) {
+                    prt.println(line);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("IOExeption happens during drain stream to file " +
+                                           fileName + ": " + e.getMessage());
+            }}).start();
+        return fileName;
     }
 
     private static String[] excludeFlags = {
@@ -293,17 +295,9 @@ public class CDS {
 
             Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[0]));
 
-            // Drain stdout to a file in a separate thread.
-            String stdOutFile = "java_pid" + proc.pid() + "_stdout.txt";
-            new Thread( ()-> {
-                    outputStdStream(proc.getInputStream(), stdOutFile, cmds);
-                }).start();
-
-            // Drain stderr to a file in a separate thread.
-            String stdErrFile = "java_pid" + proc.pid() + "_stderr.txt";
-            new Thread( ()-> {
-                    outputStdStream(proc.getErrorStream(), stdErrFile, cmds);
-                }).start();
+            // Drain stdout/stderr to files in new threads.
+            String stdOutFile = drainOutput(proc.getInputStream(), proc.pid(), "stdout", cmds);
+            String stdErrFile = drainOutput(proc.getErrorStream(), proc.pid(), "stderr", cmds);
 
             proc.waitFor();
             // done, delete classlist file.

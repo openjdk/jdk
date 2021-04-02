@@ -89,6 +89,7 @@ public class LingeredApp {
     private Thread outPumperThread;
     private Thread errPumperThread;
     private boolean finishAppCalled = false;
+    private boolean useDefaultClasspath = true;
 
     protected Process appProcess;
     protected OutputBuffer output;
@@ -338,7 +339,8 @@ public class LingeredApp {
                 .collect(Collectors.joining(" ", "Command line: [", "]")));
     }
 
-    public boolean useDefaultClasspath() { return true; }
+    public boolean useDefaultClasspath() { return useDefaultClasspath; }
+    public void setUseDefaultClasspath(boolean value) { useDefaultClasspath = value; }
 
     /**
      * Run the app.
