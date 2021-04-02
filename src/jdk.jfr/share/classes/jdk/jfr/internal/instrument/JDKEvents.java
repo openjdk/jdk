@@ -90,11 +90,6 @@ public final class JDKEvents {
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
 
-        ContainerConfigurationEvent.class,
-        ContainerCPUUsageEvent.class,
-        ContainerCPUThrottlingEvent.class,
-        ContainerMemoryUsageEvent.class,
-        ContainerIOUsageEvent.class,
         DirectBufferStatisticsEvent.class
     };
 
@@ -131,15 +126,12 @@ public final class JDKEvents {
                 for (Class<?> eventClass : eventClasses) {
                     SecuritySupport.registerEvent((Class<? extends Event>) eventClass);
                 }
-                containerMetrics = Container.metrics();
-                initializationTriggered = true;
+                
                 RequestEngine.addTrustedJDKHook(ExceptionStatisticsEvent.class, emitExceptionStatistics);
                 RequestEngine.addTrustedJDKHook(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
-                RequestEngine.addTrustedJDKHook(ContainerConfigurationEvent.class, emitContainerConfiguration);
-                RequestEngine.addTrustedJDKHook(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
-                RequestEngine.addTrustedJDKHook(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
-                RequestEngine.addTrustedJDKHook(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
-                RequestEngine.addTrustedJDKHook(ContainerIOUsageEvent.class, emitContainerIOUsage);
+                
+                initializeContainerEvents();
+                initializationTriggered = true;
             }
         } catch (Exception e) {
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Could not initialize JDK events. " + e.getMessage());
@@ -166,6 +158,23 @@ public final class JDKEvents {
         }
     }
 
+    private static void initializeContainerEvents() {
+        containerMetrics = Container.metrics();
+        if (containerMetrics == null) {
+            SecuritySupport.registerEvent(ContainerConfigurationEvent.class);
+            SecuritySupport.registerEvent(ContainerCPUUsageEvent.class);
+            SecuritySupport.registerEvent(ContainerCPUThrottlingEvent.class);
+            SecuritySupport.registerEvent(ContainerMemoryUsageEvent.class);
+            SecuritySupport.registerEvent(ContainerIOUsageEvent.class);
+
+            RequestEngine.addTrustedJDKHook(ContainerConfigurationEvent.class, emitContainerConfiguration);
+            RequestEngine.addTrustedJDKHook(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
+            RequestEngine.addTrustedJDKHook(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
+            RequestEngine.addTrustedJDKHook(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
+            RequestEngine.addTrustedJDKHook(ContainerIOUsageEvent.class, emitContainerIOUsage);
+        }
+    }
+
     private static void emitExceptionStatistics() {
         ExceptionStatisticsEvent t = new ExceptionStatisticsEvent();
         t.throwables = ThrowableTracer.numThrowables();
@@ -175,6 +184,7 @@ public final class JDKEvents {
     private static void emitContainerConfiguration() {
         if (containerMetrics != null) {
             ContainerConfigurationEvent t = new ContainerConfigurationEvent();
+            t.containerType = containerMetrics.getProvider();
             t.cpuSlicePeriod = containerMetrics.getCpuPeriod();
             t.cpuQuota = containerMetrics.getCpuQuota();
             t.cpuShares = containerMetrics.getCpuShares();
@@ -256,11 +266,13 @@ public final class JDKEvents {
         RequestEngine.removeHook(emitExceptionStatistics);
         RequestEngine.removeHook(emitDirectBufferStatistics);
 
-        RequestEngine.removeHook(emitContainerConfiguration);
-        RequestEngine.removeHook(emitContainerCPUUsage);
-        RequestEngine.removeHook(emitContainerCPUThrottling);
-        RequestEngine.removeHook(emitContainerMemoryUsage);
-        RequestEngine.removeHook(emitContainerIOUsage);
+        if (containerMetrics == null) {
+            RequestEngine.removeHook(emitContainerConfiguration);
+            RequestEngine.removeHook(emitContainerCPUUsage);
+            RequestEngine.removeHook(emitContainerCPUThrottling);
+            RequestEngine.removeHook(emitContainerMemoryUsage);
+            RequestEngine.removeHook(emitContainerIOUsage);
+        }
     }
 
     private static void emitDirectBufferStatistics() {

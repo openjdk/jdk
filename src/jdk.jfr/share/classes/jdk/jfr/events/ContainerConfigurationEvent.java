@@ -42,6 +42,10 @@ import jdk.jfr.internal.Type;
 @Category({"Operating System", "Container"})
 @Description("A set of container specific attributes.")
 public final class ContainerConfigurationEvent extends AbstractJDKEvent {
+    @Label("Container type")
+    @Description("Container type information")
+    public String containerType;
+
     @Label("CPU Slice Period")
     @Description("Length of the scheduling period, in microseconds, for processes within the container.")
     @Timespan(Timespan.MICROSECONDS)
