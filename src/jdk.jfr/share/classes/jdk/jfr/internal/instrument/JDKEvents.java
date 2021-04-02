@@ -126,10 +126,10 @@ public final class JDKEvents {
                 for (Class<?> eventClass : eventClasses) {
                     SecuritySupport.registerEvent((Class<? extends Event>) eventClass);
                 }
-                
+
                 RequestEngine.addTrustedJDKHook(ExceptionStatisticsEvent.class, emitExceptionStatistics);
                 RequestEngine.addTrustedJDKHook(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
-                
+
                 initializeContainerEvents();
                 initializationTriggered = true;
             }
