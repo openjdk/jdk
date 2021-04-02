@@ -951,7 +951,72 @@ bool DependencySignature::equals(DependencySignature const& s1, DependencySignat
   return true;
 }
 
-/// Checking dependencies:
+/// Checking dependencies
+
+#ifndef PRODUCT
+// TODO: migrate to PerfData?
+static int deps_find_witness_calls = 0;
+static int deps_find_witness_steps = 0;
+static int deps_find_witness_singles = 0;
+static int deps_find_witness_print = 0; // set to -1 to force a final print
+
+static void count_deps_find_witness_calls() {
+  if (deps_find_witness_print != 0) {
+    deps_find_witness_calls++;
+  }
+}
+
+static void count_deps_find_witness_singles() {
+  if (deps_find_witness_print != 0) {
+    deps_find_witness_singles++;
+  }
+}
+
+static void count_deps_find_witness_steps() {
+  if (deps_find_witness_print != 0) {
+    deps_find_witness_steps++;
+  }
+}
+
+static void print_find_witness_calls_info(bool verbose) {
+  if (deps_find_witness_print != 0) {
+    if (xtty != NULL) {
+      ttyLocker ttyl;
+      xtty->elem("deps_find_witness calls='%d' steps='%d' singles='%d'",
+                 deps_find_witness_calls,
+                 deps_find_witness_steps,
+                 deps_find_witness_singles);
+    }
+    if (verbose) {
+      ttyLocker ttyl;
+      tty->print_cr("Dependency check (find_witness) "
+                    "calls=%d, steps=%d (avg=%.1f), singles=%d",
+                    deps_find_witness_calls,
+                    deps_find_witness_steps,
+                    (double)deps_find_witness_steps / deps_find_witness_calls,
+                    deps_find_witness_singles);
+    }
+  }
+}
+
+static void count_find_witness_calls() {
+  if (TraceDependencies || LogCompilation) {
+    int pcount = deps_find_witness_print + 1;
+    bool initial_call     = (pcount == 1);
+    bool occasional_print = ((pcount & ((1<<10) - 1)) == 0);
+    if (pcount < 0)  pcount = 1; // crude overflow protection
+    deps_find_witness_print = pcount;
+    if (TraceDependencies && VerifyDependencies && initial_call) {
+      warning("TraceDependencies results may be inflated by VerifyDependencies");
+    }
+    if (occasional_print) {
+      // Every now and then dump a little info about dependency searching.
+      bool verbose = TraceDependencies && WizardMode;
+      print_find_witness_calls_info(verbose);
+    }
+  }
+}
+#endif // !PRODUCT
 
 // This hierarchy walker inspects subtypes of a given type,
 // trying to find a "bad" class which breaks a dependency.
@@ -1156,6 +1221,7 @@ class ClassHierarchyWalker {
  public:
   Klass* find_witness_subtype(InstanceKlass* context_type, KlassDepChange* changes = NULL) {
     assert(doing_subtype_search(), "must set up a subtype search");
+    NOT_PRODUCT( count_find_witness_calls(); )
     // When looking for unexpected concrete types,
     // do not look beneath expected ones.
     const bool participants_hide_witnesses = true;
@@ -1169,6 +1235,7 @@ class ClassHierarchyWalker {
   }
   Klass* find_witness_definer(InstanceKlass* context_type, KlassDepChange* changes = NULL) {
     assert(!doing_subtype_search(), "must set up a method definer search");
+    NOT_PRODUCT( count_find_witness_calls(); )
     // When looking for unexpected concrete methods,
     // look beneath expected ones, to see if there are overrides.
     const bool participants_hide_witnesses = true;
@@ -1180,52 +1247,6 @@ class ClassHierarchyWalker {
     }
   }
 };
-
-#ifndef PRODUCT
-static int deps_find_witness_calls = 0;
-static int deps_find_witness_steps = 0;
-static int deps_find_witness_recursions = 0;
-static int deps_find_witness_singles = 0;
-static int deps_find_witness_print = 0; // set to -1 to force a final print
-static bool count_find_witness_calls() {
-  if (TraceDependencies || LogCompilation) {
-    int pcount = deps_find_witness_print + 1;
-    bool final_stats      = (pcount == 0);
-    bool initial_call     = (pcount == 1);
-    bool occasional_print = ((pcount & ((1<<10) - 1)) == 0);
-    if (pcount < 0)  pcount = 1; // crude overflow protection
-    deps_find_witness_print = pcount;
-    if (TraceDependencies && VerifyDependencies && initial_call) {
-      warning("TraceDependencies results may be inflated by VerifyDependencies");
-    }
-    if (occasional_print || final_stats) {
-      // Every now and then dump a little info about dependency searching.
-      if (xtty != NULL) {
-       ttyLocker ttyl;
-       xtty->elem("deps_find_witness calls='%d' steps='%d' recursions='%d' singles='%d'",
-                   deps_find_witness_calls,
-                   deps_find_witness_steps,
-                   deps_find_witness_recursions,
-                   deps_find_witness_singles);
-      }
-      if (final_stats || (TraceDependencies && WizardMode)) {
-        ttyLocker ttyl;
-        tty->print_cr("Dependency check (find_witness) "
-                      "calls=%d, steps=%d (avg=%.1f), recursions=%d, singles=%d",
-                      deps_find_witness_calls,
-                      deps_find_witness_steps,
-                      (double)deps_find_witness_steps / deps_find_witness_calls,
-                      deps_find_witness_recursions,
-                      deps_find_witness_singles);
-      }
-    }
-    return true;
-  }
-  return false;
-}
-#else
-#define count_find_witness_calls() (0)
-#endif //PRODUCT
 
 #ifdef ASSERT
 // Assert that m is inherited into ctxk, without intervening overrides.
@@ -1291,8 +1312,7 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
   assert(changes.involves_context(context_type), "irrelevant dependency");
   Klass* new_type = changes.new_type();
 
-  (void)count_find_witness_calls();
-  NOT_PRODUCT(deps_find_witness_singles++);
+  NOT_PRODUCT( count_deps_find_witness_singles(); )
 
   // Current thread must be in VM (not native mode, as in CI):
   assert(must_be_in_vm(), "raw oops here");
@@ -1332,12 +1352,9 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
   // Must not move the class hierarchy during this check:
   assert_locked_or_safepoint(Compile_lock);
 
-  bool do_counts = count_find_witness_calls();
+  NOT_PRODUCT( count_deps_find_witness_calls(); )
 
   // Check the root of the sub-hierarchy first.
-  if (do_counts) {
-    NOT_PRODUCT(deps_find_witness_calls++);
-  }
 
   // (Note: Interfaces do not have subclasses.)
   // If it is an interface, search its direct implementors.
@@ -1365,7 +1382,7 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
   for (ClassHierarchyIterator iter(context_type); !iter.done(); iter.next()) {
     Klass* sub = iter.klass();
 
-    if (do_counts) { NOT_PRODUCT(deps_find_witness_steps++); }
+    NOT_PRODUCT( count_deps_find_witness_steps(); )
 
     // Do not report participant types.
     if (is_participant(sub)) {
@@ -1781,13 +1798,9 @@ bool KlassDepChange::involves_context(Klass* k) {
 
 #ifndef PRODUCT
 void Dependencies::print_statistics() {
-  if (deps_find_witness_print != 0) {
-    // Call one final time, to flush out the data.
-    deps_find_witness_print = -1;
-    count_find_witness_calls();
-  }
+  print_find_witness_calls_info(true /*verbose*/);
 }
-#endif
+#endif // !PRODUCT
 
 CallSiteDepChange::CallSiteDepChange(Handle call_site, Handle method_handle) :
   _call_site(call_site),
