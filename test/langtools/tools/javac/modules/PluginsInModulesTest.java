@@ -47,48 +47,50 @@ public class PluginsInModulesTest extends ModuleTestBase {
     }
 
     private static final String pluginModule1 =
-            "module pluginMod1x {\n" +
-            "    requires jdk.compiler;\n" +
-            "\n" +
-            "    provides com.sun.source.util.Plugin\n" +
-            "      with mypkg1.SimplePlugin1;\n" +
-            "}";
+            """
+                module pluginMod1x {
+                    requires jdk.compiler;
+                
+                    provides com.sun.source.util.Plugin
+                      with mypkg1.SimplePlugin1;
+                }""";
 
     private static final String plugin1 =
-            "package mypkg1;\n" +
-            "import com.sun.source.util.JavacTask;\n" +
-            "import com.sun.source.util.Plugin;\n" +
-            "import com.sun.source.util.TaskEvent;\n" +
-            "import com.sun.source.util.TaskListener;\n" +
-            "\n" +
-            "public class SimplePlugin1 implements Plugin {\n" +
-            "\n" +
-            "    @Override\n" +
-            "    public String getName() {\n" +
-            "        return \"simpleplugin1\";\n" +
-            "    }\n" +
-            "\n" +
-            "    @Override\n" +
-            "    public void init(JavacTask task, String... args) {\n" +
-            "        task.addTaskListener(new PostAnalyzeTaskListener());\n" +
-            "    }\n" +
-            "\n" +
-            "    private static class PostAnalyzeTaskListener implements TaskListener {\n" +
-            "        @Override\n" +
-            "        public void started(TaskEvent taskEvent) { \n" +
-            "            if (taskEvent.getKind().equals(TaskEvent.Kind.COMPILATION)) {\n" +
-            "                System.out.println(\"simpleplugin1 started for event \" + taskEvent.getKind());\n" +
-            "            }\n" +
-            "        }\n" +
-            "\n" +
-            "        @Override\n" +
-            "        public void finished(TaskEvent taskEvent) {\n" +
-            "            if (taskEvent.getKind().equals(TaskEvent.Kind.COMPILATION)) {\n" +
-            "                System.out.println(\"simpleplugin1 finished for event \" + taskEvent.getKind());\n" +
-            "            }\n" +
-            "        }\n" +
-            "    }\n" +
-            "}";
+            """
+                package mypkg1;
+                import com.sun.source.util.JavacTask;
+                import com.sun.source.util.Plugin;
+                import com.sun.source.util.TaskEvent;
+                import com.sun.source.util.TaskListener;
+                
+                public class SimplePlugin1 implements Plugin {
+                
+                    @Override
+                    public String getName() {
+                        return "simpleplugin1";
+                    }
+                
+                    @Override
+                    public void init(JavacTask task, String... args) {
+                        task.addTaskListener(new PostAnalyzeTaskListener());
+                    }
+                
+                    private static class PostAnalyzeTaskListener implements TaskListener {
+                        @Override
+                        public void started(TaskEvent taskEvent) {\s
+                            if (taskEvent.getKind().equals(TaskEvent.Kind.COMPILATION)) {
+                                System.out.println("simpleplugin1 started for event " + taskEvent.getKind());
+                            }
+                        }
+                
+                        @Override
+                        public void finished(TaskEvent taskEvent) {
+                            if (taskEvent.getKind().equals(TaskEvent.Kind.COMPILATION)) {
+                                System.out.println("simpleplugin1 finished for event " + taskEvent.getKind());
+                            }
+                        }
+                    }
+                }""";
 
     private static final String testClass = "class Test { }";
 

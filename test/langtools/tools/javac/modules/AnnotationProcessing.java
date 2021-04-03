@@ -906,7 +906,8 @@ public class AnnotationProcessing extends ModuleTestBase {
                     runCompiler(base,
                                 m1,
                                 classes,
-                                "createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"impl\", \"impl\"" + originating + "), \"impl\", \"impl\")",
+                                """
+                                    createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "impl", "impl\"""" + originating + "), \"impl\", \"impl\")",
                                 options);
                     assertFileExists(classes, modulePath, "impl", "impl");
                 }
@@ -1044,28 +1045,31 @@ public class AnnotationProcessing extends ModuleTestBase {
 
     private void compileAP(Path target, String code) {
         String processorCode =
-            "import java.util.*;\n" +
-            "import javax.annotation.processing.*;\n" +
-            "import javax.lang.model.*;\n" +
-            "import javax.lang.model.element.*;\n" +
-            "import javax.lang.model.type.*;\n" +
-            "import javax.lang.model.util.*;\n" +
-            "import javax.tools.*;\n" +
-            "@SupportedAnnotationTypes(\"*\")\n" +
-            "public final class AP extends AnnotationProcessing.GeneratingAP {\n" +
-            "\n" +
-            "        int round;\n" +
-            "\n" +
-            "        @Override\n" +
-            "        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {\n" +
-            "            if (round++ != 0)\n" +
-            "                return false;\n" +
-            "            Filer filer = processingEnv.getFiler();\n" +
-            "            TypeElement jlObject = processingEnv.getElementUtils().getTypeElement(\"java.lang.Object\");\n" +
-            code + ";\n" +
-            "            return false;\n" +
-            "        }\n" +
-            "    }\n";
+            """
+                import java.util.*;
+                import javax.annotation.processing.*;
+                import javax.lang.model.*;
+                import javax.lang.model.element.*;
+                import javax.lang.model.type.*;
+                import javax.lang.model.util.*;
+                import javax.tools.*;
+                @SupportedAnnotationTypes("*")
+                public final class AP extends AnnotationProcessing.GeneratingAP {
+                
+                        int round;
+                
+                        @Override
+                        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+                            if (round++ != 0)
+                                return false;
+                            Filer filer = processingEnv.getFiler();
+                            TypeElement jlObject = processingEnv.getElementUtils().getTypeElement("java.lang.Object");
+                """ + code + """
+                ;
+                            return false;
+                        }
+                    }
+                """;
         new JavacTask(tb)
           .options("-classpath", System.getProperty("test.class.path"))
           .sources(processorCode)
