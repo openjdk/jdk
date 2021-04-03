@@ -166,13 +166,13 @@ public class HeapMonitor {
 
     // Trigger GC then loop around an allocation loop and wait until Object Sampling
     // is enabled for every later allocation. It takes two steps:
-    // 1. Consume current TLAB, whose size can be varies with heap/GC configuration
+    // 1. Consume current TLAB, whose size can vary with heap/GC configuration
     // 2. Consume initial ThreadHeapSampler::_bytes_until_sample, which is around 512KB
     //
     // Step1 trigger GC to consume current TLAB
     System.gc();
-    // Step2 loop allocation consume "bytes until sample", each iteration allocate
-    // about 1600KB, 10 iterations can definitly consume initial "bytes until sample"
+    // Step2 loop allocation consumes "bytes until sample", each iteration allocates
+    // about 1600KB, so 10 iterations will definitly consume initial "bytes until sample"
     final int maxTries = 10;
     int[][][] result = new int[maxTries][][];
     for (int i = 0; i < maxTries; i++) {
