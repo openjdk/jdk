@@ -49,7 +49,7 @@ public class RequiresTransitiveTest extends ModuleTestBase {
     @Test
     public void testJavaSE_OK(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src, 
+        tb.writeJavaFiles(src,
                 "module m { requires java.se; }",
                 // use class in java.se
                 """

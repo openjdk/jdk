@@ -49,7 +49,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
             """
                 module anno_proc1x {
                     requires java.compiler;
-                
+
                     provides javax.annotation.processing.Processor
                       with mypkg1.MyProcessor1;
                 }""";
@@ -58,7 +58,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
             """
                 module anno_proc2x {
                     requires java.compiler;
-                
+
                     provides javax.annotation.processing.Processor
                       with mypkg2.MyProcessor2;
                 }""";
@@ -66,23 +66,23 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     private static final String annotationProcessor1 =
             """
                 package mypkg1;
-                
+
                 import javax.annotation.processing.AbstractProcessor;
                 import javax.annotation.processing.RoundEnvironment;
                 import javax.annotation.processing.SupportedAnnotationTypes;
                 import javax.lang.model.SourceVersion;
                 import javax.lang.model.element.*;
-                
+
                 import java.util.*;
-                
+
                 @SupportedAnnotationTypes("*")
                 public final class MyProcessor1 extends AbstractProcessor {
-                
+
                     @Override
                     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
                         return false;
                     }
-                
+
                     @Override
                     public SourceVersion getSupportedSourceVersion() {
                         System.out.println("the annotation processor 1 is working!");
@@ -93,23 +93,23 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     private static final String annotationProcessor2 =
             """
                 package mypkg2;
-                
+
                 import javax.annotation.processing.AbstractProcessor;
                 import javax.annotation.processing.RoundEnvironment;
                 import javax.annotation.processing.SupportedAnnotationTypes;
                 import javax.lang.model.SourceVersion;
                 import javax.lang.model.element.*;
-                
+
                 import java.util.*;
-                
+
                 @SupportedAnnotationTypes("*")
                 public final class MyProcessor2 extends AbstractProcessor {
-                
+
                     @Override
                     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
                         return false;
                     }
-                
+
                     @Override
                     public SourceVersion getSupportedSourceVersion() {
                         System.out.println("the annotation processor 2 is working!");

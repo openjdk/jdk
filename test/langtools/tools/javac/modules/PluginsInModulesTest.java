@@ -50,7 +50,7 @@ public class PluginsInModulesTest extends ModuleTestBase {
             """
                 module pluginMod1x {
                     requires jdk.compiler;
-                
+
                     provides com.sun.source.util.Plugin
                       with mypkg1.SimplePlugin1;
                 }""";
@@ -62,19 +62,19 @@ public class PluginsInModulesTest extends ModuleTestBase {
                 import com.sun.source.util.Plugin;
                 import com.sun.source.util.TaskEvent;
                 import com.sun.source.util.TaskListener;
-                
+
                 public class SimplePlugin1 implements Plugin {
-                
+
                     @Override
                     public String getName() {
                         return "simpleplugin1";
                     }
-                
+
                     @Override
                     public void init(JavacTask task, String... args) {
                         task.addTaskListener(new PostAnalyzeTaskListener());
                     }
-                
+
                     private static class PostAnalyzeTaskListener implements TaskListener {
                         @Override
                         public void started(TaskEvent taskEvent) {\s
@@ -82,7 +82,7 @@ public class PluginsInModulesTest extends ModuleTestBase {
                                 System.out.println("simpleplugin1 started for event " + taskEvent.getKind());
                             }
                         }
-                
+
                         @Override
                         public void finished(TaskEvent taskEvent) {
                             if (taskEvent.getKind().equals(TaskEvent.Kind.COMPILATION)) {

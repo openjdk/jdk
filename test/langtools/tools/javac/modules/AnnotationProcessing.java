@@ -1055,9 +1055,9 @@ public class AnnotationProcessing extends ModuleTestBase {
                 import javax.tools.*;
                 @SupportedAnnotationTypes("*")
                 public final class AP extends AnnotationProcessing.GeneratingAP {
-                
+
                         int round;
-                
+
                         @Override
                         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
                             if (round++ != 0)
