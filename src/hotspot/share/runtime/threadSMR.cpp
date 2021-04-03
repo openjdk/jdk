@@ -417,7 +417,7 @@ void SafeThreadsListPtr::acquire_stable_list() {
   _previous = _thread->_threads_list_ptr;
   _thread->_threads_list_ptr = this;
 
-  if (_thread->get_threads_hazard_ptr() == NULL) {
+  if (_thread->get_threads_hazard_ptr() == NULL && _previous == NULL) {
     // The typical case is first.
     acquire_stable_list_fast_path();
     return;
@@ -484,8 +484,6 @@ void SafeThreadsListPtr::acquire_stable_list_fast_path() {
 //
 void SafeThreadsListPtr::acquire_stable_list_nested_path() {
   assert(_thread != NULL, "sanity check");
-  assert(_thread->get_threads_hazard_ptr() != NULL,
-         "cannot have a NULL regular hazard ptr when acquiring a nested hazard ptr");
 
   // The thread already has a hazard ptr (ThreadsList ref) so we need
   // to create a nested ThreadsListHandle with the current ThreadsList
@@ -506,7 +504,7 @@ void SafeThreadsListPtr::acquire_stable_list_nested_path() {
   }
   // Clear the hazard ptr so we can go through the fast path below and
   // acquire a nested stable ThreadsList.
-  Atomic::store(&_thread->_threads_hazard_ptr, (ThreadsList*)NULL);
+  _thread->set_threads_hazard_ptr(NULL);
 
   if (EnableThreadSMRStatistics && _thread->nested_threads_hazard_ptr_cnt() > ThreadsSMRSupport::_nested_thread_list_max) {
     ThreadsSMRSupport::_nested_thread_list_max = _thread->nested_threads_hazard_ptr_cnt();
@@ -523,11 +521,26 @@ void SafeThreadsListPtr::acquire_stable_list_nested_path() {
 //
 void SafeThreadsListPtr::release_stable_list() {
   assert(_thread != NULL, "sanity check");
-  assert(_thread->get_threads_hazard_ptr() != NULL, "sanity check");
-  assert(_thread->get_threads_hazard_ptr() == _list, "sanity check");
   assert(_thread->_threads_list_ptr == this, "sanity check");
   _thread->_threads_list_ptr = _previous;
 
+  // We're releasing either a leaf or nested ThreadsListHandle. In either
+  // case, we set this thread's hazard ptr back to NULL and we do it before
+  // _nested_handle_cnt is decremented below.
+  _thread->set_threads_hazard_ptr(NULL);
+  if (_previous != NULL) {
+    // The ThreadsListHandle being released is a nested ThreadsListHandle.
+    if (EnableThreadSMRStatistics) {
+      _thread->dec_nested_threads_hazard_ptr_cnt();
+    }
+    // The previous ThreadsList is stable because the _nested_handle_cnt is
+    // > 0, but we cannot safely make it this thread's hazard ptr again.
+    // The protocol for installing and verifying a ThreadsList as a
+    // thread's hazard ptr is handled by acquire_stable_list_fast_path().
+    // And that protocol cannot be properly done with a ThreadsList that
+    // might not be the current system ThreadsList.
+    assert(_previous->_list->_nested_handle_cnt > 0, "must be > zero");
+  }
   if (_has_ref_count) {
     // This thread created a nested ThreadsListHandle after the current
     // ThreadsListHandle so we had to protect this ThreadsList with a
@@ -535,23 +548,6 @@ void SafeThreadsListPtr::release_stable_list() {
     _list->dec_nested_handle_cnt();
 
     log_debug(thread, smr)("tid=" UINTX_FORMAT ": SafeThreadsListPtr::release_stable_list: delete nested list pointer to ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(_list));
-  }
-  if (_previous == NULL) {
-    // The ThreadsListHandle being released is a leaf ThreadsListHandle.
-    // This is the "normal" case and this is where we set this thread's
-    // hazard ptr back to NULL.
-    _thread->set_threads_hazard_ptr(NULL);
-  } else {
-    // The ThreadsListHandle being released is a nested ThreadsListHandle.
-    if (EnableThreadSMRStatistics) {
-      _thread->dec_nested_threads_hazard_ptr_cnt();
-    }
-    // The previous ThreadsList becomes this thread's hazard ptr again.
-    // It is a stable ThreadsList since the non-zero _nested_handle_cnt
-    // keeps it from being freed so we can just set the thread's hazard
-    // ptr without going through the stabilization/tagging protocol.
-    assert(_previous->_list->_nested_handle_cnt > 0, "must be > than zero");
-    _thread->set_threads_hazard_ptr(_previous->_list);
   }
 
   // After releasing the hazard ptr, other threads may go ahead and
