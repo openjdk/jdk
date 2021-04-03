@@ -42,7 +42,7 @@ class outputStream;
 //  intx v = flag->read<intx>();
 //
 //  /* If you use a wrong type, or a NULL flag, an error code is returned */
-//  JVMFlag::Error err = JVMFlagAccess::get<intx>(flag, &v, origin);
+//  JVMFlag::Error err = JVMFlagAccess::get<JVM_FLAG_TYPE(intx)>(flag, &v, origin);
 
 #define JVM_FLAG_TYPE(t) \
   t, JVMFlag::TYPE_ ## t
@@ -55,21 +55,38 @@ class JVMFlagAccess : AllStatic {
   static JVMFlag::Error set_impl(JVMFlag* flag, void* value, JVMFlagOrigin origin);
   static JVMFlag::Error set_or_assert(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin);
 
+  static bool is_correct_type(const JVMFlag* flag, int type_enum) {
+    if (type_enum == JVMFlag::TYPE_ccstr) {
+      if (!flag->is_ccstr()) { // ccstr or ccstrlist
+        return false;
+      }
+    } else {
+      if (flag->type() != type_enum) {
+        return false;
+      }
+    }
+    return true;
+  }
+
 public:
   static JVMFlag::Error check_range(const JVMFlag* flag, bool verbose);
   static JVMFlag::Error check_constraint(const JVMFlag* flag, void * func, bool verbose);
   static void print_range(outputStream* st, const JVMFlag* flag, const JVMFlagLimit* range);
   static void print_range(outputStream* st, const JVMFlag* flag);
 
-  template <typename T>
+  template <typename T, int type_enum>
   static JVMFlag::Error get(const JVMFlag* flag, T* value) {
+    // The caller must not not mix incompatible types such as
+    // set<double, JVMFlag::TYPE_int>(flag, double_ptr);
+    assert(JVMFlag::is_compatible_type<T>(type_enum), "must be");
+
     if (flag == NULL) {
       return JVMFlag::INVALID_FLAG;
     }
-    int type_enum = flag->type();
-    if (!JVMFlag::is_compatible_type<T>(type_enum)) {
+    if (!is_correct_type(flag, type_enum)) {
       return JVMFlag::WRONG_FORMAT;
     }
+
     *value = flag->read<T>();
     return JVMFlag::SUCCESS;
   }
@@ -87,14 +104,19 @@ public:
   // flags, often according to external input that may contain errors.
   // Examples callers are arguments.cpp, writeableFlags.cpp, and WB_SetXxxVMFlag functions.
   // A mismatched type_enum would result in a JVMFlag::WRONG_FORMAT code.
-  template <typename T>
+  template <typename T, int type_enum>
   static JVMFlag::Error set(JVMFlag* flag, T* value, JVMFlagOrigin origin) {
+    // The caller must not not mix incompatible types such as
+    // set<double, JVMFlag::TYPE_int>(flag, double_ptr);
+    assert(JVMFlag::is_compatible_type<T>(type_enum), "must be");
+
     if (flag == NULL) {
       return JVMFlag::INVALID_FLAG;
     }
-    if (!JVMFlag::is_compatible_type<T>(flag->type())) {
+    if (!is_correct_type(flag, type_enum)) {
       return JVMFlag::WRONG_FORMAT;
     }
+
     return set_impl(flag, (void*)value, origin);
   }
 
@@ -105,7 +127,7 @@ public:
 
   // Handy aliases
   static JVMFlag::Error get_ccstr(const JVMFlag* flag, ccstr* value) {
-    return get<ccstr>(flag, value);
+    return get<JVM_FLAG_TYPE(ccstr)>(flag, value);
   }
 };
 

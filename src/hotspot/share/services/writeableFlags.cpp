@@ -97,23 +97,24 @@ static void print_flag_error_message_if_needed(JVMFlag::Error error, const JVMFl
   err_msg.print("%s", buffer);
 }
 
+template <typename T, int type_enum>
+JVMFlag::Error WriteableFlags::set_flag_impl(const char* name, T value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
+  JVMFlag* flag = JVMFlag::find_flag(name);
+  JVMFlag::Error err = JVMFlagAccess::set<T, type_enum>(flag, &value, origin);
+  print_flag_error_message_if_needed(err, flag, err_msg);
+  return err;
+}
+
+
 // set a boolean global flag
 JVMFlag::Error WriteableFlags::set_bool_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   if ((strcasecmp(arg, "true") == 0) || (*arg == '1' && *(arg + 1) == 0)) {
-    return set_flag(name, true, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(bool)>(name, true, origin, err_msg);
   } else if ((strcasecmp(arg, "false") == 0) || (*arg == '0' && *(arg + 1) == 0)) {
-    return set_flag(name, false, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(bool)>(name, false, origin, err_msg);
   }
   err_msg.print("flag value must be a boolean (1/0 or true/false)");
   return JVMFlag::WRONG_FORMAT;
-}
-
-template <typename T>
-JVMFlag::Error WriteableFlags::set_flag(const char* name, T value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
-  JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlagAccess::set(flag, &value, origin);
-  print_flag_error_message_if_needed(err, flag, err_msg);
-  return err;
 }
 
 // set a int global flag
@@ -121,7 +122,7 @@ JVMFlag::Error WriteableFlags::set_int_flag(const char* name, const char* arg, J
   int value;
 
   if (sscanf(arg, "%d", &value) == 1) {
-    return set_flag(name, value, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(int)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an integer");
   return JVMFlag::WRONG_FORMAT;
@@ -132,7 +133,7 @@ JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, const char* arg, 
   uint value;
 
   if (sscanf(arg, "%u", &value) == 1) {
-    return set_flag(name, value, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(uint)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned integer");
   return JVMFlag::WRONG_FORMAT;
@@ -143,7 +144,7 @@ JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, const char* arg, 
   intx value;
 
   if (sscanf(arg, INTX_FORMAT, &value) == 1) {
-    return set_flag(name, value, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(intx)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an integer");
   return JVMFlag::WRONG_FORMAT;
@@ -154,7 +155,7 @@ JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, const char* arg,
   uintx value;
 
   if (sscanf(arg, UINTX_FORMAT, &value) == 1) {
-    return set_flag(name, value, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(uintx)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned integer");
   return JVMFlag::WRONG_FORMAT;
@@ -165,7 +166,7 @@ JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, const char* a
   uint64_t value;
 
   if (sscanf(arg, UINT64_FORMAT, &value) == 1) {
-    return set_flag(name, value, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(uint64_t)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned 64-bit integer");
   return JVMFlag::WRONG_FORMAT;
@@ -176,7 +177,7 @@ JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, const char* arg
   size_t value;
 
   if (sscanf(arg, SIZE_FORMAT, &value) == 1) {
-    return set_flag(name, value, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(size_t)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned integer");
   return JVMFlag::WRONG_FORMAT;
@@ -187,7 +188,7 @@ JVMFlag::Error WriteableFlags::set_double_flag(const char* name, const char* arg
   double value;
 
   if (sscanf(arg, "%lf", &value) == 1) {
-    return set_flag(name, value, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(double)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be a double");
   return JVMFlag::WRONG_FORMAT;
@@ -285,28 +286,28 @@ JVMFlag::Error WriteableFlags::set_flag_from_jvalue(JVMFlag* f, const void* valu
   jvalue new_value = *(jvalue*)value;
   if (f->is_bool()) {
     bool bvalue = (new_value.z == JNI_TRUE ? true : false);
-    return set_flag(f->name(), bvalue, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(bool)>(f->name(), bvalue, origin, err_msg);
   } else if (f->is_int()) {
     int ivalue = (int)new_value.j;
-    return set_flag(f->name(), ivalue, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(int)>(f->name(), ivalue, origin, err_msg);
   } else if (f->is_uint()) {
     uint uvalue = (uint)new_value.j;
-    return set_flag(f->name(), uvalue, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(uint)>(f->name(), uvalue, origin, err_msg);
   } else if (f->is_intx()) {
     intx ivalue = (intx)new_value.j;
-    return set_flag(f->name(), ivalue, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(intx)>(f->name(), ivalue, origin, err_msg);
   } else if (f->is_uintx()) {
     uintx uvalue = (uintx)new_value.j;
-    return set_flag(f->name(), uvalue, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(uintx)>(f->name(), uvalue, origin, err_msg);
   } else if (f->is_uint64_t()) {
     uint64_t uvalue = (uint64_t)new_value.j;
-    return set_flag(f->name(), uvalue, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(uint64_t)>(f->name(), uvalue, origin, err_msg);
   } else if (f->is_size_t()) {
     size_t svalue = (size_t)new_value.j;
-    return set_flag(f->name(), svalue, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(size_t)>(f->name(), svalue, origin, err_msg);
   } else if (f->is_double()) {
     double dvalue = (double)new_value.d;
-    return set_flag(f->name(), dvalue, origin, err_msg);
+    return set_flag_impl<JVM_FLAG_TYPE(double)>(f->name(), dvalue, origin, err_msg);
   } else if (f->is_ccstr()) {
     oop str = JNIHandles::resolve_external_guard(new_value.l);
     if (str == NULL) {

@@ -48,8 +48,8 @@ private:
   static JVMFlag::Error set_double_flag(const char* name, const char* value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg);
   static JVMFlag::Error set_ccstr_flag(const char* name, const char* value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg);
 
-  template <typename T>
-  static JVMFlag::Error set_flag(const char* name, T value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg);
+  template <typename T, int type_enum>
+  static JVMFlag::Error set_flag_impl(const char* name, T value, JVMFlagOrigin origin, FormatBuffer<80>& err_msg);
 
 public:
   /* sets a writeable flag to the provided value
