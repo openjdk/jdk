@@ -620,7 +620,7 @@ public class PNGImageDecoder extends ImageDecoder
     private static final byte[] blockHeight =  { 1, 8, 8, 4, 4, 2, 2, 1 };
     private static final byte[] blockWidth =   { 1, 8, 4, 4, 2, 2, 1, 1 };
 
-    //abstract public class ChunkReader extends FilterInputStream {
+    //public abstract class ChunkReader extends FilterInputStream {
   int pos, limit;
     int chunkStart;
    int chunkKey, chunkLength, chunkCRC;
@@ -728,7 +728,7 @@ public class PNGImageDecoder extends ImageDecoder
                 chunkLength = 0;
         return chunkLength>0;
     }
-    //abstract protected boolean handleChunk(int key, byte[] buf, int st, int len)
+    //protected abstract boolean handleChunk(int key, byte[] buf, int st, int len)
     //    throws IOException;
     private static boolean checkCRC = true;
     public static boolean getCheckCRC() { return checkCRC; }
