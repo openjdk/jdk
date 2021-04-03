@@ -87,7 +87,7 @@ public interface X509Data extends XMLStructure {
      * {@link RetrievalMethod} class to describe a remote
      * <code>X509Data</code> structure.
      */
-    final static String TYPE = "http://www.w3.org/2000/09/xmldsig#X509Data";
+    static final String TYPE = "http://www.w3.org/2000/09/xmldsig#X509Data";
 
     /**
      * URI identifying the binary (ASN.1 DER) X.509 Certificate KeyInfo type:
@@ -95,7 +95,7 @@ public interface X509Data extends XMLStructure {
      * specified as the value of the <code>type</code> parameter of the
      * {@link RetrievalMethod} class to describe a remote X509 Certificate.
      */
-    final static String RAW_X509_CERTIFICATE_TYPE =
+    static final String RAW_X509_CERTIFICATE_TYPE =
         "http://www.w3.org/2000/09/xmldsig#rawX509Certificate";
 
     /**

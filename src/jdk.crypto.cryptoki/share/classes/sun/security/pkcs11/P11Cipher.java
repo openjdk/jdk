@@ -56,16 +56,16 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 final class P11Cipher extends CipherSpi {
 
     // mode constant for ECB mode
-    private final static int MODE_ECB = 3;
+    private static final int MODE_ECB = 3;
     // mode constant for CBC mode
-    private final static int MODE_CBC = 4;
+    private static final int MODE_CBC = 4;
     // mode constant for CTR mode
-    private final static int MODE_CTR = 5;
+    private static final int MODE_CTR = 5;
 
     // padding constant for NoPadding
-    private final static int PAD_NONE = 5;
+    private static final int PAD_NONE = 5;
     // padding constant for PKCS5Padding
-    private final static int PAD_PKCS5 = 6;
+    private static final int PAD_PKCS5 = 6;
 
     private static interface Padding {
         // ENC: format the specified buffer with padding bytes and return the
