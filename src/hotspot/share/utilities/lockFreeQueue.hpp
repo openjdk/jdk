@@ -29,19 +29,28 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
 
-// Return status of a LockFreeQueue::try_pop() call.
-// See description for try_pop() below.
-enum class LockFreeQueuePopStatus {
-  success,
-  lost_race,
-  operation_in_progress
-};
-
-// The LockFreeQueue template provides a lock-free FIFO. Its structure
+// The LockFreeQueue template provides a non-blocking FIFO. Its structure
 // and usage is similar to LockFreeStack. It provides a try_pop() function
 // for the client to implement pop() according to its need (e.g., whether
 // or not to retry or prevent ABA problem). It has inner padding of one
 // cache line between its two internal pointer fields.
+//
+// Internally the queue has a special pseudo-element that marks the end of
+// the linked list representing the queue contents.  Each queue has its own
+// unique special element.  A pointer to this element can be recognized
+// using the is_end() function.  Such a pointer must never be dereferenced.
+// This end marker is the value of the next member of the last element in
+// the queue, and possibly other elements during modification of the queue.
+//
+// A queue may temporarily appear to be empty even though elements have been
+// added and not removed.  For example, after running the following program,
+// the value of r may be NULL.
+//
+// thread1: q.push(a); r = q.pop();
+// thread2: q.push(b);
+//
+// This can occur if the push of b started before the push of a, but didn't
+// complete until after the pop.
 //
 // \tparam T is the class of the elements in the queue.
 //
@@ -67,20 +76,22 @@ class LockFreeQueue {
   // node.
   static inline void set_next(T& node, T* new_next);
 
+  // A unique pseudo-object pointer associated with this specific queue.
+  // The resulting pointer must not be dereferenced.
+  inline T* end_marker() const;
+
 public:
   inline LockFreeQueue();
-  DEBUG_ONLY(~LockFreeQueue();)
-
-  // Return the first object in the queue.
-  // Thread-safe, but the result may change immediately.
-  inline T* top() const;
+  inline ~LockFreeQueue() NOT_DEBUG(= default);
 
   // Return true if the queue is empty.
-  inline bool empty() const { return top() == NULL; }
+  // Not thread-safe.  There must be no concurrent modification while the
+  // queue is being tested.
+  inline bool empty() const;
 
   // Return the number of objects in the queue.
-  // Not thread-safe. There must be no concurrent modification
-  // while the length is being determined.
+  // Not thread-safe. There must be no concurrent modification while the
+  // length is being determined.
   inline size_t length() const;
 
   // Thread-safe add the object to the end of the queue.
@@ -90,31 +101,33 @@ public:
   inline void append(T& first, T& last);
 
   // Thread-safe attempt to remove and return the first object in the queue.
-  // Returns a <LockFreeQueuePopStatus, T*> pair for the caller to determine
-  // further operation. 3 possible cases depending on pair.first:
-  // - success:
-  //   The operation succeeded. If pair.second is NULL, the queue is empty;
-  //   otherwise caller can assume ownership of the object pointed by
-  //   pair.second. Note that this case is still subject to ABA behavior;
-  //   callers must ensure usage is safe.
-  // - lost_race:
-  //   An atomic operation failed. pair.second is NULL.
-  //   The caller can typically retry in this case.
-  // - operation_in_progress:
-  //   An in-progress concurrent operation interfered with taking what had been
-  //   the only remaining element in the queue. pair.second is NULL.
-  //   A concurrent try_pop may have already claimed it, but not completely
-  //   updated the queue. Alternatively, a concurrent push/append may have not
-  //   yet linked the new entry(s) to the former sole entry. Retrying the try_pop
-  //   will continue to fail in this way until that other thread has updated the
-  //   queue's internal structure.
-  inline Pair<LockFreeQueuePopStatus, T*> try_pop();
+  // Returns true if successful.  If successful then *node_ptr is the former
+  // first object, or NULL if the queue was empty.  If unsuccessful, because
+  // of contention with a concurrent modification, then returns false with
+  // the value of *node_ptr unspecified.  Subject to ABA behavior; callers
+  // must ensure usage is safe.
+  inline bool try_pop(T** node_ptr);
+
+  // Thread-safe remove and return the first object in the queue, or NULL if
+  // the queue was empty.  This just iterates on try_pop() until it
+  // succeeds, returning the (possibly NULL) element obtained from that.
+  // Subject to ABA behavior; callers must ensure usage is safe.
+  inline T* pop();
 
   // Take all the objects from the queue, leaving the queue empty.
-  // Not thread-safe. It should only be used when there is no concurrent
-  // push/append/try_pop operation.
+  // Not thread-safe.  There must be no concurrent operations.
   // Returns a pair of <head, tail> pointers to the current queue.
   inline Pair<T*, T*> take_all();
+
+  // Iteration support is provided by first() and is_end().  The queue must
+  // not be modified while iterating over its elements.
+
+  // Return the first object in the queue, or an end marker (a pointer p for
+  // which is_end(p) is true) if the queue is empty.
+  inline T* first() const;
+
+  // Test whether entry is an end marker for this queue.
+  inline bool is_end(const T* entry) const;
 };
 
 #endif // SHARE_UTILITIES_LOCKFREEQUEUE_HPP

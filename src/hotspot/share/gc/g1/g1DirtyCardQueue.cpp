@@ -135,8 +135,8 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
 // It has a restriction that it may return NULL when there are objects
 // in the queue if there is a concurrent push/append operation.
 BufferNode* G1DirtyCardQueueSet::dequeue_completed_buffer() {
-  using Status = LockFreeQueuePopStatus;
   Thread* current_thread = Thread::current();
+  BufferNode* result = NULL;
   while (true) {
     // Use GlobalCounter critical section to avoid ABA problem.
     // The release of a buffer to its allocator's free list uses
@@ -147,19 +147,7 @@ BufferNode* G1DirtyCardQueueSet::dequeue_completed_buffer() {
     // one CS could defer releasing buffer to the free list for reuse,
     // leading to excessive allocations.
     GlobalCounter::CriticalSection cs(current_thread);
-    Pair<Status, BufferNode*> pop_result = _completed.try_pop();
-    switch (pop_result.first) {
-      case Status::success:
-        return pop_result.second;
-      case Status::operation_in_progress:
-        // Returning NULL instead retrying, in order to mitigate the
-        // chance of spinning for a long time. In the case of getting a
-        // buffer to refine, it is also OK to return NULL when there is
-        // an interfering concurrent push/append operation.
-        return NULL;
-      case Status::lost_race:
-        break;  // Try again.
-    }
+    if (_completed.try_pop(&result)) return result;
   }
 }
 
@@ -177,8 +165,9 @@ BufferNode* G1DirtyCardQueueSet::get_completed_buffer() {
 #ifdef ASSERT
 void G1DirtyCardQueueSet::verify_num_cards() const {
   size_t actual = 0;
-  BufferNode* cur = _completed.top();
-  for ( ; cur != NULL; cur = cur->next()) {
+  for (BufferNode* cur = _completed.first();
+       !_completed.is_end(cur);
+       cur = cur->next()) {
     actual += buffer_size() - cur->index();
   }
   assert(actual == Atomic::load(&_num_cards),

@@ -42,32 +42,8 @@ class LockFreeQueueTestElement {
   static Element* volatile* entry1_ptr(Element& e) { return &e._entry1; }
 
 public:
-  class TestQueue: public LockFreeQueue<Element, &entry_ptr> {
-  public:
-    Element* pop() {
-      using Status = LockFreeQueuePopStatus;
-      while (true) {
-        Pair<Status, Element*> pop_result = try_pop();
-        if (pop_result.first == Status::success) {
-          return pop_result.second;
-        }
-        // Retry until success.
-      }
-    }
-  };
-  class TestQueue1: public LockFreeQueue<Element, &entry1_ptr> {
-  public:
-    Element* pop() {
-      using Status = LockFreeQueuePopStatus;
-      while (true) {
-        Pair<Status, Element*> pop_result = try_pop();
-        if (pop_result.first == Status::success) {
-          return pop_result.second;
-        }
-        // Retry until success.
-      }
-    }
-  };
+  using TestQueue = LockFreeQueue<Element, &entry_ptr>;
+  using TestQueue1 = LockFreeQueue<Element, &entry1_ptr>;
 
   LockFreeQueueTestElement(size_t id = 0) : _entry(), _entry1(), _id(id) {}
   size_t id() const { return _id; }
@@ -86,8 +62,8 @@ static void initialize(Element* elements, size_t size, TestQueue* queue) {
   }
   ASSERT_TRUE(queue->empty());
   ASSERT_EQ(0u, queue->length());
+  ASSERT_TRUE(queue->is_end(queue->first()));
   ASSERT_TRUE(queue->pop() == NULL);
-  ASSERT_TRUE(queue->top() == NULL);
 
   for (size_t id = 0; id < size; ++id) {
     ASSERT_EQ(id, queue->length());
@@ -95,8 +71,8 @@ static void initialize(Element* elements, size_t size, TestQueue* queue) {
     ASSERT_EQ(id, e->id());
     queue->push(*e);
     ASSERT_FALSE(queue->empty());
-    // top() is always the oldest element.
-    ASSERT_EQ(&elements[0], queue->top());
+    // first() is always the oldest element.
+    ASSERT_EQ(&elements[0], queue->first());
   }
 }
 
@@ -133,7 +109,7 @@ TEST_F(LockFreeQueueTestBasics, append) {
   TestQueue other_queue;
   ASSERT_TRUE(other_queue.empty());
   ASSERT_EQ(0u, other_queue.length());
-  ASSERT_TRUE(other_queue.top() == NULL);
+  ASSERT_TRUE(other_queue.is_end(other_queue.first()));
   ASSERT_TRUE(other_queue.pop() == NULL);
 
   Pair<Element*, Element*> pair = queue.take_all();
@@ -141,8 +117,8 @@ TEST_F(LockFreeQueueTestBasics, append) {
   ASSERT_EQ(nelements, other_queue.length());
   ASSERT_TRUE(queue.empty());
   ASSERT_EQ(0u, queue.length());
+  ASSERT_TRUE(queue.is_end(queue.first()));
   ASSERT_TRUE(queue.pop() == NULL);
-  ASSERT_TRUE(queue.top() == NULL);
 
   for (size_t i = 0; i < nelements; ++i) {
     ASSERT_EQ(nelements - i, other_queue.length());
@@ -163,14 +139,19 @@ TEST_F(LockFreeQueueTestBasics, two_queues) {
     queue1.push(elements[id]);
   }
   ASSERT_EQ(nelements, queue1.length());
-  Element* e0 = queue.top();
-  Element* e1 = queue1.top();
-  while (true) {
+  Element* e0 = queue.first();
+  Element* e1 = queue1.first();
+  ASSERT_TRUE(e0 != NULL);
+  ASSERT_TRUE(e1 != NULL);
+  ASSERT_FALSE(queue.is_end(e0));
+  ASSERT_FALSE(queue1.is_end(e1));
+  while (!queue.is_end(e0) && !queue1.is_end(e1)) {
     ASSERT_EQ(e0, e1);
-    if (e0 == NULL) break;
     e0 = e0->next();
     e1 = e1->next1();
   }
+  ASSERT_TRUE(queue.is_end(e0));
+  ASSERT_TRUE(queue1.is_end(e1));
 
   for (size_t i = 0; i < nelements; ++i) {
     ASSERT_EQ(nelements - i, queue.length());

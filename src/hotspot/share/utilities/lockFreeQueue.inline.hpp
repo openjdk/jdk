@@ -50,15 +50,34 @@ LockFreeQueue<T, next_ptr>::~LockFreeQueue() {
 }
 #endif
 
+// The end_marker must be uniquely associated with the specific queue, in
+// case queue elements can make their way through multiple queues.  A
+// pointer to the queue itself (after casting) satisfies that requirement.
 template<typename T, T* volatile* (*next_ptr)(T&)>
-T* LockFreeQueue<T, next_ptr>::top() const {
-  return Atomic::load(&_head);
+T* LockFreeQueue<T, next_ptr>::end_marker() const {
+  return const_cast<T*>(reinterpret_cast<const T*>(this));
+}
+
+template<typename T, T* volatile* (*next_ptr)(T&)>
+T* LockFreeQueue<T, next_ptr>::first() const {
+  T* head = Atomic::load(&_head);
+  return head == NULL ? end_marker() : head;
+}
+
+template<typename T, T* volatile* (*next_ptr)(T&)>
+bool LockFreeQueue<T, next_ptr>::is_end(const T* entry) const {
+  return entry == end_marker();
+}
+
+template<typename T, T* volatile* (*next_ptr)(T&)>
+bool LockFreeQueue<T, next_ptr>::empty() const {
+  return Atomic::load(&_head) == NULL;
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
 size_t LockFreeQueue<T, next_ptr>::length() const {
   size_t result = 0;
-  for (const T* current = top(); current != NULL; current = next(*current)) {
+  for (T* cur = first(); !is_end(cur); cur = next(*cur)) {
     ++result;
   }
   return result;
@@ -84,79 +103,92 @@ size_t LockFreeQueue<T, next_ptr>::length() const {
 template<typename T, T* volatile* (*next_ptr)(T&)>
 void LockFreeQueue<T, next_ptr>::append(T& first, T& last) {
   assert(next(last) == NULL, "precondition");
+  set_next(last, end_marker());
   T* old_tail = Atomic::xchg(&_tail, &last);
-  if (old_tail == NULL) {       // Was empty.
+  if ((old_tail == NULL) ||
+      // Try to install first as old_tail's next.
+      !is_end(Atomic::cmpxchg(next_ptr(*old_tail), end_marker(), &first))) {
+    // Install first as the new head if either
+    // (1) the list was empty, or
+    // (2) a concurrent try_pop claimed old_tail, so it is no longer in the list.
     Atomic::store(&_head, &first);
-  } else {
-    assert(next(*old_tail) == NULL, "invariant");
-    set_next(*old_tail, &first);
   }
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-Pair<LockFreeQueuePopStatus, T*> LockFreeQueue<T, next_ptr>::try_pop() {
-  typedef Pair<LockFreeQueuePopStatus, T*> StatusPair;
+bool LockFreeQueue<T, next_ptr>::try_pop(T** node_ptr) {
   // We only need memory_order_consume. Upgrade it to "load_acquire"
   // as the memory_order_consume API is not ready for use yet.
   T* result = Atomic::load_acquire(&_head);
   if (result == NULL) {
-    // Queue is empty.
-    return StatusPair(LockFreeQueuePopStatus::success, NULL);
+    *node_ptr = NULL;
+    return true;                // Queue is empty.
   }
 
-  // This relaxed load is always followed by a cmpxchg(), thus it
-  // is OK as the reader-side of the release-acquire ordering.
-  T* next_node = Atomic::load(next_ptr(*result));
-  if (next_node != NULL) {
-    // The "usual" lock-free pop from the head of a singly linked list.
+  T* next_node = Atomic::load_acquire(next_ptr(*result));
+  if (next_node == NULL) {
+    // A concurrent try_pop already claimed what was the last entry.  That
+    // operation may not have cleared queue head yet, but we should still
+    // treat the queue as empty until a push/append operation changes head
+    // to an entry with a non-NULL next value.
+    *node_ptr = NULL;
+    return true;
+
+  } else if (!is_end(next_node)) {
+    // The next_node is not at the end of the queue's list.  Use the "usual"
+    // lock-free pop from the head of a singly linked list to try to take it.
     if (result == Atomic::cmpxchg(&_head, result, next_node)) {
-      // Former head successfully taken; it is not the last.
-      assert(Atomic::load(&_tail) != result, "invariant");
-      assert(next(*result) != NULL, "invariant");
+      // Former head successfully taken.
       set_next(*result, NULL);
-      return StatusPair(LockFreeQueuePopStatus::success, result);
+      *node_ptr = result;
+      return true;
+    } else {
+      // Lost race to take result from the head of the list.
+      return false;
     }
-    // Lost the race; the caller should try again.
-    return StatusPair(LockFreeQueuePopStatus::lost_race, NULL);
-  }
 
-  // next is NULL.  This case is handled differently from the "usual"
-  // lock-free pop from the head of a singly linked list.
+  } else if (is_end(Atomic::cmpxchg(next_ptr(*result), end_marker(), (T*)NULL))) {
+    // Result was the last entry and we've claimed it by setting its next
+    // value to NULL.  However, this leaves the queue in disarray.  Fix up
+    // the queue, possibly in conjunction with other concurrent operations.
+    // Any further try_pops will consider the queue empty until a
+    // push/append completes by installing a new head.
 
-  // If _tail == result then result is the only element in the list. We can
-  // remove it from the list by first setting _tail to NULL and then setting
-  // _head to NULL, the order being important.  We set _tail with cmpxchg in
-  // case of a concurrent push/append/try_pop also changing _tail.  If we win
-  // then we've claimed result.
-  if (Atomic::cmpxchg(&_tail, result, (T*)NULL) == result) {
-    assert(next(*result) == NULL, "invariant");
-    // Now that we've claimed result, also set _head to NULL.  But we must
-    // be careful of a concurrent push/append after we NULLed _tail, since
-    // it may have already performed its list-was-empty update of _head,
-    // which we must not overwrite.
+    // Attempt to change the queue tail from result to NULL.  Failure of the
+    // cmpxchg indicates that a concurrent push/append updated the tail first.
+    // That operation will eventually recognize the old tail (our result) is
+    // no longer in the list and update head from the list being appended.
+    Atomic::cmpxchg(&_tail, result, (T*)NULL);
+
+    // Attempt to change the queue head from result to NULL.  Failure of the
+    // cmpxchg indicates a concurrent push/append updated the head first.
     Atomic::cmpxchg(&_head, result, (T*)NULL);
-    return StatusPair(LockFreeQueuePopStatus::success, result);
-  }
 
-  // If _head != result then we lost the race to take result;
-  // the caller should try again.
-  if (result != Atomic::load_acquire(&_head)) {
-    return StatusPair(LockFreeQueuePopStatus::lost_race, NULL);
-  }
+    // The queue has been restored to order, and we can return the result.
+    *node_ptr = result;
+    return true;
 
-  // An in-progress concurrent operation interfered with taking the head
-  // element when it was the only element.  A concurrent try_pop may have won
-  // the race to clear the tail but not yet cleared the head. Alternatively,
-  // a concurrent push/append may have changed the tail but not yet linked
-  // result->next(). This case slightly differs from the "lost_race" case,
-  // because the caller could wait for a long time for the other concurrent
-  // operation to finish.
-  return StatusPair(LockFreeQueuePopStatus::operation_in_progress, NULL);
+  } else {
+    // Result was the last entry in the list, but either a concurrent pop
+    // claimed it first or a concurrent push/append extended the list from
+    // it.  Either way, we lost the race.
+    return false;
+  }
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
+T* LockFreeQueue<T, next_ptr>::pop() {
+  T* result = NULL;
+  while (!try_pop(&result)) {}
+  return result;
+}
+
+
+template<typename T, T* volatile* (*next_ptr)(T&)>
 Pair<T*, T*> LockFreeQueue<T, next_ptr>::take_all() {
-  Pair<T*, T*> result(Atomic::load(&_head), Atomic::load(&_tail));
+  T* tail = Atomic::load(&_tail);
+  if (tail != NULL) set_next(*tail, NULL); // Clear end marker.
+  Pair<T*, T*> result(Atomic::load(&_head), tail);
   Atomic::store(&_head, (T*)NULL);
   Atomic::store(&_tail, (T*)NULL);
   return result;
