@@ -33,9 +33,14 @@ import sun.security.action.GetPropertyAction;
 
 public final class CMSManager {
 
-    private static PCMM cmmImpl = null;
+    private static volatile PCMM cmmImpl;
 
-    public static synchronized PCMM getModule() {
+    public static PCMM getModule() {
+        PCMM loc = cmmImpl;
+        return loc != null ? loc : createModule();
+    }
+
+    private static synchronized PCMM createModule() {
         if (cmmImpl != null) {
             return cmmImpl;
         }

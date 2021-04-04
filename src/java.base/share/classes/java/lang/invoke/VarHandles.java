@@ -605,8 +605,7 @@ final class VarHandles {
     }
 
     private static void noCheckedExceptions(MethodHandle handle) {
-        if (handle instanceof DirectMethodHandle) {
-            DirectMethodHandle directHandle = (DirectMethodHandle)handle;
+        if (handle instanceof DirectMethodHandle directHandle) {
             byte refKind = directHandle.member.getReferenceKind();
             MethodHandleInfo info = new InfoFromMemberName(
                     MethodHandles.Lookup.IMPL_LOOKUP,
@@ -686,7 +685,7 @@ final class VarHandles {
 //                @ForceInline
 //                @LambdaForm.Compiled
 //                @Hidden
-//                final static <METHOD> throws Throwable {
+//                static final <METHOD> throws Throwable {
 //                    if (handle.hasInvokeExactBehavior() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
 //                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
 //                                + ad.symbolicMethodTypeExact);
@@ -704,7 +703,7 @@ final class VarHandles {
 //                @ForceInline
 //                @LambdaForm.Compiled
 //                @Hidden
-//                final static <METHOD> throws Throwable {
+//                static final <METHOD> throws Throwable {
 //                    if (handle.hasInvokeExactBehavior() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
 //                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
 //                                + ad.symbolicMethodTypeExact);

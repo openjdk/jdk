@@ -69,7 +69,7 @@
   char* bytes = NULL;                                                      \
   int len = 0;                                                             \
   jlong jtid = SharedRuntime::get_java_tid(thread);                        \
-  Symbol* klassname = ((oop)obj)->klass()->name();                         \
+  Symbol* klassname = obj->klass()->name();                                \
   if (klassname != NULL) {                                                 \
     bytes = (char*)klassname->bytes();                                     \
     len = klassname->utf8_length();                                        \
@@ -388,6 +388,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
   { // Change java thread status to indicate blocked on monitor enter.
     JavaThreadBlockedOnMonitorEnterState jtbmes(current, this);
 
+    assert(current->current_pending_monitor() == NULL, "invariant");
     current->set_current_pending_monitor(this);
 
     DTRACE_MONITOR_PROBE(contended__enter, this, object(), current);
@@ -421,7 +422,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
       //
       _recursions = 0;
       _succ = NULL;
-      exit(false, current);
+      exit(current, false /* not_suspended */);
 
       current->java_suspend_self();
     }
@@ -1139,7 +1140,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 // structured the code so the windows are short and the frequency
 // of such futile wakups is low.
 
-void ObjectMonitor::exit(bool not_suspended, JavaThread* current) {
+void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
   void* cur = owner_raw();
   if (current != cur) {
     if (current->is_lock_owned((address)cur)) {
@@ -1372,7 +1373,7 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
   guarantee(current == owner_raw(), "complete_exit not owner");
   intx save = _recursions; // record the old recursion count
   _recursions = 0;         // set the recursion level to be 0
-  exit(true, current);     // exit the monitor
+  exit(current);           // exit the monitor
   guarantee(owner_raw() != current, "invariant");
   return save;
 }
@@ -1506,7 +1507,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   intx save = _recursions;     // record the old recursion count
   _waiters++;                  // increment the number of waiters
   _recursions = 0;             // set the recursion level to be 1
-  exit(true, current);         // exit the monitor
+  exit(current);               // exit the monitor
   guarantee(owner_raw() != current, "invariant");
 
   // The thread is on the WaitSet list - now park() it.
@@ -2187,7 +2188,7 @@ void ObjectMonitor::Initialize() {
 #undef NEWPERFVARIABLE
   }
 
-  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak");
+  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak", mtSynchronizer);
 
   DEBUG_ONLY(InitDone = true;)
 }

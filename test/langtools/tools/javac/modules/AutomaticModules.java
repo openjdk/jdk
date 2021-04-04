@@ -461,10 +461,11 @@ public class AutomaticModules extends ModuleTestBase {
         Path src = base.resolve("src");
 
         tb.writeJavaFiles(src,
-                          "module m1x {\n" +
-                          "    requires transitive automaticA;\n" +
-                          "    requires automaticB;\n" +
-                          "}");
+                          """
+                              module m1x {
+                                  requires transitive automaticA;
+                                  requires automaticB;
+                              }""");
 
         Path classes = base.resolve("classes");
 
@@ -550,11 +551,12 @@ public class AutomaticModules extends ModuleTestBase {
             .getOutputLines(Task.OutputKind.DIRECT);
 
         tb.writeJavaFiles(src,
-                          "@SuppressWarnings(\"requires-transitive-automatic\")\n" +
-                          "module m1x {\n" +
-                          "    requires transitive automaticA;\n" +
-                          "    requires automaticB;\n" +
-                          "}");
+                          """
+                              @SuppressWarnings("requires-transitive-automatic")
+                              module m1x {
+                                  requires transitive automaticA;
+                                  requires automaticB;
+                              }""");
 
         new JavacTask(tb)
             .options("--source-path", src.toString(),
@@ -590,11 +592,12 @@ public class AutomaticModules extends ModuleTestBase {
         }
 
         tb.writeJavaFiles(src,
-                          "@SuppressWarnings(\"requires-automatic\")\n" +
-                          "module m1x {\n" +
-                          "    requires transitive automaticA;\n" +
-                          "    requires automaticB;\n" +
-                          "}");
+                          """
+                              @SuppressWarnings("requires-automatic")
+                              module m1x {
+                                  requires transitive automaticA;
+                                  requires automaticB;
+                              }""");
 
         log = new JavacTask(tb)
             .options("--source-path", src.toString(),

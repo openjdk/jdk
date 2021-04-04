@@ -339,21 +339,12 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
       ClassListWriter w;
       w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
       CDSIndyInfo cii;
-      ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, THREAD);
+      ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, CHECK);
       GrowableArray<const char*>* indy_items = cii.items();
       for (int i = 0; i < indy_items->length(); i++) {
         w.stream()->print(" %s", indy_items->at(i));
       }
       w.stream()->cr();
     }
-  }
-}
-
-void ArchiveUtils::check_for_oom(oop exception) {
-  assert(exception != nullptr, "Sanity check");
-  if (exception->is_a(vmClasses::OutOfMemoryError_klass())) {
-    vm_direct_exit(-1,
-      err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-              SIZE_FORMAT "M", MaxHeapSize/M));
   }
 }
