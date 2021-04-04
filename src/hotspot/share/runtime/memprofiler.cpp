@@ -115,6 +115,9 @@ void MemProfiler::do_trace() {
       resource_memory_usage += cur->resource_area()->size_in_bytes();
     }
 
+    // used() calls G1Allocator::used_in_alloc_regions() when G1 enabled,
+    // it checks whether Heap_lock was owned on this thread's behalf.
+    G1GC_ONLY(MutexLocker ml(Heap_lock);)
     // Print trace line in log
     fprintf(_log_fp, "%6.1f,%5d," SIZE_FORMAT_W(5) "," UINTX_FORMAT_W(6) "," UINTX_FORMAT_W(6) ",",
             os::elapsedTime(),
