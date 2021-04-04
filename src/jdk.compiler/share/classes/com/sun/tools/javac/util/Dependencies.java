@@ -78,12 +78,12 @@ public abstract class Dependencies {
     /**
      * Push a new completion node on the stack.
      */
-    abstract public void push(ClassSymbol s, CompletionCause phase);
+    public abstract void push(ClassSymbol s, CompletionCause phase);
 
     /**
      * Remove current dependency node from the stack.
      */
-    abstract public void pop();
+    public abstract void pop();
 
     public enum CompletionCause implements GraphUtils.DependencyKind {
         CLASS_READER,

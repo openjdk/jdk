@@ -46,9 +46,7 @@
 // be done concurrently, but only by different loaders.
 //
 // During loading a placeholder (name, loader) is temporarily placed in
-// a side data structure, and is used to detect ClassCircularityErrors
-// and to perform verification during GC.  A GC can occur in the midst
-// of class loading, as we call out to Java, have to take locks, etc.
+// a side data structure, and is used to detect ClassCircularityErrors.
 //
 // When class loading is finished, a new entry is added to the dictionary
 // of the class loader and the placeholder is removed. Note that the protection
@@ -58,9 +56,8 @@
 // Clients of this class who are interested in finding if a class has
 // been completely loaded -- not classes in the process of being loaded --
 // can read the dictionary unlocked. This is safe because
-//    - entries are only deleted at safepoints
-//    - readers cannot come to a safepoint while actively examining
-//         an entry  (an entry cannot be deleted from under a reader)
+//    - entries are only deleted when the class loader is not alive, when the
+//      entire dictionary is deleted.
 //    - entries must be fully formed before they are available to concurrent
 //         readers (we must ensure write ordering)
 //
@@ -121,21 +118,29 @@ class SystemDictionary : AllStatic {
                                               Handle protection_domain,
                                               bool is_superclass,
                                               TRAPS);
+ private:
+  // Parse the stream to create an unsafe anonymous or hidden class.
+  // Used by Unsafe_DefineAnonymousClass and jvm_lookup_define_class.
+  static InstanceKlass* resolve_hidden_class_from_stream(ClassFileStream* st,
+                                                         Symbol* class_name,
+                                                         Handle class_loader,
+                                                         const ClassLoadInfo& cl_info,
+                                                         TRAPS);
 
-  // Parse new stream. This won't update the dictionary or class
-  // hierarchy, simply parse the stream. Used by JVMTI RedefineClasses
-  // and by Unsafe_DefineAnonymousClass and jvm_lookup_define_class.
-  static InstanceKlass* parse_stream(Symbol* class_name,
-                                     Handle class_loader,
-                                     ClassFileStream* st,
-                                     const ClassLoadInfo& cl_info,
-                                     TRAPS);
+  // Resolve a class from stream (called by jni_DefineClass and JVM_DefineClass)
+  // This class is added to the SystemDictionary.
+  static InstanceKlass* resolve_class_from_stream(ClassFileStream* st,
+                                                  Symbol* class_name,
+                                                  Handle class_loader,
+                                                  const ClassLoadInfo& cl_info,
+                                                  TRAPS);
 
-  // Resolve from stream (called by jni_DefineClass and JVM_DefineClass)
-  static InstanceKlass* resolve_from_stream(Symbol* class_name,
+ public:
+  // Resolve either a hidden or normal class from a stream of bytes, based on ClassLoadInfo
+  static InstanceKlass* resolve_from_stream(ClassFileStream* st,
+                                            Symbol* class_name,
                                             Handle class_loader,
-                                            Handle protection_domain,
-                                            ClassFileStream* st,
+                                            const ClassLoadInfo& cl_info,
                                             TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
@@ -169,9 +174,9 @@ class SystemDictionary : AllStatic {
   // satisfied, and it is safe for classes in the given class loader
   // to manipulate strongly-typed values of the found class, subject
   // to local linkage and access checks.
-  static Klass* find_constrained_instance_or_array_klass(Symbol* class_name,
-                                                           Handle class_loader,
-                                                           Thread* THREAD);
+  static Klass* find_constrained_instance_or_array_klass(Thread* current,
+                                                         Symbol* class_name,
+                                                         Handle class_loader);
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
@@ -218,7 +223,7 @@ public:
 
 public:
   static Symbol* check_signature_loaders(Symbol* signature, Klass* klass_being_linked,
-                                         Handle loader1, Handle loader2, bool is_method, TRAPS);
+                                         Handle loader1, Handle loader2, bool is_method);
 
   // JSR 292
   // find a java.lang.invoke.MethodHandle.invoke* method for a given signature
@@ -277,10 +282,10 @@ public:
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
   static void add_resolution_error(const constantPoolHandle& pool, int which, Symbol* error,
-                                   Symbol* message);
+                                   Symbol* message, Symbol* cause = NULL, Symbol* cause_msg = NULL);
   static void delete_resolution_error(ConstantPool* pool);
   static Symbol* find_resolution_error(const constantPoolHandle& pool, int which,
-                                       Symbol** message);
+                                       Symbol** message, Symbol** cause, Symbol** cause_msg);
 
 
   // Record a nest host resolution/validation error
@@ -315,10 +320,6 @@ private:
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
 
-  static void validate_protection_domain(InstanceKlass* klass,
-                                         Handle class_loader,
-                                         Handle protection_domain, TRAPS);
-
   friend class VM_PopulateDumpSharedSpace;
   static LoaderConstraintTable* constraints() { return _loader_constraints; }
   static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
@@ -336,29 +337,29 @@ private:
   static Klass* resolve_array_class_or_null(Symbol* class_name,
                                             Handle class_loader,
                                             Handle protection_domain, TRAPS);
-  static InstanceKlass* handle_parallel_super_load(Symbol* class_name,
-                                                   Symbol* supername,
-                                                   Handle class_loader,
-                                                   Handle protection_domain,
-                                                   Handle lockObject, TRAPS);
-  // Wait on SystemDictionary_lock; unlocks lockObject before
-  // waiting; relocks lockObject with correct recursion count
-  // after waiting, but before reentering SystemDictionary_lock
-  // to preserve lock order semantics.
-  static void double_lock_wait(Thread* thread, Handle lockObject);
+  static InstanceKlass* handle_parallel_loading(JavaThread* current,
+                                                unsigned int name_hash,
+                                                Symbol* name,
+                                                ClassLoaderData* loader_data,
+                                                Handle lockObject,
+                                                bool* throw_circularity_error);
+
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
   static InstanceKlass* find_or_define_helper(Symbol* class_name,
                                               Handle class_loader,
                                               InstanceKlass* k, TRAPS);
-  static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
+  static InstanceKlass* load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS);
+  static InstanceKlass* load_instance_class(unsigned int name_hash,
+                                            Symbol* class_name,
+                                            Handle class_loader, TRAPS);
 
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
                                       PackageEntry* pkg_entry,
-                                      Handle class_loader, TRAPS);
+                                      Handle class_loader);
   static bool is_shared_class_visible_impl(Symbol* class_name,
                                            InstanceKlass* ik,
                                            PackageEntry* pkg_entry,
-                                           Handle class_loader, TRAPS);
+                                           Handle class_loader);
   static bool check_shared_class_super_type(InstanceKlass* klass, InstanceKlass* super,
                                             Handle class_loader,  Handle protection_domain,
                                             bool is_superclass, TRAPS);
@@ -370,7 +371,7 @@ protected:
   // Used by SystemDictionaryShared
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
-                                    Handle loader2, TRAPS);
+                                    Handle loader2);
   static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
   static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
                                                        Handle class_loader,

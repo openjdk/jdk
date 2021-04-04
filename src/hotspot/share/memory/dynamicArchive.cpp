@@ -48,12 +48,6 @@
 
 class DynamicArchiveBuilder : public ArchiveBuilder {
 public:
-
-  static size_t reserve_alignment() {
-    return os::vm_allocation_granularity();
-  }
-
-public:
   void mark_pointer(address* ptr_loc) {
     ArchivePtrMarker::mark_pointer(ptr_loc);
   }
@@ -116,13 +110,10 @@ public:
     gather_source_objs();
     reserve_buffer();
 
-    init_mc_region();
-    verify_estimate_size(_estimated_trampoline_bytes, "Trampolines");
-
     log_info(cds, dynamic)("Copying %d klasses and %d symbols",
                            klasses()->length(), symbols()->length());
-    dump_rw_region();
-    dump_ro_region();
+    dump_rw_metadata();
+    dump_ro_metadata();
     relocate_metaspaceobj_embedded_pointers();
     relocate_roots();
 
@@ -148,7 +139,6 @@ public:
 
     verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
 
-    update_method_trampolines();
     sort_methods();
 
     log_info(cds)("Make classes shareable");
@@ -183,7 +173,7 @@ void DynamicArchiveBuilder::init_header() {
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     _header->set_base_region_crc(i, base_info->space_crc(i));
   }
-  _header->populate(base_info, os::vm_allocation_granularity());
+  _header->populate(base_info, base_info->core_region_alignment());
 }
 
 void DynamicArchiveBuilder::release_header() {
@@ -263,8 +253,8 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   if (ik->default_methods() != NULL) {
     Method::sort_methods(ik->default_methods(), /*set_idnums=*/false, dynamic_dump_method_comparator);
   }
-  ik->vtable().initialize_vtable(true, THREAD); assert(!HAS_PENDING_EXCEPTION, "cannot fail");
-  ik->itable().initialize_itable(true, THREAD); assert(!HAS_PENDING_EXCEPTION, "cannot fail");
+  ik->vtable().initialize_vtable();
+  ik->itable().initialize_itable();
 
   // Set all the pointer marking bits after sorting.
   remark_pointers_for_instance_klass(ik, true);

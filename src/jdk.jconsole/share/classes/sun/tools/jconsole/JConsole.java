@@ -82,9 +82,9 @@ public class JConsole extends JFrame
     }
 
 
-    private final static String title =
+    private static final String title =
         Messages.JAVA_MONITORING___MANAGEMENT_CONSOLE;
-    public final static String ROOT_URL =
+    public static final String ROOT_URL =
         "service:jmx:";
 
     private static int updateInterval = 4000;

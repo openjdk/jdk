@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1248,13 +1248,12 @@ LEAF(Invoke, StateSplit)
   Value           _recv;
   Values*         _args;
   BasicTypeList*  _signature;
-  int             _vtable_index;
   ciMethod*       _target;
 
  public:
   // creation
   Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values* args,
-         int vtable_index, ciMethod* target, ValueStack* state_before);
+         ciMethod* target, ValueStack* state_before);
 
   // accessors
   Bytecodes::Code code() const                   { return _code; }
@@ -1262,7 +1261,6 @@ LEAF(Invoke, StateSplit)
   bool has_receiver() const                      { return receiver() != NULL; }
   int number_of_arguments() const                { return _args->length(); }
   Value argument_at(int i) const                 { return _args->at(i); }
-  int vtable_index() const                       { return _vtable_index; }
   BasicTypeList* signature() const               { return _signature; }
   ciMethod* target() const                       { return _target; }
 

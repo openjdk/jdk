@@ -31,7 +31,7 @@
 // ------------------------------ Load/store/reinterpret -----------------------
 
 // Load Vector (16 bits)
-instruct loadV2(vecD dst, memory mem)
+instruct loadV2(vecD dst, vmem2 mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 2);
   match(Set dst (LoadVector mem));
@@ -41,8 +41,41 @@ instruct loadV2(vecD dst, memory mem)
   ins_pipe(vload_reg_mem64);
 %}
 
+// Load Vector (32 bits)
+instruct loadV4(vecD dst, vmem4 mem)
+%{
+  predicate(n->as_LoadVector()->memory_size() == 4);
+  match(Set dst (LoadVector mem));
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrs   $dst,$mem\t# vector (32 bits)" %}
+  ins_encode( aarch64_enc_ldrvS(dst, mem) );
+  ins_pipe(vload_reg_mem64);
+%}
+
+// Load Vector (64 bits)
+instruct loadV8(vecD dst, vmem8 mem)
+%{
+  predicate(n->as_LoadVector()->memory_size() == 8);
+  match(Set dst (LoadVector mem));
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrd   $dst,$mem\t# vector (64 bits)" %}
+  ins_encode( aarch64_enc_ldrvD(dst, mem) );
+  ins_pipe(vload_reg_mem64);
+%}
+
+// Load Vector (128 bits)
+instruct loadV16(vecX dst, vmem16 mem)
+%{
+  predicate(UseSVE == 0 && n->as_LoadVector()->memory_size() == 16);
+  match(Set dst (LoadVector mem));
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrq   $dst,$mem\t# vector (128 bits)" %}
+  ins_encode( aarch64_enc_ldrvQ(dst, mem) );
+  ins_pipe(vload_reg_mem128);
+%}
+
 // Store Vector (16 bits)
-instruct storeV2(vecD src, memory mem)
+instruct storeV2(vecD src, vmem2 mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 2);
   match(Set mem (StoreVector mem src));
@@ -50,6 +83,39 @@ instruct storeV2(vecD src, memory mem)
   format %{ "strh   $mem,$src\t# vector (16 bits)" %}
   ins_encode( aarch64_enc_strvH(src, mem) );
   ins_pipe(vstore_reg_mem64);
+%}
+
+// Store Vector (32 bits)
+instruct storeV4(vecD src, vmem4 mem)
+%{
+  predicate(n->as_StoreVector()->memory_size() == 4);
+  match(Set mem (StoreVector mem src));
+  ins_cost(4 * INSN_COST);
+  format %{ "strs   $mem,$src\t# vector (32 bits)" %}
+  ins_encode( aarch64_enc_strvS(src, mem) );
+  ins_pipe(vstore_reg_mem64);
+%}
+
+// Store Vector (64 bits)
+instruct storeV8(vecD src, vmem8 mem)
+%{
+  predicate(n->as_StoreVector()->memory_size() == 8);
+  match(Set mem (StoreVector mem src));
+  ins_cost(4 * INSN_COST);
+  format %{ "strd   $mem,$src\t# vector (64 bits)" %}
+  ins_encode( aarch64_enc_strvD(src, mem) );
+  ins_pipe(vstore_reg_mem64);
+%}
+
+// Store Vector (128 bits)
+instruct storeV16(vecX src, vmem16 mem)
+%{
+  predicate(n->as_StoreVector()->memory_size() == 16);
+  match(Set mem (StoreVector mem src));
+  ins_cost(4 * INSN_COST);
+  format %{ "strq   $mem,$src\t# vector (128 bits)" %}
+  ins_encode( aarch64_enc_strvQ(src, mem) );
+  ins_pipe(vstore_reg_mem128);
 %}
 
 instruct reinterpretD(vecD dst)
@@ -3460,11 +3526,12 @@ instruct anytrue_in_mask8B(iRegINoSp dst, vecD src1, vecD src2, vecD tmp, rFlags
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "addv  $tmp, T8B, $src1\t# src1 and src2 are the same\n\t"
+  format %{ "addv  $tmp, T8B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
             "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cset  $dst\t# anytrue 8B" %}
   ins_encode %{
+    // No need to use src2.
     __ addv(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, zr);
@@ -3479,11 +3546,12 @@ instruct anytrue_in_mask16B(iRegINoSp dst, vecX src1, vecX src2, vecX tmp, rFlag
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "addv  $tmp, T16B, $src1\t# src1 and src2 are the same\n\t"
+  format %{ "addv  $tmp, T16B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
             "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cset  $dst\t# anytrue 16B" %}
   ins_encode %{
+    // No need to use src2.
     __ addv(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, zr);
@@ -3498,19 +3566,15 @@ instruct alltrue_in_mask8B(iRegINoSp dst, vecD src1, vecD src2, vecD tmp, rFlags
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "andr  $tmp, T8B, $src1, $src2\t# src2 is maskAllTrue\n\t"
-            "notr  $tmp, T8B, $tmp\n\t"
-            "addv  $tmp, T8B, $tmp\n\t"
+  format %{ "uminv $tmp, T8B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cmp   $dst, 0xff\n\t"
+            "cset  $dst\t# alltrue 8B" %}
   ins_encode %{
-    __ andr(as_FloatRegister($tmp$$reg), __ T8B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($tmp$$reg));
-    __ addv(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($tmp$$reg));
+    // No need to use src2.
+    __ uminv(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
-    __ cmpw($dst$$Register, zr);
+    __ cmpw($dst$$Register, 0xff);
     __ csetw($dst$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -3522,19 +3586,15 @@ instruct alltrue_in_mask16B(iRegINoSp dst, vecX src1, vecX src2, vecX tmp, rFlag
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "andr  $tmp, T16B, $src1, $src2\t# src2 is maskAllTrue\n\t"
-            "notr  $tmp, T16B, $tmp\n\t"
-            "addv  $tmp, T16B, $tmp\n\t"
+  format %{ "uminv $tmp, T16B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cmp   $dst, 0xff\n\t"
+            "cset  $dst\t# alltrue 16B" %}
   ins_encode %{
-    __ andr(as_FloatRegister($tmp$$reg), __ T16B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($tmp$$reg));
-    __ addv(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($tmp$$reg));
+    // No need to use src2.
+    __ uminv(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
-    __ cmpw($dst$$Register, zr);
+    __ cmpw($dst$$Register, 0xff);
     __ csetw($dst$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -3701,72 +3761,6 @@ instruct vabd2D(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
   ins_pipe(vunop_fp128);
-%}
-
-// Load Vector (32 bits)
-instruct loadV4(vecD dst, vmem4 mem)
-%{
-  predicate(n->as_LoadVector()->memory_size() == 4);
-  match(Set dst (LoadVector mem));
-  ins_cost(4 * INSN_COST);
-  format %{ "ldrs   $dst,$mem\t# vector (32 bits)" %}
-  ins_encode( aarch64_enc_ldrvS(dst, mem) );
-  ins_pipe(vload_reg_mem64);
-%}
-
-// Load Vector (64 bits)
-instruct loadV8(vecD dst, vmem8 mem)
-%{
-  predicate(n->as_LoadVector()->memory_size() == 8);
-  match(Set dst (LoadVector mem));
-  ins_cost(4 * INSN_COST);
-  format %{ "ldrd   $dst,$mem\t# vector (64 bits)" %}
-  ins_encode( aarch64_enc_ldrvD(dst, mem) );
-  ins_pipe(vload_reg_mem64);
-%}
-
-// Load Vector (128 bits)
-instruct loadV16(vecX dst, vmem16 mem)
-%{
-  predicate(UseSVE == 0 && n->as_LoadVector()->memory_size() == 16);
-  match(Set dst (LoadVector mem));
-  ins_cost(4 * INSN_COST);
-  format %{ "ldrq   $dst,$mem\t# vector (128 bits)" %}
-  ins_encode( aarch64_enc_ldrvQ(dst, mem) );
-  ins_pipe(vload_reg_mem128);
-%}
-
-// Store Vector (32 bits)
-instruct storeV4(vecD src, vmem4 mem)
-%{
-  predicate(n->as_StoreVector()->memory_size() == 4);
-  match(Set mem (StoreVector mem src));
-  ins_cost(4 * INSN_COST);
-  format %{ "strs   $mem,$src\t# vector (32 bits)" %}
-  ins_encode( aarch64_enc_strvS(src, mem) );
-  ins_pipe(vstore_reg_mem64);
-%}
-
-// Store Vector (64 bits)
-instruct storeV8(vecD src, vmem8 mem)
-%{
-  predicate(n->as_StoreVector()->memory_size() == 8);
-  match(Set mem (StoreVector mem src));
-  ins_cost(4 * INSN_COST);
-  format %{ "strd   $mem,$src\t# vector (64 bits)" %}
-  ins_encode( aarch64_enc_strvD(src, mem) );
-  ins_pipe(vstore_reg_mem64);
-%}
-
-// Store Vector (128 bits)
-instruct storeV16(vecX src, vmem16 mem)
-%{
-  predicate(n->as_StoreVector()->memory_size() == 16);
-  match(Set mem (StoreVector mem src));
-  ins_cost(4 * INSN_COST);
-  format %{ "strq   $mem,$src\t# vector (128 bits)" %}
-  ins_encode( aarch64_enc_strvQ(src, mem) );
-  ins_pipe(vstore_reg_mem128);
 %}
 
 instruct replicate8B(vecD dst, iRegIorL2I src)

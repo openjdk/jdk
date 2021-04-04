@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,12 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build LinkClassApp
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar link_class_app.jar LinkClassApp Parent Child Parent2 Child2 MyShutdown
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar link_class_app.jar LinkClassApp Parent Child Parent2 Child2 MyShutdown
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LinkClassTest
  */
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class LinkClassTest extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {

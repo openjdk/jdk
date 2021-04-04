@@ -148,6 +148,12 @@ import java.util.concurrent.locks.LockSupport;
  * returns snapshots of these state queries in a form convenient for
  * informal monitoring.
  *
+ * <p>Memory consistency effects: Actions prior to any form of arrive
+ * method <a href="package-summary.html#MemoryVisibility">
+ * <i>happen-before</i></a> a corresponding phase advance and
+ * onAdvance actions (if present), which in turn <i>happen-before</i>
+ * actions following the phase advance.
+ *
  * <p><b>Sample usages:</b>
  *
  * <p>A {@code Phaser} may be used instead of a {@code CountDownLatch}

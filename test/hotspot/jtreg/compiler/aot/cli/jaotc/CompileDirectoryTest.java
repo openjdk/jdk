@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library / /test/lib /testlibrary
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.cli.jaotc.CompileDirectoryTest
- * @run driver ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
  *                                compiler.aot.cli.jaotc.data.HelloWorldTwo
  * @run driver compiler.aot.cli.jaotc.CompileDirectoryTest
  * @summary check jaotc can compile directory with classes where directory is specified by relative path

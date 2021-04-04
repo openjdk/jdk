@@ -389,19 +389,19 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
 // If it has an explicit _nest_host_index or _nest_members, these will be ignored.
 // We also know the "host" is a valid nest-host in the same package so we can
 // assert some of those facts.
-void InstanceKlass::set_nest_host(InstanceKlass* host, TRAPS) {
+void InstanceKlass::set_nest_host(InstanceKlass* host) {
   assert(is_hidden(), "must be a hidden class");
   assert(host != NULL, "NULL nest host specified");
   assert(_nest_host == NULL, "current class has resolved nest-host");
-  assert(nest_host_error(THREAD) == NULL, "unexpected nest host resolution error exists: %s",
-         nest_host_error(THREAD));
+  assert(nest_host_error() == NULL, "unexpected nest host resolution error exists: %s",
+         nest_host_error());
   assert((host->_nest_host == NULL && host->_nest_host_index == 0) ||
          (host->_nest_host == host), "proposed host is not a valid nest-host");
   // Can't assert this as package is not set yet:
   // assert(is_same_class_package(host), "proposed host is in wrong package");
 
   if (log_is_enabled(Trace, class, nestmates)) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm;
     const char* msg = "";
     // a hidden class does not expect a statically defined nest-host
     if (_nest_host_index > 0) {
@@ -452,11 +452,11 @@ bool InstanceKlass::has_nestmate_access_to(InstanceKlass* k, TRAPS) {
   return access;
 }
 
-const char* InstanceKlass::nest_host_error(TRAPS) {
+const char* InstanceKlass::nest_host_error() {
   if (_nest_host_index == 0) {
     return NULL;
   } else {
-    constantPoolHandle cph(THREAD, constants());
+    constantPoolHandle cph(Thread::current(), constants());
     return SystemDictionary::find_nest_host_error(cph, (int)_nest_host_index);
   }
 }
@@ -787,7 +787,7 @@ oop InstanceKlass::init_lock() const {
   oop lock = java_lang_Class::init_lock(java_mirror());
   // Prevent reordering with any access of initialization state
   OrderAccess::loadload();
-  assert((oop)lock != NULL || !is_not_initialized(), // initialized or in_error state
+  assert(lock != NULL || !is_not_initialized(), // initialized or in_error state
          "only fully initialized state can have a null lock");
   return lock;
 }
@@ -807,7 +807,7 @@ void InstanceKlass::eager_initialize_impl() {
   EXCEPTION_MARK;
   HandleMark hm(THREAD);
   Handle h_init_lock(THREAD, init_lock());
-  ObjectLocker ol(h_init_lock, THREAD);
+  ObjectLocker ol(h_init_lock, THREAD->as_Java_thread());
 
   // abort if someone beat us to the initialization
   if (!is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -943,7 +943,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   {
     HandleMark hm(THREAD);
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, THREAD);
+    ObjectLocker ol(h_init_lock, jt);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -984,12 +984,12 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // 1) the class is loaded by custom class loader or
       // 2) the class is loaded by built-in class loader but failed to add archived loader constraints
       bool need_init_table = true;
-      if (is_shared() && SystemDictionaryShared::check_linking_constraints(this, THREAD)) {
+      if (is_shared() && SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
         need_init_table = false;
       }
       if (need_init_table) {
-        vtable().initialize_vtable(true, CHECK_false);
-        itable().initialize_itable(true, CHECK_false);
+        vtable().initialize_vtable_and_check_constraints(CHECK_false);
+        itable().initialize_itable_and_check_constraints(CHECK_false);
       }
 #ifdef ASSERT
       vtable().verify(tty, true);
@@ -1068,7 +1068,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 1
   {
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, THREAD);
+    ObjectLocker ol(h_init_lock, jt);
 
     // Step 2
     // If we were to use wait() instead of waitInterruptibly() then
@@ -1211,7 +1211,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS) {
   Handle h_init_lock(THREAD, init_lock());
   if (h_init_lock() != NULL) {
-    ObjectLocker ol(h_init_lock, THREAD);
+    ObjectLocker ol(h_init_lock, THREAD->as_Java_thread());
     set_init_thread(NULL); // reset _init_thread before changing _init_state
     set_init_state(state);
     fence_and_clear_init_lock();
@@ -1223,37 +1223,37 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
   }
 }
 
-Klass* InstanceKlass::implementor() const {
-  Klass* volatile* k = adr_implementor();
-  if (k == NULL) {
+InstanceKlass* InstanceKlass::implementor() const {
+  InstanceKlass* volatile* ik = adr_implementor();
+  if (ik == NULL) {
     return NULL;
   } else {
     // This load races with inserts, and therefore needs acquire.
-    Klass* kls = Atomic::load_acquire(k);
-    if (kls != NULL && !kls->is_loader_alive()) {
+    InstanceKlass* ikls = Atomic::load_acquire(ik);
+    if (ikls != NULL && !ikls->is_loader_alive()) {
       return NULL;  // don't return unloaded class
     } else {
-      return kls;
+      return ikls;
     }
   }
 }
 
 
-void InstanceKlass::set_implementor(Klass* k) {
+void InstanceKlass::set_implementor(InstanceKlass* ik) {
   assert_locked_or_safepoint(Compile_lock);
   assert(is_interface(), "not interface");
-  Klass* volatile* addr = adr_implementor();
+  InstanceKlass* volatile* addr = adr_implementor();
   assert(addr != NULL, "null addr");
   if (addr != NULL) {
-    Atomic::release_store(addr, k);
+    Atomic::release_store(addr, ik);
   }
 }
 
 int  InstanceKlass::nof_implementors() const {
-  Klass* k = implementor();
-  if (k == NULL) {
+  InstanceKlass* ik = implementor();
+  if (ik == NULL) {
     return 0;
-  } else if (k != this) {
+  } else if (ik != this) {
     return 1;
   } else {
     return 2;
@@ -1269,29 +1269,29 @@ int  InstanceKlass::nof_implementors() const {
 //   self                  - more than one implementor
 //
 // The _implementor field only exists for interfaces.
-void InstanceKlass::add_implementor(Klass* k) {
+void InstanceKlass::add_implementor(InstanceKlass* ik) {
   if (Universe::is_fully_initialized()) {
     assert_lock_strong(Compile_lock);
   }
   assert(is_interface(), "not interface");
   // Filter out my subinterfaces.
   // (Note: Interfaces are never on the subklass list.)
-  if (InstanceKlass::cast(k)->is_interface()) return;
+  if (ik->is_interface()) return;
 
   // Filter out subclasses whose supers already implement me.
   // (Note: CHA must walk subclasses of direct implementors
   // in order to locate indirect implementors.)
-  Klass* sk = k->super();
-  if (sk != NULL && InstanceKlass::cast(sk)->implements_interface(this))
+  InstanceKlass* super_ik = ik->java_super();
+  if (super_ik != NULL && super_ik->implements_interface(this))
     // We only need to check one immediate superclass, since the
     // implements_interface query looks at transitive_interfaces.
     // Any supers of the super have the same (or fewer) transitive_interfaces.
     return;
 
-  Klass* ik = implementor();
-  if (ik == NULL) {
-    set_implementor(k);
-  } else if (ik != this && ik != k) {
+  InstanceKlass* iklass = implementor();
+  if (iklass == NULL) {
+    set_implementor(ik);
+  } else if (iklass != this && iklass != ik) {
     // There is already an implementor. Use itself as an indicator of
     // more than one implementors.
     set_implementor(this);
@@ -1299,7 +1299,7 @@ void InstanceKlass::add_implementor(Klass* k) {
 
   // The implementor also implements the transitive_interfaces
   for (int index = 0; index < local_interfaces()->length(); index++) {
-    InstanceKlass::cast(local_interfaces()->at(index))->add_implementor(k);
+    local_interfaces()->at(index)->add_implementor(ik);
   }
 }
 
@@ -1314,7 +1314,7 @@ void InstanceKlass::process_interfaces() {
   // link this class into the implementors list of every interface it implements
   for (int i = local_interfaces()->length() - 1; i >= 0; i--) {
     assert(local_interfaces()->at(i)->is_klass(), "must be a klass");
-    InstanceKlass* interf = InstanceKlass::cast(local_interfaces()->at(i));
+    InstanceKlass* interf = local_interfaces()->at(i);
     assert(interf->is_interface(), "expected interface");
     interf->add_implementor(this);
   }
@@ -2344,11 +2344,11 @@ void InstanceKlass::clean_implementors_list() {
     assert (ClassUnloading, "only called for ClassUnloading");
     for (;;) {
       // Use load_acquire due to competing with inserts
-      Klass* impl = Atomic::load_acquire(adr_implementor());
+      InstanceKlass* impl = Atomic::load_acquire(adr_implementor());
       if (impl != NULL && !impl->is_loader_alive()) {
-        // NULL this field, might be an unloaded klass or NULL
-        Klass* volatile* klass = adr_implementor();
-        if (Atomic::cmpxchg(klass, impl, (Klass*)NULL) == impl) {
+        // NULL this field, might be an unloaded instance klass or NULL
+        InstanceKlass* volatile* iklass = adr_implementor();
+        if (Atomic::cmpxchg(iklass, impl, (InstanceKlass*)NULL) == impl) {
           // Successfully unlinking implementor.
           if (log_is_enabled(Trace, class, unload)) {
             ResourceMark rm;
@@ -2599,8 +2599,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // have been redefined.
     bool trace_name_printed = false;
     adjust_default_methods(&trace_name_printed);
-    vtable().initialize_vtable(false, CHECK);
-    itable().initialize_itable(false, CHECK);
+    vtable().initialize_vtable();
+    itable().initialize_itable();
   }
 #endif
 
@@ -2857,9 +2857,10 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
     check_prohibited_package(name(), loader_data, CHECK);
   }
 
-  if (is_shared() && _package_entry == pkg_entry) {
-    if (MetaspaceShared::use_full_module_graph()) {
+  if (is_shared() && _package_entry != NULL) {
+    if (MetaspaceShared::use_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
+      assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
       return;
     } else {
       _package_entry = NULL;
@@ -3108,7 +3109,7 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
   return outer_klass;
 }
 
-jint InstanceKlass::compute_modifier_flags(TRAPS) const {
+jint InstanceKlass::compute_modifier_flags() const {
   jint access = access_flags().as_int();
 
   // But check if it happens to be member class.

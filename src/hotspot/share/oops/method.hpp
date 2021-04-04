@@ -76,6 +76,7 @@ class Method : public Metadata {
   ConstMethod*      _constMethod;                // Method read-only data.
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
+  AdapterHandlerEntry* _adapter;
   AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
                                                  // note: can have vtables with >2**16 elements (because of inheritance)
@@ -98,7 +99,7 @@ class Method : public Metadata {
   JFR_ONLY(DEFINE_TRACE_FLAG;)
 
 #ifndef PRODUCT
-  int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
+  int64_t _compiled_invocation_count;
 #endif
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
@@ -227,7 +228,7 @@ class Method : public Metadata {
   void clear_all_breakpoints();
   // Tracking number of breakpoints, for fullspeed debugging.
   // Only mutated by VM thread.
-  u2   number_of_breakpoints()             const {
+  u2   number_of_breakpoints() const {
     MethodCounters* mcs = method_counters();
     if (mcs == NULL) {
       return 0;
@@ -235,20 +236,20 @@ class Method : public Metadata {
       return mcs->number_of_breakpoints();
     }
   }
-  void incr_number_of_breakpoints(TRAPS)         {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void incr_number_of_breakpoints(Thread* current) {
+    MethodCounters* mcs = get_method_counters(current);
     if (mcs != NULL) {
       mcs->incr_number_of_breakpoints();
     }
   }
-  void decr_number_of_breakpoints(TRAPS)         {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void decr_number_of_breakpoints(Thread* current) {
+    MethodCounters* mcs = get_method_counters(current);
     if (mcs != NULL) {
       mcs->decr_number_of_breakpoints();
     }
   }
   // Initialization only
-  void clear_number_of_breakpoints()             {
+  void clear_number_of_breakpoints() {
     MethodCounters* mcs = method_counters();
     if (mcs != NULL) {
       mcs->clear_number_of_breakpoints();
@@ -291,8 +292,8 @@ class Method : public Metadata {
 
 #if COMPILER2_OR_JVMCI
   // Count of times method was exited via exception while interpreting
-  void interpreter_throwout_increment(TRAPS) {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void interpreter_throwout_increment(Thread* current) {
+    MethodCounters* mcs = get_method_counters(current);
     if (mcs != NULL) {
       mcs->interpreter_throwout_increment();
     }
@@ -423,24 +424,24 @@ class Method : public Metadata {
     }
   }
 
-  int invocation_count();
-  int backedge_count();
+  int invocation_count() const;
+  int backedge_count() const;
 
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
 
   static void build_interpreter_method_data(const methodHandle& method, TRAPS);
 
-  static MethodCounters* build_method_counters(Method* m, TRAPS);
+  static MethodCounters* build_method_counters(Thread* current, Method* m);
 
   int interpreter_invocation_count()            { return invocation_count();          }
 
 #ifndef PRODUCT
-  int  compiled_invocation_count() const        { return _compiled_invocation_count;  }
-  void set_compiled_invocation_count(int count) { _compiled_invocation_count = count; }
+  int64_t  compiled_invocation_count() const    { return _compiled_invocation_count;}
+  void set_compiled_invocation_count(int count) { _compiled_invocation_count = (int64_t)count; }
 #else
   // for PrintMethodData in a product build
-  int  compiled_invocation_count() const        { return 0;  }
+  int64_t  compiled_invocation_count() const    { return 0; }
 #endif // not PRODUCT
 
   // Clear (non-shared space) pointers which could not be relevant
@@ -464,13 +465,7 @@ private:
 public:
   static void set_code(const methodHandle& mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
-    constMethod()->set_adapter_entry(adapter);
-  }
-  void set_adapter_trampoline(AdapterHandlerEntry** trampoline) {
-    constMethod()->set_adapter_trampoline(trampoline);
-  }
-  void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
-    constMethod()->update_adapter_trampoline(adapter);
+    _adapter = adapter;
   }
   void set_from_compiled_entry(address entry) {
     _from_compiled_entry =  entry;
@@ -481,7 +476,7 @@ public:
   address get_c2i_unverified_entry();
   address get_c2i_no_clinit_check_entry();
   AdapterHandlerEntry* adapter() const {
-    return constMethod()->adapter();
+    return _adapter;
   }
   // setup entry points
   void link_method(const methodHandle& method, TRAPS);
@@ -516,8 +511,6 @@ public:
   address interpreter_entry() const              { return _i2i_entry; }
   // Only used when first initialize so we can set _i2i_entry and _from_interpreted_entry
   void set_interpreter_entry(address entry) {
-    assert(!is_shared(),
-           "shared method's interpreter entry should not be changed at run time");
     if (_i2i_entry != entry) {
       _i2i_entry = entry;
     }
@@ -951,9 +944,9 @@ public:
   void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);
 
  public:
-  MethodCounters* get_method_counters(TRAPS) {
+  MethodCounters* get_method_counters(Thread* current) {
     if (_method_counters == NULL) {
-      build_method_counters(this, CHECK_AND_CLEAR_NULL);
+      build_method_counters(current, this);
     }
     return _method_counters;
   }

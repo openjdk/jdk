@@ -135,7 +135,7 @@ public final class Recording implements Closeable {
      *         FlightRecorderPermission "accessFlightRecorder" is not set.
      */
     public Recording() {
-        this(new HashMap<String, String>());
+        this(Map.of());
      }
 
     /**

@@ -327,7 +327,7 @@ class InstanceKlass: public Klass {
   // embedded nonstatic oop-map blocks follows here
   // embedded implementor of this interface follows here
   //   The embedded implementor only exists if the current klass is an
-  //   iterface. The possible values of the implementor fall into following
+  //   interface. The possible values of the implementor fall into following
   //   three cases:
   //     NULL: no implementor.
   //     A Klass* that's not itself: one implementor.
@@ -465,7 +465,7 @@ class InstanceKlass: public Klass {
   jushort nest_host_index() const { return _nest_host_index; }
   void set_nest_host_index(u2 i)  { _nest_host_index = i; }
   // dynamic nest member support
-  void set_nest_host(InstanceKlass* host, TRAPS);
+  void set_nest_host(InstanceKlass* host);
 
   // record components
   Array<RecordComponent*>* record_components() const { return _record_components; }
@@ -486,7 +486,7 @@ public:
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns NULL if there was no error.
-  const char* nest_host_error(TRAPS);
+  const char* nest_host_error();
   // Returns nest-host class, resolving and validating it if needed.
   // Returns NULL if resolution is not possible from the calling context.
   InstanceKlass* nest_host(TRAPS);
@@ -1016,10 +1016,10 @@ public:
 #endif
 
   // Access to the implementor of an interface.
-  Klass* implementor() const;
-  void set_implementor(Klass* k);
+  InstanceKlass* implementor() const;
+  void set_implementor(InstanceKlass* ik);
   int  nof_implementors() const;
-  void add_implementor(Klass* k);  // k is a new class that implements this interface
+  void add_implementor(InstanceKlass* ik);  // ik is a new class that implements this interface
   void init_implementor();           // initialize
 
   // link this class into the implementors list of every interface it implements
@@ -1087,7 +1087,7 @@ public:
   inline OopMapBlock* start_of_nonstatic_oop_maps() const;
   inline Klass** end_of_nonstatic_oop_maps() const;
 
-  inline Klass* volatile* adr_implementor() const;
+  inline InstanceKlass* volatile* adr_implementor() const;
   inline InstanceKlass** adr_unsafe_anonymous_host() const;
   inline address adr_fingerprint() const;
 
@@ -1267,8 +1267,7 @@ public:
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
 
-  // jvm support
-  jint compute_modifier_flags(TRAPS) const;
+  jint compute_modifier_flags() const;
 
 public:
   // JVMTI support

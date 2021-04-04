@@ -187,13 +187,10 @@ PackageEntryTable::~PackageEntryTable() {
       to_remove->delete_qualified_exports();
       to_remove->name()->decrement_refcount();
 
-      // Unlink from the Hashtable prior to freeing
-      unlink_entry(to_remove);
-      FREE_C_HEAP_ARRAY(char, to_remove);
+      BasicHashtable<mtModule>::free_entry(to_remove);
     }
   }
   assert(number_of_entries() == 0, "should have removed all entries");
-  assert(new_entry_free_list() == NULL, "entry present on PackageEntryTable's free list");
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -322,7 +319,7 @@ void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_pac
 
 PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, ModuleEntry* module) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
-  PackageEntry* entry = (PackageEntry*)Hashtable<Symbol*, mtModule>::allocate_new_entry(hash, name);
+  PackageEntry* entry = (PackageEntry*)Hashtable<Symbol*, mtModule>::new_entry(hash, name);
 
   JFR_ONLY(INIT_ID(entry);)
 
