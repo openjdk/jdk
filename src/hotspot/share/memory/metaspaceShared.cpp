@@ -530,16 +530,24 @@ void VM_PopulateDumpSharedSpace::doit() {
 }
 
 class CollectCLDClosure : public CLDClosure {
-  GrowableArray<ClassLoaderData*>* _loaded_cld;
+  GrowableArray<ClassLoaderData*> _loaded_cld;
 public:
-  CollectCLDClosure(GrowableArray<ClassLoaderData*>* loaded_cld) : _loaded_cld(loaded_cld){}
-
+  CollectCLDClosure() {}
+  ~CollectCLDClosure() {
+    for (int i = 0; i < _loaded_cld.length(); i++) {
+      ClassLoaderData* cld = _loaded_cld.at(i);
+      cld->dec_keep_alive();
+    }
+  }
   void do_cld(ClassLoaderData* cld) {
     if (!cld->is_unloading()) {
       cld->inc_keep_alive();
-      _loaded_cld->append(cld);
+      _loaded_cld.append(cld);
     }
   }
+
+  int nof_cld() const                { return _loaded_cld.length(); }
+  ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
 bool MetaspaceShared::linking_required(InstanceKlass* ik) {
@@ -565,17 +573,20 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
   ResourceMark rm;
-  GrowableArray<ClassLoaderData*> loaded_cld;
-  CollectCLDClosure collect_cld(&loaded_cld);
+  CollectCLDClosure collect_cld;
   {
+    // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
+    // We cannot link the classes while holding this lock (or else we may run into deadlock).
+    // Therefore, we need to first collect all the CLDs, and then link their classes after
+    // releasing the lock.
     MutexLocker lock(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::loaded_cld_do(&collect_cld);
   }
 
   while (true) {
     bool has_linked = false;
-    for (int i = 0; i < loaded_cld.length(); i++) {
-      ClassLoaderData* cld = loaded_cld.at(i);
+    for (int i = 0; i < collect_cld.nof_cld(); i++) {
+      ClassLoaderData* cld = collect_cld.cld_at(i);
       for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
         if (klass->is_instance_klass()) {
           InstanceKlass* ik = InstanceKlass::cast(klass);
@@ -592,12 +603,6 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
     // Class linking includes verification which may load more classes.
     // Keep scanning until we have linked no more classes.
   }
-
-  for (int i = 0; i < loaded_cld.length(); i++) {
-    ClassLoaderData* cld = loaded_cld.at(i);
-    cld->dec_keep_alive();
-  }
-  loaded_cld.trunc_to(0);
 }
 
 void MetaspaceShared::prepare_for_dumping() {
