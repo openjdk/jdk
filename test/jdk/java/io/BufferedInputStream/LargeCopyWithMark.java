@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *          streams and mark
  * @run main/othervm -Xmx4G -Xlog:gc,gc+heap,gc+ergo+heap -XX:+CrashOnOutOfMemoryError
                      -XX:+IgnoreUnrecognizedVMOptions -XX:+G1ExitOnExpansionFailure
+                     -Xlog:cds=debug
                      LargeCopyWithMark
  */
 
