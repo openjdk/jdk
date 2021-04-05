@@ -969,6 +969,9 @@ void CodeCache::initialize() {
 
 void codeCache_init() {
   CodeCache::initialize();
+}
+
+void AOTLoader_init() {
   // Load AOT libraries and add AOT code heaps.
   AOTLoader::initialize();
 }

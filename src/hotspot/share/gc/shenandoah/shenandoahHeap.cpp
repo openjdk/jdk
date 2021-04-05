@@ -1551,6 +1551,17 @@ public:
   bool is_thread_safe() { return true; }
 };
 
+class ShenandoahRendezvousClosure : public HandshakeClosure {
+public:
+  inline ShenandoahRendezvousClosure() : HandshakeClosure("ShenandoahRendezvous") {}
+  inline void do_thread(Thread* thread) {}
+};
+
+void ShenandoahHeap::rendezvous_threads() {
+  ShenandoahRendezvousClosure cl;
+  Handshake::execute(&cl);
+}
+
 void ShenandoahHeap::recycle_trash() {
   free_set()->recycle_trash();
 }

@@ -4,12 +4,12 @@ class foo/module-info {
   52; // version
   [] { // Constant Pool
     ; // first element is empty
-    class #6; // #1    
-    Utf8 "SourceFile"; // #2    
-    Utf8 "module-info.java"; // #3    
-    Utf8 "Module"; // #4    
-    Utf8 "java.base"; // #5    
-    Utf8 "foo/module-info"; // #6    
+    class #6; // #1
+    Utf8 "SourceFile"; // #2
+    Utf8 "module-info.java"; // #3
+    Utf8 "Module"; // #4
+    Utf8 "java.base"; // #5
+    Utf8 "foo/module-info"; // #6
   } // Constant Pool
 
   0x8000; // access

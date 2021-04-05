@@ -190,7 +190,7 @@ public abstract class PKCS11Test {
                     test.enableSM = true;
                 } else {
                     throw new RuntimeException("Unknown Command, use 'sm' as "
-                            + "first arguemtn to enable security manager");
+                            + "first argument to enable security manager");
                 }
             }
             if (test.enableSM) {
