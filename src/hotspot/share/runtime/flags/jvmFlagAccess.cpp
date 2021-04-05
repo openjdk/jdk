@@ -29,7 +29,6 @@
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
-#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
