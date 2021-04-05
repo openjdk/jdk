@@ -393,7 +393,7 @@ Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
 }
 
 // Converts a C string to a Java String based on current encoding
-Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRAPS) {
+Handle java_lang_String::create_from_platform_dependent_str(JavaThread* current, const char* str) {
   assert(str != NULL, "bad arguments");
 
   typedef jstring (JNICALL *to_java_string_fn_t)(JNIEnv*, const char *);
@@ -415,20 +415,19 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
 
   jstring js = NULL;
   {
-    JavaThread* thread = THREAD->as_Java_thread();
-    HandleMark hm(thread);
-    ThreadToNativeFromVM ttn(thread);
-    js = (_to_java_string_fn)(thread->jni_environment(), str);
+    HandleMark hm(current);
+    ThreadToNativeFromVM ttn(current);
+    js = (_to_java_string_fn)(current->jni_environment(), str);
   }
 
-  Handle native_platform_string(THREAD, JNIHandles::resolve(js));
+  Handle native_platform_string(current, JNIHandles::resolve(js));
   JNIHandles::destroy_local(js);  // destroy local JNIHandle.
   return native_platform_string;
 }
 
 // Converts a Java String to a native C string that can be used for
 // native OS calls.
-char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
+char* java_lang_String::as_platform_dependent_str(JavaThread* current, Handle java_string) {
   typedef char* (*to_platform_string_fn_t)(JNIEnv*, jstring, bool*);
   static to_platform_string_fn_t _to_platform_string_fn = NULL;
 
@@ -441,12 +440,12 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   }
 
   char *native_platform_string;
-  { JavaThread* thread = THREAD->as_Java_thread();
-    jstring js = (jstring) JNIHandles::make_local(thread, java_string());
+  {
+    jstring js = (jstring) JNIHandles::make_local(current, java_string());
     bool is_copy;
-    HandleMark hm(thread);
-    ThreadToNativeFromVM ttn(thread);
-    JNIEnv *env = thread->jni_environment();
+    HandleMark hm(current);
+    ThreadToNativeFromVM ttn(current);
+    JNIEnv *env = current->jni_environment();
     native_platform_string = (_to_platform_string_fn)(env, js, &is_copy);
     assert(is_copy == JNI_TRUE, "is_copy value changed");
     JNIHandles::destroy_local(js);
@@ -968,7 +967,7 @@ void java_lang_Class::initialize_mirror_fields(Klass* k,
 }
 
 // Set the java.lang.Module module field in the java_lang_Class mirror
-void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle module, TRAPS) {
+void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Handle mirror, Handle module) {
   if (module.is_null()) {
     // During startup, the module may be NULL only if java.base has not been defined yet.
     // Put the class on the fixup_module_list to patch later when the java.lang.Module
@@ -977,7 +976,7 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
 
     bool javabase_was_defined = false;
     {
-      MutexLocker m1(THREAD, Module_lock);
+      MutexLocker m1(current, Module_lock);
       // Keep list of classes needing java.base module fixup
       if (!ModuleEntryTable::javabase_defined()) {
         assert(k->java_mirror() != NULL, "Class's mirror is null");
@@ -994,7 +993,7 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
       assert(javabase_entry != NULL && javabase_entry->module() != NULL,
              "Setting class module field, " JAVA_BASE_NAME " should be defined");
-      Handle javabase_handle(THREAD, javabase_entry->module());
+      Handle javabase_handle(current, javabase_entry->module());
       set_module(mirror(), javabase_handle());
     }
   } else {
@@ -1087,7 +1086,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
     // Set the module field in the java_lang_Class instance.  This must be done
     // after the mirror is set.
-    set_mirror_module_field(k, mirror, module, THREAD);
+    set_mirror_module_field(THREAD->as_Java_thread(), k, mirror, module);
 
     if (comp_mirror() != NULL) {
       // Set after k->java_mirror() is published, because compiled code running
@@ -1394,7 +1393,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   k->set_java_mirror(mirror);
 
-  set_mirror_module_field(k, mirror, module, THREAD);
+  set_mirror_module_field(THREAD->as_Java_thread(), k, mirror, module);
 
   if (log_is_enabled(Trace, cds, heap, mirror)) {
     ResourceMark rm(THREAD);
@@ -2881,7 +2880,7 @@ void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const metho
   Handle mname(THREAD, stackFrame->obj_field(_memberName_offset));
   InstanceKlass* ik = method->method_holder();
   CallInfo info(method(), ik, CHECK);
-  MethodHandles::init_method_MemberName(mname, info, THREAD);
+  MethodHandles::init_method_MemberName(mname, info);
   // set bci
   java_lang_StackFrameInfo::set_bci(stackFrame(), bci);
   // method may be redefined; store the version

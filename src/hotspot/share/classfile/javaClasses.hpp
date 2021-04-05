@@ -126,7 +126,7 @@ class java_lang_String : AllStatic {
   static Handle create_from_str(const char* utf8_str, TRAPS);
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
   static Handle create_from_symbol(Symbol* symbol, TRAPS);
-  static Handle create_from_platform_dependent_str(const char* str, TRAPS);
+  static Handle create_from_platform_dependent_str(JavaThread* current, const char* str);
   static Handle char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS);
 
   static void set_compact_strings(bool value);
@@ -155,7 +155,7 @@ class java_lang_String : AllStatic {
   static char*  as_utf8_string(oop java_string, int start, int len);
   static char*  as_utf8_string(oop java_string, typeArrayOop value, char* buf, int buflen);
   static char*  as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, int buflen);
-  static char*  as_platform_dependent_str(Handle java_string, TRAPS);
+  static char*  as_platform_dependent_str(JavaThread* current, Handle java_string);
   static jchar* as_unicode_string(oop java_string, int& length, TRAPS);
   // produce an ascii string with all other values quoted using \u####
   static char*  as_quoted_ascii(oop java_string);
@@ -261,7 +261,7 @@ class java_lang_Class : AllStatic {
   static void set_component_mirror(oop java_class, oop comp_mirror);
   static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain,
                                        Handle classData, TRAPS);
-  static void set_mirror_module_field(Klass* K, Handle mirror, Handle module, TRAPS);
+  static void set_mirror_module_field(JavaThread* current, Klass* K, Handle mirror, Handle module);
  public:
   static void allocate_fixup_lists();
   static void compute_offsets();

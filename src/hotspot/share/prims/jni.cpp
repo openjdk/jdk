@@ -1078,7 +1078,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   // Throw a NoSuchMethodError exception if we have an instance of a
   // primitive java.lang.Class
   if (java_lang_Class::is_primitive(mirror)) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
 
@@ -1102,7 +1102,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
     }
   }
   if (m == NULL || (m->is_static() != is_static)) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
   return m->jmethod_id();
@@ -2735,7 +2735,7 @@ JNI_ENTRY(jint, jni_MonitorExit(JNIEnv *env, jobject jobj))
   }
 
   Handle obj(THREAD, JNIHandles::resolve_non_null(jobj));
-  ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
+  ObjectSynchronizer::jni_exit(THREAD->as_Java_thread(), obj());
 
   ret = JNI_OK;
   return ret;

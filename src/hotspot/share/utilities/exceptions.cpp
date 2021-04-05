@@ -378,7 +378,7 @@ Handle Exceptions::new_exception(Thread* thread, Symbol* name,
       msg = java_lang_String::create_from_str(message, thread);
     } else {
       // Make a java string keeping the encoding scheme of the original string.
-      msg = java_lang_String::create_from_platform_dependent_str(message, thread);
+      msg = java_lang_String::create_from_platform_dependent_str(thread->as_Java_thread(), message);
     }
     if (thread->has_pending_exception()) {
       Handle exception(thread, thread->pending_exception());

@@ -1214,11 +1214,11 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
   }
 
-  load_shared_class_misc(ik, loader_data, CHECK_NULL);
+  load_shared_class_misc(ik, loader_data);
   return ik;
 }
 
-void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) {
+void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) {
   ik->print_class_load_logging(loader_data, NULL, NULL);
 
   // For boot loader, ensure that GetSystemPackage knows that a class in this
@@ -1240,7 +1240,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
       ik->set_has_passed_fingerprint_check(true);
     } else {
       if (log_is_enabled(Info, class, fingerprint)) {
-        ResourceMark rm(THREAD);
+        ResourceMark rm;
         log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
       }
     }
