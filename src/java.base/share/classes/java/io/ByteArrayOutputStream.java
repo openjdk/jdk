@@ -42,6 +42,9 @@ import jdk.internal.util.ArraysSupport;
  * this class can be called after the stream has been closed without
  * generating an {@code IOException}.
  *
+ * An instance of this class does not need
+ * wrapping with {@code BufferedOutputStream}.
+ *
  * @author  Arthur van Hoff
  * @since   1.0
  */
@@ -51,7 +54,7 @@ public class ByteArrayOutputStream extends OutputStream {
     /**
      * The buffer where data is stored.
      */
-    protected byte buf[];
+    protected byte[] buf;
 
     /**
      * The number of valid bytes in the buffer.
@@ -125,7 +128,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}
      */
-    public synchronized void write(byte b[], int off, int len) {
+    public synchronized void write(byte[] b, int off, int len) {
         Objects.checkFromIndexSize(off, len, b.length);
         ensureCapacity(count + len);
         System.arraycopy(b, off, buf, count, len);
@@ -144,7 +147,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * @throws  NullPointerException if {@code b} is {@code null}.
      * @since   11
      */
-    public void writeBytes(byte b[]) {
+    public void writeBytes(byte[] b) {
         write(b, 0, b.length);
     }
 

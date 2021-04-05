@@ -39,6 +39,9 @@ import java.util.Objects;
  * this class can be called after the stream has been closed without
  * generating an {@code IOException}.
  *
+ * An instance of this class does not need
+ * wrapping with {@code BufferedInputStream}.
+ *
  * @author  Arthur van Hoff
  * @see     java.io.StringBufferInputStream
  * @since   1.0
@@ -53,7 +56,7 @@ public class ByteArrayInputStream extends InputStream {
      * stream;  element {@code buf[pos]} is
      * the next byte to be read.
      */
-    protected byte buf[];
+    protected byte[] buf;
 
     /**
      * The index of the next character to read from the input stream buffer.
@@ -77,7 +80,7 @@ public class ByteArrayInputStream extends InputStream {
      *
      * @since   1.1
      */
-    protected int mark = 0;
+    protected int mark;
 
     /**
      * The index one greater than the last valid character in the input
@@ -102,7 +105,7 @@ public class ByteArrayInputStream extends InputStream {
      *
      * @param   buf   the input buffer.
      */
-    public ByteArrayInputStream(byte buf[]) {
+    public ByteArrayInputStream(byte[] buf) {
         this.buf = buf;
         this.pos = 0;
         this.count = buf.length;
@@ -122,7 +125,7 @@ public class ByteArrayInputStream extends InputStream {
      * @param   offset   the offset in the buffer of the first byte to read.
      * @param   length   the maximum number of bytes to read from the buffer.
      */
-    public ByteArrayInputStream(byte buf[], int offset, int length) {
+    public ByteArrayInputStream(byte[] buf, int offset, int length) {
         this.buf = buf;
         this.pos = offset;
         this.count = Math.min(offset + length, buf.length);
@@ -169,7 +172,7 @@ public class ByteArrayInputStream extends InputStream {
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}
      */
-    public synchronized int read(byte b[], int off, int len) {
+    public synchronized int read(byte[] b, int off, int len) {
         Objects.checkFromIndexSize(off, len, b.length);
 
         if (pos >= count) {

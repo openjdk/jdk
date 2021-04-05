@@ -214,7 +214,7 @@ public abstract class InputStream implements Closeable {
      * @throws     NullPointerException  if {@code b} is {@code null}.
      * @see        java.io.InputStream#read(byte[], int, int)
      */
-    public int read(byte b[]) throws IOException {
+    public int read(byte[] b) throws IOException {
         return read(b, 0, b.length);
     }
 
@@ -275,7 +275,7 @@ public abstract class InputStream implements Closeable {
      *             {@code b.length - off}
      * @see        java.io.InputStream#read()
      */
-    public int read(byte b[], int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             return 0;
@@ -623,9 +623,10 @@ public abstract class InputStream implements Closeable {
      * another thread.  A single read or skip of this many bytes will not block,
      * but may read or skip fewer bytes.
      *
-     * <p> Note that while some implementations of {@code InputStream} will
-     * return the total number of bytes in the stream, many will not.  It is
-     * never correct to use the return value of this method to allocate
+     * <p> Note that while some implementations of {@code InputStream}
+     * (e.g. {@code ByteArrayInputStream}) will return
+     * the total number of bytes in the stream, many will not. It is
+     * usually not correct to use the return value of this method to allocate
      * a buffer intended to hold all data in this stream.
      *
      * <p> A subclass's implementation of this method may choose to throw an
