@@ -21,7 +21,15 @@
  * questions.
  */
 
-import javax.swing.*;
+import javax.swing.JList;
+import javax.swing.JTable;
+import javax.swing.JToolTip;
+import javax.swing.JTree;
+import javax.swing.JViewport;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /**
  *  @test
