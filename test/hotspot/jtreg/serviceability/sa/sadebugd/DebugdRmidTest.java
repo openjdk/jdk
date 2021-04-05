@@ -34,6 +34,7 @@ import jtreg.SkippedException;
 /**
  * @test
  * @bug 8263636
+ * @summary Test to use already started RMI registry
  * @requires vm.hasSA
  * @requires os.family != "windows"
  * @library /test/lib
@@ -55,7 +56,7 @@ public class DebugdRmidTest {
         Process rmidProcess = pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
                                 .redirectError(ProcessBuilder.Redirect.INHERIT)
                                 .start();
-        Thread.sleep(3000);  // Sleep 3 sec for waiting to start rmid.
+        Thread.sleep(3000);  // Sleep 3 sec to wait for rmid to start.
         return rmidProcess;
     }
 

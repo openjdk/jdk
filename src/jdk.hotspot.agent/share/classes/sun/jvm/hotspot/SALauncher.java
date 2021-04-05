@@ -86,6 +86,7 @@ public class SALauncher {
         System.out.println("          or  jhsdb " + mode + " --core ./core.1234 --exe ./myexe");
         if (canConnectToRemote) {
             System.out.println("          or  jhsdb " + mode + " --connect debugserver");
+            System.out.println("          or  jhsdb " + mode + " --connect id@debugserver");
             System.out.println("          or  jhsdb " + mode + " --connect id@debugserver:1234");
         }
         return false;
@@ -100,7 +101,7 @@ public class SALauncher {
         System.out.println("    --registryport <port>   Sets the RMI registry port." +
                 " This option overrides the system property 'sun.jvm.hotspot.rmi.port'. If not specified," +
                 " the system property is used. If the system property is not set, the default port 1099 is used.");
-        System.out.println("    --disableregistry       Do not start RMI registry (to use RMI registry that exists)");
+        System.out.println("    --disableregistry       Do not start RMI registry (use already started RMI registry)");
         System.out.println("    --hostname <hostname>   Sets the hostname the RMI connector is bound. The value could" +
                 " be a hostname or an IPv4/IPv6 address. This option overrides the system property" +
                 " 'java.rmi.server.hostname'. If not specified, the system property is used. If the system" +

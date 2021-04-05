@@ -184,8 +184,8 @@ Disable starting RMI registry on startup.
 This option overrides the system property
 \[aq]sun.jvm.hotspot.rmi.startRegistry\[aq].
 If not specified, RMI registry will be started on startup.
-Otherwise will it not start, the RMI registry (rmid, etc) is needed
-before starting debugd.
+Otherwise it will not be started, and the already started RMI registry
+will be used instead.
 .RS
 .RE
 .TP

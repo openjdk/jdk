@@ -30,15 +30,10 @@ import jdk.test.lib.Utils;
 
 
 public class DebugdUtils {
-
     private static final String GOLDEN = "Debugger attached";
-
     private final String id;
-
     private int registryPort;
-
     private boolean disableRegistry;
-
     private Process debugdProcess;
 
     public DebugdUtils(String id) {
