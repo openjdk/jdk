@@ -103,13 +103,17 @@ void Dependencies::assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, c
 void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm) {
   check_ctxk(ctxk);
   check_unique_method(ctxk, uniqm);
-  assert_common_2(unique_concrete_method, ctxk, uniqm);
+  assert_common_2(unique_concrete_method_2, ctxk, uniqm);
 }
 
 void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method) {
   check_ctxk(ctxk);
   check_unique_method(ctxk, uniqm);
-  assert_common_2(unique_concrete_method, ctxk, uniqm);
+  if (UseVtableBasedCHA) {
+    assert_common_4(unique_concrete_method_4, ctxk, uniqm, resolved_klass, resolved_method);
+  } else {
+    assert_common_2(unique_concrete_method_2, ctxk, uniqm);
+  }
 }
 
 void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
@@ -172,7 +176,7 @@ void Dependencies::assert_abstract_with_unique_concrete_subtype(Klass* ctxk, Kla
 void Dependencies::assert_unique_concrete_method(Klass* ctxk, Method* uniqm) {
   check_ctxk(ctxk);
   check_unique_method(ctxk, uniqm);
-  assert_common_2(unique_concrete_method, DepValue(_oop_recorder, ctxk), DepValue(_oop_recorder, uniqm));
+  assert_common_2(unique_concrete_method_2, DepValue(_oop_recorder, ctxk), DepValue(_oop_recorder, uniqm));
 }
 
 void Dependencies::assert_call_site_target_value(oop call_site, oop method_handle) {
@@ -452,7 +456,8 @@ size_t Dependencies::estimate_size_in_bytes() {
 
 ciKlass* Dependencies::ctxk_encoded_as_null(DepType dept, ciBaseObject* x) {
   switch (dept) {
-  case unique_concrete_method:
+  case unique_concrete_method_2:
+  case unique_concrete_method_4:
     return x->as_metadata()->as_method()->holder();
   default:
     return NULL;  // let NULL be NULL
@@ -462,7 +467,8 @@ ciKlass* Dependencies::ctxk_encoded_as_null(DepType dept, ciBaseObject* x) {
 Klass* Dependencies::ctxk_encoded_as_null(DepType dept, Metadata* x) {
   assert(must_be_in_vm(), "raw oops here");
   switch (dept) {
-  case unique_concrete_method:
+  case unique_concrete_method_2:
+  case unique_concrete_method_4:
     assert(x->is_method(), "sanity");
     return ((Method*)x)->method_holder();
   default:
@@ -565,7 +571,8 @@ const char* Dependencies::_dep_name[TYPE_LIMIT] = {
   "evol_method",
   "leaf_type",
   "abstract_with_unique_concrete_subtype",
-  "unique_concrete_method",
+  "unique_concrete_method_2",
+  "unique_concrete_method_4",
   "no_finalizable_subclasses",
   "call_site_target_value"
 };
@@ -575,7 +582,8 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   1, // evol_method m
   1, // leaf_type ctxk
   2, // abstract_with_unique_concrete_subtype ctxk, k
-  2, // unique_concrete_method ctxk, m
+  2, // unique_concrete_method_2 ctxk, m
+  4, // unique_concrete_method_4 ctxk, m, resolved_klass, resolved_method
   1, // no_finalizable_subclasses ctxk
   2  // call_site_target_value call_site, method_handle
 };
@@ -1381,6 +1389,175 @@ Klass* ConcreteMethodFinder::find_witness_anywhere(InstanceKlass* context_type) 
   return NULL;
 }
 
+// For some method m and some class ctxk (subclass of method holder),
+// enumerate all distinct overrides of m in concrete subclasses of ctxk.
+// It relies on vtable/itable information to perform method selection on each linked subclass
+// and ignores all non yet linked ones (speculatively treat them as "effectively abstract").
+class LinkedConcreteMethodFinder : public AbstractClassHierarchyWalker {
+ private:
+  InstanceKlass* _resolved_klass;   // resolved class (JVMS-5.4.3.1)
+  InstanceKlass* _declaring_klass;  // the holder of resolved method (JVMS-5.4.3.3)
+  int            _vtable_index;     // vtable/itable index of the resolved method
+  bool           _do_itable_lookup; // choose between itable and vtable lookup logic
+
+  // cache of method lookups
+  Method* _found_methods[PARTICIPANT_LIMIT+1];
+
+  bool is_witness(Klass* k);
+  Method* select_method(InstanceKlass* recv_klass);
+  static int compute_vtable_index(InstanceKlass* resolved_klass, Method* resolved_method, bool& is_itable_index);
+  static bool is_concrete_klass(InstanceKlass* ik);
+
+  void add_participant(Method* m, Klass* participant) {
+    uint np = num_participants();
+    AbstractClassHierarchyWalker::add_participant(participant);
+    assert(np + 1 == num_participants(), "sanity");
+    _found_methods[np] = m; // record the method for the participant
+  }
+
+  bool record_witness(Klass* witness, Method* m) {
+    for (uint i = 0; i < num_participants(); i++) {
+      if (found_method(i) == m) {
+        return false; // already recorded
+      }
+    }
+    // Record not yet seen method.
+    _found_methods[num_participants()] = m;
+    return AbstractClassHierarchyWalker::record_witness(witness);
+  }
+
+  void initialize(Method* participant) {
+    for (uint i = 0; i < PARTICIPANT_LIMIT+1; i++) {
+      _found_methods[i] = NULL;
+    }
+    if (participant != NULL) {
+      add_participant(participant, participant->method_holder());
+    }
+  }
+
+ protected:
+  virtual Klass* find_witness_in(KlassDepChange* changes);
+  virtual Klass* find_witness_anywhere(InstanceKlass* context_type);
+
+ public:
+  // In order to perform method selection, the following info is needed:
+  //  (1) interface or virtual call;
+  //  (2) vtable/itable index;
+  //  (3) declaring class (in case of interface call).
+  //
+  // It is prepared based on the results of method resolution: resolved class and resolved method (as specified in JVMS-5.4.3.3).
+  // Optionally, a method which was previously determined as a unique target (uniqm) is added as a participant
+  // to enable dependency spot-checking and speed up the search.
+  LinkedConcreteMethodFinder(InstanceKlass* resolved_klass, Method* resolved_method, Method* uniqm = NULL) : AbstractClassHierarchyWalker(NULL) {
+    assert(UseVtableBasedCHA, "required");
+    assert(resolved_klass->is_linked(), "required");
+    assert(resolved_method->method_holder()->is_linked(), "required");
+    assert(!resolved_method->can_be_statically_bound(), "no vtable index available");
+
+    _resolved_klass  = resolved_klass;
+    _declaring_klass = resolved_method->method_holder();
+    _vtable_index    = compute_vtable_index(resolved_klass, resolved_method,
+                                            _do_itable_lookup); // out parameter
+    assert(_vtable_index >= 0, "invalid vtable index");
+
+    initialize(uniqm);
+  }
+
+  // Note:  If n==num_participants, returns NULL.
+  Method* found_method(uint n) {
+    assert(n <= num_participants(), "oob");
+    assert(participant(n) != NULL || n == num_participants(), "proper usage");
+    return _found_methods[n];
+  }
+};
+
+Klass* LinkedConcreteMethodFinder::find_witness_in(KlassDepChange* changes) {
+  Klass* new_type = changes->new_type();
+
+  assert(!is_participant(new_type), "only old classes are participants");
+
+  if (is_witness(new_type)) {
+    return new_type;
+  }
+  return NULL; // No witness found.  The dependency remains unbroken.
+}
+
+Klass* LinkedConcreteMethodFinder::find_witness_anywhere(InstanceKlass* context_type) {
+  for (CountingClassHierarchyIterator iter(context_type); !iter.done(); iter.next()) {
+    Klass* sub = iter.klass();
+    if (is_witness(sub)) {
+      return sub;
+    }
+    if (sub->is_instance_klass() && !InstanceKlass::cast(sub)->is_linked()) {
+      iter.skip_subclasses(); // ignore not yet linked classes
+    }
+  }
+  return NULL; // No witness found. The dependency remains unbroken.
+}
+
+bool LinkedConcreteMethodFinder::is_witness(Klass* k) {
+  if (is_participant(k)) {
+    return false; // do not report participant types
+  } else if (k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (is_concrete_klass(ik)) {
+      Method* m = select_method(ik);
+      return record_witness(ik, m);
+    } else {
+      return false; // ignore non-concrete holder class
+    }
+  } else {
+    return false; // no methods to find in an array type
+  }
+}
+
+Method* LinkedConcreteMethodFinder::select_method(InstanceKlass* recv_klass) {
+  Method* selected_method = NULL;
+  if (_do_itable_lookup) {
+    assert(_declaring_klass->is_interface(), "sanity");
+    bool implements_interface; // initialized by method_at_itable_or_null()
+    selected_method = recv_klass->method_at_itable_or_null(_declaring_klass, _vtable_index,
+                                                           implements_interface); // out parameter
+    assert(implements_interface, "not implemented");
+  } else {
+    selected_method = recv_klass->method_at_vtable(_vtable_index);
+  }
+  return selected_method;
+}
+
+int LinkedConcreteMethodFinder::compute_vtable_index(InstanceKlass* resolved_klass, Method* resolved_method,
+                                                     // out parameter
+                                                     bool& is_itable_index) {
+  if (resolved_klass->is_interface() && resolved_method->has_itable_index()) {
+    is_itable_index = true;
+    return resolved_method->itable_index();
+  }
+  // Check for default or miranda method first.
+  InstanceKlass* declaring_klass = resolved_method->method_holder();
+  if (!resolved_klass->is_interface() && declaring_klass->is_interface()) {
+    is_itable_index = false;
+    return resolved_klass->vtable_index_of_interface_method(resolved_method);
+  }
+  // At this point we are sure that resolved_method is virtual and not
+  // a default or miranda method; therefore, it must have a valid vtable index.
+  assert(resolved_method->has_vtable_index(), "");
+  is_itable_index = false;
+  return resolved_method->vtable_index();
+}
+
+bool LinkedConcreteMethodFinder::is_concrete_klass(InstanceKlass* ik) {
+  if (!Dependencies::is_concrete_klass(ik)) {
+    return false; // not concrete
+  }
+  if (ik->is_interface()) {
+    return false; // interfaces aren't concrete
+  }
+  if (!ik->is_linked()) {
+    return false; // not yet linked classes don't have instances
+  }
+  return true;
+}
+
 #ifdef ASSERT
 // Assert that m is inherited into ctxk, without intervening overrides.
 // (May return true even if this is not true, in corner cases where we punt.)
@@ -1577,7 +1754,6 @@ Klass* Dependencies::find_unique_concrete_subtype(InstanceKlass* ctxk) {
   }
 }
 
-
 // If a class (or interface) has a unique concrete method uniqm, return NULL.
 // Otherwise, return a class that contains an interfering method.
 Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
@@ -1590,14 +1766,6 @@ Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
   ConcreteMethodFinder wf(uniqm, uniqm->method_holder());
   Klass* k = wf.find_witness(ctxk, changes);
   return k;
-}
-
-// Find the set of all non-abstract methods under ctxk that match m.
-// (The method m must be defined or inherited in ctxk.)
-// Include m itself in the set, unless it is abstract.
-// If this set has exactly one element, return that element.
-Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m, Klass* resolved_klass, Method* resolved_method) {
-  return find_unique_concrete_method(ctxk, m);
 }
 
 // Find the set of all non-abstract methods under ctxk that match m.
@@ -1635,6 +1803,84 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
               "verify dep.");
   }
 #endif //PRODUCT
+  return fm;
+}
+
+// If a class (or interface) has a unique concrete method uniqm, return NULL.
+// Otherwise, return a class that contains an interfering method.
+Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
+                                                  Method* uniqm,
+                                                  Klass* resolved_klass,
+                                                  Method* resolved_method,
+                                                  KlassDepChange* changes) {
+  assert(UseVtableBasedCHA, "required");
+  assert(!ctxk->is_interface() || ctxk == resolved_klass, "sanity");
+  assert(!resolved_method->can_be_statically_bound() || resolved_method == uniqm, "sanity");
+  assert(resolved_klass->is_subtype_of(resolved_method->method_holder()), "sanity");
+
+  if (!InstanceKlass::cast(resolved_klass)->is_linked() ||
+      !resolved_method->method_holder()->is_linked() ||
+      resolved_method->can_be_statically_bound()) {
+    // Dependency is redundant, but benign. Just keep it to avoid unnecessary recompilation.
+    return NULL; // no vtable index available
+  }
+
+  LinkedConcreteMethodFinder mf(InstanceKlass::cast(resolved_klass), resolved_method, uniqm);
+  return mf.find_witness(ctxk, changes);
+}
+
+// Find the set of all non-abstract methods under ctxk that match m.
+// (The method m must be defined or inherited in ctxk.)
+// Include m itself in the set, unless it is abstract.
+// If this set has exactly one element, return that element.
+// Not yet linked subclasses of ctxk are ignored since they don't have any instances yet.
+// Additionally, resolved_klass and resolved_method complete the description of the call site being analyzed.
+Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m, Klass* resolved_klass, Method* resolved_method) {
+  // Return NULL if m is marked old; must have been a redefined method.
+  if (m->is_old()) {
+    return NULL;
+  }
+  if (!InstanceKlass::cast(resolved_klass)->is_linked() ||
+      !resolved_method->method_holder()->is_linked() ||
+      resolved_method->can_be_statically_bound()) {
+    return m; // nothing to do: no witness under ctxk
+  }
+  LinkedConcreteMethodFinder wf(InstanceKlass::cast(resolved_klass), resolved_method);
+  assert(Dependencies::verify_method_context(ctxk, m), "proper context");
+  wf.record_witnesses(1);
+  Klass* wit = wf.find_witness(ctxk);
+  if (wit != NULL) {
+    return NULL;  // Too many witnesses.
+  }
+  Method* fm = wf.found_method(0);  // Will be NULL if num_parts == 0.
+  Klass*   p = wf.participant(0);   // Will be NULL if num_parts == 0.
+  if (fm == Universe::throw_illegal_access_error() || fm == Universe::throw_no_such_method_error()) {
+    fm = NULL; // error-throwing method
+  }
+  if (Dependencies::is_concrete_method(m, ctxk)) {
+    if (fm == NULL && p == NULL) {
+      // It turns out that m was always the only implementation.
+      fm = m;
+    }
+  }
+#ifndef PRODUCT
+  // Make sure the dependency mechanism will pass this discovery:
+  if (VerifyDependencies && fm != NULL) {
+    guarantee(NULL == check_unique_concrete_method(ctxk, fm, resolved_klass, resolved_method),
+              "verify dep.");
+  }
+#endif // PRODUCT
+  assert(fm == NULL || !fm->is_abstract(), "sanity");
+  // Old CHA conservatively reports concrete methods in abstract classes
+  // irrespective of whether they have concrete subclasses or not.
+#ifdef ASSERT
+  Klass*  uniqp = NULL;
+  Method* uniqm = Dependencies::find_unique_concrete_method(ctxk, m, &uniqp);
+  assert(uniqm == NULL || uniqm == fm ||
+         uniqm->method_holder()->is_abstract() ||
+         (fm == NULL && uniqm != NULL && uniqp != NULL && !InstanceKlass::cast(uniqp)->is_linked()),
+         "sanity");
+#endif // ASSERT
   return fm;
 }
 
@@ -1680,25 +1926,35 @@ Klass* Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) 
   Dependencies::check_valid_dependency_type(type());
 
   Klass* witness = NULL;
-  switch (type()) {
-  case evol_method:
-    witness = check_evol_method(method_argument(0));
-    break;
-  case leaf_type:
-    witness = check_leaf_type(context_type());
-    break;
-  case abstract_with_unique_concrete_subtype:
-    witness = check_abstract_with_unique_concrete_subtype(context_type(), type_argument(1), changes);
-    break;
-  case unique_concrete_method:
-    witness = check_unique_concrete_method(context_type(), method_argument(1), changes);
-    break;
-  case no_finalizable_subclasses:
-    witness = check_has_no_finalizable_subclasses(context_type(), changes);
-    break;
-  default:
-    witness = NULL;
-    break;
+  if (UseVtableBasedCHA && changes != NULL && changes->new_type()->is_linked()) {
+    // No new types added. Only unique_concrete_method_4 is sensitive to class initialization changes.
+    if (type() == unique_concrete_method_4) {
+      witness = check_unique_concrete_method(context_type(), method_argument(1), type_argument(2), method_argument(3), changes);
+    }
+  } else {
+    switch (type()) {
+    case evol_method:
+      witness = check_evol_method(method_argument(0));
+      break;
+    case leaf_type:
+      witness = check_leaf_type(context_type());
+      break;
+    case abstract_with_unique_concrete_subtype:
+      witness = check_abstract_with_unique_concrete_subtype(context_type(), type_argument(1), changes);
+      break;
+    case unique_concrete_method_2:
+      witness = check_unique_concrete_method(context_type(), method_argument(1), changes);
+      break;
+    case unique_concrete_method_4:
+      witness = check_unique_concrete_method(context_type(), method_argument(1), type_argument(2), method_argument(3), changes);
+      break;
+    case no_finalizable_subclasses:
+      witness = check_has_no_finalizable_subclasses(context_type(), changes);
+      break;
+    default:
+      witness = NULL;
+      break;
+    }
   }
   trace_and_log_witness(witness);
   return witness;

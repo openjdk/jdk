@@ -132,7 +132,8 @@ class Dependencies: public ResourceObj {
     // context class CX.  M1 must be either inherited in CX or defined
     // in a subtype* of CX.  It asserts that MM(CX, M1) is no greater
     // than {M1}.
-    unique_concrete_method,       // one unique concrete method under CX
+    unique_concrete_method_2, // one unique concrete method under CX
+    unique_concrete_method_4, // one unique concrete method under CX
 
     // This dependency asserts that no instances of class or it's
     // subclasses require finalization registration.
@@ -402,6 +403,7 @@ class Dependencies: public ResourceObj {
   static Klass* check_leaf_type(InstanceKlass* ctxk);
   static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, KlassDepChange* changes = NULL);
   static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, KlassDepChange* changes = NULL);
+  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, Klass* resolved_klass, Method* resolved_method, KlassDepChange* changes = NULL);
   static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, KlassDepChange* changes = NULL);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned Klass* is NULL if the dependency assertion is still
