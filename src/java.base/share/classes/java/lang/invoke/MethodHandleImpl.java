@@ -1227,7 +1227,6 @@ abstract class MethodHandleImpl {
         GUARD_WITH_CATCH,
         TRY_FINALLY,
         LOOP,
-        NEW_ARRAY,
         ARRAY_LOAD,
         ARRAY_STORE,
         ARRAY_LENGTH,
@@ -1880,26 +1879,45 @@ abstract class MethodHandleImpl {
     private static MethodHandle makeCollector(Class<?> arrayType, int parameterCount) {
         MethodType type = MethodType.methodType(arrayType, Collections.nCopies(parameterCount, arrayType.componentType()));
 
-        MethodHandle storeFunc = makeArrayElementAccessor(arrayType, ArrayAccess.SET);
-        LambdaForm form = makeCollectorForm(type.basicType(), arrayType.componentType(), storeFunc);
+        MethodHandle newArray = MethodHandles.arrayConstructor(arrayType);
+        MethodHandle storeFunc = ArrayAccessor.getAccessor(arrayType, ArrayAccess.SET);
 
-        return SimpleMethodHandle.make(type, form);
+        LambdaForm form = makeCollectorForm(type.basicType(), storeFunc);
+
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
+        BoundMethodHandle mh;
+        try {
+            mh = (BoundMethodHandle) data.factory().invokeBasic(type, form, (Object) newArray);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+        assert(mh.type() == type);
+        return mh;
     }
 
-    private static LambdaForm makeCollectorForm(MethodType basicType, Class<?> componentType, MethodHandle storeFunc) {
+    private static LambdaForm makeCollectorForm(MethodType basicType, MethodHandle storeFunc) {
         MethodType lambdaType = basicType.invokerType();
         int parameterCount = basicType.parameterCount();
 
-        // It might be possible to share this lambda form for all reference types - since they
-        // use the same underlying store function - by injecting an array creation handle as a
-        // field of the receiver handle.
-        // This is left as a followup enhancement, as it needs to be investigated if this causes
-        // profile pollution.
+        // Only share the lambda form for empty arrays and reference types.
+        // Sharing based on the basic type alone doesn't work because
+        // we need a separate lambda form for byte/short/char/int which
+        // are all erased to int otherwise.
+        // Other caching for primitive types happens at the MethodHandle level (see varargsArray).
+        boolean isSharedLambdaForm = parameterCount == 0 || basicType.parameterType(0) == Object.class;
+        if (isSharedLambdaForm) {
+            LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_COLLECTOR);
+            if (lform != null) {
+                return lform;
+            }
+        }
 
-        final int ARG_BASE     = 1;  // start of incoming arguments (skipped receiver handle)
+        final int THIS_MH      = 0;  // the BMH_L
+        final int ARG_BASE     = 1;  // start of incoming arguments
         final int ARG_LIMIT    = ARG_BASE + parameterCount;
 
         int nameCursor = ARG_LIMIT;
+        final int GET_NEW_ARRAY       = nameCursor++;
         final int CALL_NEW_ARRAY      = nameCursor++;
         final int STORE_ELEMENT_BASE  = nameCursor;
         final int STORE_ELEMENT_LIMIT = STORE_ELEMENT_BASE + parameterCount;
@@ -1907,9 +1925,12 @@ abstract class MethodHandleImpl {
 
         Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
 
-        NamedFunction newArray = new NamedFunction(getConstantHandle(MH_Array_newInstance), Intrinsic.NEW_ARRAY);
-        names[CALL_NEW_ARRAY] = new Name(newArray, componentType, parameterCount);
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
+        names[THIS_MH]          = names[THIS_MH].withConstraint(data);
+        names[GET_NEW_ARRAY]    = new Name(data.getterFunction(0), names[THIS_MH]);
 
+        MethodHandle invokeBasic = MethodHandles.basicInvoker(MethodType.methodType(Object.class, int.class));
+        names[CALL_NEW_ARRAY] = new Name(new NamedFunction(invokeBasic), names[GET_NEW_ARRAY], parameterCount);
         for (int storeIndex = 0,
              storeNameCursor = STORE_ELEMENT_BASE,
              argCursor = ARG_BASE;
@@ -1920,7 +1941,11 @@ abstract class MethodHandleImpl {
                     names[CALL_NEW_ARRAY], storeIndex, names[argCursor]);
         }
 
-        return new LambdaForm(lambdaType.parameterCount(), names, CALL_NEW_ARRAY, Kind.COLLECTOR);
+        LambdaForm lform = new LambdaForm(lambdaType.parameterCount(), names, CALL_NEW_ARRAY, Kind.COLLECTOR);
+        if (isSharedLambdaForm) {
+            lform = basicType.form().setCachedLambdaForm(MethodTypeForm.LF_COLLECTOR, lform);
+        }
+        return lform;
     }
 
     // Indexes into constant method handles:

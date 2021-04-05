@@ -869,11 +869,6 @@ class InvokerBytecodeGenerator {
                     onStack = emitLoop(i);
                     i += 2; // jump to the end of the LOOP idiom
                     continue;
-                case NEW_ARRAY:
-                    // component type argument needs to be constant
-                    if (!(name.arguments[0] instanceof Class<?>)) break;
-                    emitNewArray(name);
-                    continue;
                 case ARRAY_LOAD:
                     emitArrayLoad(name);
                     continue;
@@ -932,22 +927,6 @@ class InvokerBytecodeGenerator {
         BytecodeGenerationException(Exception cause) {
             super(cause);
         }
-    }
-
-    void emitNewArray(Name name) {
-        // call to Array.newInstance. Get the component type, which should be constant for this intrinsic
-        Class<?> rtype = name.function.methodType().returnType();
-        Class<?> arrayElementType = (Class<?>) name.arguments[0];
-        // push array length
-        emitPushArgument(name, 1);
-        if (!arrayElementType.isPrimitive()) {
-            mv.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(arrayElementType));
-        } else {
-            byte tc = arrayTypeCode(Wrapper.forPrimitiveType(arrayElementType));
-            mv.visitIntInsn(Opcodes.NEWARRAY, tc);
-        }
-        // the array is left on the stack
-        assertStaticType(rtype, name);
     }
 
     void emitArrayLoad(Name name)   { emitArrayOp(name, Opcodes.AALOAD);      }
