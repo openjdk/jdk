@@ -592,7 +592,8 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
 }
 
 // NOTE: must use heavy weight monitor to handle jni monitor exit
-void ObjectSynchronizer::jni_exit(JavaThread* current, oop obj) {
+void ObjectSynchronizer::jni_exit(oop obj, TRAPS) {
+  JavaThread* current = THREAD->as_Java_thread();
   if (UseBiasedLocking) {
     Handle h_obj(current, obj);
     BiasedLocking::revoke(current, h_obj);
@@ -606,7 +607,7 @@ void ObjectSynchronizer::jni_exit(JavaThread* current, oop obj) {
   // If this thread has locked the object, exit the monitor. We
   // intentionally do not use CHECK on check_owner because we must exit the
   // monitor even if an exception was already pending.
-  if (monitor->check_owner(current)) {
+  if (monitor->check_owner(THREAD)) {
     monitor->exit(current);
   }
 }

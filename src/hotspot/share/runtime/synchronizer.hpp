@@ -94,7 +94,7 @@ class ObjectSynchronizer : AllStatic {
   // Used only to handle jni locks or other unmatched monitor enter/exit
   // Internally they will use heavy weight monitor.
   static void jni_enter(Handle obj, JavaThread* current);
-  static void jni_exit(JavaThread* current, oop obj);
+  static void jni_exit(oop obj, TRAPS);
 
   // Handle all interpreter, compiler and jni cases
   static int  wait(Handle obj, jlong millis, TRAPS);

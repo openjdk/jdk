@@ -2735,7 +2735,7 @@ JNI_ENTRY(jint, jni_MonitorExit(JNIEnv *env, jobject jobj))
   }
 
   Handle obj(THREAD, JNIHandles::resolve_non_null(jobj));
-  ObjectSynchronizer::jni_exit(THREAD->as_Java_thread(), obj());
+  ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
 
   ret = JNI_OK;
   return ret;
