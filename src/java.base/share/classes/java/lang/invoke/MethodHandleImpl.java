@@ -1878,11 +1878,9 @@ abstract class MethodHandleImpl {
     // see varargsArray method for chaching/package-private version of this
     private static MethodHandle makeCollector(Class<?> arrayType, int parameterCount) {
         MethodType type = MethodType.methodType(arrayType, Collections.nCopies(parameterCount, arrayType.componentType()));
-
         MethodHandle newArray = MethodHandles.arrayConstructor(arrayType);
-        MethodHandle storeFunc = ArrayAccessor.getAccessor(arrayType, ArrayAccess.SET);
 
-        LambdaForm form = makeCollectorForm(type.basicType(), storeFunc);
+        LambdaForm form = makeCollectorForm(type.basicType(), arrayType);
 
         BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
         BoundMethodHandle mh;
@@ -1895,7 +1893,7 @@ abstract class MethodHandleImpl {
         return mh;
     }
 
-    private static LambdaForm makeCollectorForm(MethodType basicType, MethodHandle storeFunc) {
+    private static LambdaForm makeCollectorForm(MethodType basicType, Class<?> arrayType) {
         MethodType lambdaType = basicType.invokerType();
         int parameterCount = basicType.parameterCount();
 
@@ -1904,13 +1902,19 @@ abstract class MethodHandleImpl {
         // we need a separate lambda form for byte/short/char/int which
         // are all erased to int otherwise.
         // Other caching for primitive types happens at the MethodHandle level (see varargsArray).
-        boolean isSharedLambdaForm = parameterCount == 0 || basicType.parameterType(0) == Object.class;
+        boolean isReferenceType = !arrayType.componentType().isPrimitive();
+        boolean isSharedLambdaForm = parameterCount == 0 || isReferenceType;
         if (isSharedLambdaForm) {
             LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_COLLECTOR);
             if (lform != null) {
                 return lform;
             }
         }
+
+        // use erased accessor for reference types
+        MethodHandle storeFunc = isReferenceType
+                ? ArrayAccessor.OBJECT_ARRAY_SETTER
+                : makeArrayElementAccessor(arrayType, ArrayAccess.SET);
 
         final int THIS_MH      = 0;  // the BMH_L
         final int ARG_BASE     = 1;  // start of incoming arguments
