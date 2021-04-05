@@ -467,22 +467,22 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
 // ----------------------------
 // SVE Predicate Registers
 // ----------------------------
-  reg_def P0 (SOC, SOC, Op_RegVMask, 0, p0->as_VMReg());
-  reg_def P1 (SOC, SOC, Op_RegVMask, 1, p1->as_VMReg());
-  reg_def P2 (SOC, SOC, Op_RegVMask, 2, p2->as_VMReg());
-  reg_def P3 (SOC, SOC, Op_RegVMask, 3, p3->as_VMReg());
-  reg_def P4 (SOC, SOC, Op_RegVMask, 4, p4->as_VMReg());
-  reg_def P5 (SOC, SOC, Op_RegVMask, 5, p5->as_VMReg());
-  reg_def P6 (SOC, SOC, Op_RegVMask, 6, p6->as_VMReg());
-  reg_def P7 (SOC, SOC, Op_RegVMask, 7, p7->as_VMReg());
-  reg_def P8 (SOC, SOC, Op_RegVMask, 8, p8->as_VMReg());
-  reg_def P9 (SOC, SOC, Op_RegVMask, 9, p9->as_VMReg());
-  reg_def P10 (SOC, SOC, Op_RegVMask, 10, p10->as_VMReg());
-  reg_def P11 (SOC, SOC, Op_RegVMask, 11, p11->as_VMReg());
-  reg_def P12 (SOC, SOC, Op_RegVMask, 12, p12->as_VMReg());
-  reg_def P13 (SOC, SOC, Op_RegVMask, 13, p13->as_VMReg());
-  reg_def P14 (SOC, SOC, Op_RegVMask, 14, p14->as_VMReg());
-  reg_def P15 (SOC, SOC, Op_RegVMask, 15, p15->as_VMReg());
+  reg_def P0 (SOC, SOC, Op_RegVectMask, 0, p0->as_VMReg());
+  reg_def P1 (SOC, SOC, Op_RegVectMask, 1, p1->as_VMReg());
+  reg_def P2 (SOC, SOC, Op_RegVectMask, 2, p2->as_VMReg());
+  reg_def P3 (SOC, SOC, Op_RegVectMask, 3, p3->as_VMReg());
+  reg_def P4 (SOC, SOC, Op_RegVectMask, 4, p4->as_VMReg());
+  reg_def P5 (SOC, SOC, Op_RegVectMask, 5, p5->as_VMReg());
+  reg_def P6 (SOC, SOC, Op_RegVectMask, 6, p6->as_VMReg());
+  reg_def P7 (SOC, SOC, Op_RegVectMask, 7, p7->as_VMReg());
+  reg_def P8 (SOC, SOC, Op_RegVectMask, 8, p8->as_VMReg());
+  reg_def P9 (SOC, SOC, Op_RegVectMask, 9, p9->as_VMReg());
+  reg_def P10 (SOC, SOC, Op_RegVectMask, 10, p10->as_VMReg());
+  reg_def P11 (SOC, SOC, Op_RegVectMask, 11, p11->as_VMReg());
+  reg_def P12 (SOC, SOC, Op_RegVectMask, 12, p12->as_VMReg());
+  reg_def P13 (SOC, SOC, Op_RegVectMask, 13, p13->as_VMReg());
+  reg_def P14 (SOC, SOC, Op_RegVectMask, 14, p14->as_VMReg());
+  reg_def P15 (SOC, SOC, Op_RegVectMask, 15, p15->as_VMReg());
 
 // ----------------------------
 // Special Registers
@@ -2437,6 +2437,14 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 
 const bool Matcher::has_predicated_vectors(void) {
   return UseSVE > 0;
+}
+
+const RegMask* Matcher::predicate_reg_mask(void) {
+  return &_PR_REG_mask;
+}
+
+const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+  return new TypeVectMask(elemTy, length);
 }
 
 bool Matcher::supports_vector_variable_shifts(void) {
@@ -5601,7 +5609,7 @@ operand vRegD_V31()
 operand pRegGov()
 %{
   constraint(ALLOC_IN_RC(gov_pr));
-  match(RegVMask);
+  match(RegVectMask);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
