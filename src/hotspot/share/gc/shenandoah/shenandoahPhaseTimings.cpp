@@ -97,6 +97,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
   assert(phase >= 0 && phase < _num_phases, "Out of bounds");
   switch (phase) {
     case init_evac:
+    case init_scan_rset:
     case finish_mark:
     case purge_weak_par:
     case full_gc_mark:

@@ -46,6 +46,7 @@ class outputStream;
   f(CNT_PREFIX ## StringDedupQueueRoots,    DESC_PREFIX "Dedup Queue Roots")           \
   f(CNT_PREFIX ## WeakRefProc,              DESC_PREFIX "Weak References")             \
   f(CNT_PREFIX ## ParallelMark,             DESC_PREFIX "Parallel Mark")               \
+  f(CNT_PREFIX ## ScanClusters,             DESC_PREFIX "Scan Clusters")
   // end
 
 #define SHENANDOAH_PHASE_DO(f)                                                         \
@@ -54,6 +55,8 @@ class outputStream;
   f(init_mark_gross,                                "Pause Init Mark (G)")             \
   f(init_mark,                                      "Pause Init Mark (N)")             \
   f(init_manage_tlabs,                              "  Manage TLABs")                  \
+  f(init_scan_rset,                                 "  Scan Remembered Set")           \
+  SHENANDOAH_PAR_PHASE_DO(init_scan_rset_,          "    RS: ", f)                     \
   f(init_update_region_states,                      "  Update Region States")          \
                                                                                        \
   f(conc_mark_roots,                                "Concurrent Mark Roots ")          \

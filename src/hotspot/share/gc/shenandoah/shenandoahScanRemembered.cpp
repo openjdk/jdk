@@ -31,7 +31,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 
-ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(CardTable *card_table, size_t total_card_count) {
+ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(CardTable* card_table, size_t total_card_count) {
   _heap = ShenandoahHeap::heap();
   _card_table = card_table;
   _total_card_count = total_card_count;
@@ -64,8 +64,8 @@ void ShenandoahDirectCardMarkRememberedSet::initialize_overreach(size_t first_cl
   // unrolling the loop and doing wide writes if the compiler
   // doesn't do this for us.
   size_t first_card_index = first_cluster * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  uint8_t *omp = &_overreach_map[first_card_index];
-  uint8_t *endp = omp + count * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  uint8_t* omp = &_overreach_map[first_card_index];
+  uint8_t* endp = omp + count * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
   while (omp < endp)
     *omp++ = CardTable::clean_card_val();
 }
@@ -75,9 +75,9 @@ void ShenandoahDirectCardMarkRememberedSet::merge_overreach(size_t first_cluster
   // We can make this run faster in the future by explicitly unrolling the loop and doing wide writes if the compiler
   // doesn't do this for us.
   size_t first_card_index = first_cluster * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  uint8_t *bmp = &_byte_map[first_card_index];
-  uint8_t *endp = bmp + count * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  uint8_t *omp = &_overreach_map[first_card_index];
+  uint8_t* bmp = &_byte_map[first_card_index];
+  uint8_t* endp = bmp + count * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  uint8_t* omp = &_overreach_map[first_card_index];
 
   // dirty_card is 0, clean card is 0xff; if either *bmp or *omp is dirty, we need to mark it as dirty
   while (bmp < endp)
@@ -95,11 +95,12 @@ void ShenandoahScanRememberedTask::work(uint worker_id) {
   // This sets up a thread local reference to the worker_id which is necessary
   // the weak reference processor.
   ShenandoahParallelWorkerSession worker_session(worker_id);
+  ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::init_scan_rset, ShenandoahPhaseTimings::ScanClusters, worker_id);
 
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahObjToScanQueue* old = _old_queue_set == NULL ? NULL : _old_queue_set->queue(worker_id);
   ShenandoahMarkRefsClosure<YOUNG> cl(q, _rp, old);
-  RememberedScanner *rs = ShenandoahHeap::heap()->card_scan();
+  RememberedScanner* scanner = ShenandoahHeap::heap()->card_scan();
 
   // set up thread local closure for shen ref processor
   _rp->set_mark_closure(worker_id, &cl);
@@ -107,7 +108,7 @@ void ShenandoahScanRememberedTask::work(uint worker_id) {
   ShenandoahHeapRegion* region = _regions->next();
   while (region != NULL) {
     if (region->affiliation() == OLD_GENERATION) {
-      rs->process_region(region, &cl);
+      scanner->process_region(region, &cl);
     }
     region = _regions->next();
   }
