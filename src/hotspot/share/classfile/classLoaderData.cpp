@@ -949,8 +949,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
     _holder.print_on(out);
     out->print_cr("");
   }
-  out->print_cr(" - class loader        %p", _class_loader.ptr_raw());
-  out->print_cr(" - metaspace           %p", _metaspace);
+  out->print_cr(" - class loader        " PTR_FORMAT, p2i(_class_loader.ptr_raw()));
+  out->print_cr(" - metaspace           " PTR_FORMAT, p2i(_metaspace));
   out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
   out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
   out->print_cr(" - modified oops       %s", _modified_oops ? "true" : "false");
@@ -969,17 +969,17 @@ void ClassLoaderData::print_on(outputStream* out) const {
   PrintKlassClosure closure(out);
   ((ClassLoaderData*)this)->classes_do(&closure);
   out->print_cr(" }");
-  out->print_cr(" - packages            %p", _packages);
-  out->print_cr(" - module              %p", _modules);
-  out->print_cr(" - unnamed module      %p", _unnamed_module);
-  out->print_cr(" - dictionary          %p", _dictionary);
+  out->print_cr(" - packages            " PTR_FORMAT, p2i(_packages));
+  out->print_cr(" - module              " PTR_FORMAT, p2i(_modules));
+  out->print_cr(" - unnamed module      " PTR_FORMAT, p2i(_unnamed_module));
+  out->print_cr(" - dictionary          " PTR_FORMAT, p2i(_dictionary));
   if (_jmethod_ids != NULL) {
     out->print   (" - jmethod count       ");
     Method::print_jmethod_ids(this, out);
     out->print_cr("");
   }
-  out->print_cr(" - deallocate list     %p", _deallocate_list);
-  out->print_cr(" - next CLD            %p", _next);
+  out->print_cr(" - deallocate list     " PTR_FORMAT, p2i(_deallocate_list));
+  out->print_cr(" - next CLD            " PTR_FORMAT, p2i(_next));
 }
 #endif // PRODUCT
 
