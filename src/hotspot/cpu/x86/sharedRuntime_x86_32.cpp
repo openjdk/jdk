@@ -219,6 +219,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     }
   }
 
+#ifdef COMPILER2
   if (save_vectors) {
     __ subptr(rsp, ymm_bytes);
     // Save upper half of YMM registers
@@ -238,6 +239,10 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
     }
   }
+#else
+  assert(!save_vectors, "vectors are generated only by C2");
+#endif
+
   __ vzeroupper();
 
   // Set an oopmap for the call site.  This oopmap will map all
