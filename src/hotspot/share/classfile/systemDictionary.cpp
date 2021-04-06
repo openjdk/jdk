@@ -2526,14 +2526,3 @@ void SystemDictionaryDCmd::execute(DCmdSource source, TRAPS) {
                          _verbose.value());
   VMThread::execute(&dumper);
 }
-
-int SystemDictionaryDCmd::num_arguments() {
-  ResourceMark rm;
-  SystemDictionaryDCmd* dcmd = new SystemDictionaryDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
