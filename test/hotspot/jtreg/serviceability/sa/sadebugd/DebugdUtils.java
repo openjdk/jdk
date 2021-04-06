@@ -34,12 +34,14 @@ public class DebugdUtils {
     private final String id;
     private int registryPort;
     private boolean disableRegistry;
+    private String prefix;
     private Process debugdProcess;
 
     public DebugdUtils(String id) {
         this.id = id;
         this.registryPort = 0;
         this.disableRegistry = false;
+        this.prefix = null;
         debugdProcess = null;
     }
 
@@ -51,9 +53,16 @@ public class DebugdUtils {
         this.disableRegistry = disableRegistry;
     }
 
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
     public void attach(long pid) throws IOException {
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         jhsdbLauncher.addVMArgs(Utils.getTestJavaOpts());
+        if (prefix != null) {
+            jhsdbLauncher.addToolArg("-J-Dsun.jvm.hotspot.rmi.serverNamePrefix=" + prefix);
+        }
         jhsdbLauncher.addToolArg("debugd");
         jhsdbLauncher.addToolArg("--pid");
         jhsdbLauncher.addToolArg(Long.toString(pid));
