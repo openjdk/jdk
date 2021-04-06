@@ -975,7 +975,7 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr(" - dictionary          " PTR_FORMAT, p2i(_dictionary));
   if (_jmethod_ids != NULL) {
     out->print   (" - jmethod count       ");
-    Method::print_jmethod_ids(this, out);
+    Method::print_jmethod_ids_counts(this, out);
     out->print_cr("");
   }
   out->print_cr(" - deallocate list     " PTR_FORMAT, p2i(_deallocate_list));
