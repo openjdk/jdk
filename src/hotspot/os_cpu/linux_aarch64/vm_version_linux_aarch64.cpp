@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 
 #include <asm/hwcap.h>
@@ -171,22 +172,22 @@ void VM_Version::get_os_cpu_info() {
 static bool read_fully(const char *fname, char *buf, size_t buflen) {
   assert(buf != NULL, "invalid argument");
   assert(buflen >= 1, "invalid argument");
-  int fd = open(fname, O_RDONLY);
+  int fd = os::open(fname, O_RDONLY, 0);
   if (fd != -1) {
-    ssize_t read_sz = read(fd, buf, buflen);
-    close(fd);
+    ssize_t read_sz = os::read(fd, buf, buflen);
+    os::close(fd);
 
     // Skip if the contents starts with '\n' because some machine only sets
     // '\n' to the board name.
     // (e.g. /sys/devices/virtual/dmi/id/board_name)
     if ((read_sz > 0) && (*buf != '\n')) {
-      buf[read_sz - 1] = '\0';
       // Replace '\0' to ' '
       for (char *ch = buf; ch < buf + read_sz - 1; ch++) {
         if (*ch == '\0') {
           *ch = ' ';
         }
       }
+      buf[read_sz - 1] = '\0';
       return true;
     }
   }
