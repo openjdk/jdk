@@ -34,6 +34,7 @@
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/g1/heapRegionType.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shared/pretouchTask.hpp"
 #include "utilities/align.hpp"
 
 G1Allocator::G1Allocator(G1CollectedHeap* heap) :
@@ -271,12 +272,30 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
                                                                desired_word_size,
                                                                actual_word_size);
   if (result == NULL && !old_is_full()) {
-    MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = old_gc_alloc_region()->attempt_allocation_locked(min_word_size,
+    bool is_locked = false;
+    PretouchTaskCoordinator *task_coordinator = PretouchTaskCoordinator::get_task_coordinator();
+    while (true) {
+      if (UseMultithreadedPretouchForOldGen) {
+        is_locked = FreeList_lock->try_lock();
+      } else {
+        FreeList_lock->lock();
+        is_locked = true;
+      }
+      if (is_locked) {
+        task_coordinator->release_set_task_notready();
+        result = old_gc_alloc_region()->attempt_allocation_locked(min_word_size,
                                                               desired_word_size,
                                                               actual_word_size);
-    if (result == NULL) {
-      set_old_full();
+        task_coordinator->release_set_task_done();
+        if (result == NULL) {
+          set_old_full();
+        }
+        FreeList_lock->unlock();
+        break;
+      } else {
+        // Lets help expanding thread to pretouch the memory.
+        task_coordinator->worker_wait_for_task();
+      }
     }
   }
   return result;

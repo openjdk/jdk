@@ -196,6 +196,9 @@
           "bigger than this")                                               \
           range(1, max_jint/3)                                              \
                                                                             \
+  product(bool, UseMultithreadedPretouchForOldGen, false,                   \
+          "Oldgen expands during promotional failure and pages are touched" \
+          "with single thread. This option makes it multi-threaded" )       \
                                                                             \
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \

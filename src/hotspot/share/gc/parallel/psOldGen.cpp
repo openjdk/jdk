@@ -130,17 +130,6 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
 
   // Update the start_array
   start_array()->set_covered_region(cmr);
-
-  size_t chunk_size = 0;
-  size_t page_size = (size_t)os::vm_page_size();
-  PretouchTask::setup_chunk_size_and_page_size(chunk_size, page_size);
-
-  _pretouch = new PretouchTask("pretouch for oldgen expansion",
-                               (char*)object_space()->end(),
-                               (char*)object_space()->end(),
-                               page_size,
-                               chunk_size);
-  _pretouch->set_task_notready();
 }
 
 void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
@@ -195,8 +184,14 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
   bool result = true;
   {
     bool is_locked = false;
+    PretouchTaskCoordinator *task_coordinator = PretouchTaskCoordinator::get_task_coordinator();
     while(true) {
-      is_locked = ExpandHeap_lock->try_lock();
+      if (UseMultithreadedPretouchForOldGen) {
+        is_locked = ExpandHeap_lock->try_lock();
+      } else {
+        ExpandHeap_lock->lock();
+        is_locked = true;
+      }
       // Avoid "expand storms" by rechecking available space after obtaining
       // the lock, because another thread may have already made sufficient
       // space available.  If insufficient space available, that will remain
@@ -205,30 +200,23 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
       // expand.  That's okay, we'll just try expanding again.
       //
       // Todo:
-      // Thread which holds the lock can expand once for all thre threads and
-      // this will be win-win for all threads.
+      // Thread which holds the lock can expand once for all the threads and
+      // this will be win-win for all the threads.
       if (is_locked) {
         if (object_space()->needs_expand(word_size)) {
-          // Marking not ready makes other threads to Spin in loop.
-          pretouch()->set_task_notready();
+          // Marking not ready makes other threads to spin in loop.
+          task_coordinator->release_set_task_notready();
           result = expand(word_size*HeapWordSize);
-          pretouch()->set_task_done();
+          task_coordinator->release_set_task_done();
         }
 
-        assert (pretouch()->is_task_done(), "Task should be done at this point");
+        assert (task_coordinator->is_task_done_acquire(), "Task should be done at this point");
         ExpandHeap_lock->unlock();
         break;
 
       } else {
         // Lets help expanding thread to pretouch the memory.
-        while (!pretouch()->is_task_done()) {
-          if (pretouch()->is_task_ready()) {
-            pretouch()->work(Thread::current()->osthread()->thread_id());
-          } else {
-            SpinPause();
-          }
-        }
-        SpinPause();
+        task_coordinator->worker_wait_for_task();
       }
     }
   }
@@ -409,8 +397,7 @@ void PSOldGen::post_resize() {
                              SpaceDecorator::DontClear,
                              SpaceDecorator::DontMangle,
                              MutableSpace::SetupPages,
-                             workers,
-                             pretouch());
+                             workers);
 
   assert(new_word_size == heap_word_size(object_space()->capacity_in_bytes()),
     "Sanity");

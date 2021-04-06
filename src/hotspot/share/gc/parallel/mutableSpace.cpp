@@ -31,7 +31,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
@@ -73,8 +72,7 @@ void MutableSpace::initialize(MemRegion mr,
                               bool clear_space,
                               bool mangle_space,
                               bool setup_pages,
-                              WorkGang* pretouch_gang,
-                              PretouchTask* pretouch_task) {
+                              WorkGang* pretouch_gang) {
 
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -123,44 +121,11 @@ void MutableSpace::initialize(MemRegion mr,
     if (AlwaysPreTouch) {
       size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
 
-      // Old-gen gets expanded during promotion failure and this GC thread (not
-      // VM thread) is already executing a GC task so cant call run_task.
-      // "pretouch_task" is a special case for old-gen to make pretouch
-      // multi-threaded and is part of PSOldGen object and shared between the
-      // threads (expanding thread and threads waiting for expansion).
-      if (pretouch_gang == NULL) {
+      PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
+                             page_size, pretouch_gang);
 
-        assert(head.start() == head.end(), " old gen is expanding from head side also.");
-
-        // Update the object with tail part for pretouch.
-        pretouch_task->reinitialize((char*)tail.start(), (char*)tail.end());
-
-        size_t total_bytes = pointer_delta(tail.end(), tail.start(), sizeof(char));
-        size_t chunk_size =0;
-        PretouchTask::setup_chunk_size_and_page_size(chunk_size, page_size);
-        size_t num_chunks = (total_bytes + chunk_size - 1) / chunk_size;
-        log_debug(gc, heap)("Running %s with " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
-                            pretouch_task->name(), num_chunks, total_bytes);
-
-        OrderAccess::storestore();
-        // Mark Pretouch task ready here and continue. The other threads
-        // waiting to expand old-gen will join from PSOldGen::expand_for_allocate
-        // function for pretouch work.
-        pretouch_task->set_task_ready();
-        pretouch_task->work(Thread::current()->osthread()->thread_id());
-
-        // Wait for task to be finished by participating threads.
-        while(!pretouch_task->is_task_done()) {
-          SpinPause();
-        }
-      } else {
-
-        PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                               page_size, pretouch_gang);
-
-        PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                               page_size, pretouch_gang);
-      }
+      PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
+                             page_size, pretouch_gang);
     }
 
     // Remember where we stopped so that we can continue later.

@@ -32,8 +32,6 @@
 #include "gc/parallel/spaceCounters.hpp"
 #include "runtime/safepoint.hpp"
 
-class PretouchTask;
-
 class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
 
@@ -46,7 +44,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Performance Counters
   PSGenerationCounters*    _gen_counters;
   SpaceCounters*           _space_counters;
-  PretouchTask*            _pretouch;          // Used when old gen resized during scavenging.
 
   // Sizing information, in bytes, set in constructor
   const size_t _min_gen_size;
@@ -117,7 +114,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   MutableSpace*         object_space() const      { return _object_space; }
   ObjectStartArray*     start_array()             { return &_start_array; }
   PSVirtualSpace*       virtual_space() const     { return _virtual_space;}
-  PretouchTask*         pretouch()                { return _pretouch;    }
 
   // Has the generation been successfully allocated?
   bool is_allocated();

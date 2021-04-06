@@ -33,7 +33,6 @@
 #include "utilities/macros.hpp"
 
 class WorkGang;
-class PretouchTask;
 
 // A MutableSpace supports the concept of allocation. This includes the
 // concepts that a space may be only partially full, and the query methods
@@ -103,8 +102,7 @@ class MutableSpace: public CHeapObj<mtGC> {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkGang* pretouch_gang = NULL,
-                          PretouchTask* pretouch_task = NULL);
+                          WorkGang* pretouch_gang = NULL);
 
   virtual void clear(bool mangle_space);
   virtual void update() { }
