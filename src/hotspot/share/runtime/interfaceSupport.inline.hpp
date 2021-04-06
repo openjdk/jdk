@@ -76,6 +76,7 @@ class ThreadStateTransition : public StackObj {
   ThreadStateTransition(JavaThread *thread) {
     _thread = thread;
     assert(thread != NULL, "must be active Java thread");
+    assert(thread == Thread::current(), "must be current thread");
   }
 
   // Change threadstate in a manner, so safepoint can detect changes.
@@ -311,8 +312,8 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
-    ThreadInVMfromJava __tiv(thread);                                \
-    VM_ENTRY_BASE(result_type, header, thread)                       \
+    ThreadInVMfromJava __tiv(current);                               \
+    VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
 
 // JRT_LEAF currently can be called from either _thread_in_Java or
@@ -337,26 +338,26 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
-    ThreadInVMfromJava __tiv(thread, false /* check asyncs */);      \
-    VM_ENTRY_BASE(result_type, header, thread)                       \
+    ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
+    VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
 
 // Same as JRT Entry but allows for return value after the safepoint
 // to get back into Java from the VM
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
-    HandleMarkCleaner __hm(thread);
+    HandleMarkCleaner __hm(current);
 
 #define JRT_BLOCK                                                    \
     {                                                                \
-    ThreadInVMfromJava __tiv(thread);                                \
-    Thread* THREAD = thread;                                         \
+    ThreadInVMfromJava __tiv(current);                               \
+    Thread* THREAD = current;                                        \
     debug_only(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_NO_ASYNC                                           \
     {                                                                \
-    ThreadInVMfromJava __tiv(thread, false /* check asyncs */);      \
-    Thread* THREAD = thread;                                         \
+    ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
+    Thread* THREAD = current;                                        \
     debug_only(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_END }

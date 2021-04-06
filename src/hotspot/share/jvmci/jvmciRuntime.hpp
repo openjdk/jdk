@@ -386,8 +386,8 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   static void vm_message(jboolean vmError, jlong format, jlong v1, jlong v2, jlong v3);
   static jint identity_hash_code(JavaThread* thread, oopDesc* obj);
   static address exception_handler_for_pc(JavaThread* thread);
-  static void monitorenter(JavaThread* thread, oopDesc* obj, BasicLock* lock);
-  static void monitorexit (JavaThread* thread, oopDesc* obj, BasicLock* lock);
+  static void monitorenter(JavaThread* current, oopDesc* obj, BasicLock* lock);
+  static void monitorexit (JavaThread* current, oopDesc* obj, BasicLock* lock);
   static jboolean object_notify(JavaThread* thread, oopDesc* obj);
   static jboolean object_notifyAll(JavaThread* thread, oopDesc* obj);
   static void vm_error(JavaThread* thread, jlong where, jlong format, jlong value);
@@ -407,10 +407,10 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   static jboolean validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child);
 
   // used to throw exceptions from compiled JVMCI code
-  static int throw_and_post_jvmti_exception(JavaThread* thread, const char* exception, const char* message);
+  static int throw_and_post_jvmti_exception(JavaThread* current /* TRAPS */, const char* exception, const char* message);
   // helper methods to throw exception with complex messages
-  static int throw_klass_external_name_exception(JavaThread* thread, const char* exception, Klass* klass);
-  static int throw_class_cast_exception(JavaThread* thread, const char* exception, Klass* caster_klass, Klass* target_klass);
+  static int throw_klass_external_name_exception(JavaThread* current /* TRAPS */, const char* exception, Klass* klass);
+  static int throw_class_cast_exception(JavaThread* current /* TRAPS */, const char* exception, Klass* caster_klass, Klass* target_klass);
 
   // A helper to allow invocation of an arbitrary Java method.  For simplicity the method is
   // restricted to a static method that takes at most one argument.  For calling convention

@@ -429,29 +429,29 @@ JRT_LEAF(jboolean, JVMCIRuntime::object_notifyAll(JavaThread *thread, oopDesc* o
 
 JRT_END
 
-JRT_BLOCK_ENTRY(int, JVMCIRuntime::throw_and_post_jvmti_exception(JavaThread* thread, const char* exception, const char* message))
+JRT_BLOCK_ENTRY(int, JVMCIRuntime::throw_and_post_jvmti_exception(JavaThread* current, const char* exception, const char* message))
   JRT_BLOCK;
   TempNewSymbol symbol = SymbolTable::new_symbol(exception);
-  SharedRuntime::throw_and_post_jvmti_exception(thread, symbol, message);
+SharedRuntime::throw_and_post_jvmti_exception(symbol, message, THREAD);
   JRT_BLOCK_END;
   return caller_is_deopted();
 JRT_END
 
-JRT_BLOCK_ENTRY(int, JVMCIRuntime::throw_klass_external_name_exception(JavaThread* thread, const char* exception, Klass* klass))
+JRT_BLOCK_ENTRY(int, JVMCIRuntime::throw_klass_external_name_exception(JavaThread* current /* TRAPS */, const char* exception, Klass* klass))
   JRT_BLOCK;
-  ResourceMark rm(thread);
+  ResourceMark rm(current);
   TempNewSymbol symbol = SymbolTable::new_symbol(exception);
-  SharedRuntime::throw_and_post_jvmti_exception(thread, symbol, klass->external_name());
+SharedRuntime::throw_and_post_jvmti_exception(symbol, klass->external_name(), THREAD);
   JRT_BLOCK_END;
   return caller_is_deopted();
 JRT_END
 
-JRT_BLOCK_ENTRY(int, JVMCIRuntime::throw_class_cast_exception(JavaThread* thread, const char* exception, Klass* caster_klass, Klass* target_klass))
+JRT_BLOCK_ENTRY(int, JVMCIRuntime::throw_class_cast_exception(JavaThread* current /* TRAPS */, const char* exception, Klass* caster_klass, Klass* target_klass))
   JRT_BLOCK;
-  ResourceMark rm(thread);
+  ResourceMark rm(current);
   const char* message = SharedRuntime::generate_class_cast_message(caster_klass, target_klass);
   TempNewSymbol symbol = SymbolTable::new_symbol(exception);
-  SharedRuntime::throw_and_post_jvmti_exception(thread, symbol, message);
+SharedRuntime::throw_and_post_jvmti_exception(symbol, message, THREAD);
   JRT_BLOCK_END;
   return caller_is_deopted();
 JRT_END
