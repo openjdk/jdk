@@ -129,6 +129,15 @@ public:
   static JVMFlag::Error get_ccstr(const JVMFlag* flag, ccstr* value) {
     return get<JVM_FLAG_TYPE(ccstr)>(flag, value);
   }
+
+  static JVMFlag::Error set_bool    (JVMFlag* f, bool*     v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(bool)>    (f, v, origin); }
+  static JVMFlag::Error set_int     (JVMFlag* f, int*      v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(int)>     (f, v, origin); }
+  static JVMFlag::Error set_uint    (JVMFlag* f, uint*     v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(uint)>    (f, v, origin); }
+  static JVMFlag::Error set_intx    (JVMFlag* f, intx*     v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(intx)>    (f, v, origin); }
+  static JVMFlag::Error set_uintx   (JVMFlag* f, uintx*    v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(uintx)>   (f, v, origin); }
+  static JVMFlag::Error set_uint64_t(JVMFlag* f, uint64_t* v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(uint64_t)>(f, v, origin); }
+  static JVMFlag::Error set_size_t  (JVMFlag* f, size_t*   v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(size_t)>  (f, v, origin); }
+  static JVMFlag::Error set_double  (JVMFlag* f, double*   v, JVMFlagOrigin origin) { return set<JVM_FLAG_TYPE(double)>  (f, v, origin); }
 };
 
 #endif // SHARE_RUNTIME_FLAGS_JVMFLAGACCESS_HPP
