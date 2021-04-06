@@ -56,7 +56,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
