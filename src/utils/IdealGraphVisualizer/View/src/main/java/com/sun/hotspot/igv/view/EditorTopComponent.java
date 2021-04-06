@@ -36,7 +36,6 @@ import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.services.DiagramProvider;
-import com.sun.hotspot.igv.svg.BatikSVG;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.view.actions.*;
@@ -52,6 +51,11 @@ import java.util.List;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.border.Border;
+import org.apache.batik.dom.GenericDOMImplementation;
+import org.apache.batik.svggen.SVGGeneratorContext;
+import org.apache.batik.svggen.SVGGraphics2D;
+import org.apache.batik.svggen.SVGGraphics2DIOException;
+import org.w3c.dom.DOMImplementation;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.actions.RedoAction;
@@ -101,32 +105,22 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         @Override
         public void export(File f) {
 
-            Graphics2D svgGenerator = BatikSVG.createGraphicsObject();
-
-            if (svgGenerator == null) {
-                NotifyDescriptor message = new NotifyDescriptor.Message("For export to SVG files the Batik SVG Toolkit must be intalled.", NotifyDescriptor.ERROR_MESSAGE);
-                DialogDisplayer.getDefault().notifyLater(message);
-            } else {
-                scene.paint(svgGenerator);
-                FileOutputStream os = null;
-                try {
-                    os = new FileOutputStream(f);
-                    Writer out = new OutputStreamWriter(os, "UTF-8");
-                    BatikSVG.printToStream(svgGenerator, out, true);
-                } catch (FileNotFoundException e) {
-                    NotifyDescriptor message = new NotifyDescriptor.Message("For export to SVG files the Batik SVG Toolkit must be intalled.", NotifyDescriptor.ERROR_MESSAGE);
-                    DialogDisplayer.getDefault().notifyLater(message);
-
-                } catch (UnsupportedEncodingException e) {
-                } finally {
-                    if (os != null) {
-                        try {
-                            os.close();
-                        } catch (IOException e) {
-                        }
+            SVGGraphics2D svgGenerator = createGraphicsObject();
+            scene.paint(svgGenerator);
+            FileOutputStream os = null;
+            try {
+                os = new FileOutputStream(f);
+                Writer out = new OutputStreamWriter(os, "UTF-8");
+                printToStream(svgGenerator, out, true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (os != null) {
+                    try {
+                        os.close();
+                    } catch (IOException e) {
                     }
                 }
-
             }
         }
     };
@@ -639,5 +633,19 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     @Override
     protected Object writeReplace() throws ObjectStreamException {
         throw new NotSerializableException();
-}
+    }
+
+    private static SVGGraphics2D createGraphicsObject() {
+        DOMImplementation dom = GenericDOMImplementation.getDOMImplementation();
+        org.w3c.dom.Document document = dom.createDocument("http://www.w3.org/2000/svg", "svg", null);
+        SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(document);
+        ctx.setEmbeddedFontsOn(true);
+        return new SVGGraphics2D(ctx, true);
+    }
+
+    private static void printToStream(SVGGraphics2D svgGenerator, Writer stream, boolean useCSS) {
+        try {
+            svgGenerator.stream(stream, useCSS);
+        } catch (SVGGraphics2DIOException e) {}
+    }
 }

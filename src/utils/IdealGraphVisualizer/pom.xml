@@ -86,7 +86,6 @@
         <module>ServerCompiler</module>
         <module>FilterWindow</module>
         <module>Graal</module>
-        <module>BatikSVGProxy</module>
         <module>View</module>
     </modules>
     <properties>
@@ -96,6 +95,7 @@
         <mvncompilerplugin.version>3.8.1</mvncompilerplugin.version>
         <mvnjarplugin.version>3.1.2</mvnjarplugin.version>
         <junit.version>4.13.2</junit.version>
+        <batik.version>1.14</batik.version>
         <brandingToken>idealgraphvisualizer</brandingToken>
     </properties>
 </project>
