@@ -518,7 +518,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped inside exit() and the ObjectMonitor* must be !is_busy().
   ObjectMonitor* monitor = inflate(current, object, inflate_cause_vm_internal);
-  monitor->exit(true, current);
+  monitor->exit(current);
 }
 
 // -----------------------------------------------------------------------------
@@ -608,7 +608,7 @@ void ObjectSynchronizer::jni_exit(oop obj, TRAPS) {
   // intentionally do not use CHECK on check_owner because we must exit the
   // monitor even if an exception was already pending.
   if (monitor->check_owner(THREAD)) {
-    monitor->exit(true, current);
+    monitor->exit(current);
   }
 }
 

@@ -41,6 +41,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
@@ -1089,7 +1090,13 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
   print_region_stats(mapinfo, closed_heap_regions, open_heap_regions);
 
   mapinfo->set_requested_base((char*)MetaspaceShared::requested_base_address());
+  if (mapinfo->header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
+    mapinfo->set_header_base_archive_name_size(strlen(Arguments::GetSharedArchivePath()) + 1);
+    mapinfo->set_header_base_archive_is_default(FLAG_IS_DEFAULT(SharedArchiveFile));
+  }
   mapinfo->set_header_crc(mapinfo->compute_header_crc());
+  // After this point, we should not write any data into mapinfo->header() since this
+  // would corrupt its checksum we have calculated before.
   mapinfo->write_header();
   mapinfo->close();
 

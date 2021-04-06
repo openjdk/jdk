@@ -212,7 +212,8 @@ private:
   class ActiveArray;            // Array of Blocks, plus bookkeeping.
   class AllocationListEntry;    // Provides AllocationList links in a Block.
 
-  // Doubly-linked list of Blocks.
+  // Doubly-linked list of Blocks.  For all operations with a block
+  // argument, the block must be from the list's OopStorage.
   class AllocationList {
     const Block* _head;
     const Block* _tail;
@@ -237,6 +238,8 @@ private:
     void push_front(const Block& block);
     void push_back(const Block& block);
     void unlink(const Block& block);
+
+    bool contains(const Block& block) const;
   };
 
 private:

@@ -76,7 +76,6 @@ import static java.util.Collections.singletonList;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
-import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
 import static jdk.jshell.Util.PREFIX_PATTERN;
@@ -212,30 +211,28 @@ class Eval {
             String compileSourceInt = new MaskCommentsAndModifiers(compileSource, true).cleared();
 
             state.debug(DBG_GEN, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
-            switch (unitTree.getKind()) {
-                case IMPORT:
-                    return processImport(userSource, compileSourceInt);
-                case VARIABLE:
-                    return processVariables(userSource, units, compileSourceInt, pt);
-                case EXPRESSION_STATEMENT:
-                    return processExpression(userSource, unitTree, compileSourceInt, pt);
-                case CLASS:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.CLASS_SUBKIND, pt);
-                case ENUM:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.ENUM_SUBKIND, pt);
-                case ANNOTATION_TYPE:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
-                case INTERFACE:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
-                case RECORD:
-                    @SuppressWarnings("preview")
-                    List<Snippet> snippets = processClass(userSource, unitTree, compileSourceInt, SubKind.RECORD_SUBKIND, pt);
-                    return snippets;
-                case METHOD:
-                    return processMethod(userSource, unitTree, compileSourceInt, pt);
-                default:
-                    return processStatement(userSource, compileSourceInt);
-            }
+            return switch (unitTree.getKind()) {
+                case IMPORT
+                    -> processImport(userSource, compileSourceInt);
+                case VARIABLE
+                    -> processVariables(userSource, units, compileSourceInt, pt);
+                case EXPRESSION_STATEMENT
+                    -> processExpression(userSource, unitTree, compileSourceInt, pt);
+                case CLASS
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.CLASS_SUBKIND, pt);
+                case ENUM
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.ENUM_SUBKIND, pt);
+                case ANNOTATION_TYPE
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
+                case INTERFACE
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
+                case RECORD
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.RECORD_SUBKIND, pt);
+                case METHOD
+                    -> processMethod(userSource, unitTree, compileSourceInt, pt);
+                default
+                    -> processStatement(userSource, compileSourceInt);
+            };
         });
     }
 
@@ -370,32 +367,17 @@ class Eval {
                 winit = winit == null ? Wrap.rangeWrap(compileSource, rinit) : winit;
                 nameMax = rinit.begin - 1;
             } else {
-                String sinit;
-                switch (typeName) {
-                    case "byte":
-                    case "short":
-                    case "int":
-                        sinit = "0";
-                        break;
-                    case "long":
-                        sinit = "0L";
-                        break;
-                    case "float":
-                        sinit = "0.0f";
-                        break;
-                    case "double":
-                        sinit = "0.0d";
-                        break;
-                    case "boolean":
-                        sinit = "false";
-                        break;
-                    case "char":
-                        sinit = "'\\u0000'";
-                        break;
-                    default:
-                        sinit = "null";
-                        break;
-                }
+                String sinit = switch (typeName) {
+                    case "byte",
+                         "short",
+                         "int"     -> "0";
+                    case "long"    -> "0L";
+                    case "float"   -> "0.0f";
+                    case "double"  -> "0.0d";
+                    case "boolean" -> "false";
+                    case "char"    -> "'\\u0000'";
+                    default        -> "null";
+                };
                 winit = Wrap.simpleWrap(sinit);
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
             }
@@ -862,23 +844,14 @@ class Eval {
 
         // Install  wrapper for query by SourceCodeAnalysis.wrapper
         String compileSource = Util.trimEnd(new MaskCommentsAndModifiers(userSource, true).cleared());
-        OuterWrap outer;
-        switch (probableKind) {
-            case IMPORT:
-                outer = state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
-                break;
-            case EXPRESSION:
-                outer = state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(compileSource));
-                break;
-            case VAR:
-            case TYPE_DECL:
-            case METHOD:
-                outer = state.outerMap.wrapInTrialClass(Wrap.classMemberWrap(compileSource));
-                break;
-            default:
-                outer = state.outerMap.wrapInTrialClass(Wrap.methodWrap(compileSource));
-                break;
-        }
+        OuterWrap outer = switch (probableKind) {
+            case IMPORT     -> state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
+            case EXPRESSION -> state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(compileSource));
+            case VAR,
+                 TYPE_DECL,
+                 METHOD     -> state.outerMap.wrapInTrialClass(Wrap.classMemberWrap(compileSource));
+            default         -> state.outerMap.wrapInTrialClass(Wrap.methodWrap(compileSource));
+        };
         snip.setOuterWrap(outer);
 
         return singletonList(snip);
