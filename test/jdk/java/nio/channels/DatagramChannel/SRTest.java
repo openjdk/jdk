@@ -31,12 +31,12 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.nio.charset.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import org.testng.annotations.*;
 
@@ -120,7 +120,7 @@ public class SRTest {
         public void run() {
             try {
                 String dataString = "hello";
-                byte[] data = dataString.getBytes();
+                byte[] data = dataString.getBytes(US_ASCII);
                 InetAddress address = InetAddress.getLoopbackAddress();
                 DatagramPacket dp = new DatagramPacket(data, data.length,
                                                        address, port);
@@ -152,9 +152,9 @@ public class SRTest {
 
         public void run() {
             try {
-                DatagramChannel dc = DatagramChannel.open();
+                String dataString = "hello";
                 ByteBuffer bb = ByteBuffer.allocateDirect(256);
-                bb.put("hello".getBytes());
+                bb.put(dataString.getBytes(US_ASCII));
                 bb.flip();
                 InetAddress address = InetAddress.getLoopbackAddress();
                 InetSocketAddress isa = new InetSocketAddress(address, port);
@@ -162,10 +162,10 @@ public class SRTest {
                 Thread.sleep(50);
                 dc.send(bb, isa);
             } catch (Exception ex) {
-                log.println("ClassicWriter [" + dc.socket().getLocalAddress() + "]");
+                log.println("NioWriter [" + dc.socket().getLocalAddress() + "]");
                 throw new RuntimeException("NioWriter threw exception: " + ex);
             } finally {
-                log.println("NioWriter Finished");
+                log.println("NioWriter finished");
             }
         }
 
@@ -192,10 +192,10 @@ public class SRTest {
                 byte[] buf = new byte[256];
                 DatagramPacket dp = new DatagramPacket(buf, buf.length);
                 ds.receive(dp);
-                String received = new String(dp.getData());
+                String received = new String(dp.getData(), US_ASCII);
                 log.println("ClassicReader received: " + received);
             } catch (Exception ex) {
-                log.println("ClassicWriter [" + ds.getLocalAddress() +"]");
+                log.println("ClassicReader [" + ds.getLocalAddress() +"]");
                 throw new RuntimeException("ClassicReader threw exception: " + ex);
             } finally {
                 log.println("ClassicReader finished");
@@ -223,12 +223,12 @@ public class SRTest {
         public void run() {
             try {
                 ByteBuffer bb = ByteBuffer.allocateDirect(100);
-                SocketAddress sa = dc.receive(bb);
+                dc.receive(bb);
                 bb.flip();
-                CharBuffer cb = StandardCharsets.US_ASCII.newDecoder().decode(bb);
+                CharBuffer cb = US_ASCII.newDecoder().decode(bb);
                 log.println("NioReader received: " + cb);
             } catch (Exception ex) {
-                log.println("ClassicWriter [" + dc.socket().getLocalAddress() +"]");
+                log.println("NioReader [" + dc.socket().getLocalAddress() +"]");
                 throw new RuntimeException("NioReader threw exception: " + ex);
             } finally {
                 log.println("NioReader finished");
