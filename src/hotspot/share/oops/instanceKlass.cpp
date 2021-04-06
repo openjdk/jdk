@@ -3151,12 +3151,14 @@ jint InstanceKlass::jvmti_class_status() const {
 }
 
 Method* InstanceKlass::method_at_itable(InstanceKlass* holder, int index, TRAPS) {
-  bool itable_entry_found; // out parameter
-  Method* m = method_at_itable_or_null(holder, index, itable_entry_found);
+  bool implements_interface; // initialized by method_at_itable_or_null
+  Method* m = method_at_itable_or_null(holder, index,
+                                       implements_interface); // out parameter
   if (m != NULL) {
-    assert(itable_entry_found, "sanity");
+    assert(implements_interface, "sanity");
     return m;
-  } else if (itable_entry_found) {
+  } else if (implements_interface) {
+    // Throw AbstractMethodError since corresponding itable slot is empty.
     THROW_NULL(vmSymbols::java_lang_AbstractMethodError());
   } else {
     // If the interface isn't implemented by the receiver class,
