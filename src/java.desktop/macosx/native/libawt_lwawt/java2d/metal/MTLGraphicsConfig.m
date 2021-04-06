@@ -149,20 +149,6 @@ Java_sun_java2d_metal_MTLGraphicsConfig_getMTLConfigInfo
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-
-    NSRect contentRect = NSMakeRect(0, 0, 64, 64);
-    NSWindow *window =
-        [[NSWindow alloc]
-            initWithContentRect: contentRect
-            styleMask: NSBorderlessWindowMask
-            backing: NSBackingStoreBuffered
-            defer: false];
-    if (window == nil) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLGraphicsConfig_getMTLConfigInfo: NSWindow is NULL");
-        [argValue addObject: [NSNumber numberWithLong: 0L]];
-        return;
-    }
-
     MTLContext *mtlc = [[MTLContext alloc] initWithDevice:CGDirectDisplayCopyCurrentMetalDevice(displayID)
                         shadersLib:mtlShadersLib];
     if (mtlc == 0L) {
@@ -171,12 +157,12 @@ Java_sun_java2d_metal_MTLGraphicsConfig_getMTLConfigInfo
         return;
     }
 
-
     // create the MTLGraphicsConfigInfo record for this config
     MTLGraphicsConfigInfo *mtlinfo = (MTLGraphicsConfigInfo *)malloc(sizeof(MTLGraphicsConfigInfo));
     if (mtlinfo == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLGraphicsConfig_getMTLConfigInfo: could not allocate memory for mtlinfo");
-        free(mtlc);
+        [mtlc release];
+        mtlc = nil;
         [argValue addObject: [NSNumber numberWithLong: 0L]];
         return;
     }
