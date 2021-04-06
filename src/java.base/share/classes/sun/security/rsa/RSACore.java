@@ -438,26 +438,13 @@ public final class RSACore {
 
         ConcurrentLinkedQueue<BlindingParameters> queue;
 
+        // Get queue from map, if there is none then create one
         lock.lock();
         try {
-            queue = blindingCache.get(n);
+            queue = blindingCache.computeIfAbsent(n,
+                ignored -> new ConcurrentLinkedQueue<>());
         } finally {
             lock.unlock();
-        }
-
-        if (queue == null) {
-            // If the value is null on the second get(n), create a queue,
-            // place it in the map, and continue on using it
-            lock.lock();
-            try {
-                queue = blindingCache.get(n);
-                if (queue == null) {
-                    queue = new ConcurrentLinkedQueue<>();
-                    blindingCache.put(n, queue);
-                }
-            } finally {
-                lock.unlock();
-            }
         }
 
         BlindingParameters bps = queue.poll();
@@ -481,6 +468,7 @@ public final class RSACore {
             }
         }
 
+        // If this parameters are still usable, put them back into the queue.
         if (bps.isReusable()) {
             queue.add(bps);
         }
