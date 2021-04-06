@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Core of the RSA implementation. Has code to perform public and private key
@@ -64,6 +65,7 @@ public final class RSACore {
     // like performance testing.
     private static final Map<BigInteger, ConcurrentLinkedQueue<BlindingParameters>>
                 blindingCache = new WeakHashMap<>();
+    private static final ReentrantLock lock = new ReentrantLock();
 
     private RSACore() {
         // empty
@@ -434,20 +436,27 @@ public final class RSACore {
     private static BlindingRandomPair getBlindingRandomPair(
             BigInteger e, BigInteger d, BigInteger n) {
 
-        ConcurrentLinkedQueue<BlindingParameters> queue = blindingCache.get(n);
+        ConcurrentLinkedQueue<BlindingParameters> queue;
+
+        lock.lock();
+        try {
+            queue = blindingCache.get(n);
+        } finally {
+            lock.unlock();
+        }
 
         if (queue == null) {
-            // Create another queue if none is available, if there is another
-            // thread creating a queue, putIfAbsent() get the established queue
-            // and the created one will be discarded. If two threads happen to
-            // get a null value for queue, the one will be set in the Map,
-            // and the other will only be used for the life of this method.
-            // This could only happen during queue initialization with
-            // minimal cost of some CPU cycles.
-            ConcurrentLinkedQueue<BlindingParameters> newQueue =
-                new ConcurrentLinkedQueue<>();
-            if ((queue = blindingCache.putIfAbsent(n, newQueue)) == null) {
-                queue = newQueue;
+            // If the value is null on the second get(n), create a queue,
+            // place it in the map, and continue on using it
+            lock.lock();
+            try {
+                queue = blindingCache.get(n);
+                if (queue == null) {
+                    queue = new ConcurrentLinkedQueue<>();
+                    blindingCache.put(n, queue);
+                }
+            } finally {
+                lock.unlock();
             }
         }
 
