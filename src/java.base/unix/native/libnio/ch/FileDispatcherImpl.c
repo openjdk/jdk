@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,8 +167,10 @@ Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
 
 #ifdef MACOSX
     result = fcntl(fd, F_FULLFSYNC);
-    if (result == -1 && errno == ENOTSUP) {
-        /* Try fsync() in case F_FULLSYUNC is not implemented on the file system. */
+    if (result == -1 && (errno == ENOTSUP || errno == ENOTTY)) {
+        /* Try fsync() in case F_FULLSYUNC is not implemented on the file system
+         * or is unsupported by the device.
+         */
         result = fsync(fd);
     }
 #else /* end MACOSX, begin not-MACOSX */
