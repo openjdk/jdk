@@ -126,8 +126,6 @@ public class SRTest {
                 DatagramPacket dp = new DatagramPacket(data, data.length,
                                                        address, port);
                 ds.send(dp);
-                Thread.sleep(50);
-                ds.send(dp);
             } catch (Exception e) {
                 log.println("ClassicWriter [" + ds.getLocalAddress() + "]");
                 throw new RuntimeException("ClassicWriter threw exception: " + e);
@@ -158,8 +156,6 @@ public class SRTest {
                 bb.flip();
                 InetAddress address = InetAddress.getLoopbackAddress();
                 InetSocketAddress isa = new InetSocketAddress(address, port);
-                dc.send(bb, isa);
-                Thread.sleep(50);
                 dc.send(bb, isa);
             } catch (Exception ex) {
                 log.println("NioWriter [" + dc.socket().getLocalAddress() + "]");
