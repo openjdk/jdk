@@ -27,7 +27,7 @@
  * @summary Relocate CDS archived regions to the top of the G1 heap
  * @bug 8214455
  * @requires vm.cds.archived.java.heap
- * @requires (sun.arch.data.model == "64"  & os.maxMemory > 4g)
+ * @requires (sun.arch.data.model == "64" & os.maxMemory > 4g)
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build HeapFragmentationApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar HeapFragmentationApp.jar HeapFragmentationApp

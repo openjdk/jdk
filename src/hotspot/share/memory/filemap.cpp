@@ -1833,17 +1833,17 @@ void FileMapInfo::map_heap_regions_impl() {
   if (narrow_oop_mode() != CompressedOops::mode() ||
       narrow_oop_base() != CompressedOops::base() ||
       narrow_oop_shift() != CompressedOops::shift()) {
-    log_info(cds)("CDS heap data need to be relocated because the archive was created with an incompatible oop encoding mode.");
+    log_info(cds)("CDS heap data needs to be relocated because the archive was created with an incompatible oop encoding mode.");
     _heap_pointers_need_patching = true;
   } else {
     MemRegion range = get_heap_regions_range_with_current_oop_encoding_mode();
     if (!CompressedOops::is_in(range)) {
-      log_info(cds)("CDS heap data need to be relocated because");
+      log_info(cds)("CDS heap data needs to be relocated because");
       log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
       log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT, p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
       _heap_pointers_need_patching = true;
     } else if (header()->heap_end() != CompressedOops::end()) {
-      log_info(cds)("CDS heap data need to be relocated to the end of the runtime heap to reduce fragmentation");
+      log_info(cds)("CDS heap data needs to be relocated to the end of the runtime heap to reduce fragmentation");
       _heap_pointers_need_patching = true;
     }
   }
@@ -1876,7 +1876,7 @@ void FileMapInfo::map_heap_regions_impl() {
     // open regions.
     size_t align = size_t(relocated_closed_heap_region_bottom) % HeapRegion::GrainBytes;
     delta -= align;
-    log_info(cds)("CDS heap data need to be relocated lower by a further " SIZE_FORMAT
+    log_info(cds)("CDS heap data needs to be relocated lower by a further " SIZE_FORMAT
                   " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes",
                   align, delta);
     HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());

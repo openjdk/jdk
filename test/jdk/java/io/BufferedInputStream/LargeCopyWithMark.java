@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 7129312
- * @requires (sun.arch.data.model == "64"  & os.maxMemory > 4g)
+ * @requires (sun.arch.data.model == "64" & os.maxMemory > 4g)
  * @summary BufferedInputStream calculates negative array size with large
  *          streams and mark
  * @run main/othervm -Xmx4G -Xlog:gc,gc+heap,gc+ergo+heap -XX:+CrashOnOutOfMemoryError
