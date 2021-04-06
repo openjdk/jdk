@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -637,6 +637,11 @@ public class TestMemoryOptions {
         tc = new TestCase("GlobalBufferSizeTimesGlobalBufferCountEqualToMinMemorySizePositive", false);
         tc.setGlobalBufferSizeTestParam(64, 'k');
         tc.setGlobalBufferCountTestParam(16, 'b');
+        testCases.add(tc);
+
+        // threadbuffersize exceeds default memory-size
+        tc = new TestCase("ThreadBufferSizeExceedMemorySize", false);
+        tc.setThreadBufferSizeTestParam(30, 'm');
         testCases.add(tc);
     }
 

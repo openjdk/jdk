@@ -541,6 +541,10 @@ static bool valid_memory_relations(const JfrMemoryOptions& options) {
         return false;
       }
     }
+  } else if (options.thread_buffer_size_configured && options.memory_size_configured) {
+    if (!ensure_first_gteq_second(_dcmd_memorysize, _dcmd_threadbuffersize)) {
+      return false;
+    }
   }
   return true;
 }

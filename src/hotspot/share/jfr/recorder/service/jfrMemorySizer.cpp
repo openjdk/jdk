@@ -305,7 +305,12 @@ static void thread_buffer_size(JfrMemoryOptions* options) {
   options->global_buffer_size = div_total_by_units(options->memory_size, options->buffer_count);
   if (options->thread_buffer_size > options->global_buffer_size) {
     options->global_buffer_size = options->thread_buffer_size;
-    options->buffer_count = div_total_by_per_unit(options->memory_size, options->global_buffer_size);
+    if (options->memory_size_configured) {
+      options->buffer_count = div_total_by_per_unit(options->memory_size, options->global_buffer_size);
+    } else {
+      // init memory_size according buffer count and size
+      options->memory_size = options->buffer_count * options->global_buffer_size;
+    }
   }
   assert(options->global_buffer_size >= options->thread_buffer_size, "invariant");
 }
