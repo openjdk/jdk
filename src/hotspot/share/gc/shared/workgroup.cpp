@@ -399,39 +399,14 @@ SubTasksDone::~SubTasksDone() {
 
 // *** SequentialSubTasksDone
 
-void SequentialSubTasksDone::clear() {
-  _n_tasks   = _n_claimed   = 0;
-  _n_threads = _n_completed = 0;
-}
-
-bool SequentialSubTasksDone::valid() {
-  return _n_threads > 0;
-}
-
 bool SequentialSubTasksDone::try_claim_task(uint& t) {
-  t = _n_claimed;
-  while (t < _n_tasks) {
-    uint res = Atomic::cmpxchg(&_n_claimed, t, t+1);
+  t = _num_claimed;
+  while (t < _num_tasks) {
+    uint res = Atomic::cmpxchg(&_num_claimed, t, t+1);
     if (res == t) {
       return true;
     }
     t = res;
-  }
-  return false;
-}
-
-bool SequentialSubTasksDone::all_tasks_completed() {
-  uint complete = _n_completed;
-  while (true) {
-    uint res = Atomic::cmpxchg(&_n_completed, complete, complete+1);
-    if (res == complete) {
-      break;
-    }
-    complete = res;
-  }
-  if (complete+1 == _n_threads) {
-    clear();
-    return true;
   }
   return false;
 }

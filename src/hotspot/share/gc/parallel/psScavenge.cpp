@@ -303,14 +303,12 @@ public:
                     bool is_empty) :
       AbstractGangTask("ScavengeRootsTask"),
       _strong_roots_scope(active_workers),
-      _subtasks(),
+      _subtasks(ParallelRootType::sentinel),
       _old_gen(old_gen),
       _gen_top(gen_top),
       _active_workers(active_workers),
       _is_empty(is_empty),
       _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
-    _subtasks.set_n_threads(active_workers);
-    _subtasks.set_n_tasks(ParallelRootType::sentinel);
   }
 
   virtual void work(uint worker_id) {
@@ -345,7 +343,6 @@ public:
     for (uint root_type = 0; _subtasks.try_claim_task(root_type); /* empty */ ) {
       scavenge_roots_work(static_cast<ParallelRootType::Value>(root_type), worker_id);
     }
-    _subtasks.all_tasks_completed();
 
     PSThreadRootsTaskClosure closure(worker_id);
     Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
