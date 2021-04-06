@@ -45,6 +45,8 @@ public class SRTest {
     ExecutorService executorService;
     static PrintStream log = System.err;
 
+    static final String DATA_STRING = "hello";
+
     @BeforeClass
     public void beforeClass() {
         executorService = Executors.newCachedThreadPool();
@@ -119,8 +121,7 @@ public class SRTest {
 
         public void run() {
             try {
-                String dataString = "hello";
-                byte[] data = dataString.getBytes(US_ASCII);
+                byte[] data = DATA_STRING.getBytes(US_ASCII);
                 InetAddress address = InetAddress.getLoopbackAddress();
                 DatagramPacket dp = new DatagramPacket(data, data.length,
                                                        address, port);
@@ -152,9 +153,8 @@ public class SRTest {
 
         public void run() {
             try {
-                String dataString = "hello";
                 ByteBuffer bb = ByteBuffer.allocateDirect(256);
-                bb.put(dataString.getBytes(US_ASCII));
+                bb.put(DATA_STRING.getBytes(US_ASCII));
                 bb.flip();
                 InetAddress address = InetAddress.getLoopbackAddress();
                 InetSocketAddress isa = new InetSocketAddress(address, port);
@@ -192,7 +192,7 @@ public class SRTest {
                 byte[] buf = new byte[256];
                 DatagramPacket dp = new DatagramPacket(buf, buf.length);
                 ds.receive(dp);
-                String received = new String(dp.getData(), US_ASCII);
+                String received = new String(dp.getData(), 0, DATA_STRING.length(), US_ASCII);
                 log.println("ClassicReader received: " + received);
             } catch (Exception ex) {
                 log.println("ClassicReader [" + ds.getLocalAddress() +"]");
