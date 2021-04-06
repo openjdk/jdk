@@ -440,6 +440,7 @@ public class RandomTestBsi1999 {
             setRNG(factory.name());
 
             if (currentRNG.equals("SecureRandom")) {
+                // Bug: 8264791
                 // skip because stochastic
             } else if (currentRNG.equals("Random")) {
                 // testOneRng(factory.create(59), 1);
