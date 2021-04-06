@@ -4031,7 +4031,6 @@ void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
                                             FreeRegionList* free_list) {
   assert(hr->is_humongous(), "this is only for humongous regions");
-  assert(free_list != NULL, "pre-condition");
   hr->clear_humongous();
   free_region(hr, free_list);
 }
@@ -4183,6 +4182,7 @@ class G1FreeCollectionSetTask : public AbstractGangTask {
 
       // Free the region and and its remembered set.
       _g1h->free_region(r, NULL);
+      _g1h->hr_printer()->cleanup(r);
     }
 
     void handle_failed_region(HeapRegion* r) {
@@ -4336,16 +4336,14 @@ void G1CollectedHeap::free_collection_set(G1CollectionSet* collection_set, G1Eva
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {
-private:
-  FreeRegionList* _free_region_list;
   HeapRegionSet* _proxy_set;
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
 public:
 
-  G1FreeHumongousRegionClosure(FreeRegionList* free_region_list) :
-    _free_region_list(free_region_list), _proxy_set(NULL), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
+  G1FreeHumongousRegionClosure() :
+    _proxy_set(NULL), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
@@ -4430,7 +4428,8 @@ public:
       _freed_bytes += r->used();
       r->set_containing_set(NULL);
       _humongous_regions_reclaimed++;
-      g1h->free_humongous_region(r, _free_region_list);
+      g1h->free_humongous_region(r, NULL);
+      g1h->hr_printer()->cleanup(r);
       r = next;
     } while (r != NULL);
 
@@ -4461,21 +4460,10 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
 
   double start_time = os::elapsedTime();
 
-  FreeRegionList local_cleanup_list("Local Humongous Cleanup List");
-
-  G1FreeHumongousRegionClosure cl(&local_cleanup_list);
+  G1FreeHumongousRegionClosure cl;
   heap_region_iterate(&cl);
 
   remove_from_old_gen_sets(0, 0, cl.humongous_regions_reclaimed());
-
-  G1HRPrinter* hrp = hr_printer();
-  if (hrp->is_active()) {
-    FreeRegionListIterator iter(&local_cleanup_list);
-    while (iter.more_available()) {
-      HeapRegion* hr = iter.get_next();
-      hrp->cleanup(hr);
-    }
-  }
 
   decrement_summary_bytes(cl.bytes_freed());
 
