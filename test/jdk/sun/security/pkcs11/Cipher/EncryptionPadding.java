@@ -65,7 +65,7 @@ public class EncryptionPadding extends PKCS11Test {
         Arrays.fill(plainText, (byte)(inputSize & 0xFF));
         ByteBuffer cipherText =
                 ByteBuffer.allocate(((inputSize / 16 ) + 1) * 16);
-        byte[] tmp = new byte[16];
+        byte[] tmp;
 
         Cipher sunPKCS11cipher = Cipher.getInstance(transformation, p);
         sunPKCS11cipher.init(Cipher.ENCRYPT_MODE, key);
@@ -74,8 +74,9 @@ public class EncryptionPadding extends PKCS11Test {
             if (!isByteBuffer) {
                 tmp = sunPKCS11cipher.update(plainText, i * 16,
                         updateLength);
-                if (tmp != null)
+                if (tmp != null) {
                     cipherText.put(tmp);
+                }
             } else {
                 ByteBuffer bb = ByteBuffer.allocate(updateLength);
                 bb.put(plainText, i * 16, updateLength);
@@ -83,9 +84,14 @@ public class EncryptionPadding extends PKCS11Test {
                 sunPKCS11cipher.update(bb, cipherText);
             }
         }
-        tmp = sunPKCS11cipher.doFinal();
-        if (tmp != null)
-            cipherText.put(tmp);
+        if (!isByteBuffer) {
+            tmp = sunPKCS11cipher.doFinal();
+            if (tmp != null) {
+                cipherText.put(tmp);
+            }
+        } else {
+            sunPKCS11cipher.doFinal(ByteBuffer.allocate(0), cipherText);
+        }
 
         Cipher sunJCECipher = Cipher.getInstance(transformation, "SunJCE");
         sunJCECipher.init(Cipher.DECRYPT_MODE, key);

@@ -170,10 +170,11 @@ final class P11Cipher extends CipherSpi {
     private int fixedKeySize = -1;
 
     // Indicates whether the underlying PKCS#11 library requires block-sized
-    // updates during multi-part operations. This may be needed only if
-    // padding is applied on the Java side. An example of the previous is when
-    // the CKM_AES_ECB mechanism is used and the PKCS#11 library is NSS. See
-    // more on JDK-8261355.
+    // updates during multi-part operations. In such case, we buffer data in
+    // padBuffer up to a block-size. This may be needed only if padding is
+    // applied on the Java side. An example of the previous is when the
+    // CKM_AES_ECB mechanism is used and the PKCS#11 library is NSS. See more
+    // on JDK-8261355.
     private boolean reqBlockUpdates = false;
 
     P11Cipher(Token token, String algorithm, long mechanism)
@@ -601,9 +602,6 @@ final class P11Cipher extends CipherSpi {
             int newPadBufferLen = 0;
             if (paddingObj != null && (!encrypt || reqBlockUpdates)) {
                 if (padBufferLen != 0) {
-                    // NSS throws up when called with data not in multiple
-                    // of blocks. Try to work around this by holding the
-                    // extra data in padBuffer.
                     if (padBufferLen != padBuffer.length) {
                         int bufCapacity = padBuffer.length - padBufferLen;
                         if (inLen > bufCapacity) {
@@ -628,15 +626,11 @@ final class P11Cipher extends CipherSpi {
                 }
                 newPadBufferLen = inLen & (blockSize - 1);
                 if (!encrypt && newPadBufferLen == 0) {
-                    // While decrypting with implUpdate, a block-sized buffer with
-                    // encrypted data is always held instead of being unencrypted
-                    // and returned to the caller. This is because the block may
-                    // contain padding bytes, in case it's the last one (unknown
-                    // at this point). In implDoFinal, where we know it's the
-                    // last one, this buffer is unencrypted and unpadded before
-                    // returned to the caller. None of this is necessary for
-                    // encryption: encrypted data can be safely returned upon a
-                    // implUpdate call.
+                    // While decrypting with implUpdate, the current encrypted block
+                    // is always held in a buffer. If it's the last one (unknown
+                    // at this point), it may contain padding bytes and need further
+                    // processing. In implDoFinal (where we know it's the last one)
+                    // the buffer is decrypted, unpadded and returned.
                     newPadBufferLen = padBuffer.length;
                 }
                 inLen -= newPadBufferLen;
@@ -651,7 +645,7 @@ final class P11Cipher extends CipherSpi {
                 }
             }
             // update 'padBuffer' if using our own padding impl.
-            if (paddingObj != null) {
+            if (paddingObj != null && newPadBufferLen > 0) {
                 bufferInputBytes(in, inOfs + inLen, newPadBufferLen);
             }
             bytesBuffered += (inLen - k);
@@ -716,9 +710,6 @@ final class P11Cipher extends CipherSpi {
             int newPadBufferLen = 0;
             if (paddingObj != null  && (!encrypt || reqBlockUpdates)) {
                 if (padBufferLen != 0) {
-                    // NSS throws up when called with data not in multiple
-                    // of blocks. Try to work around this by holding the
-                    // extra data in padBuffer.
                     if (padBufferLen != padBuffer.length) {
                         int bufCapacity = padBuffer.length - padBufferLen;
                         if (inLen > bufCapacity) {
@@ -743,15 +734,11 @@ final class P11Cipher extends CipherSpi {
                 }
                 newPadBufferLen = inLen & (blockSize - 1);
                 if (!encrypt && newPadBufferLen == 0) {
-                    // While decrypting with implUpdate, a block-sized buffer with
-                    // encrypted data is always held instead of being unencrypted
-                    // and returned to the caller. This is because the block may
-                    // contain padding bytes, in case it's the last one (unknown
-                    // at this point). In implDoFinal, where we know it's the
-                    // last one, this buffer is unencrypted and unpadded before
-                    // returned to the caller. None of this is necessary for
-                    // encryption: encrypted data can be safely returned upon a
-                    // implUpdate call.
+                    // While decrypting with implUpdate, the current encrypted block
+                    // is always held in a buffer. If it's the last one (unknown
+                    // at this point), it may contain padding bytes and need further
+                    // processing. In implDoFinal (where we know it's the last one)
+                    // the buffer is decrypted, unpadded and returned.
                     newPadBufferLen = padBuffer.length;
                 }
                 inLen -= newPadBufferLen;
@@ -774,7 +761,7 @@ final class P11Cipher extends CipherSpi {
                 }
             }
             // update 'padBuffer' if using our own padding impl.
-            if (paddingObj != null && newPadBufferLen != 0) {
+            if (paddingObj != null && newPadBufferLen > 0) {
                 bufferInputBytes(inBuffer, newPadBufferLen);
             }
             bytesBuffered += (inLen - k);
@@ -816,11 +803,7 @@ final class P11Cipher extends CipherSpi {
                 if (paddingObj != null) {
                     int startOff = 0;
                     if (reqBlockUpdates) {
-                        startOff = bytesBuffered;
-                        assert(startOff >= 0 &&
-                                startOff < padBuffer.length);
-                        assert(requiredOutLen - bytesBuffered +
-                                startOff == padBuffer.length);
+                        startOff = padBufferLen;
                     }
                     int actualPadLen = paddingObj.setPaddingBytes(padBuffer,
                             startOff, requiredOutLen - bytesBuffered);
@@ -906,10 +889,14 @@ final class P11Cipher extends CipherSpi {
 
             if (encrypt) {
                 if (paddingObj != null) {
+                    int startOff = 0;
+                    if (reqBlockUpdates) {
+                        startOff = padBufferLen;
+                    }
                     int actualPadLen = paddingObj.setPaddingBytes(padBuffer,
-                            0, requiredOutLen - bytesBuffered);
+                            startOff, requiredOutLen - bytesBuffered);
                     k = token.p11.C_EncryptUpdate(session.id(),
-                            0, padBuffer, 0, actualPadLen,
+                            0, padBuffer, 0, startOff + actualPadLen,
                             outAddr, outArray, outOfs, outLen);
                 }
                 // Some implementations such as the NSS Software Token do not
