@@ -85,7 +85,7 @@ import jdk.javadoc.internal.doclint.DocLint;
  * Configure the output based on the options. Doclets should sub-class
  * BaseConfiguration, to configure and add their own options. This class contains
  * all user options which are supported by the standard doclet.
- * <p>
+ *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or

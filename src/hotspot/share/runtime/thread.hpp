@@ -173,11 +173,12 @@ class Thread: public ThreadShadow {
   friend class ScanHazardPtrPrintMatchingThreadsClosure;  // for get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
   friend class ThreadsSMRSupport;  // for _nested_threads_hazard_ptr_cnt, _threads_hazard_ptr, _threads_list_ptr access
   friend class ThreadsListHandleTest;  // for _nested_threads_hazard_ptr_cnt, _threads_hazard_ptr, _threads_list_ptr access
+  friend class ValidateHazardPtrsClosure;  // for get_threads_hazard_ptr(), untag_hazard_ptr() access
 
   ThreadsList* volatile _threads_hazard_ptr;
   SafeThreadsListPtr*   _threads_list_ptr;
   ThreadsList*          cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value);
-  ThreadsList*          get_threads_hazard_ptr();
+  ThreadsList*          get_threads_hazard_ptr() const;
   void                  set_threads_hazard_ptr(ThreadsList* new_list);
   static bool           is_hazard_ptr_tagged(ThreadsList* list) {
     return (intptr_t(list) & intptr_t(1)) == intptr_t(1);
@@ -1024,6 +1025,11 @@ class JavaThread: public Thread {
   // Support for high precision, thread sensitive counters in JVMCI compiled code.
   jlong*    _jvmci_counters;
 
+  // Fast thread locals for use by JVMCI
+  intptr_t*  _jvmci_reserved0;
+  intptr_t*  _jvmci_reserved1;
+  oop        _jvmci_reserved_oop0;
+
  public:
   static jlong* _jvmci_old_thread_counters;
   static void collect_counters(jlong* array, int length);
@@ -1837,9 +1843,6 @@ class Threads: AllStatic {
   static void oops_do(OopClosure* f, CodeBlobClosure* cf);
   // This version may be called by sequential or parallel code.
   static void possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf);
-
-  // Sweeper
-  static void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses support
   static void metadata_do(MetadataClosure* f);

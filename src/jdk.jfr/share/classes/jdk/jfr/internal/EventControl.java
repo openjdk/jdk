@@ -56,7 +56,7 @@ import jdk.jfr.internal.settings.ThrottleSetting;
 // holds SettingControl instances that need to be released
 // when a class is unloaded (to avoid memory leaks).
 public final class EventControl {
-    final static class NamedControl {
+    static final class NamedControl {
         public final String name;
         public final Control control;
         NamedControl(String name, Control control) {

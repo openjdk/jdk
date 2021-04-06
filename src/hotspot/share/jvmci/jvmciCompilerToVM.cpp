@@ -458,7 +458,7 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
 
 C2V_VMENTRY_NULL(jobject, findUniqueConcreteMethod, (JNIEnv* env, jobject, jobject jvmci_type, jobject jvmci_method))
   methodHandle method (THREAD, JVMCIENV->asMethod(jvmci_method));
-  Klass* holder = JVMCIENV->asKlass(jvmci_type);
+  InstanceKlass* holder = InstanceKlass::cast(JVMCIENV->asKlass(jvmci_type));
   if (holder->is_interface()) {
     JVMCI_THROW_MSG_NULL(InternalError, err_msg("Interface %s should be handled in Java code", holder->external_name()));
   }
