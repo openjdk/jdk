@@ -33,6 +33,7 @@
 
 class DictionaryEntry;
 class ProtectionDomainEntry;
+template <typename T> class GrowableArray;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // The data structure for the class loader data dictionaries.
@@ -67,7 +68,7 @@ public:
   void all_entries_do(KlassClosure* closure);
   void classes_do(MetaspaceClosure* it);
 
-  void clean_cached_protection_domains();
+  void clean_cached_protection_domains(GrowableArray<ProtectionDomainEntry*>* delete_list);
 
   // Protection domains
   InstanceKlass* find(unsigned int hash, Symbol* name, Handle protection_domain);
@@ -111,18 +112,11 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   // Contains the set of approved protection domains that can access
   // this dictionary entry.
   //
-  // This protection domain set is a set of tuples:
-  //
-  // (InstanceKlass C, initiating class loader ICL, Protection Domain PD)
-  //
   // [Note that C.protection_domain(), which is stored in the java.lang.Class
   // mirror of C, is NOT the same as PD]
   //
-  // If such an entry (C, ICL, PD) exists in the table, it means that
-  // it is okay for a class Foo to reference C, where
-  //
-  //    Foo.protection_domain() == PD, and
-  //    Foo's defining class loader == ICL
+  // If an entry for PD exists in the list, it means that
+  // it is okay for a caller class to reference the class in this dictionary entry.
   //
   // The usage of the PD set can be seen in SystemDictionary::validate_protection_domain()
   // It is essentially a cache to avoid repeated Java up-calls to
@@ -147,8 +141,8 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     return (DictionaryEntry**)HashtableEntry<InstanceKlass*, mtClass>::next_addr();
   }
 
-  ProtectionDomainEntry* pd_set() const            { return _pd_set; }
-  void set_pd_set(ProtectionDomainEntry* new_head) {  _pd_set = new_head; }
+  ProtectionDomainEntry* pd_set() const            { return Atomic::load(&_pd_set); }
+  void set_pd_set(ProtectionDomainEntry* entry)    { Atomic::store(&_pd_set, entry); }
 
   // Tells whether the initiating class' protection domain can access the klass in this entry
   inline bool is_valid_protection_domain(Handle protection_domain);
