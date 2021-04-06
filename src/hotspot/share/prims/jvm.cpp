@@ -600,7 +600,7 @@ JVM_ENTRY(void, JVM_MonitorWait(JNIEnv* env, jobject handle, jlong ms))
   Handle obj(THREAD, JNIHandles::resolve_non_null(handle));
   JavaThreadInObjectWaitState jtiows(thread, ms != 0);
   if (JvmtiExport::should_post_monitor_wait()) {
-    JvmtiExport::post_monitor_wait(thread, (oop)obj(), ms);
+    JvmtiExport::post_monitor_wait(thread, obj(), ms);
 
     // The current thread already owns the monitor and it has not yet
     // been added to the wait queue so the current thread cannot be
@@ -860,10 +860,10 @@ static jclass jvm_define_class_common(const char *name,
   ClassFileStream st((u1*)buf, len, source, ClassFileStream::verify);
   Handle class_loader (THREAD, JNIHandles::resolve(loader));
   Handle protection_domain (THREAD, JNIHandles::resolve(pd));
-  Klass* k = SystemDictionary::resolve_from_stream(class_name,
+  ClassLoadInfo cl_info(protection_domain);
+  Klass* k = SystemDictionary::resolve_from_stream(&st, class_name,
                                                    class_loader,
-                                                   protection_domain,
-                                                   &st,
+                                                   cl_info,
                                                    CHECK_NULL);
 
   if (log_is_enabled(Debug, class, resolve)) {
@@ -947,10 +947,10 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
 
   InstanceKlass* ik = NULL;
   if (!is_hidden) {
-    ik = SystemDictionary::resolve_from_stream(class_name,
+    ClassLoadInfo cl_info(protection_domain);
+    ik = SystemDictionary::resolve_from_stream(&st, class_name,
                                                class_loader,
-                                               protection_domain,
-                                               &st,
+                                               cl_info,
                                                CHECK_NULL);
 
     if (log_is_enabled(Debug, class, resolve)) {
@@ -966,11 +966,10 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
                           is_hidden,
                           is_strong,
                           vm_annotations);
-    ik = SystemDictionary::parse_stream(class_name,
-                                        class_loader,
-                                        &st,
-                                        cl_info,
-                                        CHECK_NULL);
+    ik = SystemDictionary::resolve_from_stream(&st, class_name,
+                                               class_loader,
+                                               cl_info,
+                                               CHECK_NULL);
 
     // The hidden class loader data has been artificially been kept alive to
     // this point. The mirror and any instances of this class have to keep
@@ -1350,7 +1349,7 @@ JVM_ENTRY(jint, JVM_GetClassModifiers(JNIEnv *env, jclass cls))
   }
 
   Klass* k = java_lang_Class::as_Klass(mirror);
-  debug_only(int computed_modifiers = k->compute_modifier_flags(CHECK_0));
+  debug_only(int computed_modifiers = k->compute_modifier_flags());
   assert(k->modifier_flags() == computed_modifiers, "modifiers cache is OK");
   return k->modifier_flags();
 JVM_END

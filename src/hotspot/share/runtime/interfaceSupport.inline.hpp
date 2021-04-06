@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -290,6 +292,8 @@ class VMNativeEntryWrapper {
 
 #define VM_LEAF_BASE(result_type, header)                            \
   debug_only(NoHandleMark __hm;)                                     \
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,                    \
+                                         Thread::current()));        \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
@@ -312,6 +316,7 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
     ThreadInVMfromJava __tiv(current);                               \
     VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
@@ -338,6 +343,7 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
     ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
     VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
@@ -346,6 +352,7 @@ class VMNativeEntryWrapper {
 // to get back into Java from the VM
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
     HandleMarkCleaner __hm(current);
 
 #define JRT_BLOCK                                                    \
@@ -375,6 +382,7 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -399,6 +407,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -408,6 +417,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread = JavaThread::current();                      \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)

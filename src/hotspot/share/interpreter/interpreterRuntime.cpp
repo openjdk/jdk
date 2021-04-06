@@ -970,6 +970,9 @@ JRT_END
 
 
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* current, address branch_bcp) {
+  // Enable WXWrite: the function is called directly by interpreter.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+
   // frequency_counter_overflow_inner can throw async exception.
   nmethod* nm = frequency_counter_overflow_inner(current, branch_bcp);
   assert(branch_bcp != NULL || nm == NULL, "always returns null for non OSR requests");
@@ -1112,13 +1115,7 @@ JRT_ENTRY(void, InterpreterRuntime::update_mdp_for_ret(JavaThread* current, int 
 JRT_END
 
 JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread* current, Method* m))
-  MethodCounters* mcs = Method::build_method_counters(m, current);
-  if (HAS_PENDING_EXCEPTION) {
-    // Only metaspace OOM is expected. No Java code executed.
-    assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
-    CLEAR_PENDING_EXCEPTION;
-  }
-  return mcs;
+  return Method::build_method_counters(current, m);
 JRT_END
 
 
@@ -1498,7 +1495,7 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
   Symbol* mname = cpool->name_ref_at(cp_index);
 
   if (MethodHandles::has_member_arg(cname, mname)) {
-    oop member_name_oop = (oop) member_name;
+    oop member_name_oop = cast_to_oop(member_name);
     if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
       // FIXME: remove after j.l.i.InvokerBytecodeGenerator code shape is updated.
       member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);

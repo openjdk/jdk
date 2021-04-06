@@ -270,11 +270,12 @@ public class AnnotationsOnModules extends ModuleTestBase {
         Path m1 = base.resolve("src1/A");
 
         tb.writeJavaFiles(m1,
-                "module A { " +
-                        "exports p1 to B; opens p1 to B;" +
-                        "exports p2 to C; opens p2 to C;" +
-                        "exports p3 to B,C; opens p3 to B,C;" +
-                        "}",
+                """
+                    module A {
+                        exports p1 to B; opens p1 to B;
+                        exports p2 to C; opens p2 to C;
+                        exports p3 to B,C; opens p3 to B,C;
+                    }""",
                 "package p1; public class A { }",
                 "package p2; public class A { }",
                 "package p3; public class A { }");
@@ -547,10 +548,11 @@ public class AnnotationsOnModules extends ModuleTestBase {
         String DEPRECATED_JAVADOC = "/** @deprecated */";
         for (String suppress : new String[] {"", DEPRECATED_JAVADOC, "@Deprecated ", "@SuppressWarnings(\"deprecation\") "}) {
             tb.writeJavaFiles(m3,
-                              suppress + "module m3x {\n" +
-                              "    requires m1x;\n" +
-                              "    exports api to m1x, m2x;\n" +
-                              "}",
+                              suppress + """
+                                  module m3x {
+                                      requires m1x;
+                                      exports api to m1x, m2x;
+                                  }""",
                               "package api; public class Api { }");
             System.err.println("compile m3x");
             actual = new JavacTask(tb)

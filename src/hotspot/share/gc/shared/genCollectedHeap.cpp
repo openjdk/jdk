@@ -1298,5 +1298,5 @@ oop GenCollectedHeap::handle_failed_promotion(Generation* old_gen,
   if (result != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
   }
-  return oop(result);
+  return cast_to_oop(result);
 }

@@ -487,7 +487,7 @@ class ArgumentPusher : public SignatureIterator {
   Handle next_object() {
     guarantee(!_pushed, "one argument");
     _pushed = true;
-    return Handle(Thread::current(), (oop) (address) _argument);
+    return Handle(Thread::current(), cast_to_oop(_argument));
   }
 
  public:
@@ -536,7 +536,7 @@ JRT_ENTRY(jlong, JVMCIRuntime::invoke_static_method_one_arg(JavaThread* thread, 
   if (return_type == T_VOID) {
     return 0;
   } else if (return_type == T_OBJECT || return_type == T_ARRAY) {
-    thread->set_vm_result((oop) result.get_jobject());
+    thread->set_vm_result(result.get_oop());
     return 0;
   } else {
     jvalue *value = (jvalue *) result.get_value_addr();
@@ -656,7 +656,7 @@ static void decipher(jlong v, bool ignoreZero) {
       return;
     }
     if (Universe::heap()->is_in(p)) {
-      oop obj = oop(p);
+      oop obj = cast_to_oop(p);
       obj->print_value_on(tty);
       return;
     }
@@ -1255,8 +1255,8 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
     return get_klass_by_name_impl(accessing_klass, cpool, strippedsym, require_local);
   }
 
-  Handle loader(THREAD, (oop)NULL);
-  Handle domain(THREAD, (oop)NULL);
+  Handle loader;
+  Handle domain;
   if (accessing_klass != NULL) {
     loader = Handle(THREAD, accessing_klass->class_loader());
     domain = Handle(THREAD, accessing_klass->protection_domain());
@@ -1265,9 +1265,9 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
   Klass* found_klass;
   {
     ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
-    MutexLocker ml(Compile_lock);
+    MutexLocker ml(THREAD, Compile_lock);
     if (!require_local) {
-      found_klass = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader, THREAD);
+      found_klass = SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
     } else {
       found_klass = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
