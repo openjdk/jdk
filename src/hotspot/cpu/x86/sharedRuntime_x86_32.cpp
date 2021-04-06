@@ -239,10 +239,11 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
     }
   }
-  __ vzeroupper();
 #else
   assert(!save_vectors, "vectors are generated only by C2");
 #endif
+
+  __ vzeroupper();
 
   // Set an oopmap for the call site.  This oopmap will map all
   // oop-registers and debug-info registers as callee-saved.  This
