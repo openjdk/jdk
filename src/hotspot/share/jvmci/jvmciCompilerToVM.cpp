@@ -728,7 +728,7 @@ C2V_END
 
 C2V_VMENTRY_0(jint, getVtableIndexForInterfaceMethod, (JNIEnv* env, jobject, jobject jvmci_type, jobject jvmci_method))
   Klass* klass = JVMCIENV->asKlass(jvmci_type);
-  Method* method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
   if (klass->is_interface()) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Interface %s should be handled in Java code", klass->external_name()));
   }
@@ -741,7 +741,7 @@ C2V_VMENTRY_0(jint, getVtableIndexForInterfaceMethod, (JNIEnv* env, jobject, job
   if (!InstanceKlass::cast(klass)->is_linked()) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Class %s must be linked", klass->external_name()));
   }
-  return LinkResolver::vtable_index_of_interface_method(klass, method);
+  return LinkResolver::vtable_index_of_interface_method(klass, method());
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, resolveMethod, (JNIEnv* env, jobject, jobject receiver_jvmci_type, jobject jvmci_method, jobject caller_jvmci_type))
