@@ -85,8 +85,6 @@ public class SALauncher {
         System.out.println("    Examples: jhsdb " + mode + " --pid 1234");
         System.out.println("          or  jhsdb " + mode + " --core ./core.1234 --exe ./myexe");
         if (canConnectToRemote) {
-            System.out.println("          or  jhsdb " + mode + " --connect debugserver");
-            System.out.println("          or  jhsdb " + mode + " --connect id@debugserver");
             System.out.println("          or  jhsdb " + mode + " --connect id@debugserver:1234");
         }
         return false;
