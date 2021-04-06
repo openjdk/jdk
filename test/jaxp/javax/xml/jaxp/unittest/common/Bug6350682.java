@@ -44,6 +44,7 @@ public class Bug6350682 {
 
     @Test
     public void testSAXParserFactory() {
+        // This test run in othervm so change in environment need not to be recovered at the end of test.
         runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(null));
         if (Bug6350682.class.getClassLoader() == null) {
             System.out.println("this class loader is NULL");
@@ -56,6 +57,7 @@ public class Bug6350682 {
 
     @Test
     public void testTransformerFactory() {
+        // This test run in othervm so change in environment need not to be recovered at the end of test.
         runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(null));
         TransformerFactory factory = TransformerFactory.newInstance();
         Assert.assertNotNull(factory, "Failed to get an instance of a TransformerFactory");

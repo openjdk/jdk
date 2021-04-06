@@ -56,15 +56,10 @@ public class Bug6937964Test {
      */
     private static final String TEST_VALUE_FAIL = "*FAIL*";
 
-    private static final String FIELD_UNDEFINED = "FIELD_UNDEFINED";
-    private static final DatatypeConstants.Field[] FIELDS = { DatatypeConstants.YEARS, DatatypeConstants.MONTHS, DatatypeConstants.DAYS, DatatypeConstants.HOURS,
-            DatatypeConstants.MINUTES, DatatypeConstants.SECONDS };
-
     @Test
     public void test() throws DatatypeConfigurationException {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationYearMonth("P20Y15M");
-        int years = d.getYears();
         System.out.println(d.getYears() == 21 ? "pass" : "fail");
     }
 
@@ -182,41 +177,34 @@ public class Bug6937964Test {
             }
 
             // was this expected to fail?
-            if (expectedLex.equals(TEST_VALUE_FAIL)) {
-                Assert.fail("the value \"" + actualLex + "\" is invalid yet it created the Duration \"" + duration.toString() + "\"");
-            }
+            Assert.assertNotEquals(expectedLex, TEST_VALUE_FAIL, "the value \"" + actualLex + "\" is invalid " +
+                    "yet it created the Duration \"" + duration.toString() + "\"" );
 
             // right XMLSchemaType?
             // TODO: enable test, it should pass, it fails with Exception(s)
             // for now due to a bug
             try {
                 QName xmlSchemaType = duration.getXMLSchemaType();
-                if (!xmlSchemaType.equals(DatatypeConstants.DURATION_YEARMONTH)) {
-                    Assert.fail("Duration created with XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \""
-                                + DatatypeConstants.DURATION_YEARMONTH + "\" and has the value \"" + duration.toString() + "\"");
-                }
+                Assert.assertEquals(xmlSchemaType, DatatypeConstants.DURATION_YEARMONTH, "Duration created with " +
+                        "XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \""
+                        + DatatypeConstants.DURATION_YEARMONTH + "\" and has the value \"" + duration.toString() + "\"");
                 } catch (IllegalStateException illegalStateException) {
                     // TODO; this test really should pass
                     System.err.println("Please fix this bug that is being ignored, for now: " + illegalStateException.getMessage());
                 }
 
                 // does it have the right value?
-                if (!expectedLex.equals(duration.toString())) {
-                    Assert.fail("Duration created with \"" + actualLex + "\" was expected to be \""
-                            + expectedLex + "\" and has the value \"" + duration.toString() + "\"");
-                }
-
+                Assert.assertEquals(duration.toString(), expectedLex, "Duration created with \"" + actualLex +
+                        "\" was expected to be \"" + expectedLex + "\" and has the value \"" + duration.toString() + "\"");
                 // Duration created with correct value
             } catch (Exception exception) {
-
                 if (DEBUG) {
                     System.err.println("Exception in creating duration: \"" + exception.toString() + "\"");
                 }
 
                 // was this expected to succed?
-                if (!expectedLex.equals(TEST_VALUE_FAIL)) {
-                    Assert.fail("the value \"" + actualLex + "\" is valid yet it failed with \"" + exception.toString() + "\"");
-                }
+                Assert.assertEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is valid yet " +
+                        "it failed with \"" + exception.toString() + "\"");
                 // expected failure
             }
     }
@@ -297,7 +285,7 @@ public class Bug6937964Test {
                         + seconds + "\'");
             }
         }
-        if (result.length() > 0) {
+        if(result.length() > 0) {
             Assert.fail(result.substring(2));
         }
         System.out.println("OK");

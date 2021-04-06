@@ -45,7 +45,7 @@ public class Bug6723276Test {
     private static final String ERR_MSG = "org.apache.xerces.jaxp.SAXParserFactoryImpl not found";
 
     @Test
-    public void testSAXParserFactoryCreationWithDefaultContextClassLoader() {
+    public void testWithDefaultContextClassLoader() {
         try {
             SAXParserFactory.newInstance();
         } catch (Exception e) {
@@ -56,7 +56,7 @@ public class Bug6723276Test {
     }
 
     @Test
-    public void testSAXParserFactoryCreationWithGivenURLContextClassLoader() {
+    public void testWithGivenURLContextClassLoader() {
         try {
             System.out.println(Thread.currentThread().getContextClassLoader());
             System.out.println(ClassLoader.getSystemClassLoader().getParent());
