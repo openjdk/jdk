@@ -188,7 +188,7 @@ public class SRTest {
                 byte[] buf = new byte[256];
                 DatagramPacket dp = new DatagramPacket(buf, buf.length);
                 ds.receive(dp);
-                String received = new String(dp.getData(), 0, DATA_STRING.length(), US_ASCII);
+                String received = new String(dp.getData(), dp.getOffset(), dp.getLength(), US_ASCII);
                 log.println("ClassicReader received: " + received);
             } catch (Exception ex) {
                 log.println("ClassicReader [" + ds.getLocalAddress() +"]");
