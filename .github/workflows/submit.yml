@@ -1436,14 +1436,14 @@ jobs:
       - name: Install dependencies
         run: brew install make
 
+      - name: Select Xcode version
+        run: sudo xcode-select --switch /Applications/Xcode_12.4.app/Contents/Developer
+
       - name: Configure
         run: >
           bash configure
           --with-conf-name=macos-aarch64
           --openjdk-target=aarch64-apple-darwin
-          --with-extra-cflags="-arch arm64"
-          --with-extra-cxxflags="-arch arm64"
-          --with-extra-ldflags="-arch arm64"
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           --with-version-build=0
