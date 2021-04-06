@@ -3823,6 +3823,7 @@ public final class Formatter implements Closeable, Flushable {
 
                 BigDecimal tenToTheNegFour = BigDecimal.valueOf(1, 4);
                 BigDecimal tenToThePrec = BigDecimal.valueOf(1, -prec);
+                value = value.round(new MathContext(prec));
                 if ((value.equals(BigDecimal.ZERO))
                     || ((value.compareTo(tenToTheNegFour) != -1)
                         && (value.compareTo(tenToThePrec) == -1))) {
