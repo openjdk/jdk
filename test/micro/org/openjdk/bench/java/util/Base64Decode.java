@@ -38,8 +38,8 @@ public class Base64Decode {
 
     private Base64.Encoder encoder, mimeEncoder;
     private Base64.Decoder decoder, mimeDecoder;
-    private ArrayList<byte[]> encoded, mimeEncoded;
-    private byte[] decoded, mimeDecoded;
+    private ArrayList<byte[]> encoded, mimeEncoded, errorEncoded;
+    private byte[] decoded, mimeDecoded, errorDecoded;
 
     private static final int TESTSIZE = 1000;
 
@@ -51,6 +51,11 @@ public class Base64Decode {
     private int lineSize;
 
     private byte[] lineSeparator = {'\r', '\n'};
+
+    /* Other value can be tested by passing parameters to the JMH
+       tests: -p errorIndex=3,64,144,208,272,1000,20000. */
+    @Param({"144"})
+    private int errorIndex;
 
     @Setup
     public void setup() {
@@ -66,6 +71,9 @@ public class Base64Decode {
         mimeDecoder = Base64.getMimeDecoder();
         mimeEncoded = new ArrayList<byte[]> ();
 
+        errorDecoded = new byte[errorIndex + 100];
+        errorEncoded = new ArrayList<byte[]> ();
+
         for (int i = 0; i < TESTSIZE; i++) {
             int srcLen = 1 + r.nextInt(maxNumBytes);
             byte[] src = new byte[srcLen];
@@ -80,6 +88,14 @@ public class Base64Decode {
             r.nextBytes(mimeSrc);
             mimeEncoder.encode(mimeSrc, mimeDst);
             mimeEncoded.add(mimeDst);
+
+            int errorSrcLen = errorIndex + r.nextInt(100);
+            byte[] errorSrc = new byte[errorSrcLen];
+            byte[] errorDst = new byte[(errorSrcLen + 2) / 3 * 4];
+            r.nextBytes(errorSrc);
+            encoder.encode(errorSrc, errorDst);
+            errorEncoded.add(errorDst);
+            errorDst[errorIndex] = (byte) '?';
         }
     }
 
@@ -98,6 +114,19 @@ public class Base64Decode {
         for (byte[] s : mimeEncoded) {
             mimeDecoder.decode(s, mimeDecoded);
             bh.consume(mimeDecoded);
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testBase64WithErrorInputsDecode (Blackhole bh) {
+        for (byte[] s : errorEncoded) {
+            try {
+                 decoder.decode(s, errorDecoded);
+                 bh.consume(errorDecoded);
+            } catch (IllegalArgumentException e) {
+                 bh.consume(e);
+            }
         }
     }
 }

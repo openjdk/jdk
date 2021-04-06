@@ -5798,16 +5798,17 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::LT, Process4B);
 
     // The 1st character of the input can be illegal if the data is MIME encoded.
-    // We cannot benefits from SIMD for this case. The max line size of MIME
+    // We cannot benefit from SIMD for this case. The max line size of MIME
     // encoding is 76, with the PreProcess80B blob, we actually use no-simd
     // instructions for all MIME encoded data.
     __ movw(rscratch1, 79);
 
     __ BIND(Process4B);
-    __ ldrb(r10, __ post(src, 1));
-    __ ldrb(r11, __ post(src, 1));
-    __ ldrb(r12, __ post(src, 1));
-    __ ldrb(r13, __ post(src, 1));
+    __ ldrw(r14, __ post(src, 4));
+    __ ubfxw(r10, r14, 0,  8);
+    __ ubfxw(r11, r14, 8,  8);
+    __ ubfxw(r12, r14, 16, 8);
+    __ ubfxw(r13, r14, 24, 8);
     // get the de-code
     __ ldrb(r10, Address(nosimd_codec, r10, Address::uxtw(0)));
     __ ldrb(r11, Address(nosimd_codec, r11, Address::uxtw(0)));
