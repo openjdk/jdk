@@ -222,17 +222,6 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
-int HelpDCmd::num_arguments() {
-  ResourceMark rm;
-  HelpDCmd* dcmd = new HelpDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 void VersionDCmd::execute(DCmdSource source, TRAPS) {
   output()->print_cr("%s version %s", VM_Version::vm_name(),
           VM_Version::vm_release());
@@ -261,17 +250,6 @@ void PrintVMFlagsDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
-int PrintVMFlagsDCmd::num_arguments() {
-    ResourceMark rm;
-    PrintVMFlagsDCmd* dcmd = new PrintVMFlagsDCmd(NULL, false);
-    if (dcmd != NULL) {
-      DCmdMark mark(dcmd);
-      return dcmd->_dcmdparser.num_arguments();
-    } else {
-      return 0;
-    }
-}
-
 SetVMFlagDCmd::SetVMFlagDCmd(outputStream* output, bool heap) :
                                    DCmdWithParser(output, heap),
   _flag("flag name", "The name of the flag we want to set",
@@ -292,17 +270,6 @@ void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
 
   if (ret != JVMFlag::SUCCESS) {
     output()->print_cr("%s", err_msg.buffer());
-  }
-}
-
-int SetVMFlagDCmd::num_arguments() {
-  ResourceMark rm;
-  SetVMFlagDCmd* dcmd = new SetVMFlagDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
   }
 }
 
@@ -363,16 +330,6 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
-int JVMTIAgentLoadDCmd::num_arguments() {
-  ResourceMark rm;
-  JVMTIAgentLoadDCmd* dcmd = new JVMTIAgentLoadDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 
@@ -433,17 +390,6 @@ void VMUptimeDCmd::execute(DCmdSource source, TRAPS) {
   output()->time_stamp().update_to(tty->time_stamp().ticks());
   output()->stamp();
   output()->print_cr(" s");
-}
-
-int VMUptimeDCmd::num_arguments() {
-  ResourceMark rm;
-  VMUptimeDCmd* dcmd = new VMUptimeDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }
 
 void VMInfoDCmd::execute(DCmdSource source, TRAPS) {
@@ -547,17 +493,6 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   dumper.dump(_filename.value(), output(), (int) level);
 }
 
-int HeapDumpDCmd::num_arguments() {
-  ResourceMark rm;
-  HeapDumpDCmd* dcmd = new HeapDumpDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _all("-all", "Inspect all objects, including unreachable objects",
@@ -569,17 +504,6 @@ void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
   VM_GC_HeapInspection heapop(output(),
                               !_all.value() /* request full gc if false */);
   VMThread::execute(&heapop);
-}
-
-int ClassHistogramDCmd::num_arguments() {
-  ResourceMark rm;
-  ClassHistogramDCmd* dcmd = new ClassHistogramDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }
 
 #endif // INCLUDE_SERVICES
@@ -604,17 +528,6 @@ void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
   // Deadlock detection
   VM_FindDeadlocks op3(output());
   VMThread::execute(&op3);
-}
-
-int ThreadDumpDCmd::num_arguments() {
-  ResourceMark rm;
-  ThreadDumpDCmd* dcmd = new ThreadDumpDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }
 
 // Enhanced JMX Agent support
@@ -731,19 +644,6 @@ JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated
     _dcmdparser.add_dcmd_option(&_jdp_pause);
     _dcmdparser.add_dcmd_option(&_jdp_name);
 }
-
-
-int JMXStartRemoteDCmd::num_arguments() {
-  ResourceMark rm;
-  JMXStartRemoteDCmd* dcmd = new JMXStartRemoteDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 
 void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
     ResourceMark rm(THREAD);
@@ -932,17 +832,6 @@ void CodeHeapAnalyticsDCmd::execute(DCmdSource source, TRAPS) {
 
   CompileBroker::print_heapinfo(output(), _function.value(), granularity);
 }
-
-int CodeHeapAnalyticsDCmd::num_arguments() {
-  ResourceMark rm;
-  CodeHeapAnalyticsDCmd* dcmd = new CodeHeapAnalyticsDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
 //---<  END  >--- CodeHeap State Analytics.
 
 EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
@@ -973,17 +862,6 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
-int EventLogDCmd::num_arguments() {
-  ResourceMark rm;
-  EventLogDCmd* dcmd = new EventLogDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesStack::print(output());
 }
@@ -996,17 +874,6 @@ CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool 
 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesParser::parse_from_file(_filename.value(), output());
-}
-
-int CompilerDirectivesAddDCmd::num_arguments() {
-  ResourceMark rm;
-  CompilerDirectivesAddDCmd* dcmd = new CompilerDirectivesAddDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
@@ -1035,18 +902,6 @@ void ClassHierarchyDCmd::execute(DCmdSource source, TRAPS) {
                                                _print_subclasses.value(), _classname.value());
   VMThread::execute(&printClassHierarchyOp);
 }
-
-int ClassHierarchyDCmd::num_arguments() {
-  ResourceMark rm;
-  ClassHierarchyDCmd* dcmd = new ClassHierarchyDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 #endif
 
 class VM_DumpTouchedMethods : public VM_Operation {
@@ -1064,10 +919,6 @@ public:
   }
 };
 
-TouchedMethodsDCmd::TouchedMethodsDCmd(outputStream* output, bool heap) :
-                                       DCmdWithParser(output, heap)
-{}
-
 void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
   if (!LogTouchedMethods) {
     output()->print_cr("VM.print_touched_methods command requires -XX:+LogTouchedMethods");
@@ -1075,10 +926,6 @@ void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
   }
   VM_DumpTouchedMethods dumper(output());
   VMThread::execute(&dumper);
-}
-
-int TouchedMethodsDCmd::num_arguments() {
-  return 0;
 }
 
 #if INCLUDE_CDS
@@ -1132,26 +979,12 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
                          vmSymbols::dumpSharedArchive_signature(),
                          &args, CHECK);
 }
-
-int DumpSharedArchiveDCmd::num_arguments() {
-  ResourceMark rm;
-  DumpSharedArchiveDCmd* dcmd = new DumpSharedArchiveDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI
 extern "C" typedef char const* (JNICALL *debugInit_startDebuggingViaCommandPtr)(JNIEnv* env, jthread thread, char const** transport_name,
                                                                                 char const** address, jboolean* first_start);
 static debugInit_startDebuggingViaCommandPtr dvc_start_ptr = NULL;
-
-DebugOnCmdStartDCmd::DebugOnCmdStartDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap) {
-}
 
 void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
   char const* transport = NULL;
