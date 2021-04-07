@@ -75,7 +75,7 @@ public class DebugdUtils {
             jhsdbLauncher.addToolArg(Integer.toString(registryPort));
         }
         if (disableRegistry) {
-            jhsdbLauncher.addToolArg("--disableregistry");
+            jhsdbLauncher.addToolArg("--disable-registry");
         }
         debugdProcess = (new ProcessBuilder(jhsdbLauncher.getCommand())).start();
 

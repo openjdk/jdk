@@ -99,7 +99,7 @@ public class SALauncher {
         System.out.println("    --registryport <port>   Sets the RMI registry port." +
                 " This option overrides the system property 'sun.jvm.hotspot.rmi.port'. If not specified," +
                 " the system property is used. If the system property is not set, the default port 1099 is used.");
-        System.out.println("    --disableregistry       Do not start RMI registry (use already started RMI registry)");
+        System.out.println("    --disable-registry      Do not start RMI registry (use already started RMI registry)");
         System.out.println("    --hostname <hostname>   Sets the hostname the RMI connector is bound. The value could" +
                 " be a hostname or an IPv4/IPv6 address. This option overrides the system property" +
                 " 'java.rmi.server.hostname'. If not specified, the system property is used. If the system" +
@@ -375,7 +375,7 @@ public class SALauncher {
                 "serverid=", "serverid",
                 "rmiport=", "rmiport",
                 "registryport=", "registryport",
-                "disableregistry", "disableregistry",
+                "disable-registry", "disable-registry",
                 "hostname=", "hostname");
 
         Map<String, String> argMap = parseOptions(args, longOptsMap);
@@ -403,7 +403,7 @@ public class SALauncher {
         }
 
         // Disable RMI registry if specified
-        if (argMap.containsKey("disableregistry")) {
+        if (argMap.containsKey("disable-registry")) {
             System.setProperty("sun.jvm.hotspot.rmi.startRegistry", "false");
         }
 
