@@ -33,7 +33,7 @@
 /*
  * @test
  * @bug 8264649
- * @summary OSR compiled metthod crash when UseTLAB is off
+ * @summary OSR compiled method crash when UseTLAB is off
  * @requires vm.debug
  * @modules java.management/sun.management
  * @run main/othervm -XX:-UseTLAB -XX:+UsePerfData -Xmx128m ThreadCpuTimesDeadlock
