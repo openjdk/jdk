@@ -3177,18 +3177,18 @@ Method* InstanceKlass::method_at_itable(InstanceKlass* holder, int index, TRAPS)
   }
 }
 
-Method* InstanceKlass::method_at_itable_or_null(InstanceKlass* holder, int index, bool& itable_entry_found) {
+Method* InstanceKlass::method_at_itable_or_null(InstanceKlass* holder, int index, bool& implements_interface) {
   klassItable itable(this);
   for (int i = 0; i < itable.size_offset_table(); i++) {
     itableOffsetEntry* offset_entry = itable.offset_entry(i);
     if (offset_entry->interface_klass() == holder) {
-      itable_entry_found = true;
+      implements_interface = true;
       itableMethodEntry* ime = offset_entry->first_method_entry(this);
       Method* m = ime[index].method();
       return m;
     }
   }
-  itable_entry_found = false;
+  implements_interface = false;
   return NULL; // offset entry not found
 }
 
