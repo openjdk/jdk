@@ -3967,6 +3967,12 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
+  if (TraceDependencies && VerifyDependencies) {
+    if (!FLAG_IS_DEFAULT(TraceDependencies)) {
+      warning("TraceDependencies results may be inflated by VerifyDependencies");
+    }
+  }
+
   apply_debugger_ergo();
 
   return JNI_OK;

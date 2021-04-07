@@ -41,6 +41,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
@@ -953,71 +954,6 @@ bool DependencySignature::equals(DependencySignature const& s1, DependencySignat
 
 /// Checking dependencies
 
-#ifndef PRODUCT
-// TODO: migrate to PerfData?
-static int deps_find_witness_calls = 0;
-static int deps_find_witness_steps = 0;
-static int deps_find_witness_singles = 0;
-static int deps_find_witness_print = 0; // set to -1 to force a final print
-
-static void count_deps_find_witness_calls() {
-  if (deps_find_witness_print != 0) {
-    deps_find_witness_calls++;
-  }
-}
-
-static void count_deps_find_witness_singles() {
-  if (deps_find_witness_print != 0) {
-    deps_find_witness_singles++;
-  }
-}
-
-static void count_deps_find_witness_steps() {
-  if (deps_find_witness_print != 0) {
-    deps_find_witness_steps++;
-  }
-}
-
-static void print_find_witness_calls_info(bool verbose) {
-  if (deps_find_witness_print != 0) {
-    if (xtty != NULL) {
-      ttyLocker ttyl;
-      xtty->elem("deps_find_witness calls='%d' steps='%d' singles='%d'",
-                 deps_find_witness_calls,
-                 deps_find_witness_steps,
-                 deps_find_witness_singles);
-    }
-    if (verbose) {
-      ttyLocker ttyl;
-      tty->print_cr("Dependency check (find_witness) "
-                    "calls=%d, steps=%d (avg=%.1f), singles=%d",
-                    deps_find_witness_calls,
-                    deps_find_witness_steps,
-                    (double)deps_find_witness_steps / deps_find_witness_calls,
-                    deps_find_witness_singles);
-    }
-  }
-}
-
-static void count_find_witness_calls() {
-  if (TraceDependencies || LogCompilation) {
-    int pcount = deps_find_witness_print + 1;
-    bool initial_call     = (pcount == 1);
-    bool occasional_print = ((pcount & ((1<<10) - 1)) == 0);
-    if (pcount < 0)  pcount = 1; // crude overflow protection
-    deps_find_witness_print = pcount;
-    if (TraceDependencies && VerifyDependencies && initial_call) {
-      warning("TraceDependencies results may be inflated by VerifyDependencies");
-    }
-    if (occasional_print) {
-      // Every now and then dump a little info about dependency searching.
-      bool verbose = TraceDependencies && WizardMode;
-      print_find_witness_calls_info(verbose);
-    }
-  }
-}
-#endif // !PRODUCT
-
 // This hierarchy walker inspects subtypes of a given type,
 // trying to find a "bad" class which breaks a dependency.
 // Such a class is called a "witness" to the broken dependency.
@@ -1221,7 +1157,6 @@ class ClassHierarchyWalker {
  public:
   Klass* find_witness_subtype(InstanceKlass* context_type, KlassDepChange* changes = NULL) {
     assert(doing_subtype_search(), "must set up a subtype search");
-    NOT_PRODUCT( count_find_witness_calls(); )
     // When looking for unexpected concrete types,
     // do not look beneath expected ones.
     const bool participants_hide_witnesses = true;
@@ -1235,7 +1170,6 @@ class ClassHierarchyWalker {
   }
   Klass* find_witness_definer(InstanceKlass* context_type, KlassDepChange* changes = NULL) {
     assert(!doing_subtype_search(), "must set up a method definer search");
-    NOT_PRODUCT( count_find_witness_calls(); )
     // When looking for unexpected concrete methods,
     // look beneath expected ones, to see if there are overrides.
     const bool participants_hide_witnesses = true;
@@ -1246,7 +1180,33 @@ class ClassHierarchyWalker {
       return find_witness_anywhere(context_type, !participants_hide_witnesses);
     }
   }
+
+ private:
+  static PerfCounter* _perf_find_witness_anywhere_calls_count;
+  static PerfCounter* _perf_find_witness_anywhere_steps_count;
+  static PerfCounter* _perf_find_witness_in_calls_count;
+
+ public:
+  static void init();
+  static void print_statistics();
 };
+
+PerfCounter* ClassHierarchyWalker::_perf_find_witness_anywhere_calls_count   = NULL;
+PerfCounter* ClassHierarchyWalker::_perf_find_witness_anywhere_steps_count   = NULL;
+PerfCounter* ClassHierarchyWalker::_perf_find_witness_in_calls_count = NULL;
+
+void ClassHierarchyWalker::init() {
+  if (UsePerfData) {
+    EXCEPTION_MARK;
+    _perf_find_witness_anywhere_calls_count =
+        PerfDataManager::create_counter(SUN_CI, "findWitnessAnywhere", PerfData::U_Events, CHECK);
+    _perf_find_witness_anywhere_steps_count =
+        PerfDataManager::create_counter(SUN_CI, "findWitnessAnywhereSteps", PerfData::U_Events, CHECK);
+    _perf_find_witness_in_calls_count =
+        PerfDataManager::create_counter(SUN_CI, "findWitnessIn", PerfData::U_Events, CHECK);
+  }
+}
+
 
 #ifdef ASSERT
 // Assert that m is inherited into ctxk, without intervening overrides.
@@ -1312,7 +1272,9 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
   assert(changes.involves_context(context_type), "irrelevant dependency");
   Klass* new_type = changes.new_type();
 
-  NOT_PRODUCT( count_deps_find_witness_singles(); )
+  if (UsePerfData) {
+    _perf_find_witness_in_calls_count->inc();
+  }
 
   // Current thread must be in VM (not native mode, as in CI):
   assert(must_be_in_vm(), "raw oops here");
@@ -1352,7 +1314,9 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
   // Must not move the class hierarchy during this check:
   assert_locked_or_safepoint(Compile_lock);
 
-  NOT_PRODUCT( count_deps_find_witness_calls(); )
+  if (UsePerfData) {
+    _perf_find_witness_anywhere_calls_count->inc();
+  }
 
   // Check the root of the sub-hierarchy first.
 
@@ -1382,7 +1346,9 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
   for (ClassHierarchyIterator iter(context_type); !iter.done(); iter.next()) {
     Klass* sub = iter.klass();
 
-    NOT_PRODUCT( count_deps_find_witness_steps(); )
+    if (UsePerfData) {
+      _perf_find_witness_steps_count->inc();
+    }
 
     // Do not report participant types.
     if (is_participant(sub)) {
@@ -1796,15 +1762,39 @@ bool KlassDepChange::involves_context(Klass* k) {
   return is_contained;
 }
 
-#ifndef PRODUCT
 void Dependencies::print_statistics() {
-  print_find_witness_calls_info(true /*verbose*/);
+  ClassHierarchyWalker::print_statistics();
 }
-#endif // !PRODUCT
+
+void ClassHierarchyWalker::print_statistics() {
+  if (UsePerfData) {
+    jlong deps_find_witness_calls   = _perf_find_witness_anywhere_calls_count->get_value();
+    jlong deps_find_witness_steps   = _perf_find_witness_anywhere_steps_count->get_value();
+    jlong deps_find_witness_singles = _perf_find_witness_in_calls_count->get_value();
+
+    ttyLocker ttyl;
+    tty->print_cr("Dependency check (find_witness) "
+                  "calls=" JLONG_FORMAT ", steps=" JLONG_FORMAT " (avg=%.1f), singles=" JLONG_FORMAT,
+                  deps_find_witness_calls,
+                  deps_find_witness_steps,
+                  (double)deps_find_witness_steps / deps_find_witness_calls,
+                  deps_find_witness_singles);
+    if (xtty != NULL) {
+      xtty->elem("deps_find_witness calls='" JLONG_FORMAT "' steps='" JLONG_FORMAT "' singles='" JLONG_FORMAT "'",
+                 deps_find_witness_calls,
+                 deps_find_witness_steps,
+                 deps_find_witness_singles);
+    }
+  }
+}
 
 CallSiteDepChange::CallSiteDepChange(Handle call_site, Handle method_handle) :
   _call_site(call_site),
   _method_handle(method_handle) {
   assert(_call_site()->is_a(vmClasses::CallSite_klass()), "must be");
   assert(_method_handle.is_null() || _method_handle()->is_a(vmClasses::MethodHandle_klass()), "must be");
+}
+
+void dependencies_init() {
+  ClassHierarchyWalker::init();
 }

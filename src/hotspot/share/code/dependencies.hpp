@@ -614,7 +614,7 @@ class Dependencies: public ResourceObj {
   };
   friend class Dependencies::DepStream;
 
-  static void print_statistics() PRODUCT_RETURN;
+  static void print_statistics();
 };
 
 
