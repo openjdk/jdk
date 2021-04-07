@@ -297,19 +297,22 @@ public class TestByteBuffer {
         }
     }
 
-    static final long LARGE_SIZE = 4L * 1024L * 1024L * 1024L; // 4GB
+    static final long LARGE_SIZE = 3L * 1024L * 1024L * 1024L; // 3GB
 
-    @Test(dataProvider = "mappedOps")
-    public void testLargeMappedSegment(MappedSegmentOp mappedBufferOp) throws Throwable {
-        File f = new File("test3.out");
+    @Test
+    public void testLargeMappedSegment() throws Throwable {
+        File f = new File("testLargeMappedSegment.out");
         f.createNewFile();
         f.deleteOnExit();
 
         try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0, LARGE_SIZE, FileChannel.MapMode.READ_WRITE)) {
+            MappedMemorySegments.isLoaded(segment);
             MappedMemorySegments.load(segment);
             MappedMemorySegments.isLoaded(segment);
             MappedMemorySegments.force(segment);
+            MappedMemorySegments.isLoaded(segment);
             MappedMemorySegments.unload(segment);
+            MappedMemorySegments.isLoaded(segment);
         }
     }
 
