@@ -475,7 +475,7 @@ size_t OopStorage::allocate(oop** ptrs, size_t size) {
     MutexLocker ml(_allocation_mutex, Mutex::_no_safepoint_check_flag);
     block = block_for_allocation();
     if (block == NULL) return 0; // Block allocation failed.
-    // Take exclusive use of this block for allocation.
+    // Taking all remaining entries, so remove from list.
     _allocation_list.unlink(*block);
     // Transitioning from empty to not empty.
     if (block->is_empty()) {

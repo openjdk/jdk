@@ -114,14 +114,14 @@ public:
   // allocate(oop**, size_t).
   static const size_t bulk_allocate_limit = BitsPerWord;
 
-  // Allocates multiple entries, returning them in the ptrs buffer.  The
-  // number of entries that will be allocated is never more than the minimum
-  // of size and bulk_allocate_limit, but may be less than either.  Possibly
-  // faster than making repeated calls to allocate().  Always make maximal
-  // requests for best efficiency.  Returns the number of entries allocated.
-  // A result of zero indicates failure to allocate any entries.
+  // Allocates multiple entries, returning them in the ptrs buffer. Possibly
+  // faster than making repeated calls to allocate(). Always make maximal
+  // requests for best efficiency. Returns the number of entries allocated,
+  // which may be less than requested. A result of zero indicates failure to
+  // allocate any entries.
   // Locks _allocation_mutex.
   // precondition: size > 0.
+  // postcondition: result <= min(size, bulk_allocate_limit).
   // postcondition: ptrs[i] is an allocated entry for i in [0, result).
   // postcondition: *ptrs[i] == NULL for i in [0, result).
   size_t allocate(oop** ptrs, size_t size);
