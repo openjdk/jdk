@@ -146,12 +146,6 @@ int MachNode::compute_padding(int current_offset) const {
 
 // REQUIRED FUNCTIONALITY
 
-// Indicate if the safepoint node needs the polling page as an input.
-// Since ARM does not have absolute addressing, it does.
-bool SafePointNode::needs_polling_address_input() {
-  return true;
-}
-
 // emit an interrupt that is caught by the debugger (for debugging compiler)
 void emit_break(CodeBuffer &cbuf) {
   C2_MacroAssembler _masm(&cbuf);
