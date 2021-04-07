@@ -385,9 +385,17 @@ public class Resolve {
     }
 
     boolean isAccessible(Env<AttrContext> env, Type t, boolean checkInner) {
-        return (t.hasTag(ARRAY))
-            ? isAccessible(env, types.cvarUpperBound(types.elemtype(t)))
-            : isAccessible(env, t.tsym, checkInner);
+        if (t.hasTag(ARRAY)) {
+            return isAccessible(env, types.cvarUpperBound(types.elemtype(t)));
+        } else if (!t.isUnion()) {
+            return isAccessible(env, t.tsym, checkInner);
+        } else {
+            boolean canAccessible = true;
+            for (Type alternativeType : ((UnionClassType) t).getAlternativeTypes()) {
+                canAccessible = canAccessible && isAccessible(env, alternativeType.tsym, checkInner);
+            }
+            return canAccessible;
+        }
     }
 
     /** Is symbol accessible as a member of given type in given environment?
