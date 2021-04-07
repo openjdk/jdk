@@ -5731,14 +5731,7 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
         MethodType newType = collectArgumentsChecks(target, pos, filter);
         MethodType collectorType = filter.type();
         BoundMethodHandle result = target.rebind();
-        LambdaForm lform;
-        if (collectorType.returnType().isArray() && filter.intrinsicName() == Intrinsic.NEW_ARRAY) {
-            lform = result.editor().collectArgumentArrayForm(1 + pos, filter);
-            if (lform != null) {
-                return result.copyWith(newType, lform);
-            }
-        }
-        lform = result.editor().collectArgumentsForm(1 + pos, collectorType.basicType());
+        LambdaForm lform = result.editor().collectArgumentsForm(1 + pos, collectorType.basicType());
         return result.copyWithExtendL(newType, lform, filter);
     }
 

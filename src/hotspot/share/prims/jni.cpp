@@ -906,7 +906,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
   {
     Method* m = Method::resolve_jmethod_id(method_id);
     number_of_parameters = m->size_of_parameters();
-    Klass* holder = m->method_holder();
+    InstanceKlass* holder = m->method_holder();
     if (call_type != JNI_VIRTUAL) {
         selected_method = m;
     } else if (!m->has_itable_index()) {

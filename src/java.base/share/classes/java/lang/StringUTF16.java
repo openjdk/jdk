@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,12 +342,12 @@ final class StringUTF16 {
             cp1 = codePointIncluding(value, cp1, k1, toffset, tlast);
             if (cp1 < 0) {
                 k1++;
-                cp1 -= cp1;
+                cp1 = -cp1;
             }
             cp2 = codePointIncluding(other, cp2, k2, ooffset, olast);
             if (cp2 < 0) {
                 k2++;
-                cp2 -= cp2;
+                cp2 = -cp2;
             }
 
             int diff = compareCodePointCI(cp1, cp2);
