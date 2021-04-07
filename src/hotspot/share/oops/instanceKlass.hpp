@@ -1109,6 +1109,7 @@ public:
   // Java itable
   klassItable itable() const;        // return klassItable wrapper
   Method* method_at_itable(Klass* holder, int index, TRAPS);
+  int vtable_index_of_interface_method(Method* method);
 
 #if INCLUDE_JVMTI
   void adjust_default_methods(bool* trace_name_printed);
