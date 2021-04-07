@@ -55,6 +55,12 @@ import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGeneratorContext;
 import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.batik.svggen.SVGGraphics2DIOException;
+import com.lowagie.text.Document;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfTemplate;
+import com.lowagie.text.pdf.PdfGraphics2D;
 import org.w3c.dom.DOMImplementation;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
@@ -105,22 +111,14 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         @Override
         public void export(File f) {
 
-            SVGGraphics2D svgGenerator = createGraphicsObject();
-            scene.paint(svgGenerator);
-            FileOutputStream os = null;
-            try {
-                os = new FileOutputStream(f);
-                Writer out = new OutputStreamWriter(os, "UTF-8");
-                printToStream(svgGenerator, out, true);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (os != null) {
-                    try {
-                        os.close();
-                    } catch (IOException e) {
-                    }
-                }
+            String lcFileName = f.getName().toLowerCase();
+            if (lcFileName.endsWith(".pdf")) {
+                exportToPDF(scene, f);
+            } else if (lcFileName.endsWith(".svg")) {
+                exportToSVG(scene, f);
+            } else {
+                NotifyDescriptor message = new NotifyDescriptor.Message("Unknown image file extension: expected either '.pdf' or '.svg'", NotifyDescriptor.ERROR_MESSAGE);
+                DialogDisplayer.getDefault().notifyLater(message);
             }
         }
     };
@@ -635,17 +633,51 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         throw new NotSerializableException();
     }
 
-    private static SVGGraphics2D createGraphicsObject() {
+    private static void exportToPDF(DiagramViewer scene, File f) {
+        int width = scene.getBounds().width;
+        int height = scene.getBounds().height;
+        com.lowagie.text.Document document = new Document(new Rectangle(width, height));
+        PdfWriter writer = null;
+        try {
+            writer = PdfWriter.getInstance(document, new FileOutputStream(f));
+            writer.setCloseStream(true);
+            document.open();
+            PdfContentByte contentByte = writer.getDirectContent();
+            PdfTemplate template = contentByte.createTemplate(width, height);
+            PdfGraphics2D pdfGenerator = new PdfGraphics2D(contentByte, width, height);
+            scene.paint(pdfGenerator);
+            pdfGenerator.dispose();
+            contentByte.addTemplate(template, 0, 0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (document.isOpen()) {
+                document.close();
+            }
+            writer.close();
+        }
+    }
+
+    private static void exportToSVG(DiagramViewer scene, File f) {
         DOMImplementation dom = GenericDOMImplementation.getDOMImplementation();
         org.w3c.dom.Document document = dom.createDocument("http://www.w3.org/2000/svg", "svg", null);
         SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(document);
         ctx.setEmbeddedFontsOn(true);
-        return new SVGGraphics2D(ctx, true);
-    }
-
-    private static void printToStream(SVGGraphics2D svgGenerator, Writer stream, boolean useCSS) {
+        SVGGraphics2D svgGenerator = new SVGGraphics2D(ctx, true);
+        scene.paint(svgGenerator);
+        FileOutputStream os = null;
         try {
-            svgGenerator.stream(stream, useCSS);
-        } catch (SVGGraphics2DIOException e) {}
+            os = new FileOutputStream(f);
+            Writer out = new OutputStreamWriter(os, "UTF-8");
+            svgGenerator.stream(out, true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (os != null) {
+                try {
+                    os.close();
+                } catch (IOException e) {}
+            }
+        }
     }
 }

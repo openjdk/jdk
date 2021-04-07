@@ -156,6 +156,11 @@
             <artifactId>batik-svggen</artifactId>
             <version>${batik.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>${openpdf.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
