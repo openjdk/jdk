@@ -1311,11 +1311,7 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
   if (participants_hide_witnesses) {
     // If the new type is a subtype of a participant, we are done.
     for (int i = 0; i < num_participants(); i++) {
-      Klass* part = participant(i);
-      if (part == NULL)  continue;
-      assert(changes.involves_context(part) == new_type->is_subtype_of(part),
-             "correct marking of participants, b/c new_type is unique");
-      if (changes.involves_context(part)) {
+      if (changes.involves_context(participant(i))) {
         // new guy is protected from this check by previous participant
         return NULL;
       }
