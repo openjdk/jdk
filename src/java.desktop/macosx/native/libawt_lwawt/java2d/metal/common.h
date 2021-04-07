@@ -26,7 +26,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <stdint.h>
 #include <simd/simd.h>
 
 #define PGRAM_VERTEX_COUNT 6
@@ -159,7 +158,7 @@ struct LCDFrameUniforms {
 };
 
 struct SwizzleUniforms {
-    uint8_t swizzle[4];
-    uint8_t hasAlpha;
+    unsigned char swizzle[4];
+    unsigned char hasAlpha;
 };
 #endif
