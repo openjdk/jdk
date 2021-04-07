@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,22 @@ public class TestByteBuffer {
             try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_ONLY)) {
                 checkTuples(segment, segment.asByteBuffer(), 1);
             }
+        }
+    }
+
+    static final long LARGE_SIZE = 4L * 1024L * 1024L * 1024L; // 4GB
+
+    @Test(dataProvider = "mappedOps")
+    public void testLargeMappedSegment(MappedSegmentOp mappedBufferOp) throws Throwable {
+        File f = new File("test3.out");
+        f.createNewFile();
+        f.deleteOnExit();
+
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0, LARGE_SIZE, FileChannel.MapMode.READ_WRITE)) {
+            MappedMemorySegments.load(segment);
+            MappedMemorySegments.isLoaded(segment);
+            MappedMemorySegments.force(segment);
+            MappedMemorySegments.unload(segment);
         }
     }
 
