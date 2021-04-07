@@ -7,7 +7,8 @@ included as part of HotSpot since that was the primary target of the tool. The
 tool itself is fairly general with only a few modules that contain C2 specific
 elements.
 
-The tool is built on top of the NetBeans Platform, and requires Java 8 or later.
+The tool is built on top of the NetBeans Platform, and requires a JDK version
+between 8 and 15 (the latest JDK supported by the current NetBeans Platform).
 
 # Building and Running
 
