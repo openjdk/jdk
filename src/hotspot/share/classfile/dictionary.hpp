@@ -141,8 +141,8 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     return (DictionaryEntry**)HashtableEntry<InstanceKlass*, mtClass>::next_addr();
   }
 
-  ProtectionDomainEntry* pd_set() const            { return Atomic::load(&_pd_set); }
-  void set_pd_set(ProtectionDomainEntry* entry)    { Atomic::store(&_pd_set, entry); }
+  ProtectionDomainEntry* pd_set_acquire() const            { return Atomic::load_acquire(&_pd_set); }
+  void release_set_pd_set(ProtectionDomainEntry* entry)    { Atomic::release_store(&_pd_set, entry); }
 
   // Tells whether the initiating class' protection domain can access the klass in this entry
   inline bool is_valid_protection_domain(Handle protection_domain);

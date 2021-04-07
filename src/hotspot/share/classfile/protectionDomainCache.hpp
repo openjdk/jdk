@@ -111,8 +111,8 @@ class ProtectionDomainEntry :public CHeapObj<mtClass> {
   ProtectionDomainEntry(ProtectionDomainCacheEntry* pd_cache,
                         ProtectionDomainEntry* head) : _pd_cache(pd_cache), _next(head) {}
 
-  ProtectionDomainEntry* next() { return Atomic::load(&_next); }
-  void set_next(ProtectionDomainEntry* entry) { Atomic::store(&_next, entry); }
+  ProtectionDomainEntry* next_acquire() { return Atomic::load_acquire(&_next); }
+  void release_set_next(ProtectionDomainEntry* entry) { Atomic::release_store(&_next, entry); }
   oop object_no_keepalive();
 };
 #endif // SHARE_CLASSFILE_PROTECTIONDOMAINCACHE_HPP
