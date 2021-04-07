@@ -78,6 +78,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"

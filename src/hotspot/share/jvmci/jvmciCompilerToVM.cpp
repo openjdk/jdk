@@ -57,6 +57,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe_hp.hpp"
 
