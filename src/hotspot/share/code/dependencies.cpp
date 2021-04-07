@@ -1146,6 +1146,24 @@ class ClassHierarchyWalker {
     return false;  // not in list
   }
 
+  class CountingClassHierarchyIterator : public ClassHierarchyIterator {
+   private:
+    jlong _nof_steps;
+   public:
+    CountingClassHierarchyIterator(InstanceKlass* root) : ClassHierarchyIterator(root), _nof_steps(0) {}
+
+    void next() {
+      _nof_steps++;
+      ClassHierarchyIterator::next();
+    }
+
+    ~CountingClassHierarchyIterator() {
+      if (UsePerfData) {
+        _perf_find_witness_anywhere_steps_count->inc(_nof_steps);
+      }
+    }
+  };
+
  private:
   // the actual search method:
   Klass* find_witness_anywhere(InstanceKlass* context_type,
@@ -1206,7 +1224,6 @@ void ClassHierarchyWalker::init() {
         PerfDataManager::create_counter(SUN_CI, "findWitnessIn", PerfData::U_Events, CHECK);
   }
 }
-
 
 #ifdef ASSERT
 // Assert that m is inherited into ctxk, without intervening overrides.
@@ -1343,12 +1360,8 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
 
   assert(!context_type->is_interface(), "not allowed");
 
-  for (ClassHierarchyIterator iter(context_type); !iter.done(); iter.next()) {
+  for (CountingClassHierarchyIterator iter(context_type); !iter.done(); iter.next()) {
     Klass* sub = iter.klass();
-
-    if (UsePerfData) {
-      _perf_find_witness_steps_count->inc();
-    }
 
     // Do not report participant types.
     if (is_participant(sub)) {
