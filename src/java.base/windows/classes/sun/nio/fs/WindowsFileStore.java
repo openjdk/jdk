@@ -25,9 +25,17 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystemException;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.FileStoreAttributeView;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.io.IOException;
+import java.util.Locale;
 
 import static sun.nio.fs.WindowsConstants.*;
 import static sun.nio.fs.WindowsNativeDispatcher.*;
@@ -43,6 +51,9 @@ class WindowsFileStore
     private final VolumeInformation volInfo;
     private final int volType;
     private final String displayName;   // returned by toString
+
+    private boolean hasHashCode = false; // as hashCode can be any int
+    private int hashCode;
 
     private WindowsFileStore(String root) throws WindowsException {
         assert root.charAt(root.length()-1) == '\\';
@@ -221,8 +232,7 @@ class WindowsFileStore
         if (name.equals("owner"))
             return supportsFileAttributeView(FileOwnerAttributeView.class);
         if (name.equals("user"))
-            return supportsFileAttributeView(UserDefinedFileAttributeView.class);
-        return false;
+            return supportsFileAttributeView(UserDefinedFileAttributeView.class); return false;
     }
 
     @Override
@@ -234,18 +244,19 @@ class WindowsFileStore
         WindowsFileStore other = (WindowsFileStore)ob;
         if (root.equals(other.root))
             return true;
-        if (root.equalsIgnoreCase(other.root)) {
-             VolumeInformation otherInfo = other.volumeInformation();
-            return volInfo.volumeName().equals(otherInfo.volumeName()) &&
-                volInfo.fileSystemName().equals(otherInfo.fileSystemName()) &&
-                volInfo.volumeSerialNumber() == otherInfo.volumeSerialNumber();
-        }
+        if (volType == DRIVE_FIXED && other.volumeType() == DRIVE_FIXED)
+            return root.equalsIgnoreCase(other.root);
         return false;
     }
 
     @Override
     public int hashCode() {
-        return root.hashCode();
+        if (!hasHashCode) { // Don't care about race
+            hashCode = volType == DRIVE_FIXED ?
+                root.toLowerCase(Locale.ROOT).hashCode() : root.hashCode();
+            hasHashCode = true;
+        }
+        return hashCode;
     }
 
     @Override
@@ -259,4 +270,4 @@ class WindowsFileStore
         sb.append(")");
         return sb.toString();
     }
- }
+}
