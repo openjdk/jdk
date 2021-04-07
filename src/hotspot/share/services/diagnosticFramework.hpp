@@ -28,7 +28,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ostream.hpp"

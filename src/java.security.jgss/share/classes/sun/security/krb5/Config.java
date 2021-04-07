@@ -979,6 +979,9 @@ public class Config {
     public int[] defaultEtype(String configName) throws KrbException {
         String default_enctypes;
         default_enctypes = get("libdefaults", configName);
+        if (default_enctypes == null && !configName.equals("permitted_enctypes")) {
+            default_enctypes = get("libdefaults", "permitted_enctypes");
+        }
         int[] etype;
         if (default_enctypes == null) {
             if (DEBUG) {

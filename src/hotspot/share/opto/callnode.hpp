@@ -501,7 +501,8 @@ class SafePointScalarObjectNode: public TypeNode {
                      // states of the scalarized object fields are collected.
                      // It is relative to the last (youngest) jvms->_scloff.
   uint _n_fields;    // Number of non-static fields of the scalarized object.
-  DEBUG_ONLY(AllocateNode* _alloc;)
+  bool _is_auto_box; // True if the scalarized object is an auto box.
+  DEBUG_ONLY(Node* _alloc;)
 
   virtual uint hash() const ; // { return NO_HASH; }
   virtual bool cmp( const Node &n ) const;
@@ -511,9 +512,9 @@ class SafePointScalarObjectNode: public TypeNode {
 public:
   SafePointScalarObjectNode(const TypeOopPtr* tp,
 #ifdef ASSERT
-                            AllocateNode* alloc,
+                            Node* alloc,
 #endif
-                            uint first_index, uint n_fields);
+                            uint first_index, uint n_fields, bool is_auto_box = false);
   virtual int Opcode() const;
   virtual uint           ideal_reg() const;
   virtual const RegMask &in_RegMask(uint) const;
@@ -526,8 +527,9 @@ public:
   }
   uint n_fields()    const { return _n_fields; }
 
+  bool is_auto_box() const { return _is_auto_box; }
 #ifdef ASSERT
-  AllocateNode* alloc() const { return _alloc; }
+  Node* alloc() const { return _alloc; }
 #endif
 
   virtual uint size_of() const { return sizeof(*this); }

@@ -71,7 +71,6 @@
 #include "opto/type.hpp"
 #include "opto/vector.hpp"
 #include "opto/vectornode.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
