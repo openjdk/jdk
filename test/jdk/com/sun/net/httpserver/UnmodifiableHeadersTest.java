@@ -42,9 +42,25 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
 import org.testng.annotations.Test;
 import sun.net.httpserver.UnmodifiableHeaders;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 
 public class UnmodifiableHeadersTest {
+
+    @Test
+    public static void testEquality() {
+        var headers = new Headers();
+        var unmodifiableHeaders1 = new UnmodifiableHeaders(headers);
+        assertEquals(unmodifiableHeaders1, headers);
+        assertEquals(unmodifiableHeaders1.hashCode(), headers.hashCode());
+        assertEquals(unmodifiableHeaders1.get("Foo"), headers.get("Foo"));
+
+        headers.add("Foo", "Bar");
+        var unmodifiableHeaders2 = new UnmodifiableHeaders(headers);
+        assertEquals(unmodifiableHeaders2, headers);
+        assertEquals(unmodifiableHeaders2.hashCode(), headers.hashCode());
+        assertEquals(unmodifiableHeaders2.get("Foo"), headers.get("Foo"));
+    }
 
     @Test
     public static void testUnmodifiableHeaders() {
