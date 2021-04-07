@@ -42,7 +42,7 @@ public class MalformedInputException
     private static final long serialVersionUID = -3438823399834806194L;
 
     /**
-     * The length of the input byte sequence.
+     * The length of the input.
      */
     private int inputLength;
 
