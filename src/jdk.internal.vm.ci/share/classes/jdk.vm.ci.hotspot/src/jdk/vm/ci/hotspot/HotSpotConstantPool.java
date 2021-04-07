@@ -140,6 +140,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         final JvmConstant jvmMethodType = add(new JvmConstant(c.jvmConstantMethodType, "MethodType"));
         final JvmConstant jvmMethodTypeInError = add(new JvmConstant(c.jvmConstantMethodTypeInError, "MethodTypeInError"));
         final JvmConstant jvmInvokeDynamic = add(new JvmConstant(c.jvmConstantInvokeDynamic, "InvokeDynamic"));
+        final JvmConstant jvmDynamic = add(new JvmConstant(c.jvmConstantDynamic, "Dynamic"));
+        final JvmConstant jvmDynamicInError = add(new JvmConstant(c.jvmConstantDynamicInError, "DynamicInError"));
 
         private JvmConstant add(JvmConstant constant) {
             table[indexOf(constant.tag)] = constant;
@@ -545,6 +547,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             case "MethodHandleInError":
             case "MethodType":
             case "MethodTypeInError":
+            case "Dynamic":
+            case "DynamicInError":
                 return compilerToVM().resolvePossiblyCachedConstantInPool(this, cpi);
             default:
                 throw new JVMCIError("Unknown constant pool tag %s", tag);

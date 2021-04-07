@@ -46,6 +46,7 @@ public interface JavaConstant extends Constant, JavaValue {
     PrimitiveConstant DOUBLE_1 = new PrimitiveConstant(JavaKind.Double, Double.doubleToRawLongBits(1.0D));
     PrimitiveConstant TRUE = new PrimitiveConstant(JavaKind.Boolean, 1L);
     PrimitiveConstant FALSE = new PrimitiveConstant(JavaKind.Boolean, 0L);
+    PrimitiveConstant ILLEGAL = new PrimitiveConstant(JavaKind.Illegal, 0);
 
     /**
      * Returns the Java kind of this constant.
@@ -329,7 +330,7 @@ public interface JavaConstant extends Constant, JavaValue {
     }
 
     static PrimitiveConstant forIllegal() {
-        return new PrimitiveConstant(JavaKind.Illegal, 0);
+        return JavaConstant.ILLEGAL;
     }
 
     /**
