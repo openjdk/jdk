@@ -1483,8 +1483,8 @@ Klass* Dependencies::check_abstract_with_unique_concrete_subtype(InstanceKlass* 
 // The returned subtype is allowed to have have further concrete subtypes.
 // That is, return CC1 for CX > CC1 > CC2, but NULL for CX > { CC1, CC2 }.
 Klass* Dependencies::find_unique_concrete_subtype(InstanceKlass* ctxk) {
-  ConcreteSubtypeFinder wf(ctxk);     // Ignore ctxk when walking.
-  wf.record_witnesses(1);           // Record one other witness when walking.
+  ConcreteSubtypeFinder wf(ctxk);  // Ignore ctxk when walking.
+  wf.record_witnesses(1);          // Record one other witness when walking.
   Klass* wit = wf.find_witness(ctxk);
   if (wit != NULL)  return NULL;   // Too many witnesses.
   Klass* conck = wf.participant(0);
