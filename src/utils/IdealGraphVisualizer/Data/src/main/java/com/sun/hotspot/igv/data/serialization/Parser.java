@@ -146,12 +146,7 @@ public class Parser implements GraphParser {
 
             final Folder parent = getParentObject();
             if (groupCallback == null || parent instanceof Group) {
-                Runnable addToParent = new Runnable(){
-                        @Override
-                        public void run() {
-                            parent.addElement(group);
-                        }
-                    };
+                Runnable addToParent = () -> parent.addElement(group);
                 if (invokeLater) {
                     SwingUtilities.invokeLater(addToParent);
                 } else {
@@ -286,12 +281,7 @@ public class Parser implements GraphParser {
             }
             blockConnections.clear();
 
-            Runnable addToParent = new Runnable(){
-                    @Override
-                    public void run() {
-                        parent.addElement(graph);
-                    }
-                };
+            Runnable addToParent = () -> parent.addElement(graph);
             if (invokeLater) {
                 SwingUtilities.invokeLater(addToParent);
             } else {
@@ -457,12 +447,7 @@ public class Parser implements GraphParser {
         public void end(String text) throws SAXException {
             if (groupCallback != null && getParentObject().getParent() instanceof GraphDocument) {
                 final Group group = getParentObject();
-                Runnable addStarted = (new Runnable() {
-                        @Override
-                        public void run() {
-                            groupCallback.started(group);
-                        }
-                    });
+                Runnable addStarted = () -> groupCallback.started(group);
                 if (invokeLater) {
                     SwingUtilities.invokeLater(addStarted);
                 } else {
