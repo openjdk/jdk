@@ -40,7 +40,7 @@ public class InvalidPathException
     static final long serialVersionUID = 4355821422286746137L;
 
     /**
-     * The invalid input path string.
+     * The input string.
      */
     private String input;
 
