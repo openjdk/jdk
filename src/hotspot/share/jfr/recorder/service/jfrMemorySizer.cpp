@@ -308,8 +308,8 @@ static void thread_buffer_size(JfrMemoryOptions* options) {
     if (options->memory_size_configured) {
       options->buffer_count = div_total_by_per_unit(options->memory_size, options->global_buffer_size);
     } else {
-      // init memory_size according buffer count and size
-      options->memory_size = options->buffer_count * options->global_buffer_size;
+      // init memory_size by buffer count and size
+      options->memory_size = multiply(options->global_buffer_size, options->buffer_count);
     }
   }
   assert(options->global_buffer_size >= options->thread_buffer_size, "invariant");
