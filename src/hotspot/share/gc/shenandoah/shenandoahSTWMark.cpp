@@ -131,7 +131,6 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
   if (ShenandoahStringDedup::is_enabled()) {
     ShenandoahInitMarkRootsClosure<ENQUEUE_DEDUP>  init_mark(task_queues()->queue(worker_id));
     _root_scanner.roots_do(&init_mark, worker_id);
-
   } else {
     ShenandoahInitMarkRootsClosure<NO_DEDUP>  init_mark(task_queues()->queue(worker_id));
     _root_scanner.roots_do(&init_mark, worker_id);
@@ -147,4 +146,3 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
             false, // not cancellable
             ShenandoahStringDedup::is_enabled());
 }
-
