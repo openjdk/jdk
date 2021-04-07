@@ -28,6 +28,7 @@
 #include "jfr/utilities/jfrLogTagSets.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logMessage.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -116,6 +117,36 @@ void JfrJavaLog::subscribe_log_level(jobject log_tag, jint id, TRAPS) {
     subscribed_updates = false;
   } else {
     log_config_change_internal(false, THREAD);
+  }
+}
+
+void JfrJavaLog::log_event(JNIEnv* env, jint level, jobjectArray lines, bool system, TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  if (lines == NULL) {
+    return;
+  }
+  if (level < (jint)LogLevel::First || level > (jint)LogLevel::Last) {
+    JfrJavaSupport::throw_illegal_argument_exception("LogLevel passed is outside valid range", THREAD);
+    return;
+  }
+
+  jsize length = env->GetArrayLength(lines);
+  LogMessage(jfr, event) jfr_event;
+  LogMessage(jfr, system, event) jfr_event_system;
+  for (jsize i = 0; i < length; ++i) {
+    jstring line = (jstring)(env->GetObjectArrayElement(lines, i));
+    const char* text = env->GetStringUTFChars(line, 0);
+    if (text == NULL) {
+      env->DeleteLocalRef(line);
+      break;
+    }
+    if (system) {
+      jfr_event_system.write((LogLevelType)level, "%s", text);
+    } else {
+      jfr_event.write((LogLevelType)level, "%s", text);
+    }
+    env->ReleaseStringUTFChars(line, text);
+    env->DeleteLocalRef(line);
   }
 }
 
