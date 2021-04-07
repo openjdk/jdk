@@ -39,7 +39,15 @@ public class InvalidPathException
     @java.io.Serial
     static final long serialVersionUID = 4355821422286746137L;
 
+    /**
+     * The invalid input path string
+     */
     private String input;
+
+    /**
+     * The index of the input string at which the error occurred or
+     * {@code -1} if not known
+     */
     private int index;
 
     /**

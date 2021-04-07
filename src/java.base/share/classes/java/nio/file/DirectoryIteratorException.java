@@ -73,9 +73,16 @@ public final class DirectoryIteratorException
     /**
      * Called to read the object from a stream.
      *
+     * @param   s
+     *          the {@code ObjectInputStream} to read
+     *
      * @throws  InvalidObjectException
      *          if the object is invalid or has a cause that is not
      *          an {@code IOException}
+     *
+     * @throws  ClassNotFoundException
+     *          if the class of a serialized object could not be
+     *          found
      */
     @java.io.Serial
     private void readObject(ObjectInputStream s)

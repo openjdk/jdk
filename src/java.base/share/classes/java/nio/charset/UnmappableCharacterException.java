@@ -41,6 +41,9 @@ public class UnmappableCharacterException
     @java.io.Serial
     private static final long serialVersionUID = -7026962371537706123L;
 
+    /**
+     * The length of the input character (or byte) sequence
+     */
     private int inputLength;
 
     /**

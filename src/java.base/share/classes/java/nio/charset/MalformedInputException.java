@@ -41,6 +41,9 @@ public class MalformedInputException
     @java.io.Serial
     private static final long serialVersionUID = -3438823399834806194L;
 
+    /**
+     * The length of the input byte sequence
+     */
     private int inputLength;
 
     /**

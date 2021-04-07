@@ -40,7 +40,15 @@ public class FileSystemException
     @java.io.Serial
     static final long serialVersionUID = -3055425747967319812L;
 
+    /**
+     *  String identifying the file or {@code null} if not known
+     */
     private final String file;
+
+    /**
+     *  String identifying the other file or {@code null} if there isn't
+     *  another file or if not known
+     */
     private final String other;
 
     /**
