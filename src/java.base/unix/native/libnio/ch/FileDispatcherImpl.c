@@ -177,9 +177,15 @@ Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
             result = fsync(fd);
         } else {
             struct statfs fbuf;
-            if (fstatfs(fd, &fbuf) == 0 && (fbuf.f_flags & MNT_LOCAL) == 0) {
-                /* Try fsync() in case file is not local. */
-                result = fsync(fd);
+            int errno_fcntl = errno;
+            if (fstatfs(fd, &fbuf) == 0) {
+                if ((fbuf.f_flags & MNT_LOCAL) == 0) {
+                    /* Try fsync() in case file is not local. */
+                    result = fsync(fd);
+                }
+            } else {
+                /* fstatfs() failed so reinstate errno from fcntl(). */
+                errno = errno_fcntl;
             }
         }
     }
