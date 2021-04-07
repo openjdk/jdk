@@ -77,10 +77,10 @@ public class HeapFragmentationTest {
 
         // First, make sure the test runs without CDS
         TestCommon.runWithoutCDS(TestCommon.concat(execArgs, runTimeHeapSize, mainClass, BUFF_SIZE))
-          .assertNormalExit(successOutput);
+            .assertNormalExit(successOutput);
 
         // Run with CDS. The archived heap regions should be relocated to avoid fragmentation.
         TestCommon.run(TestCommon.concat(execArgs, runTimeHeapSize, mainClass,  BUFF_SIZE))
-          .assertNormalExit(successOutput);
+            .assertNormalExit(successOutput);
     }
 }
