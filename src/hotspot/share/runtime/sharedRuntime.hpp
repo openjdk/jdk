@@ -201,7 +201,7 @@ class SharedRuntime: AllStatic {
   static void    throw_NullPointerException_at_call(JavaThread* current /* TRAPS */);
   static void    throw_StackOverflowError(JavaThread* current /* TRAPS */);
   static void    throw_delayed_StackOverflowError(JavaThread* current /* TRAPS */);
-  static void    throw_StackOverflowError_common(bool delayed, TRAPS);
+  static void    throw_StackOverflowError_common(JavaThread* current /* TRAPS */, bool delayed);
   static address continuation_for_implicit_exception(JavaThread* current,
                                                      address faulting_pc,
                                                      ImplicitExceptionKind exception_kind);

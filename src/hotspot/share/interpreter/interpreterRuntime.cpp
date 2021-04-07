@@ -146,7 +146,7 @@ void InterpreterRuntime::set_bcp_and_mdp(address bcp, JavaThread *current) {
 // Constants
 
 
-JRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* current, bool wide))
+JRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* current /* TRAPS */, bool wide))
   // access constant pool
   LastFrameAccessor last_frame(current);
   ConstantPool* pool = last_frame.method()->constants();
@@ -155,11 +155,11 @@ JRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* current, bool wide))
 
   assert (tag.is_unresolved_klass() || tag.is_klass(), "wrong ldc call");
   Klass* klass = pool->klass_at(index, CHECK);
-    oop java_class = klass->java_mirror();
-    current->set_vm_result(java_class);
+  oop java_class = klass->java_mirror();
+  current->set_vm_result(java_class);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current, Bytecodes::Code bytecode)) {
+JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current /* TRAPS */, Bytecodes::Code bytecode)) {
   assert(bytecode == Bytecodes::_ldc ||
          bytecode == Bytecodes::_ldc_w ||
          bytecode == Bytecodes::_ldc2_w ||
@@ -215,7 +215,7 @@ JRT_END
 //------------------------------------------------------------------------------------------------------------------------
 // Allocation
 
-JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current, ConstantPool* pool, int index))
+JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current /* TRAPS */, ConstantPool* pool, int index))
   Klass* k = pool->klass_at(index, CHECK);
   InstanceKlass* klass = InstanceKlass::cast(k);
 
@@ -244,20 +244,20 @@ JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current, ConstantPool* pool
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::newarray(JavaThread* current, BasicType type, jint size))
+JRT_ENTRY(void, InterpreterRuntime::newarray(JavaThread* current /* TRAPS */, BasicType type, jint size))
   oop obj = oopFactory::new_typeArray(type, size, CHECK);
   current->set_vm_result(obj);
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::anewarray(JavaThread* current, ConstantPool* pool, int index, jint size))
+JRT_ENTRY(void, InterpreterRuntime::anewarray(JavaThread* current /* TRAPS */, ConstantPool* pool, int index, jint size))
   Klass*    klass = pool->klass_at(index, CHECK);
   objArrayOop obj = oopFactory::new_objArray(klass, size, CHECK);
   current->set_vm_result(obj);
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* current, jint* first_size_address))
+JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* current /* TRAPS */, jint* first_size_address))
   // We may want to pass in more arguments - could make this slightly faster
   LastFrameAccessor last_frame(current);
   ConstantPool* constants = last_frame.method()->constants();
@@ -285,7 +285,7 @@ JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* current, jint* fi
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::register_finalizer(JavaThread* current, oopDesc* obj))
+JRT_ENTRY(void, InterpreterRuntime::register_finalizer(JavaThread* current /* TRAPS */, oopDesc* obj))
   assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
@@ -293,7 +293,7 @@ JRT_END
 
 
 // Quicken instance-of and check-cast bytecodes
-JRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* current))
+JRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* current /* TRAPS */))
   // Force resolving; quicken the bytecode
   LastFrameAccessor last_frame(current);
   int which = last_frame.get_index_u2(Bytecodes::_checkcast);
@@ -363,7 +363,7 @@ static Handle get_preinitialized_exception(Klass* k, TRAPS) {
 // space left we use the pre-allocated & pre-initialized StackOverflowError
 // klass to create an stack overflow error instance.  We do not call its
 // constructor for the same reason (it is empty, anyway).
-JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* current))
+JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* current /* TRAPS */))
   Handle exception = get_preinitialized_exception(
                                  vmClasses::StackOverflowError_klass(),
                                  CHECK);
@@ -372,7 +372,7 @@ JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* current
   THROW_HANDLE(exception);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread* current))
+JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread* current /* TRAPS */))
   Handle exception = get_preinitialized_exception(
                                  vmClasses::StackOverflowError_klass(),
                                  CHECK);
@@ -383,7 +383,7 @@ JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread*
   THROW_HANDLE(exception);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* current, char* name, char* message))
+JRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* current /* TRAPS */, char* name, char* message))
   // lookup exception klass
   TempNewSymbol s = SymbolTable::new_symbol(name);
   if (ProfileTraps) {
@@ -399,7 +399,7 @@ JRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* current, char* 
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* current, char* name, oopDesc* obj))
+JRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* current /* TRAPS */, char* name, oopDesc* obj))
   // Produce the error message first because note_trap can safepoint
   ResourceMark rm(current);
   const char* klass_name = obj->klass()->external_name();
@@ -413,7 +413,7 @@ JRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* current, 
   current->set_vm_result(exception());
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* current, arrayOopDesc* a, jint index))
+JRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* current /* TRAPS */, arrayOopDesc* a, jint index))
   // Produce the error message first because note_trap can safepoint
   ResourceMark rm(current);
   stringStream ss;
@@ -427,7 +427,7 @@ JRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThr
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
-  JavaThread* current, oopDesc* obj))
+  JavaThread* current /* TRAPS */, oopDesc* obj))
 
   // Produce the error message first because note_trap can safepoint
   ResourceMark rm(current);
@@ -589,7 +589,7 @@ JRT_ENTRY(void, InterpreterRuntime::throw_pending_exception(JavaThread* current)
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodError(JavaThread* current))
+JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodError(JavaThread* current /* TRAPS */))
   THROW(vmSymbols::java_lang_AbstractMethodError());
 JRT_END
 
@@ -599,7 +599,7 @@ JRT_END
 // on some platforms the receiver still resides in a register...). Thus,
 // we have no choice but print an error message not containing the receiver
 // type.
-JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorWithMethod(JavaThread* current,
+JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorWithMethod(JavaThread* current /* TRAPS */,
                                                                         Method* missingMethod))
   ResourceMark rm(current);
   assert(missingMethod != NULL, "sanity");
@@ -607,7 +607,7 @@ JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorWithMethod(JavaThre
   LinkResolver::throw_abstract_method_error(m, THREAD);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorVerbose(JavaThread* current,
+JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorVerbose(JavaThread* current /* TRAPS */,
                                                                      Klass* recvKlass,
                                                                      Method* missingMethod))
   ResourceMark rm(current);
@@ -616,11 +616,11 @@ JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorVerbose(JavaThread*
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeError(JavaThread* current))
+JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeError(JavaThread* current /* TRAPS */))
   THROW(vmSymbols::java_lang_IncompatibleClassChangeError());
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(JavaThread* current,
+JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(JavaThread* current /* TRAPS */,
                                                                               Klass* recvKlass,
                                                                               Klass* interfaceKlass))
   ResourceMark rm(current);
@@ -633,7 +633,7 @@ JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(Ja
   THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* current))
+JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* current /* TRAPS */))
   THROW(vmSymbols::java_lang_NullPointerException());
 JRT_END
 
@@ -758,7 +758,7 @@ JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::throw_illegal_monitor_state_exception(JavaThread* current))
+JRT_ENTRY(void, InterpreterRuntime::throw_illegal_monitor_state_exception(JavaThread* current /* TRAPS */))
   THROW(vmSymbols::java_lang_IllegalMonitorStateException());
 JRT_END
 
@@ -785,30 +785,30 @@ JRT_END
 //------------------------------------------------------------------------------------------------------------------------
 // Invokes
 
-JRT_ENTRY(Bytecodes::Code, InterpreterRuntime::get_original_bytecode_at(JavaThread* thread, Method* method, address bcp))
+JRT_ENTRY(Bytecodes::Code, InterpreterRuntime::get_original_bytecode_at(JavaThread* current, Method* method, address bcp))
   return method->orig_bytecode_at(method->bci_from(bcp));
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::set_original_bytecode_at(JavaThread* thread, Method* method, address bcp, Bytecodes::Code new_code))
+JRT_ENTRY(void, InterpreterRuntime::set_original_bytecode_at(JavaThread* current, Method* method, address bcp, Bytecodes::Code new_code))
   method->set_orig_bytecode_at(method->bci_from(bcp), new_code);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* thread, Method* method, address bcp))
-  JvmtiExport::post_raw_breakpoint(thread, method, bcp);
+JRT_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* current, Method* method, address bcp))
+  JvmtiExport::post_raw_breakpoint(current, method, bcp);
 JRT_END
 
-void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code bytecode) {
-  Thread* THREAD = thread;
-  LastFrameAccessor last_frame(thread);
+void InterpreterRuntime::resolve_invoke(JavaThread* current /* TRAPS */, Bytecodes::Code bytecode) {
+  Thread* THREAD = current;
+  LastFrameAccessor last_frame(current);
   // extract receiver from the outgoing argument list if necessary
-  Handle receiver(thread, NULL);
+  Handle receiver(current, NULL);
   if (bytecode == Bytecodes::_invokevirtual || bytecode == Bytecodes::_invokeinterface ||
       bytecode == Bytecodes::_invokespecial) {
-    ResourceMark rm(thread);
-    methodHandle m (thread, last_frame.method());
+    ResourceMark rm(current);
+    methodHandle m (current, last_frame.method());
     Bytecode_invoke call(m, last_frame.bci());
     Symbol* signature = call.signature();
-    receiver = Handle(thread, last_frame.callee_receiver(signature));
+    receiver = Handle(current, last_frame.callee_receiver(signature));
 
     assert(Universe::heap()->is_in_or_null(receiver()),
            "sanity check");
@@ -819,19 +819,19 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
 
   // resolve method
   CallInfo info;
-  constantPoolHandle pool(thread, last_frame.method()->constants());
+  constantPoolHandle pool(current, last_frame.method()->constants());
 
   methodHandle resolved_method;
 
   {
-    JvmtiHideSingleStepping jhss(thread);
+    JvmtiHideSingleStepping jhss(current);
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
                                  CHECK);
     if (JvmtiExport::can_hotswap_or_post_breakpoint() && info.resolved_method()->is_old()) {
-      resolved_method = methodHandle(THREAD, info.resolved_method()->get_new_method());
+      resolved_method = methodHandle(current, info.resolved_method()->get_new_method());
     } else {
-      resolved_method = methodHandle(THREAD, info.resolved_method());
+      resolved_method = methodHandle(current, info.resolved_method());
     }
   } // end JvmtiHideSingleStepping
 
@@ -896,7 +896,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
 
 
 // First time execution:  Resolve symbols, create a permanent MethodType object.
-void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
+void InterpreterRuntime::resolve_invokehandle(JavaThread* current /* TRAPS */) {
   Thread* THREAD = current;
   const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
   LastFrameAccessor last_frame(current);
@@ -916,7 +916,7 @@ void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
 }
 
 // First time execution:  Resolve symbols, create a permanent CallSite object.
-void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
+void InterpreterRuntime::resolve_invokedynamic(JavaThread* current /* TRAPS */) {
   Thread* THREAD = current;
   LastFrameAccessor last_frame(current);
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
@@ -971,7 +971,7 @@ JRT_END
 
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* current, address branch_bcp) {
   // Enable WXWrite: the function is called directly by interpreter.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
 
   // frequency_counter_overflow_inner can throw async exception.
   nmethod* nm = frequency_counter_overflow_inner(current, branch_bcp);
@@ -1025,7 +1025,7 @@ JRT_ENTRY(nmethod*,
   const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
   const int bci = branch_bcp != NULL ? method->bci_from(last_frame.bcp()) : InvocationEntryBci;
 
-  nmethod* osr_nm = CompilationPolicy::event(method, method, branch_bci, bci, CompLevel_none, NULL, THREAD);
+  nmethod* osr_nm = CompilationPolicy::event(method, method, branch_bci, bci, CompLevel_none, NULL, current);
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (osr_nm != NULL && bs_nm != NULL) {
@@ -1048,7 +1048,7 @@ JRT_ENTRY(nmethod*,
            kptr < last_frame.monitor_begin();
            kptr = last_frame.next_monitor(kptr) ) {
         if( kptr->obj() != NULL ) {
-          objects_to_revoke->append(Handle(THREAD, kptr->obj()));
+          objects_to_revoke->append(Handle(current, kptr->obj()));
         }
       }
       BiasedLocking::revoke(objects_to_revoke, current);
@@ -1175,7 +1175,7 @@ ConstantPoolCacheEntry *cp_entry))
   JvmtiExport::post_field_access(current, last_frame.method(), last_frame.bcp(), cp_entry_f1, h_obj, fid);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *current,
+JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current,
   oopDesc* obj, ConstantPoolCacheEntry *cp_entry, jvalue *value))
 
   Klass* k = cp_entry->f1_as_klass();
@@ -1443,7 +1443,7 @@ GrowableArray<address>*  SignatureHandlerLibrary::_handlers     = NULL;
 address                  SignatureHandlerLibrary::_buffer       = NULL;
 
 
-JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* current, Method* method))
+JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* current /* TRAPS */, Method* method))
   methodHandle m(current, method);
   assert(m->is_native(), "sanity check");
   // lookup native function entry point if it doesn't exist

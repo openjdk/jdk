@@ -760,7 +760,7 @@ JRT_END
 
 JRT_ENTRY(void, SharedRuntime::throw_IncompatibleClassChangeError(JavaThread* current /* TRAPS */))
   // These errors occur only at call sites
-  throw_and_post_jvmti_exception(current, vmSymbols::java_lang_IncompatibleClassChangeError(), "vtable stub";
+  throw_and_post_jvmti_exception(current, vmSymbols::java_lang_IncompatibleClassChangeError(), "vtable stub");
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::throw_ArithmeticException(JavaThread* current /* TRAPS */))
@@ -785,7 +785,7 @@ JRT_ENTRY(void, SharedRuntime::throw_delayed_StackOverflowError(JavaThread* curr
   throw_StackOverflowError_common(current, true);
 JRT_END
 
-void SharedRuntime::throw_StackOverflowError_common(JavaThread* current /* TRAPS */bool delayed) {
+void SharedRuntime::throw_StackOverflowError_common(JavaThread* current /* TRAPS */, bool delayed) {
   // We avoid using the normal exception construction in this case because
   // it performs an upcall to Java, and we're already out of stack space.
   Thread* THREAD = current; // For exception processing.
@@ -1557,7 +1557,7 @@ JRT_END
 JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_virtual_call_C(JavaThread* current /* TRAPS */))
   methodHandle callee_method;
   JRT_BLOCK
-    callee_method = SharedRuntime::resolve_helper(true, false, CHECK_NULL);
+    callee_method = SharedRuntime::resolve_helper(current, true, false, CHECK_NULL);
     current->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
@@ -3142,7 +3142,7 @@ void AdapterHandlerLibrary::print_statistics() {
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* current))
   StackOverflow* overflow_state = current->stack_overflow_state();
   overflow_state->enable_stack_reserved_zone(/*check_if_disabled*/true);
-  overflow_state->set_reserved_stack_activation(thread->stack_base());
+  overflow_state->set_reserved_stack_activation(current->stack_base());
 JRT_END
 
 frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* current, frame fr) {
