@@ -148,6 +148,7 @@ class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
 
   void check_index(unsigned index) const;
   unsigned get_index(const oop* ptr) const;
+  void atomic_add_allocated(uintx add);
 
   template<typename F, typename BlockPtr>
   static bool iterate_impl(F f, BlockPtr b);
@@ -186,6 +187,7 @@ public:
   static Block* block_for_ptr(const OopStorage* owner, const oop* ptr);
 
   oop* allocate();
+  uintx allocate_all();
   static Block* new_block(const OopStorage* owner);
   static void delete_block(const Block& block);
 
