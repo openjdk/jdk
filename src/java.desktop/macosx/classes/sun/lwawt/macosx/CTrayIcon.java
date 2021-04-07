@@ -71,7 +71,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     // events between MOUSE_PRESSED and MOUSE_RELEASED for particular button
     private static int mouseClickButtons = 0;
 
-    private final static boolean useTemplateImages = AccessController.doPrivileged((PrivilegedAction<Boolean>)
+    private static final boolean useTemplateImages = AccessController.doPrivileged((PrivilegedAction<Boolean>)
         () -> Boolean.getBoolean("apple.awt.enableTemplateImages")
     );
 
