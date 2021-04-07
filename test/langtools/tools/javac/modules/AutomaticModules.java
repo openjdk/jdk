@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8155026 8178011 8220702
+ * @bug 8155026 8178011 8220702 8261625
  * @summary Test automatic modules
  * @library /tools/lib
  * @modules
@@ -665,7 +665,31 @@ public class AutomaticModules extends ModuleTestBase {
                          "-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(Task.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS,
+                     // Processor verifies api.Api is enclosed by an automatic module.
+                     new javax.annotation.processing.AbstractProcessor() {
+                         @Override
+                         public java.util.Set<String> getSupportedAnnotationTypes() {
+                             return java.util.Set.of("*");
+                         }
+
+                         @Override
+                         public  javax.lang.model.SourceVersion getSupportedSourceVersion() {
+                             return javax.lang.model.SourceVersion.latestSupported();
+                         }
+
+                         @Override
+                         public boolean process(java.util.Set<? extends javax.lang.model.element.TypeElement> annotations,
+                                                    javax.annotation.processing.RoundEnvironment roundEnv) {
+                             if (!roundEnv.processingOver()) {
+                                 javax.lang.model.util.Elements elts = processingEnv.getElementUtils();
+                                 if (!elts.isAutomaticModule(elts.getModuleOf(elts.getTypeElement("api.Api")))) {
+                                     throw new RuntimeException("module of class Api is not automatic");
+                                 }
+                             }
+                             return true;
+                         }
+                     })
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
