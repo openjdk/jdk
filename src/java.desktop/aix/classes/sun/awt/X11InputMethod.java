@@ -43,7 +43,7 @@ import sun.util.logging.PlatformLogger;
 public abstract class X11InputMethod extends X11InputMethodBase {
 
     // to keep the instance of activating if IM resumed
-    static protected X11InputMethod activatedInstance = null;
+    protected static X11InputMethod activatedInstance = null;
 
     /**
      * Constructs an X11InputMethod instance. It initializes the XIM

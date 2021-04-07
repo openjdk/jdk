@@ -62,6 +62,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -529,18 +530,25 @@ void VM_PopulateDumpSharedSpace::doit() {
   vm_direct_exit(0);
 }
 
-static GrowableArray<ClassLoaderData*>* _loaded_cld = NULL;
-
 class CollectCLDClosure : public CLDClosure {
-  void do_cld(ClassLoaderData* cld) {
-    if (_loaded_cld == NULL) {
-      _loaded_cld = new (ResourceObj::C_HEAP, mtClassShared)GrowableArray<ClassLoaderData*>(10, mtClassShared);
-    }
-    if (!cld->is_unloading()) {
-      cld->inc_keep_alive();
-      _loaded_cld->append(cld);
+  GrowableArray<ClassLoaderData*> _loaded_cld;
+public:
+  CollectCLDClosure() {}
+  ~CollectCLDClosure() {
+    for (int i = 0; i < _loaded_cld.length(); i++) {
+      ClassLoaderData* cld = _loaded_cld.at(i);
+      cld->dec_keep_alive();
     }
   }
+  void do_cld(ClassLoaderData* cld) {
+    if (!cld->is_unloading()) {
+      cld->inc_keep_alive();
+      _loaded_cld.append(cld);
+    }
+  }
+
+  int nof_cld() const                { return _loaded_cld.length(); }
+  ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
 bool MetaspaceShared::linking_required(InstanceKlass* ik) {
@@ -565,16 +573,21 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
+  ResourceMark rm;
   CollectCLDClosure collect_cld;
   {
+    // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
+    // We cannot link the classes while holding this lock (or else we may run into deadlock).
+    // Therefore, we need to first collect all the CLDs, and then link their classes after
+    // releasing the lock.
     MutexLocker lock(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::loaded_cld_do(&collect_cld);
   }
 
   while (true) {
     bool has_linked = false;
-    for (int i = 0; i < _loaded_cld->length(); i++) {
-      ClassLoaderData* cld = _loaded_cld->at(i);
+    for (int i = 0; i < collect_cld.nof_cld(); i++) {
+      ClassLoaderData* cld = collect_cld.cld_at(i);
       for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
         if (klass->is_instance_klass()) {
           InstanceKlass* ik = InstanceKlass::cast(klass);
@@ -590,11 +603,6 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
     }
     // Class linking includes verification which may load more classes.
     // Keep scanning until we have linked no more classes.
-  }
-
-  for (int i = 0; i < _loaded_cld->length(); i++) {
-    ClassLoaderData* cld = _loaded_cld->at(i);
-    cld->dec_keep_alive();
   }
 }
 

@@ -1288,14 +1288,7 @@ void G1ConcurrentMark::reclaim_empty_regions() {
   if (!empty_regions_list.is_empty()) {
     log_debug(gc)("Reclaimed %u empty regions", empty_regions_list.length());
     // Now print the empty regions list.
-    G1HRPrinter* hrp = _g1h->hr_printer();
-    if (hrp->is_active()) {
-      FreeRegionListIterator iter(&empty_regions_list);
-      while (iter.more_available()) {
-        HeapRegion* hr = iter.get_next();
-        hrp->cleanup(hr);
-      }
-    }
+    _g1h->hr_printer()->cleanup(&empty_regions_list);
     // And actually make them available.
     _g1h->prepend_to_freelist(&empty_regions_list);
   }

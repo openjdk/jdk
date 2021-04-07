@@ -1118,7 +1118,11 @@ class ClassHierarchyWalker {
 
   bool is_witness(Klass* k) {
     if (doing_subtype_search()) {
-      return Dependencies::is_concrete_klass(k);
+      if (Dependencies::is_concrete_klass(k)) {
+        return record_witness(k); // concrete subtype
+      } else {
+        return false; // not a concrete class
+      }
     } else if (!k->is_instance_klass()) {
       return false; // no methods to find in an array type
     } else {
@@ -1126,7 +1130,9 @@ class ClassHierarchyWalker {
       // Search class hierarchy first, skipping private implementations
       // as they never override any inherited methods
       Method* m = ik->find_instance_method(_name, _signature, Klass::PrivateLookupMode::skip);
-      if (!Dependencies::is_concrete_method(m, ik)) {
+      if (Dependencies::is_concrete_method(m, ik)) {
+        return record_witness(k, m); // concrete method found
+      } else {
         // Check for re-abstraction of method
         if (!ik->is_interface() && m != NULL && m->is_abstract()) {
           // Found a matching abstract method 'm' in the class hierarchy.
@@ -1140,23 +1146,20 @@ class ClassHierarchyWalker {
               // Found a concrete subtype 'w' which does not override abstract method 'm'.
               // Bail out because 'm' could be called with 'w' as receiver (leading to an
               // AbstractMethodError) and thus the method we are looking for is not unique.
-              _found_methods[_num_participants] = m;
-              return true;
+              return record_witness(k, m);
             }
           }
         }
         // Check interface defaults also, if any exist.
         Array<Method*>* default_methods = ik->default_methods();
-        if (default_methods == NULL)
-            return false;
-        m = ik->find_method(default_methods, _name, _signature);
-        if (!Dependencies::is_concrete_method(m, NULL))
-            return false;
+        if (default_methods != NULL) {
+          Method* dm = ik->find_method(default_methods, _name, _signature);
+          if (Dependencies::is_concrete_method(dm, NULL)) {
+            return record_witness(k, dm); // default method found
+          }
+        }
+        return false; // no concrete method found
       }
-      _found_methods[_num_participants] = m;
-      // Note:  If add_participant(k) is called,
-      // the method m will already be memoized for it.
-      return true;
     }
   }
 
@@ -1170,13 +1173,21 @@ class ClassHierarchyWalker {
     }
   }
 
-  bool ignore_witness(Klass* witness) {
+  bool record_witness(Klass* witness, Method* m) {
+    _found_methods[_num_participants] = m;
+    return record_witness(witness);
+  }
+
+  // It is used by is_witness() to fill up participant list (of predefined size)
+  // and to report the first witness candidate which doesn't fit into the list.
+  // Returns true when no more witnesses can be recorded.
+  bool record_witness(Klass* witness) {
     if (_record_witnesses == 0) {
-      return false;
+      return true; // report the witness
     } else {
       --_record_witnesses;
       add_participant(witness);
-      return true;
+      return false; // record the witness
     }
   }
   static bool in_list(Klass* x, Klass** list) {
@@ -1308,8 +1319,7 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
     }
   }
 
-  if (is_witness(new_type) &&
-      !ignore_witness(new_type)) {
+  if (is_witness(new_type)) {
     return new_type;
   }
 
@@ -1364,7 +1374,7 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
       if (participants_hide_witnesses) {
         iter.skip_subclasses();
       }
-    } else if (is_witness(sub) && !ignore_witness(sub)) {
+    } else if (is_witness(sub)) {
       return sub; // found a witness
     }
   }
