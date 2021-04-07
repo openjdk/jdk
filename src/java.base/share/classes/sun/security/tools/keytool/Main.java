@@ -1967,31 +1967,20 @@ public final class Main {
             keypair.generate(keysize);
         }
 
-        CertificateExtensions ext;
-        if (signerAlias != null) {
-            ext = createV3Extensions(
-                    null,
-                    null,
-                    v3ext,
-                    keypair.getPublicKeyAnyway(),
-                    signerSubjectKeyId);
-        } else {
-            ext = createV3Extensions(
-                    null,
-                    null,
-                    v3ext,
-                    keypair.getPublicKeyAnyway(),
-                    null);
-        }
+        CertificateExtensions ext = createV3Extensions(
+                null,
+                null,
+                v3ext,
+                keypair.getPublicKeyAnyway(),
+                signerSubjectKeyId);
 
         PrivateKey privKey = keypair.getPrivateKey();
         X509Certificate newCert = keypair.getSelfCertificate(
                 x500Name, getStartDate(startDate), validity*24L*60L*60L, ext);
 
-        MessageFormat form;
         if (signerAlias != null) {
-            form = new MessageFormat(rb.getString
-                    ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.an.entry.signerAlias.with.a.validity.of.validality.days.for"));
+            MessageFormat form = new MessageFormat(rb.getString
+                    ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for"));
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
                     fullDisplayAlgName(privKey),
@@ -2001,7 +1990,7 @@ public final class Main {
                     x500Name};
             System.err.println(form.format(source));
         } else {
-            form = new MessageFormat(rb.getString
+            MessageFormat form = new MessageFormat(rb.getString
                     ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
@@ -4322,7 +4311,6 @@ public final class Main {
      * @param existingEx the original extensions, can be null, used for -selfcert
      * @param extstrs -ext values, Read keytool doc
      * @param pkey the public key for the certificate
-     * @param akey the public key for the authority (issuer)
      * @param aSubjectKeyId the subject key identifier for the authority (issuer)
      * @return the created CertificateExtensions
      */
