@@ -39,7 +39,7 @@ public class UnmodifiableHeaders extends Headers {
         var unmodHeaders = new Headers();
         h.forEach((k, v) -> unmodHeaders.put(k, Collections.unmodifiableList(v)));
         this.map = Collections.unmodifiableMap(unmodHeaders);
-        this.headers = h;
+        this.headers = unmodHeaders;
     }
 
     public int size() {return headers.size();}
@@ -50,10 +50,7 @@ public class UnmodifiableHeaders extends Headers {
 
     public boolean containsValue(Object value) { return headers.containsValue(value); }
 
-    public List<String> get(Object key) {
-        List<String> l = headers.get(key);
-        return l == null ? null : Collections.unmodifiableList(l);
-    }
+    public List<String> get(Object key) { return headers.get(key); }
 
     public String getFirst(String key) { return headers.getFirst(key); }
 
