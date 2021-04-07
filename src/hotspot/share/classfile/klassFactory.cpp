@@ -109,25 +109,27 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
 }
 
 
-static ClassFileStream* check_class_file_load_hook(JavaThread* current,
-                                                   ClassFileStream* stream,
+static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
                                                    Symbol* name,
                                                    ClassLoaderData* loader_data,
                                                    Handle protection_domain,
-                                                   JvmtiCachedClassFileData** cached_class_file) {
+                                                   JvmtiCachedClassFileData** cached_class_file,
+                                                   TRAPS) {
 
   assert(stream != NULL, "invariant");
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
-    Handle class_loader(current, loader_data->class_loader());
+    const JavaThread* jt = THREAD->as_Java_thread();
+
+    Handle class_loader(THREAD, loader_data->class_loader());
 
     // Get the cached class file bytes (if any) from the class that
     // is being redefined or retransformed. We use jvmti_thread_state()
-    // instead of JvmtiThreadState::state_for(current) so we don't allocate
+    // instead of JvmtiThreadState::state_for(jt) so we don't allocate
     // a JvmtiThreadState any earlier than necessary. This will help
     // avoid the bug described by 7126851.
 
-    JvmtiThreadState* state = current->jvmti_thread_state();
+    JvmtiThreadState* state = jt->jvmti_thread_state();
 
     if (state != NULL) {
       Klass* k = state->get_class_being_redefined();
@@ -186,12 +188,12 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   // Skip this processing for VM hidden or anonymous classes
   if (!cl_info.is_hidden() && (cl_info.unsafe_anonymous_host() == NULL)) {
-    stream = check_class_file_load_hook(THREAD->as_Java_thread(),
-                                        stream,
+    stream = check_class_file_load_hook(stream,
                                         name,
                                         loader_data,
                                         cl_info.protection_domain(),
-                                        &cached_class_file);
+                                        &cached_class_file,
+                                        CHECK_NULL);
   }
 
   ClassFileParser parser(stream,

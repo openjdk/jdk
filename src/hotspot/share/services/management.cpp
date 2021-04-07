@@ -1919,7 +1919,7 @@ JVM_ENTRY(jint, jmm_DumpHeap0(JNIEnv *env, jstring outputfile, jboolean live))
                "Output file name cannot be null.", -1);
   }
   Handle onhandle(THREAD, on);
-  char* name = java_lang_String::as_platform_dependent_str(THREAD->as_Java_thread(), onhandle);
+  char* name = java_lang_String::as_platform_dependent_str(onhandle, CHECK_(-1));
   if (name == NULL) {
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
                "Output file name cannot be null.", -1);

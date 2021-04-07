@@ -299,8 +299,8 @@ static void set_property(Handle props, const char* key, const char* value, TRAPS
   JavaValue r(T_OBJECT);
   // public synchronized Object put(Object key, Object value);
   HandleMark hm(THREAD);
-  Handle key_str    = java_lang_String::create_from_platform_dependent_str(THREAD->as_Java_thread(), key);
-  Handle value_str  = java_lang_String::create_from_platform_dependent_str(THREAD->as_Java_thread(), (value != NULL ? value : ""));
+  Handle key_str    = java_lang_String::create_from_platform_dependent_str(key, CHECK);
+  Handle value_str  = java_lang_String::create_from_platform_dependent_str((value != NULL ? value : ""), CHECK);
   JavaCalls::call_virtual(&r,
                           props,
                           vmClasses::Properties_klass(),
@@ -322,7 +322,6 @@ static void set_property(Handle props, const char* key, const char* value, TRAPS
 JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
-  JavaThread* current = THREAD->as_Java_thread();
   int ndx = 0;
   int fixedCount = 2;
 
@@ -338,8 +337,8 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
     const char * key = p->key();
     if (strcmp(key, "sun.nio.MaxDirectMemorySize") != 0) {
         const char * value = p->value();
-        Handle key_str    = java_lang_String::create_from_platform_dependent_str(current, key);
-        Handle value_str  = java_lang_String::create_from_platform_dependent_str(current, (value != NULL ? value : ""));
+        Handle key_str    = java_lang_String::create_from_platform_dependent_str(key, CHECK_NULL);
+        Handle value_str  = java_lang_String::create_from_platform_dependent_str((value != NULL ? value : ""), CHECK_NULL);
         result_h->obj_at_put(ndx * 2,  key_str());
         result_h->obj_at_put(ndx * 2 + 1, value_str());
         ndx++;
@@ -355,8 +354,8 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
   if (!FLAG_IS_DEFAULT(MaxDirectMemorySize)) {
     char as_chars[256];
     jio_snprintf(as_chars, sizeof(as_chars), JULONG_FORMAT, MaxDirectMemorySize);
-    Handle key_str = java_lang_String::create_from_platform_dependent_str(current, "sun.nio.MaxDirectMemorySize");
-    Handle value_str  = java_lang_String::create_from_platform_dependent_str(current, as_chars);
+    Handle key_str = java_lang_String::create_from_platform_dependent_str("sun.nio.MaxDirectMemorySize", CHECK_NULL);
+    Handle value_str  = java_lang_String::create_from_platform_dependent_str(as_chars, CHECK_NULL);
     result_h->obj_at_put(ndx * 2,  key_str());
     result_h->obj_at_put(ndx * 2 + 1, value_str());
     ndx++;
@@ -388,8 +387,8 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
 
     if (*compiler_name != '\0' &&
         (Arguments::mode() != Arguments::_int)) {
-      Handle key_str = java_lang_String::create_from_platform_dependent_str(current, "sun.management.compiler");
-      Handle value_str  = java_lang_String::create_from_platform_dependent_str(current, compiler_name);
+      Handle key_str = java_lang_String::create_from_platform_dependent_str("sun.management.compiler", CHECK_NULL);
+      Handle value_str  = java_lang_String::create_from_platform_dependent_str(compiler_name, CHECK_NULL);
       result_h->obj_at_put(ndx * 2,  key_str());
       result_h->obj_at_put(ndx * 2 + 1, value_str());
       ndx++;
@@ -411,7 +410,7 @@ JVM_END
 JVM_ENTRY(jstring, JVM_GetTemporaryDirectory(JNIEnv *env))
   HandleMark hm(THREAD);
   const char* temp_dir = os::get_temp_directory();
-  Handle h = java_lang_String::create_from_platform_dependent_str(THREAD->as_Java_thread(), temp_dir);
+  Handle h = java_lang_String::create_from_platform_dependent_str(temp_dir, CHECK_NULL);
   return (jstring) JNIHandles::make_local(THREAD, h());
 JVM_END
 
@@ -3847,11 +3846,11 @@ JVM_ENTRY(jobjectArray, JVM_GetVmArguments(JNIEnv *env))
   int index = 0;
   JavaThread* current = THREAD->as_Java_thread();
   for (int j = 0; j < num_flags; j++, index++) {
-    Handle h = java_lang_String::create_from_platform_dependent_str(current, vm_flags[j]);
+    Handle h = java_lang_String::create_from_platform_dependent_str(vm_flags[j], CHECK_NULL);
     result_h->obj_at_put(index, h());
   }
   for (int i = 0; i < num_args; i++, index++) {
-    Handle h = java_lang_String::create_from_platform_dependent_str(current, vm_args[i]);
+    Handle h = java_lang_String::create_from_platform_dependent_str(vm_args[i], CHECK_NULL);
     result_h->obj_at_put(index, h());
   }
   return (jobjectArray) JNIHandles::make_local(THREAD, result_h());

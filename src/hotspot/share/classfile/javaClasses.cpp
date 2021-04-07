@@ -393,7 +393,7 @@ Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
 }
 
 // Converts a C string to a Java String based on current encoding
-Handle java_lang_String::create_from_platform_dependent_str(JavaThread* current, const char* str) {
+Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRAPS) {
   assert(str != NULL, "bad arguments");
 
   typedef jstring (JNICALL *to_java_string_fn_t)(JNIEnv*, const char *);
@@ -415,19 +415,20 @@ Handle java_lang_String::create_from_platform_dependent_str(JavaThread* current,
 
   jstring js = NULL;
   {
-    HandleMark hm(current);
-    ThreadToNativeFromVM ttn(current);
-    js = (_to_java_string_fn)(current->jni_environment(), str);
+    JavaThread* thread = THREAD->as_Java_thread();
+    HandleMark hm(thread);
+    ThreadToNativeFromVM ttn(thread);
+    js = (_to_java_string_fn)(thread->jni_environment(), str);
   }
 
-  Handle native_platform_string(current, JNIHandles::resolve(js));
+  Handle native_platform_string(THREAD, JNIHandles::resolve(js));
   JNIHandles::destroy_local(js);  // destroy local JNIHandle.
   return native_platform_string;
 }
 
 // Converts a Java String to a native C string that can be used for
 // native OS calls.
-char* java_lang_String::as_platform_dependent_str(JavaThread* current, Handle java_string) {
+char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   typedef char* (*to_platform_string_fn_t)(JNIEnv*, jstring, bool*);
   static to_platform_string_fn_t _to_platform_string_fn = NULL;
 
@@ -440,12 +441,12 @@ char* java_lang_String::as_platform_dependent_str(JavaThread* current, Handle ja
   }
 
   char *native_platform_string;
-  {
-    jstring js = (jstring) JNIHandles::make_local(current, java_string());
+  { JavaThread* thread = THREAD->as_Java_thread();
+    jstring js = (jstring) JNIHandles::make_local(thread, java_string());
     bool is_copy;
-    HandleMark hm(current);
-    ThreadToNativeFromVM ttn(current);
-    JNIEnv *env = current->jni_environment();
+    HandleMark hm(thread);
+    ThreadToNativeFromVM ttn(thread);
+    JNIEnv *env = thread->jni_environment();
     native_platform_string = (_to_platform_string_fn)(env, js, &is_copy);
     assert(is_copy == JNI_TRUE, "is_copy value changed");
     JNIHandles::destroy_local(js);
