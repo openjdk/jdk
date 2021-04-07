@@ -942,15 +942,15 @@ public:
 };
 void ClassLoaderData::print_on(outputStream* out) const {
   ResourceMark rm;
-  out->print_cr("ClassLoaderData(" PTR_FORMAT ")", p2i(this));
+  out->print_cr("ClassLoaderData(" INTPTR_FORMAT ")", p2i(this));
   out->print_cr(" - name                %s", loader_name_and_id());
   if (!_holder.is_null()) {
     out->print   (" - holder              ");
     _holder.print_on(out);
     out->print_cr("");
   }
-  out->print_cr(" - class loader        " PTR_FORMAT, p2i(_class_loader.ptr_raw()));
-  out->print_cr(" - metaspace           " PTR_FORMAT, p2i(_metaspace));
+  out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.ptr_raw()));
+  out->print_cr(" - metaspace           " INTPTR_FORMAT, p2i(_metaspace));
   out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
   out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
   out->print_cr(" - modified oops       %s", _modified_oops ? "true" : "false");
@@ -969,17 +969,17 @@ void ClassLoaderData::print_on(outputStream* out) const {
   PrintKlassClosure closure(out);
   ((ClassLoaderData*)this)->classes_do(&closure);
   out->print_cr(" }");
-  out->print_cr(" - packages            " PTR_FORMAT, p2i(_packages));
-  out->print_cr(" - module              " PTR_FORMAT, p2i(_modules));
-  out->print_cr(" - unnamed module      " PTR_FORMAT, p2i(_unnamed_module));
-  out->print_cr(" - dictionary          " PTR_FORMAT, p2i(_dictionary));
+  out->print_cr(" - packages            " INTPTR_FORMAT, p2i(_packages));
+  out->print_cr(" - module              " INTPTR_FORMAT, p2i(_modules));
+  out->print_cr(" - unnamed module      " INTPTR_FORMAT, p2i(_unnamed_module));
+  out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
   if (_jmethod_ids != NULL) {
     out->print   (" - jmethod count       ");
-    Method::print_jmethod_ids_counts(this, out);
+    Method::print_jmethod_ids_count(this, out);
     out->print_cr("");
   }
-  out->print_cr(" - deallocate list     " PTR_FORMAT, p2i(_deallocate_list));
-  out->print_cr(" - next CLD            " PTR_FORMAT, p2i(_next));
+  out->print_cr(" - deallocate list     " INTPTR_FORMAT, p2i(_deallocate_list));
+  out->print_cr(" - next CLD            " INTPTR_FORMAT, p2i(_next));
 }
 #endif // PRODUCT
 
