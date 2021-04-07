@@ -41,7 +41,7 @@ public class UserPrincipalNotFoundException
     static final long serialVersionUID = -5369283889045833024L;
 
     /**
-     * The name of the {@code UserPrincipal} that does not exist
+     * The name of the {@code UserPrincipal} that does not exist.
      */
     private final String name;
 
