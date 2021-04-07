@@ -27,6 +27,7 @@
 #include "classfile/vmClasses.hpp"
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/notificationThread.hpp"
 #include "services/diagnosticArgument.hpp"

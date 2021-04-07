@@ -898,7 +898,7 @@ Deoptimization::DeoptAction Deoptimization::_unloaded_action
 
 
 
-#if INCLUDE_JVMCI || INCLUDE_AOT
+#if COMPILER2_OR_JVMCI || INCLUDE_AOT
 template<typename CacheType>
 class BoxCacheBase : public CHeapObj<mtCompiler> {
 protected:
@@ -1026,7 +1026,7 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
    }
    return NULL;
 }
-#endif // INCLUDE_JVMCI || INCLUDE_AOT
+#endif // COMPILER2_OR_JVMCI || INCLUDE_AOT
 
 #if COMPILER2_OR_JVMCI
 bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
@@ -1045,9 +1045,8 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
     oop obj = NULL;
 
     if (k->is_instance_klass()) {
-#if INCLUDE_JVMCI || INCLUDE_AOT
-      CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
-      if (cm->is_compiled_by_jvmci() && sv->is_auto_box()) {
+#if COMPILER2_OR_JVMCI || INCLUDE_AOT
+      if (sv->is_auto_box()) {
         AutoBoxObjectValue* abv = (AutoBoxObjectValue*) sv;
         obj = get_cached_box(abv, fr, reg_map, THREAD);
         if (obj != NULL) {
@@ -1055,7 +1054,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
           abv->set_cached(true);
         }
       }
-#endif // INCLUDE_JVMCI || INCLUDE_AOT
+#endif // COMPILER2_OR_JVMCI || INCLUDE_AOT
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (obj == NULL) {
 #ifdef COMPILER2
@@ -1397,12 +1396,12 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     if (obj.is_null()) {
       continue;
     }
-#if INCLUDE_JVMCI || INCLUDE_AOT
+#if COMPILER2_OR_JVMCI || INCLUDE_AOT
     // Don't reassign fields of boxes that came from a cache. Caches may be in CDS.
     if (sv->is_auto_box() && ((AutoBoxObjectValue*) sv)->is_cached()) {
       continue;
     }
-#endif // INCLUDE_JVMCI || INCLUDE_AOT
+#endif // COMPILER2_OR_JVMCI || INCLUDE_AOT
 #ifdef COMPILER2
     if (EnableVectorSupport && VectorSupport::is_vector(k)) {
       assert(sv->field_size() == 1, "%s not a vector", k->name()->as_C_string());

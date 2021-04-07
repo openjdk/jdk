@@ -61,6 +61,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
