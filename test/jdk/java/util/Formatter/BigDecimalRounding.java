@@ -42,17 +42,21 @@ public class BigDecimalRounding {
     public static void testBigDecimalRounding() {
         var res1 = String.format("%g", 0.00009999999999999995);
         var res2 = String.format("%g", 0.00009999999f);
-        var res3 = String.format("%g", new BigDecimal("0.00009999999999999999995"));
+        var res3 = String.format("%g", new BigDecimal(0.0001));
+        var res4 = String.format("%g", new BigDecimal("0.00009999999999999999995"));
 
         assertEquals(res1, res2);
         assertEquals(res2, res3);
+        assertEquals(res3, res4);
 
-        var res4 = String.format("%.9g", 999999.999999432168754e+3);
-        var res5 = String.format("%.9g", 999999999.999432168754f);
-        var res6 = String.format("%.9g", new BigDecimal("999999.999999432168754e+3")); // !!
+        var res5 = String.format("%.9g", 999999.999999432168754e+3);
+        var res6 = String.format("%.9g", 999999999.999432168754f);
+        var res7 = String.format("%.9g", new BigDecimal("999999.999999432168754e+3")); // !!
+        var res8 = String.format("%.9g", new BigDecimal("1000000000")); // !!
 
-        assertEquals(res4, res5);
         assertEquals(res5, res6);
+        assertEquals(res6, res7);
+        assertEquals(res7, res8);
 
     }
 }
