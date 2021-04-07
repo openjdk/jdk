@@ -3844,7 +3844,6 @@ JVM_ENTRY(jobjectArray, JVM_GetVmArguments(JNIEnv *env))
   objArrayHandle result_h(THREAD, r);
 
   int index = 0;
-  JavaThread* current = THREAD->as_Java_thread();
   for (int j = 0; j < num_flags; j++, index++) {
     Handle h = java_lang_String::create_from_platform_dependent_str(vm_flags[j], CHECK_NULL);
     result_h->obj_at_put(index, h());
