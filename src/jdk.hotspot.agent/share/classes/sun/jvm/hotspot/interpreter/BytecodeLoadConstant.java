@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,14 +195,14 @@ public class BytecodeLoadConstant extends Bytecode {
   }
 
   public String toString() {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append(getJavaBytecodeName());
     buf.append(spaces);
     buf.append('#');
-    buf.append(Integer.toString(poolIndex()));
+    buf.append(poolIndex());
     if (hasCacheIndex()) {
        buf.append('(');
-       buf.append(Integer.toString(cacheIndex()));
+       buf.append(cacheIndex());
        buf.append(')');
     }
     buf.append(spaces);

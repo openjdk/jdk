@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+// Copyright (c) 2012, 2021 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1562,7 +1562,7 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("pop frame\n\t");
 
   if (do_polling() && C->is_method_compilation()) {
-    st->print("touch polling page\n\t");
+    st->print("safepoint poll\n\t");
   }
 }
 #endif
@@ -1577,18 +1577,11 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   const bool method_needs_polling = do_polling() && C->is_method_compilation();
   const bool method_is_frameless  = false /* TODO: PPC port C->is_frameless_method()*/;
   const Register return_pc        = R31;  // Must survive C-call to enable_stack_reserved_zone().
-  const Register polling_page     = R12;
+  const Register temp             = R12;
 
   if (!method_is_frameless) {
     // Restore return pc relative to callers' sp.
     __ ld(return_pc, ((int)framesize) + _abi0(lr), R1_SP);
-  }
-
-  if (method_needs_polling) {
-    __ ld(polling_page, in_bytes(JavaThread::polling_page_offset()), R16_thread);
-  }
-
-  if (!method_is_frameless) {
     // Move return pc to LR.
     __ mtlr(return_pc);
     // Pop frame (fixed frame-size).
@@ -1600,10 +1593,13 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (method_needs_polling) {
-    // We need to mark the code position where the load from the safepoint
-    // polling page was emitted as relocInfo::poll_return_type here.
-    __ relocate(relocInfo::poll_return_type);
-    __ load_from_polling_page(polling_page);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!UseSIGTRAP && !C->output()->in_scratch_emit_size()) {
+      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      __ relocate(relocInfo::poll_return_type);
+    }
+    __ safepoint_poll(*code_stub, temp, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -2158,6 +2154,14 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 
 const bool Matcher::has_predicated_vectors(void) {
   return false;
+}
+
+const RegMask* Matcher::predicate_reg_mask(void) {
+  return NULL;
+}
+
+const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+  return NULL;
 }
 
 bool Matcher::supports_vector_variable_shifts(void) {

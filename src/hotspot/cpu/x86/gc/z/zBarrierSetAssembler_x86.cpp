@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   // Call VM
   call_vm(masm, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), dst, scratch);
 
-  // Restore registers
   __ movdqu(xmm0, Address(rsp, xmm_size * 0));
   __ movdqu(xmm1, Address(rsp, xmm_size * 1));
   __ movdqu(xmm2, Address(rsp, xmm_size * 2));
@@ -394,6 +393,7 @@ private:
 
   MacroAssembler* const          _masm;
   GrowableArray<Register>        _gp_registers;
+  GrowableArray<KRegister>       _opmask_registers;
   GrowableArray<XMMRegisterData> _xmm_registers;
   int                            _spill_size;
   int                            _spill_offset;
@@ -450,8 +450,18 @@ private:
     __ movq(Address(rsp, _spill_offset), reg);
   }
 
+  void opmask_register_save(KRegister reg) {
+    _spill_offset -= 8;
+    __ kmovql(Address(rsp, _spill_offset), reg);
+  }
+
   void gp_register_restore(Register reg) {
     __ movq(reg, Address(rsp, _spill_offset));
+    _spill_offset += 8;
+  }
+
+  void opmask_register_restore(KRegister reg) {
+    __ kmovql(reg, Address(rsp, _spill_offset));
     _spill_offset += 8;
   }
 
@@ -477,6 +487,7 @@ private:
     }
 
     int gp_spill_size = 0;
+    int opmask_spill_size = 0;
     int xmm_spill_size = 0;
 
     // Record registers that needs to be saved/restored
@@ -489,6 +500,13 @@ private:
         if (caller_saved.Member(opto_reg)) {
           _gp_registers.append(vm_reg->as_Register());
           gp_spill_size += 8;
+        }
+      } else if (vm_reg->is_KRegister()) {
+        // All opmask registers are caller saved, thus spill the ones
+        // which are live.
+        if (_opmask_registers.find(vm_reg->as_KRegister()) == -1) {
+          _opmask_registers.append(vm_reg->as_KRegister());
+          opmask_spill_size += 8;
         }
       } else if (vm_reg->is_XMMRegister()) {
         // We encode in the low order 4 bits of the opto_reg, how large part of the register is live
@@ -520,13 +538,14 @@ private:
     const int arg_spill_size = frame::arg_reg_save_area_bytes;
 
     // Stack pointer must be 16 bytes aligned for the call
-    _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + arg_spill_size, 16);
+    _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + opmask_spill_size + arg_spill_size, 16);
   }
 
 public:
   ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
       _masm(masm),
       _gp_registers(),
+      _opmask_registers(),
       _xmm_registers(),
       _spill_size(0),
       _spill_offset(0) {
@@ -576,9 +595,19 @@ public:
     for (int i = 0; i < _gp_registers.length(); i++) {
       gp_register_save(_gp_registers.at(i));
     }
+
+    // Save opmask registers
+    for (int i = 0; i < _opmask_registers.length(); i++) {
+      opmask_register_save(_opmask_registers.at(i));
+    }
   }
 
   ~ZSaveLiveRegisters() {
+    // Restore opmask registers
+    for (int i = _opmask_registers.length() - 1; i >= 0; i--) {
+      opmask_register_restore(_opmask_registers.at(i));
+    }
+
     // Restore general purpose registers
     for (int i = _gp_registers.length() - 1; i >= 0; i--) {
       gp_register_restore(_gp_registers.at(i));
