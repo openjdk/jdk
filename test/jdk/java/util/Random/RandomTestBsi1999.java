@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,7 +439,9 @@ public class RandomTestBsi1999 {
         RandomGeneratorFactory.all().forEach(factory -> {
             setRNG(factory.name());
 
-            if (factory.name().equals("Random")) {
+            if (currentRNG.equals("SecureRandom")) {
+                // skip because stochastic
+            } else if (currentRNG.equals("Random")) {
                 // testOneRng(factory.create(59), 1);
                 // autocorrelation failure for java.util.Random longs bit 0: count=2207 (should be in [2267,2733]), tau=2819
 
