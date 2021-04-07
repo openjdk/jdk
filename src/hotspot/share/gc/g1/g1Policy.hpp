@@ -317,7 +317,7 @@ public:
 
   // Record start and end of remark.
   void record_concurrent_mark_remark_start();
-  void record_concurrent_mark_remark_end();
+  void record_concurrent_mark_remark_end(bool early_restart = false);
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();

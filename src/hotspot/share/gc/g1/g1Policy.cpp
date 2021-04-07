@@ -546,11 +546,14 @@ void G1Policy::record_concurrent_mark_remark_start() {
   _mark_remark_start_sec = os::elapsedTime();
 }
 
-void G1Policy::record_concurrent_mark_remark_end() {
+void G1Policy::record_concurrent_mark_remark_end(bool early_restart) {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
-
+  if (early_restart) {
+    abort_time_to_mixed_tracking();
+    collector_state()->set_mark_or_rebuild_in_progress(false);
+  }
   record_pause(G1GCPauseType::Remark, _mark_remark_start_sec, end_time_sec);
 }
 

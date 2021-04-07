@@ -1118,6 +1118,7 @@ void G1ConcurrentMark::remark() {
   double mark_work_end = os::elapsedTime();
 
   bool const mark_finished = !has_overflown();
+  bool early_restart_cycle = false;
   if (mark_finished) {
     weak_refs_work(false /* clear_all_soft_refs */);
 
@@ -1150,6 +1151,7 @@ void G1ConcurrentMark::remark() {
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
                                       _g1h->num_regions(), cl.total_selected_for_rebuild());
+      early_restart_cycle = (cl.total_selected_for_rebuild() == 0);
     }
     {
       GCTraceTime(Debug, gc, phases) debug("Reclaim Empty Regions", _gc_timer_cm);
@@ -1194,7 +1196,12 @@ void G1ConcurrentMark::remark() {
   _remark_weak_ref_times.add((now - mark_work_end) * 1000.0);
   _remark_times.add((now - start) * 1000.0);
 
-  policy->record_concurrent_mark_remark_end();
+  // If Remark did not select any regions for RemSet rebuild, end concurrent cycle
+  // skipping the rebuild remembered set phase
+  if (early_restart_cycle) {
+    concurrent_cycle_abort();
+  }
+  policy->record_concurrent_mark_remark_end(early_restart_cycle);
 }
 
 class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
