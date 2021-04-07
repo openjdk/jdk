@@ -396,7 +396,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = (input.build_os == 'macosx' && input.build_cpu == 'aarch64') ? "16" : "15";
+    common.boot_jdk_version = "16";
     common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
