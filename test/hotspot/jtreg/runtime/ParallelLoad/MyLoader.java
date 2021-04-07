@@ -61,7 +61,7 @@ class MyLoader extends ClassLoader {
     private static boolean parallel = false;
     private Object sync = new Object();
     private Object thread_sync = new Object();
-    private static boolean ready = false;
+    private static volatile boolean ready = false;
 
     private void makeThreadWait() {
         if (!parallel) { return; }
