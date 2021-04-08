@@ -231,27 +231,27 @@ class WindowsFileStore
         if (name.equals("owner"))
             return supportsFileAttributeView(FileOwnerAttributeView.class);
         if (name.equals("user"))
-            return supportsFileAttributeView(UserDefinedFileAttributeView.class); return false;
+            return supportsFileAttributeView(UserDefinedFileAttributeView.class);
+        return false;
     }
 
     @Override
     public boolean equals(Object ob) {
         if (ob == this)
             return true;
-        if (!(ob instanceof WindowsFileStore))
-            return false;
-        WindowsFileStore other = (WindowsFileStore)ob;
-        if (root.equals(other.root))
-            return true;
-        if (volType == DRIVE_FIXED && other.volumeType() == DRIVE_FIXED)
-            return root.equalsIgnoreCase(other.root);
+        if (ob instanceof WindowsFileStore other) {
+            if (root.equals(other.root))
+                return true;
+            if (volType == DRIVE_FIXED && other.volumeType() == DRIVE_FIXED)
+                return root.equalsIgnoreCase(other.root);
+        }
         return false;
     }
 
     @Override
     public int hashCode() {
         if (hashCode == 0) { // Don't care about race
-            hashCode = volType == DRIVE_FIXED ?
+            hashCode = (volType == DRIVE_FIXED) ?
                 root.toLowerCase(Locale.ROOT).hashCode() : root.hashCode();
         }
         return hashCode;
