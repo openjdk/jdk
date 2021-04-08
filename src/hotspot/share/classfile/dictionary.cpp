@@ -89,7 +89,7 @@ void Dictionary::free_entry(DictionaryEntry* entry) {
   // pd_set is accessed during a safepoint.
   // This doesn't require a lock because nothing is reading this
   // entry anymore.  The ClassLoader is dead.
-  if (entry->pd_set_acquire() != NULL) {
+  while (entry->pd_set_acquire() != NULL) {
     ProtectionDomainEntry* to_delete = entry->pd_set_acquire();
     entry->release_set_pd_set(to_delete->next_acquire());
     delete to_delete;

@@ -73,6 +73,8 @@ class CleanProtectionDomainEntries : public CLDClosure {
   }
 };
 
+static GrowableArray<ProtectionDomainEntry*>* _delete_list = NULL;
+
 class HandshakeForPD : public HandshakeClosure {
  public:
   HandshakeForPD() : HandshakeClosure("HandshakeForPD") {}
@@ -83,21 +85,23 @@ class HandshakeForPD : public HandshakeClosure {
   }
 };
 
-static void purge_deleted_entries(GrowableArray<ProtectionDomainEntry*>* delete_list) {
+static void purge_deleted_entries() {
   // If there are any deleted entries, Handshake-all then they'll be
   // safe to remove since traversing the pd_set list does not stop for
   // safepoints and only JavaThreads will read the pd_set.
   // This is actually quite rare because the protection domain is generally associated
   // with the caller class and class loader, which if still alive will keep this
   // protection domain entry alive.
-  if (delete_list->length() != 0) {
+  if (_delete_list->length() >= 10) {
     HandshakeForPD hs_pd;
     Handshake::execute(&hs_pd);
 
-    for (int i = 0; i < delete_list->length(); i++) {
-      ProtectionDomainEntry* entry = delete_list->at(i);
+    for (int i = _delete_list->length() - 1; i >= 0; i--) {
+      ProtectionDomainEntry* entry = _delete_list->at(i);
+      _delete_list->remove_at(i);
       delete entry;
     }
+    assert(_delete_list->length() == 0, "should be cleared");
   }
 }
 
@@ -105,8 +109,12 @@ void ProtectionDomainCacheTable::unlink() {
   // The dictionary entries _pd_set field should be null also, so nothing to do.
   assert(java_lang_System::allow_security_manager(), "should not be called otherwise");
 
-  ResourceMark rm;
-  GrowableArray<ProtectionDomainEntry*> delete_list;
+  // Create a list for holding deleted entries
+  if (_delete_list == NULL) {
+    _delete_list = new (ResourceObj::C_HEAP, mtClass)
+                       GrowableArray<ProtectionDomainEntry*>(20, mtClass);
+  }
+
   {
     // First clean cached pd lists in loaded CLDs
     // It's unlikely, but some loaded classes in a dictionary might
@@ -114,12 +122,12 @@ void ProtectionDomainCacheTable::unlink() {
     // The dictionary pd_set points at entries in the ProtectionDomainCacheTable.
     MutexLocker ml(ClassLoaderDataGraph_lock);
     MutexLocker mldict(SystemDictionary_lock);  // need both.
-    CleanProtectionDomainEntries clean(&delete_list);
+    CleanProtectionDomainEntries clean(_delete_list);
     ClassLoaderDataGraph::loaded_cld_do(&clean);
   }
 
   // Purge any deleted entries outside of the SystemDictionary_lock.
-  purge_deleted_entries(&delete_list);
+  purge_deleted_entries();
 
   MutexLocker ml(SystemDictionary_lock);
   int oops_removed = 0;
@@ -207,7 +215,6 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, Ha
 
   return NULL;
 }
-
 
 ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, unsigned int hash, Handle protection_domain) {
   assert_locked_or_safepoint(SystemDictionary_lock);
