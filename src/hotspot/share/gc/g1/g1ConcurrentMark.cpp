@@ -1321,7 +1321,6 @@ void G1ConcurrentMark::cleanup() {
   double start = os::elapsedTime();
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup before");
-  // FIXME: can do without the exception.
   bool has_rebuilt_remembered_sets = (total_selected_for_rebuild() > 0);
   if (has_rebuilt_remembered_sets) {
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
