@@ -769,7 +769,7 @@ class vmSymbols: AllStatic {
 
  public:
   // Initialization
-  static void initialize(TRAPS);
+  static void initialize();
   // Accessing
   #define VM_SYMBOL_DECLARE(name, ignore)                 \
     static Symbol* name() {                               \
