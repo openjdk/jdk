@@ -85,7 +85,10 @@ public class XCreateWindowParams extends HashMap<Object, Object> {
         Iterator<Map.Entry<Object, Object>> eIter = entrySet().iterator();
         while (eIter.hasNext()) {
             Map.Entry<Object, Object> entry = eIter.next();
-            buf.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+            buf.append(entry.getKey())
+               .append(": ")
+               .append(entry.getValue())
+               .append("\n");
         }
         return buf.toString();
     }
