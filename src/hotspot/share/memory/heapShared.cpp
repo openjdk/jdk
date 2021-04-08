@@ -346,6 +346,8 @@ void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion>* closed,
     // Cache for recording where the archived objects are copied to
     create_archived_object_cache();
 
+    log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                  p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
     log_info(cds)("Dumping objects to closed archive heap region ...");
     copy_closed_archive_heap_objects(closed);
 

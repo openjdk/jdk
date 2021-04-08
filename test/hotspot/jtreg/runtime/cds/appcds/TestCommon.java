@@ -452,6 +452,12 @@ public class TestCommon extends CDSTestUtils {
         return new Result(opts, runWithArchive(opts));
     }
 
+    public static Result runWithoutCDS(String... suffix) throws Exception {
+        AppCDSOptions opts = (new AppCDSOptions());
+        opts.addSuffix(suffix).setXShareMode("off");;
+        return new Result(opts, runWithArchive(opts));
+    }
+
     public static Result runWithRelativePath(String jarDir, String... suffix) throws Exception {
         AppCDSOptions opts = (new AppCDSOptions());
         opts.setAppJarDir(jarDir);
