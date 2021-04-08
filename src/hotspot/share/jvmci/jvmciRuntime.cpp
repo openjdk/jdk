@@ -402,7 +402,7 @@ JRT_LEAF(void, JVMCIRuntime::monitorexit(JavaThread* current, oopDesc* obj, Basi
 JRT_END
 
 // Object.notify() fast path, caller does slow path
-JRT_LEAF(jboolean, JVMCIRuntime::object_notify(JavaThread *current, oopDesc* obj))
+JRT_LEAF(jboolean, JVMCIRuntime::object_notify(JavaThread* current, oopDesc* obj))
 
   // Very few notify/notifyAll operations find any threads on the waitset, so
   // the dominant fast-path is to simply return.
@@ -418,7 +418,7 @@ JRT_LEAF(jboolean, JVMCIRuntime::object_notify(JavaThread *current, oopDesc* obj
 JRT_END
 
 // Object.notifyAll() fast path, caller does slow path
-JRT_LEAF(jboolean, JVMCIRuntime::object_notifyAll(JavaThread *current, oopDesc* obj))
+JRT_LEAF(jboolean, JVMCIRuntime::object_notifyAll(JavaThread* current, oopDesc* obj))
 
   if (!SafepointSynchronize::is_synchronizing() ) {
     if (ObjectSynchronizer::quick_notify(obj, current, true)) {

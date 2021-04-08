@@ -128,7 +128,7 @@ public:
 //------------------------------------------------------------------------------------------------------------------------
 // State accessors
 
-void InterpreterRuntime::set_bcp_and_mdp(address bcp, JavaThread *current) {
+void InterpreterRuntime::set_bcp_and_mdp(address bcp, JavaThread* current) {
   LastFrameAccessor last_frame(current);
   last_frame.set_bcp(bcp);
   if (ProfileInterpreter) {
@@ -300,7 +300,7 @@ JRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* current))
   ConstantPool* cpool = last_frame.method()->constants();
   // We'd expect to assert that we're only here to quicken bytecodes, but in a multithreaded
   // program we might have seen an unquick'd bytecode in the interpreter but have another
-  // current quicken the bytecode before we get here.
+  // thread quicken the bytecode before we get here.
   // assert( cpool->tag_at(which).is_unresolved_klass(), "should only come here to quicken bytecodes" );
   Klass* klass = cpool->klass_at(which, CHECK);
   current->set_vm_result_2(klass);
@@ -1154,7 +1154,7 @@ JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))
   StackWatermarkSet::before_unwind(current);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread *current, oopDesc* obj,
+JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDesc* obj,
                                                       ConstantPoolCacheEntry *cp_entry))
 
   // check the access_flags for the field in the klass
@@ -1234,7 +1234,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current,
                                            fid, sig_type, &fvalue);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::post_method_entry(JavaThread *current))
+JRT_ENTRY(void, InterpreterRuntime::post_method_entry(JavaThread* current))
   LastFrameAccessor last_frame(current);
   JvmtiExport::post_method_entry(current, last_frame.method(), last_frame.get_frame());
 JRT_END
@@ -1243,7 +1243,7 @@ JRT_END
 // This is a JRT_BLOCK_ENTRY because we have to stash away the return oop
 // before transitioning to VM, and restore it after transitioning back
 // to Java. The return oop at the top-of-stack, is not walked by the GC.
-JRT_BLOCK_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread *current))
+JRT_BLOCK_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread* current))
   LastFrameAccessor last_frame(current);
   JvmtiExport::post_method_exit(current, last_frame.method(), last_frame.get_frame());
 JRT_END
