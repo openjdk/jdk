@@ -984,12 +984,12 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // 1) the class is loaded by custom class loader or
       // 2) the class is loaded by built-in class loader but failed to add archived loader constraints
       bool need_init_table = true;
-      if (is_shared() && SystemDictionaryShared::check_linking_constraints(this, THREAD)) {
+      if (is_shared() && SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
         need_init_table = false;
       }
       if (need_init_table) {
-        vtable().initialize_vtable(true, CHECK_false);
-        itable().initialize_itable(true, CHECK_false);
+        vtable().initialize_vtable_and_check_constraints(CHECK_false);
+        itable().initialize_itable_and_check_constraints(CHECK_false);
       }
 #ifdef ASSERT
       vtable().verify(tty, true);
@@ -2599,8 +2599,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // have been redefined.
     bool trace_name_printed = false;
     adjust_default_methods(&trace_name_printed);
-    vtable().initialize_vtable(false, CHECK);
-    itable().initialize_itable(false, CHECK);
+    vtable().initialize_vtable();
+    itable().initialize_itable();
   }
 #endif
 
@@ -3150,41 +3150,47 @@ jint InstanceKlass::jvmti_class_status() const {
   return result;
 }
 
-Method* InstanceKlass::method_at_itable(Klass* holder, int index, TRAPS) {
-  itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();
-  int method_table_offset_in_words = ioe->offset()/wordSize;
-  int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words())
-                       / itableOffsetEntry::size();
-
-  for (int cnt = 0 ; ; cnt ++, ioe ++) {
+Method* InstanceKlass::method_at_itable(InstanceKlass* holder, int index, TRAPS) {
+  bool implements_interface; // initialized by method_at_itable_or_null
+  Method* m = method_at_itable_or_null(holder, index,
+                                       implements_interface); // out parameter
+  if (m != NULL) {
+    assert(implements_interface, "sanity");
+    return m;
+  } else if (implements_interface) {
+    // Throw AbstractMethodError since corresponding itable slot is empty.
+    THROW_NULL(vmSymbols::java_lang_AbstractMethodError());
+  } else {
     // If the interface isn't implemented by the receiver class,
     // the VM should throw IncompatibleClassChangeError.
-    if (cnt >= nof_interfaces) {
-      ResourceMark rm(THREAD);
-      stringStream ss;
-      bool same_module = (module() == holder->module());
-      ss.print("Receiver class %s does not implement "
-               "the interface %s defining the method to be called "
-               "(%s%s%s)",
-               external_name(), holder->external_name(),
-               (same_module) ? joint_in_module_of_loader(holder) : class_in_module_of_loader(),
-               (same_module) ? "" : "; ",
-               (same_module) ? "" : holder->class_in_module_of_loader());
-      THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
-    }
-
-    Klass* ik = ioe->interface_klass();
-    if (ik == holder) break;
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    bool same_module = (module() == holder->module());
+    ss.print("Receiver class %s does not implement "
+             "the interface %s defining the method to be called "
+             "(%s%s%s)",
+             external_name(), holder->external_name(),
+             (same_module) ? joint_in_module_of_loader(holder) : class_in_module_of_loader(),
+             (same_module) ? "" : "; ",
+             (same_module) ? "" : holder->class_in_module_of_loader());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
   }
-
-  itableMethodEntry* ime = ioe->first_method_entry(this);
-  Method* m = ime[index].method();
-  if (m == NULL) {
-    THROW_NULL(vmSymbols::java_lang_AbstractMethodError());
-  }
-  return m;
 }
 
+Method* InstanceKlass::method_at_itable_or_null(InstanceKlass* holder, int index, bool& implements_interface) {
+  klassItable itable(this);
+  for (int i = 0; i < itable.size_offset_table(); i++) {
+    itableOffsetEntry* offset_entry = itable.offset_entry(i);
+    if (offset_entry->interface_klass() == holder) {
+      implements_interface = true;
+      itableMethodEntry* ime = offset_entry->first_method_entry(this);
+      Method* m = ime[index].method();
+      return m;
+    }
+  }
+  implements_interface = false;
+  return NULL; // offset entry not found
+}
 
 #if INCLUDE_JVMTI
 // update default_methods for redefineclasses for methods that are

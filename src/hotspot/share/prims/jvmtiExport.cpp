@@ -699,8 +699,8 @@ OopStorage* JvmtiExport::weak_tag_storage() {
 void JvmtiExport::initialize_oop_storage() {
   // OopStorage needs to be created early in startup and unconditionally
   // because of OopStorageSet static array indices.
-  _jvmti_oop_storage = OopStorageSet::create_strong("JVMTI OopStorage");
-  _weak_tag_storage  = OopStorageSet::create_weak("JVMTI Tag Weak OopStorage");
+  _jvmti_oop_storage = OopStorageSet::create_strong("JVMTI OopStorage", mtServiceability);
+  _weak_tag_storage  = OopStorageSet::create_weak("JVMTI Tag Weak OopStorage", mtServiceability);
   _weak_tag_storage->register_num_dead_callback(&JvmtiTagMap::gc_notification);
 }
 

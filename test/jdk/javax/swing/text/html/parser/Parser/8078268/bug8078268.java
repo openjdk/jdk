@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ public class bug8078268 {
     static volatile Exception exception;
 
     public static void main(String[] args) throws Exception {
+        long timeout = 10_000;
         long s = System.currentTimeMillis();
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -53,14 +54,14 @@ public class bug8078268 {
                 }
             }
         });
-        while (!parsingDone && exception == null && System.currentTimeMillis() - s < 5_000) {
+        while (!parsingDone && exception == null && System.currentTimeMillis() - s < timeout) {
             Thread.sleep(200);
         }
         final long took = System.currentTimeMillis() - s;
         if (exception != null) {
             throw exception;
         }
-        if (took > 5_000) {
+        if (took > timeout) {
             throw new RuntimeException("Parsing takes too long.");
         }
     }

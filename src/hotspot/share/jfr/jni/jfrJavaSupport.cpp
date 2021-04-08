@@ -602,10 +602,9 @@ const char* const JDK_JFR_MODULE_NAME = "jdk.jfr";
 const char* const JDK_JFR_PACKAGE_NAME = "jdk/jfr";
 
 static bool is_jdk_jfr_module_in_readability_graph() {
-  Thread* const t = Thread::current();
   // take one of the packages in the module to be located and query for its definition.
   TempNewSymbol pkg_sym = SymbolTable::new_symbol(JDK_JFR_PACKAGE_NAME);
-  return Modules::is_package_defined(pkg_sym, Handle(), t);
+  return Modules::is_package_defined(pkg_sym, Handle());
 }
 
 static void print_module_resolution_error(outputStream* stream) {

@@ -146,7 +146,7 @@ public class MemoryPanel extends JPanel {
         protected Transferable createTransferable(JComponent c) {
           JTable table = (JTable)c;
           if (haveSelection()) {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             int iDir = (getRowAnchor() < getRowLead() ? 1 : -1);
             int jDir = (getColAnchor() < getColLead() ? 1 : -1);
 
@@ -553,7 +553,7 @@ public class MemoryPanel extends JPanel {
   }
 
   private String bigIntToHexString(BigInteger bi) {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append("0x");
     String val = bi.toString(16);
     for (int i = 0; i < ((2 * addressSize) - val.length()); i++) {

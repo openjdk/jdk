@@ -50,7 +50,7 @@ import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
  */
 public class EventDirectoryStream extends AbstractEventStream {
 
-    private final static Comparator<? super RecordedEvent> EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
+    private static final Comparator<? super RecordedEvent> EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
 
     private final RepositoryFiles repositoryFiles;
     private final FileAccess fileAccess;

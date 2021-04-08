@@ -238,7 +238,7 @@ public final class Connection implements Runnable {
             outStream = new BufferedOutputStream(sock.getOutputStream());
 
         } catch (InvocationTargetException e) {
-            Throwable realException = e.getTargetException();
+            Throwable realException = e.getCause();
             // realException.printStackTrace();
 
             CommunicationException ce =
