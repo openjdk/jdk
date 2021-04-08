@@ -62,6 +62,7 @@ private:
   // to make complete explicit cycle for for demanding customers.
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
+  Monitor _control_lock;
   ShenandoahPeriodicTask _periodic_task;
   ShenandoahPeriodicPacerNotify _periodic_pacer_notify_task;
 
@@ -175,6 +176,7 @@ public:
 
  private:
   static const char* gc_mode_name(GCMode mode);
+  void notify_control_thread();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP
