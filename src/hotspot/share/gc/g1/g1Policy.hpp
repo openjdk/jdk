@@ -317,11 +317,11 @@ public:
 
   // Record start and end of remark.
   void record_concurrent_mark_remark_start();
-  void record_concurrent_mark_remark_end(bool early_restart = false);
+  void record_concurrent_mark_remark_end();
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
-  void record_concurrent_mark_cleanup_end();
+  void record_concurrent_mark_cleanup_end(bool rebuilt_remembered_sets);
 
   void print_phases();
 
