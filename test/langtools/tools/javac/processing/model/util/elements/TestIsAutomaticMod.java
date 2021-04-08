@@ -50,7 +50,6 @@ public class TestIsAutomaticMod extends JavacTestingAbstractProcessor {
             for (Element e : roundEnv.getRootElements() ) {
                 ModuleElement enclosing = elements.getModuleOf(e);
                 checkMod(enclosing, false);
-                System.out.println(enclosing.toString());
             }
 
             if ((new TestElements()).isAutomaticModule(null) != false) {
