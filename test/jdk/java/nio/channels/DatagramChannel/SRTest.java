@@ -112,10 +112,10 @@ public class SRTest {
 
     public static class ClassicWriter implements Runnable, AutoCloseable {
         final DatagramSocket ds;
-        final int port;
+        final int dstPort;
 
-        ClassicWriter(int port) throws SocketException {
-            this.port = port;
+        ClassicWriter(int dstPort) throws SocketException {
+            this.dstPort = dstPort;
             this.ds = new DatagramSocket();
         }
 
@@ -124,7 +124,7 @@ public class SRTest {
                 byte[] data = DATA_STRING.getBytes(US_ASCII);
                 InetAddress address = InetAddress.getLoopbackAddress();
                 DatagramPacket dp = new DatagramPacket(data, data.length,
-                                                       address, port);
+                                                       address, dstPort);
                 ds.send(dp);
             } catch (Exception e) {
                 log.println("ClassicWriter [" + ds.getLocalAddress() + "]");
@@ -142,11 +142,11 @@ public class SRTest {
 
     public static class NioWriter implements Runnable, AutoCloseable {
         final DatagramChannel dc;
-        final int port;
+        final int dstPort;
 
-        NioWriter(int port) throws IOException {
+        NioWriter(int dstPort) throws IOException {
             this.dc = DatagramChannel.open();
-            this.port = port;
+            this.dstPort = dstPort;
         }
 
         public void run() {
@@ -155,7 +155,7 @@ public class SRTest {
                 bb.put(DATA_STRING.getBytes(US_ASCII));
                 bb.flip();
                 InetAddress address = InetAddress.getLoopbackAddress();
-                InetSocketAddress isa = new InetSocketAddress(address, port);
+                InetSocketAddress isa = new InetSocketAddress(address, dstPort);
                 dc.send(bb, isa);
             } catch (Exception ex) {
                 log.println("NioWriter [" + dc.socket().getLocalAddress() + "]");
