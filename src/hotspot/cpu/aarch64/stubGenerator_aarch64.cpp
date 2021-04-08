@@ -5819,13 +5819,12 @@ class StubGenerator: public StubCodeGenerator {
     __ orrw(r14, r14, r15);
     __ tbnz(r14, 7, Exit);
     // recover the data
-    __ lslw(r14, r10, 2);
-    __ bfmw(r14, r11, 4, 5);
-    __ lslw(r15, r11, 4);
-    __ bfmw(r15, r12, 2, 5);
-    __ orrw(r13, r13, r12, Assembler::LSL, 6);
-    __ strb(r14, __ post(dst, 1));
-    __ strb(r15, __ post(dst, 1));
+    __ lslw(r14, r10, 10);
+    __ bfiw(r14, r11, 4, 6);
+    __ bfmw(r14, r12, 2, 5);
+    __ rev16w(r14, r14);
+    __ bfiw(r13, r12, 6, 2);
+    __ strh(r14, __ post(dst, 2));
     __ strb(r13, __ post(dst, 1));
     // non-simd loop
     __ subsw(rscratch1, rscratch1, 4);
