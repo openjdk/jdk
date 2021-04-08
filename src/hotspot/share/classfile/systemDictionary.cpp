@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -1230,21 +1229,6 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
 
   // notify a class loaded from shared object
   ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
-
-  ik->set_has_passed_fingerprint_check(false);
-  if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
-    uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik);
-    uint64_t cds_fp = ik->get_stored_fingerprint();
-    if (aot_fp != 0 && aot_fp == cds_fp) {
-      // This class matches with a class saved in an AOT library
-      ik->set_has_passed_fingerprint_check(true);
-    } else {
-      if (log_is_enabled(Info, class, fingerprint)) {
-        ResourceMark rm(THREAD);
-        log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
-      }
-    }
-  }
 }
 
 #endif // INCLUDE_CDS

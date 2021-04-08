@@ -266,7 +266,7 @@ class Compilation: public StackObj {
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
   bool is_optimistic() {
-    return CompilerConfig::is_c1_only_no_aot_or_jvmci() && !is_profiling() &&
+    return CompilerConfig::is_c1_only_no_jvmci() && !is_profiling() &&
       (RangeCheckElimination || UseLoopInvariantCodeMotion) &&
       method()->method_data()->trap_count(Deoptimization::Reason_none) == 0;
   }

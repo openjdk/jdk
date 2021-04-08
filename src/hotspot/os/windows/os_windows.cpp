@@ -130,9 +130,6 @@ static FILETIME process_kernel_time;
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 PVOID  topLevelVectoredExceptionHandler = NULL;
 LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = NULL;
-#elif INCLUDE_AOT
-PVOID  topLevelVectoredExceptionHandler = NULL;
-LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 #endif
 
 // save DLL module handle, used by GetModuleFileName
@@ -153,7 +150,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
     if (ForceTimeHighResolution) {
       timeEndPeriod(1L);
     }
-#if defined(USE_VECTORED_EXCEPTION_HANDLING) || INCLUDE_AOT
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
     if (topLevelVectoredExceptionHandler != NULL) {
       RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
       topLevelVectoredExceptionHandler = NULL;
@@ -2705,7 +2702,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-#if defined(USE_VECTORED_EXCEPTION_HANDLING) || INCLUDE_AOT
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
 #if defined(_M_ARM64)
@@ -2721,9 +2718,7 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
     return topLevelExceptionFilter(exceptionInfo);
   }
 
-  // Handle the case where we get an implicit exception in AOT generated
-  // code.  AOT DLL's loaded are not registered for structured exceptions.
-  // If the exception occurred in the codeCache or AOT code, pass control
+  // If the exception occurred in the codeCache, pass control
   // to our normal exception handler.
   CodeBlob* cb = CodeCache::find_blob(pc);
   if (cb != NULL) {
@@ -4172,14 +4167,6 @@ jint os::init_2(void) {
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
   topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelVectoredExceptionFilter);
   previousUnhandledExceptionFilter = SetUnhandledExceptionFilter(topLevelUnhandledExceptionFilter);
-#elif INCLUDE_AOT
-  // If AOT is enabled we need to install a vectored exception handler
-  // in order to forward implicit exceptions from code in AOT
-  // generated DLLs.  This is necessary since these DLLs are not
-  // registered for structured exceptions like codecache methods are.
-  if (AOTLibrary != NULL && (UseAOT || FLAG_IS_DEFAULT(UseAOT))) {
-    topLevelVectoredExceptionHandler = AddVectoredExceptionHandler( 1, topLevelVectoredExceptionFilter);
-  }
 #endif
 
   // for debugging float code generation bugs

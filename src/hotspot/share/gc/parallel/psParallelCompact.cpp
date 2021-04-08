@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -2010,7 +2009,6 @@ static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_
     case ParallelRootType::code_cache:
       // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
       //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(&mark_and_push_closure));
-      AOTLoader::oops_do(&mark_and_push_closure);
       break;
 
     case ParallelRootType::sentinel:
@@ -2220,7 +2218,6 @@ class PSAdjustTask final : public AbstractGangTask {
 
   enum PSAdjustSubTask {
     PSAdjustSubTask_code_cache,
-    PSAdjustSubTask_aot,
     PSAdjustSubTask_old_ref_process,
     PSAdjustSubTask_young_ref_process,
 
@@ -2263,9 +2260,6 @@ public:
     if (_sub_tasks.try_claim_task(PSAdjustSubTask_code_cache)) {
       CodeBlobToOopClosure adjust_code(&adjust, CodeBlobToOopClosure::FixRelocations);
       CodeCache::blobs_do(&adjust_code);
-    }
-    if (_sub_tasks.try_claim_task(PSAdjustSubTask_aot)) {
-      AOT_ONLY(AOTLoader::oops_do(&adjust);)
     }
     if (_sub_tasks.try_claim_task(PSAdjustSubTask_old_ref_process)) {
       PSParallelCompact::ref_processor()->weak_oops_do(&adjust);

@@ -2229,9 +2229,6 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-#if INCLUDE_AOT
-      CompiledStaticCall::emit_to_aot_stub(cbuf, mark);
-#endif
     }
   %}
 

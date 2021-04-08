@@ -572,10 +572,6 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           if (mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method) {
             stub_size  += CompiledStaticCall::to_interp_stub_size();
             reloc_size += CompiledStaticCall::reloc_to_interp_stub();
-#if INCLUDE_AOT
-            stub_size  += CompiledStaticCall::to_aot_stub_size();
-            reloc_size += CompiledStaticCall::reloc_to_aot_stub();
-#endif
           }
         } else if (mach->is_MachSafePoint()) {
           // If call/safepoint are adjacent, account for possible

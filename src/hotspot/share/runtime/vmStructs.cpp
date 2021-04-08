@@ -299,7 +299,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
-  AOT_ONLY(nonstatic_field(MethodCounters,     _method,                                       Method*))                              \
   nonstatic_field(Method,                      _constMethod,                                  ConstMethod*)                          \
   nonstatic_field(Method,                      _method_data,                                  MethodData*)                           \
   nonstatic_field(Method,                      _method_counters,                              MethodCounters*)                       \
@@ -2303,7 +2302,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(InstanceKlass::_misc_has_nonstatic_concrete_methods)   \
   declare_constant(InstanceKlass::_misc_declares_nonstatic_concrete_methods)\
   declare_constant(InstanceKlass::_misc_has_been_redefined)               \
-  declare_constant(InstanceKlass::_misc_has_passed_fingerprint_check)     \
   declare_constant(InstanceKlass::_misc_is_scratch_class)                 \
   declare_constant(InstanceKlass::_misc_is_shared_boot_class)             \
   declare_constant(InstanceKlass::_misc_is_shared_platform_class)         \
@@ -2494,7 +2492,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(CompLevel_limited_profile)                             \
   declare_constant(CompLevel_full_profile)                                \
   declare_constant(CompLevel_full_optimization)                           \
-  declare_constant(CompLevel_aot)                                         \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \

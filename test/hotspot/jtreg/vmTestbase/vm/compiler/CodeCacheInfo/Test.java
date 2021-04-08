@@ -62,15 +62,6 @@ public class Test {
         String segPrefix = "^(CodeHeap '[^']+':" + p1 + p2 + ")+";
         String nosegPrefix = "^CodeCache:" + p1 + p2;
 
-        // check if AOT is enabled
-        if (WhiteBox.getWhiteBox().aotLibrariesCount() > 0) {
-            System.out.println("AOT is enabled");
-            String aotSegment = "CodeHeap 'AOT':" + p1 + p2;
-            segPrefix += aotSegment;
-            nosegPrefix += aotSegment;
-        } else {
-            System.out.println("AOT is not enabled");
-        }
         SEG_REGEXP = segPrefix + p3 + p4;
         NOSEG_REGEXP = nosegPrefix + p3 + p4;
     }

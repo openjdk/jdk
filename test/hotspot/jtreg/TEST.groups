@@ -38,7 +38,7 @@ hotspot_compiler_xcomp = \
 
 hotspot_compiler_all_gcs = \
   :hotspot_compiler \
-  -:tier1_compiler_aot_jvmci \
+  -compiler/jvmci \
   -compiler/graalunit
 
 hotspot_gc = \
@@ -151,12 +151,7 @@ tier1_compiler_3 = \
   -compiler/runtime/Test6826736.java
 
 tier1_compiler_not_xcomp = \
-  compiler/aot \
   compiler/profiling
-
-tier1_compiler_aot_jvmci = \
-  compiler/aot \
-  compiler/jvmci
 
 tier1_compiler_graal = \
   compiler/graalunit/HotspotTest.java

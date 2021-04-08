@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memRegion.hpp"
@@ -64,8 +63,6 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
   } else {
     set_base((address)heap_space.compressed_oop_base());
   }
-
-  AOTLoader::set_narrow_oop_shift();
 
   _heap_address_range = heap_space.region();
 
@@ -254,9 +251,6 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   set_base(base);
   set_shift(shift);
   set_range(range);
-
-  // Note: this may modify our shift.
-  AOTLoader::set_narrow_klass_shift();
 #else
   fatal("64bit only.");
 #endif

@@ -157,14 +157,6 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(ClassUnloadingWithConcurrentMark, false);
   }
 
-  // AOT is not supported yet
-  if (UseAOT) {
-    if (!FLAG_IS_DEFAULT(UseAOT)) {
-      warning("Shenandoah does not support AOT at this moment, disabling UseAOT");
-    }
-    FLAG_SET_DEFAULT(UseAOT, false);
-  }
-
   // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
   // historical data, assigning more recent data the weight according to TLABAllocationWeight.
   // Current default is good for generational collectors that run frequent young GCs.

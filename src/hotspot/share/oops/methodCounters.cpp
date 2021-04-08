@@ -29,9 +29,6 @@
 #include "runtime/handles.inline.hpp"
 
 MethodCounters::MethodCounters(const methodHandle& mh) :
-#if INCLUDE_AOT
-  _method(mh()),
-#endif
   _prev_time(0),
   _rate(0),
   _nmethod_age(INT_MAX),
@@ -79,9 +76,6 @@ void MethodCounters::clear_counters() {
 
 void MethodCounters::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(MethodCounters): %p", this);
-#if INCLUDE_AOT
-  it->push(&_method);
-#endif
 }
 
 void MethodCounters::print_value_on(outputStream* st) const {

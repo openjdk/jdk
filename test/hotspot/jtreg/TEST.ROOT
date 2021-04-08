@@ -65,8 +65,6 @@ requires.properties= \
     vm.hasJFR \
     vm.rtm.cpu \
     vm.rtm.compiler \
-    vm.aot \
-    vm.aot.enabled \
     vm.cds \
     vm.cds.custom.loaders \
     vm.cds.archived.java.heap \

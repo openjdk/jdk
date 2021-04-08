@@ -235,8 +235,6 @@ public:
       scale *= threshold_scaling;
     }
     switch(cur_level) {
-    case CompLevel_aot:
-      return b >= Tier3AOTBackEdgeThreshold * scale;
     case CompLevel_none:
     case CompLevel_limited_profile:
       return b >= Tier3BackEdgeThreshold * scale;
@@ -250,10 +248,6 @@ public:
   static bool apply(int i, int b, CompLevel cur_level, const methodHandle& method) {
     double k = 1;
     switch(cur_level) {
-    case CompLevel_aot: {
-      k = CompilationModeFlag::disable_intermediate() ? 1 : CompilationPolicy::threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-      break;
-    }
     case CompLevel_none:
     // Fall through
     case CompLevel_limited_profile: {
@@ -279,9 +273,6 @@ public:
       scale *= threshold_scaling;
     }
     switch(cur_level) {
-    case CompLevel_aot:
-      return (i >= Tier3AOTInvocationThreshold * scale) ||
-             (i >= Tier3AOTMinInvocationThreshold * scale && i + b >= Tier3AOTCompileThreshold * scale);
     case CompLevel_none:
     case CompLevel_limited_profile:
       return (i >= Tier3InvocationThreshold * scale) ||
@@ -297,10 +288,6 @@ public:
   static bool apply(int i, int b, CompLevel cur_level, const methodHandle& method) {
     double k = 1;
     switch(cur_level) {
-    case CompLevel_aot: {
-      k = CompilationModeFlag::disable_intermediate() ? 1 : CompilationPolicy::threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-      break;
-    }
     case CompLevel_none:
     case CompLevel_limited_profile: {
       k = CompilationPolicy::threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
@@ -520,8 +507,8 @@ bool CompilationPolicy::verify_level(CompLevel level) {
     return false;
   }
 
-  // AOT and interpreter levels are always valid.
-  if (level == CompLevel_aot || level == CompLevel_none) {
+  // Interpreter level is always valid.
+  if (level == CompLevel_none) {
     return true;
   }
   if (CompilationModeFlag::normal()) {
@@ -759,7 +746,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
 
   if (level == CompLevel_none) {
     if (mh->has_compiled_code()) {
-      // Happens when we switch from AOT to interpreter to profile.
+      // Happens when we switch to interpreter to profile.
       MutexLocker ml(Compile_lock);
       NoSafepointVerifier nsv;
       if (mh->has_compiled_code()) {
@@ -770,24 +757,6 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
       RegisterMap map(jt, false);
       frame fr = jt->last_frame().sender(&map);
       Deoptimization::deoptimize_frame(jt, fr.id());
-    }
-    return;
-  }
-  if (level == CompLevel_aot) {
-    if (mh->has_aot_code()) {
-      if (PrintTieredEvents) {
-        print_event(COMPILE, mh(), mh(), bci, level);
-      }
-      MutexLocker ml(Compile_lock);
-      NoSafepointVerifier nsv;
-      if (mh->has_aot_code() && mh->code() != mh->aot_code()) {
-        mh->aot_code()->make_entrant();
-        if (mh->has_compiled_code()) {
-          mh->code()->make_not_entrant();
-        }
-        MutexLocker pl(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-        Method::set_code(mh, mh->aot_code());
-      }
     }
     return;
   }
@@ -1038,16 +1007,6 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
     } else {
       switch(cur_level) {
       default: break;
-      case CompLevel_aot:
-        // If we were at full profile level, would we switch to full opt?
-        if (common<Predicate>(method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
-          next_level = CompLevel_full_optimization;
-        } else if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
-                                        Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                                       Predicate::apply(i, b, cur_level, method))) {
-            next_level = CompilationModeFlag::disable_intermediate() ? CompLevel_none : CompLevel_full_profile;
-        }
-        break;
       case CompLevel_none:
         // If we were at full profile level, would we switch to full opt?
         if (common<Predicate>(method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
@@ -1152,26 +1111,6 @@ CompLevel CompilationPolicy::loop_event(const methodHandle& method, CompLevel cu
   return next_level;
 }
 
-bool CompilationPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, Thread* thread) {
-  if (UseAOT) {
-    if (cur_level == CompLevel_full_profile || cur_level == CompLevel_none) {
-      // If the current level is full profile or interpreter and we're switching to any other level,
-      // activate the AOT code back first so that we won't waste time overprofiling.
-      compile(mh, InvocationEntryBci, CompLevel_aot, thread);
-      // Fall through for JIT compilation.
-    }
-    if (next_level == CompLevel_limited_profile && cur_level != CompLevel_aot && mh->has_aot_code()) {
-      // If the next level is limited profile, use the aot code (if there is any),
-      // since it's essentially the same thing.
-      compile(mh, InvocationEntryBci, CompLevel_aot, thread);
-      // Not need to JIT, we're done.
-      return true;
-    }
-  }
-  return false;
-}
-
-
 // Handle the invocation event.
 void CompilationPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
                                                       CompLevel level, CompiledMethod* nm, TRAPS) {
@@ -1180,10 +1119,6 @@ void CompilationPolicy::method_invocation_event(const methodHandle& mh, const me
   }
   CompLevel next_level = call_event(mh, level, THREAD);
   if (next_level != level) {
-    if (maybe_switch_to_aot(mh, level, next_level, THREAD)) {
-      // No JITting necessary
-      return;
-    }
     if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
       compile(mh, InvocationEntryBci, next_level, THREAD);
     }
@@ -1214,14 +1149,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
     // enough calls.
     CompLevel cur_level, next_level;
     if (mh() != imh()) { // If there is an enclosing method
-      if (level == CompLevel_aot) {
-        // Recompile the enclosing method to prevent infinite OSRs. Stay at AOT level while it's compiling.
-        if (max_osr_level != CompLevel_none && !CompileBroker::compilation_is_in_queue(mh)) {
-          CompLevel enclosing_level = limit_level(CompLevel_full_profile);
-          compile(mh, InvocationEntryBci, enclosing_level, THREAD);
-        }
-      } else {
-        // Current loop event level is not AOT
+      {
         guarantee(nm != NULL, "Should have nmethod here");
         cur_level = comp_level(mh());
         next_level = call_event(mh, cur_level, THREAD);
@@ -1253,7 +1181,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
           next_level = CompLevel_full_profile;
         }
         if (cur_level != next_level) {
-          if (!maybe_switch_to_aot(mh, cur_level, next_level, THREAD) && !CompileBroker::compilation_is_in_queue(mh)) {
+          if (!CompileBroker::compilation_is_in_queue(mh)) {
             compile(mh, InvocationEntryBci, next_level, THREAD);
           }
         }
@@ -1262,7 +1190,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
       cur_level = comp_level(mh());
       next_level = call_event(mh, cur_level, THREAD);
       if (next_level != cur_level) {
-        if (!maybe_switch_to_aot(mh, cur_level, next_level, THREAD) && !CompileBroker::compilation_is_in_queue(mh)) {
+        if (!CompileBroker::compilation_is_in_queue(mh)) {
           compile(mh, InvocationEntryBci, next_level, THREAD);
         }
       }

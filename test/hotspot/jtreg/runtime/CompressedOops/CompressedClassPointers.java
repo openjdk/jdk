@@ -93,7 +93,6 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             logging_option,
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
@@ -119,7 +118,6 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx31g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             logging_option,
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
@@ -239,7 +237,6 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             "-Xlog:gc+metaspace=trace",
             "-Xshare:off",
             "-Xlog:cds=trace",

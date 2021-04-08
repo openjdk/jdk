@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
  * @summary Test interpreter method entries for intrinsics with CDS (class data sharing)
  *          and the intrinsic flag enabled during dump and disabled during use of the archive.
  * @requires vm.cds
- * @comment the test disables intrinsics, so it can't be run w/ AOT'ed java module
- * @requires !vm.aot.enabled
  * @library /test/lib
  * @run driver TestInterpreterMethodEntries true false
  */

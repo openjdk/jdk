@@ -72,7 +72,6 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
 
 void CompiledMethod::init_defaults() {
   { // avoid uninitialized fields, even for short time periods
-    _is_far_code                = false;
     _scopes_data_begin          = NULL;
     _deopt_handler_begin        = NULL;
     _deopt_mh_handler_begin     = NULL;

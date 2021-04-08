@@ -25,7 +25,6 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -3019,9 +3018,6 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
-
-  // Eager box cache initialization only if AOT is on and any library is loaded.
-  AOTLoader::initialize_box_caches(CHECK);
 }
 
 void Threads::initialize_jsr292_core_classes(TRAPS) {
@@ -3228,8 +3224,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // We need this to update the java.vm.info property in case any flags used
-  // to initially define it have been changed. This is needed for both CDS and
-  // AOT, since UseSharedSpaces and UseAOT may be changed after java.vm.info
+  // to initially define it have been changed. This is needed for both CDS
+  // since UseSharedSpaces may be changed after java.vm.info
   // is initially computed. See Abstract_VM_Version::vm_info_string().
   // This update must happen before we initialize the java classes, but
   // after any initialization logic that might modify the flags.

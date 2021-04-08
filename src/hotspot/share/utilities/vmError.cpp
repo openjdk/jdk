@@ -241,7 +241,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
 
   // see if it's a valid frame
   if (fr.pc()) {
-    st->print_cr("Native frames: (J=compiled Java code, A=aot compiled Java code, j=interpreted, Vv=VM code, C=native code)");
+    st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
 
     int count = 0;
     while (count++ < StackPrintLimit) {

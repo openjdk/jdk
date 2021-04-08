@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,8 @@ public class CodeBlob {
     name = (String) obj[0];
     size = (Integer) obj[1];
     int blob_type_index = (Integer) obj[2];
-    if (blob_type_index == -1) { // AOT
-      code_blob_type = null;
-    } else {
-      code_blob_type = BlobType.values()[blob_type_index];
-      assert code_blob_type.id == (Integer) obj[2];
-    }
+    code_blob_type = BlobType.values()[blob_type_index];
+    assert code_blob_type.id == (Integer) obj[2];
     address = (Long) obj[3];
   }
   public final String name;

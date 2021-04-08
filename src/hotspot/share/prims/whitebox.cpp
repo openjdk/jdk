@@ -114,9 +114,6 @@
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #endif
-#if INCLUDE_AOT
-#include "aot/aotLoader.hpp"
-#endif // INCLUDE_AOT
 
 #ifdef LINUX
 #include "osContainer_linux.hpp"
@@ -1447,9 +1444,6 @@ WB_END
 
 int WhiteBox::get_blob_type(const CodeBlob* code) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
-  if (code->is_aot()) {
-    return -1;
-  }
   return CodeCache::get_code_heap(code)->code_blob_type();
 }
 
@@ -1507,7 +1501,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
     return result;
   }
   int comp_level = code->comp_level();
-  int insts_size = comp_level == CompLevel_aot ? code->code_end() - code->code_begin() : code->insts_size();
+  int insts_size = code->insts_size();
 
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
@@ -2249,14 +2243,6 @@ WB_ENTRY(jint, WB_ProtectionDomainRemovedCount(JNIEnv* env, jobject o))
   return (jint) SystemDictionary::pd_cache_table()->removed_entries_count();
 WB_END
 
-WB_ENTRY(jint, WB_AotLibrariesCount(JNIEnv* env, jobject o))
-  jint result = 0;
-#if INCLUDE_AOT
-  result = (jint) AOTLoader::heaps_count();
-#endif
-  return result;
-WB_END
-
 WB_ENTRY(jint, WB_GetKlassMetadataSize(JNIEnv* env, jobject wb, jclass mirror))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(mirror));
   // Return size in bytes.
@@ -2603,7 +2589,6 @@ static JNINativeMethod methods[] = {
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
   {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
-  {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
 
   {CC"createMetaspaceTestContext", CC"(JJ)J",         (void*)&WB_CreateMetaspaceTestContext},

@@ -29,7 +29,6 @@
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#include "jvmci/vmStructs_compiler_runtime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/deoptimization.hpp"
@@ -232,7 +231,6 @@
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
-  AOT_ONLY(nonstatic_field(MethodCounters,     _method,                                       Method*))                              \
                                                                                                                                      \
   nonstatic_field(MethodData,                  _size,                                         int)                                   \
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
@@ -917,9 +915,6 @@ VMLongConstantEntry JVMCIVMStructs::localHotSpotVMLongConstants[] = {
 
 VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,
-               GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
-               GENERATE_VM_FUNCTION_ENTRY)
-  VM_ADDRESSES_COMPILER_RUNTIME(GENERATE_VM_ADDRESS_ENTRY,
                GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
                GENERATE_VM_FUNCTION_ENTRY)
   VM_ADDRESSES_OS(GENERATE_VM_ADDRESS_ENTRY,

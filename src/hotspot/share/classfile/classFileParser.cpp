@@ -23,7 +23,6 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -5353,25 +5352,6 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook,
   fill_instance_klass(ik, changed_by_loadhook, cl_inst_info, CHECK_NULL);
 
   assert(_klass == ik, "invariant");
-
-
-  if (ik->should_store_fingerprint()) {
-    ik->store_fingerprint(_stream->compute_fingerprint());
-  }
-
-  ik->set_has_passed_fingerprint_check(false);
-  if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
-    uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik);
-    uint64_t fp = ik->has_stored_fingerprint() ? ik->get_stored_fingerprint() : _stream->compute_fingerprint();
-    if (aot_fp != 0 && aot_fp == fp) {
-      // This class matches with a class saved in an AOT library
-      ik->set_has_passed_fingerprint_check(true);
-    } else {
-      ResourceMark rm;
-      log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT,
-                                 ik->external_name(), aot_fp, _stream->compute_fingerprint());
-    }
-  }
 
   return ik;
 }

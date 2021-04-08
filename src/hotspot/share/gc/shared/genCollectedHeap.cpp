@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
@@ -809,11 +808,6 @@ void GenCollectedHeap::process_roots(ScanningOption so,
 
   Threads::oops_do(strong_roots, roots_from_code_p);
 
-#if INCLUDE_AOT
-  if (UseAOT) {
-    AOTLoader::oops_do(strong_roots);
-  }
-#endif
   OopStorageSet::strong_oops_do(strong_roots);
 
   if (so & SO_ScavengeCodeCache) {

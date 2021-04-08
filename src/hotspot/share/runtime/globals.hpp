@@ -1653,25 +1653,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Non-segmented code cache: X[%] of the total code cache")         \
           range(0, 100)                                                     \
                                                                             \
-  /* AOT parameters */                                                      \
-  product(bool, UseAOT, false, EXPERIMENTAL,                                \
-          "Use AOT compiled files")                                         \
-                                                                            \
-  product(ccstrlist, AOTLibrary, NULL, EXPERIMENTAL,                        \
-          "AOT library")                                                    \
-                                                                            \
-  product(bool, PrintAOT, false, EXPERIMENTAL,                              \
-          "Print used AOT klasses and methods")                             \
-                                                                            \
-  notproduct(bool, PrintAOTStatistics, false,                               \
-          "Print AOT statistics")                                           \
-                                                                            \
-  product(bool, UseAOTStrictLoading, false, DIAGNOSTIC,                     \
-          "Exit the VM if any of the AOT libraries has invalid config")     \
-                                                                            \
-  product(bool, CalculateClassFingerprint, false,                           \
-          "Calculate class fingerprint")                                    \
-                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \

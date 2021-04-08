@@ -70,11 +70,6 @@ ifeq ($(INCLUDE_GRAAL), false)
   MODULES_FILTER += jdk.internal.vm.compiler.management
 endif
 
-# Filter out aot specific modules if aot is disabled
-ifeq ($(ENABLE_AOT), false)
-  MODULES_FILTER += jdk.aot
-endif
-
 # jpackage is only on windows, macosx, and linux
 ifeq ($(call isTargetOs, windows macosx linux), false)
   MODULES_FILTER += jdk.jpackage
