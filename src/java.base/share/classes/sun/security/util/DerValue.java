@@ -222,7 +222,7 @@ public class DerValue {
      */
     DerValue(byte tag, byte[] buffer, int start, int end, boolean allowBER) {
         if ((tag & 0x1f) == 0x1f) {
-            throw new IllegalArgumentException("Tag number 31 is not supported");
+            throw new IllegalArgumentException("Tag number over 30 is not supported");
         }
         this.tag = tag;
         this.buffer = buffer;
