@@ -1935,8 +1935,7 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
     ResolutionErrorEntry* entry = resolution_errors()->find_entry(index, hash, pool, which);
-    if (entry != NULL) {
-      assert(entry->nest_host_error() == NULL, "Nest host error message already set!");
+    if (entry != NULL && entry->nest_host_error() == NULL) {
       entry->set_nest_host_error(message);
     } else {
       resolution_errors()->add_entry(index, hash, pool, which, message);
