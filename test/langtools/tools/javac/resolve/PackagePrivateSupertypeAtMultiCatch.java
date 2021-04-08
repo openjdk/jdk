@@ -101,7 +101,6 @@ public class PackagePrivateSupertypeAtMultiCatch extends TestRunner {
         new JavacTask(tb)
                 .files(tb.findJavaFiles(src))
                 .outdir(out)
-                .run()
-                .writeAll();
+                .run();
     }
 }
