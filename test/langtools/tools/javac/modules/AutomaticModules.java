@@ -39,8 +39,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -665,33 +670,31 @@ public class AutomaticModules extends ModuleTestBase {
                          "-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(Task.Expect.SUCCESS,
-                     // Processor verifies api.Api is enclosed by an automatic module.
-                     new javax.annotation.processing.AbstractProcessor() {
+                .processors(new AbstractProcessor() {
+                         // Processor verifies api.Api is enclosed by an automatic module.
                          @Override
-                         public java.util.Set<String> getSupportedAnnotationTypes() {
-                             return java.util.Set.of("*");
+                         public Set<String> getSupportedAnnotationTypes() {
+                             return Set.of("*");
                          }
 
                          @Override
-                         public  javax.lang.model.SourceVersion getSupportedSourceVersion() {
-                             return javax.lang.model.SourceVersion.latestSupported();
+                         public SourceVersion getSupportedSourceVersion() {
+                             return SourceVersion.latestSupported();
                          }
 
                          @Override
-                         public boolean process(java.util.Set<? extends javax.lang.model.element.TypeElement> annotations,
-                                                    javax.annotation.processing.RoundEnvironment roundEnv) {
+                         public boolean process(Set<? extends TypeElement> annotations,
+                                                RoundEnvironment roundEnv) {
                              if (!roundEnv.processingOver()) {
-                                 javax.lang.model.util.Elements elts = processingEnv.getElementUtils();
+                                 var elts = processingEnv.getElementUtils();
                                  if (!elts.isAutomaticModule(elts.getModuleOf(elts.getTypeElement("api.Api")))) {
-                                     throw new RuntimeException("module of class Api is not automatic");
+                                     throw new RuntimeException("module of class api.Api is not automatic");
                                  }
                              }
                              return true;
                          }
-                     })
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
+                    })
+                .run(Task.Expect.SUCCESS);
 
         tb.writeJavaFiles(src,
                           "module m { requires automatic; }");

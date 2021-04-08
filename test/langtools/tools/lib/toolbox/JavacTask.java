@@ -258,6 +258,14 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
+     * Sets the the annotation processors to be used.
+     */
+    public JavacTask processors(Processor... procs) {
+        this.procs = List.of(procs);
+        return this;
+    }
+
+    /**
      * Sets the file manager to be used by this task.
      * @param fileManager the file manager
      * @return this task object
@@ -331,29 +339,6 @@ public class JavacTask extends AbstractTask<JavacTask> {
             outputMap.put(Task.OutputKind.DIRECT, direct.close());
         }
         return checkExit(new Task.Result(toolBox, this, rc, outputMap));
-    }
-
-    /**
-     * Sets the expected outcome of the task and calls {@code run(procs)}.
-     * @param expect the expected outcome
-     * @return the result of calling {@code run}
-     */
-    public Result run(Expect expect, Processor... procs) {
-        expect(expect, Integer.MIN_VALUE);
-        return run(procs);
-    }
-
-    /**
-     * Calls the compiler with the arguments as currently configured,
-     * after adding annotation processors.
-     * @return a Result object indicating the outcome of the compilation
-     * and the content of any output written to stdout, stderr, or the
-     * main stream by the compiler.
-     * @throws TaskError if the outcome of the task is not as expected.
-     */
-    public Task.Result run(Processor... procs) {
-        this.procs = List.of(procs);
-        return run();
     }
 
     private int runAPI(PrintWriter pw) throws IOException {
