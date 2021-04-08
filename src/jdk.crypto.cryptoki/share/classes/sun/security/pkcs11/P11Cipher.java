@@ -626,10 +626,10 @@ final class P11Cipher extends CipherSpi {
                 }
                 newPadBufferLen = inLen & (blockSize - 1);
                 if (!encrypt && newPadBufferLen == 0) {
-                    // While decrypting with implUpdate, the current encrypted block
-                    // is always held in a buffer. If it's the last one (unknown
+                    // While decrypting with implUpdate, the last encrypted block
+                    // is always held in a buffer. If it's the final one (unknown
                     // at this point), it may contain padding bytes and need further
-                    // processing. In implDoFinal (where we know it's the last one)
+                    // processing. In implDoFinal (where we know it's the final one)
                     // the buffer is decrypted, unpadded and returned.
                     newPadBufferLen = padBuffer.length;
                 }
@@ -734,10 +734,10 @@ final class P11Cipher extends CipherSpi {
                 }
                 newPadBufferLen = inLen & (blockSize - 1);
                 if (!encrypt && newPadBufferLen == 0) {
-                    // While decrypting with implUpdate, the current encrypted block
-                    // is always held in a buffer. If it's the last one (unknown
+                    // While decrypting with implUpdate, the last encrypted block
+                    // is always held in a buffer. If it's the final one (unknown
                     // at this point), it may contain padding bytes and need further
-                    // processing. In implDoFinal (where we know it's the last one)
+                    // processing. In implDoFinal (where we know it's the final one)
                     // the buffer is decrypted, unpadded and returned.
                     newPadBufferLen = padBuffer.length;
                 }
