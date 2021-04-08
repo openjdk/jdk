@@ -29,19 +29,19 @@
 
 - (nullable NSString *)accessibilityAttributedStringForRange:(NSRange)range
 {
-    NSLog(@"in StaticTextAccessibility accessibilityAttributedStringForRange");
+    //NSLog(@"in StaticTextAccessibility accessibilityAttributedStringForRange");
     return [self accessibilityStringForRangeAttribute:range];
 }
 
 - (nullable NSString *)accessibilityValue
 {
-    NSLog(@"in StaticTextAccessibility accessibilityValue");
+    //NSLog(@"in StaticTextAccessibility accessibilityValue");
     return [self accessibilityValueAttribute];
 }
 
 - (NSRange)accessibilityVisibleCharacterRange
 {
-    NSLog(@"in StaticTextAccessibility accessibilityVisibleCharacterRange");
+    //NSLog(@"in StaticTextAccessibility accessibilityVisibleCharacterRange");
     return [self accessibilityVisibleCharacterRangeAttribute];
 }
 
@@ -49,7 +49,7 @@
 {
     NSLog(@"in StaticTextAccessibility accessibilityRangeForPoint");
     NSRange range = [self accessibilityRangeForPositionAttribute:point];
-    NSLog(@"String  for point %@ is %@", NSStringFromRange(range), NSStringFromPoint(point));
+    NSLog(@"Range  for point %@ is %@", NSStringFromRange(range), NSStringFromPoint(point));
     return range;
 }
 
@@ -57,7 +57,7 @@
 {
     NSLog(@"in StaticTextAccessibility accessibilityRangeForIndex");
     NSRange range = [self accessibilityRangeForIndexAttribute:index];
-    //NSLog(@"String  for index %d is %@", index, NSStringFromRange(range));
+    NSLog(@"Range for index %@ is %d", NSStringFromRange(range), index);
     return range;
 }
 
