@@ -1055,7 +1055,7 @@ Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, 
   // last java frame on stack (which includes native call frames)
   vframeStream vfst(current, true);  // Do not skip and javaCalls
 
-  return find_callee_info_helper(vfst, bc, callinfo, CHECK_NH);
+  return find_callee_info_helper(vfst, bc, callinfo, THREAD);
 }
 
 Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
