@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ class ValidOptions {
         options.put(CLIOptions.VENDOR.getId(), USE.ALL);
         options.put(CLIOptions.COPYRIGHT.getId(), USE.ALL);
         options.put(CLIOptions.PACKAGE_TYPE.getId(), USE.ALL);
+        options.put(CLIOptions.ICON.getId(), USE.ALL);
 
         options.put(CLIOptions.INPUT.getId(), USE.LAUNCHER);
         options.put(CLIOptions.MODULE.getId(), USE.LAUNCHER);
@@ -77,7 +78,6 @@ class ValidOptions {
         options.put(CLIOptions.ADD_MODULES.getId(), USE.LAUNCHER);
         options.put(CLIOptions.MAIN_JAR.getId(), USE.LAUNCHER);
         options.put(CLIOptions.APPCLASS.getId(), USE.LAUNCHER);
-        options.put(CLIOptions.ICON.getId(), USE.LAUNCHER);
         options.put(CLIOptions.ARGUMENTS.getId(), USE.LAUNCHER);
         options.put(CLIOptions.JAVA_OPTIONS.getId(), USE.LAUNCHER);
         options.put(CLIOptions.ADD_LAUNCHER.getId(), USE.LAUNCHER);
