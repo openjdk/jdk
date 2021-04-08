@@ -26,6 +26,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
@@ -346,7 +347,7 @@ bool ZMark::drain(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, ZMarkCach
   }
 
   // Success
-  return true;
+  return !timeout->has_expired();
 }
 
 template <typename T>
@@ -486,7 +487,8 @@ bool ZMark::try_terminate() {
 class ZMarkNoTimeout : public StackObj {
 public:
   bool has_expired() {
-    return false;
+    // No timeout, but check for signal to abort
+    return ZAbort::should_abort();
   }
 };
 
@@ -495,7 +497,10 @@ void ZMark::work_without_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkTh
   ZMarkNoTimeout no_timeout;
 
   for (;;) {
-    drain_and_flush(stripe, stacks, cache, &no_timeout);
+    if (!drain_and_flush(stripe, stacks, cache, &no_timeout)) {
+      // Abort
+      break;
+    }
 
     if (try_steal(stripe, stacks)) {
       // Stole work

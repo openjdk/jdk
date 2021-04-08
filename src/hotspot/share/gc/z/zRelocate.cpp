@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
@@ -395,6 +396,10 @@ public:
         small.do_forwarding(forwarding);
       } else {
         medium.do_forwarding(forwarding);
+      }
+
+      if (ZAbort::should_abort()) {
+        break;
       }
     }
   }
