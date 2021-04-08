@@ -165,8 +165,7 @@ address Runtime1::arraycopy_count_address(BasicType type) {
 // Simple helper to see if the caller of a runtime stub which
 // entered the VM has been deoptimized
 
-static bool caller_is_deopted() {
-  JavaThread* current = JavaThread::current();
+static bool caller_is_deopted(JavaThread* current) {
   RegisterMap reg_map(current, false);
   frame runtime_frame = current->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
@@ -175,14 +174,13 @@ static bool caller_is_deopted() {
 }
 
 // Stress deoptimization
-static void deopt_caller() {
-  if ( !caller_is_deopted()) {
-    JavaThread* current = JavaThread::current();
+static void deopt_caller(JavaThread* current) {
+  if ( !caller_is_deopted(current)) {
     RegisterMap reg_map(current, false);
     frame runtime_frame = current->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
     Deoptimization::deoptimize_frame(current, caller_frame.id());
-    assert(caller_is_deopted(), "Must be deoptimized");
+    assert(caller_is_deopted(current), "Must be deoptimized");
   }
 }
 
@@ -381,7 +379,7 @@ JRT_ENTRY(void, Runtime1::new_type_array(JavaThread* current, Klass* klass, jint
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
-    deopt_caller();
+    deopt_caller(current);
   }
 
 JRT_END
@@ -401,7 +399,7 @@ JRT_ENTRY(void, Runtime1::new_object_array(JavaThread* current, Klass* array_kla
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
-    deopt_caller();
+    deopt_caller(current);
   }
 JRT_END
 
@@ -569,7 +567,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     // can actually continue in the exception handler ourselves but I
     // don't see an easy way to have the desired effect.
     Deoptimization::deoptimize_frame(current, caller_frame.id());
-    assert(caller_is_deopted(), "Must be deoptimized");
+    assert(caller_is_deopted(current), "Must be deoptimized");
 
     return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
@@ -650,7 +648,7 @@ address Runtime1::exception_handler_for_pc(JavaThread* current) {
 
   // Now check to see if the nmethod we were called from is now deoptimized.
   // If so we must return to the deopt blob and deoptimize the nmethod
-  if (nm != NULL && caller_is_deopted()) {
+  if (nm != NULL && caller_is_deopted(current)) {
     continuation = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
 
@@ -692,7 +690,7 @@ JRT_END
 JRT_ENTRY(void, Runtime1::throw_class_cast_exception(JavaThread* current, oopDesc* object))
   NOT_PRODUCT(_throw_class_cast_exception_count++;)
   ResourceMark rm(current);
-char* message = SharedRuntime::generate_class_cast_message(current, object->klass());
+  char* message = SharedRuntime::generate_class_cast_message(current, object->klass());
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_ClassCastException(), message);
 JRT_END
 
@@ -1042,7 +1040,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
     // Deoptimization may have happened while we waited for the lock.
     // In that case we don't bother to do any patching we just return
     // and let the deopt happen
-    if (!caller_is_deopted()) {
+    if (!caller_is_deopted(current)) {
       NativeGeneralJump* jump = nativeGeneralJump_at(caller_frame.pc());
       address instr_pc = jump->jump_destination();
       NativeInstruction* ni = nativeInstruction_at(instr_pc);
@@ -1286,7 +1284,7 @@ void Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_id) {
 
   Deoptimization::deoptimize_frame(current, caller_frame.id());
   // Return to the now deoptimized frame.
-  postcond(caller_is_deopted());
+  postcond(caller_is_deopted(current));
 }
 
 #endif // DEOPTIMIZE_WHEN_PATCHING
@@ -1313,7 +1311,7 @@ int Runtime1::move_klass_patching(JavaThread* current) {
 
   // Return true if calling code is deoptimized
 
-  return caller_is_deopted();
+  return caller_is_deopted(current);
 }
 
 int Runtime1::move_mirror_patching(JavaThread* current) {
@@ -1330,7 +1328,7 @@ int Runtime1::move_mirror_patching(JavaThread* current) {
 
   // Return true if calling code is deoptimized
 
-  return caller_is_deopted();
+  return caller_is_deopted(current);
 }
 
 int Runtime1::move_appendix_patching(JavaThread* current) {
@@ -1347,7 +1345,7 @@ int Runtime1::move_appendix_patching(JavaThread* current) {
 
   // Return true if calling code is deoptimized
 
-  return caller_is_deopted();
+  return caller_is_deopted(current);
 }
 
 // Entry point for compiled code. We want to patch a nmethod.
@@ -1374,7 +1372,7 @@ int Runtime1::access_field_patching(JavaThread* current) {
 
   // Return true if calling code is deoptimized
 
-  return caller_is_deopted();
+  return caller_is_deopted(current);
 }
 
 
