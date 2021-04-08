@@ -98,7 +98,10 @@ public:
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
   G1CMBitMap*              mark_bitmap();
   ReferenceProcessor*      reference_processor();
-  size_t                   live_words(uint region_index) { return _live_stats[region_index]._live_words; }
+  size_t live_words(uint region_index) {
+    assert(region_index < _heap->max_regions(), "sanity");
+    return _live_stats[region_index]._live_words;
+  }
 
   void update_attribute_table(HeapRegion* hr, bool force_pinned = false);
 

@@ -53,6 +53,8 @@ protected:
   uint8_t default_value() const { return Invalid; }
 
 public:
+  void set_invalid(uint idx) { set_by_index(idx, Invalid); }
+
   void set_closed_archive(uint idx) { set_by_index(idx, ClosedArchive); }
 
   bool is_closed_archive(HeapWord* obj) const {
