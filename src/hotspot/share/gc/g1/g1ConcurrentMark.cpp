@@ -1327,6 +1327,8 @@ void G1ConcurrentMark::cleanup() {
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
     G1UpdateRemSetTrackingAfterRebuild cl(_g1h);
     _g1h->heap_region_iterate(&cl);
+  } else {
+    log_debug(gc, remset, tracking)("No Remembered Sets To Update After Rebuild");
   }
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
@@ -1958,6 +1960,7 @@ void G1ConcurrentMark::rebuild_rem_set_concurrently() {
   // If Remark did not select any regions for RemSet rebuild,
   // skip the rebuild remembered set phase
   if (total_selected_for_rebuild() == 0) {
+    log_debug(gc, remset, tracking)("Skipping Remembered Set Rebuild. No Regions Selected For Rebuild.");
     return;
   }
   _g1h->rem_set()->rebuild_rem_set(this, _concurrent_workers, _worker_id_offset);

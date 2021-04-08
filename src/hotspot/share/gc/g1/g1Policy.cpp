@@ -1098,8 +1098,8 @@ void G1Policy::decide_on_conc_mark_initiation() {
   }
 }
 
-void G1Policy::record_concurrent_mark_cleanup_end(bool rebuilt_remembered_sets) {
-  if (rebuilt_remembered_sets) {
+void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {
+  if (has_rebuilt_remembered_sets) {
     G1CollectionSetCandidates* candidates = G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions());
     _collection_set->set_candidates(candidates);
   }
