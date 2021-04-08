@@ -135,7 +135,7 @@ JNI_COCOA_ENTER(env);
                 mtlc = nil;
             }
         } else {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLGC_InitMTLContext: could not initialze MTLContext.");
+            J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLGraphicsConfig_getMTLConfigInfo: could not initialze MTLContext.");
         }
     }];
 
