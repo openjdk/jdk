@@ -430,7 +430,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     }
 
     current->set_current_pending_monitor(NULL);
-    
+
     // We cleared the pending monitor info since we've just gotten past
     // the enter-check-for-suspend dance and we now own the monitor free
     // and clear, i.e., it is no longer pending.
@@ -440,7 +440,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     // states will still report that the thread is blocked trying to
     // acquire it.
 
-    // Completed the tranisition.    
+    // Completed the tranisition.
     SafepointMechanism::process_if_requested(current);
     current->set_thread_state(_thread_in_vm);
   }
