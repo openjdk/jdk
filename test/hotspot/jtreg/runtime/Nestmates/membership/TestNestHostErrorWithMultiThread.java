@@ -48,12 +48,12 @@ class HostNoNestMember {
 
 public class TestNestHostErrorWithMultiThread {
 
-  public static void main(String args[]) {
+  public static void main(String args[]) throws Throwable {
     TestNestHostErrorWithMultiThread t = new TestNestHostErrorWithMultiThread();
     t.test();
   }
 
-  public void test() {
+  public void test() throws Throwable {
 
     CountDownLatch latch = new CountDownLatch(1);
 
@@ -62,9 +62,9 @@ public class TestNestHostErrorWithMultiThread {
         latch.await();
         HostNoNestMember h = new HostNoNestMember();
         h.foo();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+      } catch (IllegalAccessError expected) {
+        System.out.println("OK - got expected exception: " + expected);
+      } catch (InterruptedException e) {}
     }).start();
 
     new Thread(() -> {
@@ -72,9 +72,9 @@ public class TestNestHostErrorWithMultiThread {
         latch.await();
         HostNoNestMember h = new HostNoNestMember();
         h.foo();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+      } catch (IllegalAccessError expected) {
+        System.out.println("OK - got expected exception: " + expected);
+      } catch (InterruptedException e) {}
     }).start();
 
     latch.countDown();
