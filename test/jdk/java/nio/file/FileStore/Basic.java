@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,8 @@ public class Basic {
              * Test: FileStore.equals() should not be case sensitive
              */
             FileSystem fs = FileSystems.getDefault();
-            FileStore upper = Files.getFileStore(fs.getPath("C:\\"));
-            FileStore lower = Files.getFileStore(fs.getPath("c:\\"));
+            FileStore upper = Files.getFileStore(Path.of("C:\\"));
+            FileStore lower = Files.getFileStore(Path.of("c:\\"));
             assertTrue(lower.equals(upper));
         }
 
