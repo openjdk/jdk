@@ -34,7 +34,6 @@ import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;
 
 import java.io.IOException;
-import java.util.HexFormat;
 
 public class WideTag {
 
@@ -45,17 +44,23 @@ public class WideTag {
         DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0);
 
         // Big ones
-        Utils.runAndCheckException(() -> DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)31),
+        Utils.runAndCheckException(
+                () -> DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)31),
                 IllegalArgumentException.class);
-        Utils.runAndCheckException(() -> DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)222),
+        Utils.runAndCheckException(
+                () -> DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)222),
                 IllegalArgumentException.class);
 
         // We don't accept number 31
         Utils.runAndCheckException(() -> new DerValue((byte)0xbf, new byte[10]),
                 IllegalArgumentException.class);
 
-        // A CONTEXT [48] with 2 zeroes. Not supported
-        byte[] wideDER = HexFormat.of().parseHex("BF30020000");
+        // CONTEXT [98] size 97. Not supported. Should fail.
+        // Before this fix, it was interpreted as CONTEXT [31] size 98.
+        byte[] wideDER = new byte[100];
+        wideDER[0] = (byte)0xBF;
+        wideDER[1] = (byte)98;
+        wideDER[2] = (byte)97;
 
         Utils.runAndCheckException(() -> new DerValue(wideDER),
                 IOException.class);
