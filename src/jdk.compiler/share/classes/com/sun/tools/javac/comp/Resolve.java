@@ -69,6 +69,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.lang.model.element.ElementVisitor;
 
@@ -387,14 +388,11 @@ public class Resolve {
     boolean isAccessible(Env<AttrContext> env, Type t, boolean checkInner) {
         if (t.hasTag(ARRAY)) {
             return isAccessible(env, types.cvarUpperBound(types.elemtype(t)));
-        } else if (!t.isUnion()) {
-            return isAccessible(env, t.tsym, checkInner);
+        } else if (t.isUnion()) {
+            return StreamSupport.stream(((UnionClassType) t).getAlternativeTypes().spliterator(), false)
+                    .allMatch(alternative -> isAccessible(env, alternative.tsym, checkInner));
         } else {
-            boolean canAccessible = true;
-            for (Type alternativeType : ((UnionClassType) t).getAlternativeTypes()) {
-                canAccessible = canAccessible && isAccessible(env, alternativeType.tsym, checkInner);
-            }
-            return canAccessible;
+            return isAccessible(env, t.tsym, checkInner);
         }
     }
 
