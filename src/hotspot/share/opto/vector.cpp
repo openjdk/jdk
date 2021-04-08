@@ -32,6 +32,15 @@
 #include "opto/vector.hpp"
 #include "utilities/macros.hpp"
 
+static bool is_vector_mask(ciKlass* klass) {
+  return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+}
+
+static bool is_vector_shuffle(ciKlass* klass) {
+  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+}
+
+
 void PhaseVector::optimize_vector_boxes() {
   Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
 
@@ -252,6 +261,22 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
 #endif // ASSERT
                                                first_ind, n_fields);
     sobj->init_req(0, C->root());
+
+    // If a mask is feeding into a safepoint, then its value should be
+    // packed into a byte vector first, this will simplify the re-materialization
+    // logic for both predicated and non-predicated targets.
+    bool is_mask = is_vector_mask(iklass);
+    if (is_mask) {
+      if (vec_value->Opcode() == Op_VectorLoadMask) {
+        const Type* in1_ty = vec_value->in(1)->bottom_type();
+        assert(in1_ty->isa_vect() && in1_ty->is_vect()->element_basic_type() == T_BOOLEAN, "");
+        vec_value = vec_value->in(1);
+      } else if (vec_value->Opcode() != Op_VectorStoreMask) {
+        const TypeVect* vt = vec_value->bottom_type()->is_vect();
+        BasicType bt = vt->element_basic_type();
+        vec_value = gvn.transform(VectorStoreMaskNode::make(gvn, vec_value, bt, vt->length()));
+      }
+    }
     sfpt->add_req(vec_value);
 
     sobj = gvn.transform(sobj);
@@ -303,14 +328,6 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     // TODO: assert that expanded vbox is initialized with the same value (vect).
     return vbox; // already expanded
   }
-}
-
-static bool is_vector_mask(ciKlass* klass) {
-  return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
-}
-
-static bool is_vector_shuffle(ciKlass* klass) {
-  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
 }
 
 Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,

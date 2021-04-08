@@ -88,20 +88,13 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
 
 void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr) {
   if (is_mask) {
-    // Masks require special handling: when boxed they are packed and stored in boolean
-    // arrays, but in scalarized form they have the same size as corresponding vectors.
-    // For example, Int512Mask is represented in memory as boolean[16], but
-    // occupies the whole 512-bit vector register when scalarized.
-    // (In generated code, the conversion is performed by VectorStoreMask.)
-    //
-    // TODO: revisit when predicate registers are fully supported.
     switch (elem_bt) {
-      case T_BYTE:   arr->bool_at_put(index,  (*(jbyte*)addr) != 0); break;
-      case T_SHORT:  arr->bool_at_put(index, (*(jshort*)addr) != 0); break;
-      case T_INT:    // fall-through
-      case T_FLOAT:  arr->bool_at_put(index,   (*(jint*)addr) != 0); break;
-      case T_LONG:   // fall-through
-      case T_DOUBLE: arr->bool_at_put(index,  (*(jlong*)addr) != 0); break;
+      case T_BYTE:
+      case T_SHORT:
+      case T_INT:
+      case T_LONG:
+      case T_FLOAT:
+      case T_DOUBLE: arr->bool_at_put(index,  (*(jbyte*)addr) != 0); break;
 
       default: fatal("unsupported: %s", type2name(elem_bt));
     }
@@ -124,7 +117,11 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
 
   int num_elem = klass2length(ik);
   BasicType elem_bt = klass2bt(ik);
-  int elem_size = type2aelembytes(elem_bt);
+  // Inserting a VectorStoreMask before stitching the mask
+  // to SafePointNode will ensure packing the mask into a
+  // byte array for masks present in both predicated register
+  // or vector registers.
+  int elem_size = is_mask ? 1 : type2aelembytes(elem_bt);
 
   // On-heap vector values are represented as primitive arrays.
   TypeArrayKlass* tak = TypeArrayKlass::cast(Universe::typeArrayKlassObj(is_mask ? T_BOOLEAN : elem_bt));
