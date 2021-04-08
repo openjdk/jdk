@@ -570,14 +570,14 @@ public class PrintingProcessor extends AbstractProcessor {
                         if (annotationMethods.size() == 1) {
                             var valueMethod = annotationMethods.get(0);
                             var returnType = valueMethod.getReturnType();
-                            
+
                             if ("value".equals(valueMethod.getSimpleName().toString()) &&
                                 returnType.getKind() == TypeKind.ARRAY) {
                                 // Use annotation value visitor that
                                 // returns a boolean if it prints out
                                 // contained annotations as expected
                                 // and false otherwise
-                    
+
                                 return (new SimpleAnnotationValueVisitor14<Boolean, Void>(false) {
                                     @Override
                                     public Boolean visitArray(List<? extends AnnotationValue> vals, Void p) {
