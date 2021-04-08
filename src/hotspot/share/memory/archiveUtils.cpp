@@ -37,6 +37,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;

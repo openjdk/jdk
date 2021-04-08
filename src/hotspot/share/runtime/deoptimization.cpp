@@ -896,9 +896,7 @@ void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
 Deoptimization::DeoptAction Deoptimization::_unloaded_action
   = Deoptimization::Action_reinterpret;
 
-
-
-#if INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
 template<typename CacheType>
 class BoxCacheBase : public CHeapObj<mtCompiler> {
 protected:
@@ -1026,9 +1024,7 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
    }
    return NULL;
 }
-#endif // INCLUDE_JVMCI
 
-#if COMPILER2_OR_JVMCI
 bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
   Handle pending_exception(THREAD, thread->pending_exception());
   const char* exception_file = thread->exception_file();
@@ -1045,9 +1041,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
     oop obj = NULL;
 
     if (k->is_instance_klass()) {
-#if INCLUDE_JVMCI
-      CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
-      if (cm->is_compiled_by_jvmci() && sv->is_auto_box()) {
+      if (sv->is_auto_box()) {
         AutoBoxObjectValue* abv = (AutoBoxObjectValue*) sv;
         obj = get_cached_box(abv, fr, reg_map, THREAD);
         if (obj != NULL) {
@@ -1055,7 +1049,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
           abv->set_cached(true);
         }
       }
-#endif // INCLUDE_JVMCI
+
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (obj == NULL) {
 #ifdef COMPILER2
@@ -1397,12 +1391,11 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     if (obj.is_null()) {
       continue;
     }
-#if INCLUDE_JVMCI
+
     // Don't reassign fields of boxes that came from a cache. Caches may be in CDS.
     if (sv->is_auto_box() && ((AutoBoxObjectValue*) sv)->is_cached()) {
       continue;
     }
-#endif // INCLUDE_JVMCI
 #ifdef COMPILER2
     if (EnableVectorSupport && VectorSupport::is_vector(k)) {
       assert(sv->field_size() == 1, "%s not a vector", k->name()->as_C_string());
@@ -1654,7 +1647,7 @@ void Deoptimization::revoke_from_deopt_handler(JavaThread* thread, frame fr, Reg
   int len = objects_to_revoke->length();
   for (int i = 0; i < len; i++) {
     oop obj = (objects_to_revoke->at(i))();
-    BiasedLocking::revoke_own_lock(objects_to_revoke->at(i), thread);
+    BiasedLocking::revoke_own_lock(thread, objects_to_revoke->at(i));
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 }
@@ -1687,7 +1680,7 @@ void Deoptimization::revoke_for_object_deoptimization(JavaThread* deoptee_thread
       // Deoptimization::relock_objects().
       continue;
     }
-    BiasedLocking::revoke(objects_to_revoke->at(i), thread);
+    BiasedLocking::revoke(thread, objects_to_revoke->at(i));
     assert(!objects_to_revoke->at(i)->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 }

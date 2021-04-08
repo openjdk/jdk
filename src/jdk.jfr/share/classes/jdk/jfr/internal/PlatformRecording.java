@@ -176,7 +176,8 @@ public final class PlatformRecording implements AutoCloseable {
                 notifyIfStateChanged(newState, oldState);
                 close(); // remove if copied out
             } catch(IOException e) {
-                // throw e; // BUG8925030
+                Logger.log(LogTag.JFR, LogLevel.ERROR,
+                           "Unable to complete I/O operation when dumping recording \"" + getName() + "\" (" + getId() + ")");
             }
         } else {
             notifyIfStateChanged(newState, oldState);
