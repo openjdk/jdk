@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package java.lang;
 
-import jdk.internal.math.FloatingDecimal;
+import jdk.internal.math.DoubleToDecimal;
+import jdk.internal.math.FloatToDecimal;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Spliterator;
 import java.util.stream.IntStream;
@@ -874,8 +876,13 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(float f) {
-        FloatingDecimal.appendTo(f,this);
+        try {
+            FloatToDecimal.appendTo(f, this);
+        } catch (IOException ignored) {
+            assert false;
+        }
         return this;
+
     }
 
     /**
@@ -891,7 +898,11 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(double d) {
-        FloatingDecimal.appendTo(d,this);
+        try {
+            DoubleToDecimal.appendTo(d, this);
+        } catch (IOException ignored) {
+            assert false;
+        }
         return this;
     }
 
