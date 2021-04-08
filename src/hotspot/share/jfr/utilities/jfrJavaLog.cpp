@@ -30,6 +30,7 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 #define JFR_LOG_TAGS_CONCATED(T0, T1, T2, T3, T4, T5, ...)  \
@@ -130,23 +131,25 @@ void JfrJavaLog::log_event(JNIEnv* env, jint level, jobjectArray lines, bool sys
     return;
   }
 
-  jsize length = env->GetArrayLength(lines);
+  objArrayOop the_lines = objArrayOop(JfrJavaSupport::resolve_non_null(lines));
+  assert(the_lines != NULL, "invariant");
+  assert(the_lines->is_array(), "must be array");
+  const int length = the_lines->length();
+
+  ResourceMark rm(THREAD);
   LogMessage(jfr, event) jfr_event;
   LogMessage(jfr, system, event) jfr_event_system;
-  for (jsize i = 0; i < length; ++i) {
-    jstring line = (jstring)(env->GetObjectArrayElement(lines, i));
-    const char* text = env->GetStringUTFChars(line, 0);
+  for (int i = 0; i < length; ++i) {
+    const char* text = JfrJavaSupport::c_str(the_lines->obj_at(i), THREAD);
     if (text == NULL) {
-      env->DeleteLocalRef(line);
-      break;
+      // An oome has been thrown and is pending.
+      return;
     }
     if (system) {
       jfr_event_system.write((LogLevelType)level, "%s", text);
     } else {
       jfr_event.write((LogLevelType)level, "%s", text);
     }
-    env->ReleaseStringUTFChars(line, text);
-    env->DeleteLocalRef(line);
   }
 }
 
