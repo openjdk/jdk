@@ -222,7 +222,7 @@ public class DerValue {
      */
     DerValue(byte tag, byte[] buffer, int start, int end, boolean allowBER) {
         if ((tag & 0x1f) == 0x1f) {
-            throw new IllegalArgumentException("Tag number cannot be 31");
+            throw new IllegalArgumentException("Tag number 31 is not supported");
         }
         this.tag = tag;
         this.buffer = buffer;
@@ -319,7 +319,7 @@ public class DerValue {
         int pos = offset;
         tag = buf[pos++];
         if ((tag & 0x1f) == 0x1f) {
-            throw new IOException("Tag number cannot exceed 30");
+            throw new IOException("Tag number over 30 is not supported");
         }
         int lenByte = buf[pos++];
 
@@ -395,7 +395,7 @@ public class DerValue {
     DerValue(InputStream in, boolean allowBER) throws IOException {
         this.tag = (byte)in.read();
         if ((tag & 0x1f) == 0x1f) {
-            throw new IOException("Tag number cannot exceed 30");
+            throw new IOException("Tag number over 30 is not supported");
         }
         int length = DerInputStream.getLength(in);
         if (length == -1) { // indefinite length encoding found
@@ -1150,7 +1150,7 @@ public class DerValue {
      */
     public static byte createTag(byte tagClass, boolean form, byte val) {
         if (val < 0 || val > 30) {
-            throw new IllegalArgumentException("Tag number cannot exceed 30");
+            throw new IllegalArgumentException("Tag number over 30 is not supported");
         }
         byte tag = (byte)(tagClass | val);
         if (form) {
