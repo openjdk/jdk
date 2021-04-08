@@ -177,8 +177,7 @@ public final class PlatformRecording implements AutoCloseable {
                 close(); // remove if copied out
             } catch(IOException e) {
                 Logger.log(LogTag.JFR, LogLevel.ERROR,
-                           "Unable to complete I/O operation when dumping recording \"" + getName() + "\" (" + getId() + ") due to: "
-                           + e.getMessage());
+                           "Unable to complete I/O operation when dumping recording \"" + getName() + "\" (" + getId() + ")");
             }
         } else {
             notifyIfStateChanged(newState, oldState);
