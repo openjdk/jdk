@@ -358,13 +358,14 @@ class SequentialSubTasksDone : public CHeapObj<mtInternal> {
 public:
   SequentialSubTasksDone(uint num_tasks) : _num_tasks(num_tasks), _num_claimed(0) { }
   ~SequentialSubTasksDone() {
-    assert(_num_claimed == _num_tasks, "Claimed %u tasks of %u", _num_claimed, _num_tasks);
+    // Claiming may try to claim more tasks than there are.
+    assert(_num_claimed >= _num_tasks, "Claimed %u tasks of %u", _num_claimed, _num_tasks);
   }
 
   // Attempt to claim the next unclaimed task in the sequence,
   // returning true if successful, with t set to the index of the
-  // claimed task.  Returns false if there are no more unclaimed tasks
-  // in the sequence.
+  // claimed task. Returns false if there are no more unclaimed tasks
+  // in the sequence. In this case t is undefined.
   bool try_claim_task(uint& t);
 };
 

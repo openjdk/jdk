@@ -401,12 +401,8 @@ SubTasksDone::~SubTasksDone() {
 
 bool SequentialSubTasksDone::try_claim_task(uint& t) {
   t = _num_claimed;
-  while (t < _num_tasks) {
-    uint res = Atomic::cmpxchg(&_num_claimed, t, t+1);
-    if (res == t) {
-      return true;
-    }
-    t = res;
+  if (t < _num_tasks) {
+    t = Atomic::add(&_num_claimed, 1u) - 1;
   }
-  return false;
+  return t < _num_tasks;
 }
