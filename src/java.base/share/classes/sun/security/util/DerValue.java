@@ -319,7 +319,7 @@ public class DerValue {
         int pos = offset;
         tag = buf[pos++];
         if ((tag & 0x1f) == 0x1f) {
-            throw new IOException("Tag number over 30 is not supported");
+            throw new IOException("Tag number over 30 at " + offset + " is not supported");
         }
         int lenByte = buf[pos++];
 
