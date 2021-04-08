@@ -74,7 +74,7 @@ public final class CertAndKeyGen {
      * @exception NoSuchAlgorithmException on unrecognized algorithms.
      */
     public CertAndKeyGen (String keyType, String sigAlg)
-    throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
     {
         keyGen = KeyPairGenerator.getInstance(keyType);
         this.sigAlg = sigAlg;
@@ -85,7 +85,7 @@ public final class CertAndKeyGen {
      * @see #CertAndKeyGen(String, String, String, PrivateKey, X500Name)
      */
     public CertAndKeyGen (String keyType, String sigAlg, String providerName)
-    throws NoSuchAlgorithmException, NoSuchProviderException
+            throws NoSuchAlgorithmException, NoSuchProviderException
     {
         this(keyType, sigAlg, providerName, null, null);
     }

@@ -94,27 +94,23 @@ public class GenKeyPairSigner {
 
         Certificate[] certChain = kstore.getCertificateChain("e1");
         if (certChain.length != 2) {
-            System.out.println("Generated cert chain is in error");
-            System.exit(1);
+            throw new Exception("Generated cert chain is in error");
         }
 
         sigName = cert.getSigAlgName();
         if (sigName != "Ed25519") {
-            System.out.println("Signature algorithm name is in error");
-            System.exit(1);
+            throw new Exception("Signature algorithm name is in error");
         }
 
         pKey = cert.getPublicKey();
         keyLen = KeyUtil.getKeySize(pKey);
         if (keyLen != 255) {
-            System.out.println("Key size is in error");
-            System.exit(1);
+            throw new Exception("Key size is in error");
         }
 
         pKeyAlg = pKey.getAlgorithm();
         if (pKeyAlg != "XDH") {
-            System.out.println("Subject Public Key Algorithm is in error");
-            System.exit(1);
+            throw new Exception("Subject Public Key Algorithm is in error");
         }
 
         SecurityTools.keytool("-keystore ks -storepass changeit " +
@@ -134,21 +130,18 @@ public class GenKeyPairSigner {
 
         byte[] authorityKeyId = null;
         if (authorityKeyIdExt == null) {
-            System.out.println("Failed to get AKID extension from the cert");
-            System.exit(1);
+            throw new Exception("Failed to get AKID extension from the cert");
         } else {
             try {
                 authorityKeyId = new DerValue(authorityKeyIdExt).getOctetString();
             } catch (IOException e) {
-                System.out.println("Failed to get AKID encoded OctetString in the cert");
-                System.exit(1);
+                throw new Exception("Failed to get AKID encoded OctetString in the cert");
             }
         }
 
         authorityKeyId = Arrays.copyOfRange(authorityKeyId, 4, authorityKeyId.length);
         if (!Arrays.equals(authorityKeyId, expectedId)) {
-            System.out.println("Failed due to AKID mismatch");
-            System.exit(1);
+            throw new Exception("Failed due to AKID mismatch");
         }
 
         kt("-genkeypair -keyalg RSA -alias ca2 -dname CN=CA2 -ext bc:c ",
@@ -166,21 +159,18 @@ public class GenKeyPairSigner {
         cert = (X509Certificate)kstore.getCertificate("e2");
         sigName = cert.getSigAlgName();
         if (sigName != "SHA384withRSA") {
-            System.out.println("Signature algorithm name is in error");
-            System.exit(1);
+            throw new Exception("Signature algorithm name is in error");
         }
 
         pKey = cert.getPublicKey();
         keyLen = KeyUtil.getKeySize(pKey);
         if (keyLen != 448) {
-            System.out.println("Key size is in error");
-            System.exit(1);
+            throw new Exception("Key size is in error");
         }
 
         pKeyAlg = pKey.getAlgorithm();
         if (pKeyAlg != "XDH") {
-            System.out.println("Subject Public Key Algorithm is in error");
-            System.exit(1);
+            throw new Exception("Subject Public Key Algorithm is in error");
         }
 
         SecurityTools.keytool("-keystore ks -storepass changeit " +
@@ -205,21 +195,18 @@ public class GenKeyPairSigner {
         cert = (X509Certificate)kstore.getCertificate("e3");
         sigName = cert.getSigAlgName();
         if (sigName != "SHA256withDSA") {
-            System.out.println("Signature algorithm name is in error");
-            System.exit(1);
+            throw new Exception("Signature algorithm name is in error");
         }
 
         pKey = cert.getPublicKey();
         keyLen = KeyUtil.getKeySize(pKey);
         if (keyLen != 2048) {
-            System.out.println("Key size is in error");
-            System.exit(1);
+            throw new Exception("Key size is in error");
         }
 
         pKeyAlg = pKey.getAlgorithm();
         if (pKeyAlg != "DH") {
-            System.out.println("Subject Public Key Algorithm is in error");
-            System.exit(1);
+            throw new Exception("Subject Public Key Algorithm is in error");
         }
 
         SecurityTools.keytool("-keystore ks -storepass changeit " +
@@ -274,27 +261,23 @@ public class GenKeyPairSigner {
 
         Certificate[] certChain = kstore.getCertificateChain("e1");
         if (certChain.length != 3) {
-            System.out.println("Generated cert chain is in error");
-            System.exit(1);
+            throw new Exception("Generated cert chain is in error");
         }
 
         sigName = cert.getSigAlgName();
         if (sigName != "SHA256withDSA") {
-            System.out.println("Signature algorithm name is in error");
-            System.exit(1);
+            throw new Exception("Signature algorithm name is in error");
         }
 
         pKey = cert.getPublicKey();
         keyLen = KeyUtil.getKeySize(pKey);
         if (keyLen != 255) {
-            System.out.println("Key size is in error");
-            System.exit(1);
+            throw new Exception("Key size is in error");
         }
 
         pKeyAlg = pKey.getAlgorithm();
         if (pKeyAlg != "XDH") {
-            System.out.println("Subject Public Key Algorithm is in error");
-            System.exit(1);
+            throw new Exception("Subject Public Key Algorithm is in error");
         }
 
         SecurityTools.keytool("-keystore ksjks -storepass changeit " +
