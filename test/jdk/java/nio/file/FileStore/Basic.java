@@ -84,7 +84,6 @@ public class Basic {
             /**
              * Test: FileStore.equals() should not be case sensitive
              */
-            FileSystem fs = FileSystems.getDefault();
             FileStore upper = Files.getFileStore(Path.of("C:\\"));
             FileStore lower = Files.getFileStore(Path.of("c:\\"));
             assertTrue(lower.equals(upper));
