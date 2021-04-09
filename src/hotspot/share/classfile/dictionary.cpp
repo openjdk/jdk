@@ -141,6 +141,14 @@ bool DictionaryEntry::is_valid_protection_domain(Handle protection_domain) {
         : contains_protection_domain(protection_domain());
 }
 
+// Reading the pd_set on each DictionaryEntry is lock free and cannot safepoint.
+// Adding and deleting entries is under the SystemDictionary_lock
+// Deleting unloaded entries on ClassLoaderData for dictionaries that are not unloaded
+// is a three step process:
+//     moving the entries to a separate list, handshake to wait for
+//     readers to complete (see NSV here), and then actually deleting the entries.
+// Deleting entries is done by the ServiceThread when triggered by class unloading.
+
 bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   assert(Thread::current()->is_Java_thread() || SafepointSynchronize::is_at_safepoint(),
          "can only be called by a JavaThread or at safepoint");
@@ -452,6 +460,8 @@ void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainE
             assert(prev != NULL, "should be set by alive entry");
             prev->release_set_next(current->next_acquire());
           }
+          // Mark current for deletion but in the meantime it can still be
+          // traversed.
           delete_list->push(current);
           current = current->next_acquire();
         } else {
@@ -556,8 +566,9 @@ void DictionaryEntry::verify_protection_domain_set() {
 }
 
 void DictionaryEntry::print_count(outputStream *st) {
+  assert_locked_or_safepoint(SystemDictionary_lock);
   int count = 0;
-  for (ProtectionDomainEntry* current = pd_set_acquire();  // accessed inside SD lock
+  for (ProtectionDomainEntry* current = pd_set_acquire();
                               current != NULL;
                               current = current->next_acquire()) {
     count++;
