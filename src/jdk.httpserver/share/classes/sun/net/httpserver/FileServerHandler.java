@@ -173,7 +173,7 @@ public final class FileServerHandler implements HttpHandler {
         throws IOException
     {
         var respHdrs = exchange.getResponseHeaders();
-        respHdrs.set("Content-Type", mediaType(exchange.getRequestURI().getPath()));
+        respHdrs.set("Content-Type", mediaType(path.toString()));
         if (writeBody) {
             exchange.sendResponseHeaders(200, Files.size(path));
             try (InputStream fis = Files.newInputStream(path);
