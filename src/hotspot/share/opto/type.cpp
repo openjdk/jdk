@@ -1006,6 +1006,7 @@ const Type::TYPES Type::dual_type[Type::lastype] = {
 
   Bad,          // Tuple - handled in v-call
   Bad,          // Array - handled in v-call
+  Bad,          // VectorMask - handled in v-call
   Bad,          // VectorA - handled in v-call
   Bad,          // VectorS - handled in v-call
   Bad,          // VectorD - handled in v-call
