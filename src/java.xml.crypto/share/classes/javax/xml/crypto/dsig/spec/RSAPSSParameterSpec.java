@@ -71,7 +71,8 @@ import java.util.Objects;
  * {@code DigestMethod}, MGF1 with SHA-256 as the
  * {@code MaskGenerationFunction}, 32 as {@code SaltLength}, and 1 as
  * {@code TrailerField}. This is equivalent to the parameter-less signature
- * method as defined by http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1.
+ * method {@link SignatureMethod#SHA256_RSA_MGF1 SHA256_RSA_MGF1} as defined
+ * in <a href="https://tools.ietf.org/html/rfc6931#section-2.3.10">RFC 6931</a>.
  *
  * @implNote
  * In this implementation one can obtain this default value with:
