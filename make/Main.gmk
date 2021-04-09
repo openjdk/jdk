@@ -441,6 +441,11 @@ $(eval $(call SetupTarget, exploded-image-optimize, \
         buildtools-modules, \
 ))
 
+$(eval $(call SetupTarget, graal-builder-image, \
+    MAKEFILE := GraalBuilderImage, \
+    DEPS := jdk-image static-libs-image, \
+))
+
 ifeq ($(JCOV_ENABLED), true)
   $(eval $(call SetupTarget, jcov-image, \
       MAKEFILE := Coverage, \
