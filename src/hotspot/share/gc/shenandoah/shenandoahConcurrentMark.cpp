@@ -191,8 +191,13 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure cl(q, _rp);
-  _root_scanner.roots_do(&cl, worker_id);
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahMarkRefsDedupClosure cl(q, _rp);
+    _root_scanner.roots_do(&cl, worker_id);
+  } else {
+    ShenandoahMarkRefsClosure cl(q, _rp);
+    _root_scanner.roots_do(&cl, worker_id);
+  }
 }
 
 void ShenandoahConcurrentMark::mark_concurrent_roots() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8155026 8178011 8220702
+ * @bug 8155026 8178011 8220702 8261625
  * @summary Test automatic modules
  * @library /tools/lib
  * @modules
@@ -39,8 +39,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -665,9 +670,31 @@ public class AutomaticModules extends ModuleTestBase {
                          "-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(Task.Expect.SUCCESS)
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
+                .processors(new AbstractProcessor() {
+                         // Processor verifies api.Api is enclosed by an automatic module.
+                         @Override
+                         public Set<String> getSupportedAnnotationTypes() {
+                             return Set.of("*");
+                         }
+
+                         @Override
+                         public SourceVersion getSupportedSourceVersion() {
+                             return SourceVersion.latestSupported();
+                         }
+
+                         @Override
+                         public boolean process(Set<? extends TypeElement> annotations,
+                                                RoundEnvironment roundEnv) {
+                             if (!roundEnv.processingOver()) {
+                                 var elts = processingEnv.getElementUtils();
+                                 if (!elts.isAutomaticModule(elts.getModuleOf(elts.getTypeElement("api.Api")))) {
+                                     throw new RuntimeException("module of class api.Api is not automatic");
+                                 }
+                             }
+                             return true;
+                         }
+                    })
+                .run(Task.Expect.SUCCESS);
 
         tb.writeJavaFiles(src,
                           "module m { requires automatic; }");
