@@ -2428,11 +2428,6 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
           bootstrap_specifier.resolved_method().not_null()), "bootstrap method call failed");
 }
 
-// Protection domain cache table handling
-
-ProtectionDomainCacheEntry* SystemDictionary::cache_get(Handle protection_domain) {
-  return _pd_cache_table->get(protection_domain);
-}
 
 ClassLoaderData* SystemDictionary::class_loader_data(Handle class_loader) {
   return ClassLoaderData::class_loader_data(class_loader());

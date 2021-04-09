@@ -188,17 +188,24 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   return false;
 }
 
-void DictionaryEntry::add_protection_domain(Dictionary* dict, Handle protection_domain) {
-  assert_locked_or_safepoint(SystemDictionary_lock);
+void DictionaryEntry::add_protection_domain(ClassLoaderData* loader_data, Handle protection_domain) {
+  assert_lock_strong(SystemDictionary_lock);
   if (!contains_protection_domain(protection_domain())) {
-    ProtectionDomainCacheEntry* entry = SystemDictionary::cache_get(protection_domain);
+    ProtectionDomainCacheEntry* entry = SystemDictionary::pd_cache_table()->get(protection_domain);
     // Additions and deletions hold the SystemDictionary_lock, readers are lock-free
     ProtectionDomainEntry* new_head = new ProtectionDomainEntry(entry, _pd_set);
     release_set_pd_set(new_head);
   }
   LogTarget(Trace, protectiondomain) lt;
   if (lt.is_enabled()) {
+    ResourceMark rm;
     LogStream ls(lt);
+    ls.print("adding protection domain for class %s", instance_klass()->name()->as_C_string());
+    ls.print(" class loader: ");
+    loader_data->class_loader()->print_value_on(&ls);
+    ls.print(" protection domain: ");
+    protection_domain->print_value_on(&ls);
+    ls.print(" ");
     print_count(&ls);
   }
 }
@@ -335,7 +342,7 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
   assert(protection_domain() != NULL,
          "real protection domain should be present");
 
-  entry->add_protection_domain(this, protection_domain);
+  entry->add_protection_domain(loader_data(), protection_domain);
 
 #ifdef ASSERT
   assert(loader_data() != ClassLoaderData::the_null_class_loader_data(), "doesn't make sense");
