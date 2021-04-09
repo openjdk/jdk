@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
@@ -187,13 +187,10 @@ PackageEntryTable::~PackageEntryTable() {
       to_remove->delete_qualified_exports();
       to_remove->name()->decrement_refcount();
 
-      // Unlink from the Hashtable prior to freeing
-      unlink_entry(to_remove);
-      FREE_C_HEAP_ARRAY(char, to_remove);
+      BasicHashtable<mtModule>::free_entry(to_remove);
     }
   }
   assert(number_of_entries() == 0, "should have removed all entries");
-  assert(new_entry_free_list() == NULL, "entry present on PackageEntryTable's free list");
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -208,7 +205,7 @@ static ArchivedPackageEntries* _archived_packages_entries = NULL;
 
 PackageEntry* PackageEntry::allocate_archived_entry() const {
   assert(!in_unnamed_module(), "unnamed packages/modules are not archived");
-  PackageEntry* archived_entry = (PackageEntry*)MetaspaceShared::read_write_space_alloc(sizeof(PackageEntry));
+  PackageEntry* archived_entry = (PackageEntry*)ArchiveBuilder::rw_region_alloc(sizeof(PackageEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(PackageEntry));
 
   if (_archived_packages_entries == NULL) {
@@ -278,7 +275,7 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
     }
   }
 
-  Array<PackageEntry*>* archived_packages = MetaspaceShared::new_rw_array<PackageEntry*>(n);
+  Array<PackageEntry*>* archived_packages = ArchiveBuilder::new_rw_array<PackageEntry*>(n);
   for (n = 0, i = 0; i < table_size(); ++i) {
     for (PackageEntry* p = bucket(i); p != NULL; p = p->next()) {
       if (p->module()->name() != NULL) {
@@ -322,7 +319,7 @@ void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_pac
 
 PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, ModuleEntry* module) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
-  PackageEntry* entry = (PackageEntry*)Hashtable<Symbol*, mtModule>::allocate_new_entry(hash, name);
+  PackageEntry* entry = (PackageEntry*)Hashtable<Symbol*, mtModule>::new_entry(hash, name);
 
   JFR_ONLY(INIT_ID(entry);)
 

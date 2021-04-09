@@ -38,6 +38,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -45,6 +46,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
@@ -62,6 +64,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
@@ -499,7 +502,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   int comp_level,
-  const GrowableArrayView<BufferBlob*>& native_invokers
+  const GrowableArrayView<RuntimeStub*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -724,7 +727,7 @@ nmethod::nmethod(
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   int comp_level,
-  const GrowableArrayView<BufferBlob*>& native_invokers
+  const GrowableArrayView<RuntimeStub*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -933,6 +936,8 @@ void nmethod::maybe_print_nmethod(DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
+  run_nmethod_entry_barrier(); // ensure all embedded OOPs are valid before printing
+
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != NULL) {
     xtty->begin_head("print_nmethod");
@@ -1021,9 +1026,9 @@ inline void nmethod::initialize_immediate_oop(oop* dest, jobject handle) {
   if (handle == NULL ||
       // As a special case, IC oops are initialized to 1 or -1.
       handle == (jobject) Universe::non_oop_word()) {
-    (*dest) = (oop) handle;
+    *(void**)dest = handle;
   } else {
-    (*dest) = JNIHandles::resolve_non_null(handle);
+    *dest = JNIHandles::resolve_non_null(handle);
   }
 }
 
@@ -1055,7 +1060,7 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
 }
 
 void nmethod::free_native_invokers() {
-  for (BufferBlob** it = native_invokers_begin(); it < native_invokers_end(); it++) {
+  for (RuntimeStub** it = native_invokers_begin(); it < native_invokers_end(); it++) {
     CodeCache::free(*it);
   }
 }
@@ -2611,7 +2616,7 @@ void nmethod::print_oops(outputStream* st) {
     for (oop* p = oops_begin(); p < oops_end(); p++) {
       Disassembler::print_location((unsigned char*)p, (unsigned char*)oops_begin(), (unsigned char*)oops_end(), st, true, false);
       st->print(PTR_FORMAT " ", *((uintptr_t*)p));
-      if (*p == Universe::non_oop_word()) {
+      if (Universe::contains_non_oop_word(p)) {
         st->print_cr("NON_OOP");
         continue;  // skip non-oops
       }
@@ -2694,7 +2699,7 @@ void nmethod::print_pcs_on(outputStream* st) {
 void nmethod::print_native_invokers() {
   ResourceMark m;       // in case methods get printed via debugger
   tty->print_cr("Native invokers:");
-  for (BufferBlob** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
+  for (RuntimeStub** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
     (*itt)->print_on(tty);
   }
 }
@@ -2707,6 +2712,36 @@ void nmethod::print_nul_chk_table() {
   ImplicitExceptionTable(this).print(code_begin());
 }
 
+void nmethod::print_recorded_oop(int log_n, int i) {
+  void* value;
+
+  if (i == 0) {
+    value = NULL;
+  } else {
+    // Be careful around non-oop words. Don't create an oop
+    // with that value, or it will assert in verification code.
+    if (Universe::contains_non_oop_word(oop_addr_at(i))) {
+      value = Universe::non_oop_word();
+    } else {
+      value = oop_at(i);
+    }
+  }
+
+  tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(value));
+
+  if (value == Universe::non_oop_word()) {
+    tty->print("non-oop word");
+  } else {
+    if (value == 0) {
+      tty->print("NULL-oop");
+    } else {
+      oop_at(i)->print_value_on(tty);
+    }
+  }
+
+  tty->cr();
+}
+
 void nmethod::print_recorded_oops() {
   const int n = oops_count();
   const int log_n = (n<10) ? 1 : (n<100) ? 2 : (n<1000) ? 3 : (n<10000) ? 4 : 6;
@@ -2714,16 +2749,7 @@ void nmethod::print_recorded_oops() {
   if (n > 0) {
     tty->cr();
     for (int i = 0; i < n; i++) {
-      oop o = oop_at(i);
-      tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(o));
-      if (o == (oop)Universe::non_oop_word()) {
-        tty->print("non-oop word");
-      } else if (o == NULL) {
-        tty->print("NULL-oop");
-      } else {
-        o->print_value_on(tty);
-      }
-      tty->cr();
+      print_recorded_oop(log_n, i);
     }
   } else {
     tty->print_cr(" <list empty>");

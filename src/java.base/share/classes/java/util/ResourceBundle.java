@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2890,15 +2890,17 @@ public abstract class ResourceBundle {
                 }
                 if (language.equals("nb") || isNorwegianBokmal) {
                     List<Locale> tmpList = getDefaultList("nb", script, region, variant);
-                    // Insert a locale replacing "nb" with "no" for every list entry
+                    // Insert a locale replacing "nb" with "no" for every list entry with precedence
                     List<Locale> bokmalList = new LinkedList<>();
-                    for (Locale l : tmpList) {
-                        bokmalList.add(l);
-                        if (l.getLanguage().isEmpty()) {
+                    for (Locale l_nb : tmpList) {
+                        var isRoot = l_nb.getLanguage().isEmpty();
+                        var l_no = Locale.getInstance(isRoot ? "" : "no",
+                                l_nb.getScript(), l_nb.getCountry(), l_nb.getVariant(), null);
+                        bokmalList.add(isNorwegianBokmal ? l_no : l_nb);
+                        if (isRoot) {
                             break;
                         }
-                        bokmalList.add(Locale.getInstance("no", l.getScript(), l.getCountry(),
-                                l.getVariant(), null));
+                        bokmalList.add(isNorwegianBokmal ? l_nb : l_no);
                     }
                     return bokmalList;
                 } else if (language.equals("nn") || isNorwegianNynorsk) {
@@ -3193,7 +3195,7 @@ public abstract class ResourceBundle {
                         } catch (InvocationTargetException e) {
                             uncheckedThrow(e);
                         } catch (PrivilegedActionException e) {
-                            assert e.getException() instanceof NoSuchMethodException;
+                            assert e.getCause() instanceof NoSuchMethodException;
                             throw new InstantiationException("public no-arg constructor " +
                                 "does not exist in " + bundleClass.getName());
                         }
@@ -3228,7 +3230,7 @@ public abstract class ResourceBundle {
                             }
                         });
                 } catch (PrivilegedActionException e) {
-                    throw (IOException) e.getException();
+                    throw (IOException) e.getCause();
                 }
                 if (stream != null) {
                     try {

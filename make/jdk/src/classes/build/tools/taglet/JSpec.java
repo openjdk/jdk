@@ -206,7 +206,7 @@ public class JSpec implements Taglet  {
             private String escape(String s) {
                 return s.replace("&", "&amp;")
                         .replace("<", "&lt;")
-                        .replace(">", "&gt");
+                        .replace(">", "&gt;");
             }
         }).visit(trees, new StringBuilder()).toString();
     }

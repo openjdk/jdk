@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -58,7 +56,7 @@ import sun.hotspot.WhiteBox;
  * @requires vm.gc == "G1" | vm.gc == null
  * @library /test/lib /test/jdk /test/hotspot/jtreg
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+AlwaysTenure
  *      -Xms20M -Xmx20M -Xlog:gc=debug,gc+heap*=debug,gc+ergo*=debug,gc+start=debug
  *      -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0 -XX:G1HeapRegionSize=1m

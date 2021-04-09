@@ -1550,11 +1550,17 @@ Zone	Africa/Khartoum	2:10:08 -	LMT	1931
 			3:00	-	EAT	2017 Nov  1
 			2:00	-	CAT
 
+# From Steffen Thorsen (2021-01-18):
+# "South Sudan will change its time zone by setting the clock back 1
+# hour on February 1, 2021...."
+# from https://eyeradio.org/south-sudan-adopts-new-time-zone-makuei/
+
 # South Sudan
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Juba	2:06:28 -	LMT	1931
 			2:00	Sudan	CA%sT	2000 Jan 15 12:00
-			3:00	-	EAT
+			3:00	-	EAT	2021 Feb  1 00:00
+			2:00	-	CAT
 
 # Tanzania
 # See Africa/Nairobi.

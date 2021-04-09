@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8250768
+ * @bug      8250768 8261976
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -99,7 +99,7 @@ public class TestPreview extends JavadocTester {
 
         checkOutput("preview-list.html", true,
                     """
-                    <div id="record.class">
+                    <div id="record-class">
                     <div class="caption"><span>Record Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Record Class</div>

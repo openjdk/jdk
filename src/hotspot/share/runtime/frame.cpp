@@ -942,7 +942,7 @@ class CompiledArgumentOopFinder: public SignatureIterator {
     // Extract low order register number from register array.
     // In LP64-land, the high-order bits are valid but unhelpful.
     VMReg reg = _regs[_offset].first();
-    oop *loc = _fr.oopmapreg_to_location(reg, _reg_map);
+    oop *loc = _fr.oopmapreg_to_oop_location(reg, _reg_map);
     assert(loc != NULL, "missing register map entry");
     _f->do_oop(loc);
   }
@@ -997,7 +997,7 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
 
   // First consult the ADLC on where it puts parameter 0 for this signature.
   VMReg reg = SharedRuntime::name_for_receiver();
-  oop* oop_adr = caller.oopmapreg_to_location(reg, reg_map);
+  oop* oop_adr = caller.oopmapreg_to_oop_location(reg, reg_map);
   if (oop_adr == NULL) {
     guarantee(oop_adr != NULL, "bad register save location");
     return NULL;

@@ -27,6 +27,8 @@
 #include "aot/aotLoader.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaAssertions.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -110,8 +112,7 @@ Klass* AOTCodeHeap::lookup_klass(const char* name, int len, const Method* method
     log_debug(aot, class, resolve)("Probe failed for AOT class %s", name);
     return NULL;
   }
-  Klass* k = SystemDictionary::find_instance_or_array_klass(sym, loader, protection_domain, thread);
-  assert(!thread->has_pending_exception(), "should not throw");
+  Klass* k = SystemDictionary::find_instance_or_array_klass(sym, loader, protection_domain);
 
   if (k != NULL) {
     log_info(aot, class, resolve)("%s %s (lookup)", caller->method_holder()->external_name(), k->external_name());
@@ -188,10 +189,6 @@ void AOTLib::verify_config() {
   verify_flag(_config->_contendedPaddingWidth, ContendedPaddingWidth, "ContendedPaddingWidth");
   verify_flag(_config->_enableContended, EnableContended, "EnableContended");
   verify_flag(_config->_restrictContended, RestrictContended, "RestrictContended");
-
-  if (!TieredCompilation && _config->_tieredAOT) {
-    handle_config_error("Shared file %s error: Expected to run with tiered compilation on", _name);
-  }
 
   // Shifts are static values which initialized by 0 until java heap initialization.
   // AOT libs are loaded before heap initialized so shift values are not set.
@@ -354,7 +351,7 @@ void AOTCodeHeap::publish_aot(const methodHandle& mh, AOTMethodData* method_data
     _code_to_aot[code_id]._aot = NULL; // Clean
   } else { // success
     // Publish method
-#ifdef TIERED
+#if COMPILER1_OR_COMPILER2
     mh->set_aot_code(aot);
 #endif
     {
@@ -393,7 +390,7 @@ void AOTCodeHeap::link_known_klasses() {
       link_klass(arr_klass);
     }
   }
-  link_klass(SystemDictionary::Reference_klass());
+  link_klass(vmClasses::Reference_klass());
 }
 
 void AOTCodeHeap::register_stubs() {
@@ -770,7 +767,7 @@ void AOTCodeHeap::sweep_dependent_methods(InstanceKlass* ik) {
 void AOTCodeHeap::sweep_method(AOTCompiledMethod *aot) {
   int indexes[] = {aot->method_index()};
   sweep_dependent_methods(indexes, 1);
-  vmassert(aot->method()->code() != aot TIERED_ONLY( && aot->method()->aot_code() == NULL), "method still active");
+  vmassert(aot->method()->code() != aot COMPILER1_OR_COMPILER2_PRESENT( && aot->method()->aot_code() == NULL), "method still active");
 }
 
 

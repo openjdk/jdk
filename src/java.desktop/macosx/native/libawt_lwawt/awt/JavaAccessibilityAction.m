@@ -84,7 +84,7 @@
                                               fCompLocal );
     CHECK_EXCEPTION();
     if (jstr != NULL) {
-        str = JNFJavaToNSString(env, jstr); // AWT_THREADING Safe (AWTRunLoopMode)
+        str = JavaStringToNSString(env, jstr);
         (*env)->DeleteLocalRef(env, jstr);
     }
     (*env)->DeleteLocalRef(env, fCompLocal);
@@ -100,7 +100,7 @@
                     "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V");
 
     (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
-             fAccessibleAction, fIndex, fComponent); // AWT_THREADING Safe (AWTRunLoopMode)
+             fAccessibleAction, fIndex, fComponent);
     CHECK_EXCEPTION();
 }
 

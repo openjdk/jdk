@@ -24,16 +24,9 @@
 
 #include "precompiled.hpp"
 
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
-
-#include "gc/shared/weakProcessor.inline.hpp"
-#include "gc/shared/gcTimer.hpp"
-#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
@@ -46,13 +39,8 @@
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-
 #include "memory/iterator.inline.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/handles.inline.hpp"
-
 
 class ShenandoahUpdateRootsTask : public AbstractGangTask {
 private:
@@ -104,17 +92,16 @@ public:
   }
 };
 
-class ShenandoahSATBAndRemarkCodeRootsThreadsClosure : public ThreadClosure {
+class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
 private:
   SATBMarkQueueSet& _satb_qset;
   OopClosure* const _cl;
-  MarkingCodeBlobClosure* _code_cl;
   uintx _claim_token;
 
 public:
-  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl, MarkingCodeBlobClosure* code_cl) :
+  ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
     _satb_qset(satb_qset),
-    _cl(cl), _code_cl(code_cl),
+    _cl(cl),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
@@ -124,15 +111,7 @@ public:
       if (thread->is_Java_thread()) {
         if (_cl != NULL) {
           ResourceMark rm;
-          thread->oops_do(_cl, _code_cl);
-        } else if (_code_cl != NULL) {
-          // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
-          // however the liveness of oops reachable from nmethods have very complex lifecycles:
-          // * Alive if on the stack of an executing method
-          // * Weakly reachable otherwise
-          // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
-          // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-          thread->as_Java_thread()->nmethods_do(_code_cl);
+          thread->oops_do(_cl, NULL);
         }
       }
     }
@@ -165,12 +144,9 @@ public:
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      bool do_nmethods = heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading();
       ShenandoahMarkRefsClosure mark_cl(q, rp);
-      MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
-      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(satb_mq_set,
-                                                        ShenandoahIUBarrier ? &mark_cl : NULL,
-                                                        do_nmethods ? &blobsCl : NULL);
+      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
+                                               ShenandoahIUBarrier ? &mark_cl : NULL);
       Threads::threads_do(&tc);
     }
 
@@ -215,8 +191,13 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure cl(q, _rp);
-  _root_scanner.roots_do(&cl, worker_id);
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahMarkRefsDedupClosure cl(q, _rp);
+    _root_scanner.roots_do(&cl, worker_id);
+  } else {
+    ShenandoahMarkRefsClosure cl(q, _rp);
+    _root_scanner.roots_do(&cl, worker_id);
+  }
 }
 
 void ShenandoahConcurrentMark::mark_concurrent_roots() {

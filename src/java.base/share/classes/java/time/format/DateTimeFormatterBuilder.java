@@ -5041,7 +5041,7 @@ public final class DateTimeFormatterBuilder {
      */
     static final class DayPeriodPrinterParser implements DateTimePrinterParser {
         private final TextStyle textStyle;
-        private final static ConcurrentMap<Locale, LocaleStore> DAYPERIOD_LOCALESTORE = new ConcurrentHashMap<>();
+        private static final ConcurrentMap<Locale, LocaleStore> DAYPERIOD_LOCALESTORE = new ConcurrentHashMap<>();
 
         /**
          * Constructor.
@@ -5148,15 +5148,15 @@ public final class DateTimeFormatterBuilder {
         /**
          *  DayPeriod cache
          */
-        private final static Map<Locale, Map<DayPeriod, Long>> DAYPERIOD_CACHE = new ConcurrentHashMap<>();
+        private static final Map<Locale, Map<DayPeriod, Long>> DAYPERIOD_CACHE = new ConcurrentHashMap<>();
         /**
          * comparator based on the duration of the day period.
          */
-        private final static Comparator<DayPeriod> DPCOMPARATOR = (dp1, dp2) -> (int)(dp1.duration() - dp2.duration());
+        private static final Comparator<DayPeriod> DPCOMPARATOR = (dp1, dp2) -> (int)(dp1.duration() - dp2.duration());
         /**
          * Pattern to parse day period rules
          */
-        private final static Pattern RULE = Pattern.compile("(?<type>[a-z12]+):(?<from>\\d{2}):00(-(?<to>\\d{2}))*");
+        private static final Pattern RULE = Pattern.compile("(?<type>[a-z12]+):(?<from>\\d{2}):00(-(?<to>\\d{2}))*");
         /**
          * minute-of-day of "at" or "from" attribute
          */

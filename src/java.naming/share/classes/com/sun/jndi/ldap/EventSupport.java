@@ -113,7 +113,7 @@ import javax.naming.ldap.UnsolicitedNotification;
  * @author Rosanna Lee
  */
 final class EventSupport {
-    final static private boolean debug = false;
+    private static final boolean debug = false;
 
     private LdapCtx ctx;
 

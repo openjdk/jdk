@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "oops/klass.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/vmOperations.hpp"
+#include "runtime/vmOperation.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/resourceHash.hpp"
 

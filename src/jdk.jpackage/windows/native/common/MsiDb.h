@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,27 +34,9 @@
 
 class Guid;
 
-/**
- * Helpers to interact with MSI through database interface.
- */
-
 namespace msi {
+
 void closeDatabaseView(MSIHANDLE h);
-
-struct MsiDbViewDeleter {
-    typedef MSIHANDLE pointer;
-
-    void operator()(MSIHANDLE h) {
-        closeDatabaseView(h);
-    }
-};
-} // namespace msi
-
-
-typedef std::unique_ptr<MSIHANDLE, msi::MsiDbViewDeleter> UniqueDbView;
-
-
-namespace msi {
 
 class CA;
 class DatabaseView;
@@ -95,6 +77,12 @@ public:
      */
     explicit Database(const CA& ca);
 
+    ~Database() {
+      if (dbHandle != 0) {
+        closeMSIHANDLE(dbHandle);
+      }
+    }
+
     /**
      * Returns value of property with the given name.
      * Throws NoMoreItemsError if property with the given name doesn't exist
@@ -116,7 +104,7 @@ private:
     Database& operator=(const Database&);
 private:
     const tstring msiPath;
-    UniqueMSIHANDLE dbHandle;
+    MSIHANDLE dbHandle;
 };
 
 typedef std::unique_ptr<Database> DatabasePtr;
@@ -128,7 +116,8 @@ public:
     }
 
     DatabaseRecord(const DatabaseRecord& other): handle(MSIHANDLE(0)) {
-        handle.swap(other.handle);
+        handle = other.handle;
+        other.handle = 0;
     }
 
     DatabaseRecord& operator=(const DatabaseRecord& other);
@@ -137,8 +126,14 @@ public:
 
     explicit DatabaseRecord(unsigned fieldCount);
 
-    explicit DatabaseRecord(DatabaseView& view) {
+    explicit DatabaseRecord(DatabaseView& view) : handle(MSIHANDLE(0)) {
         fetch(view);
+    }
+
+    ~DatabaseRecord() {
+      if (handle != 0) {
+        closeMSIHANDLE(handle);
+      }
     }
 
     DatabaseRecord& fetch(DatabaseView& view);
@@ -160,15 +155,15 @@ public:
     void saveStreamToFile(unsigned idx, const tstring& path) const;
 
     bool empty() const {
-        return 0 == handle.get();
+        return 0 == handle;
     }
 
     MSIHANDLE getHandle() const {
-        return handle.get();
+        return handle;
     }
 
 private:
-    mutable UniqueMSIHANDLE handle;
+    mutable MSIHANDLE handle;
 };
 
 
@@ -186,7 +181,7 @@ public:
 private:
     tstring sqlQuery;
     const Database& db;
-    UniqueDbView handle;
+    MSIHANDLE handle;
 };
 
 } // namespace msi

@@ -554,6 +554,12 @@ const intx ObjectAlignmentInBytes = 8;
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
+  product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
+          "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
+          "level of the dump file. 0 (the default) disables gzip "          \
+          "compression. Otherwise the level must be between 1 and 9.")      \
+          range(0, 9)                                                       \
+                                                                            \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
                                                                             \
@@ -671,17 +677,11 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, UsePrivilegedStack, true,                                   \
           "Enable the security JVM functions")                              \
                                                                             \
-  develop(bool, ProtectionDomainVerification, true,                         \
-          "Verify protection domain before resolution in system dictionary")\
-                                                                            \
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
   product(bool, ClassUnloadingWithConcurrentMark, true,                     \
           "Do unloading of classes with a concurrent marking cycle")        \
-                                                                            \
-  develop(bool, MemProfiling, false,                                        \
-          "Write memory usage profiling to log file")                       \
                                                                             \
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Print the system dictionary at exit")                            \
@@ -1374,9 +1374,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(intx, SweeperLogEntries, 1024,                                 \
           "Number of records in the ring buffer of sweeper activity")       \
                                                                             \
-  notproduct(intx, MemProfilingInterval, 500,                               \
-          "Time between each invocation of the MemProfiler")                \
-                                                                            \
   develop(intx, MallocCatchPtr, -1,                                         \
           "Hit breakpoint when mallocing/freeing this pointer")             \
                                                                             \
@@ -1467,7 +1464,7 @@ const intx ObjectAlignmentInBytes = 8;
           "Force inlining of throwing methods smaller than this")           \
           range(0, max_jint)                                                \
                                                                             \
-  product_pd(size_t, MetaspaceSize,                                         \
+  product(size_t, MetaspaceSize, NOT_LP64(16 * M) LP64_ONLY(21 * M),        \
           "Initial threshold (in bytes) at which a garbage collection "     \
           "is done to reduce Metaspace usage")                              \
           constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \
@@ -1483,6 +1480,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
+                                                                            \
+  product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
+          "Print metaspace statistics upon VM exit.")                       \
                                                                             \
   product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
           "Metapace allocations are guarded.")                              \

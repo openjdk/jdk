@@ -123,7 +123,7 @@ public final class RemoteRecordingStream implements EventStream {
     }
 
     // Reference to stream is released when EventStream::close is called
-    final static class ChunkConsumer implements Consumer<Long> {
+    static final class ChunkConsumer implements Consumer<Long> {
 
         private final DiskRepository repository;
 
@@ -133,8 +133,7 @@ public final class RemoteRecordingStream implements EventStream {
 
         @Override
         public void accept(Long endNanos) {
-            Instant t = ManagementSupport.epochNanosToInstant(endNanos);
-            repository.onChunkComplete(t);
+            repository.onChunkComplete(endNanos);
         }
     }
 
@@ -552,8 +551,8 @@ public final class RemoteRecordingStream implements EventStream {
     }
 
     private void startDownload() {
-        Thread downLoadThread = new DownLoadThread(this);
-        downLoadThread.setName("JFR: Download Thread " + creationTime);
+        String name = "JFR: Download Thread " + creationTime;
+        Thread downLoadThread = new DownLoadThread(this, name);
         downLoadThread.start();
     }
 

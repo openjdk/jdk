@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,6 +425,9 @@ public final class ServicePermission extends Permission
      * WriteObject is called to save the state of the ServicePermission
      * to a stream. The actions are serialized, and the superclass
      * takes care of the name.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     private void writeObject(java.io.ObjectOutputStream s)
         throws IOException
@@ -439,6 +442,10 @@ public final class ServicePermission extends Permission
     /**
      * readObject is called to restore the state of the
      * ServicePermission from a stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     private void readObject(java.io.ObjectInputStream s)
          throws IOException, ClassNotFoundException

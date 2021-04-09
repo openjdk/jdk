@@ -26,7 +26,7 @@
 #include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -318,7 +318,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* thread, int reason,
       Method::build_interpreter_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Only metaspace OOM is expected. No Java code executed.
-        assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())),
+        assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())),
                "we expect only an OOM error here");
         CLEAR_PENDING_EXCEPTION;
       }
@@ -365,7 +365,7 @@ static Handle get_preinitialized_exception(Klass* k, TRAPS) {
 // constructor for the same reason (it is empty, anyway).
 JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* thread))
   Handle exception = get_preinitialized_exception(
-                                 SystemDictionary::StackOverflowError_klass(),
+                                 vmClasses::StackOverflowError_klass(),
                                  CHECK);
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
@@ -374,7 +374,7 @@ JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread* thread))
   Handle exception = get_preinitialized_exception(
-                                 SystemDictionary::StackOverflowError_klass(),
+                                 vmClasses::StackOverflowError_klass(),
                                  CHECK);
   java_lang_Throwable::set_message(exception(),
           Universe::delayed_stack_overflow_error_message());
@@ -493,7 +493,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     // assertions
     assert(h_exception.not_null(), "NULL exceptions should be handled by athrow");
     // Check that exception is a subclass of Throwable.
-    assert(h_exception->is_a(SystemDictionary::Throwable_klass()),
+    assert(h_exception->is_a(vmClasses::Throwable_klass()),
            "Exception not subclass of Throwable");
 
     // tracing
@@ -708,8 +708,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code byt
     info.offset(),
     state,
     info.access_flags().is_final(),
-    info.access_flags().is_volatile(),
-    pool->pool_holder()
+    info.access_flags().is_volatile()
   );
 }
 
@@ -732,7 +731,7 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, Ba
   Handle h_obj(thread, elem->obj());
   assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be NULL or an object");
-  ObjectSynchronizer::enter(h_obj, elem->lock(), CHECK);
+  ObjectSynchronizer::enter(h_obj, elem->lock(), thread);
   assert(Universe::heap()->is_in_or_null(elem->obj()),
          "must be NULL or an object");
 #ifdef ASSERT
@@ -752,7 +751,7 @@ JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
     }
     return;
   }
-  ObjectSynchronizer::exit(obj, elem->lock(), Thread::current());
+  ObjectSynchronizer::exit(obj, elem->lock(), JavaThread::current());
   // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
   // again at method exit or in the case of an exception.
   elem->set_obj(NULL);
@@ -774,9 +773,9 @@ JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   Handle exception(thread, thread->vm_result());
   assert(exception() != NULL, "vm result should be set");
   thread->set_vm_result(NULL); // clear vm result before continuing (may cause memory leaks and assert failures)
-  if (!exception->is_a(SystemDictionary::ThreadDeath_klass())) {
+  if (!exception->is_a(vmClasses::ThreadDeath_klass())) {
     exception = get_preinitialized_exception(
-                       SystemDictionary::IllegalMonitorStateException_klass(),
+                       vmClasses::IllegalMonitorStateException_klass(),
                        CATCH);
   }
   thread->set_vm_result(exception());
@@ -842,7 +841,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
 
 #ifdef ASSERT
   if (bytecode == Bytecodes::_invokeinterface) {
-    if (resolved_method->method_holder() == SystemDictionary::Object_klass()) {
+    if (resolved_method->method_holder() == vmClasses::Object_klass()) {
       // NOTE: THIS IS A FIX FOR A CORNER CASE in the JVM spec
       // (see also CallInfo::set_interface for details)
       assert(info.call_kind() == CallInfo::vtable_call ||
@@ -971,6 +970,9 @@ JRT_END
 
 
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, address branch_bcp) {
+  // Enable WXWrite: the function is called directly by interpreter.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+
   // frequency_counter_overflow_inner can throw async exception.
   nmethod* nm = frequency_counter_overflow_inner(thread, branch_bcp);
   assert(branch_bcp != NULL || nm == NULL, "always returns null for non OSR requests");
@@ -1023,7 +1025,7 @@ JRT_ENTRY(nmethod*,
   const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
   const int bci = branch_bcp != NULL ? method->bci_from(last_frame.bcp()) : InvocationEntryBci;
 
-  nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, NULL, THREAD);
+  nmethod* osr_nm = CompilationPolicy::event(method, method, branch_bci, bci, CompLevel_none, NULL, THREAD);
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (osr_nm != NULL && bs_nm != NULL) {
@@ -1062,25 +1064,6 @@ JRT_LEAF(jint, InterpreterRuntime::bcp_to_di(Method* method, address cur_bcp))
   if (mdo == NULL)  return 0;
   return mdo->bci_to_di(bci);
 JRT_END
-
-JRT_ENTRY(void, InterpreterRuntime::profile_method(JavaThread* thread))
-  // use UnlockFlagSaver to clear and restore the _do_not_unlock_if_synchronized
-  // flag, in case this method triggers classloading which will call into Java.
-  UnlockFlagSaver fs(thread);
-
-  assert(ProfileInterpreter, "must be profiling interpreter");
-  LastFrameAccessor last_frame(thread);
-  assert(last_frame.is_interpreted_frame(), "must come from interpreter");
-  methodHandle method(thread, last_frame.method());
-  Method::build_interpreter_method_data(method, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    // Only metaspace OOM is expected. No Java code executed.
-    assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
-    CLEAR_PENDING_EXCEPTION;
-    // and fall through...
-  }
-JRT_END
-
 
 #ifdef ASSERT
 JRT_LEAF(void, InterpreterRuntime::verify_mdp(Method* method, address bcp, address mdp))
@@ -1132,13 +1115,7 @@ JRT_ENTRY(void, InterpreterRuntime::update_mdp_for_ret(JavaThread* thread, int r
 JRT_END
 
 JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread* thread, Method* m))
-  MethodCounters* mcs = Method::build_method_counters(m, thread);
-  if (HAS_PENDING_EXCEPTION) {
-    // Only metaspace OOM is expected. No Java code executed.
-    assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
-    CLEAR_PENDING_EXCEPTION;
-  }
-  return mcs;
+  return Method::build_method_counters(thread, m);
 JRT_END
 
 
@@ -1470,9 +1447,8 @@ JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* thread, Meth
   methodHandle m(thread, method);
   assert(m->is_native(), "sanity check");
   // lookup native function entry point if it doesn't exist
-  bool in_base_library;
   if (!m->has_native_function()) {
-    NativeLookup::lookup(m, in_base_library, CHECK);
+    NativeLookup::lookup(m, CHECK);
   }
   // make sure signature handler is installed
   SignatureHandlerLibrary::add(m);
@@ -1519,7 +1495,7 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* thread, 
   Symbol* mname = cpool->name_ref_at(cp_index);
 
   if (MethodHandles::has_member_arg(cname, mname)) {
-    oop member_name_oop = (oop) member_name;
+    oop member_name_oop = cast_to_oop(member_name);
     if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
       // FIXME: remove after j.l.i.InvokerBytecodeGenerator code shape is updated.
       member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);

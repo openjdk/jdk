@@ -95,7 +95,7 @@ public class TypeEnter implements Completer {
 
     /** A switch to determine whether we check for package/class conflicts
      */
-    final static boolean checkClash = true;
+    static final boolean checkClash = true;
 
     private final Names names;
     private final Enter enter;

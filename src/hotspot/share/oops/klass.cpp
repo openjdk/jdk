@@ -26,18 +26,17 @@
 #include "jvm_io.h"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -70,7 +69,7 @@ void Klass::replace_java_mirror(oop mirror) {
 
 bool Klass::is_cloneable() const {
   return _access_flags.is_cloneable_fast() ||
-         is_subtype_of(SystemDictionary::Cloneable_klass());
+         is_subtype_of(vmClasses::Cloneable_klass());
 }
 
 void Klass::set_is_cloneable() {
@@ -245,8 +244,8 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
     set_super(NULL);
     _primary_supers[0] = this;
     assert(super_depth() == 0, "Object must already be initialized properly");
-  } else if (k != super() || k == SystemDictionary::Object_klass()) {
-    assert(super() == NULL || super() == SystemDictionary::Object_klass(),
+  } else if (k != super() || k == vmClasses::Object_klass()) {
+    assert(super() == NULL || super() == vmClasses::Object_klass(),
            "initialize this only once to a non-trivial value");
     set_super(k);
     Klass* sup = k;
@@ -474,7 +473,7 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     return;
   }
 
-  Klass* root = SystemDictionary::Object_klass();
+  Klass* root = vmClasses::Object_klass();
   Stack<Klass*, mtGC> stack;
 
   stack.push(root);
@@ -750,11 +749,6 @@ const char* Klass::external_kind() const {
   if (is_interface()) return "interface";
   if (is_abstract()) return "abstract class";
   return "class";
-}
-
-// Unless overridden, modifier_flags is 0.
-jint Klass::compute_modifier_flags(TRAPS) const {
-  return 0;
 }
 
 int Klass::atomic_incr_biased_lock_revocation_count() {

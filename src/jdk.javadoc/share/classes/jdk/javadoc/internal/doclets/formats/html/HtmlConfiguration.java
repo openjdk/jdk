@@ -265,7 +265,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
         docPaths = new DocPaths(utils);
         setCreateOverview();
-        setTopFile(docEnv);
+        setTopFile();
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
     }
@@ -277,11 +277,9 @@ public class HtmlConfiguration extends BaseConfiguration {
      * "package-summary.html" of the respective package if there is only one
      * package to document. It will be a class page(first in the sorted order),
      * if only classes are provided on the command line.
-     *
-     * @param docEnv the doclet environment
      */
-    protected void setTopFile(DocletEnvironment docEnv) {
-        if (!checkForDeprecation(docEnv)) {
+    protected void setTopFile() {
+        if (!checkForDeprecation()) {
             return;
         }
         if (options.createOverview()) {
@@ -313,7 +311,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         return null;
     }
 
-    protected boolean checkForDeprecation(DocletEnvironment docEnv) {
+    protected boolean checkForDeprecation() {
         for (TypeElement te : getIncludedTypeElements()) {
             if (isGeneratedDoc(te)) {
                 return true;

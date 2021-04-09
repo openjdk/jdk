@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,26 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/dictionary.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 // Optimization: if any dictionary needs resizing, we set this flag,
@@ -69,30 +75,26 @@ Dictionary::~Dictionary() {
     }
   }
   assert(number_of_entries() == 0, "should have removed all entries");
-  assert(new_entry_free_list() == NULL, "entry present on Dictionary's free list");
 }
 
 DictionaryEntry* Dictionary::new_entry(unsigned int hash, InstanceKlass* klass) {
-  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::allocate_new_entry(hash, klass);
-  entry->set_pd_set(NULL);
+  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::new_entry(hash, klass);
+  entry->release_set_pd_set(NULL);
   assert(klass->is_instance_klass(), "Must be");
   return entry;
 }
-
 
 void Dictionary::free_entry(DictionaryEntry* entry) {
   // avoid recursion when deleting linked list
   // pd_set is accessed during a safepoint.
   // This doesn't require a lock because nothing is reading this
   // entry anymore.  The ClassLoader is dead.
-  while (entry->pd_set() != NULL) {
-    ProtectionDomainEntry* to_delete = entry->pd_set();
-    entry->set_pd_set(to_delete->next());
+  while (entry->pd_set_acquire() != NULL) {
+    ProtectionDomainEntry* to_delete = entry->pd_set_acquire();
+    entry->release_set_pd_set(to_delete->next_acquire());
     delete to_delete;
   }
-  // Unlink from the Hashtable prior to freeing
-  unlink_entry(entry);
-  FREE_C_HEAP_ARRAY(char, entry);
+  BasicHashtable<mtClass>::free_entry(entry);
 }
 
 const int _resize_load_trigger = 5;       // load factor that will trigger the resize
@@ -132,17 +134,33 @@ bool Dictionary::resize_if_needed() {
   return (desired_size != 0);
 }
 
+bool DictionaryEntry::is_valid_protection_domain(Handle protection_domain) {
+
+  return protection_domain() == NULL || !java_lang_System::allow_security_manager()
+        ? true
+        : contains_protection_domain(protection_domain());
+}
+
+// Reading the pd_set on each DictionaryEntry is lock free and cannot safepoint.
+// Adding and deleting entries is under the SystemDictionary_lock
+// Deleting unloaded entries on ClassLoaderData for dictionaries that are not unloaded
+// is a three step process:
+//     moving the entries to a separate list, handshake to wait for
+//     readers to complete (see NSV here), and then actually deleting the entries.
+// Deleting entries is done by the ServiceThread when triggered by class unloading.
+
 bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
-  // Lock the pd_set list.  This lock cannot safepoint since the caller holds
-  // a Dictionary entry, which can be moved if the Dictionary is resized.
-  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
+  assert(Thread::current()->is_Java_thread() || SafepointSynchronize::is_at_safepoint(),
+         "can only be called by a JavaThread or at safepoint");
+  // This cannot safepoint while reading the protection domain set.
+  NoSafepointVerifier nsv;
 #ifdef ASSERT
   if (protection_domain == instance_klass()->protection_domain()) {
     // Ensure this doesn't show up in the pd_set (invariant)
     bool in_pd_set = false;
-    for (ProtectionDomainEntry* current = pd_set();
+    for (ProtectionDomainEntry* current = pd_set_acquire();
                                 current != NULL;
-                                current = current->next()) {
+                                current = current->next_acquire()) {
       if (current->object_no_keepalive() == protection_domain) {
         in_pd_set = true;
         break;
@@ -160,25 +178,23 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
     return true;
   }
 
-  for (ProtectionDomainEntry* current = pd_set();
+  for (ProtectionDomainEntry* current = pd_set_acquire();
                               current != NULL;
-                              current = current->next()) {
-    if (current->object_no_keepalive() == protection_domain) return true;
+                              current = current->next_acquire()) {
+    if (current->object_no_keepalive() == protection_domain) {
+      return true;
+    }
   }
   return false;
 }
-
 
 void DictionaryEntry::add_protection_domain(Dictionary* dict, Handle protection_domain) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   if (!contains_protection_domain(protection_domain())) {
     ProtectionDomainCacheEntry* entry = SystemDictionary::cache_get(protection_domain);
-    // The pd_set in the dictionary entry is protected by a low level lock.
-    // With concurrent PD table cleanup, these links could be broken.
-    MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
-    ProtectionDomainEntry* new_head =
-                new ProtectionDomainEntry(entry, pd_set());
-    set_pd_set(new_head);
+    // Additions and deletions hold the SystemDictionary_lock, readers are lock-free
+    ProtectionDomainEntry* new_head = new ProtectionDomainEntry(entry, _pd_set);
+    release_set_pd_set(new_head);
   }
   LogTarget(Trace, protectiondomain) lt;
   if (lt.is_enabled()) {
@@ -275,12 +291,13 @@ DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
   for (DictionaryEntry* entry = bucket(index);
                         entry != NULL;
                         entry = entry->next()) {
-    if (entry->hash() == hash && entry->equals(class_name)) {
+    if (entry->hash() == hash && entry->instance_klass()->name() == class_name) {
       return entry;
     }
   }
   return NULL;
 }
+
 
 
 InstanceKlass* Dictionary::find(unsigned int hash, Symbol* name,
@@ -307,11 +324,10 @@ InstanceKlass* Dictionary::find_class(unsigned int hash,
   return (entry != NULL) ? entry->instance_klass() : NULL;
 }
 
-
 void Dictionary::add_protection_domain(int index, unsigned int hash,
                                        InstanceKlass* klass,
-                                       Handle protection_domain,
-                                       TRAPS) {
+                                       Handle protection_domain) {
+  assert(java_lang_System::allow_security_manager(), "only needed if security manager allowed");
   Symbol*  klass_name = klass->name();
   DictionaryEntry* entry = get_entry(index, hash, klass_name);
 
@@ -330,7 +346,7 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
 }
 
 
-bool Dictionary::is_valid_protection_domain(unsigned int hash,
+inline bool Dictionary::is_valid_protection_domain(unsigned int hash,
                                             Symbol* name,
                                             Handle protection_domain) {
   int index = hash_to_index(hash);
@@ -338,10 +354,79 @@ bool Dictionary::is_valid_protection_domain(unsigned int hash,
   return entry->is_valid_protection_domain(protection_domain);
 }
 
+void Dictionary::validate_protection_domain(unsigned int name_hash,
+                                            InstanceKlass* klass,
+                                            Handle class_loader,
+                                            Handle protection_domain,
+                                            TRAPS) {
+
+  assert(class_loader() != NULL, "Should not call this");
+  assert(protection_domain() != NULL, "Should not call this");
+
+  if (!java_lang_System::allow_security_manager() ||
+      is_valid_protection_domain(name_hash, klass->name(), protection_domain)) {
+    return;
+  }
+
+  // We only have to call checkPackageAccess if there's a security manager installed.
+  if (java_lang_System::has_security_manager()) {
+
+    // This handle and the class_loader handle passed in keeps this class from
+    // being unloaded through several GC points.
+    // The class_loader handle passed in is the initiating loader.
+    Handle mirror(THREAD, klass->java_mirror());
+
+    // Now we have to call back to java to check if the initating class has access
+    InstanceKlass* system_loader = vmClasses::ClassLoader_klass();
+    JavaValue result(T_VOID);
+    JavaCalls::call_special(&result,
+                           class_loader,
+                           system_loader,
+                           vmSymbols::checkPackageAccess_name(),
+                           vmSymbols::class_protectiondomain_signature(),
+                           mirror,
+                           protection_domain,
+                           THREAD);
+
+    LogTarget(Debug, protectiondomain) lt;
+    if (lt.is_enabled()) {
+      ResourceMark rm(THREAD);
+      // Print out trace information
+      LogStream ls(lt);
+      ls.print_cr("Checking package access");
+      ls.print("class loader: ");
+      class_loader()->print_value_on(&ls);
+      ls.print(" protection domain: ");
+      protection_domain()->print_value_on(&ls);
+      ls.print(" loading: "); klass->print_value_on(&ls);
+      if (HAS_PENDING_EXCEPTION) {
+        ls.print_cr(" DENIED !!!!!!!!!!!!!!!!!!!!!");
+      } else {
+        ls.print_cr(" granted");
+      }
+    }
+
+    if (HAS_PENDING_EXCEPTION) return;
+  }
+
+  // If no exception has been thrown, we have validated the protection domain
+  // Insert the protection domain of the initiating class into the set.
+  // We still have to add the protection_domain to the dictionary in case a new
+  // security manager is installed later. Calls to load the same class with class loader
+  // and protection domain are expected to succeed.
+  {
+    MutexLocker mu(THREAD, SystemDictionary_lock);
+    int d_index = hash_to_index(name_hash);
+    add_protection_domain(d_index, name_hash, klass,
+                          protection_domain);
+  }
+}
+
 // During class loading we may have cached a protection domain that has
 // since been unreferenced, so this entry should be cleared.
-void Dictionary::clean_cached_protection_domains() {
-  assert_locked_or_safepoint(SystemDictionary_lock);
+void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainEntry*>* delete_list) {
+  assert(Thread::current()->is_Java_thread(), "only called by JavaThread");
+  assert_lock_strong(SystemDictionary_lock);
   assert(!loader_data()->has_class_mirror_holder(), "cld should have a ClassLoader holder not a Class holder");
 
   if (loader_data()->is_the_null_class_loader_data()) {
@@ -355,8 +440,7 @@ void Dictionary::clean_cached_protection_domains() {
                           probe = probe->next()) {
       Klass* e = probe->instance_klass();
 
-      MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
-      ProtectionDomainEntry* current = probe->pd_set();
+      ProtectionDomainEntry* current = probe->pd_set_acquire();
       ProtectionDomainEntry* prev = NULL;
       while (current != NULL) {
         if (current->object_no_keepalive() == NULL) {
@@ -370,18 +454,19 @@ void Dictionary::clean_cached_protection_domains() {
             ls.print(" loading: "); probe->instance_klass()->print_value_on(&ls);
             ls.cr();
           }
-          if (probe->pd_set() == current) {
-            probe->set_pd_set(current->next());
+          if (probe->pd_set_acquire() == current) {
+            probe->release_set_pd_set(current->next_acquire());
           } else {
             assert(prev != NULL, "should be set by alive entry");
-            prev->set_next(current->next());
+            prev->release_set_next(current->next_acquire());
           }
-          ProtectionDomainEntry* to_delete = current;
-          current = current->next();
-          delete to_delete;
+          // Mark current for deletion but in the meantime it can still be
+          // traversed.
+          delete_list->push(current);
+          current = current->next_acquire();
         } else {
           prev = current;
-          current = current->next();
+          current = current->next_acquire();
         }
       }
     }
@@ -468,24 +553,24 @@ void SymbolPropertyTable::methods_do(void f(Method*)) {
 
 void SymbolPropertyTable::free_entry(SymbolPropertyEntry* entry) {
   entry->free_entry();
-  Hashtable<Symbol*, mtSymbol>::free_entry(entry);
+  BasicHashtable<mtSymbol>::free_entry(entry);
 }
 
 void DictionaryEntry::verify_protection_domain_set() {
-  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
-  for (ProtectionDomainEntry* current = pd_set(); // accessed at a safepoint
+  assert(SafepointSynchronize::is_at_safepoint(), "must only be called as safepoint");
+  for (ProtectionDomainEntry* current = pd_set_acquire(); // accessed at a safepoint
                               current != NULL;
-                              current = current->_next) {
-    guarantee(oopDesc::is_oop_or_null(current->_pd_cache->object_no_keepalive()), "Invalid oop");
+                              current = current->next_acquire()) {
+    guarantee(oopDesc::is_oop_or_null(current->object_no_keepalive()), "Invalid oop");
   }
 }
 
 void DictionaryEntry::print_count(outputStream *st) {
-  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
+  assert_locked_or_safepoint(SystemDictionary_lock);
   int count = 0;
-  for (ProtectionDomainEntry* current = pd_set();  // accessed inside SD lock
+  for (ProtectionDomainEntry* current = pd_set_acquire();
                               current != NULL;
-                              current = current->_next) {
+                              current = current->next_acquire()) {
     count++;
   }
   st->print_cr("pd set count = #%d", count);
@@ -516,6 +601,8 @@ void Dictionary::print_on(outputStream* st) const {
         // redundant and obvious.
         st->print(", ");
         cld->print_value_on(st);
+        st->print(", ");
+        probe->print_count(st);
       }
       st->cr();
     }

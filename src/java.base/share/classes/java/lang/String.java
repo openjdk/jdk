@@ -1008,6 +1008,27 @@ public final class String
 
     //////////////////////////////// utf8 ////////////////////////////////////
 
+    /**
+     * Decodes ASCII from the source byte array into the destination
+     * char array. Used via JavaLangAccess from UTF_8 and other charset
+     * decoders.
+     *
+     * @return the number of bytes successfully decoded, at most len
+     */
+    /* package-private */
+    static int decodeASCII(byte[] sa, int sp, char[] da, int dp, int len) {
+        if (!StringCoding.hasNegatives(sa, sp, len)) {
+            StringLatin1.inflate(sa, sp, da, dp, len);
+            return len;
+        } else {
+            int start = sp;
+            int end = sp + len;
+            while (sp < end && sa[sp] >= 0) {
+                da[dp++] = (char) sa[sp++];
+            }
+            return sp - start;
+        }
+    }
 
     private static boolean isNotContinuation(int b) {
         return (b & 0xc0) != 0x80;
@@ -1797,13 +1818,9 @@ public final class String
         if (this == anObject) {
             return true;
         }
-        if (anObject instanceof String) {
-            String aString = (String)anObject;
-            if (!COMPACT_STRINGS || this.coder == aString.coder) {
-                return StringLatin1.equals(value, aString.value);
-            }
-        }
-        return false;
+        return (anObject instanceof String aString)
+                && (!COMPACT_STRINGS || this.coder == aString.coder)
+                && StringLatin1.equals(value, aString.value);
     }
 
     /**
@@ -4397,7 +4414,7 @@ public final class String
      */
     void getBytes(byte[] dst, int srcPos, int dstBegin, byte coder, int length) {
         if (coder() == coder) {
-            System.arraycopy(value, srcPos, dst, dstBegin << coder, length << coder());
+            System.arraycopy(value, srcPos << coder, dst, dstBegin << coder, length << coder);
         } else {    // this.coder == LATIN && coder == UTF16
             StringLatin1.inflate(value, srcPos, dst, dstBegin, length);
         }

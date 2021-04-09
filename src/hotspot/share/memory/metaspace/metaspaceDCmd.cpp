@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,9 +24,12 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/nmtCommon.hpp"
 

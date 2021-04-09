@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -52,7 +52,7 @@ HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
   if (top_obj != NULL) {
     if (_sp->block_is_obj(top_obj)) {
       if (_precision == CardTable::ObjHeadPreciseArray) {
-        if (oop(top_obj)->is_objArray() || oop(top_obj)->is_typeArray()) {
+        if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
           // An arrayOop is starting on the dirty card - since we do exact
           // store checks for objArrays we are done.
         } else {
@@ -63,7 +63,7 @@ HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
           // the iteration is being done.  That space (e.g. CMS) may have
           // specific requirements on object sizes which will
           // be reflected in the block_size() method.
-          top = top_obj + oop(top_obj)->size();
+          top = top_obj + cast_to_oop(top_obj)->size();
         }
       }
     } else {
@@ -94,8 +94,8 @@ void DirtyCardToOopClosure::walk_mem_region(MemRegion mr,
     // "adjust the object size" (for instance pad it up to its
     // block alignment or minimum block size restrictions. XXX
     if (_sp->block_is_obj(bottom) &&
-        !_sp->obj_allocated_since_save_marks(oop(bottom))) {
-      oop(bottom)->oop_iterate(_cl, mr);
+        !_sp->obj_allocated_since_save_marks(cast_to_oop(bottom))) {
+      cast_to_oop(bottom)->oop_iterate(_cl, mr);
     }
   }
 }
@@ -163,8 +163,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
 
 DirtyCardToOopClosure* Space::new_dcto_cl(OopIterateClosure* cl,
                                           CardTable::PrecisionStyle precision,
-                                          HeapWord* boundary,
-                                          bool parallel) {
+                                          HeapWord* boundary) {
   return new DirtyCardToOopClosure(this, cl, precision, boundary);
 }
 
@@ -172,16 +171,16 @@ HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
                                                HeapWord* top_obj) {
   if (top_obj != NULL && top_obj < (_sp->toContiguousSpace())->top()) {
     if (_precision == CardTable::ObjHeadPreciseArray) {
-      if (oop(top_obj)->is_objArray() || oop(top_obj)->is_typeArray()) {
+      if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
         // An arrayOop is starting on the dirty card - since we do exact
         // store checks for objArrays we are done.
       } else {
         // Otherwise, it is possible that the object starting on the dirty
         // card spans the entire card, and that the store happened on a
         // later card.  Figure out where the object ends.
-        assert(_sp->block_size(top_obj) == (size_t) oop(top_obj)->size(),
+        assert(_sp->block_size(top_obj) == (size_t) cast_to_oop(top_obj)->size(),
           "Block size and object size mismatch");
-        top = top_obj + oop(top_obj)->size();
+        top = top_obj + cast_to_oop(top_obj)->size();
       }
     }
   } else {
@@ -219,18 +218,18 @@ void ContiguousSpaceDCTOC::walk_mem_region_with_cl(MemRegion mr,        \
                                                    HeapWord* bottom,    \
                                                    HeapWord* top,       \
                                                    ClosureType* cl) {   \
-  bottom += oop(bottom)->oop_iterate_size(cl, mr);                      \
+  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);              \
   if (bottom < top) {                                                   \
-    HeapWord* next_obj = bottom + oop(bottom)->size();                  \
+    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();          \
     while (next_obj < top) {                                            \
       /* Bottom lies entirely below top, so we can call the */          \
       /* non-memRegion version of oop_iterate below. */                 \
-      oop(bottom)->oop_iterate(cl);                                     \
+      cast_to_oop(bottom)->oop_iterate(cl);                             \
       bottom = next_obj;                                                \
-      next_obj = bottom + oop(bottom)->size();                          \
+      next_obj = bottom + cast_to_oop(bottom)->size();                  \
     }                                                                   \
     /* Last object. */                                                  \
-    oop(bottom)->oop_iterate(cl, mr);                                   \
+    cast_to_oop(bottom)->oop_iterate(cl, mr);                           \
   }                                                                     \
 }
 
@@ -243,8 +242,7 @@ ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 DirtyCardToOopClosure*
 ContiguousSpace::new_dcto_cl(OopIterateClosure* cl,
                              CardTable::PrecisionStyle precision,
-                             HeapWord* boundary,
-                             bool parallel) {
+                             HeapWord* boundary) {
   return new ContiguousSpaceDCTOC(this, cl, precision, boundary);
 }
 
@@ -374,7 +372,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
 
   // store the forwarding pointer into the mark word
   if (cast_from_oop<HeapWord*>(q) != compact_top) {
-    q->forward_to(oop(compact_top));
+    q->forward_to(cast_to_oop(compact_top));
     assert(q->is_gc_marked(), "encoding the pointer should preserve the mark");
   } else {
     // if the object isn't moving we can just set the mark to the default
@@ -448,9 +446,9 @@ void ContiguousSpace::verify() const {
   HeapWord* t = top();
   HeapWord* prev_p = NULL;
   while (p < t) {
-    oopDesc::verify(oop(p));
+    oopDesc::verify(cast_to_oop(p));
     prev_p = p;
-    p += oop(p)->size();
+    p += cast_to_oop(p)->size();
   }
   guarantee(p == top(), "end of last object must match end of space");
   if (top() != end()) {
@@ -476,7 +474,7 @@ void ContiguousSpace::oop_iterate(OopIterateClosure* blk) {
   HeapWord* t = top();
   // Could call objects iterate, but this is easier.
   while (obj_addr < t) {
-    obj_addr += oop(obj_addr)->oop_iterate_size(blk);
+    obj_addr += cast_to_oop(obj_addr)->oop_iterate_size(blk);
   }
 }
 
@@ -487,8 +485,8 @@ void ContiguousSpace::object_iterate(ObjectClosure* blk) {
 
 void ContiguousSpace::object_iterate_from(HeapWord* mark, ObjectClosure* blk) {
   while (mark < top()) {
-    blk->do_object(oop(mark));
-    mark += oop(mark)->size();
+    blk->do_object(cast_to_oop(mark));
+    mark += cast_to_oop(mark)->size();
   }
 }
 
@@ -504,9 +502,9 @@ HeapWord* ContiguousSpace::block_start_const(const void* p) const {
     HeapWord* cur = last;
     while (cur <= p) {
       last = cur;
-      cur += oop(cur)->size();
+      cur += cast_to_oop(cur)->size();
     }
-    assert(oopDesc::is_oop(oop(last)), PTR_FORMAT " should be an object start", p2i(last));
+    assert(oopDesc::is_oop(cast_to_oop(last)), PTR_FORMAT " should be an object start", p2i(last));
     return last;
   }
 }
@@ -519,12 +517,12 @@ size_t ContiguousSpace::block_size(const HeapWord* p) const {
   assert(p <= current_top,
          "p > current top - p: " PTR_FORMAT ", current top: " PTR_FORMAT,
          p2i(p), p2i(current_top));
-  assert(p == current_top || oopDesc::is_oop(oop(p)),
+  assert(p == current_top || oopDesc::is_oop(cast_to_oop(p)),
          "p (" PTR_FORMAT ") is not a block start - "
          "current_top: " PTR_FORMAT ", is_oop: %s",
-         p2i(p), p2i(current_top), BOOL_TO_STR(oopDesc::is_oop(oop(p))));
+         p2i(p), p2i(current_top), BOOL_TO_STR(oopDesc::is_oop(cast_to_oop(p))));
   if (p < current_top) {
-    return oop(p)->size();
+    return cast_to_oop(p)->size();
   } else {
     assert(p == current_top, "just checking");
     return pointer_delta(end(), (HeapWord*) p);
@@ -594,7 +592,7 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
   if (size >= align_object_size(array_header_size)) {
     size_t length = (size - array_header_size) * (HeapWordSize / sizeof(jint));
     // allocate uninitialized int array
-    typeArrayOop t = (typeArrayOop) allocate(size);
+    typeArrayOop t = (typeArrayOop) cast_to_oop(allocate(size));
     assert(t != NULL, "allocation should succeed");
     t->set_mark(markWord::prototype());
     t->set_klass(Universe::intArrayKlassObj());
@@ -602,10 +600,10 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
   } else {
     assert(size == CollectedHeap::min_fill_size(),
            "size for smallest fake object doesn't match");
-    instanceOop obj = (instanceOop) allocate(size);
+    instanceOop obj = (instanceOop) cast_to_oop(allocate(size));
     obj->set_mark(markWord::prototype());
     obj->set_klass_gap(0);
-    obj->set_klass(SystemDictionary::Object_klass());
+    obj->set_klass(vmClasses::Object_klass());
   }
 }
 
@@ -641,7 +639,7 @@ void OffsetTableContigSpace::verify() const {
   }
 
   while (p < top()) {
-    size_t size = oop(p)->size();
+    size_t size = cast_to_oop(p)->size();
     // For a sampling of objects in the space, find it using the
     // block offset table.
     if (blocks == BLOCK_SAMPLE_INTERVAL) {
@@ -653,7 +651,7 @@ void OffsetTableContigSpace::verify() const {
     }
 
     if (objs == OBJ_SAMPLE_INTERVAL) {
-      oopDesc::verify(oop(p));
+      oopDesc::verify(cast_to_oop(p));
       objs = 0;
     } else {
       objs++;

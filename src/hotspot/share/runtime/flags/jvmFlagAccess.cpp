@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
+#include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
@@ -316,40 +317,29 @@ JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlagOri
     new_value = os::strdup_check_oom(*value);
   }
   flag->set_ccstr(new_value);
-  if (flag->is_default() && old_value != NULL) {
-    // Prior value is NOT heap allocated, but was a literal constant.
-    old_value = os::strdup_check_oom(old_value);
+  if (!flag->is_default() && old_value != NULL) {
+    // Old value is heap allocated so free it.
+    FREE_C_HEAP_ARRAY(char, old_value);
   }
-  *value = old_value;
+  // Unlike the other APIs, the old vale is NOT returned, so the caller won't need to free it.
+  // The callers typically don't care what the old value is.
+  // If the caller really wants to know the old value, read it (and make a copy if necessary)
+  // before calling this API.
+  *value = NULL;
   flag->set_origin(origin);
   return JVMFlag::SUCCESS;
 }
 
 // This is called by the FLAG_SET_XXX macros.
 JVMFlag::Error JVMFlagAccess::set_impl(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin) {
-  if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
-    return ccstrAtPut((JVMFlagsEnum)flag_enum, *((ccstr*)value), origin);
-  }
-
   JVMFlag* flag = JVMFlag::flag_from_enum(flag_enum);
-  assert(flag->type() == type_enum, "wrong flag type");
-  return set_impl(flag, type_enum, value, origin);
-}
-
-// This is called by the FLAG_SET_XXX macros.
-JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlagsEnum flag, ccstr value, JVMFlagOrigin origin) {
-  JVMFlag* faddr = JVMFlag::flag_from_enum(flag);
-  assert(faddr->is_ccstr(), "wrong flag type");
-  ccstr old_value = faddr->get_ccstr();
-  trace_flag_changed<ccstr, EventStringFlagChanged>(faddr, old_value, value, origin);
-  char* new_value = os::strdup_check_oom(value);
-  faddr->set_ccstr(new_value);
-  if (!faddr->is_default() && old_value != NULL) {
-    // Prior value is heap allocated so free it.
-    FREE_C_HEAP_ARRAY(char, old_value);
+  if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
+    assert(flag->is_ccstr(), "must be");
+    return ccstrAtPut(flag, (ccstr*)value, origin);
+  } else {
+    assert(flag->type() == type_enum, "wrong flag type");
+    return set_impl(flag, type_enum, value, origin);
   }
-  faddr->set_origin(origin);
-  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagAccess::check_range(const JVMFlag* flag, bool verbose) {

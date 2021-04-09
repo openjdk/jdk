@@ -67,7 +67,7 @@ public final class VersionHelper {
         TRUST_URL_CODE_BASE = "true".equalsIgnoreCase(trust);
     }
 
-    final static String[] PROPS = new String[]{
+    static final String[] PROPS = new String[]{
         javax.naming.Context.INITIAL_CONTEXT_FACTORY,
         javax.naming.Context.OBJECT_FACTORIES,
         javax.naming.Context.URL_PKG_PREFIXES,
@@ -78,13 +78,13 @@ public final class VersionHelper {
         javax.naming.ldap.LdapContext.CONTROL_FACTORIES
     };
 
-    public final static int INITIAL_CONTEXT_FACTORY = 0;
-    public final static int OBJECT_FACTORIES = 1;
-    public final static int URL_PKG_PREFIXES = 2;
-    public final static int STATE_FACTORIES = 3;
-    public final static int PROVIDER_URL = 4;
-    public final static int DNS_URL = 5;
-    public final static int CONTROL_FACTORIES = 6;
+    public static final int INITIAL_CONTEXT_FACTORY = 0;
+    public static final int OBJECT_FACTORIES = 1;
+    public static final int URL_PKG_PREFIXES = 2;
+    public static final int STATE_FACTORIES = 3;
+    public static final int PROVIDER_URL = 4;
+    public static final int DNS_URL = 5;
+    public static final int CONTROL_FACTORIES = 6;
 
     private VersionHelper() {} // Disallow anyone from creating one of these.
 

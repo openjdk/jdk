@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class VMVersionInfoPanel extends JPanel {
 
     private String getVersionInfo() {
        VM vm = VM.getVM();
-       StringBuffer buf = new StringBuffer();
+       StringBuilder buf = new StringBuilder();
        buf.append("<html><head><title>VM Version Info</title></head>");
        buf.append("<body><table border='1'>");
 
