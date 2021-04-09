@@ -29,6 +29,7 @@ import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -127,8 +128,7 @@ final class SimpleFileServerImpl {
             var server = SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
-            out.printf("Serving %s and subdirectories on http://%s:%d/ ...\n",
-                    root, socketAddr.getHostString(), port);
+            printStartMessage(socketAddr, root, port);
         } catch (Exception e) {
             reportError(getMessage("err.server.config.failed", e.getMessage()));
             e.printStackTrace(out);
@@ -137,6 +137,23 @@ final class SimpleFileServerImpl {
             out.flush();
         }
         return Result.OK.statusCode;
+    }
+
+    private static void printStartMessage(InetSocketAddress socketAddr, Path root, int port)
+            throws UnknownHostException {
+        var isAnyLocal = socketAddr.getAddress().isAnyLocalAddress();
+        var addr = isAnyLocal ? InetAddress.getLocalHost().getHostAddress()
+                : socketAddr.getHostString();
+        if (isAnyLocal)
+            out.printf("""
+                    Serving %s and subdirectories on 0.0.0.0:%d
+                    http://%s:%d/ ...
+                    """, root, port, addr, port);
+        else
+            out.printf("""
+                    Serving %s and subdirectories on
+                    http://%s:%d/ ...
+                    """, root, addr, port);
     }
 
     // TODO: WHICH OUTPUT DO WE WANT TO SHOW, AND WHEN?
