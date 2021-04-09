@@ -219,15 +219,11 @@ public class BorderUIResource implements Border, UIResource, Serializable
 
         /**
          * Constructs a {@code BevelBorderUIResource}.
-         * highlightOuterColor which is the color to use for the
-         * bevel outer highlight
-         * and highlightInnerColor which is the color to use for the
-         * bevel inner highlight will be derived from
+         * The bevel outer highlight color and
+         * bevel inner highlight color will be derived from
          * specified highlight color and
-         * shadowOuterColor which is the color to use for the
-         * bevel outer shadow
-         * and shadowInnerColor which is the color to use for the
-         * bevel inner shadow
+         * bevel outer shadow color
+         * and bevel inner shadow color
          * will be derived from specified shadow color.
          * @param bevelType the type of bevel for the border
          * @param highlight the color to use for the bevel highlight
