@@ -814,8 +814,8 @@ class RelocateBufferToRequested : public BitMapClosure {
     address top = _builder->buffer_top();
     address new_bottom = bottom + _buffer_to_requested_delta;
     address new_top = top + _buffer_to_requested_delta;
-    log_debug(cds)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT " ] to "
-                   "[" INTPTR_FORMAT " - " INTPTR_FORMAT " ]",
+    log_debug(cds)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
+                   "[" INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                    p2i(bottom), p2i(top),
                    p2i(new_bottom), p2i(new_top));
   }

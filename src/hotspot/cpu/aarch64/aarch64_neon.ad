@@ -2842,6 +2842,51 @@ instruct vnot2L(vecX dst, vecX src, immL_M1 m1)
   ins_pipe(pipe_class_default);
 %}
 
+// ------------------------------ Vector and_not -------------------------------
+
+instruct vand_not2I(vecD dst, vecD src1, vecD src2, immI_M1 m1)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (AndV src1 (XorV src2 (ReplicateB m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateS m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateI m1))));
+  ins_cost(INSN_COST);
+  format %{ "bic  $dst, T8B, $src1, $src2\t# vector (8B)" %}
+  ins_encode %{
+    __ bic(as_FloatRegister($dst$$reg), __ T8B,
+           as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vand_not4I(vecX dst, vecX src1, vecX src2, immI_M1 m1)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (AndV src1 (XorV src2 (ReplicateB m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateS m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateI m1))));
+  ins_cost(INSN_COST);
+  format %{ "bic  $dst, T16B, $src1, $src2\t# vector (16B)" %}
+  ins_encode %{
+    __ bic(as_FloatRegister($dst$$reg), __ T16B,
+           as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vand_not2L(vecX dst, vecX src1, vecX src2, immL_M1 m1)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (AndV src1 (XorV src2 (ReplicateL m1))));
+  ins_cost(INSN_COST);
+  format %{ "bic  $dst, T16B, $src1, $src2\t# vector (16B)" %}
+  ins_encode %{
+    __ bic(as_FloatRegister($dst$$reg), __ T16B,
+           as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // ------------------------------ Vector max/min -------------------------------
 
 instruct vmax8B(vecD dst, vecD src1, vecD src2)
