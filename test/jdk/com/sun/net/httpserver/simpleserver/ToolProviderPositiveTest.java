@@ -38,6 +38,7 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -63,6 +64,15 @@ public class ToolProviderPositiveTest {
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
     static final String TEST_DIR_STR = TEST_DIR.toString();
     static final String TOOL_PROVIDER_CLS_NAME = SimpleServerTool.class.getName();
+    static final String LOCALHOST_ADDR;
+
+    static {
+        try {
+            LOCALHOST_ADDR = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Cannot determine local host address");
+        }
+    }
 
     @BeforeTest
     public void makeTestDirectoryAndFile() throws IOException {
@@ -81,7 +91,9 @@ public class ToolProviderPositiveTest {
                 .forEach(addr -> {
                     try {
                         simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-b", addr)
-                                .resultChecker(r -> assertContains(r.output, "Serving " + TEST_DIR_STR + " and subdirectories on http://" + addr + ":8000/ ..."));
+                                .resultChecker(r -> assertContains(r.output,
+                                        "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
+                                        "http://" + addr + ":8000/ ..."));
                     } catch (Exception e) {
                         throw new AssertionError(e);
                     }
@@ -93,7 +105,8 @@ public class ToolProviderPositiveTest {
         simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-d", TEST_DIR_STR)
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:8000/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8000\n" +
+                                    "http://" + LOCALHOST_ADDR + ":8000/ ...");
                 });
     }
 
@@ -110,7 +123,8 @@ public class ToolProviderPositiveTest {
         simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-p", port)
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:" + port + "/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:" + port + "\n" +
+                                    "http://" + LOCALHOST_ADDR + ":" + port + "/ ...");
                 });
     }
 
@@ -139,7 +153,8 @@ public class ToolProviderPositiveTest {
         simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-b", "localhost", "-b", "127.0.0.1")
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on http://127.0.0.1:8000/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
+                                    "http://127.0.0.1:8000/ ...");
                 });
     }
 
@@ -148,7 +163,8 @@ public class ToolProviderPositiveTest {
         simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-d", TEST_DIR_STR, "-d", TEST_DIR_STR)
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:8000/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8000\n" +
+                                    "http://" + LOCALHOST_ADDR + ":8000/ ...");
                 });
     }
 
@@ -157,7 +173,8 @@ public class ToolProviderPositiveTest {
         simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-o", "none", "-o", "verbose")
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:8000/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8000\n" +
+                                    "http://" + LOCALHOST_ADDR + ":8000/ ...");
                 });
     }
 
@@ -166,7 +183,8 @@ public class ToolProviderPositiveTest {
         simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-p", "8001", "-p", "8002")
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on http://0.0.0.0:8002/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8002\n" +
+                                    "http://" + LOCALHOST_ADDR + ":8002/ ...");
                 });
     }
 
