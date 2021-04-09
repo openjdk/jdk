@@ -33,13 +33,11 @@ hotspot_compiler = \
 
 hotspot_compiler_xcomp = \
   :hotspot_compiler \
-  -:tier1_compiler_not_xcomp \
-  -compiler/graalunit
+  -:tier1_compiler_not_xcomp
 
 hotspot_compiler_all_gcs = \
   :hotspot_compiler \
-  -compiler/jvmci \
-  -compiler/graalunit
+  -compiler/jvmci
 
 hotspot_gc = \
   gc
@@ -88,8 +86,7 @@ tier1_compiler = \
 hotspot_not_fast_compiler = \
   :hotspot_compiler \
   -:tier1_compiler \
-  -:hotspot_slow_compiler \
-  -compiler/graalunit
+  -:hotspot_slow_compiler
 
 hotspot_slow_compiler = \
   compiler/codegen/aes \
@@ -153,9 +150,6 @@ tier1_compiler_3 = \
 tier1_compiler_not_xcomp = \
   compiler/profiling
 
-tier1_compiler_graal = \
-  compiler/graalunit/HotspotTest.java
-
 ctw_1 = \
   applications/ctw/modules/ \
   -:ctw_2 \
@@ -170,7 +164,6 @@ ctw_2 = \
 ctw_3 = \
   applications/ctw/modules/java_xml.java \
   applications/ctw/modules/jdk_compiler.java \
-  applications/ctw/modules/jdk_internal_vm_compiler.java \
   applications/ctw/modules/jdk_localedata.java \
   applications/ctw/modules/jdk_localedata_2.java
 

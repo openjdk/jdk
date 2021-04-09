@@ -43,9 +43,7 @@ import java.util.stream.Collectors;
 
 public class UpgradeableModules {
     private static final List<String> UPGRADEABLE_MODULES =
-        List.of("java.compiler",
-                "jdk.internal.vm.compiler",
-                "jdk.internal.vm.compiler.management");
+        List.of("java.compiler");
 
     public static void main(String... args) {
         Set<String> hashedModules = hashedModules();
