@@ -117,7 +117,7 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                         <section class="summary">
                         <ul class="summary-list">
-                        <li>
+                        <li id="class-summary">
                         <div class="caption"><span>Class Summary</span></div>
                         <div class="summary-table two-column-summary">""");
 

@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 
@@ -125,20 +124,24 @@ public class Contents {
     public final Content module_;
     public final Content moduleSubNavLabel;
     public final Content modulesLabel;
+    public final Content navAnnotations;
     public final Content navAnnotationTypeMember;
     public final Content navAnnotationTypeOptionalMember;
     public final Content navAnnotationTypeRequiredMember;
     public final Content navConstructor;
+    public final Content navDescription;
     public final Content navEnum;
+    public final Content navEnums;
     public final Content navField;
     public final Content navHelpNavigation;
     public final Content navHelpPages;
     public final Content navMethod;
-    public final Content navModuleDescription;
     public final Content navModules;
     public final Content navNested;
     public final Content navPackages;
     public final Content navProperty;
+    public final Content navRecords;
+    public final Content navRelated;
     public final Content navServices;
     public final Content nestedClassSummary;
     public final Content noScriptMessage;
@@ -150,6 +153,7 @@ public class Contents {
     public final Content packageLabel;
     public final Content package_;
     public final Content packagesLabel;
+    public final Content packageSubNavLabel;
     public final Content parameters;
     public final Content previewAPI;
     public final Content previewLabel;
@@ -275,20 +279,24 @@ public class Contents {
         module_ = getContent("doclet.module");
         moduleSubNavLabel = getContent("doclet.Module_Sub_Nav");
         modulesLabel = getContent("doclet.Modules");
+        navAnnotations = getContent("doclet.navAnnotations");
         navAnnotationTypeMember = getContent("doclet.navAnnotationTypeMember");
         navAnnotationTypeOptionalMember = getContent("doclet.navAnnotationTypeOptionalMember");
         navAnnotationTypeRequiredMember = getContent("doclet.navAnnotationTypeRequiredMember");
         navConstructor = getContent("doclet.navConstructor");
         navEnum = getContent("doclet.navEnum");
+        navEnums = getContent("doclet.navEnums");
         navField = getContent("doclet.navField");
         navHelpNavigation = getContent("doclet.navNavigation");
         navHelpPages = getContent("doclet.navPages");
         navMethod = getContent("doclet.navMethod");
-        navModuleDescription = getContent("doclet.navModuleDescription");
+        navDescription = getContent("doclet.navDescription");
         navModules = getContent("doclet.navModules");
         navNested = getContent("doclet.navNested");
         navPackages = getContent("doclet.navPackages");
         navProperty = getContent("doclet.navProperty");
+        navRecords = getContent("doclet.navRecords");
+        navRelated = getContent("doclet.navRelated");
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
         noScriptMessage = getContent("doclet.No_Script_Message");
@@ -300,6 +308,7 @@ public class Contents {
         packageLabel = getContent("doclet.Package");
         package_ = getContent("doclet.package");
         packagesLabel = getContent("doclet.Packages");
+        packageSubNavLabel = getContent("doclet.Package_Sub_Nav");
         parameters = getContent("doclet.Parameters");
         previewAPI = getContent("doclet.Preview_API");
         previewLabel = getContent("doclet.Preview_Label");
@@ -336,6 +345,10 @@ public class Contents {
         navLinkLabels.put(VisibleMemberTable.Kind.FIELDS, getContent("doclet.navField"));
         navLinkLabels.put(VisibleMemberTable.Kind.CONSTRUCTORS, getContent("doclet.navConstructor"));
         navLinkLabels.put(VisibleMemberTable.Kind.METHODS, getContent("doclet.navMethod"));
+        navLinkLabels.put(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL,
+                getContent("doclet.navAnnotationTypeOptionalMember"));
+        navLinkLabels.put(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED,
+                getContent("doclet.navAnnotationTypeRequiredMember"));
 
         this.annotationTypeSummary = resources.getText("doclet.Annotation_Types_Summary");
         this.classSummary = resources.getText("doclet.Class_Summary");

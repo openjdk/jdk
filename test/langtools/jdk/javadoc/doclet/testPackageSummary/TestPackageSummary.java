@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 
 /*
  * @test
- * @bug 8189841 8253117
+ * @bug 8189841 8253117 8263507
  * @summary Error in alternate row coloring in package-summary files
+ * @summary Add links to page sections in sub-navigation of package summaries
  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.* TestPackageSummary
@@ -42,8 +43,53 @@ public class TestPackageSummary extends JavadocTester {
     }
 
     @Test
+    public void testSummaryLinks() {
+        javadoc("-d", "out-links",
+                "-sourcepath", testSrc,
+                "-subpackages", "pkg:pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/package-summary.html", true,
+                """
+                    <div class="sub-nav">
+                    <div>
+                    <ul class="sub-nav-list">
+                    <li>Package:&nbsp;</li>
+                    <li><a href="#class-summary">Classes</a></li>
+                    </ul>
+                    </div>""");
+        checkOutput("pkg1/package-summary.html", true,
+                """
+                    <div class="sub-nav">
+                    <div>
+                    <ul class="sub-nav-list">
+                    <li>Package:&nbsp;</li>
+                    <li><a href="#package-description">Description</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#related-package-summary">Related</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#interface-summary">Interfaces</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#class-summary">Classes</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#enum-summary">Enums</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#record-summary">Records</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#exception-summary">Exceptions</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#error-summary">Errors</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#annotation-interface-summary">Annotations</a></li>
+                    </ul>
+                    </div>""");
+        checkOutput("pkg1/sub/package-summary.html", true,
+                """
+                    <div class="sub-nav">
+                    <div>
+                    <ul class="sub-nav-list">
+                    <li>Package:&nbsp;</li>
+                    <li><a href="#related-package-summary">Related</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#class-summary">Classes</a></li>
+                    </ul>
+                    </div>""");
+    }
+
+    @Test
     public void testStripes() {
-        javadoc("-d", "out",
+        javadoc("-d", "out-stripes",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

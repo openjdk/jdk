@@ -25,8 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -38,6 +43,7 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -68,12 +74,26 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     protected PackageElement packageElement;
 
+    private List<PackageElement> relatedPackages;
+    private SortedSet<TypeElement> interfaces;
+    private SortedSet<TypeElement> classes;
+    private SortedSet<TypeElement> enums;
+    private SortedSet<TypeElement> exceptions;
+    private SortedSet<TypeElement> errors;
+    private SortedSet<TypeElement> records;
+    private SortedSet<TypeElement> annotationTypes;
+
     /**
      * The HTML tree for section tag.
      */
     protected HtmlTree sectionTree = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
 
     private final BodyContents bodyContents = new BodyContents();
+
+    // Maximum number of subpackages and sibling packages to list in related packages table
+    private final static int MAX_SUBPACKAGES = 20;
+    private final static int MAX_SIBLING_PACKAGES = 5;
+
 
     /**
      * Constructor to construct PackageWriter object and to generate
@@ -91,6 +111,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
         this.packageElement = packageElement;
+        computePackageData();
     }
 
     @Override
@@ -126,12 +147,96 @@ public class PackageWriterImpl extends HtmlDocletWriter
         return new ContentBuilder();
     }
 
+    private void computePackageData() {
+        relatedPackages = findRelatedPackages();
+        boolean isSpecified = utils.isSpecified(packageElement);
+        interfaces = filterClasses(isSpecified
+                ? utils.getTypeElementsAsSortedSet(utils.getInterfaces(packageElement))
+                : configuration.typeElementCatalog.interfaces(packageElement));
+        classes = filterClasses(isSpecified
+                ? utils.getTypeElementsAsSortedSet(utils.getOrdinaryClasses(packageElement))
+                : configuration.typeElementCatalog.ordinaryClasses(packageElement));
+        enums = filterClasses(isSpecified
+                ? utils.getTypeElementsAsSortedSet(utils.getEnums(packageElement))
+                : configuration.typeElementCatalog.enums(packageElement));
+        records = filterClasses(isSpecified
+                ? utils.getTypeElementsAsSortedSet(utils.getRecords(packageElement))
+                : configuration.typeElementCatalog.records(packageElement));
+        exceptions = filterClasses(isSpecified
+                ? utils.getTypeElementsAsSortedSet(utils.getExceptions(packageElement))
+                : configuration.typeElementCatalog.exceptions(packageElement));
+        errors = filterClasses(isSpecified
+                ? utils.getTypeElementsAsSortedSet(utils.getErrors(packageElement))
+                : configuration.typeElementCatalog.errors(packageElement));
+        annotationTypes = filterClasses(isSpecified
+                ? utils.getTypeElementsAsSortedSet(utils.getAnnotationTypes(packageElement))
+                : configuration.typeElementCatalog.annotationTypes(packageElement));
+    }
+
+    private SortedSet<TypeElement> filterClasses(SortedSet<TypeElement> types) {
+        List<TypeElement> typeList = types
+                .stream()
+                .filter(te -> utils.isCoreClass(te) && configuration.isGeneratedDoc(te))
+                .collect(Collectors.toList());
+        return utils.filterOutPrivateClasses(typeList, options.javafx());
+    }
+
+    private List<PackageElement> findRelatedPackages() {
+        String pkgName = packageElement.getQualifiedName().toString();
+
+        // always add super package
+        int lastdot = pkgName.lastIndexOf('.');
+        String pkgPrefix = lastdot > 0 ? pkgName.substring(0, lastdot) : null;
+        List<PackageElement> packages = new ArrayList<>(
+                filterPackages(p -> p.getQualifiedName().toString().equals(pkgPrefix)));
+
+        // add subpackages unless there are very many of them
+        Pattern subPattern = Pattern.compile(pkgName.replace(".", "\\.") + "\\.\\w+");
+        List<PackageElement> subpackages = filterPackages(
+                p -> subPattern.matcher(p.getQualifiedName().toString()).matches());
+        if (subpackages.size() <= MAX_SUBPACKAGES) {
+            packages.addAll(subpackages);
+        }
+
+        // only add sibling packages if we are beneath threshold, and number of siblings is beneath threshold as well
+        if (pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
+            Pattern siblingPattern = Pattern.compile(pkgPrefix.replace(".", "\\.") + "\\.\\w+");
+
+            List<PackageElement> siblings = filterPackages(
+                    p -> siblingPattern.matcher(p.getQualifiedName().toString()).matches());
+            if (siblings.size() <= MAX_SIBLING_PACKAGES) {
+                packages.addAll(siblings);
+            }
+        }
+        return packages;
+    }
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
                 contents.moduleLabel);
         return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent);
+                .setNavLinkModule(linkContent)
+                .setSubNavLinks(() -> {
+                    List<Content> list = new ArrayList<>();
+                    if (!utils.getFullBody(packageElement).isEmpty() && !options.noComment()) {
+                        list.add(HtmlTree.LI(links.createLink(HtmlIds.PACKAGE_DESCRIPTION, contents.navDescription)));
+                    }
+                    subNavLink(list, relatedPackages, HtmlIds.RELATED_PACKAGE_SUMMARY, contents.navRelated);
+                    subNavLink(list, interfaces, HtmlIds.INTERFACE_SUMMARY, contents.interfaces);
+                    subNavLink(list, classes, HtmlIds.CLASS_SUMMARY, contents.classes);
+                    subNavLink(list, enums, HtmlIds.ENUM_SUMMARY, contents.navEnums);
+                    subNavLink(list, records, HtmlIds.RECORD_SUMMARY, contents.navRecords);
+                    subNavLink(list, exceptions, HtmlIds.EXCEPTION_SUMMARY, contents.exceptions);
+                    subNavLink(list, errors, HtmlIds.ERROR_SUMMARY, contents.errors);
+                    subNavLink(list, annotationTypes, HtmlIds.ANNOTATION_TYPE_SUMMARY, contents.navAnnotations);
+                    return list;
+                });
+    }
+
+    private void subNavLink(List<Content> list, Collection<? extends Element> elements, HtmlId id, Content label) {
+        if (elements != null && !elements.isEmpty()) {
+            list.add(HtmlTree.LI(links.createLink(id, label)));
+        }
     }
 
     /**
@@ -163,7 +268,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     @Override
-    public void addRelatedPackagesSummary(List<PackageElement> relatedPackages, Content summaryContentTree) {
+    public void addRelatedPackagesSummary(Content summaryContentTree) {
         boolean showModules = configuration.showModules && hasRelatedPackagesInOtherModules(relatedPackages);
         TableHeader tableHeader= showModules
                 ? new TableHeader(contents.moduleLabel, contents.packageLabel, contents.descriptionLabel)
@@ -173,49 +278,56 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     @Override
-    public void addInterfaceSummary(SortedSet<TypeElement> interfaces, Content summaryContentTree) {
+    public void addInterfaceSummary(Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.interfaceLabel, contents.descriptionLabel);
-        addClassesSummary(interfaces, contents.interfaceSummary, tableHeader, summaryContentTree);
+        addClassesSummary(interfaces, contents.interfaceSummary, tableHeader, summaryContentTree,
+                HtmlIds.INTERFACE_SUMMARY);
     }
 
     @Override
-    public void addClassSummary(SortedSet<TypeElement> classes, Content summaryContentTree) {
+    public void addClassSummary(Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.classLabel, contents.descriptionLabel);
-        addClassesSummary(classes, contents.classSummary, tableHeader, summaryContentTree);
+        addClassesSummary(classes, contents.classSummary, tableHeader, summaryContentTree,
+                HtmlIds.CLASS_SUMMARY);
     }
 
     @Override
-    public void addEnumSummary(SortedSet<TypeElement> enums, Content summaryContentTree) {
+    public void addEnumSummary(Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.enum_, contents.descriptionLabel);
-        addClassesSummary(enums, contents.enumSummary, tableHeader, summaryContentTree);
+        addClassesSummary(enums, contents.enumSummary, tableHeader, summaryContentTree,
+                HtmlIds.ENUM_SUMMARY);
     }
 
     @Override
-    public void addRecordSummary(SortedSet<TypeElement> records, Content summaryContentTree) {
+    public void addRecordSummary(Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.record, contents.descriptionLabel);
-        addClassesSummary(records, contents.recordSummary, tableHeader, summaryContentTree);
+        addClassesSummary(records, contents.recordSummary, tableHeader, summaryContentTree,
+                HtmlIds.RECORD_SUMMARY);
     }
 
     @Override
-    public void addExceptionSummary(SortedSet<TypeElement> exceptions, Content summaryContentTree) {
+    public void addExceptionSummary(Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.exception, contents.descriptionLabel);
-        addClassesSummary(exceptions, contents.exceptionSummary, tableHeader, summaryContentTree);
+        addClassesSummary(exceptions, contents.exceptionSummary, tableHeader, summaryContentTree,
+                HtmlIds.EXCEPTION_SUMMARY);
     }
 
     @Override
-    public void addErrorSummary(SortedSet<TypeElement> errors, Content summaryContentTree) {
+    public void addErrorSummary(Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.error, contents.descriptionLabel);
-        addClassesSummary(errors, contents.errorSummary, tableHeader, summaryContentTree);
+        addClassesSummary(errors, contents.errorSummary, tableHeader, summaryContentTree,
+                HtmlIds.ERROR_SUMMARY);
     }
 
     @Override
-    public void addAnnotationTypeSummary(SortedSet<TypeElement> annoTypes, Content summaryContentTree) {
+    public void addAnnotationTypeSummary(Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.annotationType, contents.descriptionLabel);
-        addClassesSummary(annoTypes, contents.annotationTypeSummary, tableHeader, summaryContentTree);
+        addClassesSummary(annotationTypes, contents.annotationTypeSummary, tableHeader, summaryContentTree,
+                 HtmlIds.ANNOTATION_TYPE_SUMMARY);
     }
 
     public void addClassesSummary(SortedSet<TypeElement> classes, String label,
-            TableHeader tableHeader, Content summaryContentTree) {
+            TableHeader tableHeader, Content summaryContentTree, HtmlId id) {
         if(!classes.isEmpty()) {
             Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(Text.of(label))
@@ -223,9 +335,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
 
             for (TypeElement klass : classes) {
-                if (!utils.isCoreClass(klass) || !configuration.isGeneratedDoc(klass)) {
-                    continue;
-                }
                 Content classLink = getLink(new HtmlLinkInfo(
                         configuration, HtmlLinkInfo.Kind.PACKAGE, klass));
                 ContentBuilder description = new ContentBuilder();
@@ -241,7 +350,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 }
                 table.addRow(classLink, description);
             }
-            summaryContentTree.add(HtmlTree.LI(table));
+            summaryContentTree.add(HtmlTree.LI(table).setId(id));
         }
     }
 
@@ -284,7 +393,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     table.addRow(packageLink, description);
                 }
             }
-            summaryContentTree.add(HtmlTree.LI(table));
+            summaryContentTree.add(HtmlTree.LI(table)
+                    .setId(HtmlIds.RELATED_PACKAGE_SUMMARY));
         }
     }
 
@@ -339,5 +449,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
     private boolean hasRelatedPackagesInOtherModules(List<PackageElement> relatedPackages) {
         final ModuleElement module = (ModuleElement) packageElement.getEnclosingElement();
         return relatedPackages.stream().anyMatch(pkg -> module != pkg.getEnclosingElement());
+    }
+
+    private List<PackageElement> filterPackages(Predicate<? super PackageElement> filter) {
+        return configuration.packages.stream()
+                .filter(p -> p != packageElement && filter.test(p))
+                .collect(Collectors.toList());
     }
 }

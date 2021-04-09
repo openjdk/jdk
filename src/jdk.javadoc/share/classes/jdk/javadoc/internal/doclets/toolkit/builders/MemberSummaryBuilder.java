@@ -167,15 +167,6 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Returns true if there are members of the given kind, false otherwise.
-     * @param kind
-     * @return true if there are members of the given kind, false otherwise
-     */
-    public boolean hasMembers(VisibleMemberTable.Kind kind) {
-        return !getVisibleMembers(kind).isEmpty();
-    }
-
-    /**
      * Builds the summary for any optional members of an annotation type.
      *
      * @param summariesList the list of summaries to which the summary will be added

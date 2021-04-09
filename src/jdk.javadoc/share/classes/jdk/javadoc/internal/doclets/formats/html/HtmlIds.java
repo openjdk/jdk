@@ -42,6 +42,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Centralized constants and factory methods for HTML ids.
@@ -71,17 +72,23 @@ public class HtmlIds {
     static final HtmlId ANNOTATION_TYPE_ELEMENT_DETAIL = HtmlId.of("annotation-interface-element-detail");
     static final HtmlId ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY = HtmlId.of("annotation-interface-optional-element-summary");
     static final HtmlId ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY = HtmlId.of("annotation-interface-required-element-summary");
+    static final HtmlId ANNOTATION_TYPE_SUMMARY = HtmlId.of("annotation-interface-summary");
     static final HtmlId CLASS_DESCRIPTION = HtmlId.of("class-description");
+    static final HtmlId CLASS_SUMMARY = HtmlId.of("class-summary");
     static final HtmlId CONSTRUCTOR_DETAIL = HtmlId.of("constructor-detail");
     static final HtmlId CONSTRUCTOR_SUMMARY = HtmlId.of("constructor-summary");
     static final HtmlId ENUM_CONSTANT_DETAIL = HtmlId.of("enum-constant-detail");
     static final HtmlId ENUM_CONSTANT_SUMMARY = HtmlId.of("enum-constant-summary");
+    static final HtmlId ENUM_SUMMARY = HtmlId.of("enum-summary");
+    static final HtmlId ERROR_SUMMARY = HtmlId.of("error-summary");
+    static final HtmlId EXCEPTION_SUMMARY = HtmlId.of("exception-summary");
     static final HtmlId FIELD_DETAIL = HtmlId.of("field-detail");
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
     static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
     static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
     static final HtmlId HELP_SEARCH = HtmlId.of("help-search");
+    static final HtmlId INTERFACE_SUMMARY = HtmlId.of("interface-summary");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
@@ -95,6 +102,8 @@ public class HtmlIds {
     static final HtmlId PACKAGE_SUMMARY_TABLE = HtmlId.of("package-summary-table");
     static final HtmlId PROPERTY_DETAIL = HtmlId.of("property-detail");
     static final HtmlId PROPERTY_SUMMARY = HtmlId.of("property-summary");
+    static final HtmlId RECORD_SUMMARY = HtmlId.of("record-summary");
+    static final HtmlId RELATED_PACKAGE_SUMMARY = HtmlId.of("related-package-summary");
     static final HtmlId RESET_BUTTON = HtmlId.of("reset-button");
     static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
@@ -422,6 +431,19 @@ public class HtmlIds {
             case ANNOTATION_TYPE_MEMBER -> "annotation-interface-member";
             case RECORD_CLASS -> "record-class";
         });
+    }
+
+    static HtmlId forMemberSummaryKind(VisibleMemberTable.Kind kind) {
+        return switch (kind) {
+            case INNER_CLASSES -> NESTED_CLASS_SUMMARY;
+            case ENUM_CONSTANTS -> ENUM_CONSTANT_SUMMARY;
+            case FIELDS -> FIELD_SUMMARY;
+            case CONSTRUCTORS -> CONSTRUCTOR_SUMMARY;
+            case METHODS -> METHOD_SUMMARY;
+            case ANNOTATION_TYPE_MEMBER_OPTIONAL -> ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
+            case ANNOTATION_TYPE_MEMBER_REQUIRED -> ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
+            case PROPERTIES -> PROPERTY_SUMMARY;
+        };
     }
 
     /**
