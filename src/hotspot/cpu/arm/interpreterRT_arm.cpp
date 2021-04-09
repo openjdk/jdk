@@ -364,7 +364,7 @@ class SlowSignatureHandler: public NativeSignatureIterator {
   }
 };
 
-JRT_ENTRY(address, InterpreterRuntime::slow_signature_handler(JavaCurrent* current, Method* method, intptr_t* from, intptr_t* to))
+JRT_ENTRY(address, InterpreterRuntime::slow_signature_handler(JavaThread* current, Method* method, intptr_t* from, intptr_t* to))
   methodHandle m(current, (Method*)method);
   assert(m->is_native(), "sanity check");
   SlowSignatureHandler(m, (address)from, to).iterate(UCONST64(-1));
