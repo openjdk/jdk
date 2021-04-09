@@ -1224,17 +1224,6 @@ class VectorLoadMaskNode : public VectorNode {
 
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual bool cmp( const Node &n ) const {
-    // The vector types for mask nodes can be treated equal if they are compatible.
-    return vect_type()->mask_compatible(((VectorLoadMaskNode&)n).vect_type());
-  }
-
-  virtual uint hash() const {
-    // Compute the hash value based on the vector length and element size
-    // for mask nodes. Note that the same element size can be verified with
-    // the same length and same length in bytes.
-    return Node::hash() + (intptr_t)length_in_bytes() + (intptr_t)length();
-  }
 };
 
 class VectorStoreMaskNode : public VectorNode {
@@ -1246,6 +1235,17 @@ class VectorStoreMaskNode : public VectorNode {
   virtual Node* Identity(PhaseGVN* phase);
 
   static VectorStoreMaskNode* make(PhaseGVN& gvn, Node* in, BasicType in_type, uint num_elem);
+};
+
+class VectorMaskCastNode : public VectorNode {
+ public:
+  VectorMaskCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+    const TypeVect* in_vt = in->bottom_type()->is_vect();
+    assert(in_vt->length() == vt->length(), "vector length must match");
+    assert(type2aelembytes(in_vt->element_basic_type()) == type2aelembytes(vt->element_basic_type()), "element size must match");
+  }
+
+  virtual int Opcode() const;
 };
 
 // This is intended for use as a simple reinterpret node that has no cast.

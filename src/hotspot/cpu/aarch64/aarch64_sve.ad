@@ -1700,3 +1700,17 @@ instruct vsubD(vReg dst, vReg src1, vReg src2) %{
   %}
   ins_pipe(pipe_slow);
 %}
+
+// vector mask cast
+
+instruct vmaskcast(vReg dst) %{
+  predicate(UseSVE > 0);
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vmaskcast $dst\t# empty (sve)" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(pipe_class_empty);
+%}
+

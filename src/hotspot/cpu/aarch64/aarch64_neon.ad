@@ -3289,6 +3289,32 @@ instruct storemask2L(vecD dst, vecX src, immI_8 size)
   ins_pipe(pipe_slow);
 %}
 
+// vector mask cast
+
+instruct vmaskcastD(vecD dst)
+%{
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 8);
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vmaskcast $dst\t# empty" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct vmaskcastX(vecX dst)
+%{
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 16);
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vmaskcast $dst\t# empty" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(pipe_class_empty);
+%}
+
 //-------------------------------- LOAD_IOTA_INDICES----------------------------------
 
 instruct loadcon8B(vecD dst, immI0 src)

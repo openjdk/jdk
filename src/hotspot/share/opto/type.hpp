@@ -803,11 +803,6 @@ public:
   virtual const Type *xmeet( const Type *t) const;
   virtual const Type *xdual() const;     // Compute dual right now.
 
-  bool mask_compatible(const TypeVect* t) const {
-    return base() == t->base() && length() == t->length() &&
-           type2aelembytes(element_basic_type()) == type2aelembytes(t->element_basic_type());
-  }
-
   static const TypeVect *VECTA;
   static const TypeVect *VECTS;
   static const TypeVect *VECTD;

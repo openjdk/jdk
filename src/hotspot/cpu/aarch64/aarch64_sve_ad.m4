@@ -853,3 +853,17 @@ BINARY_OP_UNPREDICATED(vsubI, SubVI, S, 4, sve_sub)
 BINARY_OP_UNPREDICATED(vsubL, SubVL, D, 2, sve_sub)
 BINARY_OP_UNPREDICATED(vsubF, SubVF, S, 4, sve_fsub)
 BINARY_OP_UNPREDICATED(vsubD, SubVD, D, 2, sve_fsub)
+
+// vector mask cast
+
+instruct vmaskcast(vReg dst) %{
+  predicate(UseSVE > 0);
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vmaskcast $dst\t# empty (sve)" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(pipe_class_empty);
+%}
+
