@@ -82,7 +82,8 @@
 */
 
 import java.io.File;
-import java.util.LinkedList;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -92,29 +93,49 @@ import java.util.regex.Pattern;
 // know for sure what the underlying page size is.
 public class TestTracePageSizes {
     // Store address ranges with known page size.
-    private static LinkedList<RangeWithPageSize> ranges = new LinkedList<>();
+    private static Set<Range> ranges = new HashSet<>();
     private static boolean debug;
 
     // Parse /proc/self/smaps using a regexp capturing the address
     // ranges, what page size they have and if they might use
     // transparent huge pages. The pattern is not greedy and will
     // match as little as possible so each "segment" in the file
-    // will generate a match.
+    // will generate a match. The order of KernelPageSize and
+    // AnonHugePages can be different, so we need to match the block
+    // body first, assuming VmFlags are the last, and then parse out
+    // the individual fields out of it.
     private static void parseSmaps() throws Exception {
-        String smapsPatternString = "(\\w+)-(\\w+).*?" +
-                                    "KernelPageSize:\\s*(\\d*) kB.*?" +
-                                    "VmFlags: ([\\w ]*)";
-        Pattern smapsPattern = Pattern.compile(smapsPatternString, Pattern.DOTALL);
+        Pattern blockPatt = Pattern.compile("(\\w+)-(\\w+)(.*?)" +
+                                            "VmFlags: ([\\w ]*)", Pattern.DOTALL);
+        Pattern psPatt  = Pattern.compile(".*KernelPageSize:\\s*(\\d*) kB.*?", Pattern.DOTALL);
+        Pattern ahpPatt = Pattern.compile(".*AnonHugePages:\\s*(\\d*).*?", Pattern.DOTALL);
+
+        // Find all memory segments in the smaps-file with pattern 1
         Scanner smapsScanner = new Scanner(new File("/proc/self/smaps"));
-        // Find all memory segments in the smaps-file.
-        smapsScanner.findAll(smapsPattern).forEach(mr -> {
+        smapsScanner.findAll(blockPatt).forEach(mr -> {
             String start = mr.group(1);
             String end = mr.group(2);
-            String ps = mr.group(3);
+            String body = mr.group(3);
             String vmFlags = mr.group(4);
 
+            String ps = null;
+            Matcher psMatcher = psPatt.matcher(body);
+            if (psMatcher.matches()) {
+                ps = psMatcher.group(1);
+            } else {
+                throw new IllegalStateException("Cannot parse page size out of " + body);
+            }
+
+	    String ahp = null;
+            Matcher ahpMatcher = ahpPatt.matcher(body);
+            if (ahpMatcher.matches()) {
+                ahp = ahpMatcher.group(1);
+            } else {
+                throw new IllegalStateException("Cannot parse anon huge pages out of " + body);
+            }
+
             // Create a range given the match and add it to the list.
-            RangeWithPageSize range = new RangeWithPageSize(start, end, ps, vmFlags);
+            Range range = new Range(start, end, ahp, ps, vmFlags);
             ranges.add(range);
             debug("Added range: " + range);
         });
@@ -122,9 +143,9 @@ public class TestTracePageSizes {
     }
 
     // Search for a range including the given address.
-    private static RangeWithPageSize getRange(String addr) {
+    private static Range getRange(String addr) {
         long laddr = Long.decode(addr);
-        for (RangeWithPageSize range : ranges) {
+        for (Range range : ranges) {
             if (range.includes(laddr)) {
                 return range;
             }
@@ -179,7 +200,7 @@ public class TestTracePageSizes {
                 String address = trace.group(1);
                 String pageSize = trace.group(2);
 
-                RangeWithPageSize range = getRange(address);
+                Range range = getRange(address);
                 if (range == null) {
                     debug("Could not find range for: " + line);
                     throw new AssertionError("No memory range found for address: " + address);
@@ -222,23 +243,29 @@ public class TestTracePageSizes {
 // lines we care about are:
 // 700000000-73ea00000 rw-p 00000000 00:00 0
 // ...
+// AnonHugePages:         4096
 // KernelPageSize:        4 kB
 // ...
 // VmFlags: rd wr mr mw me ac sd
 //
 // We use the VmFlags to know what kind of huge pages are used.
+// Unfortunately, old kernels do not print the madvise flag.
+// To handle that case, we need to check for non-zero AnonHugePages.
+//
 // For transparent huge pages the KernelPageSize field will not
 // report the large page size.
-class RangeWithPageSize {
-    private long start;
-    private long end;
-    private long pageSize;
+class Range {
+    private final long start;
+    private final long end;
+    private final long anonHugePages;
+    private final long pageSize;
     private boolean vmFlagHG;
     private boolean vmFlagHT;
 
-    public RangeWithPageSize(String start, String end, String pageSize, String vmFlags) {
+    public Range(String start, String end, String anonHugePages, String pageSize, String vmFlags) {
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
+        this.anonHugePages = Long.parseLong(anonHugePages);
         this.pageSize = Long.parseLong(pageSize);
 
         vmFlagHG = false;
@@ -260,7 +287,7 @@ class RangeWithPageSize {
     }
 
     public boolean isTransparentHuge() {
-        return vmFlagHG;
+        return vmFlagHG || (!vmFlagHT && anonHugePages > 0);
     }
 
     public boolean isExplicitHuge() {
@@ -273,6 +300,18 @@ class RangeWithPageSize {
 
     public String toString() {
         return "[" + Long.toHexString(start) + ", " + Long.toHexString(end) + ") " +
-               "pageSize=" + pageSize + "KB isTHP=" + vmFlagHG + " isHUGETLB=" + vmFlagHT;
+               "anonHugePages = " + anonHugePages + " pageSize=" + pageSize +
+               "KB isTHP=" + vmFlagHG + " isHUGETLB=" + vmFlagHT;
+    }
+
+    public int hashCode() {
+        return (int)(start ^ end);
+    }
+
+    public boolean equals(Object o) {
+        Range r = ((Range) o);
+        if (start != r.start) return false;
+        if (end != r.end) return false;
+        return true;
     }
 }
