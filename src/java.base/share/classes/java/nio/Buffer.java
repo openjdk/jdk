@@ -282,7 +282,7 @@ public abstract class Buffer {
     /**
      * Returns this buffer's capacity.
      *
-     * @return  The capacity of this buffer
+     * @return  The capacity of this buffer as an amount of bytes
      */
     public final int capacity() {
         return capacity;
