@@ -38,7 +38,8 @@ ZMarkStackSpace::ZMarkStackSpace() :
     _expand_lock(),
     _start(0),
     _top(0),
-    _end(0) {
+    _end(0),
+    _high_usage(false) {
   assert(ZMarkStackSpaceLimit >= ZMarkStackSpaceExpandSize, "ZMarkStackSpaceLimit too small");
 
   // Reserve address space
@@ -103,8 +104,13 @@ uintptr_t ZMarkStackSpace::expand_and_alloc_space(size_t size) {
           ZMarkStackSpaceLimit / M);
   }
 
-  log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M",
-                         old_size / M, new_size / M);
+  // Set high usage flag if we've used more than a 8th of the available space
+  if (!_high_usage && new_size > ZMarkStackSpaceLimit / 8) {
+    Atomic::store(&_high_usage, true);
+  }
+
+  log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M (%s Usage)",
+                         old_size / M, new_size / M, _high_usage ? "High" : "Low");
 
   // Expand
   os::commit_memory_or_exit((char*)_end, expand_size, false /* executable */, "Mark stack space");
@@ -126,26 +132,18 @@ uintptr_t ZMarkStackSpace::alloc(size_t size) {
   return expand_and_alloc_space(size);
 }
 
+void ZMarkStackSpace::free() {
+  os::uncommit_memory((char*)_start, _end - _start, false /* executable */);
+  _end = _top = _start;
+  _high_usage = false;
+}
+
 ZMarkStackAllocator::ZMarkStackAllocator() :
     _freelist(),
-    _space() {
-  // Prime free list to avoid an immediate space
-  // expansion when marking starts.
-  if (_space.is_initialized()) {
-    prime_freelist();
-  }
-}
+    _space() {}
 
 bool ZMarkStackAllocator::is_initialized() const {
   return _space.is_initialized();
-}
-
-void ZMarkStackAllocator::prime_freelist() {
-  for (size_t size = 0; size < ZMarkStackSpaceExpandSize; size += ZMarkStackMagazineSize) {
-    const uintptr_t addr = _space.alloc(ZMarkStackMagazineSize);
-    ZMarkStackMagazine* const magazine = create_magazine_from_space(addr, ZMarkStackMagazineSize);
-    free_magazine(magazine);
-  }
 }
 
 ZMarkStackMagazine* ZMarkStackAllocator::create_magazine_from_space(uintptr_t addr, size_t size) {
@@ -180,4 +178,9 @@ ZMarkStackMagazine* ZMarkStackAllocator::alloc_magazine() {
 
 void ZMarkStackAllocator::free_magazine(ZMarkStackMagazine* magazine) {
   _freelist.push(magazine);
+}
+
+void ZMarkStackAllocator::free() {
+  _freelist.clear();
+  _space.free();
 }

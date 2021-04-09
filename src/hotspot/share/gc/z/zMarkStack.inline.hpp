@@ -156,6 +156,11 @@ inline T* ZStackList<T>::pop() {
   }
 }
 
+template <typename T>
+inline void ZStackList<T>::clear() {
+  _head = encode_versioned_pointer(NULL, 0);
+}
+
 inline bool ZMarkStripe::is_empty() const {
   return _published.is_empty() && _overflowed.is_empty();
 }

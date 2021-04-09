@@ -108,6 +108,7 @@ public:
   void start();
   void mark(bool initial);
   bool end();
+  void free();
 
   void flush_and_free();
   bool flush_and_free(Thread* thread);

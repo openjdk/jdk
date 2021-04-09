@@ -27,6 +27,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
+#include "gc/z/zMarkStackAllocator.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zThreadLocalData.hpp"
@@ -34,12 +35,11 @@
 #include "utilities/debug.hpp"
 
 // Marking before pushing defeats the purpose of striped marking, but it
-// can also help reduce mark stack usage. However, in practice it only helps
-// reduce mark stack usage if marking is done with a single stripe for the
-// whole heap. When a single stripe is used, striped marking is essentially
-// disabled, so we don't have to worry about it defeating its purpose.
+// can also help reduce mark stack usage. We mark before pushing, only if
+// the mark stack usage is high, or if we're using a single stripe (in
+// which case striped marking is essesntially disabled).
 //
-// Furthermore, we only consider doing marking before pushing in GC threads
+// Furthermore, we only consider doing mark before pushing in GC threads
 // to avoid burdening Java threads with writing to, and potentially first
 // having to clear, mark bitmaps.
 //
@@ -50,7 +50,7 @@
 
 template <bool gc_thread>
 inline bool ZMark::should_mark_before_push() const {
-  return gc_thread && _stripes.nstripes() == 1;
+  return gc_thread && (_allocator.high_usage() || _stripes.nstripes() == 1);
 }
 
 template <bool gc_thread, bool follow, bool finalizable, bool publish>

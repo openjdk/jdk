@@ -752,6 +752,10 @@ bool ZMark::end() {
   return true;
 }
 
+void ZMark::free() {
+  _allocator.free();
+}
+
 void ZMark::flush_and_free() {
   Thread* const thread = Thread::current();
   flush_and_free(thread);

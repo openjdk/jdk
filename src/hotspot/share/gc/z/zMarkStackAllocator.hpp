@@ -34,6 +34,7 @@ private:
   uintptr_t          _start;
   volatile uintptr_t _top;
   volatile uintptr_t _end;
+  volatile bool      _high_usage;
 
   void expand();
 
@@ -45,7 +46,10 @@ public:
 
   bool is_initialized() const;
 
+  bool high_usage() const;
+
   uintptr_t alloc(size_t size);
+  void free();
 };
 
 class ZMarkStackAllocator {
@@ -53,7 +57,6 @@ private:
   ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
   ZCACHE_ALIGNED ZMarkStackSpace        _space;
 
-  void prime_freelist();
   ZMarkStackMagazine* create_magazine_from_space(uintptr_t addr, size_t size);
 
 public:
@@ -61,8 +64,12 @@ public:
 
   bool is_initialized() const;
 
+  bool high_usage() const;
+
   ZMarkStackMagazine* alloc_magazine();
   void free_magazine(ZMarkStackMagazine* magazine);
+
+  void free();
 };
 
 #endif // SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP
