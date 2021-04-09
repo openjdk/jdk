@@ -1390,13 +1390,13 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
   }
 
   // If the successor blocks have a CreateEx node, move it back to the top
-  for(uint i4 = 0; i4 < block->_num_succs; i4++ ) {
+  for (uint i4 = 0; i4 < block->_num_succs; i4++) {
     Block *sb = block->_succs[i4];
     uint new_cnt = end - beg;
     // Remove any newly created, but dead, nodes by traversing their schedule
     // backwards. Here, a dead node is a node whose only outputs (if any) are
     // unused projections.
-    for( uint j = new_cnt; j > 0; j-- ) {
+    for (uint j = new_cnt; j > 0; j--) {
       Node *n = sb->get_node(j);
       // Individual projections are examined together with all siblings when
       // their parent is visited.
