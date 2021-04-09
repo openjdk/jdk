@@ -680,7 +680,7 @@ public final class SunPKCS11 extends AuthProvider {
         d(SKF, "Blowfish",      P11SecretKeyFactory,
                 m(CKM_BLOWFISH_CBC));
         d(SKF, "ChaCha20",      P11SecretKeyFactory,
-                m(CKM_CHACHA20, CKM_CHACHA20_POLY1305));
+                m(CKM_CHACHA20_POLY1305));
 
         // XXX attributes for Ciphers (supported modes, padding)
         dA(CIP, "ARCFOUR",                      P11Cipher,
