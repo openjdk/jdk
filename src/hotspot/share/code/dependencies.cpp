@@ -1209,9 +1209,9 @@ class ClassHierarchyWalker {
   static void print_statistics();
 };
 
-PerfCounter* ClassHierarchyWalker::_perf_find_witness_anywhere_calls_count   = NULL;
-PerfCounter* ClassHierarchyWalker::_perf_find_witness_anywhere_steps_count   = NULL;
-PerfCounter* ClassHierarchyWalker::_perf_find_witness_in_calls_count = NULL;
+PerfCounter* ClassHierarchyWalker::_perf_find_witness_anywhere_calls_count = NULL;
+PerfCounter* ClassHierarchyWalker::_perf_find_witness_anywhere_steps_count = NULL;
+PerfCounter* ClassHierarchyWalker::_perf_find_witness_in_calls_count       = NULL;
 
 void ClassHierarchyWalker::init() {
   if (UsePerfData) {
