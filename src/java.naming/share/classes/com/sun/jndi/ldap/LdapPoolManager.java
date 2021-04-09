@@ -395,47 +395,21 @@ public final class LdapPoolManager {
         }
     }
 
-    private static final String getProperty(final String propName,
-        final String defVal) {
+    private static final String getProperty(final String propName, final String defVal) {
         return AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-            public String run() {
-                try {
-                    return System.getProperty(propName, defVal);
-                } catch (SecurityException e) {
-                    return defVal;
-                }
-            }
-        });
+                (PrivilegedAction<String>) () -> System.getProperty(propName, defVal)
+        );
     }
 
-    private static final int getInteger(final String propName,
-        final int defVal) {
-        Integer val = AccessController.doPrivileged(
-            new PrivilegedAction<Integer>() {
-            public Integer run() {
-                try {
-                    return Integer.getInteger(propName, defVal);
-                } catch (SecurityException e) {
-                    return defVal;
-                }
-            }
-        });
-        return val.intValue();
+    private static final int getInteger(final String propName, final int defVal) {
+        return AccessController.doPrivileged(
+                (PrivilegedAction<Integer>) () -> Integer.getInteger(propName, defVal).intValue()
+        );
     }
 
-    private static final long getLong(final String propName,
-        final long defVal) {
-        Long val = AccessController.doPrivileged(
-            new PrivilegedAction<Long>() {
-            public Long run() {
-                try {
-                    return Long.getLong(propName, defVal);
-                } catch (SecurityException e) {
-                    return defVal;
-                }
-            }
-        });
-        return val.longValue();
+    private static final long getLong(final String propName, final long defVal) {
+        return AccessController.doPrivileged(
+                (PrivilegedAction<Long>) () -> Long.getLong(propName, defVal).longValue()
+        );
     }
 }

@@ -221,22 +221,14 @@ public class StartTlsRequest implements ExtendedRequest {
      */
     private final ClassLoader getContextClassLoader() {
         return AccessController.doPrivileged(
-            new PrivilegedAction<ClassLoader>() {
-                public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
-                }
-            }
+                (PrivilegedAction<ClassLoader>) () -> Thread.currentThread().getContextClassLoader()
         );
     }
 
     private static final boolean privilegedHasNext(final Iterator<StartTlsResponse> iter) {
-        Boolean answer = AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return Boolean.valueOf(iter.hasNext());
-            }
-        });
-        return answer.booleanValue();
+        return AccessController.doPrivileged(
+                (PrivilegedAction<Boolean>) iter::hasNext
+        );
     }
 
     private static final long serialVersionUID = 4441679576360753397L;

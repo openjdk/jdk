@@ -119,12 +119,9 @@ final class LdapSearchEnumeration
                 // Entry contains Java-object attributes (ser/ref object)
                 // serialized object or object reference
                 try {
-                    obj = AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                        @Override
-                        public Object run() throws NamingException {
-                            return Obj.decodeObject(attrs);
-                        }
-                    }, acc);
+                    obj = AccessController.doPrivileged(
+                            (PrivilegedExceptionAction<Object>) () -> Obj.decodeObject(attrs), acc
+                    );
                 } catch (PrivilegedActionException e) {
                     throw (NamingException)e.getException();
                 }
