@@ -843,9 +843,8 @@ C2V_VMENTRY_0(jint, installCode, (JNIEnv *env, jobject, jobject target, jobject 
   JVMCICompiler* compiler = JVMCICompiler::instance(true, CHECK_JNI_ERR);
 
   TraceTime install_time("installCode", JVMCICompiler::codeInstallTimer(!thread->is_Compiler_thread()));
-  bool is_immutable_PIC = JVMCIENV->get_HotSpotCompiledCode_isImmutablePIC(compiled_code_handle) > 0;
 
-  CodeInstaller installer(JVMCIENV, is_immutable_PIC);
+  CodeInstaller installer(JVMCIENV);
   JVMCI::CodeInstallResult result = installer.install(compiler,
       target_handle,
       compiled_code_handle,

@@ -131,7 +131,7 @@ void CompiledDirectStaticCall::verify() {
 
 #ifdef ASSERT
   CodeBlob *cb = CodeCache::find_blob_unsafe((address) _call);
-  assert(cb, "sanity");
+  assert(cb != NULL, "sanity");
 #endif
 
   // Verify stub.
