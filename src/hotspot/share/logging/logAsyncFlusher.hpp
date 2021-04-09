@@ -27,6 +27,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/task.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/pair.hpp"
@@ -118,33 +119,36 @@ public:
 
 typedef LinkedListDeque<AsyncLogMessage> AsyncLogBuffer;
 
-class LogAsyncFlusher : public PeriodicTask {
+// Flusher is a NonJavaThread which manages a FIFO capacity-bound buffer.
+class LogAsyncFlusher : public NonJavaThread {
  private:
   static LogAsyncFlusher* _instance;
-  Mutex _lock;
+
+  volatile bool _should_terminate;
+  // The semantics of _lock is like JVM monitor.
+  // This thread sleeps and only wakes up by the monitor if any of events happen.
+  //   1. buffer is half-full
+  //   2. buffer is full
+  //   3. timeout defined by LogAsyncInterval
+  //
+  // It also roles as a lock to consolidate buffer's MT-safety.
+  Monitor _lock;
   AsyncLogBuffer _buffer;
 
-  LogAsyncFlusher(size_t interval/*ms*/) : PeriodicTask(interval),
-                  _lock(Mutex::tty, "logAsyncFlusher",
-                  Mutex::_allow_vm_block_flag, Mutex::_safepoint_check_never) {
-    this->enroll();
-  }
+  LogAsyncFlusher();
 
   void enqueue_impl(const AsyncLogMessage& msg);
-
- protected:
-  void task();
-
+  void run() override;
+  char* name() const override { return (char*)"AsyncLog Thread"; }
  public:
   void enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg);
   void enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator);
-  void flush() { task(); }
+  void flush();
 
-  // none of following functions are thread-safe.
-  // Meyer's singleton is not thread-safe until C++11.
-  static void initialize();
-  static void cleanup();
   static LogAsyncFlusher* instance();
+  // None of following functions are thread-safe.
+  static void initialize();
+  static void terminate();
 };
 
 #endif // SHARE_LOGGING_ASYNC_FLUSHER_HPP

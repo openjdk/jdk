@@ -958,7 +958,6 @@ void ostream_exit() {
   if (ostream_exit_called)  return;
   ostream_exit_called = true;
   ClassListWriter::delete_classlist();
-  LogAsyncFlusher::cleanup();
   if (tty != defaultStream::instance) {
     delete tty;
   }

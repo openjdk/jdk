@@ -25,6 +25,7 @@
 #include "logging/logAsyncFlusher.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logHandle.hpp"
+#include "runtime/atomic.hpp"
 
 void AsyncLogMessage::writeback() {
   if (_message != NULL) {
@@ -55,20 +56,10 @@ void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
   }
   assert(_buffer.size() < AsyncLogBufferSize, "_buffer is over-sized.");
   _buffer.push_back(msg);
-}
 
-void LogAsyncFlusher::task() {
-  LinkedListImpl<AsyncLogMessage, ResourceObj::C_HEAP, mtLogging> logs;
-
-  { // critical area
-    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    _buffer.pop_all(&logs);
-  }
-
-  LinkedListIterator<AsyncLogMessage> it(logs.head());
-  while (!it.is_empty()) {
-    AsyncLogMessage* e = it.next();
-    e->writeback();
+  size_t sz = _buffer.size();
+  if (sz == (AsyncLogBufferSize >> 1) || sz == AsyncLogBufferSize) {
+    _lock.notify();
   }
 }
 
@@ -92,22 +83,72 @@ void LogAsyncFlusher::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator 
   }
 }
 
-LogAsyncFlusher* LogAsyncFlusher::_instance = NULL;
-
-void LogAsyncFlusher::initialize() {
-  if (!_instance) {
-    _instance = new LogAsyncFlusher(LogAsyncInterval);
+LogAsyncFlusher::LogAsyncFlusher()
+  : _should_terminate(false),
+    _lock(Mutex::tty, "async-log-monitor", true /* allow_vm_block */, Mutex::_safepoint_check_never) {
+  if (os::create_thread(this, os::asynclog_thread)) {
+    os::start_thread(this);
   }
 }
 
-void LogAsyncFlusher::cleanup() {
+void LogAsyncFlusher::flush() {
+  LinkedListImpl<AsyncLogMessage, ResourceObj::C_HEAP, mtLogging> logs;
+
+  { // critical area
+    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+    _buffer.pop_all(&logs);
+  }
+
+  LinkedListIterator<AsyncLogMessage> it(logs.head());
+  while (!it.is_empty()) {
+    AsyncLogMessage* e = it.next();
+    e->writeback();
+  }
+}
+
+void LogAsyncFlusher::run() {
+  while (!_should_terminate) {
+    {
+      MonitorLocker m(&_lock, Mutex::_no_safepoint_check_flag);
+      m.wait(LogAsyncInterval);
+    }
+    flush();
+  }
+}
+
+LogAsyncFlusher* LogAsyncFlusher::_instance = nullptr;
+
+void LogAsyncFlusher::initialize() {
+  if (!_instance) {
+    _instance = new LogAsyncFlusher();
+  }
+}
+
+// Termination
+// 1. issue an atomic store-&-fence to close the logging window.
+// 2. flush itself in-place
+// 3. signal the flusher thread to exit
+// 4. (optional) deletes this in post_run()
+void LogAsyncFlusher::terminate() {
   if (_instance != NULL) {
-    _instance->flush();
-    delete _instance;
-    _instance = NULL;
+    LogAsyncFlusher* self = _instance;
+
+    // make sure no new log entry will be enqueued after.
+    Atomic::release_store_fence<LogAsyncFlusher*, LogAsyncFlusher*>(&_instance, nullptr);
+    self->flush();
+    {
+      MonitorLocker m(&self->_lock, Mutex::_no_safepoint_check_flag);
+      self->_should_terminate = true;
+      m.notify();
+    }
   }
 }
 
 LogAsyncFlusher* LogAsyncFlusher::instance() {
-  return _instance;
+  if (Thread::current_or_null() != nullptr) {
+    return _instance;
+  } else {
+    // current thread may has been detached.
+    return nullptr;
+  }
 }
