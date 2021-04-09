@@ -1096,7 +1096,7 @@ var getJibProfilesDependencies = function (input, common) {
             module: "devkit-" + input.build_platform,
             revision: devkit_platform_revisions[input.build_platform],
             // Only set --with-build-devkit when cross compiling.
-            configure_args: (input.build_arch == input.target_arch ? false 
+            configure_args: (input.build_cpu == input.target_cpu ? false
                 : "--with-build-devkit=" + input.get("build_devkit", "home_path"))
         },
 
