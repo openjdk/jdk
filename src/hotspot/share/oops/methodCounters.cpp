@@ -23,7 +23,6 @@
  */
 #include "precompiled.hpp"
 #include "compiler/compiler_globals.hpp"
-#include "memory/metaspaceClosure.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "runtime/handles.inline.hpp"
@@ -72,10 +71,6 @@ void MethodCounters::clear_counters() {
   set_rate(0);
   set_highest_comp_level(0);
   set_highest_osr_comp_level(0);
-}
-
-void MethodCounters::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(MethodCounters): %p", this);
 }
 
 void MethodCounters::print_value_on(outputStream* st) const {

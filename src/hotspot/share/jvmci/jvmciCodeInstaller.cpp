@@ -1132,10 +1132,6 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
 
   if (foreign_call.is_non_null()) {
     jlong foreign_call_destination = jvmci_env()->get_HotSpotForeignCallTarget_address(foreign_call);
-    if (_immutable_pic_compilation) {
-      // Use fake short distance during PIC compilation.
-      foreign_call_destination = (jlong)(_instructions->start() + pc_offset);
-    }
     CodeInstaller::pd_relocate_ForeignCall(inst, foreign_call_destination, JVMCI_CHECK);
   } else { // method != NULL
     if (debug_info.is_null()) {
@@ -1171,19 +1167,11 @@ void CodeInstaller::site_DataPatch(CodeBuffer& buffer, jint pc_offset, JVMCIObje
         const char* to_string = JVMCIENV->as_utf8_string(string);
         JVMCI_THROW_MSG(IllegalArgumentException, err_msg("Direct object constant reached the backend: %s", to_string));
       }
-      if (!_immutable_pic_compilation) {
-        // Do not patch during PIC compilation.
-        pd_patch_OopConstant(pc_offset, constant, JVMCI_CHECK);
-      }
+      pd_patch_OopConstant(pc_offset, constant, JVMCI_CHECK);
     } else if (jvmci_env()->isa_IndirectHotSpotObjectConstantImpl(constant)) {
-      if (!_immutable_pic_compilation) {
-        // Do not patch during PIC compilation.
-        pd_patch_OopConstant(pc_offset, constant, JVMCI_CHECK);
-      }
+      pd_patch_OopConstant(pc_offset, constant, JVMCI_CHECK);
     } else if (jvmci_env()->isa_HotSpotMetaspaceConstantImpl(constant)) {
-      if (!_immutable_pic_compilation) {
-        pd_patch_MetaspaceConstant(pc_offset, constant, JVMCI_CHECK);
-      }
+      pd_patch_MetaspaceConstant(pc_offset, constant, JVMCI_CHECK);
     } else {
       JVMCI_ERROR("unknown constant type in data patch: %s", jvmci_env()->klass_name(constant));
     }

@@ -711,8 +711,6 @@ void CompiledDirectStaticCall::print() {
     tty->print("compiled");
   } else if (is_call_to_interpreted()) {
     tty->print("interpreted");
-  } else {
-    tty->print("unknown");
   }
   tty->cr();
 }

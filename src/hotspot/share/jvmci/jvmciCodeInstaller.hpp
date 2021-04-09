@@ -151,8 +151,6 @@ private:
   ImplicitExceptionTable    _implicit_exception_table;
   bool                      _has_auto_box;
 
-  bool _immutable_pic_compilation;  // Installer is called for Immutable PIC compilation.
-
   static ConstantOopWriteValue* _oop_null_scope_value;
   static ConstantIntValue*    _int_m1_scope_value;
   static ConstantIntValue*    _int_0_scope_value;
@@ -180,11 +178,10 @@ private:
 
 public:
 
-  CodeInstaller(JVMCIEnv* jvmci_env, bool immutable_pic_compilation) :
+  CodeInstaller(JVMCIEnv* jvmci_env) :
     _arena(mtJVMCI),
     _jvmci_env(jvmci_env),
-    _has_auto_box(false),
-    _immutable_pic_compilation(immutable_pic_compilation) {}
+    _has_auto_box(false) {}
 
   JVMCI::CodeInstallResult install(JVMCICompiler* compiler,
                                    JVMCIObject target,
