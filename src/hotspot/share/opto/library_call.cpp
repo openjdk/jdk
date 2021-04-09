@@ -1676,11 +1676,18 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dpow: {
     Node* exp = round_double_node(argument(2));
     const TypeD* d = _gvn.type(exp)->isa_double_constant();
-    if (d != NULL && d->getd() == 2.0) {
-      // Special case: pow(x, 2.0) => x * x
-      Node* base = round_double_node(argument(0));
-      set_result(_gvn.transform(new MulDNode(base, base)));
-      return true;
+    if (d != NULL) {
+      if (d->getd() == 2.0) {
+        // Special case: pow(x, 2.0) => x * x
+        Node* base = round_double_node(argument(0));
+        set_result(_gvn.transform(new MulDNode(base, base)));
+        return true;
+      } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
+        // Special case: pow(x, 0.5) => sqrt(x)
+        Node* base = round_double_node(argument(0));
+        set_result(_gvn.transform(new SqrtDNode(C, control(), base)));
+        return true;
+      }
     }
     return StubRoutines::dpow() != NULL ?
       runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(),  "dpow") :

@@ -409,6 +409,22 @@ public class MathBench {
     }
 
     @Benchmark
+    public double  powDouble0Dot5() {
+        return  Math.pow(double4Dot1, 0.5);
+    }
+
+    @Benchmark
+    public double  powDouble0Dot5Loop() {
+        double sum = 0.0;
+        for (int i = 0; i < 1000; i++) {
+            for (int j = 0; j < 1000; j++) {
+                sum += i + Math.pow(j * 1.0, 0.5);
+            }
+        }
+        return sum;
+    }
+
+    @Benchmark
     public double  random() {
         return  Math.random();
     }
