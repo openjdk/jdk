@@ -968,14 +968,14 @@ class ClassHierarchyWalker {
   Symbol* _signature;
 
   // special classes which are not allowed to be witnesses:
-  Klass*    _participants[PARTICIPANT_LIMIT+1];
-  int       _num_participants;
+  Klass*  _participants[PARTICIPANT_LIMIT+1];
+  uint    _num_participants;
 
   // cache of method lookups
   Method* _found_methods[PARTICIPANT_LIMIT+1];
 
   // if non-zero, tells how many witnesses to convert to participants
-  int       _record_witnesses;
+  uint    _record_witnesses;
 
   void initialize(Klass* participant) {
     _record_witnesses = 0;
@@ -1012,11 +1012,11 @@ class ClassHierarchyWalker {
     _signature = NULL;
     initialize(participant);
   }
-  ClassHierarchyWalker(Klass* participants[], int num_participants) {
+  ClassHierarchyWalker(Klass* participants[], uint num_participants) {
     _name      = NULL;
     _signature = NULL;
     initialize(NULL);
-    for (int i = 0; i < num_participants; ++i) {
+    for (uint i = 0; i < num_participants; ++i) {
       add_participant(participants[i]);
     }
   }
@@ -1028,14 +1028,14 @@ class ClassHierarchyWalker {
   }
 
   int num_participants() { return _num_participants; }
-  Klass* participant(int n) {
-    assert((uint)n <= (uint)_num_participants, "oob");
+  Klass* participant(uint n) {
+    assert(n <= _num_participants, "oob");
     return _participants[n];
   }
 
   // Note:  If n==num_participants, returns NULL.
-  Method* found_method(int n) {
-    assert((uint)n <= (uint)_num_participants, "oob");
+  Method* found_method(uint n) {
+    assert(n <= _num_participants, "oob");
     Method* fm = _found_methods[n];
     assert(n == _num_participants || fm != NULL, "proper usage");
     if (fm != NULL && fm->method_holder() != _participants[n]) {
@@ -1048,69 +1048,15 @@ class ClassHierarchyWalker {
     return fm;
   }
 
-#ifdef ASSERT
-  // Assert that m is inherited into ctxk, without intervening overrides.
-  // (May return true even if this is not true, in corner cases where we punt.)
-  bool check_method_context(InstanceKlass* ctxk, Method* m) {
-    if (m->method_holder() == ctxk)
-      return true;  // Quick win.
-    if (m->is_private())
-      return false; // Quick lose.  Should not happen.
-    if (!(m->is_public() || m->is_protected()))
-      // The override story is complex when packages get involved.
-      return true;  // Must punt the assertion to true.
-    Method* lm = ctxk->lookup_method(m->name(), m->signature());
-    if (lm == NULL && ctxk->is_instance_klass()) {
-      // It might be an interface method
-      lm = InstanceKlass::cast(ctxk)->lookup_method_in_ordered_interfaces(m->name(),
-                                                                          m->signature());
-    }
-    if (lm == m)
-      // Method m is inherited into ctxk.
-      return true;
-    if (lm != NULL) {
-      if (!(lm->is_public() || lm->is_protected())) {
-        // Method is [package-]private, so the override story is complex.
-        return true;  // Must punt the assertion to true.
-      }
-      if (lm->is_static()) {
-        // Static methods don't override non-static so punt
-        return true;
-      }
-      if (!Dependencies::is_concrete_method(lm, ctxk) &&
-          !Dependencies::is_concrete_method(m, ctxk)) {
-        // They are both non-concrete
-        if (lm->method_holder()->is_subtype_of(m->method_holder())) {
-          // Method m is overridden by lm, but both are non-concrete.
-          return true;
-        }
-        if (lm->method_holder()->is_interface() && m->method_holder()->is_interface() &&
-            ctxk->is_subtype_of(m->method_holder()) && ctxk->is_subtype_of(lm->method_holder())) {
-          // Interface method defined in multiple super interfaces
-          return true;
-        }
-      }
-    }
-    ResourceMark rm;
-    tty->print_cr("Dependency method not found in the associated context:");
-    tty->print_cr("  context = %s", ctxk->external_name());
-    tty->print(   "  method = "); m->print_short_name(tty); tty->cr();
-    if (lm != NULL) {
-      tty->print( "  found = "); lm->print_short_name(tty); tty->cr();
-    }
-    return false;
-  }
-#endif
-
   void add_participant(Klass* participant) {
     assert(_num_participants + _record_witnesses < PARTICIPANT_LIMIT, "oob");
-    int np = _num_participants++;
+    uint np = _num_participants++;
     _participants[np] = participant;
     _participants[np+1] = NULL;
     _found_methods[np+1] = NULL;
   }
 
-  void record_witnesses(int add) {
+  void record_witnesses(uint add) {
     if (add > PARTICIPANT_LIMIT)  add = PARTICIPANT_LIMIT;
     assert(_num_participants + add < PARTICIPANT_LIMIT, "oob");
     _record_witnesses = add;
@@ -1281,6 +1227,63 @@ static bool count_find_witness_calls() {
 #define count_find_witness_calls() (0)
 #endif //PRODUCT
 
+#ifdef ASSERT
+// Assert that m is inherited into ctxk, without intervening overrides.
+// (May return true even if this is not true, in corner cases where we punt.)
+bool Dependencies::verify_method_context(InstanceKlass* ctxk, Method* m) {
+  if (m->is_private()) {
+    return false; // Quick lose.  Should not happen.
+  }
+  if (m->method_holder() == ctxk) {
+    return true;  // Quick win.
+  }
+  if (!(m->is_public() || m->is_protected())) {
+    // The override story is complex when packages get involved.
+    return true;  // Must punt the assertion to true.
+  }
+  Method* lm = ctxk->lookup_method(m->name(), m->signature());
+  if (lm == NULL && ctxk->is_instance_klass()) {
+    // It might be an interface method
+    lm = InstanceKlass::cast(ctxk)->lookup_method_in_ordered_interfaces(m->name(),
+                                                                        m->signature());
+  }
+  if (lm == m) {
+    // Method m is inherited into ctxk.
+    return true;
+  }
+  if (lm != NULL) {
+    if (!(lm->is_public() || lm->is_protected())) {
+      // Method is [package-]private, so the override story is complex.
+      return true;  // Must punt the assertion to true.
+    }
+    if (lm->is_static()) {
+      // Static methods don't override non-static so punt
+      return true;
+    }
+    if (!Dependencies::is_concrete_method(lm, ctxk) &&
+        !Dependencies::is_concrete_method(m, ctxk)) {
+      // They are both non-concrete
+      if (lm->method_holder()->is_subtype_of(m->method_holder())) {
+        // Method m is overridden by lm, but both are non-concrete.
+        return true;
+      }
+      if (lm->method_holder()->is_interface() && m->method_holder()->is_interface() &&
+          ctxk->is_subtype_of(m->method_holder()) && ctxk->is_subtype_of(lm->method_holder())) {
+        // Interface method defined in multiple super interfaces
+        return true;
+      }
+    }
+  }
+  ResourceMark rm;
+  tty->print_cr("Dependency method not found in the associated context:");
+  tty->print_cr("  context = %s", ctxk->external_name());
+  tty->print(   "  method = "); m->print_short_name(tty); tty->cr();
+  if (lm != NULL) {
+    tty->print( "  found = "); lm->print_short_name(tty); tty->cr();
+  }
+  return false;
+}
+#endif // ASSERT
 
 Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
                                              InstanceKlass* context_type,
@@ -1308,11 +1311,7 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
   if (participants_hide_witnesses) {
     // If the new type is a subtype of a participant, we are done.
     for (int i = 0; i < num_participants(); i++) {
-      Klass* part = participant(i);
-      if (part == NULL)  continue;
-      assert(changes.involves_context(part) == new_type->is_subtype_of(part),
-             "correct marking of participants, b/c new_type is unique");
-      if (changes.involves_context(part)) {
+      if (changes.involves_context(participant(i))) {
         // new guy is protected from this check by previous participant
         return NULL;
       }
@@ -1392,18 +1391,27 @@ bool Dependencies::is_concrete_klass(Klass* k) {
   return true;
 }
 
-bool Dependencies::is_concrete_method(Method* m, Klass * k) {
-  // NULL is not a concrete method,
-  // statics are irrelevant to virtual call sites,
-  // abstract methods are not concrete,
-  // overpass (error) methods are not concrete if k is abstract
-  //
-  // note "true" is conservative answer --
-  //     overpass clause is false if k == NULL, implies return true if
-  //     answer depends on overpass clause.
-  return ! ( m == NULL || m -> is_static() || m -> is_abstract() ||
-             (m->is_overpass() && k != NULL && k -> is_abstract()) );
-}
+bool Dependencies::is_concrete_method(Method* m, Klass* k) {
+  // NULL is not a concrete method.
+  if (m == NULL) {
+    return false;
+  }
+  // Statics are irrelevant to virtual call sites.
+  if (m->is_static()) {
+    return false;
+  }
+  // Abstract methods are not concrete.
+  if (m->is_abstract()) {
+    return false;
+  }
+  // Overpass (error) methods are not concrete if k is abstract.
+  if (m->is_overpass() && k != NULL) {
+     return !k->is_abstract();
+  }
+  // Note "true" is conservative answer: overpass clause is false if k == NULL,
+  // implies return true if answer depends on overpass clause.
+  return true;
+ }
 
 
 Klass* Dependencies::find_finalizable_subclass(Klass* k) {
@@ -1538,7 +1546,7 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
     return NULL;
   }
   ClassHierarchyWalker wf(m);
-  assert(wf.check_method_context(ctxk, m), "proper context");
+  assert(verify_method_context(ctxk, m), "proper context");
   wf.record_witnesses(1);
   Klass* wit = wf.find_witness_definer(ctxk);
   if (wit != NULL)  return NULL;  // Too many witnesses.
