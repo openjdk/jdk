@@ -1273,8 +1273,10 @@ void PhaseCFG::verify() const {
         }
       }
       if (n->is_Proj()) {
+        assert(j >= 1, "a projection cannot be the first instruction in a block");
         Node* pred = block->get_node(j - 1);
         Node* parent = n->in(0);
+        assert(parent != NULL, "projections must have a parent");
         assert(pred == parent || (pred->is_Proj() && pred->in(0) == parent),
                "projections must follow their parents or other sibling projections");
       }
