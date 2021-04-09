@@ -96,19 +96,23 @@ class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
 private:
   SATBMarkQueueSet& _satb_qset;
   OopClosure* const _cl;
+  uintx _claim_token;
 
 public:
   ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
     _satb_qset(satb_qset),
-    _cl(cl) {}
+    _cl(cl),
+    _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
-    // Transfer any partial buffer to the qset for completed buffer processing.
-    _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-    if (thread->is_Java_thread()) {
-      if (_cl != NULL) {
-        ResourceMark rm;
-        thread->oops_do(_cl, NULL);
+    if (thread->claim_threads_do(true, _claim_token)) {
+      // Transfer any partial buffer to the qset for completed buffer processing.
+      _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+      if (thread->is_Java_thread()) {
+        if (_cl != NULL) {
+          ResourceMark rm;
+          thread->oops_do(_cl, NULL);
+        }
       }
     }
   }
@@ -143,7 +147,7 @@ public:
       ShenandoahMarkRefsClosure mark_cl(q, rp);
       ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
                                                ShenandoahIUBarrier ? &mark_cl : NULL);
-      Threads::possibly_parallel_threads_do(true /*par*/, &tc);
+      Threads::threads_do(&tc);
     }
 
     _cm->mark_loop(worker_id, _terminator, rp,
@@ -187,8 +191,13 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure cl(q, _rp);
-  _root_scanner.roots_do(&cl, worker_id);
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahMarkRefsDedupClosure cl(q, _rp);
+    _root_scanner.roots_do(&cl, worker_id);
+  } else {
+    ShenandoahMarkRefsClosure cl(q, _rp);
+    _root_scanner.roots_do(&cl, worker_id);
+  }
 }
 
 void ShenandoahConcurrentMark::mark_concurrent_roots() {

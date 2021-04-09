@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-final public class Executor {
+public final class Executor {
 
     Executor() {
     }
@@ -223,7 +223,7 @@ final public class Executor {
         return sb.toString();
     }
 
-    public final static int INFINITE_TIMEOUT = -1;
+    public static final int INFINITE_TIMEOUT = -1;
 
     private ProcessBuilder pb;
     private boolean saveOutput;

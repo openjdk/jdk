@@ -261,7 +261,7 @@ class java_lang_Class : AllStatic {
   static void set_component_mirror(oop java_class, oop comp_mirror);
   static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain,
                                        Handle classData, TRAPS);
-  static void set_mirror_module_field(Klass* K, Handle mirror, Handle module, TRAPS);
+  static void set_mirror_module_field(JavaThread* current, Klass* K, Handle mirror, Handle module);
  public:
   static void allocate_fixup_lists();
   static void compute_offsets();

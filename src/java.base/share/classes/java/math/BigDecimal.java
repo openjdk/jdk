@@ -52,15 +52,15 @@ import java.util.Objects;
  *
  * <p>The {@code BigDecimal} class gives its user complete control
  * over rounding behavior.  If no rounding mode is specified and the
- * exact result cannot be represented, an exception is thrown;
- * otherwise, calculations can be carried out to a chosen precision
- * and rounding mode by supplying an appropriate {@link MathContext}
- * object to the operation.  In either case, eight <em>rounding
- * modes</em> are provided for the control of rounding.  Using the
- * integer fields in this class (such as {@link #ROUND_HALF_UP}) to
- * represent rounding mode is deprecated; the enumeration values
- * of the {@code RoundingMode} {@code enum}, (such as {@link
- * RoundingMode#HALF_UP}) should be used instead.
+ * exact result cannot be represented, an {@code ArithmeticException}
+ * is thrown; otherwise, calculations can be carried out to a chosen
+ * precision and rounding mode by supplying an appropriate {@link
+ * MathContext} object to the operation.  In either case, eight
+ * <em>rounding modes</em> are provided for the control of rounding.
+ * Using the integer fields in this class (such as {@link
+ * #ROUND_HALF_UP}) to represent rounding mode is deprecated; the
+ * enumeration values of the {@code RoundingMode} {@code enum}, (such
+ * as {@link RoundingMode#HALF_UP}) should be used instead.
  *
  * <p>When a {@code MathContext} object is supplied with a precision
  * setting of 0 (for example, {@link MathContext#UNLIMITED}),
@@ -103,8 +103,7 @@ import java.util.Objects;
  * the exact result has more digits (perhaps infinitely many in the
  * case of division and square root) than the number of digits returned.
  *
- * First, the
- * total number of digits to return is specified by the
+ * First, the total number of digits to return is specified by the
  * {@code MathContext}'s {@code precision} setting; this determines
  * the result's <i>precision</i>.  The digit count starts from the
  * leftmost nonzero digit of the exact result.  The rounding mode
@@ -194,6 +193,11 @@ import java.util.Objects;
  * {@code BigDecimal} created from the operand by moving the decimal
  * point a specified distance in the specified direction.
  *
+ * <p>As a 32-bit integer, the set of values for the scale is large,
+ * but bounded. If the scale of a result would exceed the range of a
+ * 32-bit integer, either by overflow or underflow, the operation may
+ * throw an {@code ArithmeticException}.
+ *
  * <p>For the sake of brevity and clarity, pseudo-code is used
  * throughout the descriptions of {@code BigDecimal} methods.  The
  * pseudo-code expression {@code (i + j)} is shorthand for "a
@@ -207,7 +211,6 @@ import java.util.Objects;
  * the particular {@code BigInteger} and scale pair defining a
  * {@code BigDecimal} value; for example [19, 2] is the
  * {@code BigDecimal} numerically equal to 0.19 having a scale of 2.
- *
  *
  * <p>All methods and constructors for this class throw
  * {@code NullPointerException} when passed a {@code null} object

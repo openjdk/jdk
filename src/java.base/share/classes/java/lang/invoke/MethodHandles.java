@@ -2262,10 +2262,9 @@ public class MethodHandles {
                     // workaround to read `this_class` using readConst and validate the value
                     int thisClass = reader.readUnsignedShort(reader.header + 2);
                     Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
-                    if (!(constant instanceof Type)) {
+                    if (!(constant instanceof Type type)) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
-                    Type type = ((Type) constant);
                     if (!type.getDescriptor().startsWith("L")) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
@@ -5732,14 +5731,7 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
         MethodType newType = collectArgumentsChecks(target, pos, filter);
         MethodType collectorType = filter.type();
         BoundMethodHandle result = target.rebind();
-        LambdaForm lform;
-        if (collectorType.returnType().isArray() && filter.intrinsicName() == Intrinsic.NEW_ARRAY) {
-            lform = result.editor().collectArgumentArrayForm(1 + pos, filter);
-            if (lform != null) {
-                return result.copyWith(newType, lform);
-            }
-        }
-        lform = result.editor().collectArgumentsForm(1 + pos, collectorType.basicType());
+        LambdaForm lform = result.editor().collectArgumentsForm(1 + pos, collectorType.basicType());
         return result.copyWithExtendL(newType, lform, filter);
     }
 

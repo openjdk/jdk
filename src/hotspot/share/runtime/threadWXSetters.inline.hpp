@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +23,27 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_MEMPROFILER_HPP
-#define SHARE_RUNTIME_MEMPROFILER_HPP
+#ifndef SHARE_RUNTIME_THREADWXSETTERS_INLINE_HPP
+#define SHARE_RUNTIME_THREADWXSETTERS_INLINE_HPP
 
-// Prints periodic memory usage trace of HotSpot VM
+#include "runtime/thread.inline.hpp"
 
-class MemProfilerTask;
-
-class MemProfiler : AllStatic {
- friend class MemProfilerTask;
- private:
-  static MemProfilerTask* _task;
-  static FILE* _log_fp;
-  // Do trace (callback from MemProfilerTask and from disengage)
-  static void do_trace()      PRODUCT_RETURN;
- public:
-  // Start/stop the profiler
-  static void engage()        PRODUCT_RETURN;
-  static void disengage()     PRODUCT_RETURN;
-  // Tester
-  static bool is_active()     PRODUCT_RETURN0;
+#if defined(__APPLE__) && defined(AARCH64)
+class ThreadWXEnable  {
+  Thread* _thread;
+  WXMode _old_mode;
+public:
+  ThreadWXEnable(WXMode new_mode, Thread* thread) :
+    _thread(thread),
+    _old_mode(_thread ? _thread->enable_wx(new_mode) : WXWrite)
+  { }
+  ~ThreadWXEnable() {
+    if (_thread) {
+      _thread->enable_wx(_old_mode);
+    }
+  }
 };
+#endif // __APPLE__ && AARCH64
 
-#endif // SHARE_RUNTIME_MEMPROFILER_HPP
+#endif // SHARE_RUNTIME_THREADWXSETTERS_INLINE_HPP
+

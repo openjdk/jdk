@@ -791,7 +791,7 @@ bool PSScavenge::should_attempt_scavenge() {
 void PSScavenge::set_young_generation_boundary(HeapWord* v) {
   _young_generation_boundary = v;
   if (UseCompressedOops) {
-    _young_generation_boundary_compressed = (uintptr_t)CompressedOops::encode((oop)v);
+    _young_generation_boundary_compressed = (uintptr_t)CompressedOops::encode(cast_to_oop(v));
   }
 }
 

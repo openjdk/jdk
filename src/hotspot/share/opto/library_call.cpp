@@ -50,7 +50,6 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
-#include "prims/nativeLookup.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1273,7 +1272,7 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
 
   // Check for allocation before we add nodes that would confuse
   // tightly_coupled_allocation()
-  AllocateArrayNode* alloc = tightly_coupled_allocation(dst, NULL);
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Figure out the size and type of the elements we will be copying.
   const Type* src_type = src->Value(&_gvn);
@@ -1390,7 +1389,8 @@ bool LibraryCallKit::inline_string_toBytesU() {
     Node* size = _gvn.transform(new LShiftINode(length, intcon(1)));
     Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
     newcopy = new_array(klass_node, size, 0);  // no arguments to push
-    AllocateArrayNode* alloc = tightly_coupled_allocation(newcopy, NULL);
+    AllocateArrayNode* alloc = tightly_coupled_allocation(newcopy);
+    guarantee(alloc != NULL, "created above");
 
     // Calculate starting addresses.
     Node* src_start = array_element_address(value, offset, T_CHAR);
@@ -1408,26 +1408,22 @@ bool LibraryCallKit::inline_string_toBytesU() {
                       copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
                       src_start, dst_start, ConvI2X(length) XTOP);
     // Do not let reads from the cloned object float above the arraycopy.
-    if (alloc != NULL) {
-      if (alloc->maybe_set_complete(&_gvn)) {
-        // "You break it, you buy it."
-        InitializeNode* init = alloc->initialization();
-        assert(init->is_complete(), "we just did this");
-        init->set_complete_with_arraycopy();
-        assert(newcopy->is_CheckCastPP(), "sanity");
-        assert(newcopy->in(0)->in(0) == init, "dest pinned");
-      }
-      // Do not let stores that initialize this object be reordered with
-      // a subsequent store that would make this object accessible by
-      // other threads.
-      // Record what AllocateNode this StoreStore protects so that
-      // escape analysis can go from the MemBarStoreStoreNode to the
-      // AllocateNode and eliminate the MemBarStoreStoreNode if possible
-      // based on the escape status of the AllocateNode.
-      insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
-    } else {
-      insert_mem_bar(Op_MemBarCPUOrder);
+    if (alloc->maybe_set_complete(&_gvn)) {
+      // "You break it, you buy it."
+      InitializeNode* init = alloc->initialization();
+      assert(init->is_complete(), "we just did this");
+      init->set_complete_with_arraycopy();
+      assert(newcopy->is_CheckCastPP(), "sanity");
+      assert(newcopy->in(0)->in(0) == init, "dest pinned");
     }
+    // Do not let stores that initialize this object be reordered with
+    // a subsequent store that would make this object accessible by
+    // other threads.
+    // Record what AllocateNode this StoreStore protects so that
+    // escape analysis can go from the MemBarStoreStoreNode to the
+    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+    // based on the escape status of the AllocateNode.
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
   } // original reexecute is set back here
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
@@ -1455,7 +1451,7 @@ bool LibraryCallKit::inline_string_getCharsU() {
 
   // Check for allocation before we add nodes that would confuse
   // tightly_coupled_allocation()
-  AllocateArrayNode* alloc = tightly_coupled_allocation(dst, NULL);
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Check if a null path was taken unconditionally.
   src = null_check(src);
@@ -4396,7 +4392,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
   // Check for allocation before we add nodes that would confuse
   // tightly_coupled_allocation()
-  AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dest);
 
   int saved_reexecute_sp = -1;
   JVMState* saved_jvms = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
@@ -4432,7 +4428,7 @@ bool LibraryCallKit::inline_arraycopy() {
     // account: the null check is mandatory and if it caused an
     // uncommon trap to be emitted then the allocation can't be
     // considered tightly coupled in this context.
-    alloc = tightly_coupled_allocation(dest, NULL);
+    alloc = tightly_coupled_allocation(dest);
   }
 
   bool validated = false;
@@ -4645,8 +4641,7 @@ bool LibraryCallKit::inline_arraycopy() {
 // Helper function which determines if an arraycopy immediately follows
 // an allocation, with no intervening tests or other escapes for the object.
 AllocateArrayNode*
-LibraryCallKit::tightly_coupled_allocation(Node* ptr,
-                                           RegionNode* slow_region) {
+LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   if (stopped())             return NULL;  // no fast path
   if (C->AliasLevel() == 0)  return NULL;  // no MergeMems around
 
@@ -4684,10 +4679,6 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr,
       IfNode* iff = ctl->in(0)->as_If();
       Node* not_ctl = iff->proj_out_or_null(1 - ctl->as_Proj()->_con);
       assert(not_ctl != NULL && not_ctl != ctl, "found alternate");
-      if (slow_region != NULL && slow_region->find_edge(not_ctl) >= 1) {
-        ctl = iff->in(0);       // This test feeds the known slow_region.
-        continue;
-      }
       // One more try:  Various low-level checks bottom out in
       // uncommon traps.  If the debug-info of the trap omits
       // any reference to the allocation, as we've already

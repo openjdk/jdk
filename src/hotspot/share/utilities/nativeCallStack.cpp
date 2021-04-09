@@ -36,7 +36,7 @@ NativeCallStack::NativeCallStack(int toSkip) {
   // to call os::get_native_stack. A tail call is used if _NMT_NOINLINE_ is not defined
   // (which means this is not a slowdebug build), and we are on 64-bit (except Windows).
   // This is not necessarily a rule, but what has been obvserved to date.
-#if (defined(_NMT_NOINLINE_) || defined(_WINDOWS) || !defined(_LP64) || defined(PPC64))
+#if (defined(_NMT_NOINLINE_) || defined(_WINDOWS) || !defined(_LP64) || defined(PPC64) || (defined(BSD) && defined (__aarch64__)))
   // Not a tail call.
   toSkip++;
 #if (defined(_NMT_NOINLINE_) && defined(BSD) && defined(_LP64))

@@ -75,6 +75,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -271,7 +272,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
             }
             if (exec_mode == Deoptimization::Unpack_none) {
               ObjectMonitor* monitor = deoptee_thread->current_waiting_monitor();
-              if (monitor != NULL && (oop)monitor->object() == mi->owner()) {
+              if (monitor != NULL && monitor->object() == mi->owner()) {
                 tty->print_cr("     object <" INTPTR_FORMAT "> DEFERRED relocking after wait", p2i(mi->owner()));
                 continue;
               }
@@ -897,7 +898,7 @@ Deoptimization::DeoptAction Deoptimization::_unloaded_action
 
 
 
-#if INCLUDE_JVMCI || INCLUDE_AOT
+#if COMPILER2_OR_JVMCI || INCLUDE_AOT
 template<typename CacheType>
 class BoxCacheBase : public CHeapObj<mtCompiler> {
 protected:
@@ -1025,7 +1026,7 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
    }
    return NULL;
 }
-#endif // INCLUDE_JVMCI || INCLUDE_AOT
+#endif // COMPILER2_OR_JVMCI || INCLUDE_AOT
 
 #if COMPILER2_OR_JVMCI
 bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
@@ -1044,9 +1045,8 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
     oop obj = NULL;
 
     if (k->is_instance_klass()) {
-#if INCLUDE_JVMCI || INCLUDE_AOT
-      CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
-      if (cm->is_compiled_by_jvmci() && sv->is_auto_box()) {
+#if COMPILER2_OR_JVMCI || INCLUDE_AOT
+      if (sv->is_auto_box()) {
         AutoBoxObjectValue* abv = (AutoBoxObjectValue*) sv;
         obj = get_cached_box(abv, fr, reg_map, THREAD);
         if (obj != NULL) {
@@ -1054,7 +1054,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
           abv->set_cached(true);
         }
       }
-#endif // INCLUDE_JVMCI || INCLUDE_AOT
+#endif // COMPILER2_OR_JVMCI || INCLUDE_AOT
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (obj == NULL) {
 #ifdef COMPILER2
@@ -1396,12 +1396,12 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     if (obj.is_null()) {
       continue;
     }
-#if INCLUDE_JVMCI || INCLUDE_AOT
+#if COMPILER2_OR_JVMCI || INCLUDE_AOT
     // Don't reassign fields of boxes that came from a cache. Caches may be in CDS.
     if (sv->is_auto_box() && ((AutoBoxObjectValue*) sv)->is_cached()) {
       continue;
     }
-#endif // INCLUDE_JVMCI || INCLUDE_AOT
+#endif // COMPILER2_OR_JVMCI || INCLUDE_AOT
 #ifdef COMPILER2
     if (EnableVectorSupport && VectorSupport::is_vector(k)) {
       assert(sv->field_size() == 1, "%s not a vector", k->name()->as_C_string());
@@ -1467,7 +1467,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           if (mark.has_monitor()) {
             // defer relocking if the deoptee thread is currently waiting for obj
             ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
-            if (waiting_monitor != NULL && (oop)waiting_monitor->object() == obj()) {
+            if (waiting_monitor != NULL && waiting_monitor->object() == obj()) {
               assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
               mon_info->lock()->set_displaced_header(markWord::unused_mark());
               JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
@@ -1653,7 +1653,7 @@ void Deoptimization::revoke_from_deopt_handler(JavaThread* thread, frame fr, Reg
   int len = objects_to_revoke->length();
   for (int i = 0; i < len; i++) {
     oop obj = (objects_to_revoke->at(i))();
-    BiasedLocking::revoke_own_lock(objects_to_revoke->at(i), thread);
+    BiasedLocking::revoke_own_lock(thread, objects_to_revoke->at(i));
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 }
@@ -1686,7 +1686,7 @@ void Deoptimization::revoke_for_object_deoptimization(JavaThread* deoptee_thread
       // Deoptimization::relock_objects().
       continue;
     }
-    BiasedLocking::revoke(objects_to_revoke->at(i), thread);
+    BiasedLocking::revoke(thread, objects_to_revoke->at(i));
     assert(!objects_to_revoke->at(i)->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 }
@@ -2469,6 +2469,9 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
 }
 
 Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, jint trap_request, jint exec_mode) {
+  // Enable WXWrite: current function is called from methods compiled by C2 directly
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+
   if (TraceDeoptimization) {
     tty->print("Uncommon trap ");
   }

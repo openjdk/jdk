@@ -205,6 +205,8 @@ static char cpu_arch[] = "i386";
 static char cpu_arch[] = "amd64";
 #elif defined(ARM)
 static char cpu_arch[] = "arm";
+#elif defined(AARCH64)
+static char cpu_arch[] = "aarch64";
 #elif defined(PPC32)
 static char cpu_arch[] = "ppc";
 #else
@@ -763,9 +765,7 @@ void os::free_thread(OSThread* osthread) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
-
   return ((double)os::elapsed_counter()) / os::elapsed_frequency();
 }
 
@@ -1401,7 +1401,13 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
       strncpy(machine, "", sizeof(machine));
   }
 
-  snprintf(buf, buflen, "%s %s %d MHz", model, machine, mhz);
+  const char* emulated = "";
+#if defined(__APPLE__) && !defined(ZERO)
+  if (VM_Version::is_cpu_emulated()) {
+    emulated = " (EMULATED)";
+  }
+#endif
+  snprintf(buf, buflen, "\"%s\" %s%s %d MHz", model, machine, emulated, mhz);
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -2118,7 +2124,7 @@ int os::active_processor_count() {
   return _processor_count;
 }
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__x86_64__)
 uint os::processor_id() {
   // Get the initial APIC id and return the associated processor id. The initial APIC
   // id is limited to 8-bits, which means we can have at most 256 unique APIC ids. If

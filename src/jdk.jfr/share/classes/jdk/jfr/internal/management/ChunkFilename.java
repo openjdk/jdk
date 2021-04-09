@@ -27,13 +27,9 @@ package jdk.jfr.internal.management;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.consumer.FileAccess;
 

@@ -697,6 +697,7 @@ javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
+sun/security/ssl/SSLSocketImpl/SSLSocketImplThrowsWrongExceptions.java 8262409 linux-x64
 
 ############################################################################
 
@@ -837,8 +838,6 @@ jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-
 
 # jdk_jpackage
 
-tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java#id0    8248418 generic-all
-
 ############################################################################
 
 # Client manual tests
@@ -871,6 +870,8 @@ java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java 8024986 macosx
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macosx-all
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
+java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
+javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8260331 linux-x64
 
 
 ############################################################################
