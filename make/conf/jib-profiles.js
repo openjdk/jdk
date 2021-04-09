@@ -1029,10 +1029,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc10.2.0-OL6.4+1.0",
+        linux_x64: "gcc10.3.0-OL6.4+1.0-beta",
         macosx_x64: "Xcode11.3.1-MacOSX10.15+1.1",
         windows_x64: "VS2019-16.7.2+1.1",
-        linux_aarch64: "gcc10.2.0-OL7.6+1.0",
+        linux_aarch64: "gcc10.3.0-OL7.6+1.0-beta",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0"
