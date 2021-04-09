@@ -1393,29 +1393,33 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
   for(uint i4 = 0; i4 < block->_num_succs; i4++ ) {
     Block *sb = block->_succs[i4];
     uint new_cnt = end - beg;
-    // Remove any newly created, but dead, nodes. In this context, a dead node
-    // is either a multi-node with all projections unused, or a non-projection
-    // single node that is unused. This definition avoids removing unused
-    // projections of partially-used multi-nodes.
+    // Remove any newly created, but dead, nodes by traversing their schedule
+    // backwards. Here, a dead node is a node whose only outputs (if any) are
+    // unused projections.
     for( uint j = new_cnt; j > 0; j-- ) {
       Node *n = sb->get_node(j);
+      // Individual projections are examined together with all siblings when
+      // their parent is visited.
       if (n->is_Proj()) {
         continue;
       }
       bool dead = true;
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* user = n->fast_out(i);
-        if (!user->is_Proj() || user->outcnt() > 0) {
+        Node* out = n->fast_out(i);
+        // n is live if it has a non-projection output or a used projection.
+        if (!out->is_Proj() || out->outcnt() > 0) {
           dead = false;
           break;
         }
       }
       if (dead) {
-        // Remove projections if n is a dead multi-node.
-        for (uint k = j + n->outcnt(); sb->get_node(k)->is_Proj(); k--) {
-          assert(sb->get_node(k)->in(0) == n,
-                 "dead projection should correspond to current node");
-          sb->get_node(k)->disconnect_inputs(C);
+        // n's only outputs (if any) are unused projections scheduled next to n
+        // (see PhaseCFG::select()). Remove these projections backwards.
+        for (uint k = j + n->outcnt(); k > j; k--) {
+          Node* proj = sb->get_node(k);
+          assert(proj->is_Proj() && proj->in(0) == n,
+                 "projection should correspond to dead node");
+          proj->disconnect_inputs(C);
           sb->remove_node(k);
           new_cnt--;
         }
