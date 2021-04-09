@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -322,6 +322,11 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                      TRACE0("[ CK_CCM_PARAMS ]\n");
                      free(((CK_CCM_PARAMS*)tmp)->pNonce);
                      free(((CK_CCM_PARAMS*)tmp)->pAAD);
+                     break;
+                 case CKM_CHACHA20_POLY1305:
+                     TRACE0("[ CK_SALSA20_CHACHA20_POLY1305_PARAMS ]\n");
+                     free(((CK_SALSA20_CHACHA20_POLY1305_PARAMS*)tmp)->pNonce);
+                     free(((CK_SALSA20_CHACHA20_POLY1305_PARAMS*)tmp)->pAAD);
                      break;
                  case CKM_TLS_PRF:
                  case CKM_NSS_TLS_PRF_GENERAL:

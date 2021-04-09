@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,10 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
         case (int)CKM_BLOWFISH_KEY_GEN:
             keySize = adjustKeySize(128, range);
             keyType = CKK_BLOWFISH;
+            break;
+        case (int)CKM_CHACHA20_KEY_GEN:
+            keySize = 256;
+            keyType = CKK_CHACHA20;
             break;
         case (int)CKM_SHA_1_KEY_GEN:
             keySize = adjustKeySize(160, range);
