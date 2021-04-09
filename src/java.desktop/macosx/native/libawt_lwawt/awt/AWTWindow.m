@@ -288,6 +288,9 @@ AWT_NS_WINDOW_IMPLEMENTATION
 {
 AWT_ASSERT_APPKIT_THREAD;
 
+    if (@available(macOS 10.12, *)) {
+        [NSWindow setAllowsAutomaticWindowTabbing:NO];
+    }
     NSUInteger newBits = bits;
     if (IS(bits, SHEET) && owner == nil) {
         newBits = bits & ~NSWindowStyleMaskDocModalWindow;
