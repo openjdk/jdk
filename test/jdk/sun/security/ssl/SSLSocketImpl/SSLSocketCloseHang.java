@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8184328 8253368
+ * @bug 8184328 8253368 8260923
  * @summary JDK8u131-b34-socketRead0 hang at SSL read
  * @run main/othervm SSLSocketCloseHang TLSv1.2
  * @run main/othervm SSLSocketCloseHang TLSv1.2 shutdownInput
@@ -182,7 +182,6 @@ public class SSLSocketCloseHang {
         try {
             sslSocket.shutdownInput();
         } catch (SSLException e) {
-            System.out.println("----------- Hello: ");
             if (!e.getMessage().contains
                     ("closing inbound before receiving peer's close_notify")) {
                 throw new RuntimeException("expected different exception "
