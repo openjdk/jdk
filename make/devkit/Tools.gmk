@@ -254,12 +254,8 @@ $(foreach p,GCC BINUTILS CCACHE MPFR GMP MPC GDB,$(eval $(call Download,$(p))))
 
 RPM_ARCHS := $(ARCH) noarch
 ifeq ($(ARCH),x86_64)
-  ifeq ($(BUILD),$(HOST))
-    ifeq ($(TARGET),$(HOST))
-      # When building the native compiler for x86_64, enable mixed mode.
-      RPM_ARCHS += i386 i686
-    endif
-  endif
+  # Enable mixed mode.
+  RPM_ARCHS += i386 i686
 else ifeq ($(ARCH),i686)
   RPM_ARCHS += i386
 else ifeq ($(ARCH), armhfp)
