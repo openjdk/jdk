@@ -65,6 +65,8 @@ BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
 
   if (is_vector_shuffle(ik)) {
     return T_BYTE;
+  } else if (is_vector_mask(ik)) {
+    return T_BOOLEAN;
   } else { // vector and mask
     oop value = ik->java_mirror()->obj_field(fd.offset());
     BasicType elem_bt = java_lang_Class::as_BasicType(value);
@@ -86,45 +88,36 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
   return vlen;
 }
 
-void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr) {
-  if (is_mask) {
-    switch (elem_bt) {
-      case T_BYTE:
-      case T_SHORT:
-      case T_INT:
-      case T_LONG:
-      case T_FLOAT:
-      case T_DOUBLE: arr->bool_at_put(index,  (*(jbyte*)addr) != 0); break;
+// Masks require special handling: when boxed they are packed and stored in boolean
+// arrays, but in scalarized form they have the same size as corresponding vectors.
+// For example, Int512Mask is represented in memory as boolean[16], but
+// occupies the whole 512-bit vector register when scalarized.
+// During scalarization inserting a VectorStoreMask node between mask
+// and safepoint node always ensures the existence of masks in a boolean array.
+//
+// TODO: revisit when predicate registers are fully supported.
+//
+void VectorSupport::init_payload_element(typeArrayOop arr, BasicType elem_bt, int index, address addr) {
+  switch (elem_bt) {
+    case T_BOOLEAN:
+    case T_BYTE:   arr->  byte_at_put(index,   *(jbyte*)addr); break;
+    case T_SHORT:  arr-> short_at_put(index,  *(jshort*)addr); break;
+    case T_INT:    arr->   int_at_put(index,    *(jint*)addr); break;
+    case T_FLOAT:  arr-> float_at_put(index,  *(jfloat*)addr); break;
+    case T_LONG:   arr->  long_at_put(index,   *(jlong*)addr); break;
+    case T_DOUBLE: arr->double_at_put(index, *(jdouble*)addr); break;
 
-      default: fatal("unsupported: %s", type2name(elem_bt));
-    }
-  } else {
-    switch (elem_bt) {
-      case T_BYTE:   arr->  byte_at_put(index,   *(jbyte*)addr); break;
-      case T_SHORT:  arr-> short_at_put(index,  *(jshort*)addr); break;
-      case T_INT:    arr->   int_at_put(index,    *(jint*)addr); break;
-      case T_FLOAT:  arr-> float_at_put(index,  *(jfloat*)addr); break;
-      case T_LONG:   arr->  long_at_put(index,   *(jlong*)addr); break;
-      case T_DOUBLE: arr->double_at_put(index, *(jdouble*)addr); break;
-
-      default: fatal("unsupported: %s", type2name(elem_bt));
-    }
+    default: fatal("unsupported: %s", type2name(elem_bt));
   }
 }
 
 Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, Location location, TRAPS) {
-  bool is_mask = is_vector_mask(ik);
-
   int num_elem = klass2length(ik);
   BasicType elem_bt = klass2bt(ik);
-  // Inserting a VectorStoreMask before stitching the mask
-  // to SafePointNode will ensure packing the mask into a
-  // byte array for masks present in both predicated register
-  // or vector registers.
-  int elem_size = is_mask ? 1 : type2aelembytes(elem_bt);
+  int elem_size = type2aelembytes(elem_bt);
 
   // On-heap vector values are represented as primitive arrays.
-  TypeArrayKlass* tak = TypeArrayKlass::cast(Universe::typeArrayKlassObj(is_mask ? T_BOOLEAN : elem_bt));
+  TypeArrayKlass* tak = TypeArrayKlass::cast(Universe::typeArrayKlassObj(elem_bt));
 
   typeArrayOop arr = tak->allocate(num_elem, CHECK_NH); // safepoint
 
@@ -137,13 +130,13 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
       int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
 
       address elem_addr = reg_map->location(vreg, vslot) + off; // assumes little endian element order
-      init_payload_element(arr, is_mask, elem_bt, i, elem_addr);
+      init_payload_element(arr, elem_bt, i, elem_addr);
     }
   } else {
     // Value was directly saved on the stack.
     address base_addr = ((address)fr->unextended_sp()) + location.stack_offset();
     for (int i = 0; i < num_elem; i++) {
-      init_payload_element(arr, is_mask, elem_bt, i, base_addr + i * elem_size);
+      init_payload_element(arr, elem_bt, i, base_addr + i * elem_size);
     }
   }
   return Handle(THREAD, arr);

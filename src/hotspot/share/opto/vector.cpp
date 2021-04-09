@@ -267,11 +267,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     // logic for both predicated and non-predicated targets.
     bool is_mask = is_vector_mask(iklass);
     if (is_mask) {
-      if (vec_value->Opcode() == Op_VectorLoadMask) {
-        const Type* in1_ty = vec_value->in(1)->bottom_type();
-        assert(in1_ty->isa_vect() && in1_ty->is_vect()->element_basic_type() == T_BOOLEAN, "");
-        vec_value = vec_value->in(1);
-      } else if (vec_value->Opcode() != Op_VectorStoreMask) {
+      if (vec_value->Opcode() != Op_VectorStoreMask) {
         const TypeVect* vt = vec_value->bottom_type()->is_vect();
         BasicType bt = vt->element_basic_type();
         vec_value = gvn.transform(VectorStoreMaskNode::make(gvn, vec_value, bt, vt->length()));
