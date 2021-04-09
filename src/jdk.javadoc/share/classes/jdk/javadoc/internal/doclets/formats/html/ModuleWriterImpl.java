@@ -197,19 +197,16 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         return super.getNavBar(pageMode, element)
-                .setSubNavLinks(() -> {
-                    List<Content> list = new ArrayList<>();
-                    list.add(HtmlTree.LI(links.createLink(HtmlIds.MODULE_DESCRIPTION, contents.navDescription,
-                            !utils.getFullBody(mdle).isEmpty() && !options.noComment())));
-                    list.add(HtmlTree.LI(links.createLink(HtmlIds.MODULES, contents.navModules,
-                            display(requires) || display(indirectModules))));
-
-                    list.add(HtmlTree.LI(links.createLink(HtmlIds.PACKAGES, contents.navPackages,
-                            display(packages) || display(indirectPackages) || display(indirectOpenPackages))));
-                    list.add(HtmlTree.LI(links.createLink(HtmlIds.SERVICES, contents.navServices,
-                            displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))));
-                    return list;
-                });
+                .setSubNavLinks(() -> List.of(
+                        HtmlTree.LI(links.createLink(HtmlIds.MODULE_DESCRIPTION, contents.navDescription,
+                            !utils.getFullBody(mdle).isEmpty() && !options.noComment())),
+                        HtmlTree.LI(links.createLink(HtmlIds.MODULES, contents.navModules,
+                            display(requires) || display(indirectModules))),
+                        HtmlTree.LI(links.createLink(HtmlIds.PACKAGES, contents.navPackages,
+                            display(packages) || display(indirectPackages) || display(indirectOpenPackages))),
+                        HtmlTree.LI(links.createLink(HtmlIds.SERVICES, contents.navServices,
+                            displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees)))
+                ));
     }
 
     /**

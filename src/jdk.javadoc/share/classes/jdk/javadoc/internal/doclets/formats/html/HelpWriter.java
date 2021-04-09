@@ -25,8 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.ArrayList;
 import java.util.List;
+import javax.lang.model.element.Element;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -41,8 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-
-import javax.lang.model.element.Element;
 
 
 /**
@@ -148,13 +146,11 @@ public class HelpWriter extends HtmlDocletWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        return super.getNavBar(pageMode, element).setSubNavLinks(
-                () -> {
-                    List<Content> list = new ArrayList<>();
-                    list.add(HtmlTree.LI(links.createLink(HtmlIds.HELP_NAVIGATION, contents.navHelpNavigation)));
-                    list.add(HtmlTree.LI(links.createLink(HtmlIds.HELP_PAGES, contents.navHelpPages)));
-                    return list;
-                });
+        return super.getNavBar(pageMode, element)
+                .setSubNavLinks(() -> List.of(
+                        HtmlTree.LI(links.createLink(HtmlIds.HELP_NAVIGATION, contents.navHelpNavigation)),
+                        HtmlTree.LI(links.createLink(HtmlIds.HELP_PAGES, contents.navHelpPages)))
+                );
     }
 
     /**
