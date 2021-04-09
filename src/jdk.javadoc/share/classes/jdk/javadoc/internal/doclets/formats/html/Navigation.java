@@ -377,7 +377,7 @@ public class Navigation {
                                 || !vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_REQUIRED).isEmpty();
                 addTypeDetailLink(ANNOTATION_TYPE_MEMBER_REQUIRED, hasAnnotationElements, listContents);
             } else {
-                Set<VisibleMemberTable.Kind> detailSet = VisibleMemberTable.Kind.getDetailSetFor(element.getKind());
+                Set<VisibleMemberTable.Kind> detailSet = VisibleMemberTable.Kind.forDetailsOf(element.getKind());
                 for (VisibleMemberTable.Kind kind : detailSet) {
                     addTypeDetailLink(kind, !vmt.getVisibleMembers(kind).isEmpty(), listContents);
                 }

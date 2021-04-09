@@ -433,7 +433,14 @@ public class HtmlIds {
         });
     }
 
-    static HtmlId forMemberSummaryKind(VisibleMemberTable.Kind kind) {
+    /**
+     * Returns an id for the member summary table of the given {@code kind} in a class page.
+     *
+     * @param kind the kind of member
+     *
+     * @return the id
+     */
+    static HtmlId forMemberSummary(VisibleMemberTable.Kind kind) {
         return switch (kind) {
             case INNER_CLASSES -> NESTED_CLASS_SUMMARY;
             case ENUM_CONSTANTS -> ENUM_CONSTANT_SUMMARY;

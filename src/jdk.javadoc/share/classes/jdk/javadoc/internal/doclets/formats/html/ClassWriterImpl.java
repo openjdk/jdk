@@ -156,9 +156,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                     List<Content> list = new ArrayList<>();
                     VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
                     Set<VisibleMemberTable.Kind> summarySet =
-                            VisibleMemberTable.Kind.getSummarySetFor(element.getKind());
+                            VisibleMemberTable.Kind.forSummariesOf(element.getKind());
                     for (VisibleMemberTable.Kind kind : summarySet) {
-                        list.add(HtmlTree.LI(links.createLink(HtmlIds.forMemberSummaryKind(kind),
+                        list.add(HtmlTree.LI(links.createLink(HtmlIds.forMemberSummary(kind),
                                 contents.getNavLinkLabelContent(kind), vmt.hasVisibleMembers(kind))));
                     }
                     return list;

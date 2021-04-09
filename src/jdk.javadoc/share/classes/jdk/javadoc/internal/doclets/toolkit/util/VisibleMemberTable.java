@@ -118,7 +118,11 @@ public class VisibleMemberTable {
         private static final EnumSet<Kind> enumDetailSet = EnumSet.of(
                 ENUM_CONSTANTS, FIELDS, METHODS);
 
-        public static Set<Kind> getSummarySetFor(ElementKind kind) {
+        /**
+         * {@return the set of possible member kinds for the summaries section of a type element}
+         * @param kind the kind of type element being documented
+         */
+        public static Set<Kind> forSummariesOf(ElementKind kind) {
             return switch (kind) {
                 case ANNOTATION_TYPE -> annotationSummarySet;
                 case ENUM -> enumSummarySet;
@@ -126,7 +130,11 @@ public class VisibleMemberTable {
             };
         }
 
-        public static Set<Kind> getDetailSetFor(ElementKind kind) {
+        /**
+         * {@return the set of possible member kinds for the details section of a type element}
+         * @param kind the kind of type element being documented
+         */
+        public static Set<Kind> forDetailsOf(ElementKind kind) {
             return kind == ElementKind.ENUM
                     ? enumDetailSet
                     : defaultDetailSet;
