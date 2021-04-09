@@ -59,7 +59,7 @@ final class DCmdConfigure extends AbstractDCmd {
      * @throws DCmdException
      *             if the dump could not be completed
      */
-    public String execute
+    public String[] execute
     (
             boolean verbose,
             String repositoryPath,
@@ -177,7 +177,7 @@ final class DCmdConfigure extends AbstractDCmd {
             updated = true;
         }
         if (!verbose) {
-            return "";
+            return new String[0];
         }
         if (!updated) {
             println("Current configuration:");
