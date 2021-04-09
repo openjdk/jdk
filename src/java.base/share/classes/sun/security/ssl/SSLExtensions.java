@@ -56,14 +56,14 @@ final class SSLExtensions {
 
         if (m.remaining() < 2) {
             throw hm.handshakeContext.conContext.fatal(
-                    Alert.ILLEGAL_PARAMETER,
+                    Alert.DECODE_ERROR,
                     "Incorrect extensions: no length field");
         }
 
         int len = Record.getInt16(m);
         if (len > m.remaining()) {
             throw hm.handshakeContext.conContext.fatal(
-                    Alert.ILLEGAL_PARAMETER,
+                    Alert.DECODE_ERROR,
                     "Insufficient extensions data");
         }
 
@@ -73,7 +73,7 @@ final class SSLExtensions {
             int extLen = Record.getInt16(m);
             if (extLen > m.remaining()) {
                 throw hm.handshakeContext.conContext.fatal(
-                        Alert.ILLEGAL_PARAMETER,
+                        Alert.DECODE_ERROR,
                         "Error parsing extension (" + extId +
                         "): no sufficient data");
             }
