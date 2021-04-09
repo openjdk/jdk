@@ -393,14 +393,16 @@ public final class Console implements Flushable
 
 
     /**
-     * Returns the {@code Charset} object used in this {@code Console}.
+     * Returns the {@link java.nio.charset.Charset Charset} object used in
+     * this {@code Console}.
      * <p>
-     * The returned charset corresponds to input and output source
+     * The returned charset corresponds to the input and output source
      * (e.g., keyboard and/or display) specified by the host environment or user.
      * It may not necessarily be the same as the default charset returned from
      * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
      *
-     * @return A {@code Charset} object used in this {@code Console}.
+     * @return a {@link java.nio.charset.Charset Charset} object used in this
+     *          {@code Console}
      * @since 17
      */
     public Charset charset() {
