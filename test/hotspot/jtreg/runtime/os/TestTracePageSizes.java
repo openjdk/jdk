@@ -126,7 +126,7 @@ public class TestTracePageSizes {
                 throw new IllegalStateException("Cannot parse page size out of " + body);
             }
 
-	    String ahp = null;
+            String ahp = null;
             Matcher ahpMatcher = ahpPatt.matcher(body);
             if (ahpMatcher.matches()) {
                 ahp = ahpMatcher.group(1);
