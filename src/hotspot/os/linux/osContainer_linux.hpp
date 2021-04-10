@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ class OSContainer: AllStatic {
  public:
   static void init();
   static inline bool is_containerized();
-  static const char * container_type();
+  static const char * resource_controller_type();
 
   static jlong memory_limit_in_bytes();
   static jlong memory_and_swap_limit_in_bytes();

@@ -197,15 +197,18 @@ julong os::Linux::available_memory() {
   if (OSContainer::is_containerized()) {
     jlong mem_limit, mem_usage;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) < 1) {
-      log_debug(os, container)("cgroup memory limit %s: " JLONG_FORMAT ", using host value",
+      log_debug(os, container)("%s memory limit %s: " JLONG_FORMAT ", using host value",
+                             OSContainer::resource_controller_type(),
                              mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
     }
     if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
-      log_debug(os, container)("cgroup memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
+      log_debug(os, container)("%s memory usage failed: " JLONG_FORMAT ", using host value",
+                             OSContainer::resource_controller_type(), mem_usage);
     }
     if (mem_limit > 0 && mem_usage > 0 ) {
       avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-      log_trace(os)("available cgroup memory: " JULONG_FORMAT, avail_mem);
+      log_trace(os)("available %s memory: " JULONG_FORMAT,
+                             OSContainer::resource_controller_type(), avail_mem);
       return avail_mem;
     }
   }
@@ -221,10 +224,12 @@ julong os::physical_memory() {
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
-      log_trace(os)("total cgroup memory: " JLONG_FORMAT, mem_limit);
+      log_trace(os)("total %s memory: " JLONG_FORMAT,
+                             OSContainer::resource_controller_type(), mem_limit);
       return mem_limit;
     }
-    log_debug(os, container)("cgroup memory limit %s: " JLONG_FORMAT ", using host value",
+    log_debug(os, container)("%s memory limit %s: " JLONG_FORMAT ", using host value",
+                            OSContainer::resource_controller_type(),
                             mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
   }
 
@@ -2219,10 +2224,7 @@ bool os::Linux::print_container_info(outputStream* st) {
     return false;
   }
 
-  st->print_cr("cgroup information:");
-
-  const char *p_ct = OSContainer::container_type();
-  st->print_cr("cgroup_type: %s", p_ct != NULL ? p_ct : "not supported");
+  st->print_cr("%s information:", OSContainer::resource_controller_type());
 
   char *p = OSContainer::cpu_cpuset_cpus();
   st->print_cr("cpu_cpuset_cpus: %s", p != NULL ? p : "not supported");

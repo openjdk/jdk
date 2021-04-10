@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ class CgroupV1Subsystem: public CgroupSubsystem {
 
     int cpu_shares();
 
-    const char * container_type() {
+    const char * resource_controller_type() {
       return "cgroupv1";
     }
     CachingCgroupController * memory_controller() { return _memory; }

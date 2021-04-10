@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2021, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     jlong memory_max_usage_in_bytes();
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();
-    const char * container_type() {
+    const char * resource_controller_type() {
       return "cgroupv2";
     }
     CachingCgroupController * memory_controller() { return _memory; }

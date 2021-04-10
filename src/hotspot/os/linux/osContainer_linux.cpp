@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,9 @@ void OSContainer::init() {
 
 }
 
-const char * OSContainer::container_type() {
+const char * OSContainer::resource_controller_type() {
   assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
-  return cgroup_subsystem->container_type();
+  return cgroup_subsystem->resource_controller_type();
 }
 
 jlong OSContainer::memory_limit_in_bytes() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,7 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     virtual char * cpu_cpuset_cpus() = 0;
     virtual char * cpu_cpuset_memory_nodes() = 0;
     virtual jlong read_memory_limit_in_bytes() = 0;
-    virtual const char * container_type() = 0;
+    virtual const char * resource_controller_type() = 0;
     virtual CachingCgroupController* memory_controller() = 0;
     virtual CachingCgroupController* cpu_controller() = 0;
 };
