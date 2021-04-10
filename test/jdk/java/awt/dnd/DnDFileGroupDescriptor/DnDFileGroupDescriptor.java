@@ -1,5 +1,5 @@
  /*
-  * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+  * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
   *
   * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,7 @@ public class DnDFileGroupDescriptor extends Applet {
 
         String[] instructions = {
          "The applet window contains a red field.",
-         "1. Start MS Outlook program. Find and open ",
-         "   the mail form with attachments.",
-         "2. Select attachments from the mail and drag into a red field of applet.",
+         "1. Select any file from File Explorer and drag into a red field of applet.",
          "   When the mouse enters the field during the drag, the application ",
          "   should change the cursor form to OLE-copy and field color to yellow.",
          "3. Release the mouse button (drop attachments) over the field.",
