@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,46 @@
  * questions.
  */
 
-import java.net.URLClassLoader;
-
 /*
- * This class is loaded by the custom URLClassLoader, and then calls
- * Class.forName() with the protection domain for the checkPackageAccess
- * call created from the code source jar file.
+ * @test
+ * @bug 8005295
+ * @summary Verify repeating annotations are printed as expected
+ * @compile/ref=XprintRepeatingAnnotations.out -Xprint  XprintRepeatingAnnotations.java
  */
-public class ClassForName {
-    static {
-        if (!(ClassForName.class.getClassLoader() instanceof URLClassLoader)) {
-            throw new RuntimeException("Supposed to be loaded by URLClassLoader");
-        }
-    }
 
-    public ClassForName() {
-        try {
-            // class_loader = App$ClassLoader, protection_domain = ClassForName.getProtectionDomain()
-            Class.forName(java.util.List.class.getName(), false,
-                          ClassLoader.getSystemClassLoader());
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
+import java.lang.annotation.*;
+import static java.lang.annotation.RetentionPolicy.*;
+
+@Foo(1)
+@Foo(2)
+@Bar(3)
+@Bar(4)
+public class XprintRepeatingAnnotations {
+}
+
+@Retention(RUNTIME)
+@Documented
+@Repeatable(Foos.class)
+@interface Foo {
+    int value();
+}
+
+@Retention(RUNTIME)
+@Documented
+@interface Foos {
+    Foo[] value();
+}
+
+@Retention(RUNTIME)
+@Documented
+@Repeatable(Bars.class)
+@interface Bar {
+    int value();
+}
+
+@Retention(RUNTIME)
+@Documented
+@interface Bars {
+    Bar[] value();
+    int quux() default 1;
 }
