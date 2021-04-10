@@ -808,10 +808,10 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
     write_record_attribute();
   }
   if (cpool()->operands() != NULL) {
-	  write_bootstrapmethod_attribute();
+    write_bootstrapmethod_attribute();
   }
   if (inner_classes_length > 0) {
-	  write_inner_classes_attribute(inner_classes_length);
+    write_inner_classes_attribute(inner_classes_length);
   }
 }
 
