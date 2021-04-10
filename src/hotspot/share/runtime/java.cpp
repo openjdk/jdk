@@ -51,12 +51,12 @@
 #include "oops/generateOopMap.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/klassVtable.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
@@ -64,7 +64,6 @@
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -224,10 +223,6 @@ void print_bytecode_count() {
 
 // General statistics printing (profiling ...)
 void print_statistics() {
-  if (MemProfiling) {
-    MemProfiler::disengage();
-  }
-
   if (CITime) {
     CompileBroker::print_times();
   }

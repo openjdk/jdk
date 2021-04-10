@@ -407,7 +407,7 @@ class VM_RedefineClasses: public VM_Operation {
   void compute_added_deleted_matching_methods();
 
   // Change jmethodIDs to point to the new methods
-  void update_jmethod_ids(Thread* thread);
+  void update_jmethod_ids();
 
   // In addition to marking methods as old and/or obsolete, this routine
   // counts the number of methods that are EMCP (Equivalent Module Constant Pool).
@@ -415,8 +415,8 @@ class VM_RedefineClasses: public VM_Operation {
   void transfer_old_native_function_registrations(InstanceKlass* the_class);
 
   // Install the redefinition of a class
-  void redefine_single_class(jclass the_jclass,
-    InstanceKlass* scratch_class_oop, TRAPS);
+  void redefine_single_class(Thread* current, jclass the_jclass,
+                             InstanceKlass* scratch_class_oop);
 
   void swap_annotations(InstanceKlass* new_class,
                         InstanceKlass* scratch_class);

@@ -30,6 +30,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals_extension.hpp"
 
 CompilerDirectives::CompilerDirectives() : _next(NULL), _match(NULL), _ref_count(0) {
   _c1_store = new DirectiveSet(this);
@@ -103,6 +104,10 @@ void DirectiveSet::finalize(outputStream* st) {
   // Check LogOption and warn
   if (LogOption && !LogCompilation) {
     st->print_cr("Warning:  +LogCompilation must be set to enable compilation logging from directives");
+  }
+  if (PrintAssemblyOption && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
+    warning("printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output");
+    DebugNonSafepoints = true;
   }
 
   // if any flag has been modified - set directive as enabled

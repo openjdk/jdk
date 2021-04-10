@@ -87,7 +87,7 @@ inline ThreadsList* Thread::cmpxchg_threads_hazard_ptr(ThreadsList* exchange_val
   return (ThreadsList*)Atomic::cmpxchg(&_threads_hazard_ptr, compare_value, exchange_value);
 }
 
-inline ThreadsList* Thread::get_threads_hazard_ptr() {
+inline ThreadsList* Thread::get_threads_hazard_ptr() const {
   return (ThreadsList*)Atomic::load_acquire(&_threads_hazard_ptr);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /* @test
  * @bug 7129312
- * @requires (sun.arch.data.model == "64"  & os.maxMemory > 4g)
+ * @requires (sun.arch.data.model == "64" & os.maxMemory > 4g)
  * @summary BufferedInputStream calculates negative array size with large
  *          streams and mark
  * @run main/othervm -Xmx4G -Xlog:gc,gc+heap,gc+ergo+heap -XX:+CrashOnOutOfMemoryError
                      -XX:+IgnoreUnrecognizedVMOptions -XX:+G1ExitOnExpansionFailure
+                     -Xlog:cds=debug
                      LargeCopyWithMark
  */
 

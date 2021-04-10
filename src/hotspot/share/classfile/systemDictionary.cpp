@@ -1214,11 +1214,11 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
   }
 
-  load_shared_class_misc(ik, loader_data, CHECK_NULL);
+  load_shared_class_misc(ik, loader_data);
   return ik;
 }
 
-void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) {
+void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) {
   ik->print_class_load_logging(loader_data, NULL, NULL);
 
   // For boot loader, ensure that GetSystemPackage knows that a class in this
@@ -1240,7 +1240,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
       ik->set_has_passed_fingerprint_check(true);
     } else {
       if (log_is_enabled(Info, class, fingerprint)) {
-        ResourceMark rm(THREAD);
+        ResourceMark rm;
         log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
       }
     }
@@ -2428,11 +2428,6 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
           bootstrap_specifier.resolved_method().not_null()), "bootstrap method call failed");
 }
 
-// Protection domain cache table handling
-
-ProtectionDomainCacheEntry* SystemDictionary::cache_get(Handle protection_domain) {
-  return _pd_cache_table->get(protection_domain);
-}
 
 ClassLoaderData* SystemDictionary::class_loader_data(Handle class_loader) {
   return ClassLoaderData::class_loader_data(class_loader());
@@ -2525,15 +2520,4 @@ void SystemDictionaryDCmd::execute(DCmdSource source, TRAPS) {
   VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpSysDict,
                          _verbose.value());
   VMThread::execute(&dumper);
-}
-
-int SystemDictionaryDCmd::num_arguments() {
-  ResourceMark rm;
-  SystemDictionaryDCmd* dcmd = new SystemDictionaryDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }

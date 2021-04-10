@@ -199,6 +199,7 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   bool    _compressed_class_ptrs;   // save the flag UseCompressedClassPointers
   size_t  _cloned_vtables_offset;   // The address of the first cloned vtable
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
+  address _heap_begin;              // heap begin at dump time.
   address _heap_end;                // heap end at dump time.
   bool _base_archive_is_default;    // indicates if the base archive is the system default one
 
@@ -262,6 +263,7 @@ public:
   address narrow_klass_base()              const { return (address)mapped_base_address(); }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
+  address heap_begin()                     const { return _heap_begin; }
   address heap_end()                       const { return _heap_end; }
   bool base_archive_is_default()           const { return _base_archive_is_default; }
   const char* jvm_ident()                  const { return _jvm_ident; }
