@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Tests counting of streams
- * @bug 8031187 8067969 8075307
+ * @bug 8031187 8067969 8075307 8265029
  */
 
 package org.openjdk.tests.java.util.stream;
@@ -54,6 +54,11 @@ public class CountTest extends OpTestCase {
         withData(data).
                 terminal(Stream::count).
                 expectedResult(expectedCount).
+                exercise();
+
+        withData(data).
+                terminal(s -> s.skip(1), Stream::count).
+                expectedResult(Math.max(0, expectedCount - 1)).
                 exercise();
 
         // Test with an unknown sized stream
@@ -92,6 +97,11 @@ public class CountTest extends OpTestCase {
                 exercise();
 
         withData(data).
+            terminal(s -> s.skip(1), IntStream::count).
+            expectedResult(Math.max(0, expectedCount - 1)).
+            exercise();
+
+        withData(data).
                 terminal(s -> s.filter(e -> true), IntStream::count).
                 expectedResult(expectedCount).
                 exercise();
@@ -115,6 +125,11 @@ public class CountTest extends OpTestCase {
                 terminal(LongStream::count).
                 expectedResult(expectedCount).
                 exercise();
+
+        withData(data).
+            terminal(s -> s.skip(1), LongStream::count).
+            expectedResult(Math.max(0, expectedCount - 1)).
+            exercise();
 
         withData(data).
                 terminal(s -> s.filter(e -> true), LongStream::count).
@@ -142,6 +157,11 @@ public class CountTest extends OpTestCase {
                 exercise();
 
         withData(data).
+            terminal(s -> s.skip(1), DoubleStream::count).
+            expectedResult(Math.max(0, expectedCount - 1)).
+            exercise();
+
+        withData(data).
                 terminal(s -> s.filter(e -> true), DoubleStream::count).
                 expectedResult(expectedCount).
                 exercise();
@@ -160,28 +180,52 @@ public class CountTest extends OpTestCase {
     public void testNoEvaluationForSizedStream() {
         {
             AtomicInteger ai = new AtomicInteger();
-            Stream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
+            assertEquals(Stream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count(), 4);
             assertEquals(ai.get(), 0);
 
-            Stream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count();
+            assertEquals(Stream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count(), 4);
+            assertEquals(ai.get(), 0);
+
+            assertEquals(Stream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement())
+                .skip(1).limit(2).skip(1).count(), 1);
+            assertEquals(ai.get(), 0);
+
+            assertEquals(Stream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement())
+                .parallel().skip(1).limit(2).skip(1).count(), 1);
             assertEquals(ai.get(), 0);
         }
 
         {
             AtomicInteger ai = new AtomicInteger();
-            IntStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
+            assertEquals(IntStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count(), 4);
             assertEquals(ai.get(), 0);
 
-            IntStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count();
+            assertEquals(IntStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count(), 4);
+            assertEquals(ai.get(), 0);
+
+            assertEquals(IntStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement())
+                .skip(1).limit(2).skip(1).count(), 1);
+            assertEquals(ai.get(), 0);
+
+            assertEquals(IntStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement())
+                .parallel().skip(1).limit(2).skip(1).count(), 1);
             assertEquals(ai.get(), 0);
         }
 
         {
             AtomicInteger ai = new AtomicInteger();
-            LongStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
+            assertEquals(LongStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count(), 4);
             assertEquals(ai.get(), 0);
 
-            LongStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count();
+            assertEquals(LongStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count(), 4);
+            assertEquals(ai.get(), 0);
+
+            assertEquals(LongStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement())
+                .skip(1).limit(2).skip(1).count(), 1);
+            assertEquals(ai.get(), 0);
+
+            assertEquals(LongStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement())
+                .parallel().skip(1).limit(2).skip(1).count(), 1);
             assertEquals(ai.get(), 0);
         }
 
@@ -191,6 +235,14 @@ public class CountTest extends OpTestCase {
             assertEquals(ai.get(), 0);
 
             DoubleStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).parallel().count();
+            assertEquals(ai.get(), 0);
+
+            assertEquals(DoubleStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement())
+                .skip(1).limit(2).skip(1).count(), 1);
+            assertEquals(ai.get(), 0);
+
+            assertEquals(DoubleStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement())
+                .parallel().skip(1).limit(2).skip(1).count(), 1);
             assertEquals(ai.get(), 0);
         }
     }

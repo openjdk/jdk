@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -466,7 +466,18 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
 
     @Override
     final <P_IN> long exactOutputSizeIfKnown(Spliterator<P_IN> spliterator) {
-        return StreamOpFlag.SIZED.isKnown(getStreamAndOpFlags()) ? spliterator.getExactSizeIfKnown() : -1;
+        long size = StreamOpFlag.SIZED.isKnown(getStreamAndOpFlags()) ? spliterator.getExactSizeIfKnown() : -1;
+        return size == -1 ? size : adjustSize(size);
+    }
+
+    /**
+     * Adjusts the exact size of the resulting stream using source spliterator size.
+     *
+     * @param size exact size of the output reported by source spliterator
+     * @return adjusted size
+     */
+    long adjustSize(long size) {
+        return previousStage == null ? size : previousStage.adjustSize(size);
     }
 
     @Override

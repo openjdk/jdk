@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ final class SliceOps {
      * @return the sliced size
      */
     private static long calcSize(long size, long skip, long limit) {
-        return size >= 0 ? Math.max(-1, Math.min(size - skip, limit)) : -1;
+        return size >= 0 ? Math.max(0, Math.min(size - skip, limit)) : -1;
     }
 
     /**
@@ -72,28 +72,23 @@ final class SliceOps {
      * spliterator type.  Requires that the underlying Spliterator
      * be SUBSIZED.
      */
-    @SuppressWarnings("unchecked")
     private static <P_IN> Spliterator<P_IN> sliceSpliterator(StreamShape shape,
                                                              Spliterator<P_IN> s,
                                                              long skip, long limit) {
         assert s.hasCharacteristics(Spliterator.SUBSIZED);
         long sliceFence = calcSliceFence(skip, limit);
-        switch (shape) {
-            case REFERENCE:
-                return new StreamSpliterators
-                        .SliceSpliterator.OfRef<>(s, skip, sliceFence);
-            case INT_VALUE:
-                return (Spliterator<P_IN>) new StreamSpliterators
-                        .SliceSpliterator.OfInt((Spliterator.OfInt) s, skip, sliceFence);
-            case LONG_VALUE:
-                return (Spliterator<P_IN>) new StreamSpliterators
-                        .SliceSpliterator.OfLong((Spliterator.OfLong) s, skip, sliceFence);
-            case DOUBLE_VALUE:
-                return (Spliterator<P_IN>) new StreamSpliterators
-                        .SliceSpliterator.OfDouble((Spliterator.OfDouble) s, skip, sliceFence);
-            default:
-                throw new IllegalStateException("Unknown shape " + shape);
-        }
+        @SuppressWarnings("unchecked")
+        Spliterator<P_IN> sliceSpliterator = (Spliterator<P_IN>) switch (shape) {
+            case REFERENCE
+                -> new StreamSpliterators.SliceSpliterator.OfRef<>(s, skip, sliceFence);
+            case INT_VALUE
+                -> new StreamSpliterators.SliceSpliterator.OfInt((Spliterator.OfInt) s, skip, sliceFence);
+            case LONG_VALUE
+                -> new StreamSpliterators.SliceSpliterator.OfLong((Spliterator.OfLong) s, skip, sliceFence);
+            case DOUBLE_VALUE
+                -> new StreamSpliterators.SliceSpliterator.OfDouble((Spliterator.OfDouble) s, skip, sliceFence);
+        };
+        return sliceSpliterator;
     }
 
     /**
@@ -110,9 +105,16 @@ final class SliceOps {
                                         long skip, long limit) {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
+        long adjustedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
 
         return new ReferencePipeline.StatefulOp<T, T>(upstream, StreamShape.REFERENCE,
                                                       flags(limit)) {
+            @Override
+            long adjustSize(long size) {
+                return isParallel() ? super.adjustSize(size)
+                    : calcSize(super.adjustSize(size), skip, adjustedLimit);
+            }
+
             Spliterator<T> unorderedSkipLimitSpliterator(Spliterator<T> s,
                                                          long skip, long limit, long sizeIfKnown) {
                 if (skip <= sizeIfKnown) {
@@ -182,9 +184,9 @@ final class SliceOps {
 
             @Override
             Sink<T> opWrapSink(int flags, Sink<T> sink) {
-                return new Sink.ChainedReference<T, T>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     long n = skip;
-                    long m = limit >= 0 ? limit : Long.MAX_VALUE;
+                    long m = adjustedLimit;
 
                     @Override
                     public void begin(long size) {
@@ -226,9 +228,16 @@ final class SliceOps {
                                     long skip, long limit) {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
+        long adjustedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
 
         return new IntPipeline.StatefulOp<Integer>(upstream, StreamShape.INT_VALUE,
                                                    flags(limit)) {
+            @Override
+            long adjustSize(long size) {
+                return isParallel() ? super.adjustSize(size)
+                    : calcSize(super.adjustSize(size), skip, adjustedLimit);
+            }
+
             Spliterator.OfInt unorderedSkipLimitSpliterator(
                     Spliterator.OfInt s, long skip, long limit, long sizeIfKnown) {
                 if (skip <= sizeIfKnown) {
@@ -291,9 +300,9 @@ final class SliceOps {
 
             @Override
             Sink<Integer> opWrapSink(int flags, Sink<Integer> sink) {
-                return new Sink.ChainedInt<Integer>(sink) {
+                return new Sink.ChainedInt<>(sink) {
                     long n = skip;
-                    long m = limit >= 0 ? limit : Long.MAX_VALUE;
+                    long m = adjustedLimit;
 
                     @Override
                     public void begin(long size) {
@@ -335,9 +344,16 @@ final class SliceOps {
                                       long skip, long limit) {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
+        long adjustedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
 
         return new LongPipeline.StatefulOp<Long>(upstream, StreamShape.LONG_VALUE,
                                                  flags(limit)) {
+            @Override
+            long adjustSize(long size) {
+                return isParallel() ? super.adjustSize(size)
+                    : calcSize(super.adjustSize(size), skip, adjustedLimit);
+            }
+
             Spliterator.OfLong unorderedSkipLimitSpliterator(
                     Spliterator.OfLong s, long skip, long limit, long sizeIfKnown) {
                 if (skip <= sizeIfKnown) {
@@ -400,9 +416,9 @@ final class SliceOps {
 
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong<Long>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     long n = skip;
-                    long m = limit >= 0 ? limit : Long.MAX_VALUE;
+                    long m = adjustedLimit;
 
                     @Override
                     public void begin(long size) {
@@ -444,9 +460,16 @@ final class SliceOps {
                                           long skip, long limit) {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
+        long adjustedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
 
         return new DoublePipeline.StatefulOp<Double>(upstream, StreamShape.DOUBLE_VALUE,
                                                      flags(limit)) {
+            @Override
+            long adjustSize(long size) {
+                return isParallel() ? super.adjustSize(size)
+                    : calcSize(super.adjustSize(size), skip, adjustedLimit);
+            }
+
             Spliterator.OfDouble unorderedSkipLimitSpliterator(
                     Spliterator.OfDouble s, long skip, long limit, long sizeIfKnown) {
                 if (skip <= sizeIfKnown) {
@@ -509,9 +532,9 @@ final class SliceOps {
 
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble<Double>(sink) {
+                return new Sink.ChainedDouble<>(sink) {
                     long n = skip;
-                    long m = limit >= 0 ? limit : Long.MAX_VALUE;
+                    long m = adjustedLimit;
 
                     @Override
                     public void begin(long size) {
@@ -541,7 +564,7 @@ final class SliceOps {
     }
 
     private static int flags(long limit) {
-        return StreamOpFlag.NOT_SIZED | ((limit != -1) ? StreamOpFlag.IS_SHORT_CIRCUIT : 0);
+        return (limit != -1) ? StreamOpFlag.IS_SHORT_CIRCUIT : 0;
     }
 
     /**
