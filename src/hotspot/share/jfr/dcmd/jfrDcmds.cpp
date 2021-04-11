@@ -34,7 +34,6 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/objArrayOop.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -200,10 +199,10 @@ static void handle_dcmd_result(outputStream* output,
   assert(!HAS_PENDING_EXCEPTION, "invariant");
 
   if (startup) {
-    if (log_is_enabled(Warning, jfr, start))  {
+    if (log_is_enabled(Warning, jfr, startup))  {
       // if warning is set, assume user hasn't configured log level
       // Log to Info and reset to Warning. This way user can disable
-      // default output by setting -Xlog:jfr+start=error/off
+      // default output by setting -Xlog:jfr+startup=error/off
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(jfr, startup));
       log(result, THREAD);
       LogConfiguration::configure_stdout(LogLevel::Warning, true, LOG_TAGS(jfr, startup));
