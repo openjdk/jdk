@@ -1,0 +1,5 @@
+MisleadingTypeNotFound.java:13:31: compiler.err.cant.resolve.location: kindname.class, NotFound, , , (compiler.misc.location: kindname.package, knownpkg, null)
+MisleadingTypeNotFound.java:16:32: compiler.err.cant.resolve.location: kindname.class, NotFound, , , (compiler.misc.location: kindname.package, java.lang, null)
+MisleadingTypeNotFound.java:19:33: compiler.err.doesnt.exist: unknownpkg
+MisleadingTypeNotFound.java:22:27: compiler.err.cant.resolve.location: kindname.class, NotFound, , , (compiler.misc.location: kindname.package, java, null)
+4 errors
