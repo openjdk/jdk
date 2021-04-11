@@ -111,6 +111,7 @@ final class SliceOps {
                                                       flags(limit)) {
             @Override
             long adjustSize(long size) {
+                // For parallel streams, spliterator size is already adjusted
                 return isParallel() ? super.adjustSize(size)
                     : calcSize(super.adjustSize(size), skip, adjustedLimit);
             }
@@ -234,6 +235,7 @@ final class SliceOps {
                                                    flags(limit)) {
             @Override
             long adjustSize(long size) {
+                // For parallel streams, spliterator size is already adjusted
                 return isParallel() ? super.adjustSize(size)
                     : calcSize(super.adjustSize(size), skip, adjustedLimit);
             }
@@ -350,6 +352,7 @@ final class SliceOps {
                                                  flags(limit)) {
             @Override
             long adjustSize(long size) {
+                // For parallel streams, spliterator size is already adjusted
                 return isParallel() ? super.adjustSize(size)
                     : calcSize(super.adjustSize(size), skip, adjustedLimit);
             }
@@ -466,6 +469,7 @@ final class SliceOps {
                                                      flags(limit)) {
             @Override
             long adjustSize(long size) {
+                // For parallel streams, spliterator size is already adjusted
                 return isParallel() ? super.adjustSize(size)
                     : calcSize(super.adjustSize(size), skip, adjustedLimit);
             }
