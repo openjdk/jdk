@@ -94,12 +94,10 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
 // occupies the whole 512-bit vector register when scalarized.
 // During scalarization inserting a VectorStoreMask node between mask
 // and safepoint node always ensures the existence of masks in a boolean array.
-//
-// TODO: revisit when predicate registers are fully supported.
-//
+
 void VectorSupport::init_payload_element(typeArrayOop arr, BasicType elem_bt, int index, address addr) {
   switch (elem_bt) {
-    case T_BOOLEAN:
+    case T_BOOLEAN: arr->  byte_at_put(index,   *(jboolean*)addr); break;
     case T_BYTE:   arr->  byte_at_put(index,   *(jbyte*)addr); break;
     case T_SHORT:  arr-> short_at_put(index,  *(jshort*)addr); break;
     case T_INT:    arr->   int_at_put(index,    *(jint*)addr); break;

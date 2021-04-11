@@ -263,15 +263,14 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     sobj->init_req(0, C->root());
 
     // If a mask is feeding into a safepoint, then its value should be
-    // packed into a byte vector first, this will simplify the re-materialization
-    // logic for both predicated and non-predicated targets.
+    // packed into a boolean/byte vector first, this will simplify the
+    // re-materialization logic for both predicated and non-predicated
+    // targets.
     bool is_mask = is_vector_mask(iklass);
-    if (is_mask) {
-      if (vec_value->Opcode() != Op_VectorStoreMask) {
-        const TypeVect* vt = vec_value->bottom_type()->is_vect();
-        BasicType bt = vt->element_basic_type();
-        vec_value = gvn.transform(VectorStoreMaskNode::make(gvn, vec_value, bt, vt->length()));
-      }
+    if (is_mask && vec_value->Opcode() != Op_VectorStoreMask) {
+      const TypeVect* vt = vec_value->bottom_type()->is_vect();
+      BasicType bt = vt->element_basic_type();
+      vec_value = gvn.transform(VectorStoreMaskNode::make(gvn, vec_value, bt, vt->length()));
     }
     sfpt->add_req(vec_value);
 
