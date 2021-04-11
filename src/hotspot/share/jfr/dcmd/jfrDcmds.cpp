@@ -144,7 +144,7 @@ static void handle_pending_exception(outputStream* output, bool startup, oop thr
     if (startup) {
       log_error(jfr,startup)("%s", text);
     } else {
-      output->print_raw_cr(text);
+      output->print_cr("%s", text);
     }
   }
 }
@@ -160,7 +160,7 @@ static void print_message(outputStream* output, oop content, TRAPS) {
       // An oome has been thrown and is pending.
       break;
     }
-    output->print_raw_cr(text);
+    output->print_cr("%s", text);
   }
 }
 
