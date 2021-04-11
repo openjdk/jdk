@@ -24,6 +24,7 @@
 package jdk.jfr.startupargs;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -44,12 +45,12 @@ public class TestStartupMessage {
     }
 
     public static void main(String[] args) throws Exception {
-         startWith("-Xlog:jfr+startup=off")
+         startJfrJvm("-Xlog:jfr+startup=off")
              .shouldNotContain("[jfr,startup")
              .shouldNotContain("Started recording")
              .shouldNotContain("Use jcmd");
 
-         startWith("-Xlog:jfr+startup=error")
+         startJfrJvm("-Xlog:jfr+startup=error")
              .shouldNotContain("[jfr,startup")
              .shouldNotContain("Started recording")
              .shouldNotContain("Use jcmd");
@@ -57,22 +58,19 @@ public class TestStartupMessage {
          // Known limitation.
          // Can't turn off log with -Xlog:jfr+startup=warning
 
-         startWith(null)
+         startJfrJvm()
              .shouldContain("[info][jfr,startup")
              .shouldContain("Started recording")
              .shouldContain("Use jcmd");
 
-         startWith("-Xlog:jfr+startup=info")
+         startJfrJvm("-Xlog:jfr+startup=info")
              .shouldContain("[info][jfr,startup")
              .shouldContain("Started recording")
              .shouldContain("Use jcmd");
     }
 
-    private static OutputAnalyzer startWith(String command) throws Exception {
-        List<String> commands = new ArrayList<>();
-        if (command != null) {
-            commands.add(command);
-        }
+    private static OutputAnalyzer startJfrJvm(String... args) throws Exception {
+        List<String> commands = new ArrayList<>(Arrays.asList(args));
         commands.add("-XX:StartFlightRecording");
         commands.add(TestMessage.class.getName());
         ProcessBuilder pb = ProcessTools.createTestJvm(commands);
