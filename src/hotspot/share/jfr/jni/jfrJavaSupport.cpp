@@ -37,7 +37,6 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayKlass.hpp"
-#include "oops/objArrayOop.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"

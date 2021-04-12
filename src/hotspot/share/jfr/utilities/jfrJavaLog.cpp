@@ -30,7 +30,6 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/objArrayOop.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
