@@ -301,6 +301,10 @@ public class TestByteBuffer {
 
     @Test
     public void testLargeMappedSegment() throws Throwable {
+        if (System.getProperty("sun.arch.data.model").equals("32")) {
+            throw new SkipException("large mapped files not supported on 32-bit systems");
+        }
+
         File f = new File("testLargeMappedSegment.out");
         f.createNewFile();
         f.deleteOnExit();
