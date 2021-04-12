@@ -51,6 +51,9 @@ public:
 
 protected:
   class G1CalculatePointersClosure : public HeapRegionClosure {
+  private:
+    template<bool is_humongous>
+    void free_region(HeapRegion* hr);
   protected:
     G1CollectedHeap* _g1h;
     G1FullCollector* _collector;
@@ -59,10 +62,8 @@ protected:
     bool _regions_freed;
 
     bool should_compact(HeapRegion* hr);
-    virtual void prepare_for_compaction(HeapRegion* hr);
+    void prepare_for_compaction(HeapRegion* hr);
     void prepare_for_compaction_work(G1FullGCCompactionPoint* cp, HeapRegion* hr);
-    void free_humongous_region(HeapRegion* hr);
-    void free_open_archive_region(HeapRegion* hr);
     void update_bot(HeapRegion* hr);
 
     void reset_region_metadata(HeapRegion* hr);
