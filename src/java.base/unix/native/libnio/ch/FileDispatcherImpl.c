@@ -28,8 +28,10 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#ifdef MACOSX
 #include <sys/mount.h>
 #include <sys/param.h>
+#endif
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 
