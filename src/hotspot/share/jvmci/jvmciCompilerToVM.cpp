@@ -57,6 +57,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe_hp.hpp"
 
@@ -126,10 +127,11 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 }
 
 // Bring the JVMCI compiler thread into the VM state.
-#define JVMCI_VM_ENTRY_MARK                   \
-  ThreadInVMfromNative __tiv(thread);         \
-  HandleMarkCleaner __hm(thread);             \
-  Thread* THREAD = thread;                    \
+#define JVMCI_VM_ENTRY_MARK                                       \
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));       \
+  ThreadInVMfromNative __tiv(thread);                             \
+  HandleMarkCleaner __hm(thread);                                 \
+  Thread* THREAD = thread;                                        \
   debug_only(VMNativeEntryWrapper __vew;)
 
 // Native method block that transitions current thread to '_thread_in_vm'.
@@ -457,7 +459,7 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
 
 C2V_VMENTRY_NULL(jobject, findUniqueConcreteMethod, (JNIEnv* env, jobject, jobject jvmci_type, jobject jvmci_method))
   methodHandle method (THREAD, JVMCIENV->asMethod(jvmci_method));
-  Klass* holder = JVMCIENV->asKlass(jvmci_type);
+  InstanceKlass* holder = InstanceKlass::cast(JVMCIENV->asKlass(jvmci_type));
   if (holder->is_interface()) {
     JVMCI_THROW_MSG_NULL(InternalError, err_msg("Interface %s should be handled in Java code", holder->external_name()));
   }
@@ -728,10 +730,11 @@ C2V_END
 C2V_VMENTRY_0(jint, getVtableIndexForInterfaceMethod, (JNIEnv* env, jobject, jobject jvmci_type, jobject jvmci_method))
   Klass* klass = JVMCIENV->asKlass(jvmci_type);
   methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
+  InstanceKlass* holder = method->method_holder();
   if (klass->is_interface()) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Interface %s should be handled in Java code", klass->external_name()));
   }
-  if (!method->method_holder()->is_interface()) {
+  if (!holder->is_interface()) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Method %s is not held by an interface, this case should be handled in Java code", method->name_and_sig_as_C_string()));
   }
   if (!klass->is_instance_klass()) {
@@ -739,6 +742,9 @@ C2V_VMENTRY_0(jint, getVtableIndexForInterfaceMethod, (JNIEnv* env, jobject, job
   }
   if (!InstanceKlass::cast(klass)->is_linked()) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Class %s must be linked", klass->external_name()));
+  }
+  if (!klass->is_subtype_of(holder)) {
+    JVMCI_THROW_MSG_0(InternalError, err_msg("Class %s does not implement interface %s", klass->external_name(), holder->external_name()));
   }
   return LinkResolver::vtable_index_of_interface_method(klass, method);
 C2V_END

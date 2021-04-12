@@ -77,7 +77,8 @@ protected:
          StripMined          = 1<<15,
          SubwordLoop         = 1<<16,
          ProfileTripFailed   = 1<<17,
-         TransformedLongLoop = 1<<18 };
+         TransformedLongInnerLoop = 1<<18,
+         TransformedLongOuterLoop = 1<<19};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
@@ -102,7 +103,8 @@ public:
   bool is_strip_mined() const { return _loop_flags & StripMined; }
   bool is_profile_trip_failed() const { return _loop_flags & ProfileTripFailed; }
   bool is_subword_loop() const { return _loop_flags & SubwordLoop; }
-  bool is_transformed_long_loop() const { return _loop_flags & TransformedLongLoop; }
+  bool is_transformed_long_inner_loop() const { return _loop_flags & TransformedLongInnerLoop; }
+  bool is_transformed_long_outer_loop() const { return _loop_flags & TransformedLongOuterLoop; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
@@ -117,7 +119,8 @@ public:
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
-  void mark_transformed_long_loop() { _loop_flags |= TransformedLongLoop; }
+  void mark_transformed_long_inner_loop() { _loop_flags |= TransformedLongInnerLoop; }
+  void mark_transformed_long_outer_loop() { _loop_flags |= TransformedLongOuterLoop; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }

@@ -169,8 +169,8 @@ final class MetadataWriter {
             element.addAttribute(ATTRIBUTE_SIMPLE_TYPE, true);
         }
         element.addAttribute(ATTRIBUTE_ID, type.getId());
-        if (type instanceof PlatformEventType) {
-            for (SettingDescriptor v : ((PlatformEventType)type).getSettings()) {
+        if (type instanceof PlatformEventType pType) {
+            for (SettingDescriptor v : pType.getSettings()) {
                 makeSettingElement(element, v);
             }
         }

@@ -1823,7 +1823,7 @@ void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode,
 // the indicated process's PerfData memory region from this
 // process's address space.
 //
-void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
+void PerfMemory::detach(char* addr, size_t bytes) {
 
   assert(addr != 0, "address sanity check");
   assert(bytes > 0, "capacity sanity check");

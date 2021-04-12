@@ -91,7 +91,19 @@ public class ICC_Profile implements Serializable {
     @Serial
     private static final long serialVersionUID = -3938515861990936766L;
 
+    /**
+     * The implementation specific CMM profile, {@code null} if this
+     * {@code ICC_Profile} is not activated by the {@link #cmmProfile()} method.
+     * This field must not be used directly and only via {@link #cmmProfile()}.
+     */
     private transient volatile Profile cmmProfile;
+
+    /**
+     * Stores some information about {@code ICC_Profile} without causing a
+     * deferred profile to be loaded. Note that we can defer the loading of
+     * standard profiles only. If this field is null, then {@link #cmmProfile}
+     * should be used to access profile information.
+     */
     private transient volatile ProfileDeferralInfo deferralInfo;
 
     /**
@@ -917,32 +929,37 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Activates the deferred standard profiles. Implementation of this method
-     * mimics the old behaviour when the CMMException and IOException were
-     * wrapped by the ProfileDataException, and the ProfileDataException itself
-     * was ignored during activation.
+     * Activates and returns the deferred standard profiles. Implementation of
+     * this method mimics the old behaviour when the {@code CMMException} and
+     * {@code IOException} were wrapped by the {@code ProfileDataException}, and
+     * the {@code ProfileDataException} itself was ignored during activation.
+     *
+     * @return the implementation specific CMM profile, or {@code null}
      */
-    private void activate() {
-        if (cmmProfile == null) {
-            synchronized (this) {
-                if (cmmProfile != null) {
-                    return;
+    private Profile cmmProfile() {
+        Profile p = cmmProfile;
+        if (p != null) {
+            return p; // one volatile read on common path
+        }
+        synchronized (this) {
+            if (cmmProfile != null) {
+                return cmmProfile;
+            }
+            var is = getStandardProfileInputStream(deferralInfo.filename);
+            if (is == null) {
+                return null;
+            }
+            try (is) {
+                byte[] data = getProfileDataFromStream(is);
+                if (data != null) {
+                    p = cmmProfile = CMSManager.getModule().loadProfile(data);
+                    // from now we cannot use the deferred value, drop it
+                    deferralInfo = null;
                 }
-                var is = getStandardProfileInputStream(deferralInfo.filename);
-                if (is == null) {
-                    return;
-                }
-                try (is) {
-                    byte[] data = getProfileDataFromStream(is);
-                    if (data != null) {
-                        cmmProfile = CMSManager.getModule().loadProfile(data);
-                        // from now we cannot use the deferred value, drop it
-                        deferralInfo = null;
-                    }
-                } catch (CMMException | IOException ignore) {
-                }
+            } catch (CMMException | IOException ignore) {
             }
         }
+        return p;
     }
 
     /**
@@ -1006,8 +1023,7 @@ public class ICC_Profile implements Serializable {
         if (info != null) {
             return info.colorSpaceType;
         }
-        activate();
-        return getColorSpaceType(cmmProfile);
+        return getColorSpaceType(cmmProfile());
     }
 
     private static int getColorSpaceType(Profile p) {
@@ -1030,8 +1046,7 @@ public class ICC_Profile implements Serializable {
      *         {@code ColorSpace} class
      */
     public int getPCSType() {
-        activate();
-        byte[] theHeader = getData(cmmProfile, icSigHead);
+        byte[] theHeader = getData(icSigHead);
         int thePCSSig = intFromBigEndian(theHeader, icHdrPcs);
         return iccCStoJCS(thePCSSig);
     }
@@ -1067,8 +1082,7 @@ public class ICC_Profile implements Serializable {
      * @see #setData(int, byte[])
      */
     public byte[] getData() {
-        activate();
-        return CMSManager.getModule().getProfileData(cmmProfile);
+        return CMSManager.getModule().getProfileData(cmmProfile());
     }
 
     /**
@@ -1085,8 +1099,8 @@ public class ICC_Profile implements Serializable {
      * @see #setData(int, byte[])
      */
     public byte[] getData(int tagSignature) {
-        activate();
-        return getData(cmmProfile, tagSignature);
+        byte[] t = getData(cmmProfile(), tagSignature);
+        return t != null ? t.clone() : null;
     }
 
     private static byte[] getData(Profile p, int tagSignature) {
@@ -1115,8 +1129,7 @@ public class ICC_Profile implements Serializable {
      * @see #getData
      */
     public void setData(int tagSignature, byte[] tagData) {
-        activate();
-        CMSManager.getModule().setTagData(cmmProfile, tagSignature, tagData);
+        CMSManager.getModule().setTagData(cmmProfile(), tagSignature, tagData);
     }
 
     /**
@@ -1170,7 +1183,7 @@ public class ICC_Profile implements Serializable {
      * Returns a float array of length 3 containing the X, Y, and Z components
      * encoded in an XYZType tag.
      */
-    float[] getXYZTag(int tagSignature) {
+    final float[] getXYZTag(int tagSignature) {
         byte[] theData = getData(tagSignature);
         float[] theXYZNumber = new float[3]; /* array to return */
 

@@ -167,6 +167,11 @@ const char * os::Linux::_libc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
+#ifdef __GLIBC__
+os::Linux::mallinfo_func_t os::Linux::_mallinfo = NULL;
+os::Linux::mallinfo2_func_t os::Linux::_mallinfo2 = NULL;
+#endif // __GLIBC__
+
 static jlong initial_time_count=0;
 
 static int clock_tics_per_sec = 100;
@@ -1265,9 +1270,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
-
   return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }
 
@@ -2174,19 +2177,25 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // Print glibc outstanding allocations.
   // (note: there is no implementation of mallinfo for muslc)
 #ifdef __GLIBC__
-  struct mallinfo mi = ::mallinfo();
-
-  // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
-  // So values may have wrapped around. Still useful enough to see how much glibc thinks
-  // we allocated.
-  const size_t total_allocated = (size_t)(unsigned)mi.uordblks;
-  st->print("C-Heap outstanding allocations: " SIZE_FORMAT "K", total_allocated / K);
-  // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-  if ((vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX)) {
-    st->print(" (may have wrapped)");
+  size_t total_allocated = 0;
+  bool might_have_wrapped = false;
+  if (_mallinfo2 != NULL) {
+    struct glibc_mallinfo2 mi = _mallinfo2();
+    total_allocated = mi.uordblks;
+  } else if (_mallinfo != NULL) {
+    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
+    // So values may have wrapped around. Still useful enough to see how much glibc thinks
+    // we allocated.
+    struct glibc_mallinfo mi = _mallinfo();
+    total_allocated = (size_t)(unsigned)mi.uordblks;
+    // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
+    might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
   }
-  st->cr();
-
+  if (_mallinfo2 != NULL || _mallinfo != NULL) {
+    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K%s",
+                 total_allocated / K,
+                 might_have_wrapped ? " (may have wrapped)" : "");
+  }
 #endif // __GLIBC__
 
 }
@@ -3482,39 +3491,21 @@ int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
 }
 
 bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
-  bool result = false;
-
   // Include the page size flag to ensure we sanity check the correct page size.
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
   void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
 
   if (p != MAP_FAILED) {
-    // We don't know if this really is a huge page or not.
-    FILE *fp = fopen("/proc/self/maps", "r");
-    if (fp) {
-      while (!feof(fp)) {
-        char chars[257];
-        long x = 0;
-        if (fgets(chars, sizeof(chars), fp)) {
-          if (sscanf(chars, "%lx-%*x", &x) == 1
-              && x == (long)p) {
-            if (strstr (chars, "hugepage")) {
-              result = true;
-              break;
-            }
-          }
-        }
-      }
-      fclose(fp);
-    }
+    // Mapping succeeded, sanity check passed.
     munmap(p, page_size);
+    return true;
   }
 
-  if (warn && !result) {
-    warning("HugeTLBFS is not supported by the operating system.");
+  if (warn) {
+    warning("HugeTLBFS is not configured or not supported by the operating system.");
   }
 
-  return result;
+  return false;
 }
 
 bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
@@ -4312,6 +4303,11 @@ void os::init(void) {
   _page_sizes.add(Linux::page_size());
 
   Linux::initialize_system_info();
+
+#ifdef __GLIBC__
+  Linux::_mallinfo = CAST_TO_FN_PTR(Linux::mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
+  Linux::_mallinfo2 = CAST_TO_FN_PTR(Linux::mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+#endif // __GLIBC__
 
   os::Linux::CPUPerfTicks pticks;
   bool res = os::Linux::get_tick_information(&pticks, -1);

@@ -824,7 +824,7 @@ public final class PNGImageWriter extends ImageWriter {
             ChunkStream cs = new ChunkStream(PNGImageReader.zTXt_TYPE, stream);
             String keyword = keywordIter.next();
             if (keyword.length() > 79) {
-                throw new IIOException("tEXt keyword is longer than 79");
+                throw new IIOException("zTXt keyword is longer than 79");
             }
             cs.writeBytes(keyword);
             cs.writeByte(0);

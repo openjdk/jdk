@@ -158,7 +158,7 @@ class InterpreterRuntime: AllStatic {
 #ifdef ASSERT
   static void    verify_mdp(Method* method, address bcp, address mdp);
 #endif // ASSERT
-  static MethodCounters* build_method_counters(JavaThread* thread, Method* m);
+  static MethodCounters* build_method_counters(JavaThread* current, Method* m);
 };
 
 

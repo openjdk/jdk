@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,7 +285,7 @@ public class ZoneInfo extends TimeZone {
             int dstoffset = tz.getOffset(msec) - rawOffset;
 
             // Check if it's in a standard-to-daylight transition.
-            if (dstoffset > 0 && tz.getOffset(msec - dstoffset) == rawoffset) {
+            if (dstoffset > 0 && tz.getOffset(msec - dstoffset) == rawoffset && type == WALL_TIME) {
                 dstoffset = 0;
             }
 

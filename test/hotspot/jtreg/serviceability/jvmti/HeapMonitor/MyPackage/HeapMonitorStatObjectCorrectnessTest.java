@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,9 @@ public class HeapMonitorStatObjectCorrectnessTest {
     emptyStorage();
 
     HeapMonitor.enableSamplingEvents();
+    // Instead of relying on the allocation loop to fill and retire the TLAB, which might not happen,
+    // use System.gc() to retire the TLAB and ensure sampling happens
+    System.gc();
     for (int j = 0; j < maxIteration; j++) {
       obj = new BigObject();
     }

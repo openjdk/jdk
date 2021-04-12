@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -764,7 +764,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List &old_new) {
   Node* x = loop->_head;
   // Only for inner loops
-  if (loop->_child != NULL || !x->is_LongCountedLoop()) {
+  if (loop->_child != NULL || !x->is_LongCountedLoop() || x->as_Loop()->is_transformed_long_outer_loop()) {
     return false;
   }
 
@@ -812,7 +812,8 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
     return false;
   }
 
-  const TypeLong* phi_t = _igvn.type(phi)->is_long();
+  // May not have gone thru igvn yet so don't use _igvn.type(phi) (PhaseIdealLoop::is_counted_loop() sets the iv phi's type)
+  const TypeLong* phi_t = phi->bottom_type()->is_long();
   assert(phi_t->_hi >= phi_t->_lo, "dead phi?");
   iters_limit = (int)MIN2((julong)iters_limit, (julong)(phi_t->_hi - phi_t->_lo));
 
@@ -832,8 +833,8 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   Node* outer_exit_test = new IfNode(exit_test->in(0), exit_test->in(1), exit_test->_prob, exit_test->_fcnt);
   Node* inner_exit_branch = exit_branch->clone();
 
-  Node* outer_head = new LoopNode(entry_control, outer_back_branch);
-  IdealLoopTree* outer_ilt = insert_outer_loop(loop, outer_head->as_Loop(), outer_back_branch);
+  LoopNode* outer_head = new LoopNode(entry_control, outer_back_branch);
+  IdealLoopTree* outer_ilt = insert_outer_loop(loop, outer_head, outer_back_branch);
 
   const bool body_populated = true;
   register_control(outer_head, outer_ilt, entry_control, body_populated);
@@ -1005,7 +1006,8 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   Atomic::inc(&_long_loop_nests);
 #endif
 
-  inner_head->mark_transformed_long_loop();
+  inner_head->mark_transformed_long_inner_loop();
+  outer_head->mark_transformed_long_outer_loop();
 
   return true;
 }
@@ -1389,7 +1391,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     if (sov < 0) {
       return false;  // Bailout: integer overflow is certain.
     }
-    assert(!x->as_Loop()->is_transformed_long_loop(), "long loop was transformed");
+    assert(!x->as_Loop()->is_transformed_long_inner_loop(), "long loop was transformed");
     // Generate loop's limit check.
     // Loop limit check predicate should be near the loop.
     ProjNode *limit_check_proj = find_predicate_insertion_point(init_control, Deoptimization::Reason_loop_limit_check);
@@ -1479,7 +1481,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
 
 #ifdef ASSERT
   if (iv_bt == T_INT &&
-      !x->as_Loop()->is_transformed_long_loop() &&
+      !x->as_Loop()->is_transformed_long_inner_loop() &&
       StressLongCountedLoop > 0 &&
       trunc1 == NULL &&
       convert_to_long_loop(cmp, phi, loop)) {
@@ -1636,6 +1638,16 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
         Node* sfpt = sfpt2->clone();
         sfpt->set_req(0, iffalse);
         outer_le->set_req(0, sfpt);
+
+        Node* polladdr = sfpt->in(TypeFunc::Parms);
+        if (polladdr != nullptr && polladdr->is_Load()) {
+          // Polling load should be pinned outside inner loop.
+          Node* new_polladdr = polladdr->clone();
+          new_polladdr->set_req(0, iffalse);
+          _igvn.register_new_node_with_optimizer(new_polladdr, polladdr);
+          set_ctrl(new_polladdr, iffalse);
+          sfpt->set_req(TypeFunc::Parms, new_polladdr);
+        }
         // When this code runs, loop bodies have not yet been populated.
         const bool body_populated = false;
         register_control(sfpt, outer_ilt, iffalse, body_populated);
@@ -1674,10 +1686,13 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 
 #ifndef PRODUCT
-  if (x->as_Loop()->is_transformed_long_loop()) {
+  if (x->as_Loop()->is_transformed_long_inner_loop()) {
     Atomic::inc(&_long_loop_counted_loops);
   }
 #endif
+  if (iv_bt == T_LONG && x->as_Loop()->is_transformed_long_outer_loop()) {
+    l->mark_transformed_long_outer_loop();
+  }
 
   return true;
 }
@@ -1802,7 +1817,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
           for (DUIterator_Fast jmax, j = be->fast_outs(jmax); j < jmax; j++) {
             Node* n = be->fast_out(j);
             if (n->is_Load()) {
-              assert(n->in(0) == be, "should be on the backedge");
+              assert(n->in(0) == be || n->find_prec_edge(be) > 0, "should be on the backedge");
               do {
                 n = n->raw_out(0);
               } while (!n->is_Phi());
@@ -3313,7 +3328,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
              phase->is_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
-    assert(!_head->is_Loop() || !_head->as_Loop()->is_transformed_long_loop(), "transformation to counted loop should not fail");
+    assert(!_head->is_Loop() || !_head->as_Loop()->is_transformed_long_inner_loop(), "transformation to counted loop should not fail");
     if (_parent != NULL && !_irreducible) {
       // Not a counted loop. Keep one safepoint.
       bool keep_one_sfpt = true;
@@ -5037,7 +5052,8 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
             for (uint j = 1; j < s->req(); j++) {
               Node* in = s->in(j);
               Node* r_in = r->in(j);
-              if ((worklist.member(in) || in == mem) && is_dominator(early, r_in)) {
+              // We can't reach any node from a Phi because we don't enqueue Phi's uses above
+              if (((worklist.member(in) && !in->is_Phi()) || in == mem) && is_dominator(early, r_in)) {
                 LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
               }
             }
