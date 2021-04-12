@@ -918,6 +918,7 @@ void nmethod::log_new_nmethod() const {
 // Print out more verbose output usually for a newly created nmethod.
 void nmethod::print_on(outputStream* st, const char* msg) const {
   if (st != NULL) {
+    ttyLocker ttyl;
     if (WizardMode) {
       CompileTask::print(st, this, msg, /*short_form:*/ true);
       st->print_cr(" (" INTPTR_FORMAT ")", p2i(this));
