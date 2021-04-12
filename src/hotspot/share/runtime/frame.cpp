@@ -1238,17 +1238,6 @@ void frame::describe(FrameValues& values, int frame_no) {
 
 #endif
 
-
-//-----------------------------------------------------------------------------------
-// StackFrameStream implementation
-
-StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames) : _reg_map(thread, update, process_frames) {
-  assert(thread->has_last_Java_frame(), "sanity check");
-  _fr = thread->last_frame();
-  _is_done = false;
-}
-
-
 #ifndef PRODUCT
 
 void FrameValues::describe(int owner, intptr_t* location, const char* description, int priority) {

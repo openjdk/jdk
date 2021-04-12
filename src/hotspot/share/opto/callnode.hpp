@@ -484,8 +484,6 @@ public:
   virtual const RegMask &out_RegMask() const;
   virtual uint           match_edge(uint idx) const;
 
-  static  bool           needs_polling_address_input();
-
 #ifndef PRODUCT
   virtual void           dump_spec(outputStream *st) const;
   virtual void           related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
