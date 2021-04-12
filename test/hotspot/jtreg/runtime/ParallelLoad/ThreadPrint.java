@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_RUNTIME_MEMPROFILER_HPP
-#define SHARE_RUNTIME_MEMPROFILER_HPP
 
-// Prints periodic memory usage trace of HotSpot VM
-
-class MemProfilerTask;
-
-class MemProfiler : AllStatic {
- friend class MemProfilerTask;
- private:
-  static MemProfilerTask* _task;
-  static FILE* _log_fp;
-  // Do trace (callback from MemProfilerTask and from disengage)
-  static void do_trace()      PRODUCT_RETURN;
- public:
-  // Start/stop the profiler
-  static void engage()        PRODUCT_RETURN;
-  static void disengage()     PRODUCT_RETURN;
-  // Tester
-  static bool is_active()     PRODUCT_RETURN0;
-};
-
-#endif // SHARE_RUNTIME_MEMPROFILER_HPP
+// class to print thread-annotated output
+class ThreadPrint {
+    public static void println(String s) {
+        System.out.println(Thread.currentThread().getName() + ": " + s);
+        System.out.flush();
+    }
+}
