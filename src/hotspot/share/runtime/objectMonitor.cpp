@@ -407,6 +407,8 @@ bool ObjectMonitor::enter(JavaThread* current) {
     assert(current->thread_state() == _thread_in_vm, "invariant");
 
     current->frame_anchor()->make_walkable(current);
+    // Thread must be walkable before it is blocked.
+    // Read in reverse order.
     OrderAccess::storestore();
     for (;;) {
       current->set_thread_state(_thread_blocked);
@@ -974,7 +976,7 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
       if (SafepointMechanism::should_process(current)) {
         if (_succ == current) {
             _succ = NULL;
-            OrderAccess::fence();
+            OrderAccess::fence(); // always do a full fence when successor is cleared
         }
         SafepointMechanism::process_if_requested(current);
       }
@@ -1537,6 +1539,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
     {
       current->frame_anchor()->make_walkable(current);
+      // Thread must be walkable before it is blocked.
+      // Read in reverse order.
       OrderAccess::storestore();
       current->set_thread_state(_thread_blocked);
       if (interrupted || HAS_PENDING_EXCEPTION) {

@@ -1443,10 +1443,12 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
       JvmtiExport::post_thread_end(this);
     }
 
-    // The careful dance between thread suspension and exit is handled here:
-    _handshake.thread_exit();
-    ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
+    // The careful dance between thread suspension and exit is handled here.
+    // Since we are in vm and suspension is done with handshakes,
+    // we can just put in the exiting state and it will be corrcetly handled.
+    set_exiting();
 
+    ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
   } else {
     assert(!is_terminated() && !is_exiting(), "must not be exiting");
     // before_exit() has already posted JVMTI THREAD_END events

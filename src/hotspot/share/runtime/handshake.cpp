@@ -460,6 +460,10 @@ bool HandshakeState::process_by_self() {
   assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
   ThreadInVMForHandshake tivm(_handshakee);
   {
+    // Handshakes cannot safely safepoint.
+    // The exception to this rule is the asynchronous suspension handshake.
+    // It by-passes the NSV by manully doing the transition.
+    // Since we can have safepoints while suspeneded we need to release the tty locker if it is held.
     ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
     NoSafepointVerifier nsv;
     return process_self_inner();
@@ -606,30 +610,7 @@ void HandshakeState::unlock() {
   _lock.unlock();
 }
 
-// The careful dance between thread suspension and exit is handled here.
-// The caller has notified the agents that we are exiting, before we go
-// on, we must check for a pending external suspend request and honor it
-// in order to not surprise the thread that made the suspend request.
-void HandshakeState::thread_exit() {
-  guarantee(JavaThread::current() == _handshakee, "Must be");
-  while (true) {
-    {
-      MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-      // If we have any safepoint or handshake pending deal with it else set exit.
-      if (!SafepointMechanism::should_process(_handshakee)) {
-        _handshakee->set_exiting();
-        return;
-      }
-    }
-    ThreadBlockInVM tbivm(_handshakee);
-    // We're done with this suspend request, but we have to loop around
-    // and check again. Eventually we will get the lock without a pending
-    // external suspend request and will be able to mark ourselves as
-    // exiting.
-  }
-}
-
-void HandshakeState::self_suspened() {
+void HandshakeState::do_self_suspend() {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(!_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable(), "should have walkable stack");
@@ -651,7 +632,7 @@ class ThreadSuspensionHandshake : public AsyncHandshakeClosure {
   ThreadSuspensionHandshake() : AsyncHandshakeClosure("ThreadSuspension") {}
   void do_thread(Thread* thr) {
     JavaThread* target = thr->as_Java_thread();
-    target->handshake_state()->self_suspened();
+    target->handshake_state()->do_self_suspend();
   }
 };
 

@@ -125,9 +125,17 @@ class HandshakeState {
   // while handshake operations are being executed, the _handshakee
   // must take slow path, process_by_self(), if _lock is held.
   bool should_process() {
+    // When doing thread suspension the holder of the _lock
+    // can add an asynchronous handshake to queue.
+    // To make sure it is seen by the handshakee, the handshakee must first
+    // check the _lock, if held go to slow path.
+    // Since the handshakee is unsafe if _lock gets lock after this check
+    // we know another threads cannot process any handshakes.
+    // Now we can check queue if there is anything we should process.
     if (_lock.is_locked()) {
       return true;
     }
+    // Lock check must be done before queue check, force ordering.
     OrderAccess::loadload();
     return !_queue.is_empty();
   }
@@ -153,15 +161,15 @@ class HandshakeState {
   volatile bool _suspended;
   // This flag is true while there is async handshake (trap)
   // on queue. Since we do only need one, we can reuse it if
-  // thread thread gets suspended again (after a resume)
-  // and have not yet processed it.
+  // thread gets suspended again (after a resume)
+  // and we have not yet processed it.
   bool _async_suspend_handshake;
 
   // Called from the suspend handshake.
   bool suspend_with_handshake();
   // Called from the async handshake (the trap)
   // to stop a thread from continuing execution when suspended.
-  void self_suspened();
+  void do_self_suspend();
 
   bool is_suspended()                       { return Atomic::load(&_suspended); }
   void set_suspended(bool to)               { return Atomic::store(&_suspended, to); }
@@ -170,7 +178,6 @@ class HandshakeState {
 
   bool suspend();
   bool resume();
-  void thread_exit();
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP
