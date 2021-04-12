@@ -49,7 +49,7 @@ class ReservedSpace {
                 bool executable);
  protected:
   // Helpers to clear and set members during initialization. Two members
-  // are treated differently:
+  // require special treatment:
   //  * _fd_for_heap     - The fd is set once and should not be cleared
   //                       even if the reservation has to be retried.
   //  * _noaccess_prefix - Used for compressed heaps and updated after
