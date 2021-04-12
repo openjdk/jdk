@@ -596,7 +596,7 @@ public:
 private:
   // Rebuilds the remembered sets for chosen regions in parallel and concurrently to the application.
   void rebuild_rem_set_concurrently();
-  
+
   uint total_selected_for_rebuild() const { return _total_selected_for_rebuild; }
   void set_total_selected_for_rebuild(uint num) { _total_selected_for_rebuild = num; }
 
