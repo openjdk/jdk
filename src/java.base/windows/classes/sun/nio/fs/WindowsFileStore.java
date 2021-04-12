@@ -52,7 +52,7 @@ class WindowsFileStore
     private final int volType;
     private final String displayName;   // returned by toString
 
-    private int hashCode;
+    private volatile int hashCode;
 
     private WindowsFileStore(String root) throws WindowsException {
         assert root.charAt(root.length()-1) == '\\';
@@ -250,11 +250,13 @@ class WindowsFileStore
 
     @Override
     public int hashCode() {
-        if (hashCode == 0) { // Don't care about race
-            hashCode = (volType == DRIVE_FIXED) ?
+        int hc = hashCode;
+        if (hc == 0) {
+            hc = (volType == DRIVE_FIXED) ?
                 root.toLowerCase(Locale.ROOT).hashCode() : root.hashCode();
+            hashCode = hc;
         }
-        return hashCode;
+        return hc;
     }
 
     @Override
