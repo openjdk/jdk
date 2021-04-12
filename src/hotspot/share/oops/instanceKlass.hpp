@@ -30,7 +30,6 @@
 #include "oops/constMethod.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/klassVtable.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
 #include "utilities/accessFlags.hpp"
@@ -40,6 +39,7 @@
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
+class klassItable;
 class RecordComponent;
 
 // An InstanceKlass is the VM level representation of a Java class.
@@ -1108,7 +1108,9 @@ public:
 
   // Java itable
   klassItable itable() const;        // return klassItable wrapper
-  Method* method_at_itable(Klass* holder, int index, TRAPS);
+  Method* method_at_itable(InstanceKlass* holder, int index, TRAPS);
+  Method* method_at_itable_or_null(InstanceKlass* holder, int index, bool& itable_entry_found);
+  int vtable_index_of_interface_method(Method* method);
 
 #if INCLUDE_JVMTI
   void adjust_default_methods(bool* trace_name_printed);

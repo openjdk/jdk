@@ -41,11 +41,6 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
   _weak(false)
 { }
 
-ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
-  _queue(q),
-  _mark_context(ShenandoahHeap::heap()->marking_context()) {
-}
-
 ShenandoahMark::ShenandoahMark() :
   _task_queues(ShenandoahHeap::heap()->marking_context()->task_queues()) {
 }

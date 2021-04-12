@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ class ExchangeImpl {
         String m, URI u, Request req, long len, HttpConnection connection
     ) throws IOException {
         this.req = req;
-        this.reqHdrs = req.headers();
+        this.reqHdrs = new UnmodifiableHeaders(req.headers());
         this.rspHdrs = new Headers();
         this.method = m;
         this.uri = u;
@@ -99,7 +99,7 @@ class ExchangeImpl {
     }
 
     public Headers getRequestHeaders () {
-        return new UnmodifiableHeaders (reqHdrs);
+        return reqHdrs;
     }
 
     public Headers getResponseHeaders () {

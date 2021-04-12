@@ -44,7 +44,6 @@
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "logging/log.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"

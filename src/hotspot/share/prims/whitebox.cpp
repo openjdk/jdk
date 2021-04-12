@@ -78,6 +78,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
@@ -1248,58 +1249,38 @@ WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
   return NULL;
 WB_END
 
-WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
-  int result;
-  if (GetVMFlag <JVM_FLAG_TYPE(int)> (thread, env, name, &result)) {
+template <typename T, int type_enum>
+jobject GetVMFlag_longBox(JNIEnv* env, JavaThread* thread, jstring name) {
+  T result;
+  if (GetVMFlag <T, type_enum> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
   return NULL;
+}
+
+WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(int)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUintVMFlag(JNIEnv* env, jobject o, jstring name))
-  uint result;
-  if (GetVMFlag <JVM_FLAG_TYPE(uint)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(uint)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetIntxVMFlag(JNIEnv* env, jobject o, jstring name))
-  intx result;
-  if (GetVMFlag <JVM_FLAG_TYPE(intx)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(intx)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUintxVMFlag(JNIEnv* env, jobject o, jstring name))
-  uintx result;
-  if (GetVMFlag <JVM_FLAG_TYPE(uintx)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(uintx)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
-  uint64_t result;
-  if (GetVMFlag <JVM_FLAG_TYPE(uint64_t)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(uint64_t)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetSizeTVMFlag(JNIEnv* env, jobject o, jstring name))
-  size_t result;
-  if (GetVMFlag <JVM_FLAG_TYPE(size_t)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(size_t)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))

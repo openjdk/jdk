@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1638,6 +1638,16 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
         Node* sfpt = sfpt2->clone();
         sfpt->set_req(0, iffalse);
         outer_le->set_req(0, sfpt);
+
+        Node* polladdr = sfpt->in(TypeFunc::Parms);
+        if (polladdr != nullptr && polladdr->is_Load()) {
+          // Polling load should be pinned outside inner loop.
+          Node* new_polladdr = polladdr->clone();
+          new_polladdr->set_req(0, iffalse);
+          _igvn.register_new_node_with_optimizer(new_polladdr, polladdr);
+          set_ctrl(new_polladdr, iffalse);
+          sfpt->set_req(TypeFunc::Parms, new_polladdr);
+        }
         // When this code runs, loop bodies have not yet been populated.
         const bool body_populated = false;
         register_control(sfpt, outer_ilt, iffalse, body_populated);
