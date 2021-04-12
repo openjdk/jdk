@@ -110,9 +110,4 @@ public final class RSAPSSParameterSpec implements SignatureMethodParameterSpec {
     public PSSParameterSpec getPSSParameterSpec() {
         return spec;
     }
-
-    @Override
-    public String toString() {
-        return "RSAPSSParameterSpec[spec=" + spec + "]";
-    }
 }
