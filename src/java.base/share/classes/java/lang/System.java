@@ -33,7 +33,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -122,7 +121,10 @@ public final class System {
      * The "standard" output stream. This stream is already
      * open and ready to accept output data. Typically this stream
      * corresponds to display output or another output destination
-     * specified by the host environment or user.
+     * specified by the host environment or user. The encoding used
+     * in the conversion from characters to bytes is determined by
+     * {@link Console#charset()} if the {@code Console} exists,
+     * {@link Charset#defaultCharset()} otherwise.
      * <p>
      * For simple stand-alone Java applications, a typical way to write
      * a line of output data is:
@@ -156,6 +158,9 @@ public final class System {
      * of a user even if the principal output stream, the value of the
      * variable {@code out}, has been redirected to a file or other
      * destination that is typically not continuously monitored.
+     * The encoding used in the conversion from characters to bytes is
+     * determined by {@link Console#charset()} if the {@code Console}
+     * exists, {@link Charset#defaultCharset()} otherwise.
      */
     public static final PrintStream err = null;
 
@@ -1909,13 +1914,8 @@ public final class System {
     /**
      * Create PrintStream for stdout/err based on encoding.
      */
-    private static PrintStream newPrintStream(FileOutputStream fos, String enc) {
-       if (enc != null) {
-            try {
-                return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
-            } catch (UnsupportedEncodingException uee) {}
-        }
-        return new PrintStream(new BufferedOutputStream(fos, 128), true);
+    private static PrintStream newPrintStream(FileOutputStream fos, Charset cs) {
+        return new PrintStream(new BufferedOutputStream(fos, 128), true, cs);
     }
 
     /**
@@ -2010,12 +2010,14 @@ public final class System {
 
         lineSeparator = props.getProperty("line.separator");
 
+        Console con = System.console();
+        Charset cs = con != null ? con.charset() : Charset.defaultCharset();
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
         setIn0(new BufferedInputStream(fdIn));
-        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
-        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
+        setOut0(newPrintStream(fdOut, cs));
+        setErr0(newPrintStream(fdErr, cs));
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();

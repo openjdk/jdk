@@ -45,10 +45,8 @@ import java.nio.charset.UnsupportedCharsetException;
  * ({@code '\n'}) is written.
  *
  * <p> All characters printed by a {@code PrintStream} are converted into
- * bytes using the given encoding or charset. If it is not given,
- * it is the <a id="default_charset">default charset</a>, which is
- * {@link Console#charset()} if the {@code Console} exists, or defaults to
- * {@link Charset#defaultCharset()}.
+ * bytes using the given encoding or charset, or the platform's default
+ * character encoding if not specified.
  * The {@link PrintWriter} class should be used in situations that require
  * writing characters rather than bytes.
  *
@@ -125,7 +123,7 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, without automatic line flushing, with the
      * specified OutputStream. Characters written to the stream are converted
-     * to bytes using the <a href="#default_charset">default charset</a>.
+     * to bytes using the platform's default character encoding.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed
@@ -139,7 +137,7 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, with the specified OutputStream and line
      * flushing. Characters written to the stream are converted to bytes using
-     * the <a href="#default_charset">default charset</a>.
+     * the platform's default character encoding.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed
@@ -521,8 +519,8 @@ public class PrintStream extends FilterOutputStream
      * invoked on the underlying output stream.
      *
      * <p> Note that the byte is written as given; to write a character that
-     * will be translated according to the <a href="#default_charset">
-     * default charset</a>, use the {@code print(char)} or {@code println(char)}
+     * will be translated according to the platform's default character
+     * encoding, use the {@code print(char)} or {@code println(char)}
      * methods.
      *
      * @param  b  The byte to be written
@@ -554,8 +552,8 @@ public class PrintStream extends FilterOutputStream
      * output stream.
      *
      * <p> Note that the bytes will be written as given; to write characters
-     * that will be translated according to the <a href="#default_charset">
-     * default charset</a>, use the {@code print(char)} or {@code println(char)}
+     * that will be translated according to the platform's default character
+     * encoding, use the {@code print(char)} or {@code println(char)}
      * methods.
      *
      * @param  buf   A byte array
@@ -586,8 +584,8 @@ public class PrintStream extends FilterOutputStream
      * invoked on the underlying output stream.
      *
      * <p> Note that the bytes will be written as given; to write characters
-     * that will be translated according to the <a href="#default_charset">
-     * default charset</a>, use the {@code print(char[])} or {@code println(char[])}
+     * that will be translated according to the platform's default character
+     * encoding, use the {@code print(char[])} or {@code println(char[])}
      * methods.
      *
      * @apiNote
@@ -624,8 +622,8 @@ public class PrintStream extends FilterOutputStream
      * will be invoked.
      *
      * <p> Note that the bytes will be written as given; to write characters
-     * that will be translated according to the <a href="#default_charset">
-     * default charset</a>, use the {@code print(char[])} or {@code println(char[])}
+     * that will be translated according to the platform's default character
+     * encoding, use the {@code print(char[])} or {@code println(char[])}
      * methods.
      *
      * @implSpec
@@ -759,8 +757,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a boolean value.  The string produced by {@link
      * java.lang.String#valueOf(boolean)} is translated into bytes
-     * according to the <a href="#default_charset">default charset</a>,
-     * and these bytes are written in exactly the manner of the
+     * according to the platform's default character encoding, and these bytes
+     * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      b   The {@code boolean} to be printed
@@ -772,9 +770,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a character.  The character is translated into one or more bytes
      * according to the character encoding given to the constructor, or the
-     * <a href="#default_charset">default charset</a> if none specified.
-     * These bytes are written in exactly the manner of the
-     * {@link #write(int)} method.
+     * platform's default character encoding if none specified. These bytes
+     * are written in exactly the manner of the {@link #write(int)} method.
      *
      * @param      c   The {@code char} to be printed
      */
@@ -785,8 +782,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints an integer.  The string produced by {@link
      * java.lang.String#valueOf(int)} is translated into bytes
-     * according to the <a href="#default_charset">default charset</a>, and
-     * these bytes are written in exactly the manner of the
+     * according to the platform's default character encoding, and these bytes
+     * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      i   The {@code int} to be printed
@@ -799,8 +796,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a long integer.  The string produced by {@link
      * java.lang.String#valueOf(long)} is translated into bytes
-     * according to the <a href="#default_charset">default charset</a>,
-     * and these bytes are written in exactly the manner of the
+     * according to the platform's default character encoding, and these bytes
+     * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      l   The {@code long} to be printed
@@ -813,8 +810,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a floating-point number.  The string produced by {@link
      * java.lang.String#valueOf(float)} is translated into bytes
-     * according to the <a href="#default_charset">default charset</a>,
-     * and these bytes are written in exactly the manner of the
+     * according to the platform's default character encoding, and these bytes
+     * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      f   The {@code float} to be printed
@@ -827,8 +824,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a double-precision floating-point number.  The string produced by
      * {@link java.lang.String#valueOf(double)} is translated into
-     * bytes according to the <a href="#default_charset">default charset</a>,
-     * and these bytes are written in exactly the manner of the {@link
+     * bytes according to the platform's default character encoding, and these
+     * bytes are written in exactly the manner of the {@link
      * #write(int)} method.
      *
      * @param      d   The {@code double} to be printed
@@ -841,7 +838,7 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints an array of characters.  The characters are converted into bytes
      * according to the character encoding given to the constructor, or the
-     * <a href="#default_charset">default charset</a> if none specified. These bytes
+     * platform's default character encoding if none specified. These bytes
      * are written in exactly the manner of the {@link #write(int)} method.
      *
      * @param      s   The array of chars to be printed
@@ -856,7 +853,7 @@ public class PrintStream extends FilterOutputStream
      * Prints a string.  If the argument is {@code null} then the string
      * {@code "null"} is printed.  Otherwise, the string's characters are
      * converted into bytes according to the character encoding given to the
-     * constructor, or the <a href="#default_charset">default charset</a> if none
+     * constructor, or the platform's default character encoding if none
      * specified. These bytes are written in exactly the manner of the
      * {@link #write(int)} method.
      *
@@ -869,8 +866,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints an object.  The string produced by the {@link
      * java.lang.String#valueOf(Object)} method is translated into bytes
-     * according to the <a href="#default_charset">default charset</a>, and
-     * these bytes are written in exactly the manner of the
+     * according to the platform's default character encoding, and these bytes
+     * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      obj   The {@code Object} to be printed
