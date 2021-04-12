@@ -60,10 +60,33 @@ public class Compiler {
     /**
      * Check if Graal is used as JIT compiler.
      *
-     * @return false because Graal is removed from JDK.
+     * Graal is enabled if following conditions are true:
+     * - we are not in Interpreter mode
+     * - UseJVMCICompiler flag is true
+     * - jvmci.Compiler variable is equal to 'graal'
+     * - TieredCompilation is not used or TieredStopAtLevel is greater than 3
+     * No need to check client mode because it set UseJVMCICompiler to false.
+     *
+     * @return true if Graal is used as JIT compiler.
      */
     public static boolean isGraalEnabled() {
-        return false;
+        Boolean useCompiler = WB.getBooleanVMFlag("UseCompiler");
+        if (useCompiler == null || !useCompiler) {
+            return false;
+        }
+        Boolean useJvmciComp = WB.getBooleanVMFlag("UseJVMCICompiler");
+        if (useJvmciComp == null || !useJvmciComp) {
+            return false;
+        }
+
+        Boolean tieredCompilation = WB.getBooleanVMFlag("TieredCompilation");
+        Long compLevel = WB.getIntxVMFlag("TieredStopAtLevel");
+        // if TieredCompilation is enabled and compilation level is <= 3 then no Graal is used
+        if (tieredCompilation != null && tieredCompilation &&
+            compLevel != null && compLevel <= 3) {
+            return false;
+        }
+        return true;
     }
 
     /**
