@@ -51,7 +51,7 @@ public class B6206527 {
 
         // need to remove the %scope suffix
         addr = (Inet6Address) InetAddress.getByAddress (
-                addr.getAddress()
+            addr.getAddress()
         );
 
         try (ServerSocket ss = new ServerSocket()) {
