@@ -940,6 +940,7 @@ public:
     _out->print("%s,", k->external_name());
   }
 };
+
 void ClassLoaderData::print_on(outputStream* out) const {
   ResourceMark rm;
   out->print_cr("ClassLoaderData(" INTPTR_FORMAT ")", p2i(this));
