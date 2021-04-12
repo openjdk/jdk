@@ -387,7 +387,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             super(dmElem);
         }
 
-        public abstract PSSParameterSpec getPSSParameterSpec();
+        abstract public PSSParameterSpec getPSSParameterSpec();
 
         @Override
         Signature getSignature(Provider p)
