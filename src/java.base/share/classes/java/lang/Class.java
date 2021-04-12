@@ -3066,18 +3066,12 @@ public final class Class<T> implements java.io.Serializable,
     private String resolveName(String name) {
         if (!name.startsWith("/")) {
             String baseName = getPackageName();
-            if (baseName != null && !baseName.isEmpty()) {
-                int len = baseName.length() + 1 + name.length();
-                StringBuilder sb = new StringBuilder(len);
-                name = sb.append(baseName.replace('.', '/'))
-                    .append('/')
-                    .append(name)
-                    .toString();
+            if (!baseName.isEmpty()) {
+                return baseName.replace('.', '/') + '/' + name;
             }
-        } else {
-            name = name.substring(1);
+            return name;
         }
-        return name;
+        return name.substring(1);
     }
 
     /**
@@ -4493,7 +4487,6 @@ public final class Class<T> implements java.io.Serializable,
      * @since 15
      */
     @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
-    @SuppressWarnings("preview")
     public boolean isSealed() {
         if (isArray() || isPrimitive()) {
             return false;
