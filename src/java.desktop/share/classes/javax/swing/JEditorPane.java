@@ -1621,7 +1621,7 @@ public class JEditorPane extends JTextComponent {
 
     /**
      * Key for a client property used to indicate whether
-     * <a href="http://www.w3.org/TR/CSS21/syndata.html#length-units">
+     * <a href="https://www.w3.org/TR/CSS22/syndata.html#length-units">
      * w3c compliant</a> length units are used for html rendering.
      * <p>
      * By default this is not enabled; to enable
@@ -2061,7 +2061,7 @@ public class JEditorPane extends JTextComponent {
         }
 
         /**
-         * Make one of these puppies
+         * Constructs a {@code JEditorPaneAccessibleHypertextSupport}.
          */
         public JEditorPaneAccessibleHypertextSupport() {
             hyperlinks = new LinkVector();

@@ -35,6 +35,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -139,7 +140,7 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
     return;
   }
 
-  if (cache == NULL)  cache = (void*)Universe::non_oop_word();
+  if (cache == NULL)  cache = Universe::non_oop_word();
 
   set_data((intptr_t)cache);
 }

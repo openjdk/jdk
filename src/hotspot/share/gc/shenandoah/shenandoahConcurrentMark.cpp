@@ -24,15 +24,9 @@
 
 #include "precompiled.hpp"
 
-#include "classfile/symbolTable.hpp"
-#include "code/codeCache.hpp"
-
-#include "gc/shared/weakProcessor.inline.hpp"
-#include "gc/shared/gcTimer.hpp"
-#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
@@ -45,13 +39,8 @@
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-
 #include "memory/iterator.inline.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/handles.inline.hpp"
-
 
 class ShenandoahUpdateRootsTask : public AbstractGangTask {
 private:
@@ -202,8 +191,13 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure cl(q, _rp);
-  _root_scanner.roots_do(&cl, worker_id);
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahMarkRefsDedupClosure cl(q, _rp);
+    _root_scanner.roots_do(&cl, worker_id);
+  } else {
+    ShenandoahMarkRefsClosure cl(q, _rp);
+    _root_scanner.roots_do(&cl, worker_id);
+  }
 }
 
 void ShenandoahConcurrentMark::mark_concurrent_roots() {

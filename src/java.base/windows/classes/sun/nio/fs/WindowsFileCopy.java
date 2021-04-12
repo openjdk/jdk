@@ -139,6 +139,12 @@ class WindowsFileCopy {
             sm.checkPermission(new LinkPermission("symbolic"));
         }
 
+        // if source is a Unix domain socket, we don't want to copy it for various
+        // reasons including consistency with Unix
+        if (sourceAttrs.isUnixDomainSocket()) {
+            throw new IOException("Can not copy socket file");
+        }
+
         final String sourcePath = asWin32Path(source);
         final String targetPath = asWin32Path(target);
 

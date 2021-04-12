@@ -477,33 +477,34 @@ void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
 // Load object from cpool->resolved_references(index).
 // Kills:
 //   - index
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Register tmp1,
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index,
+                                                                 Register tmp1, Register tmp2,
                                                                  Label *L_handle_null) {
-  assert_different_registers(result, index);
+  assert_different_registers(result, index, tmp1, tmp2);
+  assert(index->is_nonvolatile(), "needs to survive C-call in resolve_oop_handle");
   get_constant_pool(result);
 
   // Convert from field index to resolved_references() index and from
   // word index to byte offset. Since this is a java object, it can be compressed.
-  Register tmp2 = index;  // reuse
-  sldi(tmp1, index, LogBytesPerHeapOop);
+  sldi(index, index, LogBytesPerHeapOop);
   // Load pointer for resolved_references[] objArray.
   ld(result, ConstantPool::cache_offset_in_bytes(), result);
   ld(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
-  resolve_oop_handle(result);
+  resolve_oop_handle(result, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
 #ifdef ASSERT
   Label index_ok;
   lwa(R0, arrayOopDesc::length_offset_in_bytes(), result);
   sldi(R0, R0, LogBytesPerHeapOop);
-  cmpd(CCR0, tmp1, R0);
+  cmpd(CCR0, index, R0);
   blt(CCR0, index_ok);
   stop("resolved reference index out of bounds");
   bind(index_ok);
 #endif
   // Add in the index.
-  add(result, tmp1, result);
+  add(result, index, result);
   load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result,
                 tmp1, tmp2,
-                MacroAssembler::PRESERVATION_FRAME_LR,
+                MacroAssembler::PRESERVATION_NONE,
                 0, L_handle_null);
 }
 
@@ -826,6 +827,7 @@ void InterpreterMacroAssembler::narrow(Register result) {
 
 // Remove activation.
 //
+// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
@@ -841,6 +843,23 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
                                                   bool throw_monitor_exception,
                                                   bool install_monitor_exception) {
   BLOCK_COMMENT("remove_activation {");
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path;
+  Label fast_path;
+  safepoint_poll(slow_path, R11_scratch1, true /* at_return */, false /* in_nmethod */);
+  b(fast_path);
+  bind(slow_path);
+  push(state);
+  set_last_Java_frame(R1_SP, noreg);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), R16_thread);
+  reset_last_Java_frame();
+  pop(state);
+  align(32);
+  bind(fast_path);
+
   unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
 
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.

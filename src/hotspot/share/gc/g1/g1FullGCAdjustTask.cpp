@@ -65,7 +65,7 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
     if (r->is_humongous()) {
       // Special handling for humongous regions to get somewhat better
       // work distribution.
-      oop obj = oop(r->humongous_start_region()->bottom());
+      oop obj = cast_to_oop(r->humongous_start_region()->bottom());
       obj->oop_iterate(&cl, MemRegion(r->bottom(), r->top()));
     } else if (!r->is_closed_archive() && !r->is_free()) {
       // Closed archive regions never change references and only contain
@@ -81,7 +81,7 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
 G1FullGCAdjustTask::G1FullGCAdjustTask(G1FullCollector* collector) :
     G1FullGCTask("G1 Adjust", collector),
     _root_processor(G1CollectedHeap::heap(), collector->workers()),
-    _references_done(0),
+    _references_done(false),
     _weak_proc_task(collector->workers()),
     _hrclaimer(collector->workers()),
     _adjust(collector),
@@ -99,8 +99,7 @@ void G1FullGCAdjustTask::work(uint worker_id) {
   marker->preserved_stack()->adjust_during_full_gc();
 
   // Adjust the weak roots.
-
-  if (Atomic::add(&_references_done, 1u) == 1u) { // First incr claims task.
+  if (!Atomic::cmpxchg(&_references_done, false, true)) {
     G1CollectedHeap::heap()->ref_processor_stw()->weak_oops_do(&_adjust);
   }
 

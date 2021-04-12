@@ -666,7 +666,7 @@ class MacroAssembler: public Assembler {
                                    bool try_bias = UseBiasedLocking, bool use_rtm = false);
 
   // Check if safepoint requested and if so branch
-  void safepoint_poll(Label& slow_path, Register temp_reg);
+  void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level);
@@ -743,8 +743,10 @@ class MacroAssembler: public Assembler {
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
 
-  void resolve_oop_handle(Register result);
-  void load_mirror_from_const_method(Register mirror, Register const_method);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2,
+                          MacroAssembler::PreservationLevel preservation_level);
+  void resolve_weak_handle(Register result, Register tmp1, Register tmp2,
+                           MacroAssembler::PreservationLevel preservation_level);
   void load_method_holder(Register holder, Register method);
 
   static int instr_size_for_decode_klass_not_null();

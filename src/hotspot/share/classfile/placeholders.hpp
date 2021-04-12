@@ -120,8 +120,8 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   InstanceKlass*    _instanceKlass; // InstanceKlass from successful define
   SeenThread*       _superThreadQ;  // doubly-linked queue of Threads loading a superclass for this class
   SeenThread*       _loadInstanceThreadQ;  // loadInstance thread
-                                    // can be multiple threads if classloader object lock broken by application
-                                    // or if classloader supports parallel classloading
+                                    // This can't be multiple threads since class loading waits for
+                                    // this token to be removed.
 
   SeenThread*       _defineThreadQ; // queue of Threads trying to define this class
                                     // including _definer

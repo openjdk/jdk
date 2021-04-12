@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
@@ -79,8 +79,15 @@ void  StackObj::operator delete [](void* p)           { ShouldNotCallThis(); }
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
                                  MetaspaceObj::Type type, TRAPS) throw() {
-  // Klass has it's own operator new
+  // Klass has its own operator new
   return Metaspace::allocate(loader_data, word_size, type, THREAD);
+}
+
+void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
+                                 size_t word_size,
+                                 MetaspaceObj::Type type) throw() {
+  assert(!Thread::current()->is_Java_thread(), "only allowed by non-Java thread");
+  return Metaspace::allocate(loader_data, word_size, type);
 }
 
 bool MetaspaceObj::is_valid(const MetaspaceObj* p) {

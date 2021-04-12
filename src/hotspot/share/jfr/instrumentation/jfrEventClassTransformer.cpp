@@ -52,6 +52,7 @@
 #include "oops/method.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/exceptions.hpp"
@@ -1512,7 +1513,7 @@ static bool is_retransforming(const InstanceKlass* ik, TRAPS) {
   assert(name != NULL, "invariant");
   Handle class_loader(THREAD, ik->class_loader());
   Handle protection_domain(THREAD, ik->protection_domain());
-  return SystemDictionary::find(name, class_loader, protection_domain, THREAD) != NULL;
+  return SystemDictionary::find_instance_klass(name, class_loader, protection_domain) != NULL;
 }
 
 // target for JFR_ON_KLASS_CREATION hook

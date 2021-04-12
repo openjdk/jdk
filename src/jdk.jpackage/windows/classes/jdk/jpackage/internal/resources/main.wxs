@@ -74,67 +74,45 @@
       <ComponentGroupRef Id="FileAssociations"/>
     </Feature>
 
-    <?ifdef JpInstallDirChooser ?>
-    <Binary Id="JpCaDll" SourceFile="wixhelper.dll"/>
-    <CustomAction Id="JpCheckInstallDir" BinaryKey="JpCaDll" DllEntry="CheckInstallDir" />
+    <CustomAction Id="JpSetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[INSTALLDIR]" />
+    <CustomAction Id="JpSetARPCOMMENTS" Property="ARPCOMMENTS" Value="$(var.JpAppDescription)" />
+    <CustomAction Id="JpSetARPCONTACT" Property="ARPCONTACT" Value="$(var.JpAppVendor)" />
+    <CustomAction Id="JpSetARPSIZE" Property="ARPSIZE" Value="$(var.JpAppSizeKb)" />
+
+    <?ifdef JpHelpURL ?>
+      <CustomAction Id="JpSetARPHELPLINK" Property="ARPHELPLINK" Value="$(var.JpHelpURL)" />
     <?endif?>
 
-    <CustomAction Id="JpSetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[INSTALLDIR]" />
+    <?ifdef JpAboutURL ?>
+      <CustomAction Id="JpSetARPURLINFOABOUT" Property="ARPURLINFOABOUT" Value="$(var.JpAboutURL)" />
+    <?endif?>
+
+    <?ifdef JpUpdateURL ?>
+      <CustomAction Id="JpSetARPURLUPDATEINFO" Property="ARPURLUPDATEINFO" Value="$(var.JpUpdateURL)" />
+    <?endif?>
 
     <?ifdef JpIcon ?>
     <Property Id="ARPPRODUCTICON" Value="JpARPPRODUCTICON"/>
     <Icon Id="JpARPPRODUCTICON" SourceFile="$(var.JpIcon)"/>
     <?endif?>
 
-    <UI>
-      <?ifdef JpInstallDirChooser ?>
-      <Dialog Id="JpInvalidInstallDir" Width="300" Height="85" Title="[ProductName] Setup" NoMinimize="yes">
-        <Control Id="JpInvalidInstallDirYes" Type="PushButton" X="100" Y="55" Width="50" Height="15" Default="no" Cancel="no" Text="Yes">
-          <Publish Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
-        </Control>
-        <Control Id="JpInvalidInstallDirNo" Type="PushButton" X="150" Y="55" Width="50" Height="15" Default="yes" Cancel="yes" Text="No">
-          <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>
-        </Control>
-        <Control Id="Text" Type="Text" X="25" Y="15" Width="250" Height="30" TabSkip="no">
-          <Text>!(loc.message.install.dir.exist)</Text>
-        </Control>
-      </Dialog>
-
-      <!--
-        Run WixUI_InstallDir dialog in the default install directory.
-      -->
-      <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>
-      <UIRef Id="WixUI_InstallDir" />
-
-      <Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="JpCheckInstallDir" Order="3">1</Publish>
-      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="JpInvalidInstallDir" Order="5">INSTALLDIR_VALID="0"</Publish>
-      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="5">INSTALLDIR_VALID="1"</Publish>
-
-      <?ifndef JpLicenseRtf ?>
-      <!--
-        No license file provided.
-        Override the dialog sequence in built-in dialog set "WixUI_InstallDir"
-        to exclude license dialog.
-      -->
-      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2">1</Publish>
-      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2">1</Publish>
-      <?endif?>
-
-      <?else?>
-
-      <?ifdef JpLicenseRtf ?>
-      <UIRef Id="WixUI_Minimal" />
-      <?endif?>
-
-      <?endif?>
-    </UI>
-
-    <?ifdef JpLicenseRtf ?>
-    <WixVariable Id="WixUILicenseRtf" Value="$(var.JpLicenseRtf)"/>
-    <?endif?>
+    <UIRef Id="JpUI"/>
 
     <InstallExecuteSequence>
       <Custom Action="JpSetARPINSTALLLOCATION" After="CostFinalize">Not Installed</Custom>
+      <Custom Action="JpSetARPCOMMENTS" After="CostFinalize">Not Installed</Custom>
+      <Custom Action="JpSetARPCONTACT" After="CostFinalize">Not Installed</Custom>
+      <Custom Action="JpSetARPSIZE" After="CostFinalize">Not Installed</Custom>
+      <?ifdef JpHelpURL ?>
+        <Custom Action="JpSetARPHELPLINK" After="CostFinalize">Not Installed</Custom>
+      <?endif?>
+      <?ifdef JpAboutURL ?>
+        <Custom Action="JpSetARPURLINFOABOUT" After="CostFinalize">Not Installed</Custom>
+      <?endif?>
+      <?ifdef JpUpdateURL ?>
+        <Custom Action="JpSetARPURLUPDATEINFO" After="CostFinalize">Not Installed</Custom>
+      <?endif?>
+
       <?ifndef JpAllowUpgrades ?>
       <Custom Action="JpDisallowUpgrade" After="FindRelatedProducts">JP_UPGRADABLE_FOUND</Custom>
       <?endif?>

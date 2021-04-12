@@ -42,6 +42,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -932,11 +933,14 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
 // state_size: We save the current state of the interpreter to this area.
 //
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Register Rsize_of_parameters, Register Rsize_of_locals) {
-  Register parent_frame_resize = R6_ARG4, // Frame will grow by this number of bytes.
-           top_frame_size      = R7_ARG5,
-           Rconst_method       = R8_ARG6;
+  Register Rparent_frame_resize = R6_ARG4, // Frame will grow by this number of bytes.
+           Rtop_frame_size      = R7_ARG5,
+           Rconst_method        = R8_ARG6,
+           Rconst_pool          = R9_ARG7,
+           Rmirror              = R10_ARG8;
 
-  assert_different_registers(Rsize_of_parameters, Rsize_of_locals, parent_frame_resize, top_frame_size);
+  assert_different_registers(Rsize_of_parameters, Rsize_of_locals, Rparent_frame_resize, Rtop_frame_size,
+                             Rconst_method, Rconst_pool);
 
   __ ld(Rconst_method, method_(const));
   __ lhz(Rsize_of_parameters /* number of params */,
@@ -947,35 +951,35 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
     // We add two slots to the parameter_count, one for the jni
     // environment and one for a possible native mirror.
     Label skip_native_calculate_max_stack;
-    __ addi(top_frame_size, Rsize_of_parameters, 2);
-    __ cmpwi(CCR0, top_frame_size, Argument::n_register_parameters);
+    __ addi(Rtop_frame_size, Rsize_of_parameters, 2);
+    __ cmpwi(CCR0, Rtop_frame_size, Argument::n_register_parameters);
     __ bge(CCR0, skip_native_calculate_max_stack);
-    __ li(top_frame_size, Argument::n_register_parameters);
+    __ li(Rtop_frame_size, Argument::n_register_parameters);
     __ bind(skip_native_calculate_max_stack);
     __ sldi(Rsize_of_parameters, Rsize_of_parameters, Interpreter::logStackElementSize);
-    __ sldi(top_frame_size, top_frame_size, Interpreter::logStackElementSize);
-    __ sub(parent_frame_resize, R1_SP, R15_esp); // <0, off by Interpreter::stackElementSize!
+    __ sldi(Rtop_frame_size, Rtop_frame_size, Interpreter::logStackElementSize);
+    __ sub(Rparent_frame_resize, R1_SP, R15_esp); // <0, off by Interpreter::stackElementSize!
     assert(Rsize_of_locals == noreg, "Rsize_of_locals not initialized"); // Only relevant value is Rsize_of_parameters.
   } else {
     __ lhz(Rsize_of_locals /* number of params */, in_bytes(ConstMethod::size_of_locals_offset()), Rconst_method);
     __ sldi(Rsize_of_parameters, Rsize_of_parameters, Interpreter::logStackElementSize);
     __ sldi(Rsize_of_locals, Rsize_of_locals, Interpreter::logStackElementSize);
-    __ lhz(top_frame_size, in_bytes(ConstMethod::max_stack_offset()), Rconst_method);
+    __ lhz(Rtop_frame_size, in_bytes(ConstMethod::max_stack_offset()), Rconst_method);
     __ sub(R11_scratch1, Rsize_of_locals, Rsize_of_parameters); // >=0
-    __ sub(parent_frame_resize, R1_SP, R15_esp); // <0, off by Interpreter::stackElementSize!
-    __ sldi(top_frame_size, top_frame_size, Interpreter::logStackElementSize);
-    __ add(parent_frame_resize, parent_frame_resize, R11_scratch1);
+    __ sub(Rparent_frame_resize, R1_SP, R15_esp); // <0, off by Interpreter::stackElementSize!
+    __ sldi(Rtop_frame_size, Rtop_frame_size, Interpreter::logStackElementSize);
+    __ add(Rparent_frame_resize, Rparent_frame_resize, R11_scratch1);
   }
 
   // Compute top frame size.
-  __ addi(top_frame_size, top_frame_size, frame::abi_reg_args_size + frame::ijava_state_size);
+  __ addi(Rtop_frame_size, Rtop_frame_size, frame::abi_reg_args_size + frame::ijava_state_size);
 
   // Cut back area between esp and max_stack.
-  __ addi(parent_frame_resize, parent_frame_resize, frame::abi_minframe_size - Interpreter::stackElementSize);
+  __ addi(Rparent_frame_resize, Rparent_frame_resize, frame::abi_minframe_size - Interpreter::stackElementSize);
 
-  __ round_to(top_frame_size, frame::alignment_in_bytes);
-  __ round_to(parent_frame_resize, frame::alignment_in_bytes);
-  // parent_frame_resize = (locals-parameters) - (ESP-SP-ABI48) Rounded to frame alignment size.
+  __ round_to(Rtop_frame_size, frame::alignment_in_bytes);
+  __ round_to(Rparent_frame_resize, frame::alignment_in_bytes);
+  // Rparent_frame_resize = (locals-parameters) - (ESP-SP-ABI48) Rounded to frame alignment size.
   // Enlarge by locals-parameters (not in case of native_call), shrink by ESP-SP-ABI48.
 
   if (!native_call) {
@@ -983,15 +987,15 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
     // Native calls don't need the stack size check since they have no
     // expression stack and the arguments are already on the stack and
     // we only add a handful of words to the stack.
-    __ add(R11_scratch1, parent_frame_resize, top_frame_size);
+    __ add(R11_scratch1, Rparent_frame_resize, Rtop_frame_size);
     generate_stack_overflow_check(R11_scratch1, R12_scratch2);
   }
 
   // Set up interpreter state registers.
 
   __ add(R18_locals, R15_esp, Rsize_of_parameters);
-  __ ld(R27_constPoolCache, in_bytes(ConstMethod::constants_offset()), Rconst_method);
-  __ ld(R27_constPoolCache, ConstantPool::cache_offset_in_bytes(), R27_constPoolCache);
+  __ ld(Rconst_pool, in_bytes(ConstMethod::constants_offset()), Rconst_method);
+  __ ld(R27_constPoolCache, ConstantPool::cache_offset_in_bytes(), Rconst_pool);
 
   // Set method data pointer.
   if (ProfileInterpreter) {
@@ -1011,19 +1015,21 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
 
   // Resize parent frame.
   __ mflr(R12_scratch2);
-  __ neg(parent_frame_resize, parent_frame_resize);
-  __ resize_frame(parent_frame_resize, R11_scratch1);
+  __ neg(Rparent_frame_resize, Rparent_frame_resize);
+  __ resize_frame(Rparent_frame_resize, R11_scratch1);
   __ std(R12_scratch2, _abi0(lr), R1_SP);
 
   // Get mirror and store it in the frame as GC root for this Method*.
-  __ load_mirror_from_const_method(R12_scratch2, Rconst_method);
+  __ ld(Rmirror, ConstantPool::pool_holder_offset_in_bytes(), Rconst_pool);
+  __ ld(Rmirror, in_bytes(Klass::java_mirror_offset()), Rmirror);
+  __ resolve_oop_handle(Rmirror, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS);
 
   __ addi(R26_monitor, R1_SP, -frame::ijava_state_size);
   __ addi(R15_esp, R26_monitor, -Interpreter::stackElementSize);
 
   // Store values.
   __ std(R19_method, _ijava_state_neg(method), R1_SP);
-  __ std(R12_scratch2, _ijava_state_neg(mirror), R1_SP);
+  __ std(Rmirror, _ijava_state_neg(mirror), R1_SP);
   __ std(R18_locals, _ijava_state_neg(locals), R1_SP);
   __ std(R27_constPoolCache, _ijava_state_neg(cpoolCache), R1_SP);
 
@@ -1045,12 +1051,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ std(R0, _ijava_state_neg(oop_tmp), R1_SP); // only used for native_call
 
   // Store sender's SP and this frame's top SP.
-  __ subf(R12_scratch2, top_frame_size, R1_SP);
+  __ subf(R12_scratch2, Rtop_frame_size, R1_SP);
   __ std(R21_sender_SP, _ijava_state_neg(sender_sp), R1_SP);
   __ std(R12_scratch2, _ijava_state_neg(top_frame_sp), R1_SP);
 
   // Push top frame.
-  __ push_frame(top_frame_size, R11_scratch1);
+  __ push_frame(Rtop_frame_size, R11_scratch1);
 }
 
 // End of helpers
@@ -1443,7 +1449,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   Label do_safepoint, sync_check_done;
   // No synchronization in progress nor yet synchronized.
-  __ safepoint_poll(do_safepoint, sync_state);
+  __ safepoint_poll(do_safepoint, sync_state, true /* at_return */, false /* in_nmethod */);
 
   // Not suspended.
   // TODO PPC port assert(4 == Thread::sz_suspend_flags(), "unexpected field size");
@@ -1743,7 +1749,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
     // Safepoint check
     const Register sync_state = R11_scratch1;
-    __ safepoint_poll(slow_path, sync_state);
+    __ safepoint_poll(slow_path, sync_state, false /* at_return */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we not even call stub code (we generate the code inline)
@@ -1797,7 +1803,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
     // Safepoint check
     const Register sync_state = R11_scratch1;
-    __ safepoint_poll(slow_path, sync_state);
+    __ safepoint_poll(slow_path, sync_state, false /* at_return */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we not even call stub code (we generate the code inline)

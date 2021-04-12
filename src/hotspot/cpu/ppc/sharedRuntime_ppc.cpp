@@ -36,6 +36,7 @@
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -561,17 +562,6 @@ bool SharedRuntime::is_wide_vector(int size) {
   // Note, MaxVectorSize == 8/16 on PPC64.
   assert(size <= (SuperwordUseVSX ? 16 : 8), "%d bytes vectors are not supported", size);
   return size > 8;
-}
-
-size_t SharedRuntime::trampoline_size() {
-  return Assembler::load_const_size + 8;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  Register Rtemp = R12;
-  __ load_const(Rtemp, destination);
-  __ mtctr(Rtemp);
-  __ bctr();
 }
 
 static int reg2slot(VMReg r) {
@@ -1300,9 +1290,13 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     c2i_no_clinit_check_entry = __ pc();
   }
 
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->c2i_entry_barrier(masm, /* tmp register*/ ic_klass, /* tmp register*/ receiver_klass, /* tmp register*/ code);
+
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, call_interpreter, ientry);
 
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry,
+                                          c2i_no_clinit_check_entry);
 }
 
 // An oop arg. Must pass a handle not the oop itself.
@@ -1972,6 +1966,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ generate_stack_overflow_check(frame_size_in_bytes); // Check before creating frame.
   __ mr(r_callers_sp, R1_SP);                            // Remember frame pointer.
   __ push_frame(frame_size_in_bytes, r_temp_1);          // Push the c2n adapter's frame.
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(masm, r_temp_1);
+
   frame_done_pc = (intptr_t)__ pc();
 
   __ verify_thread();
@@ -2264,7 +2262,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   if (is_critical_native) {
     Label needs_safepoint;
     Register sync_state      = r_temp_5;
-    __ safepoint_poll(needs_safepoint, sync_state);
+    // Note: We should not reach here with active stack watermark. There's no safepoint between
+    //       start of the native wrapper and this check where it could have been added.
+    //       We don't check the watermark in the fast path.
+    __ safepoint_poll(needs_safepoint, sync_state, false /* at_return */, false /* in_nmethod */);
 
     Register suspend_flags   = r_temp_6;
     __ lwz(suspend_flags, thread_(suspend_flags));
@@ -2311,7 +2312,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // No synchronization in progress nor yet synchronized
     // (cmp-br-isync on one path, release (same as acquire on PPC64) on the other path).
-    __ safepoint_poll(sync, sync_state);
+    __ safepoint_poll(sync, sync_state, true /* at_return */, false /* in_nmethod */);
 
     // Not suspended.
     // TODO: PPC port assert(4 == Thread::sz_suspend_flags(), "unexpected field size");
@@ -3010,7 +3011,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   if (cause_return) {
     // Nothing to do here. The frame has already been popped in MachEpilogNode.
     // Register LR already contains the return pc.
-    return_pc_location = RegisterSaver::return_pc_is_lr;
+    return_pc_location = RegisterSaver::return_pc_is_pre_saved;
   } else {
     // Use thread()->saved_exception_pc() as return pc.
     return_pc_location = RegisterSaver::return_pc_is_thread_saved_exception_pc;
@@ -3433,10 +3434,12 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   reverse_words(m, (unsigned long *)m_ints, longwords);
 }
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
-                                               int shadow_space_bytes,
-                                               const GrowableArray<VMReg>& input_registers,
-                                               const GrowableArray<VMReg>& output_registers) {
+#ifdef COMPILER2
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
+                                                int shadow_space_bytes,
+                                                const GrowableArray<VMReg>& input_registers,
+                                                const GrowableArray<VMReg>& output_registers) {
   Unimplemented();
   return nullptr;
 }
+#endif

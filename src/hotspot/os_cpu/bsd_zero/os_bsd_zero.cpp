@@ -31,7 +31,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "assembler_zero.inline.hpp"
-#include "classfile/classLoader.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -157,24 +156,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
 void os::Bsd::init_thread_fpu_state(void) {
   // Nothing to do
-}
-
-bool os::is_allocatable(size_t bytes) {
-#ifdef _LP64
-  return true;
-#else
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // _LP64
 }
 
 ///////////////////////////////////////////////////////////////////////////////

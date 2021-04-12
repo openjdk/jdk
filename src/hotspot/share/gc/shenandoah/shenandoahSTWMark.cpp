@@ -26,15 +26,44 @@
 #include "precompiled.hpp"
 
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
+#include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
+template <StringDedupMode STRING_DEDUP>
+class ShenandoahInitMarkRootsClosure : public OopClosure {
+private:
+  ShenandoahObjToScanQueue* const _queue;
+  ShenandoahMarkingContext* const _mark_context;
+
+  template <class T>
+  inline void do_oop_work(T* p);
+
+public:
+  ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
+
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(oop* p)       { do_oop_work(p); }
+};
+
+template <StringDedupMode STRING_DEDUP>
+ShenandoahInitMarkRootsClosure<STRING_DEDUP>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
+  _queue(q),
+  _mark_context(ShenandoahHeap::heap()->marking_context()) {
+}
+
+template <StringDedupMode STRING_DEDUP>
+template <class T>
+void ShenandoahInitMarkRootsClosure<STRING_DEDUP>::do_oop_work(T* p) {
+  ShenandoahMark::mark_through_ref<T, STRING_DEDUP>(p, _queue, _mark_context, false);
+}
 
 class ShenandoahSTWMarkTask : public AbstractGangTask {
 private:
@@ -99,8 +128,13 @@ void ShenandoahSTWMark::mark() {
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
-  ShenandoahInitMarkRootsClosure  init_mark(task_queues()->queue(worker_id));
-  _root_scanner.roots_do(&init_mark, worker_id);
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahInitMarkRootsClosure<ENQUEUE_DEDUP> init_mark(task_queues()->queue(worker_id));
+    _root_scanner.roots_do(&init_mark, worker_id);
+  } else {
+    ShenandoahInitMarkRootsClosure<NO_DEDUP> init_mark(task_queues()->queue(worker_id));
+    _root_scanner.roots_do(&init_mark, worker_id);
+  }
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
@@ -112,4 +146,3 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
             false, // not cancellable
             ShenandoahStringDedup::is_enabled());
 }
-

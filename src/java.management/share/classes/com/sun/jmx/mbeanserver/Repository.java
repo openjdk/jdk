@@ -108,7 +108,7 @@ public class Repository {
     // Private methods --------------------------------------------->
 
     /* This class is used to match an ObjectName against a pattern. */
-    private final static class ObjectNamePattern {
+    private static final class ObjectNamePattern {
         private final String[] keys;
         private final String[] values;
         private final String   properties;

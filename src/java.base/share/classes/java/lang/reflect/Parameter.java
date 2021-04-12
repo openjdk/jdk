@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,12 +77,9 @@ public final class Parameter implements AnnotatedElement {
      */
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof Parameter) {
-            Parameter other = (Parameter)obj;
-            return (other.executable.equals(executable) &&
-                    other.index == index);
-        }
-        return false;
+        return (obj instanceof Parameter other)
+                && other.executable.equals(executable)
+                && other.index == index;
     }
 
     /**
@@ -145,19 +142,20 @@ public final class Parameter implements AnnotatedElement {
     }
 
     /**
-     * Return the {@code Executable} which declares this parameter.
-     *
-     * @return The {@code Executable} declaring this parameter.
+     * {@return the {@code Executable} declaring this parameter}
      */
     public Executable getDeclaringExecutable() {
         return executable;
     }
 
     /**
-     * Get the modifier flags for this the parameter represented by
-     * this {@code Parameter} object.
+     * {@return the Java language {@linkplain Modifier modifiers} for
+     * the parameter represented by this object}
      *
-     * @return The modifier flags for this parameter.
+     * @jls 8.4.1 Formal Parameters
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      */
     public int getModifiers() {
         return modifiers;

@@ -26,7 +26,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "assembler_zero.inline.hpp"
-#include "classfile/classLoader.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -181,24 +180,6 @@ int os::Linux::get_fpu_control_word() {
 
 void os::Linux::set_fpu_control_word(int fpu) {
   ShouldNotCallThis();
-}
-
-bool os::is_allocatable(size_t bytes) {
-#ifdef _LP64
-  return true;
-#else
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // _LP64
 }
 
 ///////////////////////////////////////////////////////////////////////////////

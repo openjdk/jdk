@@ -924,7 +924,7 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
             Node* hook = new Node(1);
             hook->init_req(0, n_ctrl); // Add an input to prevent hook from being dead
             _igvn.rehash_node_delayed(phi);
-            int count = phi->replace_edge(n, hook);
+            int count = phi->replace_edge(n, hook, &_igvn);
             assert(count > 0, "inconsistent phi");
 
             // Compute latest point this store can go
@@ -1043,7 +1043,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Do not clone the trip counter through on a CountedLoop
   // (messes up the canonical shape).
-  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_loop())) && n->Opcode() == Op_AddI) ||
+  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_inner_loop())) && n->Opcode() == Op_AddI) ||
       (n_blk->is_LongCountedLoop() && n->Opcode() == Op_AddL)) {
     return n;
   }
@@ -1429,7 +1429,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
         // If n is a load, and the late control is the same as the current
         // control, then the cloning of n is a pointless exercise, because
         // GVN will ensure that we end up where we started.
-        if (!n->is_Load() || late_load_ctrl != n_ctrl) {
+        if (!n->is_Load() || (late_load_ctrl != n_ctrl && is_safe_load_ctrl(late_load_ctrl))) {
           Node* outer_loop_clone = NULL;
           for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin; ) {
             Node *u = n->last_out(j); // Clone private computation per use
@@ -1532,6 +1532,13 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       get_loop(get_ctrl(n)) == get_loop(get_ctrl(n->in(1))) ) {
     _igvn.replace_node( n, n->in(1) );
   }
+}
+
+bool PhaseIdealLoop::is_safe_load_ctrl(Node* ctrl) {
+  if (ctrl->is_Proj() && ctrl->in(0)->is_Call() && ctrl->has_out_with(Op_Catch)) {
+    return false;
+  }
+  return true;
 }
 
 //------------------------------split_if_with_blocks---------------------------

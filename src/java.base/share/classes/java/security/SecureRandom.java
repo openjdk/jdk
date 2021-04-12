@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package java.security;
 
+import java.math.BigInteger;
 import java.util.*;
+import java.util.random.RandomGenerator;
 import java.util.regex.*;
-
 import java.security.Provider.Service;
 
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.provider.SunEntries;
@@ -147,6 +149,10 @@ import sun.security.util.Debug;
  * @since 1.1
  */
 
+@RandomGeneratorProperties(
+        name = "SecureRandom",
+        isStochastic = true
+)
 public class SecureRandom extends java.util.Random {
 
     private static final Debug pdebug =
@@ -178,8 +184,8 @@ public class SecureRandom extends java.util.Random {
      */
     private final boolean threadSafe;
 
-    /*
-     * The algorithm name of null if unknown.
+    /**
+     * The algorithm name or {@code null} if unknown.
      *
      * @serial
      * @since 1.5
@@ -730,10 +736,11 @@ public class SecureRandom extends java.util.Random {
     @Override
     public void setSeed(long seed) {
         /*
-         * Ignore call from super constructor (as well as any other calls
-         * unfortunate enough to be passing 0).  It's critical that we
-         * ignore call from superclass constructor, as digest has not
-         * yet been initialized at that point.
+         * Ignore call from super constructor as well as any other calls
+         * unfortunate enough to be passing 0. All SecureRandom
+         * constructors call `super(0)` which leads to `setSeed(0)`.
+         * We either keep the object unseeded (in `new SecureRandom()`)
+         * or we seed the object explicitly (in `new SecureRandom(byte[])`).
          */
         if (seed != 0) {
             setSeed(longToByteArray(seed));
