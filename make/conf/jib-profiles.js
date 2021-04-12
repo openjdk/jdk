@@ -974,8 +974,11 @@ var getJibProfilesProfiles = function (input, common, data) {
     // This gives us a guaranteed working version of lldb for the jtreg failure handler.
     if (input.build_os == "macosx") {
         macosxRunTestExtra = {
-            environment_path: input.get("devkit", "install_path")
-                + "/Xcode.app/Contents/Developer/usr/bin"
+            dependencies: [ "lldb" ],
+            environment_path: [
+                input.get("gnumake", "install_path") + "/bin",
+                input.get("lldb", "install_path") + "/Xcode.app/Contents/Developer/usr/bin",
+            ],
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
@@ -1030,7 +1033,7 @@ var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
         linux_x64: "gcc10.2.0-OL6.4+1.0",
-        macosx_x64: "Xcode11.3.1-MacOSX10.15+1.1",
+        macosx: "Xcode12.4+1.0",
         windows_x64: "VS2019-16.7.2+1.1",
         linux_aarch64: "gcc10.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
@@ -1043,6 +1046,8 @@ var getJibProfilesDependencies = function (input, common) {
         : input.target_platform);
     if (input.target_platform == "windows_aarch64") {
         devkit_platform = "windows_x64";
+    } else if (input.target_os == "macosx") {
+        devkit_platform = "macosx";
     }
     var devkit_cross_prefix = "";
     if (!(input.target_os == "windows")) {
@@ -1093,6 +1098,13 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "tar.gz",
             module: "devkit-" + input.build_platform,
             revision: devkit_platform_revisions[input.build_platform]
+        },
+
+        lldb: {
+            organization: common.organization,
+            ext: "tar.gz",
+            module: "devkit-macosx_x64",
+            revision: "Xcode11.3.1-MacOSX10.15+1.1",
         },
 
         cups: {
