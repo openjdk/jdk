@@ -22,9 +22,9 @@
  */
 
 // key: compiler.misc.feature.sealed.classes
-// key: compiler.warn.preview.feature.use.plural
-// key: compiler.warn.declared.using.preview
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.warn.source.no.system.modules.path
+// options: -source 16
 
 sealed class Sealed {}
 

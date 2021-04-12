@@ -30,8 +30,7 @@
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask JavacTestingAbstractProcessor
- * @compile --enable-preview -source ${jdk.version} TestSealed.java
- * @run main/othervm --enable-preview TestSealed
+ * @run main TestSealed
  */
 
 import java.io.*;
@@ -130,16 +129,12 @@ public class TestSealed extends TestRunner {
                 "- compiler.note.proc.messager: visiting: NonSealedClass2 Modifiers: [non-sealed]",
                 "- compiler.note.proc.messager:     this class has: 0, permitted subclasses",
                 "- compiler.note.proc.messager: visiting: ClassOutOfSealedHierarchy Modifiers: []",
-                "- compiler.note.proc.messager:     this class has: 0, permitted subclasses",
-                "- compiler.note.preview.filename: SealedInterface.java, DEFAULT",
-                "- compiler.note.preview.recompile"
+                "- compiler.note.proc.messager:     this class has: 0, permitted subclasses"
         );
 
         for (Mode mode : new Mode[] {Mode.API}) {
             List<String> log = new JavacTask(tb, mode)
                     .options("-processor", SealedClassesProcessor.class.getName(),
-                            "--enable-preview",
-                            "-source", Integer.toString(Runtime.version().feature()),
                             "-XDrawDiagnostics")
                     .files(findJavaFiles(src))
                     .outdir(classes)

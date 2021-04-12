@@ -33,9 +33,8 @@
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask
- * @compile --enable-preview -source ${jdk.version} SealedCompilationTests.java
- * @run testng/othervm -DuseAP=false --enable-preview SealedCompilationTests
- * @run testng/othervm -DuseAP=true --enable-preview SealedCompilationTests
+ * @run testng/othervm -DuseAP=false SealedCompilationTests
+ * @run testng/othervm -DuseAP=true SealedCompilationTests
  */
 
 import java.lang.constant.ClassDesc;
@@ -77,17 +76,7 @@ public class SealedCompilationTests extends CompilationTestCase {
 
     ToolBox tb = new ToolBox();
 
-    // When sealed classes become a permanent feature, we don't need these any more
-    private static String[] PREVIEW_OPTIONS = {
-            "--enable-preview",
-            "-source", Integer.toString(Runtime.version().feature())
-    };
-
-    private static String[] PREVIEW_OPTIONS_WITH_AP = {
-            "--enable-preview",
-            "-source", Integer.toString(Runtime.version().feature()),
-            "-processor", SimplestAP.class.getName()
-    };
+    private static String[] OPTIONS_WITH_AP = { "-processor", SimplestAP.class.getName() };
 
     /* simplest annotation processor just to force a round of annotation processing for all tests
      */
@@ -108,7 +97,7 @@ public class SealedCompilationTests extends CompilationTestCase {
     public SealedCompilationTests() {
         boolean useAP = System.getProperty("useAP") == null ? false : System.getProperty("useAP").equals("true");
         setDefaultFilename("SealedTest.java");
-        setCompileOptions(useAP ? PREVIEW_OPTIONS_WITH_AP : PREVIEW_OPTIONS);
+        setCompileOptions(useAP ? OPTIONS_WITH_AP : new String[]{});
         System.out.println(useAP ? "running all tests using an annotation processor" : "running all tests without annotation processor");
     }
 
@@ -298,22 +287,6 @@ public class SealedCompilationTests extends CompilationTestCase {
                 )) {
             assertFail("compiler.err.restricted.type.not.allowed.here", s);
         }
-
-        String[] testOptions = {/* no options */};
-        String[] previousCompOptions = getCompileOptions();
-        setCompileOptions(testOptions);
-        // now testing with preview disabled
-        for (String s : List.of(
-                "sealed class S {}",
-                "class Outer { sealed class S {} }",
-                "class Outer { void m() { sealed class S {} } }",
-                "non-sealed class S {}",
-                "class Outer { non-sealed class S {} }",
-                "class Outer { void m() { non-sealed class S {} } }"
-        )) {
-            assertFail("compiler.err.preview.feature.disabled.plural", s);
-        }
-        setCompileOptions(previousCompOptions);
     }
 
     public void testRejectPermitsInNonSealedClass() {

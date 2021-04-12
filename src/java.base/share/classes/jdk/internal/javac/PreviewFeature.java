@@ -54,7 +54,6 @@ public @interface PreviewFeature {
     public boolean reflective() default false;
 
     public enum Feature {
-        SEALED_CLASSES,
         /**
          * A key for testing.
          */

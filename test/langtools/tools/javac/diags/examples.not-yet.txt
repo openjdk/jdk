@@ -141,6 +141,9 @@ compiler.warn.preview.feature.use.classfile             # preview feature suppor
 compiler.note.preview.plural.additional                 # preview feature support: diag test causes intermittent failures (see JDK-8201498)
 compiler.misc.bad.intersection.target.for.functional.expr  # currently not generated, should be removed?
 compiler.misc.not.an.intf.component
+compiler.warn.declared.using.preview                    # after making sealed classes a final feature there is no other
+                                                        # preview feature but we should keep this key for future use just
+                                                        # in case
 
 # The following module-related messages will have to stay on the not-yet list for various reasons:
 compiler.warn.locn.unknown.file.on.module.path                # Never issued ATM (short circuited with an if (false))
