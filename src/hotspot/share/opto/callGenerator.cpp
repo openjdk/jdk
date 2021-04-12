@@ -30,6 +30,7 @@
 #include "ci/ciMethodHandle.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "compiler/compileLog.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
