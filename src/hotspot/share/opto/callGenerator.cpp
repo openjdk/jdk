@@ -28,6 +28,7 @@
 #include "ci/ciObjArray.hpp"
 #include "ci/ciMemberName.hpp"
 #include "ci/ciMethodHandle.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "opto/addnode.hpp"
@@ -565,6 +566,32 @@ static bool has_non_debug_usages(Node* n) {
   return false;
 }
 
+static bool is_klass_initialized(Symbol* klass_name) {
+  VM_ENTRY_MARK;
+  InstanceKlass* ik = SystemDictionary::find_instance_klass(klass_name, Handle(), Handle());
+  return ik != nullptr && ik->is_initialized();
+}
+
+static bool is_box_cache_valid(CallNode* call) {
+  ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
+  BasicType box_type = klass->box_klass_type();
+
+  if (box_type != T_OBJECT) {
+    switch(box_type) {
+      case T_INT:     return is_klass_initialized(java_lang_Integer_IntegerCache::symbol());
+      case T_CHAR:    return is_klass_initialized(java_lang_Character_CharacterCache::symbol());
+      case T_SHORT:   return is_klass_initialized(java_lang_Short_ShortCache::symbol());
+      case T_BYTE:    return is_klass_initialized(java_lang_Byte_ByteCache::symbol());
+      case T_LONG:    return is_klass_initialized(java_lang_Long_LongCache::symbol());
+      case T_BOOLEAN:
+      case T_FLOAT:
+      case T_DOUBLE:  return true;
+      default:;
+    }
+  }
+  return false;
+}
+
 // delay box in runtime, treat box as a scalarized object
 static void scalarize_debug_usages(CallNode* call, Node* resproj) {
   GraphKit kit(call->jvms());
@@ -660,7 +687,7 @@ void CallGenerator::do_late_inline_helper() {
     if (is_boxing_late_inline() && callprojs.resproj != nullptr) {
         // replace box node to scalar node only in case it is directly referenced by debug info
         assert(call->as_CallStaticJava()->is_boxing_method(), "sanity");
-        if (!has_non_debug_usages(callprojs.resproj)) {
+        if (!has_non_debug_usages(callprojs.resproj) && is_box_cache_valid(call)) {
           scalarize_debug_usages(call, callprojs.resproj);
         }
     }
