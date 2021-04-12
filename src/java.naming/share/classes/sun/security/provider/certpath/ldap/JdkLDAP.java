@@ -73,7 +73,7 @@ public final class JdkLDAP extends Provider {
         super("JdkLDAP", PROVIDER_VER, "JdkLDAP Provider (implements LDAP CertStore)");
 
         final Provider p = this;
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        PrivilegedAction<Void> pa = () -> {
             HashMap<String, String> attrs = new HashMap<>(2);
             attrs.put("LDAPSchema", "RFC2587");
             attrs.put("ImplementedIn", "Software");
@@ -86,6 +86,7 @@ public final class JdkLDAP extends Provider {
                        "LDAP", "sun.security.provider.certpath.ldap.LDAPCertStore",
                        null, attrs));
             return null;
-        });
+        };
+        AccessController.doPrivileged(pa);
     }
 }

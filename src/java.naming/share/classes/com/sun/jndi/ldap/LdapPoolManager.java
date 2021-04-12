@@ -396,20 +396,17 @@ public final class LdapPoolManager {
     }
 
     private static final String getProperty(final String propName, final String defVal) {
-        return AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> System.getProperty(propName, defVal)
-        );
+        PrivilegedAction<String> pa = () -> System.getProperty(propName, defVal);
+        return AccessController.doPrivileged(pa);
     }
 
     private static final int getInteger(final String propName, final int defVal) {
-        return AccessController.doPrivileged(
-                (PrivilegedAction<Integer>) () -> Integer.getInteger(propName, defVal).intValue()
-        );
+        PrivilegedAction<Integer> pa = () -> Integer.getInteger(propName, defVal);
+        return AccessController.doPrivileged(pa);
     }
 
     private static final long getLong(final String propName, final long defVal) {
-        return AccessController.doPrivileged(
-                (PrivilegedAction<Long>) () -> Long.getLong(propName, defVal).longValue()
-        );
+        PrivilegedAction<Long> pa = () -> Long.getLong(propName, defVal);
+        return AccessController.doPrivileged(pa);
     }
 }

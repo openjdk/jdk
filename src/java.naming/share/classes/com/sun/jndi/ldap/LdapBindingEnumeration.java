@@ -59,9 +59,8 @@ final class LdapBindingEnumeration
         if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
             // serialized object or object reference
             try {
-                obj = AccessController.doPrivileged(
-                        (PrivilegedExceptionAction<Object>) () -> Obj.decodeObject(attrs), acc
-                );
+                PrivilegedExceptionAction<Object> pa = () -> Obj.decodeObject(attrs);
+                obj = AccessController.doPrivileged(pa, acc);
             } catch (PrivilegedActionException e) {
                 throw (NamingException)e.getException();
             }

@@ -220,15 +220,13 @@ public class StartTlsRequest implements ExtendedRequest {
      * Acquire the class loader associated with this thread.
      */
     private final ClassLoader getContextClassLoader() {
-        return AccessController.doPrivileged(
-                (PrivilegedAction<ClassLoader>) () -> Thread.currentThread().getContextClassLoader()
-        );
+        PrivilegedAction<ClassLoader> pa = () -> Thread.currentThread().getContextClassLoader();
+        return AccessController.doPrivileged(pa);
     }
 
     private static final boolean privilegedHasNext(final Iterator<StartTlsResponse> iter) {
-        return AccessController.doPrivileged(
-                (PrivilegedAction<Boolean>) iter::hasNext
-        );
+        PrivilegedAction<Boolean> pa = iter::hasNext;
+        return AccessController.doPrivileged(pa);
     }
 
     private static final long serialVersionUID = 4441679576360753397L;
