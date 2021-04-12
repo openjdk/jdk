@@ -23,7 +23,6 @@
 
 /* @test
  * @summary Test DatagramChannel's send and receive methods
- * @author Mike McCloskey
  * @run testng/othervm/timeout=20 SRTest
  */
 
