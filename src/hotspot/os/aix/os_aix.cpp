@@ -930,7 +930,6 @@ void os::free_thread(OSThread* osthread) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
   return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }

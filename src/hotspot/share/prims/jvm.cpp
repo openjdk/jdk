@@ -1502,7 +1502,7 @@ JVM_ENTRY(jbyteArray, JVM_GetClassAnnotations(JNIEnv *env, jclass cls))
 JVM_END
 
 
-static bool jvm_get_field_common(jobject field, fieldDescriptor& fd, TRAPS) {
+static bool jvm_get_field_common(jobject field, fieldDescriptor& fd) {
   // some of this code was adapted from from jni_FromReflectedField
 
   oop reflected = JNIHandles::resolve_non_null(field);
@@ -1593,7 +1593,7 @@ JVM_END
 JVM_ENTRY(jbyteArray, JVM_GetFieldTypeAnnotations(JNIEnv *env, jobject field))
   assert (field != NULL, "illegal field");
   fieldDescriptor fd;
-  bool gotFd = jvm_get_field_common(field, fd, CHECK_NULL);
+  bool gotFd = jvm_get_field_common(field, fd);
   if (!gotFd) {
     return NULL;
   }
