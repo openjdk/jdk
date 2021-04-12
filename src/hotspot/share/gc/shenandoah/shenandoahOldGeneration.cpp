@@ -38,14 +38,18 @@
 class ShenandoahFlushAllSATB : public ThreadClosure {
  private:
   SATBMarkQueueSet& _satb_qset;
+  uintx _claim_token;
 
  public:
   explicit ShenandoahFlushAllSATB(SATBMarkQueueSet& satb_qset) :
-    _satb_qset(satb_qset) { }
+    _satb_qset(satb_qset),
+    _claim_token(Threads::thread_claim_token()) { }
 
   void do_thread(Thread* thread) {
-    // Transfer any partial buffer to the qset for completed buffer processing.
-    _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+    if (thread->claim_threads_do(true, _claim_token)) {
+      // Transfer any partial buffer to the qset for completed buffer processing.
+      _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+    }
   }
 };
 
@@ -92,12 +96,14 @@ private:
   ShenandoahObjToScanQueueSet* _mark_queues;
 
 public:
-  size_t _trashed_oops;
+  volatile size_t _trashed_oops;
 
   explicit ShenandoahPurgeSATBTask(ShenandoahObjToScanQueueSet* queues) :
     AbstractGangTask("Purge SATB"),
     _mark_queues(queues),
-    _trashed_oops(0) {}
+    _trashed_oops(0) {
+    Threads::change_thread_claim_token();
+  }
 
   ~ShenandoahPurgeSATBTask() {
     if (_trashed_oops > 0) {
@@ -109,7 +115,7 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahSATBMarkQueueSet &satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
     ShenandoahFlushAllSATB flusher(satb_queues);
-    Threads::possibly_parallel_threads_do(true /*par*/, &flusher);
+    Threads::threads_do(&flusher);
 
     ShenandoahObjToScanQueue* mark_queue = _mark_queues->queue(worker_id);
     ShenandoahProcessOldSATB processor(mark_queue);
