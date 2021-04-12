@@ -50,7 +50,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -58,12 +57,13 @@ public class ToolProviderPositiveTest {
 
     static final ToolProvider SIMPLESERVER_TOOL = ToolProvider.findFirst("simpleserver")
             .orElseThrow(() -> new RuntimeException("simpleserver tool not found"));
-    static final String JAVA = System.getProperty("java.home") + "/bin/java";
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("dir");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
     static final String TEST_DIR_STR = TEST_DIR.toString();
     static final String TOOL_PROVIDER_CLS_NAME = SimpleServerTool.class.getName();
+    static final String JAVA = System.getProperty("java.home") + "/bin/java";
+    static final String CLASS_PATH = System.getProperty("java.class.path");
     static final String LOCALHOST_ADDR;
 
     static {
@@ -102,7 +102,7 @@ public class ToolProviderPositiveTest {
 
     @Test
     public void testDirectory() throws Exception {
-        simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-d", TEST_DIR_STR)
+        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-d", TEST_DIR_STR)
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8000\n" +
@@ -120,7 +120,7 @@ public class ToolProviderPositiveTest {
     }
     @Test(dataProvider = "ports")
     public void testPort(String port) throws Exception {
-        simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-p", port)
+        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", port)
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:" + port + "\n" +
@@ -141,7 +141,7 @@ public class ToolProviderPositiveTest {
                 To stop the server, press Crtl + C.
                 """;
 
-        simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-h")
+        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-h")
                 .resultChecker(r -> {
                     assertContains(r.output, usageText);
                     assertContains(r.output, optionsText);
@@ -150,7 +150,7 @@ public class ToolProviderPositiveTest {
 
     @Test
     public void testlastOneWinsBindAddress() throws Exception {
-        simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-b", "localhost", "-b", "127.0.0.1")
+        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-b", "localhost", "-b", "127.0.0.1")
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
@@ -160,7 +160,7 @@ public class ToolProviderPositiveTest {
 
     @Test
     public void testlastOneWinsDirectory() throws Exception {
-        simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-d", TEST_DIR_STR, "-d", TEST_DIR_STR)
+        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-d", TEST_DIR_STR, "-d", TEST_DIR_STR)
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8000\n" +
@@ -170,7 +170,7 @@ public class ToolProviderPositiveTest {
 
     @Test
     public void testlastOneWinsOutput() throws Exception {
-        simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-o", "none", "-o", "verbose")
+        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-o", "none", "-o", "verbose")
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8000\n" +
@@ -180,7 +180,7 @@ public class ToolProviderPositiveTest {
 
     @Test
     public void testlastOneWinsPort() throws Exception {
-        simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-p", "8001", "-p", "8002")
+        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "8001", "-p", "8002")
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8002\n" +
