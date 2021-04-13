@@ -135,14 +135,6 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    boolean testNotFound(HttpExchange exchange, Path path) throws IOException {
-        if (!Files.exists(path)) {
-            handleNotFound(exchange);
-            return true;
-        }
-        return false;
-    }
-
     boolean testMissingSlash(HttpExchange exchange) throws IOException {
         if (!exchange.getRequestURI().getPath().endsWith("/")) {
             handleMovedPermanently(exchange);
@@ -157,10 +149,7 @@ public final class FileServerHandler implements HttpHandler {
         if (!contextPath.endsWith("/"))
             contextPath += "/";
         String requestPath = URI.create(contextPath).relativize(uri).getPath();
-        Path validatedPath = root.resolve(requestPath).normalize();
-        if (!validatedPath.startsWith(root) || isHiddenOrSymLink(validatedPath))
-            return root;
-        return validatedPath;
+        return root.resolve(requestPath).normalize();  // validated path
     }
 
     Path indexFile(Path path) {
@@ -265,9 +254,8 @@ public final class FileServerHandler implements HttpHandler {
             discardRequestBody(exchange);
             Path path = mapToPath(exchange, root);
             exchange.setAttribute("path", path);  // store path for output filter
-            if (testNotFound(exchange, path)) {
-                return;
-            }
+            if (!path.startsWith(root) || !Files.exists(path) || isHiddenOrSymLink(path))
+                handleNotFound(exchange);
             if (exchange.getRequestMethod().equals("HEAD")) {
                 handleHEAD(exchange, path);
             } else {
