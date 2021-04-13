@@ -24,7 +24,6 @@
 package jdk.test.lib.apps;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -96,7 +95,6 @@ public class LingeredApp {
     protected static final int appWaitTime = 100;
     protected static final int appCoreWaitTime = 480;
     protected final String lockFileName;
-    protected String logFileName;
 
     protected boolean forceCrash = false; // set true to force a crash and core file
 
@@ -127,10 +125,6 @@ public class LingeredApp {
      */
     public String getLockFileName() {
         return this.lockFileName;
-    }
-
-    public void setLogFileName(String name) {
-        logFileName = name;
     }
 
     /**
@@ -384,17 +378,8 @@ public class LingeredApp {
                     " LingeredApp stdout: [" + output.getStdout() + "];\n" +
                     " LingeredApp stderr: [" + output.getStderr() + "]\n" +
                     " LingeredApp exitValue = " + appProcess.exitValue();
-            if (logFileName != null) {
-                System.out.println("Logging to " + logFileName + " (" + msg.length + " chars)");
-                try (FileOutputStream fos = new FileOutputStream(file);
-                     PrintStream ps = new PrintStream(fos);) {
-                    ps.print(content);
-                    ps.close();
-                    fos.close();
-                }
-            } else {
-                System.out.println(msg);
-            }
+
+            System.out.println(msg);
         }
     }
 
