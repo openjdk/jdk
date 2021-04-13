@@ -500,7 +500,7 @@ public final class PlatformRecorder {
         // Use indexing to avoid Iterator allocation if nothing happens
         int count = recordings.size();
         for (int i = 0; i < count; i++) {
-            PlatformRecording r = recordings.get(0);
+            PlatformRecording r = recordings.get(i);
             if (r.isToDisk() && r.getState() == RecordingState.RUNNING) {
                 return true;
             }

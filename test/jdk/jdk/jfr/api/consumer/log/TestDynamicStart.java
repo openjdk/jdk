@@ -61,7 +61,6 @@ public class TestDynamicStart {
             executeJcmd("VM.log what=jfr+event=debug,jfr+system=debug output=" + FILE);
             la.await("Log stream started");
             la.await("Giraffe");
-            r.stop();
             executeJcmd("VM.log what=jfr+event=warning output=" + FILE);
             la.await("Log stream stopped");
         }

@@ -23,6 +23,7 @@
 package jdk.jfr.api.consumer.log;
 
 import java.io.Closeable;
+import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +57,7 @@ public class TestWithStreaming {
             rs.onEvent("TwoStreams", e -> {
                 latch.countDown();
             });
+            rs.setStartTime(Instant.MIN);
             rs.startAsync();
             TwoStreams e1 = new TwoStreams();
             e1.commit();
