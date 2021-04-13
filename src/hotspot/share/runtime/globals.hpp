@@ -426,16 +426,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option AbortVMOnVMOperationTimeout")   \
           range(0, max_intx)                                                \
                                                                             \
-  /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
-  /* typically, at most a few retries are needed                    */      \
-  product(intx, SuspendRetryCount, 50,                                      \
-          "Maximum retry count for an external suspend request")            \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(intx, SuspendRetryDelay, 5,                                       \
-          "Milliseconds to delay per retry (* current_retry_count)")        \
-          range(0, max_intx)                                                \
-                                                                            \
   product(bool, AssertOnSuspendWaitFailure, false,                          \
           "Assert/Guarantee on external suspend wait failure")              \
                                                                             \

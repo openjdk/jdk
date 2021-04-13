@@ -521,6 +521,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "SuspendRetryCount",            JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "SuspendRetryDelay",            JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
