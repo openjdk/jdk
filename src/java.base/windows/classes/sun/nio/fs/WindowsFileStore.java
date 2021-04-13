@@ -52,7 +52,7 @@ class WindowsFileStore
     private final int volType;
     private final String displayName;   // returned by toString
 
-    private volatile int hashCode;
+    private int hashCode;
 
     private WindowsFileStore(String root) throws WindowsException {
         assert root.charAt(root.length()-1) == '\\';
