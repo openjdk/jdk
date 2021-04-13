@@ -84,10 +84,10 @@ public class CommandLinePositiveTest {
                 .map(InetAddress::getHostAddress)
                 .forEach(addr -> {
             try {
-                simpleserver(JAVA, "-m", "jdk.httpserver", "-b", addr)
+                simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-b", addr)
                         .resultChecker(r -> assertContains(r.output,
                                 "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                                "http://" + addr + ":8000/ ..."));
+                                "http://" + addr));
             } catch (Exception e) {
                 throw new AssertionError(e);
             }
@@ -96,20 +96,19 @@ public class CommandLinePositiveTest {
 
     @Test
     public void testDirectory() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", TEST_DIR_STR)
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-d", TEST_DIR_STR)
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8000\n" +
-                                    "http://" + LOCALHOST_ADDR + ":8000/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
+                    assertContains(r.output,
+                            "http://" + LOCALHOST_ADDR);
                 });
     }
 
     @DataProvider(name = "ports")
     public Object[][] ports() {
         return new Object[][] {
-                {"0"},
-                {"8000"},
-                {"65535"}
+                {"0"}
         };
     }
     @Test(dataProvider = "ports")
@@ -117,8 +116,9 @@ public class CommandLinePositiveTest {
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", port)
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:" + port + "\n" +
-                                    "http://" + LOCALHOST_ADDR + ":" + port + "/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
+                    assertContains(r.output,
+                            "http://" + LOCALHOST_ADDR);
                 });
     }
 
@@ -144,41 +144,43 @@ public class CommandLinePositiveTest {
 
     @Test
     public void testlastOneWinsBindAddress() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-b", "localhost", "-b", "127.0.0.1")
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-b", "localhost", "-b", "127.0.0.1")
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                                    "http://127.0.0.1:8000/ ...");
+                                    "http://127.0.0.1:");
                 });
     }
 
     @Test
     public void testlastOneWinsDirectory() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", TEST_DIR_STR, "-d", TEST_DIR_STR)
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-d", TEST_DIR_STR, "-d", TEST_DIR_STR)
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8000\n" +
-                                    "http://" + LOCALHOST_ADDR + ":8000/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
+                    assertContains(r.output,
+                            "http://" + LOCALHOST_ADDR);
                 });
     }
 
     @Test
     public void testlastOneWinsOutput() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-o", "none", "-o", "verbose")
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-o", "none", "-o", "verbose")
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8000\n" +
-                                    "http://" + LOCALHOST_ADDR + ":8000/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
+                    assertContains(r.output,
+                            "http://" + LOCALHOST_ADDR);
                 });
     }
 
     @Test
     public void testlastOneWinsPort() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "8001", "-p", "8002")
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-p", "65535")
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:8002\n" +
-                                    "http://" + LOCALHOST_ADDR + ":8002/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:65535\n" +
+                                    "http://" + LOCALHOST_ADDR + ":65535/ ...");
                 });
     }
 
@@ -191,9 +193,12 @@ public class CommandLinePositiveTest {
     // --- helper methods ---
 
     static void assertContains(String output, String subString) {
-        if (output.contains(subString))
+        var outs = output.replaceAll("\n", System.lineSeparator());
+        var subs = subString.replaceAll("\n", System.lineSeparator());
+        if (outs.contains(subs))
             assertTrue(true);
-        else fail("Expected to find [" + subString + "], in output [" + output + "]");
+        else
+            fail("Expected to find [" + subs + "], in output [" + outs + "]");
     }
 
     static Result simpleserver(String... args) throws Exception {

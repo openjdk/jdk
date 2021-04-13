@@ -85,7 +85,7 @@ public class CommandLineNegativeTest {
                 {"-b", "localhost"},
                 {"-d", "/some/path"},
                 {"-o", "none"},
-                {"-p", "8001"}
+                {"-p", "0"}
                 // doesn't fail for -h option
         };
     }
@@ -128,10 +128,8 @@ public class CommandLineNegativeTest {
                 // TODO: expect failure at Path::of, not at actual file system access
                 //  need to be file system specific?
 
-                {"-o", ""},
                 {"-o", "bad-output-level"},
 
-                {"-p", ""},
                 {"-p", "+-"},
         };
     }
@@ -156,12 +154,12 @@ public class CommandLineNegativeTest {
 
     @Test
     public void testRootNotAbsolute() throws Exception {
-        var root = Path.of("");
+        var root = Path.of(".");
         assertFalse(root.isAbsolute());
         simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
-                                + "Path is not absolute: " + root.toString())
+                                + "Path is not absolute:")
                 );
     }
 
@@ -178,7 +176,7 @@ public class CommandLineNegativeTest {
 
     @Test
     public void testRootDoesNotExist() throws Exception {
-        Path root = TEST_DIR.resolve("not/existant/dir");
+        Path root = TEST_DIR.resolve("not/existent/dir");
         assertFalse(Files.exists(root));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
                 .resultChecker(r ->

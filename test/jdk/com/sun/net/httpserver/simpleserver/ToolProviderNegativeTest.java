@@ -92,7 +92,7 @@ public class ToolProviderNegativeTest {
                 {"-b", "localhost"},
                 {"-d", "/some/path"},
                 {"-o", "none"},
-                {"-p", "8001"}
+                {"-p", "0"}
                 // doesn't fail for -h option
         };
     }
@@ -137,10 +137,8 @@ public class ToolProviderNegativeTest {
                 // TODO: expect failure at Path::of, not at actual file system access
                 //  need to be file system specific?
 
-                {"-o", ""},
                 {"-o", "bad-output-level"},
 
-                {"-p", ""},
                 {"-p", "+-"},
                 {"-p", "\u0000"},
         };
@@ -168,13 +166,13 @@ public class ToolProviderNegativeTest {
 
     @Test
     public void testRootNotAbsolute() {
-        var root = Path.of("");
+        var root = Path.of(".");
         assertFalse(root.isAbsolute());
         simpleserver("-d", root.toString())
                 .assertFailure()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
-                                + "Path is not absolute: " + root.toString())
+                                + "Path is not absolute: ")
                 );
     }
 
@@ -192,7 +190,7 @@ public class ToolProviderNegativeTest {
 
     @Test
     public void testRootDoesNotExist() {
-        Path root = TEST_DIR.resolve("not/existant/dir");
+        Path root = TEST_DIR.resolve("not/existent/dir");
         assertFalse(Files.exists(root));
         simpleserver("-d", root.toString())
                 .assertFailure()
@@ -206,7 +204,7 @@ public class ToolProviderNegativeTest {
     public void testRootNotReadable() throws IOException {
         Path root = Files.createDirectories(TEST_DIR.resolve("not/readable/dir"));
         try {
-            root.toFile().setReadable(false);
+            root.toFile().setReadable(false, false);
             assertFalse(Files.isReadable(root));
             simpleserver("-d", root.toString())
                     .assertFailure()
@@ -214,7 +212,7 @@ public class ToolProviderNegativeTest {
                             assertContains(r.output, "Error: server config failed: "
                                     + "Path is not readable: " + root.toString()));
         } finally {
-            root.toFile().setReadable(true);
+            root.toFile().setReadable(true, false);
         }
     }
 
