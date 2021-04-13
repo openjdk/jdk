@@ -56,6 +56,8 @@ import javax.xml.stream.XMLStreamWriter;
 public class IOUtils {
 
     public static void deleteRecursive(Path directory) throws IOException {
+        final IOException [] exception = { (IOException) null };
+
         if (!Files.exists(directory)) {
             return;
         }
@@ -67,7 +69,13 @@ public class IOUtils {
                 if (Platform.getPlatform() == Platform.WINDOWS) {
                     Files.setAttribute(file, "dos:readonly", false);
                 }
-                Files.delete(file);
+                try {
+                    Files.delete(file);
+                } catch (IOException e) {
+                    if (exception[0] == null) {
+                        exception[0] = e;
+                    }
+                }
                 return FileVisitResult.CONTINUE;
             }
 
@@ -83,10 +91,19 @@ public class IOUtils {
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException e)
                             throws IOException {
-                Files.delete(dir);
+                try {
+                    Files.delete(dir);
+                } catch (IOException ex) {
+                    if (exception[0] == null) {
+                        exception[0] = ex;
+                    }
+                }
                 return FileVisitResult.CONTINUE;
             }
         });
+        if (exception[0] != null) {
+            throw exception[0];
+        }
     }
 
     public static void copyRecursive(Path src, Path dest) throws IOException {

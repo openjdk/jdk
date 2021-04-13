@@ -89,6 +89,11 @@ public final class Executor extends CommandArguments<Executor> {
         return this;
     }
 
+    public Executor setTmpDir(String tmp) {
+        tmpDir = tmp;
+        return this;
+    }
+
     /**
      * Configures this instance to save full output that command will produce.
      * This function is mutual exclusive with
@@ -279,6 +284,9 @@ public final class Executor extends CommandArguments<Executor> {
         command.add(executablePath().toString());
         command.addAll(args);
         ProcessBuilder builder = new ProcessBuilder(command);
+        if (tmpDir != null) {
+            builder.environment().put("TMP", tmpDir);
+        }
         StringBuilder sb = new StringBuilder(getPrintableCommandLine());
         if (withSavedOutput()) {
             builder.redirectErrorStream(true);
@@ -426,6 +434,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
     private boolean removePath;
+    private String tmpDir = null;
 
     private static enum SaveOutputType {
         NONE, FULL, FIRST_LINE, DUMP
