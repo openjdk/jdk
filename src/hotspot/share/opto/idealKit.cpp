@@ -351,7 +351,8 @@ Node* IdealKit::load(Node* ctl,
                      const Type* t,
                      BasicType bt,
                      int adr_idx,
-                     bool require_atomic_access) {
+                     bool require_atomic_access,
+                     MemNode::MemOrd mo) {
 
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = NULL; // debug-mode-only argument
@@ -359,9 +360,9 @@ Node* IdealKit::load(Node* ctl,
   Node* mem = memory(adr_idx);
   Node* ld;
   if (require_atomic_access && bt == T_LONG) {
-    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, MemNode::unordered);
+    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, mo);
   } else {
-    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, MemNode::unordered);
+    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo);
   }
   return transform(ld);
 }

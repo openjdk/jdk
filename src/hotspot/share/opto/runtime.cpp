@@ -1499,6 +1499,22 @@ const TypeFunc *OptoRuntime::register_finalizer_Type() {
   return TypeFunc::make(domain,range);
 }
 
+const TypeFunc *OptoRuntime::jfr_enqueue_klass_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::KLASS;
+  // // The JavaThread* is passed to each routine as the last argument
+  // fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL;  // JavaThread *; Executing thread
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1,fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
+
+  return TypeFunc::make(domain,range);
+}
+
 
 //-----------------------------------------------------------------------------
 // Dtrace support.  entry and exit probes have the same signature

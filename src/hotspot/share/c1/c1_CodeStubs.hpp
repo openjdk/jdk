@@ -561,4 +561,21 @@ class ArrayCopyStub: public CodeStub {
 #endif // PRODUCT
 };
 
+class JfrKlassEnqueueStub: public CodeStub {
+ private:
+  CodeEmitInfo* _info;
+
+ public:
+  JfrKlassEnqueueStub(CodeEmitInfo* info) : _info(info) {}
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const             { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+  }
+
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("JfrKlassEnqueueStub"); }
+#endif // PRODUCT
+};
+
 #endif // SHARE_C1_C1_CODESTUBS_HPP

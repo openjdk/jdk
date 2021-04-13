@@ -71,6 +71,7 @@ class StubAssembler;
   stub(fpu2long_stub)                \
   stub(counter_overflow)             \
   stub(predicate_failed_trap)        \
+  stub(jfr_enqueue_klass)            \
   last_entry(number_of_ids)
 
 #define DECLARE_STUB_ID(x)       x ## _id ,

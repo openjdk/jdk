@@ -44,6 +44,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#ifdef JFR_HAVE_INTRINSICS
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
+#endif
+
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
 #else
@@ -3043,31 +3047,131 @@ void LIRGenerator::do_IfOp(IfOp* x) {
 
 #ifdef JFR_HAVE_INTRINSICS
 void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
-  CodeEmitInfo* info = state_for(x);
-  CodeEmitInfo* info2 = new CodeEmitInfo(info); // Clone for the second null check
-
-  assert(info != NULL, "must have info");
   LIRItem arg(x->argument_at(0), this);
 
   arg.load_item();
+
+  LIR_Opr cls = arg.result();
+  LIR_Opr result = new_register(T_LONG);
+
+  LabelObj* L_signal = new LabelObj();
+  LabelObj* L_end = new LabelObj();
+
   LIR_Opr klass = new_register(T_METADATA);
-  __ move(new LIR_Address(arg.result(), java_lang_Class::klass_offset(), T_ADDRESS), klass, info);
-  LIR_Opr id = new_register(T_LONG);
+
+  __ move(new LIR_Address(cls, java_lang_Class::klass_offset(), T_ADDRESS), klass);
+
+  LabelObj* klass_not_null = new LabelObj();
+
+  __ cmp(lir_cond_notEqual, klass, LIR_OprFact::metadataConst(0));
+  __ branch(lir_cond_notEqual, klass_not_null->label());
+
+  LIR_Opr array_klass = new_register(T_METADATA);
+  __ move(new LIR_Address(cls, java_lang_Class::array_klass_offset(), T_ADDRESS), array_klass);
+
+  LabelObj* L_void = new LabelObj();
+  __ move(LIR_OprFact::longConst(LAST_TYPE_ID + 1), result);
+  __ cmp(lir_cond_equal, array_klass, LIR_OprFact::metadataConst(0));
+  __ branch(lir_cond_equal, L_signal->label());
+
   ByteSize offset = KLASS_TRACE_ID_OFFSET;
+  LIR_Address* prim_trace_id_addr = new LIR_Address(array_klass, in_bytes(offset), T_LONG);
+  LIR_Opr prim_trace_id = new_register(T_LONG);
+  __ move(prim_trace_id_addr, prim_trace_id);
+  __ shift_right(prim_trace_id, TRACE_ID_SHIFT, prim_trace_id);
+  __ add(prim_trace_id, LIR_OprFact::longConst(1), prim_trace_id);
+  __ move(prim_trace_id, result);
+  __ branch(lir_cond_always, L_signal->label());
+
+  __ branch_destination(klass_not_null->label());
+  LIR_Opr trace_id_raw = new_register(T_LONG);
   LIR_Address* trace_id_addr = new LIR_Address(klass, in_bytes(offset), T_LONG);
+  __ move(trace_id_addr, trace_id_raw);
 
-  __ move(trace_id_addr, id);
-  __ logical_or(id, LIR_OprFact::longConst(0x01l), id);
-  __ store(id, trace_id_addr);
+  LIR_Opr epoch = new_register(T_INT);
+  LIR_Opr epoch_address = new_register(T_LONG);
+  __ move(LIR_OprFact::intptrConst(JfrTraceIdEpoch::epoch_address()), epoch_address);
+  __ move(new LIR_Address(epoch_address, (intx)0, T_INT), epoch);
+  __ cmp(lir_cond_equal, epoch, LIR_OprFact::intConst(0));
+  LIR_Opr this_epoch_bit = new_register(T_LONG);
+  __ cmove(lir_cond_equal, LIR_OprFact::longConst(EPOCH_0_BIT),
+           LIR_OprFact::longConst(EPOCH_1_BIT), this_epoch_bit, T_LONG);
+  LIR_Opr mask = new_register(T_LONG);
+  __ move(this_epoch_bit, mask);
+  __ shift_left(mask, META_SHIFT, mask);
+  __ logical_or(mask, this_epoch_bit, mask);
+  LIR_Opr trace_id_raw_and_mask = new_register(T_LONG);
+  __ move(trace_id_raw, trace_id_raw_and_mask);
+  __ logical_and(trace_id_raw_and_mask, mask, trace_id_raw_and_mask);
 
-#ifdef TRACE_ID_META_BITS
-  __ logical_and(id, LIR_OprFact::longConst(~TRACE_ID_META_BITS), id);
+  __ move(trace_id_raw, result);
+  __ shift_right(result, TRACE_ID_SHIFT, result);
+  __ cmp(lir_cond_equal, this_epoch_bit, trace_id_raw_and_mask);
+  __ branch(lir_cond_equal, L_end->label());
+
+#ifdef VM_LITTLE_ENDIAN
+  const int low_offset = 0;
+#else
+  const int low_offset = 7;
 #endif
-#ifdef TRACE_ID_SHIFT
-  __ unsigned_shift_right(id, TRACE_ID_SHIFT, id);
-#endif
+  LIR_Address* trace_id_low_addr = new LIR_Address(klass, in_bytes(offset) + low_offset, T_BYTE);
+  LIR_Opr current_value = new_register(T_INT);
+  __ move(trace_id_low_addr, current_value);
+  LIR_Opr epoch_i = new_register(T_INT);
+  __ convert(Bytecodes::_l2i, this_epoch_bit, epoch_i);
+  LIR_Opr new_value = new_register(T_INT);
+  __ logical_or(current_value, epoch_i, current_value);
+  __ move(current_value, new_value);
+  __ move(new_value, trace_id_low_addr);
+  __ membar_storestore();
 
-  __ move(id, rlock_result(x));
+  BasicTypeList signature;
+  signature.append(T_METADATA); // Klass*
+  signature.append(LP64_ONLY(T_LONG) NOT_LP64(T_INT)); // thread
+  LIR_OprList* args = new LIR_OprList();
+  args->append(klass);
+  args->append(getThreadPointer());
+
+  // move the arguments into the correct location
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+
+  assert(cc->length() == args->length(), "argument mismatch");
+  for (int i = 0; i < args->length(); i++) {
+    LIR_Opr arg = args->at(i);
+    LIR_Opr loc = cc->at(i);
+    if (loc->is_register()) {
+      __ move(arg, loc);
+    } else {
+      LIR_Address* addr = loc->as_address_ptr();
+      if (addr->type() == T_LONG || addr->type() == T_DOUBLE) {
+        __ unaligned_move(arg, addr);
+      } else {
+        __ move(arg, addr);
+      }
+    }
+  }
+
+  CodeEmitInfo *info = state_for(x, x->state());
+  CodeStub* stub = new JfrKlassEnqueueStub(info);
+
+  __ jump(stub);
+  __ branch_destination(stub->continuation());
+
+  __ branch_destination(L_signal->label());
+  LIR_Opr signal = new_register(T_INT);
+  LIR_Opr signal_addr = new_register(T_LONG);
+  __ move(LIR_OprFact::intptrConst(JfrTraceIdEpoch::signal_address()), signal_addr);
+  __ move(new LIR_Address(signal_addr, (intx)0, T_BOOLEAN), signal);
+  __ membar_acquire();
+  __ cmp(lir_cond_equal, signal, 1);
+  __ branch(lir_cond_equal, L_end->label());
+  __ move(LIR_OprFact::intConst(1), signal);
+  __ membar_storestore();
+  __ move(signal, new LIR_Address(signal_addr, (intx)0, T_BOOLEAN));
+
+  __ branch_destination(L_end->label());
+
+  __ move(result, rlock_result(x));
 }
 
 void LIRGenerator::do_getEventWriter(Intrinsic* x) {

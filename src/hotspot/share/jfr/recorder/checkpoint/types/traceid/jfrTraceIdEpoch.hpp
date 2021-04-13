@@ -67,8 +67,8 @@ class JfrTraceIdEpoch : AllStatic {
     return _epoch_state;
   }
 
-  static jlong epoch_address() {
-    return (jlong)&_epoch_state;
+  static address epoch_address() {
+    return (address)&_epoch_state;
   }
 
   static u1 current() {
@@ -113,6 +113,10 @@ class JfrTraceIdEpoch : AllStatic {
 
   static void set_changed_tag_state() {
     _tag_state.signal();
+  }
+
+  static address signal_address() {
+    return _tag_state.signaled_addr();
   }
 };
 

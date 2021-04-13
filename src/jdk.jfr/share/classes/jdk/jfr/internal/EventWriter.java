@@ -166,7 +166,7 @@ public final class EventWriter {
         if (aClass == null) {
             putLong(0L);
         } else {
-            putLong(JVM.getClassIdNonIntrinsic(aClass));
+            putLong(JVM.getClassId(aClass));
         }
     }
 

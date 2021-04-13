@@ -549,4 +549,19 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ jmp(_continuation);
 }
 
+void JfrKlassEnqueueStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+
+  __ save_live_registers_no_oop_map(true);
+
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::jfr_enqueue_klass)));
+
+  __ restore_live_registers(true);
+
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+
+  __ jmp(_continuation);
+}
+
 #undef __

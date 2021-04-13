@@ -68,6 +68,7 @@ class PackageEntry;
  */
 class JfrTraceIdLoadBarrier : AllStatic {
   friend class JfrCheckpointManager;
+  friend class SharedRuntime;
  private:
   static bool initialize();
   static void clear();

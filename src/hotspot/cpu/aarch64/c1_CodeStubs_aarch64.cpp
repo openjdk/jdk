@@ -368,4 +368,32 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ b(_continuation);
 }
 
+void JfrKlassEnqueueStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+
+  __ push(RegSet::range(r0, r29), sp);         // integer registers except lr & sp
+
+  for (int i = 31; i>= 0; i -= 4) {
+    __ sub(sp, sp, 4 * wordSize); // no pre-increment for st1. Emulate it without modifying other registers
+    __ st1(as_FloatRegister(i-3), as_FloatRegister(i-2), as_FloatRegister(i-1),
+           as_FloatRegister(i), __ T1D, Address(sp));
+  }
+
+
+  __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::jfr_enqueue_klass)));
+  __ blr(rscratch1);
+
+  for (int i = 0; i < 32; i += 4) {
+    __ ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
+           as_FloatRegister(i+3), __ T1D, Address(__ post(sp, 4 * wordSize)));
+  }
+
+  __ pop(RegSet::range(r0, r29), sp);
+
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+
+  __ b(_continuation);
+}
+
 #undef __

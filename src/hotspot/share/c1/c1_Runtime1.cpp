@@ -248,6 +248,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
 #if defined(PPC32)
   case handle_exception_nofpu_id:
 #endif
+  case jfr_enqueue_klass_id:
     expect_oop_map = false;
     break;
   default:
@@ -335,6 +336,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, trace_block_entry);
 #ifdef JFR_HAVE_INTRINSICS
   FUNCTION_CASE(entry, JFR_TIME_FUNCTION);
+  FUNCTION_CASE(entry, SharedRuntime::jfr_enqueue_klass);
 #endif
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32C());

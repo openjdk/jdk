@@ -985,6 +985,10 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* thread, o
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
+JRT_LEAF(void, SharedRuntime::jfr_enqueue_klass(Klass * klass, JavaThread* thread))
+  NoSafepointVerifier nsv;
+  JfrTraceIdLoadBarrier::enqueue(klass);
+JRT_END
 
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL) {
