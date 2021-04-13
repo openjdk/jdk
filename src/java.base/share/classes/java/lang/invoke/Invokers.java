@@ -103,18 +103,20 @@ class Invokers {
 
     /*non-public*/
     MethodHandle varHandleMethodInvoker(VarHandle.AccessMode ak) {
-        MethodHandle invoker = cachedVHInvoker(VH_INV_GENERIC, ak);
+        boolean isExact = false;
+        MethodHandle invoker = cachedVHInvoker(isExact, ak);
         if (invoker != null)  return invoker;
-        invoker = makeVarHandleMethodInvoker(ak, false);
-        return setCachedVHInvoker(VH_INV_GENERIC, ak, invoker);
+        invoker = makeVarHandleMethodInvoker(ak, isExact);
+        return setCachedVHInvoker(isExact, ak, invoker);
     }
 
     /*non-public*/
     MethodHandle varHandleMethodExactInvoker(VarHandle.AccessMode ak) {
-        MethodHandle invoker = cachedVHInvoker(VH_INV_EXACT, ak);
+        boolean isExact = true;
+        MethodHandle invoker = cachedVHInvoker(isExact, ak);
         if (invoker != null)  return invoker;
-        invoker = makeVarHandleMethodInvoker(ak, true);
-        return setCachedVHInvoker(VH_INV_EXACT, ak, invoker);
+        invoker = makeVarHandleMethodInvoker(ak, isExact);
+        return setCachedVHInvoker(isExact, ak, invoker);
     }
 
     private MethodHandle cachedInvoker(int idx) {
@@ -128,12 +130,14 @@ class Invokers {
         return invokers[idx] = invoker;
     }
 
-    private MethodHandle cachedVHInvoker(int idx, VarHandle.AccessMode ak) {
-        return cachedInvoker(idx + ak.ordinal());
+    private MethodHandle cachedVHInvoker(boolean isExact, VarHandle.AccessMode ak) {
+        int baseIndex = (isExact ? VH_INV_EXACT : VH_INV_GENERIC);
+        return cachedInvoker(baseIndex + ak.ordinal());
     }
 
-    private MethodHandle setCachedVHInvoker(int idx, VarHandle.AccessMode ak, final MethodHandle invoker) {
-        return setCachedInvoker(idx + ak.ordinal(), invoker);
+    private MethodHandle setCachedVHInvoker(boolean isExact, VarHandle.AccessMode ak, final MethodHandle invoker) {
+        int baseIndex = (isExact ? VH_INV_EXACT : VH_INV_GENERIC);
+        return setCachedInvoker(baseIndex + ak.ordinal(), invoker);
     }
 
     private MethodHandle makeExactOrGeneralInvoker(boolean isExact) {
