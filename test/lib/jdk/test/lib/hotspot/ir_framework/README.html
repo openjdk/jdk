@@ -1,0 +1,160 @@
+<h1>IR Test Framework</h1>
+
+<p>This folder contains a test framework whose main purpose is to perform regex-based checks on the C2 IR shape of test methods emitted by the VM flags <em>-XX:+PrintIdeal</em> and <em>-XX:+PrintOptoAssembly</em>. The framework can also be used for other non-IR matching (and non-compiler) tests by providing easy to use annotations for commonly used testing patterns and compiler control flags.</p>
+
+<p>The framework is based on the ideas of the currently present IR test framework in <a href="https://github.com/openjdk/valhalla/blob/e9c78ce4fcfd01361c35883e0d68f9ae5a80d079/test/hotspot/jtreg/runtime/valhalla/inlinetypes/InlineTypesTest.java">Valhalla</a> and aims to replace it at some point.</p>
+
+<h2>1. How to Use the Framework</h2>
+
+<p>The framework is intended to be used in JTreg tests. The JTreg header of the test must contain <code>@library /test/lib</code> and should be run as a driver with <code>@run driver</code>. Annotate the test code with the supported framework annotations and call the framework from within the test's <code>main()</code> method. A simple example is shown below:</p>
+
+<pre><code>/*
+ * @test
+ * @summary A simple test using the test framework.
+ * @library /test/lib
+ * @run driver my.package.MySimpleTest
+ */
+
+package my.package;
+
+import jdk.test.lib.hotspot.ir_framework.*;
+
+public class MySimpleTest {
+
+    public static void main(String[] args) {
+        TestFramework.run(); // The framework runs all tests of this class.
+    }
+
+    @Test
+    @IR(failOn = IRNode.STORE) // Fail if the IR of myTest() contains any stores.
+    public void myTest() {
+        /* ... */
+    }
+}
+</code></pre>
+
+<p>There are various ways how to set up and run a test within the <code>main()</code> method of a JTreg test. These are described and can be found in the <a href="./TestFramework.java">TestFramework</a> class.</p>
+
+<h2>2. Features</h2>
+
+<p>The framework offers various annotations and flags to control how your test code should be invoked and being checked. This section gives an overview over all these features.</p>
+
+<h3>2.1 Different Tests</h3>
+
+<p>There are three kinds of tests depending on how much control is needed over the test invocation.</p>
+
+<h4>Base Tests</h4>
+
+<p>The simplest form of testing provides a single <code>@Test</code> annotated method which the framework will invoke as part of the testing. The test method has no or well-defined arguments that the framework can automatically provide. </p>
+
+<p>More information on base tasts with a precise definition can be found in the <a href="./doc/jdk/test/lib/hotspot/ir_framework/Test.html">Javadocs</a>. Concrete examples on how to specify a base test can be found in <a href="./examples/BaseTestExample.java">BaseTestsExample</a>.</p>
+
+<h4>Checked Tests</h4>
+
+<p>The base tests do not provide any way of verification by user code. A checked test enabled that by allowing the user to define an additional <code>@Check</code> annotated method which is invoked directly after the <code>@Test</code> annotated method. This allows the user to perform various checks about the test method including return value verification.</p>
+
+<p>More information on checked tasts with a precise definition can be found in the <a href="./doc/jdk/test/lib/hotspot/ir_framework/Check.html">Javadocs</a>. Concrete examples on how to specify a checked test can be found in <a href="./examples/CheckedTestExample.java">CheckedTestsExample</a>.</p>
+
+<h4>Custom Run Tests</h4>
+
+<p>Neither the base nor the checked tests provide any control over how a <code>@Test</code> annotated method is invoked in terms of customized argument values and/or conditions for the invocation itself. A custom run test gives full control over the invocation of the <code>@Test</code> annotated method to the user. The framework calls a dedicated <code>@Run</code> annotated method from which the user can invoke the <code>@Test</code> method according to his/her needs.</p>
+
+<p>More information on checked tasts with a precise definition can be found in the <a href="./doc/jdk/test/lib/hotspot/ir_framework/Run.html">Javadocs</a>. Concrete examples on how to specify a custom run test can be found in <a href="./examples/CustomRunTestExample.java">CustomRunTestsExample</a>.</p>
+
+<h3>2.2 IR Verification</h3>
+
+<p>The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of <em>-XX:+PrintIdeal</em> and <em>-XX:+PrintOptoAssembly</em>. For simplicity, we will refer to the "IR" or "IR matching" when actually meaning the combined output of <em>-XX:+PrintIdeal</em> and <em>-XX:+PrintOptoAssembly</em> for a C2 compilation.</p>
+
+<p>The user has the possibility to add an additional <code>@IR</code> annotation to any <code>@Test</code> annotated method (regardless of the kind of test mentioned in section 2.1) to specify a constraint/rule on the compiled IR shape. The <code>@IR</code> annotation provides two kinds of regex checks:</p>
+
+<ul>
+<li>A <code>failOn</code> check that verifies that the provided regex is not matched in the C2 IR.</li>
+<li>A <code>counts</code> check that verifies that the provided regex is matched a user defined number of times in the C2 IR.</li>
+</ul>
+
+<p>A regex can either be a custom string or any of the default regexes provided by the framework in <a href="IRNode.java">IRNode</a> for some commonly used IR nodes (also provides the possibility of composite regexes).</p>
+
+<p>An IR verification cannot (and does not want to) always be performed. For example, a JTreg test could be run with <em>-Xint</em> or not a debug build (<em>-XX:+PrintIdeal</em> and <em>-XX:+PrintOptoAssembly</em> are debug build flags). But also CI tier testing could add additional JTreg VM and Javaoptions flags which could make an IR rule unstable. </p>
+
+<p>In general, the framework will only perform IR verification if the used VM flags allow a C2 compilation and if non-critical additional JTreg VM and Javaoptions are provided (see whiteflag list in <a href="./TestFramework.java">TestFramework</a>). The user test code, however, can specify any flags which still allow an IR verification to be performed if a C2 compilation is done (expected flags by user defined <code>@IR</code> annotations). </p>
+
+<p>An <code>@IR</code> annotation allows additional preconditions/restrictions on the currently present VM flags to enable or disable rules when certain flags are present or have a specific value (see <code>applyIfXX</code> properties of an <code>@IR</code> annotation).</p>
+
+<p>More information about IR matching can be found in the <a href="./doc/jdk/test/lib/hotspot/ir_framework/IR.html">Javadocs</a>. Concrete examples on how to specify IR constraint/rules can be found in <a href="./examples/IRExample.java">IRExample</a> and <a href="./tests/TestIRMatching.java">TestIRMatching</a> (an internal framework test).</p>
+
+<h3>2.3 Test VM Flags and Scenarios</h3>
+
+<p>The recommended way to use the framework is by using defining single <code>@run driver</code> statement in the JTreg header which, however, does not allow the specification of additional test VM flags. Instead, the user has the possibility to provide VM flags by calling <code>TestFramework.runWithFlags()</code> or by creating a <code>TestFramework</code> builder object on which <code>addFlags()</code> can be called.</p>
+
+<p>If a user wants to provide multiple flag combinations for a single test, he or she has the option to provide different scenarios. A scenario based flag will always have precedence over other user defined flags. More information about scenarios can be found in the <a href="./doc/jdk/test/lib/hotspot/ir_framework/Scenario.html">Javadocs</a>.</p>
+
+<h3>2.4 Compiler Controls</h3>
+
+<p>The framework allows the use of additional compiler control annotations for helper method and classes in the same fashion as JMH does. The following annotations are supported and described in the referenced Javadocs for the annotation class:</p>
+
+<ul>
+<li><a href="./doc/jdk/test/lib/hotspot/ir_framework/DontInline.html">@DontInline</a></li>
+<li><a href="./doc/jdk/test/lib/hotspot/ir_framework/ForceInline.html">@ForceInline</a></li>
+<li><a href="./doc/jdk/test/lib/hotspot/ir_framework/DontCompile.html">@DontCompile</a></li>
+<li><a href="./doc/jdk/test/lib/hotspot/ir_framework/DontCompile.html">@ForceCompile</a></li>
+<li><a href="./doc/jdk/test/lib/hotspot/ir_framework/ForceCompileClassInitializer.html">@ForceCompileClassInitializer</a></li>
+</ul>
+
+<h3>2.5 Framework Debug and Stress Flags</h3>
+
+<p>The framework provides various stress and debug flags. They should mainly be used as JTreg VM and/or Javaoptions (apart from <code>VerifyIR</code>). The following (property) flags are supported:</p>
+
+<ul>
+<li><code>-DVerifyIR=false</code>: Explicitly disable IR verification. This is useful, for example, if some scenarios use VM flags that let <code>@IR</code> annotation rules fail and the user does not want to provide separate IR rules or add flag preconditions to the already existing IR rules.</li>
+<li><code>-DTest=test1,test2</code>: Provide a list of <code>@Test</code> method names which should be executed.</li>
+<li><code>-DExclude=test3</code>: Provide a list of <code>@Test</code> method names which should be excluded from execution.</li>
+<li><code>-DScenarios=1,2</code>: Provide a list of scenario indexes to specify which scenarios that should be executed.</li>
+<li><code>-DWarmup=200</code>: Provide a new default value of the number of warm-up iterations. This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with <code>testFrameworkObject.setDefaultWarmup(200)</code>).</li>
+<li><code>-DVerbose=true</code>: Enable more fain-grained logging (slows the execution down).</li>
+<li><code>-DReproduce=true</code>: Flag to use when directly running a test VM to bypass dependencies to the driver VM state (for example, when reproducing an issue).</li>
+<li><code>-DPrintTimes=true</code>: Print the execution time measurements of each executed test.</li>
+<li><code>-DVerifyVM=true</code>: The framework runs the test VM with additional verification flags (slows the execution down).</li>
+<li><code>-DExcluceRandom=true</code>: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.</li>
+<li><code>-DFlipC1C2=true</code>: The framework compiles all <code>@Test</code> annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.</li>
+<li><code>-DShuffleTests=false</code>: Disables the shuffling of tests (a shuffling is always done by default).</li>
+<li><code>-DDumpReplay=true</code>: Add the <code>DumpReplay</code> directive to the test VM.</li>
+<li><code>-DGCAfter=true</code>: Perform <code>System.gc()</code> after each test (slows the execution don).</li>
+</ul>
+
+<h2>3. Test Framework Execution</h2>
+
+<p>This section gives an overview of how the framework is executing a JTreg test that calls the framework from within its <code>main()</code> method.</p>
+
+<p>The framework will spawn a new "test VM" to execute the user defined tests. The test VM collects all tests of the test class specified by the user code in <code>main()</code> and ensures that there is no violation of the required format by the framework. In a next step, the framework does the following for each test in general:
+1. Warm the test up for a predefined number of times (default 2000). This can also be adapted for all tests by using <code>testFrameworkobject.setDefaultWarmup(100)</code> or for individual tests with an additional <a href="./doc/jdk/test/lib/hotspot/ir_framework/Warmup.html">@Warmup</a> annotation. 
+2. After the warm-up is finished, the framework compiles the associated <code>@Test</code> annotated method at the specified compilation level (default: C2).
+3. After the compilation, the test is invokes one more time.</p>
+
+<p>Once the test VM terminates, IR verification (if possible) is performed on the output of the test VM. If any test throws an exception during its execution or if IR matching fails, the failures are collected and reported in a pretty format. Check the standard error and output for more information and how to reproduce these failures.</p>
+
+<p>Some of the steps above can be different due to the kind of the test or due to using non-default annotation properties. These details and differences are discribed in the Javadocs for the three tests (see section 2.1 Different Tests).</p>
+
+<p>More information about the internals and the workflow of the framework can be found at <a href="./doc/jdk/test/lib/hotspot/ir_framework/TestFramework.html">TestFramework</a>.  </p>
+
+<h2>4. Internal Framework Tests</h2>
+
+<p>There are various tests to verify the correctness of the test framework. These tests can be found in <a href="tests">tests</a> and can directly be run with JTreg. The tests are not part of the normal JTreg tests of HotSpot and should only be run upon changing the framework code as a minimal form of testing.</p>
+
+<p>Additional testing was performed by converting all compiler Inline Types tests that used the currently present IR test framework in Valhalla (see <a href="https://bugs.openjdk.java.net/browse/JDK-8263024">JDK-8263024</a>). It is strongly advised to make sure a change to the framework still lets these converted tests in Valhalla pass as part of an additional testing step.</p>
+
+<h2>5. Future Work</h2>
+
+<p>This framework is based on the idea of the currently present IR test framework in <a href="https://github.com/openjdk/valhalla/blob/e9c78ce4fcfd01361c35883e0d68f9ae5a80d079/test/hotspot/jtreg/runtime/valhalla/inlinetypes/InlineTypesTest.java">Valhalla</a>. This IR framework was used with great success in Valhalla and thus served as a foundation for this new IR framework.</p>
+
+<p>The new framework supports all the features that are present in the Valhalla IR framework with the idea to replace it at some point. The initial design and feature set was kept simple and straight forward and serves well for small to medium sized tests. There are a lot of possibilities to further enhance the framework and make it more powerful. This can be tackled in additional RFEs. A few ideas include:</p>
+
+<ul>
+<li>Provide more default IR regexes (e.g. for vector nodes etc.) in <a href="./IRNode.java">IRNode</a> (<a href="https://bugs.openjdk.java.net/browse/JDK-8265197">JDK-8265197</a>).</li>
+<li>Parsing the IR directly to perform queries on it, walking it, searching it, match on IR node properties etc. (<a href="https://bugs.openjdk.java.net/browse/JDK-8265198">JDK-8265198</a>).</li>
+<li>Investigate more verification possibilities based on additional/other flags (e.g. <em>-XX:+PrintIdealGraph</em>, <em>-XX:+TraceNewVectors</em> etc.) (<a href="https://bugs.openjdk.java.net/browse/JDK-8265200">JDK-8265200</a>).</li>
+<li>More interface methods for verification in checked and custom run tests.</li>
+<li>More stress/debug framework flags.</li>
+<li>Additional check possibilities in <code>@IR</code> annotations. </li>
+</ul>
+
+<p>More information can be found in the JBS issue <a href="https://bugs.openjdk.java.net/browse/JDK-8254129">JDK-8254129</a> (the initial IR Test Framework RFE).</p>
