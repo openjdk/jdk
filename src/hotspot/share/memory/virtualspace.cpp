@@ -136,12 +136,7 @@ static bool failed_to_reserve_as_requested(char* base, char* requested_address,
 }
 
 void ReservedSpace::clear_members() {
-  _base = NULL;
-  _size = 0;
-  _alignment = 0;
-  _special = false;
-  _executable = false;
-  _noaccess_prefix = 0;
+  initialize_members(NULL, 0, 0, false, false);
 }
 
 void ReservedSpace::initialize_members(char* base, size_t size, size_t alignment,
