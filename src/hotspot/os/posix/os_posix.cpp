@@ -53,11 +53,13 @@
 #include <dirent.h>
 #include <dlfcn.h>
 #include <grp.h>
+#include <netdb.h>
 #include <pwd.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
@@ -68,6 +70,18 @@
 #ifdef __APPLE__
   #include <crt_externs.h>
 #endif
+
+// macros for restartable system calls
+
+#define RESTARTABLE(_cmd, _result) do { \
+    _result = _cmd; \
+  } while(((int)_result == OS_ERR) && (errno == EINTR))
+
+#define RESTARTABLE_RETURN_INT(_cmd) do { \
+  int _result; \
+  RESTARTABLE(_cmd, _result); \
+  return _result; \
+} while(false)
 
 #define ROOT_UID 0
 
@@ -631,6 +645,22 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
 #endif
 }
 
+void os::dll_unload(void *lib) {
+  ::dlclose(lib);
+}
+
+jlong os::lseek(int fd, jlong offset, int whence) {
+  return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
+}
+
+int os::fsync(int fd) {
+  return ::fsync(fd);
+}
+
+int os::ftruncate(int fd, jlong length) {
+   return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
+}
+
 const char* os::get_current_directory(char *buf, size_t buflen) {
   return getcwd(buf, buflen);
 }
@@ -639,8 +669,18 @@ FILE* os::open(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
+size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  size_t res;
+  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+  return res;
+}
+
 ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   return ::pread(fd, buf, nBytes, offset);
+}
+
+int os::close(int fd) {
+  return ::close(fd);
 }
 
 void os::flockfile(FILE* fp) {
@@ -664,6 +704,38 @@ struct dirent* os::readdir(DIR* dirp) {
 int os::closedir(DIR *dirp) {
   assert(dirp != NULL, "just checking");
   return ::closedir(dirp);
+}
+
+int os::socket_close(int fd) {
+  return ::close(fd);
+}
+
+int os::socket(int domain, int type, int protocol) {
+  return ::socket(domain, type, protocol);
+}
+
+int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
+}
+
+int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
+}
+
+int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+  return os::send(fd, buf, nBytes, flags);
+}
+
+int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+  RESTARTABLE_RETURN_INT(::connect(fd, him, len));
+}
+
+struct hostent* os::get_host_by_name(char* name) {
+  return ::gethostbyname(name);
+}
+
+void os::exit(int num) {
+  ::exit(num);
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name

@@ -29,9 +29,12 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
+
+#if defined(__APPLE__) && defined(AARCH64)
+#include "runtime/os.hpp"
+#endif
 
 inline void Thread::set_suspend_flag(SuspendFlags f) {
   uint32_t flags;

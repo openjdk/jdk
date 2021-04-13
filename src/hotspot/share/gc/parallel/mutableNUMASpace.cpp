@@ -33,6 +33,7 @@
 #include "oops/typeArrayOop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/align.hpp"

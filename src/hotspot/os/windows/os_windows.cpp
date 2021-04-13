@@ -1200,6 +1200,16 @@ void os::die() {
   win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
 }
 
+const char* os::dll_file_extension() { return ".dll"; }
+
+void  os::dll_unload(void *lib) {
+  ::FreeLibrary((HMODULE)lib);
+}
+
+void* os::dll_lookup(void *lib, const char *name) {
+  return (void*)::GetProcAddress((HMODULE)lib, name);
+}
+
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
 //  * dirent_md.c       1.15 00/02/02
 //
@@ -4651,6 +4661,18 @@ int os::open(const char *path, int oflag, int mode) {
 
 FILE* os::open(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
+}
+
+size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  return ::write(fd, buf, nBytes);
+}
+
+int os::close(int fd) {
+  return ::close(fd);
+}
+
+void os::exit(int num) {
+  win32::exit_process_or_thread(win32::EPT_PROCESS, num);
 }
 
 // Is a (classpath) directory empty?
