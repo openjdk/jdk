@@ -49,8 +49,14 @@ public interface ReversibleCollection<E> extends Collection<E> {
      * @param e the element to be added
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
+     * @throws UnsupportedOperationException if this collection implementation
+     *         does not support this operation
+     * @implSpec
+     * The default implementation in this class throws UnsupportedOperationException.
      */
-    void addFirst(E e);
+    default void addFirst(E e) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Adds an element at the end of this collection (optional operation).
@@ -58,34 +64,79 @@ public interface ReversibleCollection<E> extends Collection<E> {
      * @param e the element to be added.
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
+     * @throws UnsupportedOperationException if this collection implementation
+     *         does not support this operation
+     * @implSpec
+     * The default implementation in this class throws UnsupportedOperationException.
      */
-    void addLast(E e);
+    default void addLast(E e) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Gets the element at the front of this collection.
      * @return the retrieved element
      * @throws NoSuchElementException if this collection is empty
+     * @implSpec
+     * The default implementation in this class gets an Iterator via
+     * the iterator() method, calls next() on it and returns the result.
      */
-    E getFirst();
+    default E getFirst() {
+        return this.iterator().next();
+    }
 
     /**
      * Gets the element at the end of this collection.
      * @return the retrieved element
      * @throws NoSuchElementException if this collection is empty
+     * @implSpec
+     * The default implementation in this class gets the reverse-order view
+     * of this collection by calling the reversed() method. It then gets
+     * an Iterator via the iterator() method, calls next() on it and returns the result.
      */
-    E getLast();
+    default E getLast() {
+        return this.reversed().iterator().next();
+    }
 
     /**
      * Removes and returns the first element of this collection (optional operation).
      * @return the removed element
      * @throws NoSuchElementException if this collection is empty
+     * @throws UnsupportedOperationException if this collection does not support this operation
+     * @implSpec
+     * The default implementation in this class is implemented as if:
+     * <pre>{@code
+     *     var it = this.iterator();
+     *     E e = it.next();
+     *     it.remove();
+     *     return e;
+     * }</pre>
      */
-    E removeFirst();
+    default E removeFirst() {
+        var it = this.iterator();
+        E e = it.next();
+        it.remove();
+        return e;
+    }
 
     /**
      * Removes and returns the last element of this collection (optional operation).
      * @return the removed element
      * @throws NoSuchElementException if this collection is empty
+     * @throws UnsupportedOperationException if this collection does not support this operation
+     * @implSpec
+     * The default implementation in this class is implemented as if:
+     * <pre>{@code
+     *     var it = this.reversed().iterator();
+     *     E e = it.next();
+     *     it.remove();
+     *     return e;
+     * }</pre>
      */
-    E removeLast();
+    default E removeLast() {
+        var it = this.reversed().iterator();
+        E e = it.next();
+        it.remove();
+        return e;
+    }
 }
