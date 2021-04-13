@@ -220,7 +220,7 @@ public class StartTlsRequest implements ExtendedRequest {
      * Acquire the class loader associated with this thread.
      */
     private final ClassLoader getContextClassLoader() {
-        PrivilegedAction<ClassLoader> pa = () -> Thread.currentThread().getContextClassLoader();
+        PrivilegedAction<ClassLoader> pa = Thread.currentThread()::getContextClassLoader;
         return AccessController.doPrivileged(pa);
     }
 
