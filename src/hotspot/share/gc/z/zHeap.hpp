@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,8 @@ public:
   // Object allocation
   uintptr_t alloc_tlab(size_t size);
   uintptr_t alloc_object(size_t size);
-  uintptr_t alloc_object_non_blocking(size_t size);
-  void undo_alloc_object(uintptr_t addr, size_t size);
+  uintptr_t alloc_object_for_relocation(size_t size);
+  void undo_alloc_object_for_relocation(uintptr_t addr, size_t size);
   bool is_alloc_stalled() const;
   void check_out_of_memory();
 
