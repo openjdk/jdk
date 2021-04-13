@@ -643,7 +643,9 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             exec.setToolProvider(JavaTool.JPACKAGE);
         } else {
             exec.setExecutable(JavaTool.JPACKAGE);
-            exec.setTmpDir(System.getProperty("java.io.tmpdir"));
+            if (TKit.isWindows()) {
+                exec.setWindowsTmpDir(System.getProperty("java.io.tmpdir"));
+            }
         }
 
         return exec;

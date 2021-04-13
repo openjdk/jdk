@@ -89,8 +89,8 @@ public final class Executor extends CommandArguments<Executor> {
         return this;
     }
 
-    public Executor setTmpDir(String tmp) {
-        tmpDir = tmp;
+    public Executor setWindowsTmpDir(String tmp) {
+        winTmpDir = tmp;
         return this;
     }
 
@@ -284,8 +284,8 @@ public final class Executor extends CommandArguments<Executor> {
         command.add(executablePath().toString());
         command.addAll(args);
         ProcessBuilder builder = new ProcessBuilder(command);
-        if (tmpDir != null) {
-            builder.environment().put("TMP", tmpDir);
+        if (winTmpDir != null) {
+            builder.environment().put("TMP", winTmpDir);
         }
         StringBuilder sb = new StringBuilder(getPrintableCommandLine());
         if (withSavedOutput()) {
@@ -434,7 +434,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
     private boolean removePath;
-    private String tmpDir = null;
+    private String winTmpDir = null;
 
     private static enum SaveOutputType {
         NONE, FULL, FIRST_LINE, DUMP
