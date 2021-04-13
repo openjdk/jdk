@@ -56,14 +56,14 @@ public class bug4449413 extends JFrame {
 
     private static final String INSTRUCTIONS = """
             This test is for MetalLookAndFeel only.
-            
+
             There are eight controls with black backgrounds.
             Four enabled (on the left side) and four disabled (on the right side)
             checkboxes and radiobuttons.
-                        
+
             1. If at least one of the controls' check marks is not visible:
                the test fails.
-                        
+
             2. Uncheck the "Use Ocean Theme" check box.
                If now at least one of the controls' check marks is not visible:
                the test fails.
