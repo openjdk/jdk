@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -659,7 +659,9 @@ class SSLStreams {
                 r = wrapper.wrapAndSend (buf);
                 stat = r.result.getHandshakeStatus();
             }
-            assert r.result.getStatus() == Status.CLOSED;
+            assert r.result.getStatus() == Status.CLOSED
+                    : "status is: " + r.result.getStatus()
+                    + ", handshakeStatus is: " + stat;
         }
     }
 }
