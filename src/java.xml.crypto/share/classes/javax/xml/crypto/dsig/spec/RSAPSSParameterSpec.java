@@ -65,23 +65,6 @@ import java.util.Objects;
  *    &lt;/xs:complexType&gt;
  * </code></pre>
  *
- * @implSpec
- * If the parameter is not specified when using the RSASSA-PSS signature
- * algorithm, the default parameter is used, which uses SHA-256 as the
- * {@code DigestMethod}, MGF1 with SHA-256 as the
- * {@code MaskGenerationFunction}, 32 as {@code SaltLength}, and 1 as
- * {@code TrailerField}. This is equivalent to the parameter-less signature
- * method {@link SignatureMethod#SHA256_RSA_MGF1 SHA256_RSA_MGF1} as defined
- * in <a href="https://tools.ietf.org/html/rfc6931#section-2.3.10">RFC 6931</a>.
- *
- * @implNote
- * In this implementation one can obtain this default value with:
- * <pre><code>
- * XMLSignatureFactory.getInstance()
- *      .newSignatureMethod(SignatureMethod.RSA_PSS, null)
- *      .getParameterSpec()
- * </code></pre>
- *
  * @since 17
  * @see SignatureMethod
  * @see <a href="https://www.ietf.org/rfc/rfc6931.txt">RFC 6931</a>

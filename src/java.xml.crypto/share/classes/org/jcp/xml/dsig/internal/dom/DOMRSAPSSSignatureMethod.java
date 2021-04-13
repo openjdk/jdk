@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -116,15 +116,13 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
     void checkParams(SignatureMethodParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
-        if (params != null) {
-            if (!(params instanceof RSAPSSParameterSpec)) {
-                throw new InvalidAlgorithmParameterException
-                    ("params must be of type RSAPSSParameterSpec");
-            }
-
-            spec = ((RSAPSSParameterSpec) params).getPSSParameterSpec();
-            LOG.debug("Setting RSAPSSParameterSpec to: {}", params.toString());
+        if (!(params instanceof RSAPSSParameterSpec)) {
+            throw new InvalidAlgorithmParameterException
+                ("params must be of type RSAPSSParameterSpec");
         }
+
+        spec = ((RSAPSSParameterSpec) params).getPSSParameterSpec();
+        LOG.debug("Setting RSAPSSParameterSpec to: {}", params.toString());
     }
 
     public final AlgorithmParameterSpec getParameterSpec() {
