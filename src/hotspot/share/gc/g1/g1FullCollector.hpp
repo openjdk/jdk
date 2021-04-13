@@ -103,7 +103,7 @@ public:
     return _live_stats[region_index]._live_words;
   }
 
-  void update_attribute_table(HeapRegion* hr, bool force_pinned = false);
+  void update_attribute_table(HeapRegion* hr, bool force_not_compacted = false);
 
   inline bool is_compacted(oop obj) const;
   inline bool is_not_compacted_but_marked_through(uint region_index) const;
