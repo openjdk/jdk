@@ -96,17 +96,17 @@ public class TestPolicy extends Policy {
         permissions.add(new RuntimePermission("getClassLoader"));
         permissions.add(new RuntimePermission("setSecurityManager"));
         permissions.add(new RuntimePermission("createSecurityManager"));
-        permissions.add(new PropertyPermission("testng.show.stack.frames",
-                "read"));
         permissions.add(new PropertyPermission("line.separator", "read"));
         permissions.add(new PropertyPermission("fileStringBuffer", "read"));
         permissions.add(new PropertyPermission("dataproviderthreadcount", "read"));
         permissions.add(new PropertyPermission("java.io.tmpdir", "read"));
+        permissions.add(new PropertyPermission("testng.show.stack.frames",
+                "read"));
         permissions.add(new PropertyPermission("testng.thread.affinity", "read"));
         permissions.add(new PropertyPermission("testng.mode.dryrun", "read"));
         permissions.add(new PropertyPermission("testng.report.xml.name", "read"));
-        permissions.add(new ReflectPermission("suppressAccessChecks"));
         permissions.add(new PropertyPermission("testng.timezone", "read"));
+        permissions.add(new ReflectPermission("suppressAccessChecks"));
         permissions.add(new FilePermission("<<ALL FILES>>",
                 "read, write, delete"));
     }
