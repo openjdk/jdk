@@ -31,17 +31,17 @@
 // fast access during the full collection. In particular some parts of the region
 // type information is encoded in these per-region bytes.
 // Value encoding has been specifically chosen to make required accesses fast.
-// In particular, the table collects whether a region should be considered pinned
-// during full gc (only), and that there are two reasons a
-// region is pinned (and excluded from compaction):
+// In particular, the table collects whether a region should be compacted, not
+// compacted, or not even marked through.
+// Reasons for not compacting a region:
 // (1) the HeapRegion itself has been pinned at the start of Full GC.
 // (2) the occupancy of the region is too high to be considered eligible for compaction.
+// Not marked through regions are neither compacted nor even marked through for
+// performance reasons. Currently only Closed Archive regions are of this kind.
 class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
-  static const uint8_t Normal = 0;        // Other kind of region
-  static const uint8_t Pinned = 1;        // Region is a pinned (non-Closed Archive) region
-  static const uint8_t ClosedArchive = 2; // Region is a (pinned) Closed Archive region
-
-  STATIC_ASSERT(ClosedArchive > Pinned);
+  static const uint8_t Compacted = 0;        // Region will be compacted.
+  static const uint8_t NotCompacted = 1;     // Region should not be compacted, but otherwise handled as usual.
+  static const uint8_t NotMarkedThrough = 2; // Region should not even be marked through.
 
   static const uint8_t Invalid = 255;
 
@@ -55,34 +55,24 @@ protected:
 public:
   void set_invalid(uint idx) { set_by_index(idx, Invalid); }
 
-  void set_closed_archive(uint idx) { set_by_index(idx, ClosedArchive); }
+  void set_not_marked_through(uint idx) { set_by_index(idx, NotMarkedThrough); }
 
-  bool is_closed_archive(HeapWord* obj) const {
+  bool is_not_marked_through(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) == ClosedArchive;
+    return get_by_address(obj) == NotMarkedThrough;
   }
 
-  void set_pinned(uint idx) { set_by_index(idx, Pinned); }
+  void set_not_compacted(uint idx) { set_by_index(idx, NotCompacted); }
 
-  bool is_pinned_or_closed(HeapWord* obj) const {
-    assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) >= Pinned;
+  bool is_not_compacted_but_marked_through(uint idx) const {
+    return get_by_index(idx) == NotCompacted;
   }
 
-  bool is_pinned(HeapWord* obj) const {
+  void set_compacted(uint idx) { set_by_index(idx, Compacted); }
+
+  bool is_compacted(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) == Pinned;
-  }
-
-  bool is_pinned(uint idx) const {
-    return get_by_index(idx) == Pinned;
-  }
-
-  void set_normal(uint idx) { set_by_index(idx, Normal); }
-
-  bool is_normal(HeapWord* obj) const {
-    assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) == Normal;
+    return get_by_address(obj) == Compacted;
   }
 };
 
