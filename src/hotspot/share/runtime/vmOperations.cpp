@@ -356,7 +356,7 @@ int VM_Exit::set_vm_exited() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
     if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
       ++num_active;
-      thr->set_vm_exited();  // per-thread flag
+      thr->set_terminated(JavaThread::_vm_exited);  // per-thread flag
     }
   }
 

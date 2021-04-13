@@ -129,8 +129,8 @@ class HandshakeState {
     // can add an asynchronous handshake to queue.
     // To make sure it is seen by the handshakee, the handshakee must first
     // check the _lock, if held go to slow path.
-    // Since the handshakee is unsafe if _lock gets lock after this check
-    // we know another threads cannot process any handshakes.
+    // Since the handshakee is unsafe if _lock gets locked after this check
+    // we know another thread cannot process any handshakes.
     // Now we can check queue if there is anything we should process.
     if (_lock.is_locked()) {
       return true;

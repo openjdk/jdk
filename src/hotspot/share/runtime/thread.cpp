@@ -448,10 +448,8 @@ Thread::~Thread() {
   delete last_handle_mark();
   assert(last_handle_mark() == NULL, "check we have reached the end");
 
-  // It's possible we can encounter a null _ParkEvent, etc., in stillborn threads.
-  // We NULL out the fields for good hygiene.
   ParkEvent::Release(_ParkEvent);
-  // Can be racingly loaded in signal handler via has_terminated()
+  // Set to NULL as a termination indicator for has_terminated().
   Atomic::store(&_ParkEvent, (ParkEvent*)NULL);
 
   delete handle_area();
@@ -1444,9 +1442,9 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     }
 
     // The careful dance between thread suspension and exit is handled here.
-    // Since we are in vm and suspension is done with handshakes,
+    // Since we are in thread_in_vm state and suspension is done with handshakes,
     // we can just put in the exiting state and it will be corrcetly handled.
-    set_exiting();
+    set_terminated(_thread_exiting);
 
     ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
   } else {
@@ -3577,7 +3575,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     // the thread might mess around with locks after this point. This can cause it
     // to do callbacks into the safepoint code. However, the safepoint code is not aware
     // of this thread since it is removed from the queue.
-    p->set_terminated();
+    p->set_terminated(JavaThread::_thread_terminated);
 
     // Notify threads waiting in EscapeBarriers
     EscapeBarrier::thread_removed(p);

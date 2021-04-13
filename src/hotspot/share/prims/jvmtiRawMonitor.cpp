@@ -429,7 +429,6 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
       simple_exit(jt);
       jt->set_thread_state_fence(_thread_in_native_trans);
       SafepointMechanism::process_if_requested(jt);
-      jt->set_thread_state(_thread_in_vm);
       if (jt->is_interrupted(true)) {
         ret = M_INTERRUPTED;
       }

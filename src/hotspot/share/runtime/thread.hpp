@@ -742,7 +742,9 @@ protected:
   ParkEvent * volatile _ParkEvent;            // for Object monitors, JVMTI raw monitors,
                                               // and ObjectSynchronizer::read_stable_mark
 
-                                              // _ParkEvent is cleared
+  // Termination indicator used by the signal handler.
+  // _ParkEvent is just a convenient field we can NULL out after setting the JavaThread termination state
+  // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
   bool has_terminated()                       { return Atomic::load(&_ParkEvent) == NULL; };
 
   volatile int _OnTrap;                       // Resume-at IP delta
@@ -885,6 +887,7 @@ class JavaThread: public Thread {
   NOT_PRODUCT(bool      _requires_cross_modify_fence;) // State used by VerifyCrossModifyFence
 
   // JavaThread termination support
+ public:
   enum TerminatedTypes {
     _not_terminated = 0xDEAD - 2,
     _thread_exiting,                             // JavaThread::exit() has been called for this thread
@@ -893,6 +896,7 @@ class JavaThread: public Thread {
                                                  // only VM_Exit can set _vm_exited
   };
 
+ private:
   // In general a JavaThread's _terminated field transitions as follows:
   //
   //   _not_terminated => _thread_exiting => _thread_terminated
@@ -1110,10 +1114,8 @@ class JavaThread: public Thread {
     return l_terminated != _not_terminated && l_terminated != _thread_exiting;
   }
   bool is_terminated() const;
-  void set_exiting();
-  void set_vm_exited();
-  // special for Threads::remove() which is static:
-  void set_terminated();
+  void set_terminated(TerminatedTypes t);
+
   void block_if_vm_exited();
 
   bool doing_unsafe_access()                     { return _doing_unsafe_access; }
