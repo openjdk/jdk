@@ -90,6 +90,8 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     public Executor setWindowsTmpDir(String tmp) {
+        TKit.assertTrue(TKit.isWindows(),
+                "setWindowsTmpDir is only valid on Windows platform");
         winTmpDir = tmp;
         return this;
     }

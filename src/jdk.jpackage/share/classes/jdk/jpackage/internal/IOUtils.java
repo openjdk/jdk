@@ -73,7 +73,7 @@ public class IOUtils {
                 try {
                     Files.delete(file);
                 } catch (IOException ex) {
-                    exception.compareAndSet(ex, null);
+                    exception.compareAndSet(null, ex);
                 }
                 return FileVisitResult.CONTINUE;
             }
@@ -93,7 +93,7 @@ public class IOUtils {
                 try {
                     Files.delete(dir);
                 } catch (IOException ex) {
-                    exception.compareAndSet(ex, null);
+                    exception.compareAndSet(null, ex);
                 }
                 return FileVisitResult.CONTINUE;
             }
