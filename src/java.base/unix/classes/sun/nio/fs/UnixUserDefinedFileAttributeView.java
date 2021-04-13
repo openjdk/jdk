@@ -49,6 +49,14 @@ abstract class UnixUserDefinedFileAttributeView
     private static final int MIN_LISTXATTR_BUF_SIZE = 1024;
     private static final int MAX_LISTXATTR_BUF_SIZE = 32 * 1024;
 
+    private final UnixPath file;
+    private final boolean followLinks;
+
+    UnixUserDefinedFileAttributeView(UnixPath file, boolean followLinks) {
+        this.file = file;
+        this.followLinks = followLinks;
+    }
+
     private byte[] nameAsBytes(UnixPath file, String name) throws IOException {
         if (name == null)
             throw new NullPointerException("'name' is null");
@@ -60,6 +68,11 @@ abstract class UnixUserDefinedFileAttributeView
         }
         return bytes;
     }
+
+    /**
+     * @return the maximum supported length of xattr names (in bytes, including namespace)
+     */
+    protected abstract int maxNameLength();
 
     // Parses buffer as array of NULL-terminated C strings.
     private static List<String> asList(long address, int size) {
@@ -96,19 +109,6 @@ abstract class UnixUserDefinedFileAttributeView
             }
         }
     }
-
-    private final UnixPath file;
-    private final boolean followLinks;
-
-    UnixUserDefinedFileAttributeView(UnixPath file, boolean followLinks) {
-        this.file = file;
-        this.followLinks = followLinks;
-    }
-
-    /**
-     * @return the maximum supported length of xattr names (in bytes, including namespace)
-     */
-    protected abstract int maxNameLength();
 
     @Override
     public List<String> list() throws IOException  {

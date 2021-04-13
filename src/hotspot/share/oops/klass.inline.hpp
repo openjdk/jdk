@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/klass.hpp"
+#include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
 
 // This loads the klass's holder as a phantom. This is useful when a weak Klass
