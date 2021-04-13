@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8225056
- * @run main OverrideSealedTest
  */
 
 // Test that a method in a sealed class or interface can be overridden.

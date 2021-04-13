@@ -234,9 +234,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
 
                 new JavacTask(tb)
                         .outdir(classesJavaBase)
-                        .options("--patch-module", "java.base=" + srcJavaBase.toString(),
-                                 "--enable-preview",
-                                 "-source", String.valueOf(Runtime.version().feature()))
+                        .options("--patch-module", "java.base=" + srcJavaBase.toString())
                         .files(tb.findJavaFiles(srcJavaBase))
                         .run()
                         .writeAll();
@@ -244,7 +242,8 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                 task.withOption("--patch-module")
                     .withOption("java.base=" + classesJavaBase.toString())
                     .withOption("--add-exports")
-                    .withOption("java.base/user=ALL-UNNAMED");
+                    .withOption("java.base/user=ALL-UNNAMED")
+                    .withOption("-XDforcePreview=true");
             }
             case REFER_TO_DECLARATION_SOURCE -> {
                 tb.writeJavaFiles(srcJavaBase, SEALED_DECLARATION);
@@ -252,7 +251,8 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                 task.withOption("--patch-module")
                     .withOption("java.base=" + srcJavaBase.toString())
                     .withOption("--add-exports")
-                    .withOption("java.base/user=ALL-UNNAMED");
+                    .withOption("java.base/user=ALL-UNNAMED")
+                    .withOption("-XDforcePreview=true");
             }
         }
 
@@ -289,11 +289,13 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                             expected = Set.of("5:41:compiler.err.preview.feature.disabled");
                         }
                         case REFER_TO_DECLARATION_CLASS -> {
-                            ok = false;
-                            expected = Set.of("-1:-1:compiler.err.preview.feature.disabled.classfile");
+                            ok = true;
+                            previewClass = false;
+                            expected = Set.of();
                         }
                         case REFER_TO_DECLARATION_SOURCE -> {
                             ok = false;
+                            previewClass = false;
                             expected = Set.of("2:8:compiler.err.preview.feature.disabled.plural");
                         }
                         case API_CLASS, API_SOURCE -> {
@@ -330,41 +332,16 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                             }
                         }
                         case REFER_TO_DECLARATION_CLASS -> {
-                            if (suppress == Suppress.YES) {
-                                if (lint == Lint.ENABLE_PREVIEW) {
-                                    expected = Set.of("-1:-1:compiler.warn.preview.feature.use.classfile");
-                                } else {
-                                    expected = Set.of(/*"-1:-1:compiler.note.preview.filename",
-                                                      "-1:-1:compiler.note.preview.recompile"*/);
-                                }
-                            } else if (lint == Lint.ENABLE_PREVIEW) {
-                                expected = Set.of("5:13:compiler.warn.declared.using.preview",
-                                                  "5:24:compiler.warn.declared.using.preview",
-                                                  "-1:-1:compiler.warn.preview.feature.use.classfile");
+                            previewClass = false;
+                            expected = Set.of();
+                        }
+                        case REFER_TO_DECLARATION_SOURCE -> {
+                            previewClass = false;
+                            if (lint == Lint.ENABLE_PREVIEW) {
+                                expected = Set.of("2:8:compiler.warn.preview.feature.use.plural");
                             } else {
                                 expected = Set.of("-1:-1:compiler.note.preview.filename",
                                                   "-1:-1:compiler.note.preview.recompile");
-                            }
-                        }
-                        case REFER_TO_DECLARATION_SOURCE -> {
-                            if (lint == Lint.ENABLE_PREVIEW) {
-                                if (suppress == Suppress.YES) {
-                                    expected = Set.of("2:8:compiler.warn.preview.feature.use.plural",
-                                                      "3:26:compiler.warn.declared.using.preview");
-                                } else {
-                                    expected = Set.of("5:13:compiler.warn.declared.using.preview",
-                                                      "5:24:compiler.warn.declared.using.preview",
-                                                      "2:8:compiler.warn.preview.feature.use.plural",
-                                                      "3:26:compiler.warn.declared.using.preview");
-                                }
-                            } else {
-                                if (suppress == Suppress.YES) {
-                                    expected = Set.of("-1:-1:compiler.note.preview.filename",
-                                                      "-1:-1:compiler.note.preview.recompile");
-                                } else {
-                                    expected = Set.of("-1:-1:compiler.note.preview.plural",
-                                                      "-1:-1:compiler.note.preview.recompile");
-                                }
                             }
                         }
                         case API_CLASS, API_SOURCE -> {
