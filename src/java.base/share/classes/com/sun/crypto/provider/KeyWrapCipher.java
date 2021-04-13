@@ -582,10 +582,8 @@ abstract class KeyWrapCipher extends CipherSpi {
         AlgorithmParameters params = null;
 
         byte[] iv = cipher.getIV();
-        String algo = "AES/" + cipher.getFeedback() + "/NoPadding";
         try {
-            params = AlgorithmParameters.getInstance(algo,
-                    SunJCE.getInstance());
+            params = AlgorithmParameters.getInstance("AES");
             params.init(new IvParameterSpec(iv));
         } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
             // should never happen
