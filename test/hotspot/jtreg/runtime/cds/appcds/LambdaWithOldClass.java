@@ -68,7 +68,7 @@ public class LambdaWithOldClass {
             .addSuffix(mainClass);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
         output.shouldContain("[class,load] LambdaWithOldClassApp source: shared objects file")
-              .shouldMatch(".class.load. LambdaWithOldClassApp[$][$]Lambda[$].*/0x.*source:.*LambdaWithOldClassApp")
+              .shouldMatch(".class.load. LambdaWithOldClassApp[$][$]Lambda[$].*/0x.*source:.*shared objects file")
               .shouldHaveExitValue(0);
     }
 }

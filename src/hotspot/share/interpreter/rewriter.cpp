@@ -28,6 +28,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
@@ -567,7 +568,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 }
 
 void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
-  if (!DumpSharedSpaces) {
+  if (!DumpSharedSpaces && !MetaspaceShared::is_old_class(klass)) {
     assert(!klass->is_shared(), "archive methods must not be rewritten at run time");
   }
   ResourceMark rm(THREAD);

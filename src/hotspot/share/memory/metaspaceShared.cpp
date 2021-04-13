@@ -361,7 +361,9 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
 void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
-    rewrite_nofast_bytecode(m);
+    if (!is_old_class(ik)) {
+      rewrite_nofast_bytecode(m);
+    }
     Fingerprinter fp(m);
     // The side effect of this call sets method's fingerprint field.
     fp.fingerprint();
@@ -543,9 +545,30 @@ class CollectCLDClosure : public CLDClosure {
   }
 };
 
+bool MetaspaceShared::is_old_class(InstanceKlass* ik) {
+  if (ik == NULL) {
+    return false;
+  }
+  if (ik->major_version() < 50 /*JAVA_6_VERSION*/) {
+    return true;
+  }
+  if (is_old_class(ik->java_super())) {
+    return true;
+  }
+  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+  int len = interfaces->length();
+  for (int i = 0; i < len; i++) {
+    if (is_old_class(interfaces->at(i))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool MetaspaceShared::linking_required(InstanceKlass* ik) {
+  // For static CDS dump, do not link old classes.
   // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
-  return DumpSharedSpaces ? true : !ik->is_shared_unregistered_class();
+  return DumpSharedSpaces ? !is_old_class(ik) : !ik->is_shared_unregistered_class();
 }
 
 bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
@@ -725,7 +748,7 @@ bool MetaspaceShared::try_link_class(Thread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   Thread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
-  if (ik->is_loaded() && !ik->is_linked() &&
+  if (ik->is_loaded() && !ik->is_linked() && !MetaspaceShared::is_old_class(ik) &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == NULL) {
@@ -771,7 +794,9 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
     Klass* k = klasses->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      ik->constants()->add_dumped_interned_strings();
+      if (ik->is_linked()) {
+        ik->constants()->add_dumped_interned_strings();
+      }
     }
   }
   if (_extra_interned_strings != NULL) {

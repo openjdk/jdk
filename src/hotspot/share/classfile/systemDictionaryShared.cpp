@@ -1379,15 +1379,23 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     //    class loader doesn't expect it.
     if (has_class_failed_verification(k)) {
       warn_excluded(k, "Failed verification");
+      return true;
     } else {
-      warn_excluded(k, "Not linked");
+      if (!MetaspaceShared::is_old_class(k)) {
+        warn_excluded(k, "Not linked");
+        return true;
+      }
     }
-    return true;
   }
-  if (k->major_version() < 50 /*JAVA_6_VERSION*/) {
+  if (DynamicDumpSharedSpaces && k->major_version() < 50 /*JAVA_6_VERSION*/) {
     ResourceMark rm;
     log_warning(cds)("Pre JDK 6 class not supported by CDS: %u.%u %s",
                      k->major_version(),  k->minor_version(), k->name()->as_C_string());
+    return true;
+  }
+
+  if (MetaspaceShared::is_old_class(k) && k->is_linked()) {
+    warn_excluded(k, "Old class has been linked");
     return true;
   }
 

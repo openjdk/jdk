@@ -138,7 +138,11 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(ConstantPool): %p", this);
 
   it->push(&_tags, MetaspaceClosure::_writable);
-  it->push(&_cache);
+  if (!pool_holder()->is_rewritten()) {
+    it->push(&_cache, MetaspaceClosure::_writable);
+  } else {
+    it->push(&_cache);
+  }
   it->push(&_pool_holder);
   it->push(&_operands);
   it->push(&_resolved_klasses, MetaspaceClosure::_writable);
@@ -353,6 +357,9 @@ void ConstantPool::add_dumped_interned_strings() {
 
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
+  if (!_pool_holder->is_linked() && MetaspaceShared::is_old_class(_pool_holder)) {
+    return;
+  }
   assert(is_constantPool(), "ensure C++ vtable is restored");
   assert(on_stack(), "should always be set for shared constant pools");
   assert(is_shared(), "should always be set for shared constant pools");
@@ -390,6 +397,9 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 }
 
 void ConstantPool::remove_unshareable_info() {
+  if (!_pool_holder->is_linked() && MetaspaceShared::is_old_class(_pool_holder)) {
+    return;
+  }
   // Resolved references are not in the shared archive.
   // Save the length for restoration.  It is not necessarily the same length
   // as reference_map.length() if invokedynamic is saved. It is needed when

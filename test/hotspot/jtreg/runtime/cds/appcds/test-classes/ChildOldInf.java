@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,8 @@
  * questions.
  *
  */
-import java.lang.instrument.Instrumentation;
-
-public class SimpleAgent {
-    public static void premain(String agentArg, Instrumentation instrumentation) throws Exception {
-        System.out.println("inside SimpleAgent");
-        try {
-            Class<?> cls = Class.forName("OldSuper", true, ClassLoader.getSystemClassLoader());
-        } catch (ClassNotFoundException cnfe) {
-            // Some tests don't require OldSuper.
-            if (agentArg != null && agentArg.equals("OldSuper")) {
-                throw cnfe;
-            }
-        }
+public class ChildOldInf implements OldInf {
+    public String doit() {
+        return "ChildOldInf";
     }
 }
