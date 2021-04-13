@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8000983 8008577 8247781
+ * @bug 8000983 8008577 8247781 8262108
  * @summary Unit test for narrow names support. This test is locale data-dependent
  *          and assumes that both COMPAT and CLDR have the same narrow names if not
  *          explicitly specified.
