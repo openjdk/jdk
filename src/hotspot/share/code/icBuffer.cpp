@@ -157,8 +157,6 @@ void InlineCacheBuffer::refill_ic_stubs() {
 #endif
   // we ran out of inline cache buffer space; must enter safepoint.
   // We do this by forcing a safepoint
-  EXCEPTION_MARK;
-
   VM_ICBufferFull ibf;
   VMThread::execute(&ibf);
 }
