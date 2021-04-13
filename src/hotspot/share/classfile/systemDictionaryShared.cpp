@@ -1388,6 +1388,8 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     }
   }
   if (DynamicDumpSharedSpaces && k->major_version() < 50 /*JAVA_6_VERSION*/) {
+    // In order to support old classes during dynamic dump, class rewriting needs to
+    // be reverted. This would result in more complex code and testing but not much gain.
     ResourceMark rm;
     log_warning(cds)("Pre JDK 6 class not supported by CDS: %u.%u %s",
                      k->major_version(),  k->minor_version(), k->name()->as_C_string());

@@ -72,6 +72,8 @@ public class OldSuperInf {
                      .shouldContain("ChildOldInf source: shared objects file")
                      .shouldContain("GChild2 source: shared objects file");
               } else {
+                  // Old classes were already linked before dynamic dump happened,
+                  // so they couldn't be archived.
                   out.shouldMatch(".class.load.*OldInf source:.*oldsuperinf.jar")
                      .shouldMatch(".class.load.*ChildOldInf source:.*oldsuperinf.jar")
                      .shouldMatch(".class.load.*GChild2 source:.*oldsuperinf.jar");

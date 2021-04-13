@@ -69,6 +69,8 @@ public class OldSuperClass {
                      .shouldContain("ChildOldSuper source: shared objects file")
                      .shouldContain("GChild source: shared objects file");
               } else {
+                  // Old classes were already linked before dynamic dump happened,
+                  // so they couldn't be archived.
                   out.shouldMatch(".class.load.*OldSuper source:.*oldsuperclass.jar")
                      .shouldMatch(".class.load.*ChildOldSuper source:.*oldsuperclass.jar")
                      .shouldMatch(".class.load.*GChild source:.*oldsuperclass.jar");
