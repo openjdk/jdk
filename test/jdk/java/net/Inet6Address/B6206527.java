@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
- * @run main/othervm B6206527
+ * @run main B6206527
  */
 
 import java.net.*;
