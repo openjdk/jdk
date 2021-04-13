@@ -364,7 +364,7 @@ inline void ZBarrier::keep_alive_barrier_on_oop(oop o) {
   assert(ZAddress::is_good(addr), "Invalid address");
 
   if (during_mark()) {
-    mark_barrier_on_oop_slow_path(addr);
+    keep_alive_barrier_on_oop_slow_path(addr);
   }
 }
 
