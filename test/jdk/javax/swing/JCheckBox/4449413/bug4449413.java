@@ -55,7 +55,9 @@ import java.util.concurrent.TimeUnit;
 public class bug4449413 extends JFrame {
 
     private static final String INSTRUCTIONS = """
-            When the applet starts, you'll see eight controls with black backgrounds.
+            This test is for MetalLookAndFeel only.
+            
+            There are eight controls with black backgrounds.
             Four enabled (on the left side) and four disabled (on the right side)
             checkboxes and radiobuttons.
                         
