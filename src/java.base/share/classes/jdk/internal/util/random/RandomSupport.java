@@ -1438,59 +1438,9 @@ public class RandomSupport {
         protected AbstractSpliteratorGenerator() {
         }
 
-        /**
-         * Create an instance of {@link Spliterator.OfInt} that for each
-         * traversal position between the specified index (inclusive) and the
-         * specified fence (exclusive) generates a pseudorandomly chosen
-         * {@code int} value between the specified origin (inclusive) and the
-         * specified bound (exclusive).
-         *
-         * @param index the (inclusive) lower bound on traversal positions
-         * @param fence the (exclusive) upper bound on traversal positions
-         * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
-         * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
-         *
-         * @return an instance of {@link Spliterator.OfInt}
-         *
-         * @hidden
-         */
-        public abstract Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound);
-
-        /**
-         * Create an instance of {@link Spliterator.OfLong} that for each
-         * traversal position between the specified index (inclusive) and the
-         * specified fence (exclusive) generates a pseudorandomly chosen
-         * {@code long} value between the specified origin (inclusive) and the
-         * specified bound (exclusive).
-         *
-         * @param index the (inclusive) lower bound on traversal positions
-         * @param fence the (exclusive) upper bound on traversal positions
-         * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
-         * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
-         *
-         * @return an instance of {@link Spliterator.OfLong}
-         *
-         * @hidden
-         */
-        public abstract Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound);
-
-        /**
-         * Create an instance of {@link Spliterator.OfDouble} that for each
-         * traversal position between the specified index (inclusive) and the
-         * specified fence (exclusive) generates a pseudorandomly chosen
-         * {@code double} value between the specified origin (inclusive) and the
-         * specified bound (exclusive).
-         *
-         * @param index the (inclusive) lower bound on traversal positions
-         * @param fence the (exclusive) upper bound on traversal positions
-         * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
-         * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
-         *
-         * @return an instance of {@link Spliterator.OfDouble}
-         *
-         * @hidden
-         */
-        public abstract Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound);
+        protected abstract Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound);
+        protected abstract Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound);
+        protected abstract Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound);
 
         /* ---------------- public methods ---------------- */
 
@@ -1663,15 +1613,15 @@ public class RandomSupport {
 
         // Methods required by class AbstractSpliteratorGenerator
 
-        public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
+        protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
             return new RandomIntsSpliterator(this, index, fence, origin, bound);
         }
 
-        public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
+        protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
             return new RandomLongsSpliterator(this, index, fence, origin, bound);
         }
 
-        public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
+        protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
             return new RandomDoublesSpliterator(this, index, fence, origin, bound);
         }
 
@@ -2103,15 +2053,15 @@ public class RandomSupport {
         protected AbstractSplittableGenerator() {
         }
 
-        public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
+        protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
             return new RandomIntsSpliterator(this, index, fence, origin, bound);
         }
 
-        public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
+        protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
             return new RandomLongsSpliterator(this, index, fence, origin, bound);
         }
 
-        public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
+        protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
             return new RandomDoublesSpliterator(this, index, fence, origin, bound);
         }
 

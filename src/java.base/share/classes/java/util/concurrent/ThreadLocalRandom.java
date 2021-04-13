@@ -414,27 +414,19 @@ public class ThreadLocalRandom extends Random {
     }
 
     // Methods required by class AbstractSpliteratorGenerator
-    /**
-     * @hidden
-     */
+
     @Override
-    public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
+    protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
         return new RandomIntsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
     }
 
-    /**
-     * @hidden
-     */
     @Override
-    public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
+    protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
         return new RandomLongsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
     }
 
-    /**
-     * @hidden
-     */
     @Override
-    public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
+    protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
         return new RandomDoublesSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
     }
 

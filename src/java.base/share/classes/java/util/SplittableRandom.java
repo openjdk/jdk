@@ -280,30 +280,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
         return new SplittableRandom(source.nextLong(), mixGamma(source.nextLong()));
     }
 
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-        return super.makeIntsSpliterator(index, fence, origin, bound);
-    }
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-        return super.makeLongsSpliterator(index, fence, origin, bound);
-    }
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-        return super.makeDoublesSpliterator(index, fence, origin, bound);
-    }
-
     @Override
     public int nextInt() {
         return mix32(nextSeed());
