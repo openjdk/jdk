@@ -54,7 +54,7 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
         free_humongous_region(hr);
       }
     } else if (hr->is_open_archive()) {
-      bool is_empty = _bitmap->get_next_marked_addr(hr->bottom(), hr->top()) >= hr->top();
+      bool is_empty = _collector->live_words(hr->hrm_index()) == 0;
       if (is_empty) {
         free_open_archive_region(hr);
       }
@@ -62,10 +62,10 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       // nothing to do with closed archive region
     } else {
       assert(MarkSweepDeadRatio > 0,
-                "it should not trigger skipping compaction, when MarkSweepDeadRatio == 0");
+             "only skip compaction for other regions when MarkSweepDeadRatio > 0");
 
-      // Force the high live ration region pinned,
-      // as we need skip these regions in the later compact step.
+      // Force the high live ratio region as pinned to skip these regions in the
+      // later compaction step.
       force_pinned = true;
       log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
                             hr->hrm_index(), _collector->live_words(hr->hrm_index()));
