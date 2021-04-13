@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import jdk.jfr.Event;
+import jdk.jfr.Name;
 
 /**
  * @test
@@ -50,6 +51,7 @@ import jdk.jfr.Event;
  */
 public class TestVerbosity {
 
+    @Name("UserDefined")
     static class UserEvent extends Event {
     }
 
@@ -66,19 +68,19 @@ public class TestVerbosity {
             System.out.println("Testing log level: " + level);
             if (level.equals("trace")) {
                 la.await("CPULoad"); // Emitted 1/s
-                la.await("UserEvent");
+                la.await("UserDefined");
                 la.await("method6");
                 la.await("method1");
             }
             if (level.equals("debug")) {
                 la.await("CPULoad");
-                la.await("UserEvent");
+                la.await("UserDefined");
                 la.await("method6");
                 la.shouldNotContain("method1");
             }
             if (level.equals("info")) {
                 la.shouldNotContain("CPULoad");
-                la.shouldNotContain("UserEvent");
+                la.shouldNotContain("UserDefined");
             }
         }
     }

@@ -24,6 +24,7 @@ package jdk.jfr.api.consumer.log;
 
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorder;
+import jdk.jfr.Name;
 import jdk.jfr.Period;
 
 /**
@@ -42,6 +43,7 @@ public class TestSystemEvents {
     // a likely use case and there could be issues
     // with starting the stream before main.
     @Period("1 s")
+    @Name("UserDefined")
     static class UserEvent extends Event {
     }
 
@@ -52,6 +54,6 @@ public class TestSystemEvents {
         });
         LogAnalyzer la = new LogAnalyzer("system.log");
         la.await("CPULoad"); // emitted 1/s
-        la.shouldNotContain("UserEvent");
+        la.shouldNotContain("UserDefined");
     }
 }
