@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,8 @@
 package util;
 
 import java.io.FilePermission;
-import java.security.AllPermission;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
-import java.security.SecurityPermission;
+import java.lang.reflect.ReflectPermission;
+import java.security.*;
 import java.sql.SQLPermission;
 import java.util.Enumeration;
 import java.util.PropertyPermission;
@@ -108,6 +102,11 @@ public class TestPolicy extends Policy {
         permissions.add(new PropertyPermission("fileStringBuffer", "read"));
         permissions.add(new PropertyPermission("dataproviderthreadcount", "read"));
         permissions.add(new PropertyPermission("java.io.tmpdir", "read"));
+        permissions.add(new PropertyPermission("testng.thread.affinity", "read"));
+        permissions.add(new PropertyPermission("testng.mode.dryrun", "read"));
+        permissions.add(new PropertyPermission("testng.report.xml.name", "read"));
+        permissions.add(new ReflectPermission("suppressAccessChecks"));
+        permissions.add(new PropertyPermission("testng.timezone", "read"));
         permissions.add(new FilePermission("<<ALL FILES>>",
                 "read, write, delete"));
     }

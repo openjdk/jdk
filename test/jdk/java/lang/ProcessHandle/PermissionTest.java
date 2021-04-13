@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import java.io.FilePermission;
 import java.io.IOException;
+import java.lang.reflect.ReflectPermission;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
@@ -207,6 +208,11 @@ class TestPolicy extends Policy {
         permissions.add(new RuntimePermission("createSecurityManager"));
         permissions.add(new PropertyPermission("testng.show.stack.frames",
                 "read"));
+        permissions.add(new PropertyPermission("testng.thread.affinity", "read"));
+        permissions.add(new PropertyPermission("testng.mode.dryrun", "read"));
+        permissions.add(new PropertyPermission("testng.report.xml.name", "read"));
+        permissions.add(new ReflectPermission("suppressAccessChecks"));
+        permissions.add(new PropertyPermission("testng.timezone", "read"));
         permissions.add(new PropertyPermission("user.dir", "read"));
         permissions.add(new PropertyPermission("test.src", "read"));
         permissions.add(new PropertyPermission("file.separator", "read"));
