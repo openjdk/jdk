@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jfr.api.consumer.log;
 
-#ifndef SHARE_JFR_UTILITIES_JFRJAVALOG_HPP
-#define SHARE_JFR_UTILITIES_JFRJAVALOG_HPP
+import jdk.jfr.Recording;
 
-#include "memory/allocation.hpp"
-#include "utilities/exceptions.hpp"
-
-/*
- * A thin two-way "bridge" allowing our Java components to interface with Unified Logging (UL)
- *
- * Java can "subscribe" to be notified about UL configuration changes.
- * On such a configuration change, if applicable, the passed in LogTag enum instance
- * will be updated to reflect a new LogLevel.
- *
- * Log messages originating in Java are forwarded to UL for output.
- *
+/**
+ * @test
+ * @summary Tests that event logging can't be turned on and off
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @build jdk.jfr.api.consumer.log.LogAnalyzer
+ * @run main/othervm
+ *      -Xlog:jfr+event*=debug,jfr+system=debug:file=disk-on-off.log
+ *      jdk.jfr.api.consumer.log.TestDiskOnOff
  */
+public class TestDiskOnOff {
 
-class JfrJavaLog : public AllStatic {
- public:
-  static void subscribe_log_level(jobject log_tag, jint id, TRAPS);
-  static void log(jint tag_set, jint level, jstring message, TRAPS);
-  static void log_event(JNIEnv* env, jint level, jobjectArray lines, bool system, TRAPS);
-};
-
-#endif // SHARE_JFR_UTILITIES_JFRJAVALOG_HPP
+    public static void main(String... args) throws Exception {
+        LogAnalyzer la = new LogAnalyzer("disk-on-off.log");
+        try (Recording r = new Recording()) {
+            r.start();
+            la.await("Log stream started");
+        }
+        la.await("Log stream stopped");
+        try (Recording r = new Recording()) {
+            r.start();
+            la.await("Log stream started");
+        }
+        la.await("Log stream stopped");
+    }
+}
