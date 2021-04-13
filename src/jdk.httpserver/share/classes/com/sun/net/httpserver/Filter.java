@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Objects;
-import java.util.function.Consumer;
 
 /**
  * A filter used to pre- and post-process incoming requests. Pre-processing occurs
@@ -134,36 +132,6 @@ public abstract class Filter {
      */
     public abstract void doFilter (HttpExchange exchange, Chain chain)
         throws IOException;
-
-    /**
-     * Returns a pre-processing Filter with the given description and implementation.
-     *
-     * <p>The {@link Consumer filterImpl} is the effective implementation of
-     * the returned Filter and is executed for each {@code HttpExchange} before
-     * the exchange is handled further.
-     *
-     * @param description the description of the returned filter
-     * @param filterImpl the implementation of the returned filter
-     * @return a filter
-     * @throws NullPointerException if any argument is null
-     * @since 17
-     */
-    public static Filter of(String description, Consumer<HttpExchange> filterImpl) {
-        Objects.requireNonNull(description);
-        Objects.requireNonNull(filterImpl);
-        return new Filter() {
-            @Override
-            public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
-                filterImpl.accept(exchange);
-                chain.doFilter(exchange);
-            }
-            @Override
-            public String description() {
-                return description;
-            }
-        };
-    }
-
     /**
      * Returns a short description of this {@code Filter}.
      *
