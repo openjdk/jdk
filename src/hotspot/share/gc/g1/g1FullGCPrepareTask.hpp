@@ -58,6 +58,7 @@ protected:
     G1FullGCCompactionPoint* _cp;
     bool _regions_freed;
 
+    bool should_compact(HeapRegion* hr);
     virtual void prepare_for_compaction(HeapRegion* hr);
     void prepare_for_compaction_work(G1FullGCCompactionPoint* cp, HeapRegion* hr);
     void free_humongous_region(HeapRegion* hr);

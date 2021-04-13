@@ -302,14 +302,6 @@ private:
   // leaf on stack replacement interpreter accessor types
   static const TypeFunc* osr_end_Type();
 
-  // leaf on stack replacement interpreter accessor types
-  static const TypeFunc* fetch_int_Type();
-  static const TypeFunc* fetch_long_Type();
-  static const TypeFunc* fetch_float_Type();
-  static const TypeFunc* fetch_double_Type();
-  static const TypeFunc* fetch_oop_Type();
-  static const TypeFunc* fetch_monitor_Type();
-
   static const TypeFunc* register_finalizer_Type();
 
   // Dtrace support

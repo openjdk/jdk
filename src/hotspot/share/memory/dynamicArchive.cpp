@@ -39,6 +39,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vmThread.hpp"

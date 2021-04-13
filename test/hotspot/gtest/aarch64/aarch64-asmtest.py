@@ -916,7 +916,7 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name == "and" or name == "eor" or name == "orr"):
+        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
         else:
@@ -1612,6 +1612,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["and", "ZZZ"],
                        ["eor", "ZZZ"],
                        ["orr", "ZZZ"],
+                       ["bic", "ZZZ"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],

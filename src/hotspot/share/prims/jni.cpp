@@ -906,7 +906,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
   {
     Method* m = Method::resolve_jmethod_id(method_id);
     number_of_parameters = m->size_of_parameters();
-    Klass* holder = m->method_holder();
+    InstanceKlass* holder = m->method_holder();
     if (call_type != JNI_VIRTUAL) {
         selected_method = m;
     } else if (!m->has_itable_index()) {
@@ -1078,7 +1078,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   // Throw a NoSuchMethodError exception if we have an instance of a
   // primitive java.lang.Class
   if (java_lang_Class::is_primitive(mirror)) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
 
@@ -1102,7 +1102,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
     }
   }
   if (m == NULL || (m->is_static() != is_static)) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
   return m->jmethod_id();
