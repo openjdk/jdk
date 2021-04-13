@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         if (containerMetrics != null && containerMetrics.getCpuSetCpus() != null) {
             return containerMetrics.getCpuSetCpus().length == getHostOnlineCpuCount0();
         }
-        return false;
+        // cpuset.cpus is not available, so we can assume the VM is run on the host CPUs.
+        return true;
     }
 
     /* native methods */
