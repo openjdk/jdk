@@ -2402,6 +2402,10 @@ public final class Class<T> implements java.io.Serializable,
      * declared methods of the class or interface represented by this {@code
      * Class} object, including public, protected, default (package)
      * access, and private methods, but excluding inherited methods.
+     * The declared methods may include methods <em>not</em> in the
+     * source of the class or interface, including {@linkplain
+     * Method#isBridge bridge methods} and other {@linkplain
+     * Executable#isSynthetic synthetic} methods added by compilers.
      *
      * <p> If this {@code Class} object represents a class or interface that
      * has multiple declared methods with the same name and parameter types,
