@@ -1227,8 +1227,12 @@ class ZipFileSystem extends FileSystem {
     }
 
     private long readFullyAt(ByteBuffer bb, long pos) throws IOException {
-        synchronized(ch) {
-            return ch.position(pos).read(bb);
+        if (ch instanceof FileChannel) {
+            return ((FileChannel) ch).read(bb, pos);
+        } else {
+            synchronized(ch) {
+                return ch.position(pos).read(bb);
+            }
         }
     }
 
@@ -2211,8 +2215,12 @@ class ZipFileSystem extends FileSystem {
             ByteBuffer bb = ByteBuffer.wrap(b);
             bb.position(off);
             bb.limit(off + len);
-            synchronized(zfch) {
-                n = zfch.position(pos).read(bb);
+            if (zfch instanceof FileChannel) {
+                n = ((FileChannel) zfch).read(bb, pos);
+            } else {
+                synchronized (zfch) {
+                    n = zfch.position(pos).read(bb);
+                }
             }
             if (n > 0) {
                 pos += n;
