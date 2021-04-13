@@ -71,18 +71,6 @@
   #include <crt_externs.h>
 #endif
 
-// macros for restartable system calls
-
-#define RESTARTABLE(_cmd, _result) do { \
-    _result = _cmd; \
-  } while(((int)_result == OS_ERR) && (errno == EINTR))
-
-#define RESTARTABLE_RETURN_INT(_cmd) do { \
-  int _result; \
-  RESTARTABLE(_cmd, _result); \
-  return _result; \
-} while(false)
-
 #define ROOT_UID 0
 
 #ifndef MAP_ANONYMOUS

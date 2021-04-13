@@ -23,7 +23,7 @@
  */
 #include "precompiled.hpp"
 #include "logging/logDecorators.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 const LogDecorators LogDecorators::None = LogDecorators(0);
 

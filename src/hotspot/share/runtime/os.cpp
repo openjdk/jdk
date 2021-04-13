@@ -1368,6 +1368,10 @@ FILE* os::fopen(const char* path, const char* mode) {
   return file;
 }
 
+ssize_t os::read(int fd, void *buf, unsigned int nBytes) {
+  return ::read(fd, buf, nBytes);
+}
+
 bool os::set_boot_path(char fileSep, char pathSep) {
   const char* home = Arguments::get_java_home();
   int home_len = (int)strlen(home);

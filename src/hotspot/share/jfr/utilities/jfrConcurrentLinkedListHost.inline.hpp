@@ -29,7 +29,6 @@
 #include "jfr/utilities/jfrRelation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 /*

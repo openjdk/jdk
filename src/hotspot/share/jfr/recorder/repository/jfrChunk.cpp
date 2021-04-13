@@ -28,7 +28,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 static const char* const MAGIC = "FLR";
 static const u2 JFR_VERSION_MAJOR = 2;

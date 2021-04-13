@@ -28,7 +28,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 static const int64_t MAGIC_OFFSET = 0;
 static const int64_t MAGIC_LEN = 4;

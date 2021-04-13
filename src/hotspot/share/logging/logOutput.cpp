@@ -30,7 +30,7 @@
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 LogOutput::~LogOutput() {
   os::free(_config_string);

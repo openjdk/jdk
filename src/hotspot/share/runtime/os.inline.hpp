@@ -27,10 +27,6 @@
 
 #include "runtime/os.hpp"
 
-inline ssize_t os::read(int fd, void *buf, unsigned int nBytes) {
-  return ::read(fd, buf, nBytes);
-}
-
 #include OS_HEADER_INLINE(os)
 
 #endif // SHARE_RUNTIME_OS_INLINE_HPP

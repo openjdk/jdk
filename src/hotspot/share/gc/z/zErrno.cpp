@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zErrno.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 #include <errno.h>
 #include <string.h>
