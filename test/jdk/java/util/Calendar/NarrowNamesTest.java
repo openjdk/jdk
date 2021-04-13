@@ -37,6 +37,7 @@
 import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
@@ -95,26 +96,27 @@ public class NarrowNamesTest {
                 );
         testMap(US, DAY_OF_WEEK, NARROW_FORMAT); // expect null
         if (providers.startsWith("CLDR")) {
-            testMap(US, AM_PM, ALL_STYLES,
-                    "AM",
-                    "PM",
-                    "midnight",
-                    "noon",
-                    "in the morning",
-                    "",
-                    "in the afternoon",
-                    "",
-                    "in the evening",
-                    "",
-                    "at night",
-                    "",
-                    RESET_INDEX,
-                    "a", "p", "mi", "n", "", "", "", "", "", "", "", "");
+            Map<String, Integer> expectedFieldValues = new HashMap<>();
+            expectedFieldValues.put("AM", Calendar.AM);
+            expectedFieldValues.put("PM", Calendar.PM);
+            expectedFieldValues.put("midnight", Calendar.AM);
+            expectedFieldValues.put("noon", Calendar.AM);
+            expectedFieldValues.put("in the morning", Calendar.AM);
+            expectedFieldValues.put("in the afternoon", Calendar.PM);
+            expectedFieldValues.put("in the evening", Calendar.PM);
+            expectedFieldValues.put("at night", Calendar.PM);
+            expectedFieldValues.put("a", Calendar.AM);
+            expectedFieldValues.put("p", Calendar.PM);
+            expectedFieldValues.put("mi", Calendar.AM);
+            expectedFieldValues.put("n", Calendar.AM);
+            testAM_PM(US, ALL_STYLES, expectedFieldValues);
         } else {
-            testMap(US, AM_PM, ALL_STYLES,
-                    "AM", "PM",
-                    RESET_INDEX,
-                    "a", "p");
+            Map<String, Integer> expectedFieldValues = new HashMap<>();
+            expectedFieldValues.put("AM", Calendar.AM);
+            expectedFieldValues.put("PM", Calendar.PM);
+            expectedFieldValues.put("a", Calendar.AM);
+            expectedFieldValues.put("p", Calendar.PM);
+            testAM_PM(US, ALL_STYLES, expectedFieldValues);
         }
         testMap(JAJPJP, DAY_OF_WEEK, NARROW_STANDALONE,
                 "", // 1-based indexing for DAY_OF_WEEK
@@ -211,6 +213,21 @@ public class NarrowNamesTest {
             && !(expectedMap != null && expectedMap.equals(got))) {
             System.err.printf("testMap: locale=%s, field=%d, style=%d, expected=%s, got=%s%n",
                               locale, field, style, expectedMap, got);
+            errors++;
+        }
+    }
+
+    /**
+     * Verify that the values returned by Calendar.getDisplayNames() for the passed
+     * locale and style matches the expected field values
+     */
+    private static void testAM_PM(Locale locale, int style, Map<String, Integer> expectedNameValuePair) {
+        Calendar cal = Calendar.getInstance(locale);
+        Map<String, Integer> got = cal.getDisplayNames(Calendar.AM_PM, style, locale);
+        if (!(expectedNameValuePair == null && got == null)
+                && !(expectedNameValuePair != null && expectedNameValuePair.equals(got))) {
+            System.err.printf("testAM_PM: locale=%s, field=%d, style=%d, expected=%s, got=%s%n",
+                    locale, Calendar.AM_PM, style, expectedNameValuePair, got);
             errors++;
         }
     }
