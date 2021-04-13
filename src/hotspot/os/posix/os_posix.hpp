@@ -22,8 +22,6 @@
  *
  */
 
-#include "runtime/os.hpp"
-
 #ifndef OS_POSIX_OS_POSIX_HPP
 #define OS_POSIX_OS_POSIX_HPP
 

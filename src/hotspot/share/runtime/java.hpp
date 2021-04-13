@@ -25,7 +25,11 @@
 #ifndef SHARE_RUNTIME_JAVA_HPP
 #define SHARE_RUNTIME_JAVA_HPP
 
-#include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class Handle;
+class JavaThread;
+class Symbol;
 
 // Execute code before all handles are released and thread is killed; prologue to vm_exit
 extern void before_exit(JavaThread * thread);

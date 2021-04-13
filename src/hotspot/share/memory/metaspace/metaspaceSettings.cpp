@@ -29,6 +29,7 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"

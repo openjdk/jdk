@@ -28,6 +28,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.hpp"
 #include "logging/log.hpp"
+#include "runtime/os.hpp"
 #include "utilities/ticks.hpp"
 
 inline GCTraceTimeDriver::GCTraceTimeDriver(
