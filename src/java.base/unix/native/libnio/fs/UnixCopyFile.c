@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,13 @@
 #include <unistd.h>
 #include <errno.h>
 
+#if defined(__linux__)
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/sendfile.h>
+#endif
+
 #include "sun_nio_fs_UnixCopyFile.h"
 
 #define RESTARTABLE(_cmd, _result) do { \
@@ -47,14 +54,44 @@ static void throwUnixException(JNIEnv* env, int errnum) {
 }
 
 /**
- * Transfer all bytes from src to dst via user-space buffers
+ * Transfer all bytes from src to dst within the kernel if possible (Linux),
+ * otherwise via user-space buffers
  */
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixCopyFile_transfer
     (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
 {
-    char buf[8192];
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
+
+#if defined(__linux__)
+    // Attempt to transfer within the kernel
+    struct stat stat_src;
+    if (fstat(src, &stat_src) == 0) {
+        size_t count = stat_src.st_size;
+        while (count > 0) {
+            off_t bytes_sent = sendfile(dst, src, NULL, count);
+            if (bytes_sent == -1) {
+                // Reset positions, throwing if impossible
+                int errno_sendfile = errno;
+                if (lseek(src, 0, SEEK_SET) < 0 ||
+                    lseek(dst, 0, SEEK_SET) < 0) {
+                    throwUnixException(env, errno_sendfile);
+                }
+                // Fall back to transfer via user-space buffers
+                break;
+            }
+            count -= bytes_sent;
+            if (cancel != NULL && *cancel != 0) {
+                throwUnixException(env, ECANCELED);
+                return;
+            }
+        }
+        return;
+    }
+#endif
+
+    // Transfer via user-space buffers
+    char buf[8192];
 
     for (;;) {
         ssize_t n, pos, len;
