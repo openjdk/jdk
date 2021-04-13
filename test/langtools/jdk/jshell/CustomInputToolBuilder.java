@@ -34,6 +34,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.List;
 import jdk.jshell.tool.JavaShellToolBuilder;
 import org.testng.annotations.Test;
 
@@ -48,7 +50,30 @@ public class CustomInputToolBuilder extends KullaTesting {
         String testJdk = System.getProperty(TEST_JDK);
         try {
             System.clearProperty(TEST_JDK);
-            byte[] cmdInputData = "System.out.println(\"read: \" + System.in.read());\n/exit\n".getBytes();
+            doTest("System.out.println(\"read: \" + System.in.read());",
+                   "\u0005System.out.println(\"read: \" + System.in.read());",
+                   "read: 97",
+                   "\u0005/exit");
+            doTest("1 + 1", "\u00051 + 1", "$1 ==> 2", "\u0005/exit");
+            doTest("for (int i = 0; i < 100; i++) {\nSystem.err.println(i);\n}\n",
+                   "\u0005for (int i = 0; i < 100; i++) {",
+                   "\u0006System.err.println(i);", "\u0006}",
+                   "\u0005/exit");
+            StringBuilder longInput = new StringBuilder();
+            String constant = "1_______________1";
+            longInput.append(constant);
+            for (int i = 0; i < 100; i++) {
+                longInput.append(" + ");
+                longInput.append(constant);
+            }
+            doTest(longInput.toString(), "\u0005" + longInput);
+        } finally {
+            System.setProperty(TEST_JDK, testJdk);
+        }
+    }
+
+    private void doTest(String code, String... expectedLines) throws Exception {
+            byte[] cmdInputData = (code + "\n/exit\n").getBytes();
             InputStream cmdInput = new ByteArrayInputStream(cmdInputData);
             InputStream userInput = new ByteArrayInputStream("a\n".getBytes());
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -56,19 +81,18 @@ public class CustomInputToolBuilder extends KullaTesting {
 
             JavaShellToolBuilder.builder()
                     .in(cmdInput, userInput)
-                    .out(printOut, new PrintStream(new ByteArrayOutputStream()), printOut)
+                    .out(printOut, printOut, printOut)
                     .promptCapture(true)
                     .start("--no-startup");
 
             String expected = "read: 97";
             String actual = new String(out.toByteArray());
+            List<String> actualLines = Arrays.asList(actual.split("\\R"));
 
-            assertTrue(actual.contains(expected),
-                        "actual:\n" + actual + "\n, expected:\n" + expected);
-        } finally {
-            System.setProperty(TEST_JDK, testJdk);
-        }
+            for (String expectedLine : expectedLines) {
+                assertTrue(actualLines.contains(expectedLine),
+                            "actual:\n" + actualLines + "\n, expected:\n" + expectedLine);
+            }
     }
-
 }
 

@@ -138,6 +138,8 @@ import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_M
  */
 public class JShellTool implements MessageHandler {
 
+    private static String PROMPT = "\u0005";
+    private static String CONTINUATION_PROMPT = "\u0006";
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
     private static final Pattern ID = Pattern.compile("[se]?\\d+([-\\s].*)?");
     private static final Pattern RERUN_ID = Pattern.compile("/" + ID.pattern());
@@ -1256,12 +1258,12 @@ public class JShellTool implements MessageHandler {
                 return src;
             }
             String firstLinePrompt = interactive()
-                    ? testPrompt ? " \005"
+                    ? testPrompt ? PROMPT
                                  : feedback.getPrompt(currentNameSpace.tidNext())
                     : "" // Non-interactive -- no prompt
                     ;
             String continuationPrompt = interactive()
-                    ? testPrompt ? " \006"
+                    ? testPrompt ? CONTINUATION_PROMPT
                                  : feedback.getContinuationPrompt(currentNameSpace.tidNext())
                     : "" // Non-interactive -- no prompt
                     ;

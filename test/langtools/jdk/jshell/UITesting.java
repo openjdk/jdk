@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
@@ -108,6 +109,13 @@ public class UITesting {
         runner.start();
 
         try {
+            Class<?> jshellToolClass = Class.forName("jdk.internal.jshell.tool.JShellTool");
+            Field promptField = jshellToolClass.getDeclaredField("PROMPT");
+            promptField.setAccessible(true);
+            promptField.set(null, PROMPT);
+            Field continuationPromptField = jshellToolClass.getDeclaredField("CONTINUATION_PROMPT");
+            continuationPromptField.setAccessible(true);
+            continuationPromptField.set(null, CONTINUATION_PROMPT);
             waitOutput(out, PROMPT);
             test.test(inputSink, out);
         } finally {
@@ -134,7 +142,7 @@ public class UITesting {
         } catch (NumberFormatException ex) {
             factor = 1;
         }
-        TIMEOUT = 60_000 * factor;
+        TIMEOUT = 1_000 * factor;
     }
 
     protected void waitOutput(StringBuilder out, String expected) {
