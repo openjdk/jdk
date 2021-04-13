@@ -128,7 +128,7 @@ final class SimpleFileServerImpl {
             var server = SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
-            printStartMessage(socketAddr, root, port);
+            printStartMessage(root, server.getAddress().getAddress(), server.getAddress().getPort());
         } catch (Exception e) {
             reportError(getMessage("err.server.config.failed", e.getMessage()));
             e.printStackTrace(out);
@@ -139,11 +139,11 @@ final class SimpleFileServerImpl {
         return Result.OK.statusCode;
     }
 
-    private static void printStartMessage(InetSocketAddress socketAddr, Path root, int port)
+    private static void printStartMessage(Path root, InetAddress inetAddr, int port)
             throws UnknownHostException {
-        var isAnyLocal = socketAddr.getAddress().isAnyLocalAddress();
+        var isAnyLocal = inetAddr.isAnyLocalAddress();
         var addr = isAnyLocal ? InetAddress.getLocalHost().getHostAddress()
-                : socketAddr.getHostString();
+                : inetAddr.getHostAddress();
         if (isAnyLocal)
             out.printf("""
                     Serving %s and subdirectories on 0.0.0.0:%d
