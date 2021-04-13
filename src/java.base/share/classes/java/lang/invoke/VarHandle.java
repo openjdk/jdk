@@ -1941,7 +1941,7 @@ public abstract class VarHandle implements Constable {
 
         @ForceInline
         static MemberName getMemberName(int ordinal, VarForm vform) {
-            return vform.memberName_table[ordinal];
+            return vform.getMemberName(ordinal);
         }
     }
 
