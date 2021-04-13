@@ -66,7 +66,7 @@ import java.util.Objects;
  * </code></pre>
  *
  * @since 17
- * @see SignatureMethod
+ * @see SignatureMethod#RSA_PSS
  * @see <a href="https://www.ietf.org/rfc/rfc6931.txt">RFC 6931</a>
  */
 public final class RSAPSSParameterSpec implements SignatureMethodParameterSpec {

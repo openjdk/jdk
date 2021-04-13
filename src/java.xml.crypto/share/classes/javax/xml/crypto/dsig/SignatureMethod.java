@@ -240,18 +240,16 @@ public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
      * The <a href="http://www.w3.org/2007/05/xmldsig-more#rsa-pss">
      * RSASSA-PSS</a> signature method algorithm URI.
      * <p>
-     * If the {@code params} parameter is {@code null} when calling
-     * {@link XMLSignatureFactory#newSignatureMethod} with {@code RSA_PSS}
-     * as the signature algorithm, the default parameter as defined in
-     * <a href="https://tools.ietf.org/html/rfc6931#section-2.3.9">RFC 6931 Section 2.3.9</a>
-     * is used and this default parameter will also be returned by the
-     * {@link SignatureMethod#getParameterSpec()} method. The default parameter
-     * uses SHA-256 as the {@code DigestMethod}, MGF1 with SHA-256 as the
+     * Calling {@link XMLSignatureFactory#newSignatureMethod
+     * XMLSignatureFactory.newSignatureMethod(RSA_PSS, null)} returns a
+     * {@code SignatureMethod} object that uses the default parameter as defined in
+     * <a href="https://tools.ietf.org/html/rfc6931#section-2.3.9">RFC 6931 Section 2.3.9</a>,
+     * which uses SHA-256 as the {@code DigestMethod}, MGF1 with SHA-256 as the
      * {@code MaskGenerationFunction}, 32 as {@code SaltLength}, and 1 as
-     * {@code TrailerField}. This is equivalent to the parameter-less signature
-     * method {@link SignatureMethod#SHA256_RSA_MGF1 SHA256_RSA_MGF1} as defined
-     * in <a href="https://tools.ietf.org/html/rfc6931#section-2.3.10">Section 2.3.10</a>
-     * of the same RFC.
+     * {@code TrailerField}. This default parameter is represented as an
+     * {@link javax.xml.crypto.dsig.spec.RSAPSSParameterSpec RSAPSSParameterSpec}
+     * type and returned by the {@link #getParameterSpec()} method
+     * of the {@code SignatureMethod} object.
      *
      * @since 17
      */
