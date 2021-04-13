@@ -96,18 +96,30 @@ class java_lang_Object : AllStatic {
 
 // Interface to java.lang.String objects
 
+#define STRING_INJECTED_FIELDS(macro) \
+  macro(java_lang_String, flags, byte_signature, false)
+
 class java_lang_String : AllStatic {
  private:
   static int _value_offset;
   static int _hash_offset;
   static int _hashIsZero_offset;
   static int _coder_offset;
+  static int _flags_offset;
 
   static bool _initialized;
 
   static Handle basic_create(int length, bool byte_arr, TRAPS);
 
   static inline void set_coder(oop string, jbyte coder);
+
+  static const uint8_t _no_deduplication_mask = 1 << 0;
+  static const uint8_t _deduplication_requested_mask = 1 << 1;
+
+  static int flags_offset() { CHECK_INIT(_flags_offset); }
+  static inline uint8_t* flags_addr(oop java_string);
+  static inline bool is_flag_set(oop java_string, uint8_t flag_mask);
+  static bool set_flag(oop java_string, uint8_t flag_mask);
 
  public:
 
@@ -137,11 +149,26 @@ class java_lang_String : AllStatic {
   static inline void set_value_raw(oop string, typeArrayOop buffer);
   static inline void set_value(oop string, typeArrayOop buffer);
 
+  // Set the no_deduplication flag true.  This flag is sticky; once set it
+  // never gets cleared.  This is set when a string is interned in the
+  // StringTable, to prevent string deduplication from changing the string's
+  // value array.
+  static inline void set_no_deduplication(oop java_string);
+
+  // Test and set the deduplication_requested flag.  Returns true if the
+  // flag's value is changed, false if it was already set.  This flag is
+  // sticky; once set it never gets cleared.  A GC may use this operation to
+  // determine whether to request deduplication of a string, avoiding
+  // multiple requests for the same string.
+  static inline bool set_deduplication_requested(oop java_string);
+
   // Accessors
   static inline typeArrayOop value(oop java_string);
   static inline typeArrayOop value_no_keepalive(oop java_string);
   static inline bool hash_is_set(oop string);
   static inline bool is_latin1(oop java_string);
+  static inline bool no_deduplication(oop java_string);
+  static inline bool deduplication_requested(oop java_string);
   static inline int length(oop java_string);
   static inline int length(oop java_string, typeArrayOop string_value);
   static int utf8_length(oop java_string);
@@ -1745,6 +1772,7 @@ class InjectedField {
   klass##_##name##_enum,
 
 #define ALL_INJECTED_FIELDS(macro)          \
+  STRING_INJECTED_FIELDS(macro)             \
   CLASS_INJECTED_FIELDS(macro)              \
   CLASSLOADER_INJECTED_FIELDS(macro)        \
   RESOLVEDMETHOD_INJECTED_FIELDS(macro)     \

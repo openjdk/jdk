@@ -28,7 +28,6 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -133,14 +132,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 
   _gc_par_phases[OptTermination]->create_thread_work_items("Optional Termination Attempts:");
 
-  if (UseStringDeduplication) {
-    _gc_par_phases[StringDedupQueueFixup] = new WorkerDataArray<double>("StringDedupQueueFixup", "Queue Fixup (ms):", max_gc_threads);
-    _gc_par_phases[StringDedupTableFixup] = new WorkerDataArray<double>("StringDedupTableFixup", "Table Fixup (ms):", max_gc_threads);
-  } else {
-    _gc_par_phases[StringDedupQueueFixup] = NULL;
-    _gc_par_phases[StringDedupTableFixup] = NULL;
-  }
-
   _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("RedirtyCards", "Parallel Redirty (ms):", max_gc_threads);
   _gc_par_phases[RedirtyCards]->create_thread_work_items("Redirtied Cards:");
 
@@ -163,7 +154,6 @@ void G1GCPhaseTimes::reset() {
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_evac_fail_recalc_used = 0.0;
   _cur_evac_fail_remove_self_forwards = 0.0;
-  _cur_string_deduplication_time_ms = 0.0;
   _cur_prepare_tlab_time_ms = 0.0;
   _cur_resize_tlab_time_ms = 0.0;
   _cur_concatenate_dirty_card_logs_time_ms = 0.0;
@@ -479,8 +469,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
                         _recorded_total_free_cset_time_ms +
                         _recorded_total_rebuild_freelist_time_ms +
                         _cur_fast_reclaim_humongous_time_ms +
-                        _cur_expand_heap_time_ms +
-                        _cur_string_deduplication_time_ms;
+                        _cur_expand_heap_time_ms;
 
   info_time("Post Evacuate Collection Set", sum_ms);
 
@@ -492,12 +481,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   _ref_phase_times.print_all_references(2, false);
   _weak_phase_times.log_total(2);
   _weak_phase_times.log_subtotals(3);
-
-  if (G1StringDedup::is_enabled()) {
-    debug_time("String Deduplication", _cur_string_deduplication_time_ms);
-    debug_phase(_gc_par_phases[StringDedupQueueFixup], 1);
-    debug_phase(_gc_par_phases[StringDedupTableFixup], 1);
-  }
 
   if (G1CollectedHeap::heap()->evacuation_failed()) {
     debug_time("Evacuation Failure", evac_fail_handling);

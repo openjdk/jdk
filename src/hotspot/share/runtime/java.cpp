@@ -35,6 +35,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
@@ -466,6 +467,11 @@ void before_exit(JavaThread* thread) {
   // shut down the StatSampler task
   StatSampler::disengage();
   StatSampler::destroy();
+
+  // Shut down string deduplication if running.
+  if (StringDedup::is_enabled()) {
+    StringDedup::stop();
+  }
 
   // Stop concurrent GC threads
   Universe::heap()->stop();
