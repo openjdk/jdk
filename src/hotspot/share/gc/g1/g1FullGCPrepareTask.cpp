@@ -67,6 +67,15 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       // Force the high live ration region pinned,
       // as we need skip these regions in the later compact step.
       force_pinned = true;
+      if (hr->is_young()) {
+        // Old regions have BOTs info for performance consideration, but young regions
+        // lack of BOTs info.
+        // Young regions with high live ratio might not be compacted during full gc,
+        // and they will be converted to old regions after full gc, at this situation
+        // we need to update the BOTs of these "young" regions to ensure better BOTs
+        // access performance after full gc.
+        update_bot(hr);
+      }
       log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
                             hr->hrm_index(), _collector->live_words(hr->hrm_index()));
     }
@@ -155,6 +164,29 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::should_compact(HeapRegion*
   size_t live_words_threshold = _collector->scope()->region_compaction_threshold();
   // High live ratio region will not be compacted.
   return live_words <= live_words_threshold;
+}
+
+void G1FullGCPrepareTask::G1CalculatePointersClosure::update_bot(HeapRegion* hr) {
+  HeapWord* limit = hr->top();
+  HeapWord* next_addr = hr->bottom();
+  HeapWord* threshold = hr->initialize_threshold();
+  HeapWord* pre_addr;
+
+  while (next_addr < limit) {
+    Prefetch::write(next_addr, PrefetchScanIntervalInBytes);
+    pre_addr = next_addr;
+    if (_bitmap->is_marked(next_addr)) {
+      oop obj = cast_to_oop(next_addr);
+      next_addr += obj->size();
+    } else {
+      next_addr = _bitmap->get_next_marked_addr(next_addr, limit);
+    }
+
+    if (next_addr > threshold) {
+      threshold = hr->cross_threshold(pre_addr, next_addr);
+    }
+  }
+  assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
