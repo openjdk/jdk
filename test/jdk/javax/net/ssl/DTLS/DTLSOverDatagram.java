@@ -59,24 +59,24 @@ public class DTLSOverDatagram {
     /*
      * The following is to set up the keystores.
      */
-    private static final String pathToStores = "../etc";
-    private static final String keyStoreFile = "keystore";
-    private static final String trustStoreFile = "truststore";
+    private static final String PATH_TO_STORES = "../etc";
+    private static final String KEY_STORE_FILE = "keystore";
+    private static final String TRUST_STORE_FILE = "truststore";
 
-    private static final String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static final String trustFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + trustStoreFile;
-    private static Exception clientException = null;
-    private static Exception serverException = null;
+    private static final String KEY_FILENAME =
+            System.getProperty("test.src", ".") + "/" + PATH_TO_STORES +
+                "/" + KEY_STORE_FILE;
+    private static final String TRUST_FILENAME =
+            System.getProperty("test.src", ".") + "/" + PATH_TO_STORES +
+                "/" + TRUST_STORE_FILE;
 
-    private static final ByteBuffer serverApp =
+    private static final ByteBuffer SERVER_APP =
                 ByteBuffer.wrap("Hi Client, I'm Server".getBytes());
-    private static final ByteBuffer clientApp =
+    private static final ByteBuffer CLIENT_APP =
                 ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
 
+    private static Exception clientException = null;
+    private static Exception serverException = null;
     /*
      * =============================================================
      * The test case
@@ -100,10 +100,10 @@ public class DTLSOverDatagram {
         handshake(engine, socket, clientSocketAddr, side);
 
         // read client application data
-        receiveAppData(engine, socket, clientApp);
+        receiveAppData(engine, socket, CLIENT_APP);
 
         // write server application data
-        deliverAppData(engine, socket, serverApp, clientSocketAddr, side);
+        deliverAppData(engine, socket, SERVER_APP, clientSocketAddr, side);
     }
 
     /*
@@ -120,10 +120,10 @@ public class DTLSOverDatagram {
         handshake(engine, socket, serverSocketAddr, side);
 
         // write client application data
-        deliverAppData(engine, socket, clientApp, serverSocketAddr, side);
+        deliverAppData(engine, socket, CLIENT_APP, serverSocketAddr, side);
 
         // read server application data
-        receiveAppData(engine, socket, serverApp);
+        receiveAppData(engine, socket, SERVER_APP);
     }
 
     /*
@@ -505,8 +505,8 @@ public class DTLSOverDatagram {
     SSLContext getDTLSContext() throws Exception {
         String passphrase = "passphrase";
         return SSLContextBuilder.builder()
-                .trustStore(KeyStoreUtils.loadKeyStore(trustFilename, passphrase))
-                .keyStore(KeyStoreUtils.loadKeyStore(keyFilename, passphrase))
+                .trustStore(KeyStoreUtils.loadKeyStore(TRUST_FILENAME, passphrase))
+                .keyStore(KeyStoreUtils.loadKeyStore(KEY_FILENAME, passphrase))
                 .kmfPassphrase(passphrase)
                 .protocol("DTLS")
                 .build();
