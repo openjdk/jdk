@@ -278,7 +278,7 @@ public class CDS {
             cmds.add(jdkHome + File.separator + "bin" + File.separator + "java"); // java
             cmds.add("-cp");
             cmds.add(classPath);
-            cmds.add("-Xlog:cds,class+load");
+            cmds.add("-Xlog:cds");
             cmds.add("-Xshare:dump");
             cmds.add("-XX:SharedClassListFile=" + listFile);
             cmds.add("-XX:SharedArchiveFile=" + archiveFile);
