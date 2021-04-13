@@ -159,7 +159,8 @@ intx CompilerConfig::scaled_freq_log(intx freq_log, double scale) {
   }
 }
 
-void set_client_emulation_mode_flags() {
+void CompilerConfig::set_client_emulation_mode_flags() {
+  assert(has_c1(), "Must have C1 compiler present");
   CompilationModeFlag::set_quick_only();
 
   FLAG_SET_ERGO(ProfileInterpreter, false);
@@ -560,17 +561,19 @@ void CompilerConfig::ergo_initialize() {
   return;
 #endif
 
-  if (!is_compilation_mode_selected()) {
+  if (has_c1()) {
+    if (!is_compilation_mode_selected()) {
 #if defined(_WINDOWS) && !defined(_LP64)
-    if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-      FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-    }
+      if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
+        FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
+      }
 #endif
-    if (NeverActAsServerClassMachine) {
+      if (NeverActAsServerClassMachine) {
+        set_client_emulation_mode_flags();
+      }
+    } else if (!has_c2() && !is_jvmci_compiler()) {
       set_client_emulation_mode_flags();
     }
-  } else if (!has_c2() && !is_jvmci_compiler()) {
-    set_client_emulation_mode_flags();
   }
 
   set_legacy_emulation_flags();
