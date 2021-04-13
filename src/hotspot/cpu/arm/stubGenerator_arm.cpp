@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "assembler_arm.inline.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"

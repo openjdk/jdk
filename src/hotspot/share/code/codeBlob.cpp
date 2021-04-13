@@ -30,6 +30,7 @@
 #include "code/relocInfo.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"

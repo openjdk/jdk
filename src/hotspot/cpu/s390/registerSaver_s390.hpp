@@ -26,6 +26,8 @@
 #ifndef CPU_S390_REGISTERSAVER_S390_HPP
 #define CPU_S390_REGISTERSAVER_S390_HPP
 
+class OopMap;
+
 class RegisterSaver {
   // Used for saving volatile registers.
 

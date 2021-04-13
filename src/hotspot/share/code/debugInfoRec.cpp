@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/oopMap.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals_extension.hpp"
 

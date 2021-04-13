@@ -251,6 +251,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_EXPAND_file, "oops/compressedOops.hpp");
   AD.addInclude(AD._CPP_FORMAT_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_FORMAT_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_FORMAT_file, "compiler/oopMap.hpp");
   AD.addInclude(AD._CPP_GEN_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_GEN_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_GEN_file, "opto/cfgnode.hpp");

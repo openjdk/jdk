@@ -31,6 +31,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"

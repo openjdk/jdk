@@ -31,9 +31,11 @@
 #include "code/debugInfo.hpp"
 #include "code/location.hpp"
 #include "code/pcDesc.hpp"
-#include "compiler/oopMap.hpp"
 #include "oops/oop.hpp"
 #include "utilities/growableArray.hpp"
+
+class OopMap;
+class OopMapSet;
 
 //** The DebugInformationRecorder collects debugging information
 //   for a compiled method.

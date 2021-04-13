@@ -28,6 +28,7 @@
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"

@@ -29,6 +29,7 @@
 #include "c1/c1_IR.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_Optimizer.hpp"
+#include "compiler/oopMap.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
 
