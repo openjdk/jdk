@@ -161,7 +161,11 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                     if (cpuSet == null || cpuSet.length <= 0) {
                         cpuSet = containerMetrics.getCpuSetCpus();
                     }
-                    if (cpuSet != null && cpuSet.length > 0) {
+                    if (cpuSet == null) {
+                        // cgroups is mounted, but CPU resource is not limited.
+                        // We can assume the VM is run on the host CPUs.
+                        return getCpuLoad0();
+                    } else if (cpuSet.length > 0) {
                         double systemLoad = 0.0;
                         for (int cpu : cpuSet) {
                             double cpuLoad = getSingleCpuLoad0(cpu);
@@ -187,8 +191,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         if (containerMetrics != null && containerMetrics.getCpuSetCpus() != null) {
             return containerMetrics.getCpuSetCpus().length == getHostOnlineCpuCount0();
         }
-        // cpuset.cpus is not available, so we can assume the VM is run on the host CPUs.
-        return true;
+        return false;
     }
 
     /* native methods */
