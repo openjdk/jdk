@@ -129,14 +129,9 @@ final class VarForm {
     MemberName resolveMemberName(int mode) {
         AccessMode value = AccessMode.values()[mode];
         String methodName = value.methodName();
-        try {
-            MethodType type = methodType_table[value.at.ordinal()].insertParameterTypes(0, VarHandle.class);
-            return memberName_table[mode]
-                = MethodHandles.Lookup.IMPL_LOOKUP
-                    .resolveOrFail(REF_invokeStatic, implClass, methodName, type);
-        } catch (ReflectiveOperationException e) {
-            return null;
-        }
+        MethodType type = methodType_table[value.at.ordinal()].insertParameterTypes(0, VarHandle.class);
+        return memberName_table[mode] = MethodHandles.Lookup.IMPL_LOOKUP
+            .resolveOrNull(REF_invokeStatic, implClass, methodName, type);
     }
 
     @Stable
