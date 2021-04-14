@@ -39,7 +39,7 @@ public class DnDFileGroupDescriptor extends Applet {
 
         String[] instructions = {
          "The applet window contains a red field.",
-         "1. Start MS Outlook program. Find and open "
+         "1. Start MS Outlook program. Find and open ",
          "   the mail form with attachments.",
          "2. Select attachments from the mail and drag into a red field of applet.",
          "   When the mouse enters the field during the drag, the application ",
