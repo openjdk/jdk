@@ -81,7 +81,7 @@ public class FilterTest {
     }
 
     @Test
-    public void testAddResponseHeader() throws Exception {
+    public void testBeforeResponse() throws Exception {
         var handler = new TestHttpHandler();
         var filter = Filter.beforeResponse("Add x-foo response header",
                 (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
@@ -101,9 +101,33 @@ public class FilterTest {
     }
 
     @Test
-    public void testLogResponseCode() throws Exception {
+    public void testBeforeResponseRepeated() throws Exception {
         var handler = new TestHttpHandler();
-        var respCode = new int[]{0};
+        var filter1 = Filter.beforeResponse("Add x-foo response header",
+                (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
+        var filter2 = Filter.beforeResponse("Update x-foo response header",
+                (var e) -> e.getResponseHeaders().set("x-foo", "barbar"));
+        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var context = server.createContext("/", handler);
+        context.getFilters().add(filter1);
+        context.getFilters().add(filter2);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.headers().map().size(), 3);
+            assertEquals(response.headers().firstValue("x-foo").orElseThrow(), "barbar");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testAfterResponse() throws Exception {
+        var handler = new TestHttpHandler();
+        var respCode = new int[1];
         var filter = Filter.afterResponse("Log response code",
                 (var e) -> respCode[0] = e.getResponseCode());
         var server = HttpServer.create(new InetSocketAddress(0), 10);
@@ -115,6 +139,57 @@ public class FilterTest {
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.statusCode(), respCode[0]);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testAfterResponseRepeated() throws Exception {
+        var handler = new TestHttpHandler();
+        var attr = new String[1];
+        final var value = "some value";
+        var afterFilter1 = Filter.afterResponse("Set attribute",
+                (var e) -> e.setAttribute("test-attr", value));
+        var afterFilter2 = Filter.afterResponse("Read attribute",
+                (var e) -> attr[0] = (String) e.getAttribute("test-attr"));
+        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var context = server.createContext("/", handler);
+        context.getFilters().add(afterFilter2);
+        context.getFilters().add(afterFilter1);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(attr[0], value);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testBeforeAndAfterResponse() throws Exception {
+        var handler = new TestHttpHandler();
+        var respCode = new int[1];
+        var beforeFilter = Filter.beforeResponse("Add x-foo response header",
+                (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
+        var afterFilter = Filter.afterResponse("Log response code",
+                (var e) -> respCode[0] = e.getResponseCode());
+        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var context = server.createContext("/", handler);
+        context.getFilters().add(beforeFilter);
+        context.getFilters().add(afterFilter);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.statusCode(), respCode[0]);
+            assertEquals(response.headers().map().size(), 3);
+            assertEquals(response.headers().firstValue("x-foo").orElseThrow(), "bar");
         } finally {
             server.stop(0);
         }

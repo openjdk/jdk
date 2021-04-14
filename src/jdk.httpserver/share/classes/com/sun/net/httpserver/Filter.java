@@ -143,27 +143,27 @@ public abstract class Filter {
     public abstract String description ();
 
     /**
-     * Returns a pre-processing Filter with the given description and
-     * implementation.
+     * Returns a pre-processing Filter with the given description and operation.
      *
-     * <p>The {@link Consumer filterImpl} is the effective implementation of
+     * <p>The {@link Consumer operation} is the effective implementation of
      * the returned Filter and is executed for each {@code HttpExchange} before
-     * the exchange is handled further.
+     * invoking the next filter in the chain, or the exchange handler
+     * (if this is the final filter in the chain).
      *
      * @param description the description of the returned filter
-     * @param filterImpl the implementation of the returned filter
+     * @param operation the operation of the returned filter
      * @return a filter
      * @throws NullPointerException if any argument is null
      * @since 17
      */
     public static Filter beforeResponse(String description,
-                                        Consumer<HttpExchange> filterImpl) {
+                                        Consumer<HttpExchange> operation) {
         Objects.requireNonNull(description);
-        Objects.requireNonNull(filterImpl);
+        Objects.requireNonNull(operation);
         return new Filter() {
             @Override
             public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
-                filterImpl.accept(exchange);
+                operation.accept(exchange);
                 chain.doFilter(exchange);
             }
             @Override
@@ -174,28 +174,28 @@ public abstract class Filter {
     }
 
     /**
-     * Returns a post-processing Filter with the given description and
-     * implementation.
+     * Returns a post-processing Filter with the given description and operation.
      *
-     * <p>The {@link Consumer filterImpl} is the effective implementation of
+     * <p>The {@link Consumer operation} is the effective implementation of
      * the returned Filter and is executed for each {@code HttpExchange} after
-     * the exchange has been handled.
+     * invoking the next filter in the chain, or the exchange handler
+     * (if this is the final filter in the chain).
      *
      * @param description the description of the returned filter
-     * @param filterImpl the implementation of the returned filter
+     * @param operation the operation of the returned filter
      * @return a filter
      * @throws NullPointerException if any argument is null
      * @since 17
      */
     public static Filter afterResponse(String description,
-                                       Consumer<HttpExchange> filterImpl) {
+                                       Consumer<HttpExchange> operation) {
         Objects.requireNonNull(description);
-        Objects.requireNonNull(filterImpl);
+        Objects.requireNonNull(operation);
         return new Filter() {
             @Override
             public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
                 chain.doFilter(exchange);
-                filterImpl.accept(exchange);
+                operation.accept(exchange);
             }
             @Override
             public String description() {
