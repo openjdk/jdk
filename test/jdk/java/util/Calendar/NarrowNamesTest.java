@@ -99,16 +99,16 @@ public class NarrowNamesTest {
             Map<String, Integer> expectedFieldValues = new HashMap<>();
             expectedFieldValues.put("AM", Calendar.AM);
             expectedFieldValues.put("PM", Calendar.PM);
-            expectedFieldValues.put("midnight", Calendar.AM);
-            expectedFieldValues.put("noon", Calendar.AM);
-            expectedFieldValues.put("in the morning", Calendar.AM);
-            expectedFieldValues.put("in the afternoon", Calendar.PM);
-            expectedFieldValues.put("in the evening", Calendar.PM);
-            expectedFieldValues.put("at night", Calendar.PM);
+            expectedFieldValues.put("midnight", null);
+            expectedFieldValues.put("noon", null);
+            expectedFieldValues.put("in the morning", null);
+            expectedFieldValues.put("in the afternoon", null);
+            expectedFieldValues.put("in the evening", null);
+            expectedFieldValues.put("at night", null);
             expectedFieldValues.put("a", Calendar.AM);
             expectedFieldValues.put("p", Calendar.PM);
-            expectedFieldValues.put("mi", Calendar.AM);
-            expectedFieldValues.put("n", Calendar.AM);
+            expectedFieldValues.put("mi", null);
+            expectedFieldValues.put("n", null);
             testAM_PM(US, ALL_STYLES, expectedFieldValues);
         } else {
             Map<String, Integer> expectedFieldValues = new HashMap<>();
@@ -224,8 +224,20 @@ public class NarrowNamesTest {
     private static void testAM_PM(Locale locale, int style, Map<String, Integer> expectedNameValuePair) {
         Calendar cal = Calendar.getInstance(locale);
         Map<String, Integer> got = cal.getDisplayNames(Calendar.AM_PM, style, locale);
-        if (!(expectedNameValuePair == null && got == null)
-                && !(expectedNameValuePair != null && expectedNameValuePair.equals(got))) {
+        boolean unexpectedValues = false;
+        for (Map.Entry<String, Integer> expected : expectedNameValuePair.entrySet()) {
+            final Integer expectedFieldValue = expected.getValue();
+            final Integer gotFieldValue = got.remove(expected.getKey());
+            if ((expectedFieldValue == null && gotFieldValue != null) ||
+                    (expectedFieldValue != null && !expectedFieldValue.equals(gotFieldValue))) {
+                unexpectedValues = true;
+                break;
+            }
+        }
+        if (!got.isEmpty()) {
+            unexpectedValues = true;
+        }
+        if (unexpectedValues) {
             System.err.printf("testAM_PM: locale=%s, field=%d, style=%d, expected=%s, got=%s%n",
                     locale, Calendar.AM_PM, style, expectedNameValuePair, got);
             errors++;
