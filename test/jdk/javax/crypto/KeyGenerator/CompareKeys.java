@@ -63,7 +63,7 @@ public class CompareKeys {
     }
 
     /**
-     * Compare original KeyPair with another copy.
+     * Compare original Key with another copy.
      */
     private static void checkKeyEquality(Key origKey, Key copyKey) {
 
