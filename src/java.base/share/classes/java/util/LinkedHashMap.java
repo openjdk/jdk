@@ -373,11 +373,12 @@ public class LinkedHashMap<K,V>
      * Moves the mapping to be the first in iteration order.
      * @param k the key
      * @param v the value
+     * @return the value previously associated with k, or null if none
      */
-    public void putFirst(K k, V v) {
+    public V putFirst(K k, V v) {
         try {
             putMode = PUT_FIRST;
-            this.put(k, v);
+            return this.put(k, v);
         } finally {
             putMode = PUT_NORM;
         }
@@ -388,11 +389,12 @@ public class LinkedHashMap<K,V>
      * Moves the mapping to be the last in iteration order.
      * @param k the key
      * @param v the value
+     * @return the value previously associated with k, or null if none
      */
-    public void putLast(K k, V v) {
+    public V putLast(K k, V v) {
         try {
             putMode = PUT_LAST;
-            this.put(k, v);
+            return this.put(k, v);
         } finally {
             putMode = PUT_NORM;
         }
