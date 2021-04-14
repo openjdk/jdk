@@ -57,15 +57,16 @@ import java.util.concurrent.TimeUnit;
 public class bug4449413 extends JFrame {
 
     private static final String INSTRUCTIONS = """
-            This test is for MetalLookAndFeel only.
-
             There are eight controls with black backgrounds.
             Four enabled (on the left side) and four disabled (on the right side)
             checkboxes and radiobuttons.
 
             1. If at least one of the controls' check marks is not visible:
                the test fails.
+            """;
 
+    private static final String INSTRUCTIONS_ADDITIONS_METAL = """
+            
             2. Uncheck the "Use Ocean Theme" check box.
                If now at least one of the controls' check marks is not visible:
                the test fails.
@@ -79,9 +80,11 @@ public class bug4449413 extends JFrame {
 
     private static bug4449413 instance;
 
-    public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+    boolean isMetalLookAndFeel() {
+        return UIManager.getLookAndFeel() instanceof MetalLookAndFeel;
+    }
 
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeLater(() -> {
             instance = new bug4449413();
             instance.createAndShowGUI();
@@ -100,6 +103,8 @@ public class bug4449413 extends JFrame {
     }
 
     private void createAndShowGUI() {
+        setTitle(UIManager.getLookAndFeel().getClass().getName());
+
         addComponentsToPane();
 
         addWindowListener(new WindowAdapter() {
@@ -129,20 +134,26 @@ public class bug4449413 extends JFrame {
         add(testedPanel);
 
 
-        JCheckBox oceanThemeSwitch = new JCheckBox("Use Ocean theme", true);
-        oceanThemeSwitch.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                MetalLookAndFeel.setCurrentTheme(oceanTheme);
-            } else {
-                MetalLookAndFeel.setCurrentTheme(defaultMetalTheme);
-            }
-            SwingUtilities.updateComponentTreeUI(testedPanel);
-        });
+        if (isMetalLookAndFeel()) {
+            JCheckBox oceanThemeSwitch = new JCheckBox("Use Ocean theme", true);
+            oceanThemeSwitch.addItemListener(e -> {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    MetalLookAndFeel.setCurrentTheme(oceanTheme);
+                } else {
+                    MetalLookAndFeel.setCurrentTheme(defaultMetalTheme);
+                }
+                SwingUtilities.updateComponentTreeUI(testedPanel);
+            });
 
-        add(oceanThemeSwitch);
+            add(oceanThemeSwitch);
+        }
 
+        JTextArea instructionArea = new JTextArea(
+                isMetalLookAndFeel()
+                        ? INSTRUCTIONS + INSTRUCTIONS_ADDITIONS_METAL
+                        : INSTRUCTIONS
+                );
 
-        JTextArea instructionArea = new JTextArea(INSTRUCTIONS);
         instructionArea.setEditable(false);
         instructionArea.setFocusable(false);
         instructionArea.setMargin(new Insets(10,10,10,10));
@@ -177,6 +188,7 @@ public class bug4449413 extends JFrame {
             default -> throw new IllegalArgumentException("type should be in range of 0..3");
         };
 
+        b.setOpaque(true);
         b.setBackground(Color.black);
         b.setForeground(Color.white);
         b.setEnabled(enabled == 1);
