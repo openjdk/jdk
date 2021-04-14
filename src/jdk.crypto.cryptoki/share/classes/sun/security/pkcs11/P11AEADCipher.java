@@ -282,6 +282,7 @@ final class P11AEADCipher extends CipherSpi {
                                 ("Only IvParameterSpec is supported");
                     }
                     ivValue = ((IvParameterSpec) params).getIV();
+                    tagLen = type.defTagLen;
                 }
             break;
             default:
@@ -488,8 +489,9 @@ final class P11AEADCipher extends CipherSpi {
         if (encrypt) {
             result += tagLen;
         } else {
+            // In earlier NSS versions, AES_GCM would report
+            // CKR_BUFFER_TOO_SMALL error if minus tagLen
             if (type == Transformation.CHACHA20_POLY1305) {
-            // PKCS11Exception: CKR_BUFFER_TOO_SMALL
                 result -= tagLen;
             }
         }

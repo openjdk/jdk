@@ -74,10 +74,9 @@ public class TestChaChaPolyNoReuse extends PKCS11Test {
                         "counter must be 0 or greater");
             }
             direction = dir;
-            if ((direction != Cipher.ENCRYPT_MODE) &&
-                    (direction != Cipher.DECRYPT_MODE)) {
+            if (direction != Cipher.ENCRYPT_MODE) {
                 throw new IllegalArgumentException(
-                        "Direction must be ENCRYPT_MODE or DECRYPT_MODE");
+                        "Direction must be ENCRYPT_MODE");
             }
             input = hex.parseHex(inputStr);
             aad = (aadStr != null) ? hex.parseHex(aadStr) : null;
@@ -110,29 +109,6 @@ public class TestChaChaPolyNoReuse extends PKCS11Test {
             "92ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc" +
             "3ff4def08e4b7a9de576d26586cec64b61161ae10b594f09e26a7e902ecbd060" +
             "0691"));
-        add(new TestData("RFC 7539 A.5 Sample Decryption",
-            "1c9240a5eb55d38af333888604f6b5f0473917c1402b80099dca5cbc207075c0",
-            "000000000102030405060708",
-            1, Cipher.DECRYPT_MODE,
-            "64a0861575861af460f062c79be643bd5e805cfd345cf389f108670ac76c8cb2" +
-            "4c6cfc18755d43eea09ee94e382d26b0bdb7b73c321b0100d4f03b7f355894cf" +
-            "332f830e710b97ce98c8a84abd0b948114ad176e008d33bd60f982b1ff37c855" +
-            "9797a06ef4f0ef61c186324e2b3506383606907b6a7c02b0f9f6157b53c867e4" +
-            "b9166c767b804d46a59b5216cde7a4e99040c5a40433225ee282a1b0a06c523e" +
-            "af4534d7f83fa1155b0047718cbc546a0d072b04b3564eea1b422273f548271a" +
-            "0bb2316053fa76991955ebd63159434ecebb4e466dae5a1073a6727627097a10" +
-            "49e617d91d361094fa68f0ff77987130305beaba2eda04df997b714d6c6f2c29" +
-            "a6ad5cb4022b02709beead9d67890cbb22392336fea1851f38",
-            "f33388860000000000004e91",
-            "496e7465726e65742d4472616674732061726520647261667420646f63756d65" +
-            "6e74732076616c696420666f722061206d6178696d756d206f6620736978206d" +
-            "6f6e74687320616e64206d617920626520757064617465642c207265706c6163" +
-            "65642c206f72206f62736f6c65746564206279206f7468657220646f63756d65" +
-            "6e747320617420616e792074696d652e20497420697320696e617070726f7072" +
-            "6961746520746f2075736520496e7465726e65742d4472616674732061732072" +
-            "65666572656e6365206d6174657269616c206f7220746f206369746520746865" +
-            "6d206f74686572207468616e206173202fe2809c776f726b20696e2070726f67" +
-            "726573732e2fe2809d"));
     }};
 
     /**
@@ -212,102 +188,6 @@ public class TestChaChaPolyNoReuse extends PKCS11Test {
     };
 
     /**
-     * Attempt to run two full decryption operations without an init in
-     * between.
-     */
-    public static final TestMethod decTwiceNoInit = new TestMethod() {
-
-        @Override
-        public boolean run(Provider p) {
-            System.out.println("----- Decrypt 2nd time without init -----");
-            try {
-                AlgorithmParameterSpec spec;
-                Cipher cipher = Cipher.getInstance(CIPHER_ALGO, p);
-                TestData testData = aeadTestList.get(1);
-                spec = new IvParameterSpec(testData.nonce);
-                SecretKey key = new SecretKeySpec(testData.key, KEY_ALGO);
-
-                // Initialize and encrypt
-                cipher.init(testData.direction, key, spec);
-                cipher.updateAAD(testData.aad);
-                cipher.doFinal(testData.input);
-                System.out.println("First decryption complete");
-
-                // Now attempt to encrypt again without changing the key/IV
-                // This should fail.
-                try {
-                    cipher.updateAAD(testData.aad);
-                } catch (IllegalStateException ise) {
-                    // Do nothing, this is what we expected to happen
-                }
-                try {
-                    cipher.doFinal(testData.input);
-                    throw new RuntimeException(
-                            "Expected IllegalStateException not thrown");
-                } catch (IllegalStateException ise) {
-                    // Do nothing, this is what we expected to happen
-                }
-            } catch (Exception exc) {
-                System.out.println("Unexpected exception: " + exc);
-                exc.printStackTrace();
-                return false;
-            }
-
-            return true;
-        }
-    };
-
-    /**
-     * Perform an AEAD decryption with corrupted data so the tag does not
-     * match.  Then attempt to reuse the cipher without initialization.
-     */
-    public static final TestMethod decFailNoInit = new TestMethod() {
-        @Override
-        public boolean run(Provider p) {
-            System.out.println(
-                    "----- Fail decryption, try again with no init -----");
-            try {
-                TestData testData = aeadTestList.get(1);
-                AlgorithmParameterSpec spec =
-                        new IvParameterSpec(testData.nonce);
-                byte[] corruptInput = testData.input.clone();
-                corruptInput[0]++;      // Corrupt the ciphertext
-                SecretKey key = new SecretKeySpec(testData.key, KEY_ALGO);
-                Cipher cipher = Cipher.getInstance(CIPHER_ALGO, p);
-
-                try {
-                    // Initialize and encrypt
-                    cipher.init(testData.direction, key, spec);
-                    cipher.updateAAD(testData.aad);
-                    cipher.doFinal(corruptInput);
-                    throw new RuntimeException(
-                            "Expected AEADBadTagException not thrown");
-                } catch (AEADBadTagException abte) {
-                    System.out.println("Expected decryption failure occurred");
-                }
-
-                // Make sure that despite the exception, the Cipher object is
-                // not in a state that would leave it initialized and able
-                // to process future decryption operations without init.
-                try {
-                    cipher.updateAAD(testData.aad);
-                    cipher.doFinal(testData.input);
-                    throw new RuntimeException(
-                            "Expected IllegalStateException not thrown");
-                } catch (IllegalStateException ise) {
-                    // Do nothing, this is what we expected to happen
-                }
-            } catch (Exception exc) {
-                System.out.println("Unexpected exception: " + exc);
-                exc.printStackTrace();
-                return false;
-            }
-
-            return true;
-        }
-    };
-
-    /**
      * Encrypt once successfully, then attempt to init with the same
      * key and nonce.
      */
@@ -349,52 +229,8 @@ public class TestChaChaPolyNoReuse extends PKCS11Test {
         }
     };
 
-    /**
-     * Decrypt once successfully, then attempt to init with the same
-     * key and nonce.
-     */
-    public static final TestMethod decTwiceInitSameParams = new TestMethod() {
-        @Override
-        public boolean run(Provider p) {
-            System.out.println("----- Decrypt, then init with same params " +
-                    "-----");
-            try {
-                AlgorithmParameterSpec spec;
-                Cipher cipher = Cipher.getInstance(CIPHER_ALGO, p);
-                TestData testData = aeadTestList.get(1);
-                spec = new IvParameterSpec(testData.nonce);
-                SecretKey key = new SecretKeySpec(testData.key, KEY_ALGO);
-
-                // Initialize then decrypt
-                cipher.init(testData.direction, key, spec);
-                cipher.updateAAD(testData.aad);
-                cipher.doFinal(testData.input);
-                System.out.println("First decryption complete");
-
-                // Initializing after the completed decryption with
-                // the same key and nonce should fail.
-                try {
-                    cipher.init(testData.direction, key, spec);
-                    throw new RuntimeException(
-                            "Expected IKE or IAPE not thrown");
-                } catch (InvalidKeyException |
-                        InvalidAlgorithmParameterException e) {
-                    // Do nothing, this is what we expected to happen
-                }
-            } catch (Exception exc) {
-                System.out.println("Unexpected exception: " + exc);
-                exc.printStackTrace();
-                return false;
-            }
-
-            return true;
-        }
-    };
-
     public static final List<TestMethod> testMethodList =
-            Arrays.asList(noInitTest, encTwiceNoInit,
-                    decTwiceNoInit, decFailNoInit, encTwiceInitSameParams,
-                    decTwiceInitSameParams);
+            Arrays.asList(noInitTest, encTwiceNoInit, encTwiceInitSameParams);
 
     @Override
     public void main(Provider p) throws Exception {
