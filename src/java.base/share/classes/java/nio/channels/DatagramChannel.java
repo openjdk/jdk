@@ -172,8 +172,7 @@ public abstract class DatagramChannel
      * java.nio.channels.spi.SelectorProvider} object.  The channel will not be
      * connected.
      *
-     * @apiNote {@linkplain java.net.UnixDomainSocketAddress Unix domain} sockets
-     * are not supported by DatagramChannel.
+     * @apiNote {@link java.net.StandardProtocolFamily#UNIX} is not supported.
      *
      * @param   family
      *          The protocol family
