@@ -43,7 +43,7 @@ public class OldSuperInf {
         String mainClass = "OldSuperInfApp";
         String namePrefix = "oldsuperinf";
         String appClasses[] = TestCommon.list("OldInf", "ChildOldInf", "GChild2", mainClass);
-        JarBuilder.build(namePrefix, appClasses); 
+        JarBuilder.build(namePrefix, appClasses);
 
         String appJar = TestCommon.getTestJar(namePrefix + ".jar");
         String archiveName = namePrefix + ".jsa";

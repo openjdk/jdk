@@ -42,7 +42,7 @@ public class OldSuperClass {
         String mainClass = "OldSuperApp";
         String namePrefix = "oldsuperclass";
         String appClasses[] = TestCommon.list("OldSuper", "ChildOldSuper", "GChild", mainClass);
-        JarBuilder.build(namePrefix, appClasses); 
+        JarBuilder.build(namePrefix, appClasses);
         String appJar = TestCommon.getTestJar(namePrefix + ".jar");
 
         boolean dynamicMode = CDSTestUtils.DYNAMIC_DUMP;
