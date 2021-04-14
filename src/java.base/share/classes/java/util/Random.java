@@ -618,7 +618,7 @@ public class Random extends AbstractSpliteratorGenerator
         @java.io.Serial
         static final long serialVersionUID = 0L;
 
-        static final AbstractSpliteratorGenerator proxy = new ThreadLocalRandomProxy();
+        static final AbstractSpliteratorGenerator PROXY = new ThreadLocalRandomProxy();
 
         public int nextInt() {
             return ThreadLocalRandom.current().nextInt();
@@ -632,7 +632,7 @@ public class Random extends AbstractSpliteratorGenerator
     @Override
     final protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
         if (this instanceof ThreadLocalRandom) {
-            return new RandomIntsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
+            return new RandomIntsSpliterator(ThreadLocalRandomProxy.PROXY, index, fence, origin, bound);
         } else {
             return new RandomIntsSpliterator(this, index, fence, origin, bound);
         }
@@ -641,7 +641,7 @@ public class Random extends AbstractSpliteratorGenerator
     @Override
     final protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
         if (this instanceof ThreadLocalRandom) {
-            return new RandomLongsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
+            return new RandomLongsSpliterator(ThreadLocalRandomProxy.PROXY, index, fence, origin, bound);
         } else {
             return new RandomLongsSpliterator(this, index, fence, origin, bound);
         }
@@ -650,7 +650,7 @@ public class Random extends AbstractSpliteratorGenerator
     @Override
     final protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
         if (this instanceof ThreadLocalRandom) {
-            return new RandomDoublesSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
+            return new RandomDoublesSpliterator(ThreadLocalRandomProxy.PROXY, index, fence, origin, bound);
         } else {
             return new RandomDoublesSpliterator(this, index, fence, origin, bound);
         }
