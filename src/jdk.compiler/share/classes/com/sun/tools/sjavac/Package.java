@@ -186,7 +186,7 @@ public class Package implements Comparable<Package> {
         saveArtifacts(b);
     }
 
-    static public Package load(Module module, String l) {
+    public static Package load(Module module, String l) {
         String name = l.substring(2);
         return new Package(module, name);
     }

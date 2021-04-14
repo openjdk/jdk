@@ -40,6 +40,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "gc/shared/collectedHeap.hpp"

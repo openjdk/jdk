@@ -605,9 +605,14 @@ public final class Constructor<T> extends Executable {
     }
 
     @Override
-    boolean handleParameterNumberMismatch(int resultLength, int numParameters) {
+    boolean handleParameterNumberMismatch(int resultLength, Class<?>[] parameterTypes) {
+        int numParameters = parameterTypes.length;
         Class<?> declaringClass = getDeclaringClass();
-        if (declaringClass.isEnum() ||
+        if (declaringClass.isEnum()) {
+            return resultLength + 2 == numParameters &&
+                    parameterTypes[0] == String.class &&
+                    parameterTypes[1] == int.class;
+        } else if (
             declaringClass.isAnonymousClass() ||
             declaringClass.isLocalClass() )
             return false; // Can't do reliable parameter counting

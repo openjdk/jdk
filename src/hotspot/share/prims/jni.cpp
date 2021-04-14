@@ -30,6 +30,8 @@
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -283,10 +285,11 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
   ResourceMark rm(THREAD);
   ClassFileStream st((u1*)buf, bufLen, NULL, ClassFileStream::verify);
   Handle class_loader (THREAD, JNIHandles::resolve(loaderRef));
-  Klass* k = SystemDictionary::resolve_from_stream(class_name,
+  Handle protection_domain;
+  ClassLoadInfo cl_info(protection_domain);
+  Klass* k = SystemDictionary::resolve_from_stream(&st, class_name,
                                                    class_loader,
-                                                   Handle(),
-                                                   &st,
+                                                   cl_info,
                                                    CHECK_NULL);
 
   if (log_is_enabled(Debug, class, resolve)) {
@@ -903,7 +906,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
   {
     Method* m = Method::resolve_jmethod_id(method_id);
     number_of_parameters = m->size_of_parameters();
-    Klass* holder = m->method_holder();
+    InstanceKlass* holder = m->method_holder();
     if (call_type != JNI_VIRTUAL) {
         selected_method = m;
     } else if (!m->has_itable_index()) {
@@ -1075,7 +1078,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   // Throw a NoSuchMethodError exception if we have an instance of a
   // primitive java.lang.Class
   if (java_lang_Class::is_primitive(mirror)) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
 
@@ -1099,7 +1102,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
     }
   }
   if (m == NULL || (m->is_static() != is_static)) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
   return m->jmethod_id();
@@ -3723,6 +3726,10 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
 
   // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
   JavaThread* thread = JavaThread::current();
+
+  // We are going to VM, change W^X state to the expected one.
+  MACOS_AARCH64_ONLY(WXMode oldmode = thread->enable_wx(WXWrite));
+
   ThreadStateTransition::transition_from_native(thread, _thread_in_vm);
   if (Threads::destroy_vm()) {
     // Should not change thread state, VM is gone
@@ -3731,6 +3738,7 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
     return res;
   } else {
     ThreadStateTransition::transition(thread, _thread_in_vm, _thread_in_native);
+    MACOS_AARCH64_ONLY(thread->enable_wx(oldmode));
     res = JNI_ERR;
     return res;
   }
@@ -3909,6 +3917,9 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
     // Can't detach a thread that's running java, that can't work.
     return JNI_ERR;
   }
+
+  // We are going to VM, change W^X state to the expected one.
+  MACOS_AARCH64_ONLY(thread->enable_wx(WXWrite));
 
   // Safepoint support. Have to do call-back to safepoint code, if in the
   // middle of a safepoint operation

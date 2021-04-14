@@ -72,9 +72,9 @@ abstract class P11Key implements Key, Length {
 
     private static final long serialVersionUID = -2575874101938349339L;
 
-    private final static String PUBLIC = "public";
-    private final static String PRIVATE = "private";
-    private final static String SECRET = "secret";
+    private static final String PUBLIC = "public";
+    private static final String PRIVATE = "private";
+    private static final String SECRET = "secret";
 
     // type of key, one of (PUBLIC, PRIVATE, SECRET)
     final String type;
@@ -280,7 +280,7 @@ abstract class P11Key implements Key, Length {
         }
     }
 
-    private final static CK_ATTRIBUTE[] A0 = new CK_ATTRIBUTE[0];
+    private static final CK_ATTRIBUTE[] A0 = new CK_ATTRIBUTE[0];
 
     private static CK_ATTRIBUTE[] getAttributes(Session session, long keyID,
             CK_ATTRIBUTE[] knownAttributes, CK_ATTRIBUTE[] desiredAttributes) {
