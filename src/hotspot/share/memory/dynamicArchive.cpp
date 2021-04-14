@@ -345,7 +345,6 @@ void DynamicArchive::dump(const char* archive_name, TRAPS) {
     // prevent multiple dumps.
     set_has_been_dumped_once();
   }
-  assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp?");
   ArchiveClassesAtExit = archive_name;
   if (Arguments::init_shared_archive_paths()) {
     dump();

@@ -82,10 +82,8 @@ public class JCmdTest {
     private static void buildJar() throws Exception {
         testJar = JarBuilder.build("test", TEST_CLASSES);
         bootJar = JarBuilder.build("boot", BOOT_CLASSES);
-        Path testJarPath = FileSystems.getDefault().getPath(testJar);
-        Path bootJarPath = FileSystems.getDefault().getPath(bootJar);
-        System.out.println("Jar file created: " + testJarPath.toString());
-        System.out.println("Jar file created: " + bootJarPath.toString());
+        System.out.println("Jar file created: " + testJar);
+        System.out.println("Jar file created: " + bootJar);
         allJars = testJar+ File.pathSeparator + bootJar;
     }
 
