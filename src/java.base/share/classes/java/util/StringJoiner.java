@@ -257,5 +257,5 @@ public final class StringJoiner {
             len + prefix.length() + suffix.length();
     }
 
-    JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 }
