@@ -189,17 +189,11 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                             if (name.isEmpty()) {
                                 continue;
                             }
-                            if (field == AM_PM) {
-                                // Convert the dayPeriod "type" to either AM or PM field value.
-                                // Following is a mapping of dayPeriod "type" to their array index
-                                // in Calendar resource bundle
-                                // am = 0, pm = 1, midnight = 2, noon = 3, morning1 = 4,
-                                // morning2 = 5, afternoon1 = 6, afternoon2 = 7, evening1 = 8,
-                                // evening2 = 9, night1 = 10, night2 = 11
-                                switch (i) {
-                                    case 0, 2, 3, 4, 5 -> map.put(name, AM);
-                                    case 1, 6, 7, 8, 9, 10, 11 -> map.put(name, PM);
-                                }
+                            if (field == AM_PM && !javatime && i > PM) {
+                                // when dealing with calendar fields, don't set AM_PM field value
+                                // to anything that isn't either AM or PM (this can happen when
+                                // day periods are involved)
+                                continue;
                             } else {
                                 map.put(name, base + i);
                             }
