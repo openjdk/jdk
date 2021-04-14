@@ -2101,6 +2101,8 @@ public class RandomSupport {
         @Override
         public Stream<SplittableGenerator> splits(long streamSize, SplittableGenerator source) {
             RandomSupport.checkStreamSize(streamSize);
+            Objects.requireNonNull(source, "source should be non-null");
+
             return StreamSupport.stream(makeSplitsSpliterator(0L, streamSize, source), false);
         }
 
