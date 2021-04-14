@@ -1443,7 +1443,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 
     // The careful dance between thread suspension and exit is handled here.
     // Since we are in thread_in_vm state and suspension is done with handshakes,
-    // we can just put in the exiting state and it will be corrcetly handled.
+    // we can just put in the exiting state and it will be correctly handled.
     set_terminated(_thread_exiting);
 
     ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
