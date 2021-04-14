@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,16 @@ public final class CodeCacheUtils {
         }
     }
 
+    /**
+     * For the given bean, restores it usageThreshold monitoring to the initial state - clears any reached
+     * usageThreshold and switches off the monitoring.
+     *
+     * @param bean MemoryPoolMXBean for which the clearing should be done.
+     */
+    public static void clearAndDisableUsageThreshold(MemoryPoolMXBean bean) {
+        bean.setUsageThreshold(bean.getUsage().getMax());
+        bean.setUsageThreshold(0L);
+    }
 
     public static void disableCollectionUsageThresholds() {
         BlobType.getAvailable().stream()

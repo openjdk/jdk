@@ -88,6 +88,8 @@ public class PoolsIndependenceTest implements NotificationListener {
     protected void runTest() {
         MemoryPoolMXBean bean = btype.getMemoryPool();
         System.out.printf("INFO: Starting scenario with %s%n", bean.getName());
+        CodeCacheUtils.clearAndDisableUsageThreshold(bean);
+
         ((NotificationEmitter) ManagementFactory.getMemoryMXBean()).
                 addNotificationListener(this, null, null);
         final long usageThresholdLimit = bean.getUsage().getUsed() + 1;
