@@ -171,16 +171,9 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::update_bot(HeapRegion* hr)
   HeapWord* next_addr = hr->bottom();
   HeapWord* threshold = hr->initialize_threshold();
   HeapWord* pre_addr;
-
   while (next_addr < limit) {
-    Prefetch::write(next_addr, PrefetchScanIntervalInBytes);
     pre_addr = next_addr;
-    if (_bitmap->is_marked(next_addr)) {
-      oop obj = cast_to_oop(next_addr);
-      next_addr += obj->size();
-    } else {
-      next_addr = _bitmap->get_next_marked_addr(next_addr, limit);
-    }
+    next_addr = _bitmap->get_next_marked_addr(next_addr + 1, limit);
 
     if (next_addr > threshold) {
       threshold = hr->cross_threshold(pre_addr, next_addr);
