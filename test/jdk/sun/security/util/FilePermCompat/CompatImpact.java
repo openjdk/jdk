@@ -26,7 +26,6 @@
  * @bug 8164705 8168410
  * @summary check compatibility after FilePermission change
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run main CompatImpact prepare
  * @run main CompatImpact builtin
  * @run main/othervm -Djdk.security.filePermCompat=true CompatImpact mine

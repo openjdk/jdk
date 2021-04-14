@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This is a test library that makes writing a Java test that spawns multiple
@@ -262,23 +261,24 @@ public class Proc {
     // Starts the proc
     public Proc start() throws IOException {
         List<String> cmd = new ArrayList<>();
-        boolean hasModules;
         if (launcher != null) {
             cmd.add(launcher);
             File base = new File(launcher).getParentFile().getParentFile();
-            hasModules = new File(base, "modules").exists() ||
-                    new File(base, "jmods").exists();
         } else {
             cmd.add(new File(new File(System.getProperty("java.home"), "bin"),
                         "java").getPath());
-            hasModules = true;
         }
 
-        if (hasModules) {
-            Stream.of(jdk.internal.misc.VM.getRuntimeArguments())
-                    .filter(arg -> arg.startsWith("--add-exports=") ||
-                                   arg.startsWith("--add-opens="))
-                    .forEach(cmd::add);
+        String testModules = System.getProperty("test.modules");
+        if (testModules != null) {
+            for (String module : testModules.split("\\s+")) {
+                if (module.endsWith(":+open")) {
+                    String realModule = module.substring(0, module.length() - 6);
+                    cmd.add("--add-opens=" + realModule + "=ALL-UNNAMED");
+                } else if (module.contains("/")) {
+                    cmd.add("--add-exports=" + module + "=ALL-UNNAMED");
+                }
+            }
         }
 
         Collections.addAll(cmd, splitProperty("test.vm.opts"));

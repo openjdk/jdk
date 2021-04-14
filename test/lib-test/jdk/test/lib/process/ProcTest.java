@@ -25,7 +25,6 @@
  * @test
  * @bug 8265227
  * @summary Test Proc
- * @modules java.base/jdk.internal.misc
  * @library /test/lib
  */
 

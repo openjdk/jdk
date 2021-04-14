@@ -25,7 +25,6 @@
  * @test
  * @bug 8164705 8209901
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @summary check jdk.filepermission.canonicalize
  */
 
