@@ -27,15 +27,12 @@ package java.util;
 
 import java.io.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import jdk.internal.util.random.RandomSupport.*;
 
-import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
-import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
 import static jdk.internal.util.random.RandomSupport.*;
 
 import jdk.internal.misc.Unsafe;
@@ -617,19 +614,46 @@ public class Random extends AbstractSpliteratorGenerator
 
     // Methods required by class AbstractSpliteratorGenerator
 
-    @Override
-    protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-        return new RandomIntsSpliterator(this, index, fence, origin, bound);
+    private static final class ThreadLocalRandomProxy extends Random {
+        @java.io.Serial
+        static final long serialVersionUID = 0L;
+
+        static final AbstractSpliteratorGenerator proxy = new ThreadLocalRandomProxy();
+
+        public int nextInt() {
+            return ThreadLocalRandom.current().nextInt();
+        }
+
+        public long nextLong() {
+            return ThreadLocalRandom.current().nextLong();
+        }
     }
 
     @Override
-    protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-        return new RandomLongsSpliterator(this, index, fence, origin, bound);
+    final protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
+        if (this instanceof ThreadLocalRandom) {
+            return new RandomIntsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
+        } else {
+            return new RandomIntsSpliterator(this, index, fence, origin, bound);
+        }
     }
 
     @Override
-    protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-        return new RandomDoublesSpliterator(this, index, fence, origin, bound);
+    final protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
+        if (this instanceof ThreadLocalRandom) {
+            return new RandomLongsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
+        } else {
+            return new RandomLongsSpliterator(this, index, fence, origin, bound);
+        }
+    }
+
+    @Override
+    final protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
+        if (this instanceof ThreadLocalRandom) {
+            return new RandomDoublesSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
+        } else {
+            return new RandomDoublesSpliterator(this, index, fence, origin, bound);
+        }
     }
 
     /**

@@ -51,11 +51,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import jdk.internal.util.random.RandomSupport;
-import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
-import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
+import jdk.internal.util.random.RandomSupport.*;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 
@@ -395,40 +391,6 @@ public class ThreadLocalRandom extends Random {
 
     /** The common ThreadLocalRandom */
     private static final ThreadLocalRandom instance = new ThreadLocalRandom();
-
-    private static final class ThreadLocalRandomProxy extends Random {
-        @java.io.Serial
-        static final long serialVersionUID = 0L;
-
-
-        static final AbstractSpliteratorGenerator proxy = new ThreadLocalRandomProxy();
-
-
-        public int nextInt() {
-            return ThreadLocalRandom.current().nextInt();
-        }
-
-        public long nextLong() {
-            return ThreadLocalRandom.current().nextLong();
-        }
-    }
-
-    // Methods required by class AbstractSpliteratorGenerator
-
-    @Override
-    protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-        return new RandomIntsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
-    }
-
-    @Override
-    protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-        return new RandomLongsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
-    }
-
-    @Override
-    protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-        return new RandomDoublesSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
-    }
 
     /**
      * The next seed for default constructors.
