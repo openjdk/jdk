@@ -52,8 +52,7 @@ class RemoteAddress implements Address {
   }
 
   public int hashCode() {
-    // FIXME: suggestions on a better hash code?
-    return (int) addr;
+    return Long.hashCode(addr);
   }
 
   public String toString() {
