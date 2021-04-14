@@ -25,7 +25,7 @@
  * @test
  * @bug 8164705 8168410
  * @summary check compatibility after FilePermission change
- * @library /java/security/testlibrary/
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main CompatImpact prepare
  * @run main CompatImpact builtin
@@ -33,6 +33,8 @@
  * @run main/fail CompatImpact mine
  * @run main CompatImpact dopriv
  */
+
+import jdk.test.lib.security.Proc;
 
 import java.io.File;
 import java.io.FilePermission;
