@@ -784,6 +784,9 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls 13.1 The Form of a Binary
      * @jvms 4.1 The {@code ClassFile} Structure
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      * @since 1.5
      */
     public boolean isSynthetic() {
@@ -2450,6 +2453,9 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      * @since 1.1
      */
     @CallerSensitive
