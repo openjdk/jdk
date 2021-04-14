@@ -109,9 +109,9 @@ final class VarForm {
 
     @ForceInline
     final MemberName getMemberName(int mode) {
-        MemberName mn = memberName_table[mode];
+        MemberName mn = getMemberNameOrNull(mode);
         if (mn == null) {
-            mn = resolveMemberName(mode, false);
+            throw new UnsupportedOperationException();
         }
         return mn;
     }
@@ -120,13 +120,13 @@ final class VarForm {
     final MemberName getMemberNameOrNull(int mode) {
         MemberName mn = memberName_table[mode];
         if (mn == null) {
-            mn = resolveMemberName(mode, true);
+            mn = resolveMemberName(mode);
         }
         return mn;
     }
 
     @DontInline
-    MemberName resolveMemberName(int mode, boolean graceful) {
+    MemberName resolveMemberName(int mode) {
         AccessMode value = AccessMode.values()[mode];
         String methodName = value.methodName();
         try {
@@ -135,11 +135,7 @@ final class VarForm {
                 = MethodHandles.Lookup.IMPL_LOOKUP
                     .resolveOrFail(REF_invokeStatic, implClass, methodName, type);
         } catch (ReflectiveOperationException e) {
-            if (graceful) {
-                return null;
-            } else {
-                throw new UnsupportedOperationException();
-            }
+            return null;
         }
     }
 
