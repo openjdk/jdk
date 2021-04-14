@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "precompiled.hpp"
 #include "gc/z/zAbort.hpp"
 #include "runtime/atomic.hpp"
 
