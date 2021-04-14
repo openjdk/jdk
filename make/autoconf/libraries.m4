@@ -132,7 +132,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
     # in libc.
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lrt"
   fi
-                              
+
   # Atomic library
   # 32-bit platforms needs fallback library for 8-byte atomic ops on Zero
   if HOTSPOT_CHECK_JVM_VARIANT(zero); then
