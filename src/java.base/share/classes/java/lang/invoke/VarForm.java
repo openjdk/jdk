@@ -46,7 +46,7 @@ final class VarForm {
 
     final @Stable MethodType[] methodType_table;
 
-    private final @Stable MemberName[] memberName_table;
+    final @Stable MemberName[] memberName_table;
 
     VarForm(Class<?> implClass, Class<?> receiver, Class<?> value, Class<?>... intermediate) {
         this.methodType_table = new MethodType[VarHandle.AccessType.values().length];
@@ -111,13 +111,22 @@ final class VarForm {
     final MemberName getMemberName(int mode) {
         MemberName mn = memberName_table[mode];
         if (mn == null) {
-            mn = resolveMemberName(mode);
+            mn = resolveMemberName(mode, false);
+        }
+        return mn;
+    }
+
+    @ForceInline
+    final MemberName getMemberNameOrNull(int mode) {
+        MemberName mn = memberName_table[mode];
+        if (mn == null) {
+            mn = resolveMemberName(mode, true);
         }
         return mn;
     }
 
     @DontInline
-    private final MemberName resolveMemberName(int mode) {
+    MemberName resolveMemberName(int mode, boolean graceful) {
         AccessMode value = AccessMode.values()[mode];
         String methodName = value.methodName();
         try {
@@ -126,7 +135,11 @@ final class VarForm {
                 = MethodHandles.Lookup.IMPL_LOOKUP
                     .resolveOrFail(REF_invokeStatic, implClass, methodName, type);
         } catch (ReflectiveOperationException e) {
-            throw new InternalError("Failed resolving VarHandle member name", e);
+            if (graceful) {
+                return null;
+            } else {
+                throw new UnsupportedOperationException();
+            }
         }
     }
 
