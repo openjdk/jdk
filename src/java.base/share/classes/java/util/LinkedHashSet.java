@@ -270,6 +270,12 @@ public class LinkedHashSet<E>
             public E removeFirst()             { return LinkedHashSet.this.removeLast(); }
             public E removeLast()              { return LinkedHashSet.this.removeFirst(); }
             public ReversibleSet<E> reversed() { return LinkedHashSet.this; }
+
+            public boolean add(E e) {
+                boolean present = LinkedHashSet.this.contains(e);
+                LinkedHashSet.this.addFirst(e);
+                return ! present;
+            }
         }
 
         return new ReverseLinkedHashSetView();
