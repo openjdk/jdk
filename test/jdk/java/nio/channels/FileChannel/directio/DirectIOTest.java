@@ -47,9 +47,8 @@ import com.sun.nio.file.ExtendedOpenOption;
 public class DirectIOTest {
 
     private static final int BASE_SIZE = 4096;
-    private static long blockSize;
 
-    private static int testWrite(Path p) throws Exception {
+    private static int testWrite(Path p, long blockSize) throws Exception {
         try (FileChannel fc = FileChannel.open(p, StandardOpenOption.WRITE,
              ExtendedOpenOption.DIRECT)) {
             int bs = (int)blockSize;
@@ -67,7 +66,7 @@ public class DirectIOTest {
         }
     }
 
-    private static int testRead(Path p) throws Exception {
+    private static int testRead(Path p, long blockSize) throws Exception {
         try (FileChannel fc = FileChannel.open(p, ExtendedOpenOption.DIRECT)) {
             int bs = (int)blockSize;
             int size = Math.max(BASE_SIZE, bs);
@@ -94,17 +93,17 @@ public class DirectIOTest {
 
     public static void main(String[] args) throws Exception {
         Path p = createTempFile();
-        blockSize = Files.getFileStore(p).getBlockSize();
+        long blockSize = Files.getFileStore(p).getBlockSize();
 
         System.loadLibrary("DirectIO");
 
         try {
-            int size = testWrite(p);
+            int size = testWrite(p, blockSize);
             if (isFileInCache(size, p)) {
                 throw new RuntimeException("DirectIO is not working properly with "
                     + "write. File still exists in cache!");
             }
-            size = testRead(p);
+            size = testRead(p, blockSize);
             if (isFileInCache(size, p)) {
                 throw new RuntimeException("DirectIO is not working properly with "
                     + "read. File still exists in cache!");
