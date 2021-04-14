@@ -304,6 +304,34 @@ int os::Linux::get_fpu_control_word(void) {
 void os::Linux::set_fpu_control_word(int fpu_control) {
 }
 
+bool os::stub_use_cmath_impl(int intrinsicID){
+  const int libc_vers_major = os::Linux::libc_major_version();
+  const int libc_vers_minor = os::Linux::libc_minor_version();
+
+  // implies runtime-environment has alternative libc to glibc.
+  if (libc_vers_major == 0)
+    return false;
+
+  bool hasFastLogsExpPow = false;
+
+  // Glibc 2.29 is the version exp, log, log10 and pow had significant performace
+  // improvements on AArch64.
+  // Release Doc: https://sourceware.org/legacy-ml/libc-announce/2019/msg00000.html
+  if ((libc_vers_major > 2) || ((libc_vers_major == 2) && (libc_vers_minor >= 29))){
+    hasFastLogsExpPow = true;
+  }
+
+  if (!hasFastLogsExpPow)
+    return false;
+
+  if (intrinsicID == vmIntrinsics::as_int(vmIntrinsics::_dlog)   ||
+      intrinsicID == vmIntrinsics::as_int(vmIntrinsics::_dlog10) ||
+      intrinsicID == vmIntrinsics::as_int(vmIntrinsics::_dexp))
+    return true;
+
+  return false;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 

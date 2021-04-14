@@ -42,6 +42,8 @@ class Linux {
   static address   _initial_thread_stack_bottom;
   static uintptr_t _initial_thread_stack_size;
 
+  static int _libc_major_version;
+  static int _libc_minor_version;
   static const char *_libc_version;
   static const char *_libpthread_version;
 
@@ -69,6 +71,9 @@ class Linux {
   static int commit_memory_impl(char* addr, size_t bytes,
                                 size_t alignment_hint, bool exec);
 
+  static void set_libc_major_minor(const char *s);
+  static void set_libc_major_version(int n)   { _libc_major_version = n; }
+  static void set_libc_minor_version(int n)   { _libc_minor_version = n; }
   static void set_libc_version(const char *s)       { _libc_version = s; }
   static void set_libpthread_version(const char *s) { _libpthread_version = s; }
 
@@ -139,6 +144,9 @@ class Linux {
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
 
+  // Runtime GNU libc minor major verion integers
+  static const int libc_major_version()       { return _libc_major_version; }
+  static const int libc_minor_version()       { return _libc_minor_version; }
   // GNU libc and libpthread version strings
   static const char *libc_version()           { return _libc_version; }
   static const char *libpthread_version()     { return _libpthread_version; }

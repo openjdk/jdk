@@ -269,6 +269,10 @@ void os::print_register_info(outputStream *st, const void *context) {
 void os::setup_fpu() {
 }
 
+bool os::stub_use_cmath_impl(int intrinsicID){
+  return false;
+}
+
 bool os::supports_sse() {
   return true;
 }

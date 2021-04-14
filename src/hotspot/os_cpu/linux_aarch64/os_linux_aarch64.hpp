@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,8 @@
 #endif
 
   static void setup_fpu();
+
+  static bool stub_use_cmath_impl(int intrinsicID);
 
   // Used to register dynamic code cache area with the OS
   // Note: Currently only used in 64 bit Windows implementations

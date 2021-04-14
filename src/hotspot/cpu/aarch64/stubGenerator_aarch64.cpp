@@ -7009,17 +7009,30 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
     }
 
-    // Disabled until JDK-8210858 is fixed
-    // if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
-    //   StubRoutines::_dlog = generate_dlog();
-    // }
-
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin)) {
       StubRoutines::_dsin = generate_dsin_dcos(/* isCos = */ false);
     }
 
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
       StubRoutines::_dcos = generate_dsin_dcos(/* isCos = */ true);
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
+      StubRoutines::_dlog = os::stub_use_cmath_impl(vmIntrinsics::as_int(vmIntrinsics::_dlog)) ?
+        CAST_FROM_FN_PTR(address,
+          static_cast < double( * )(double) > (log)) : NULL;
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog10)) {
+      StubRoutines::_dlog10 = os::stub_use_cmath_impl(vmIntrinsics::as_int(vmIntrinsics::_dlog10)) ?
+        CAST_FROM_FN_PTR(address,
+          static_cast < double( * )(double) > (log10)) : NULL;
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
+      StubRoutines::_dexp = os::stub_use_cmath_impl(vmIntrinsics::as_int(vmIntrinsics::_dexp)) ?
+        CAST_FROM_FN_PTR(address,
+          static_cast < double( * )(double) > (exp)) : NULL;
     }
 
     // Safefetch stubs.

@@ -163,6 +163,8 @@ int (*os::Linux::_pthread_setname_np)(pthread_t, const char*) = NULL;
 pthread_t os::Linux::_main_thread;
 int os::Linux::_page_size = -1;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
+int os::Linux::_libc_major_version = 0;
+int os::Linux::_libc_minor_version = 0;
 const char * os::Linux::_libc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
@@ -533,6 +535,7 @@ void os::Linux::libpthread_init() {
   char *str = (char *)malloc(n, mtInternal);
   confstr(_CS_GNU_LIBC_VERSION, str, n);
   os::Linux::set_libc_version(str);
+  os::Linux::set_libc_major_minor(str);
 
   n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
   assert(n > 0, "cannot retrieve pthread version");
@@ -540,6 +543,21 @@ void os::Linux::libpthread_init() {
   confstr(_CS_GNU_LIBPTHREAD_VERSION, str, n);
   os::Linux::set_libpthread_version(str);
 #endif
+}
+
+void os::Linux::set_libc_major_minor(const char *libc_vers){
+  // If using alternative to glibc, not implemented yet.
+  if (!strstr(libc_vers, "glibc"))
+    return;
+
+  if (libc_vers != NULL){
+    const char *major = strchr(libc_vers, ' ');
+    const char *minor = strchr(libc_vers, '.');
+    if (major != NULL && minor != NULL) {
+      os::Linux::set_libc_major_version(strtol(major + 1, nullptr, 10));
+      os::Linux::set_libc_minor_version(strtol(minor + 1, nullptr, 10));
+    }
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////
