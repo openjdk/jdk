@@ -32,6 +32,7 @@ import org.testng.annotations.Test;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,18 +60,6 @@ public class TestVHInvokerCaching {
     public static Object[][] testHandles() throws NoSuchFieldException, IllegalAccessException {
         List<VarHandle> testHandles = new ArrayList<>();
 
-        Class<?>[] TEST_TYPES = {
-            byte.class,
-            short.class,
-            char.class,
-            int.class,
-            long.class,
-            float.class,
-            double.class,
-            Object.class,
-            String.class
-        };
-
         class Holder {
             byte f_byte;
             short f_short;
@@ -85,9 +74,12 @@ public class TestVHInvokerCaching {
 
         MethodHandles.Lookup lookup = lookup();
 
-        for (Class<?> type : TEST_TYPES) {
-            testHandles.add(MethodHandles.arrayElementVarHandle(type.arrayType()));
-            testHandles.add(lookup.findVarHandle(Holder.class, "f_" + type.getSimpleName(), type));
+        for (Field field : Holder.class.getFields()) {
+            String fieldName = field.getName();
+            Class<?> fieldType = field.getType();
+
+            testHandles.add(MethodHandles.arrayElementVarHandle(fieldType.arrayType()));
+            testHandles.add(lookup.findVarHandle(Holder.class, fieldName, fieldType));
         }
 
         return testHandles.stream().map(vh -> new Object[]{ vh }).toArray(Object[][]::new);
