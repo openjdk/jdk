@@ -22,7 +22,6 @@
  */
 package jdk.jfr.tool;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,13 +67,11 @@ public class TestConfigure {
 
         var output = newOutputFile("verbose-1.jfc");
         var result = jfrConfigure("--input", input, "--verbose", "mammal=true", "--output", output);
-        new File(output).delete();
         result.shouldContain("com.example.Lion#enabled=true");
         result.shouldContain("com.example.Tiger#enabled=true");
 
         output = newOutputFile("verbose-2.jfc");
         result = jfrConfigure("--input", input, "--verbose", "+com.example.Albatross#enabled=true", "--output",  output);
-        new File(output).delete();
         result.shouldContain("com.example.Albatross#enabled=true");
     }
 
@@ -84,7 +81,6 @@ public class TestConfigure {
         var output = newOutputFile("quoted-timespan.jfc");
         jfrConfigure("--input", input, "value=20 s","--output", output);
         var outputSetting = readSettings(output);
-        new File(output).delete();
         var expected = readSettings(input);
         expected.put("com.example.Tiger#threshold", "20 s");
         expected.put("com.example.Lion#period", "20 s");
@@ -94,7 +90,6 @@ public class TestConfigure {
         output = newOutputFile("compact-timespan.jfc");
         jfrConfigure("--input", input, "value=13s","--output", output);
         outputSetting = readSettings(output);
-        new File(output).delete();
         expected = readSettings(input);
         expected.put("com.example.Tiger#threshold", "13 s");
         expected.put("com.example.Lion#period", "13 s");
@@ -108,7 +103,6 @@ public class TestConfigure {
                 "--output", output);
 
         outputSetting = readSettings(output);
-        new File(output).delete();
         expected = readSettings(input);
         expected.put("com.example.Tiger#threshold", "2 s");
         expected.put("com.example.Lion#period", "3 s");
@@ -126,7 +120,6 @@ public class TestConfigure {
         var input1Setting = readSettings(input1);
         var input2Setting = readSettings(input2);
         var outputSetting = readSettings(output);
-        new File(output).delete();
 
         Map<String, String> expected = new HashMap<>();
         expected.putAll(input1Setting);
@@ -140,23 +133,21 @@ public class TestConfigure {
 
         var output = newOutputFile("test-adding-succeed-1.jfc");
         var result = jfrConfigure("--input", input, "+com.example.Tiger#legs=4", "--output", output);
+        result.shouldNotContain("Could not find");
         var outputSetting = readSettings(output);
-        new File(output).delete();
         var expected = readSettings(input);
         expected.put("com.example.Tiger#legs", "4");
 
-        result.shouldNotContain("Could not find");
         aseertEqual(outputSetting, expected);
 
         output = newOutputFile("test-adding-succeed-2.jfc");
         result = jfrConfigure("--input", input, "+com.example.Foo#bar=baz", "--output", output);
+        result.shouldNotContain("Could not find");
 
         outputSetting = readSettings(output);
-        new File(output).delete();
         expected = readSettings(input);
         expected.put("com.example.Foo#bar", "baz");
 
-        result.shouldNotContain("Could not find");
         aseertEqual(outputSetting, expected);
     }
 
@@ -165,23 +156,20 @@ public class TestConfigure {
 
         var output = newOutputFile("test-modify-fail-1.jfc");
         var result = jfrConfigure("--input", input, "com.example.Zebra#stackTrace=true", "--output", output);
-        new File(output).delete();
         result.shouldContain("Could not find event 'com.example.Zebra'");
 
         output = newOutputFile("test-modify-fail-2.jfc");
         result = jfrConfigure("--input", input, "com.example.Tiger#foo=true", "--output", output);
-        new File(output).delete();
         result.shouldContain("Could not find setting 'foo' for event 'com.example.Tiger'");
 
         output = newOutputFile("test-modify-succeed.jfc");
         result = jfrConfigure("--input", input, "com.example.Tiger#enabled=true", "--output", output);
+        result.shouldNotContain("Could not find");
 
         var outputSetting = readSettings(output);
-        new File(output).delete();
         var expected = readSettings(input);
         expected.put("com.example.Tiger#enabled", "true");
 
-        result.shouldNotContain("Could not find");
         aseertEqual(outputSetting, expected);
     }
 
@@ -191,7 +179,6 @@ public class TestConfigure {
         var input = newInputFile("superfluous.jfc");
         jfrConfigure("--input", input, "--output", output);
         String content = Files.readString(Path.of(output));
-        new File(output).delete();
         for (String t : List.of("legs=\"4\"", "radio", "red", "</radio>", "option")) {
             if (!content.contains(t)) {
                 throw new Exception("Expected superfluous element '" + t + "' or attribute to survive");
@@ -203,25 +190,23 @@ public class TestConfigure {
         var output = newOutputFile("missed.jfc");
         var input = newInputFile("missing.jfc");
         var result = jfrConfigure("--input", input, "--output", output);
-        new File(output).delete();
         result.shouldContain("Warning! Setting 'com.example.Tiger#enabled' refers to missing control 'tigre'");
      }
 
     private static void testDefault() throws Throwable {
         var output = newOutputFile("fresh.jfc");
         var result = jfrConfigure("--output", output);
-        var outputSetting = readSettings(output);
-        new File(output).delete();
         result.shouldNotContain("Warning"); // checks dangling control reference in default.jfc
+        var outputSetting = readSettings(output);
         aseertEqual(outputSetting, Configuration.getConfiguration("default").getSettings());
     }
 
     private static void testCopyPredefined() throws Throwable {
         var output = newOutputFile("new.jfc");
         var result = jfrConfigure("--input", "profile", "--output", output);
-        var outputSetting = readSettings(output);
-        new File(output).delete();
         result.shouldNotContain("Warning"); // checks missing control reference in profile.jfc
+
+        var outputSetting = readSettings(output);
         aseertEqual(outputSetting, Configuration.getConfiguration("profile").getSettings());
     }
 
@@ -229,7 +214,6 @@ public class TestConfigure {
         var output = newOutputFile("new.jfc");
         jfrConfigure("--input", "none", "--output", output);
         var outputSetting = readSettings(output);
-        new File(output).delete();
         aseertEqual(outputSetting, Map.of());
     }
 
@@ -238,7 +222,6 @@ public class TestConfigure {
         var input = newInputFile("or.jfc");
         jfrConfigure("--input", input, "month=May", "--output", output);
         var outputSetting = readSettings(output);
-        new File(output).delete();
         var expected = readSettings(input);
         expected.put("season.Spring#enabled", "true");
 
@@ -247,7 +230,6 @@ public class TestConfigure {
         output = newOutputFile("test-or-false.jfc");
         jfrConfigure("--input", input, "month=September", "--output", output);
         outputSetting = readSettings(output);
-        new File(output).delete();
         expected = readSettings(input);
         expected.put("season.Spring#enabled", "false");
 
@@ -264,7 +246,6 @@ public class TestConfigure {
                 "inverse=true",
                 "--output", output);
         var outputSetting = readSettings(output);
-        new File(output).delete();
         var expected = readSettings(input);
         expected.put("algebra.Group#enabled", "true");
 
@@ -278,7 +259,6 @@ public class TestConfigure {
                 "inverse=false",
                 "--output", output);
         outputSetting = readSettings(output);
-        new File(output).delete();
         expected = readSettings(input);
         expected.put("algebra.Group#enabled", "false");
 
@@ -291,7 +271,6 @@ public class TestConfigure {
         var input = newInputFile("condition.jfc");
         jfrConfigure("--input", input, "variable=activate", "--output", output);
         var outputSetting = readSettings(output);
-        new File(output).delete();
         var expected = readSettings(input);
         expected.put("com.example.Tiger#period", "1 s");
         expected.put("com.example.Lion#period", "3 s");
@@ -301,7 +280,6 @@ public class TestConfigure {
         output = newOutputFile("test-condition-2.jfc");
         jfrConfigure("--input", input, "variable=whatever", "--output", output);
         outputSetting = readSettings(output);
-        new File(output).delete();
         expected = readSettings(input);
         expected.put("com.example.Lion#period", "5 s");
         expected.put("com.example.Zebra#period", "7 s");
@@ -314,7 +292,6 @@ public class TestConfigure {
         var input = newInputFile("flag.jfc");
         jfrConfigure("--input", input, "mammal=true", "--output", output);
         var outputSetting = readSettings(output);
-        new File(output).delete();
         var expected = readSettings(input);
         expected.put("com.example.Tiger#enabled", "true");
         expected.put("com.example.Lion#enabled", "true");
@@ -327,7 +304,6 @@ public class TestConfigure {
         var input = newInputFile("text.jfc");
         jfrConfigure("--input", input, "animal-threshold=3s", "--output", output);
         var outputSetting = readSettings(output);
-        new File(output).delete();
         var expected = readSettings(input);
         expected.put("com.example.Tiger#threshold", "3 s");
         expected.put("com.example.Lion#threshold", "3 s");
@@ -340,7 +316,6 @@ public class TestConfigure {
         var input = newInputFile("selection.jfc");
         jfrConfigure("--input", input, "animal=medium", "--output", output);
         var outputSetting = readSettings(output);
-        new File(output).delete();
         var expected = readSettings(input);
         expected.put("com.example.Tiger#threshold", "10 s");
         expected.put("com.example.Lion#threshold", "10 s");
@@ -368,7 +343,7 @@ public class TestConfigure {
     }
 
     private static String newOutputFile(String filename) {
-        return Path.of(DIR, System.currentTimeMillis() + filename).toAbsolutePath().toString();
+        return Path.of(".", System.currentTimeMillis() + filename).toAbsolutePath().toString();
     }
 
     private static void aseertEqual(Map<String, String> output, Map<String, String> expected) throws Exception {
