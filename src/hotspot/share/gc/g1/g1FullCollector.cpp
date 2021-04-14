@@ -232,7 +232,7 @@ void G1FullCollector::update_attribute_table(HeapRegion* hr, bool force_not_comp
   if (hr->is_free()) {
     _region_attr_table.set_invalid(hr->hrm_index());
   } else if (hr->is_closed_archive()) {
-    _region_attr_table.set_not_marked_through(hr->hrm_index());
+    _region_attr_table.set_always_live(hr->hrm_index());
   } else if (hr->is_pinned() || force_not_compacted) {
     _region_attr_table.set_not_compacted(hr->hrm_index());
   } else {

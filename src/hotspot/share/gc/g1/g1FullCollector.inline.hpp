@@ -34,12 +34,12 @@ bool G1FullCollector::is_compacted(oop obj) const {
   return _region_attr_table.is_compacted(cast_from_oop<HeapWord*>(obj));
 }
 
-bool G1FullCollector::is_compacted_or_marked_through(uint region_index) const {
-  return _region_attr_table.is_compacted_or_marked_through(region_index);
+bool G1FullCollector::is_compacted_or_always_live(uint region_index) const {
+  return _region_attr_table.is_compacted_or_always_live(region_index);
 }
 
-bool G1FullCollector::is_not_marked_through(oop obj) const {
-  return _region_attr_table.is_not_marked_through(cast_from_oop<HeapWord*>(obj));
+bool G1FullCollector::is_always_live(oop obj) const {
+  return _region_attr_table.is_always_live(cast_from_oop<HeapWord*>(obj));
 }
 
 #endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
