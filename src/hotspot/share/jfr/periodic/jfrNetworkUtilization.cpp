@@ -156,7 +156,6 @@ void JfrNetworkUtilization::send_events() {
   if (!get_interfaces(&network_interfaces)) {
     return;
   }
-  log_trace(jfr, event)("Reporting network utilization");
   static JfrTicks last_sample_instant;
   const JfrTicks cur_time = JfrTicks::now();
   if (cur_time > last_sample_instant) {

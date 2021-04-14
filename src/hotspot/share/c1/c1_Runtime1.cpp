@@ -40,6 +40,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -1265,6 +1266,10 @@ JRT_END
 
 void Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id) {
   NOT_PRODUCT(_patch_code_slowcase_cnt++);
+
+  // Enable WXWrite: the function is called by c1 stub as a runtime function
+  // (see another implementation above).
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   if (TracePatching) {
     tty->print_cr("Deoptimizing because patch is needed");

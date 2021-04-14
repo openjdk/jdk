@@ -229,7 +229,7 @@ public class StartTlsRequest implements ExtendedRequest {
         );
     }
 
-    private final static boolean privilegedHasNext(final Iterator<StartTlsResponse> iter) {
+    private static final boolean privilegedHasNext(final Iterator<StartTlsResponse> iter) {
         Boolean answer = AccessController.doPrivileged(
             new PrivilegedAction<Boolean>() {
             public Boolean run() {

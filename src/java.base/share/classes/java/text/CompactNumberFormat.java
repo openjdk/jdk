@@ -1211,14 +1211,14 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     // Patterns for plurals syntax validation
-    private final static String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*";
-    private final static String RELATION = "(!?=)";
-    private final static String VALUE_RANGE = "((\\d+)\\.\\.(\\d+)|\\d+)";
-    private final static String CONDITION = EXPR + "\\s*" +
+    private static final String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*";
+    private static final String RELATION = "(!?=)";
+    private static final String VALUE_RANGE = "((\\d+)\\.\\.(\\d+)|\\d+)";
+    private static final String CONDITION = EXPR + "\\s*" +
                                              RELATION + "\\s*" +
                                              VALUE_RANGE + "\\s*" +
                                              "(,\\s*" + VALUE_RANGE + ")*";
-    private final static Pattern PLURALRULES_PATTERN =
+    private static final Pattern PLURALRULES_PATTERN =
             Pattern.compile("(zero|one|two|few|many):\\s*" +
                             CONDITION +
                             "(\\s*(and|or)\\s*" + CONDITION + ")*");
@@ -2421,12 +2421,12 @@ public final class CompactNumberFormat extends NumberFormat {
                 .allMatch(r -> relationCheck(r, input)));
     }
 
-    private final static String NAMED_EXPR = "(?<op>[niftvwe])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
-    private final static String NAMED_RELATION = "(?<rel>!?=)";
-    private final static String NAMED_VALUE_RANGE = "(?<start>\\d+)\\.\\.(?<end>\\d+)|(?<value>\\d+)";
-    private final static Pattern EXPR_PATTERN = Pattern.compile(NAMED_EXPR);
-    private final static Pattern RELATION_PATTERN = Pattern.compile(NAMED_RELATION);
-    private final static Pattern VALUE_RANGE_PATTERN = Pattern.compile(NAMED_VALUE_RANGE);
+    private static final String NAMED_EXPR = "(?<op>[niftvwe])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
+    private static final String NAMED_RELATION = "(?<rel>!?=)";
+    private static final String NAMED_VALUE_RANGE = "(?<start>\\d+)\\.\\.(?<end>\\d+)|(?<value>\\d+)";
+    private static final Pattern EXPR_PATTERN = Pattern.compile(NAMED_EXPR);
+    private static final Pattern RELATION_PATTERN = Pattern.compile(NAMED_RELATION);
+    private static final Pattern VALUE_RANGE_PATTERN = Pattern.compile(NAMED_VALUE_RANGE);
 
     /**
      * Checks if the 'input' equals the value, or within the range.

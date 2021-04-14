@@ -59,7 +59,6 @@
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "prims/nativeLookup.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -558,25 +557,40 @@ void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
   }
 }
 
-MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
+MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
   // Do not profile the method if metaspace has hit an OOM previously
   if (ClassLoaderDataGraph::has_metaspace_oom()) {
     return NULL;
   }
 
-  methodHandle mh(THREAD, m);
-  MethodCounters* counters = MethodCounters::allocate(mh, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
+  methodHandle mh(current, m);
+  MethodCounters* counters;
+  if (current->is_Java_thread()) {
+    Thread* THREAD = current;
+    // Use the TRAPS version for a JavaThread so it will adjust the GC threshold
+    // if needed.
+    counters = MethodCounters::allocate_with_exception(mh, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      CLEAR_PENDING_EXCEPTION;
+    }
+  } else {
+    // Call metaspace allocation that doesn't throw exception if the
+    // current thread isn't a JavaThread, ie. the VMThread.
+    counters = MethodCounters::allocate_no_exception(mh);
+  }
+
+  if (counters == NULL) {
     CompileBroker::log_metaspace_failure();
     ClassLoaderDataGraph::set_metaspace_oom(true);
-    return NULL;   // return the exception (which is cleared)
+    return NULL;
   }
+
   if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);
   }
 
   if (LogTouchedMethods) {
-    mh->log_touched(CHECK_NULL);
+    mh->log_touched(current);
   }
 
   return mh->method_counters();
@@ -2241,8 +2255,8 @@ bool Method::is_valid_method(const Method* m) {
 }
 
 #ifndef PRODUCT
-void Method::print_jmethod_ids(const ClassLoaderData* loader_data, outputStream* out) {
-  out->print(" jni_method_id count = %d", loader_data->jmethod_ids()->count_methods());
+void Method::print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) {
+  out->print("%d", loader_data->jmethod_ids()->count_methods());
 }
 #endif // PRODUCT
 
@@ -2375,7 +2389,7 @@ public:
 static const int TOUCHED_METHOD_TABLE_SIZE = 20011;
 static TouchedMethodRecord** _touched_method_table = NULL;
 
-void Method::log_touched(TRAPS) {
+void Method::log_touched(Thread* current) {
 
   const int table_size = TOUCHED_METHOD_TABLE_SIZE;
   Symbol* my_class = klass_name();
@@ -2387,7 +2401,7 @@ void Method::log_touched(TRAPS) {
                       my_sig->identity_hash();
   juint index = juint(hash) % table_size;
 
-  MutexLocker ml(THREAD, TouchedMethodLog_lock);
+  MutexLocker ml(current, TouchedMethodLog_lock);
   if (_touched_method_table == NULL) {
     _touched_method_table = NEW_C_HEAP_ARRAY2(TouchedMethodRecord*, table_size,
                                               mtTracing, CURRENT_PC);

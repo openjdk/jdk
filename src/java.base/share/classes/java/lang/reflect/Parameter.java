@@ -77,12 +77,9 @@ public final class Parameter implements AnnotatedElement {
      */
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof Parameter) {
-            Parameter other = (Parameter)obj;
-            return (other.executable.equals(executable) &&
-                    other.index == index);
-        }
-        return false;
+        return (obj instanceof Parameter other)
+                && other.executable.equals(executable)
+                && other.index == index;
     }
 
     /**

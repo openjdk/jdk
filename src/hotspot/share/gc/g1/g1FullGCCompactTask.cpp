@@ -26,6 +26,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -35,18 +36,21 @@
 #include "utilities/ticks.hpp"
 
 class G1ResetPinnedClosure : public HeapRegionClosure {
-  G1CMBitMap* _bitmap;
+  G1FullCollector* _collector;
 
 public:
-  G1ResetPinnedClosure(G1CMBitMap* bitmap) : _bitmap(bitmap) { }
+  G1ResetPinnedClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* r) {
-    if (!r->is_pinned()) {
+    uint region_index = r->hrm_index();
+    if (!_collector->is_in_pinned(region_index)) {
       return false;
     }
-    assert(!r->is_starts_humongous() || _bitmap->is_marked((oop)r->bottom()),
+    assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold() ||
+           !r->is_starts_humongous() ||
+           _collector->mark_bitmap()->is_marked(cast_to_oop(r->bottom())),
            "must be, otherwise reclaimed earlier");
-    r->reset_pinned_after_full_gc();
+    r->reset_not_compacted_after_full_gc();
     return false;
   }
 };
@@ -63,8 +67,8 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
   assert(obj_addr != destination, "everything in this pass should be moving");
   Copy::aligned_conjoint_words(obj_addr, destination, size);
-  oop(destination)->init_mark();
-  assert(oop(destination)->klass() != NULL, "should have a class");
+  cast_to_oop(destination)->init_mark();
+  assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
 
   return size;
 }
@@ -91,7 +95,7 @@ void G1FullGCCompactTask::work(uint worker_id) {
     compact_region(*it);
   }
 
-  G1ResetPinnedClosure hc(collector()->mark_bitmap());
+  G1ResetPinnedClosure hc(collector());
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&hc, &_claimer, worker_id);
   log_task("Compaction task", worker_id, start);
 }

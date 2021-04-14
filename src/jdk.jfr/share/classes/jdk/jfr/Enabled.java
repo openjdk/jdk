@@ -47,7 +47,7 @@ public @interface Enabled {
      * Setting name {@code "enabled"}, signifies that the event should be
      * recorded.
      */
-    public final static String NAME = "enabled";
+    public static final String NAME = "enabled";
 
     /**
      * Returns {@code true} if by default the event should be enabled, {@code false} otherwise.
