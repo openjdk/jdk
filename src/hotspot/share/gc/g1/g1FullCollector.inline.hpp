@@ -34,8 +34,8 @@ bool G1FullCollector::is_compacted(oop obj) const {
   return _region_attr_table.is_compacted(cast_from_oop<HeapWord*>(obj));
 }
 
-bool G1FullCollector::is_not_compacted_but_marked_through(uint region_index) const {
-  return _region_attr_table.is_not_compacted_but_marked_through(region_index);
+bool G1FullCollector::is_compacted_or_marked_through(uint region_index) const {
+  return _region_attr_table.is_compacted_or_marked_through(region_index);
 }
 
 bool G1FullCollector::is_not_marked_through(oop obj) const {

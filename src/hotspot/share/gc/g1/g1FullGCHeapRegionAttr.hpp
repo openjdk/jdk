@@ -54,25 +54,22 @@ protected:
 
 public:
   void set_invalid(uint idx) { set_by_index(idx, Invalid); }
-
+  void set_compacted(uint idx) { set_by_index(idx, Compacted); }
   void set_not_marked_through(uint idx) { set_by_index(idx, NotMarkedThrough); }
+  void set_not_compacted(uint idx) { set_by_index(idx, NotCompacted); }
 
   bool is_not_marked_through(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
     return get_by_address(obj) == NotMarkedThrough;
   }
 
-  void set_not_compacted(uint idx) { set_by_index(idx, NotCompacted); }
-
-  bool is_not_compacted_but_marked_through(uint idx) const {
-    return get_by_index(idx) == NotCompacted;
-  }
-
-  void set_compacted(uint idx) { set_by_index(idx, Compacted); }
-
   bool is_compacted(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
     return get_by_address(obj) == Compacted;
+  }
+
+  bool is_compacted_or_marked_through(uint idx) const {
+    return get_by_index(idx) != NotCompacted;
   }
 };
 

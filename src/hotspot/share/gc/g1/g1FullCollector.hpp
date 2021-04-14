@@ -106,7 +106,7 @@ public:
   void update_attribute_table(HeapRegion* hr, bool force_not_compacted = false);
 
   inline bool is_compacted(oop obj) const;
-  inline bool is_not_compacted_but_marked_through(uint region_index) const;
+  inline bool is_compacted_or_marked_through(uint region_index) const;
   inline bool is_not_marked_through(oop obj) const;
 
 private:
