@@ -31,9 +31,6 @@
 #include <errno.h>
 
 #if defined(__linux__)
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/sendfile.h>
 #endif
 
@@ -65,27 +62,18 @@ Java_sun_nio_fs_UnixCopyFile_transfer
 
 #if defined(__linux__)
     // Attempt to transfer within the kernel
-    struct stat stat_src;
-    if (fstat(src, &stat_src) == 0) {
-        size_t count = stat_src.st_size;
-        while (count > 0) {
-            off_t bytes_sent = sendfile(dst, src, NULL, count);
-            if (bytes_sent == -1) {
-                // Reset positions, throwing if impossible
-                int errno_sendfile = errno;
-                if (lseek(src, 0, SEEK_SET) < 0 ||
-                    lseek(dst, 0, SEEK_SET) < 0) {
-                    throwUnixException(env, errno_sendfile);
-                }
-                // Fall back to transfer via user-space buffers
-                break;
-            }
-            count -= bytes_sent;
-            if (cancel != NULL && *cancel != 0) {
-                throwUnixException(env, ECANCELED);
-                return;
-            }
+    ssize_t bytes_sent;
+    do {
+        // sendfile() will transfer at most 0x7ffff000 bytes
+        RESTARTABLE(sendfile64(dst, src, NULL, 0x7ffff000), bytes_sent);
+        if (cancel != NULL && *cancel != 0) {
+            throwUnixException(env, ECANCELED);
+            return;
         }
+    } while (bytes_sent > 0);
+
+    // sendfile() returns zero at src EOF
+    if (bytes_sent == 0) {
         return;
     }
 #endif
