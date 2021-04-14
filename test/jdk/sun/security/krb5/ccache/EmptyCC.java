@@ -36,7 +36,7 @@
  */
 import java.io.File;
 
-import jdk.test.lib.security.Proc;
+import jdk.test.lib.process.Proc;
 import sun.security.krb5.Credentials;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.internal.ccache.CredentialsCache;

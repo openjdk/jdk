@@ -32,7 +32,7 @@
  * @run main/othervm -Djdk.net.hosts.file=TestHosts Renewal
  */
 
-import jdk.test.lib.security.Proc;
+import jdk.test.lib.process.Proc;
 import sun.security.krb5.Config;
 import sun.security.krb5.internal.ccache.Credentials;
 import sun.security.krb5.internal.ccache.FileCredentialsCache;

@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import jdk.test.lib.security.Proc;
+import jdk.test.lib.process.Proc;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.internal.rcache.AuthTime;
 

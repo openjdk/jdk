@@ -41,7 +41,7 @@ import java.util.Set;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import jdk.test.lib.security.Proc;
+import jdk.test.lib.process.Proc;
 import org.ietf.jgss.Oid;
 import sun.security.krb5.Config;
 

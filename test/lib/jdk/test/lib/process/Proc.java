@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.security;
+package jdk.test.lib.process;
 
 import java.io.BufferedReader;
 import java.io.File;

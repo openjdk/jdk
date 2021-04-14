@@ -34,7 +34,7 @@
  * @run main CompatImpact dopriv
  */
 
-import jdk.test.lib.security.Proc;
+import jdk.test.lib.process.Proc;
 
 import java.io.File;
 import java.io.FilePermission;
