@@ -151,6 +151,8 @@ public final class System {
      * @see     java.io.PrintStream#println(long)
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
+     * @see     Console#charset()
+     * @see     Charset#defaultCharset()
      */
     public static final PrintStream out = null;
 
@@ -168,6 +170,9 @@ public final class System {
      * The encoding used in the conversion from characters to bytes is
      * equivalent to {@link Console#charset()} if the {@code Console}
      * exists, {@link Charset#defaultCharset()} otherwise.
+     *
+     * @see     Console#charset()
+     * @see     Charset#defaultCharset()
      */
     public static final PrintStream err = null;
 
