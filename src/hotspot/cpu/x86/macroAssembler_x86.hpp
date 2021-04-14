@@ -1414,7 +1414,7 @@ public:
 
   void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8) {
     if (UseAVX > 2 && VM_Version::supports_avx512novl()) {
-      Assembler::vinserti32x4(dst, dst, src, imm8);
+      Assembler::vinserti32x4(dst, nds, src, imm8);
     } else if (UseAVX > 1) {
       // vinserti128 is available only in AVX2
       Assembler::vinserti128(dst, nds, src, imm8);
@@ -1425,7 +1425,7 @@ public:
 
   void vinserti128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8) {
     if (UseAVX > 2 && VM_Version::supports_avx512novl()) {
-      Assembler::vinserti32x4(dst, dst, src, imm8);
+      Assembler::vinserti32x4(dst, nds, src, imm8);
     } else if (UseAVX > 1) {
       // vinserti128 is available only in AVX2
       Assembler::vinserti128(dst, nds, src, imm8);
