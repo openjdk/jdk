@@ -32,16 +32,15 @@
 // type information is encoded in these per-region bytes.
 // Value encoding has been specifically chosen to make required accesses fast.
 // In particular, the table collects whether a region should be compacted, not
-// compacted, or always live (not even marked through, and do not contain references
-// outside of other always live regions).
+// compacted, or marking (liveness analysis) completely skipped.
 // Reasons for not compacting a region:
 // (1) the HeapRegion itself has been pinned at the start of Full GC.
 // (2) the occupancy of the region is too high to be considered eligible for compaction.
-// The only examples for always live regions are Closed Archive regions.
+// The only examples for skipping marking for regions are Closed Archive regions.
 class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
   static const uint8_t Compacted = 0;        // Region will be compacted.
   static const uint8_t NotCompacted = 1;     // Region should not be compacted, but otherwise handled as usual.
-  static const uint8_t AlwaysLive = 2;       // Region contents are always live. Do not even mark through.
+  static const uint8_t SkipMarking = 2;      // Region contents are not even marked through, but contain live objects.
 
   static const uint8_t Invalid = 255;
 
@@ -55,12 +54,12 @@ protected:
 public:
   void set_invalid(uint idx) { set_by_index(idx, Invalid); }
   void set_compacted(uint idx) { set_by_index(idx, Compacted); }
-  void set_always_live(uint idx) { set_by_index(idx, AlwaysLive); }
+  void set_skip_marking(uint idx) { set_by_index(idx, SkipMarking); }
   void set_not_compacted(uint idx) { set_by_index(idx, NotCompacted); }
 
-  bool is_always_live(HeapWord* obj) const {
+  bool is_skip_marking(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) == AlwaysLive;
+    return get_by_address(obj) == SkipMarking;
   }
 
   bool is_compacted(HeapWord* obj) const {
@@ -68,7 +67,7 @@ public:
     return get_by_address(obj) == Compacted;
   }
 
-  bool is_compacted_or_always_live(uint idx) const {
+  bool is_compacted_or_skip_marking(uint idx) const {
     return get_by_index(idx) != NotCompacted;
   }
 };

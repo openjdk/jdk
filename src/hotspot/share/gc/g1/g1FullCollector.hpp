@@ -106,8 +106,8 @@ public:
   void update_attribute_table(HeapRegion* hr, bool force_not_compacted = false);
 
   inline bool is_compacted(oop obj) const;
-  inline bool is_compacted_or_always_live(uint region_index) const;
-  inline bool is_always_live(oop obj) const;
+  inline bool is_compacted_or_skip_marking(uint region_index) const;
+  inline bool is_skip_marking(oop obj) const;
 
 private:
   void phase1_mark_live_objects();

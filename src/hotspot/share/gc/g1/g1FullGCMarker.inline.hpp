@@ -42,7 +42,7 @@
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
-  if (_collector->is_always_live(obj)) {
+  if (_collector->is_skip_marking(obj)) {
     return false;
   }
 
@@ -81,8 +81,8 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
       _oop_stack.push(obj);
       assert(_bitmap->is_marked(obj), "Must be marked now - map self");
     } else {
-      assert(_bitmap->is_marked(obj) || _collector->is_always_live(obj),
-             "Must be marked by other or object in always live region");
+      assert(_bitmap->is_marked(obj) || _collector->is_skip_marking(obj),
+             "Must be marked by other or object in skip marking region");
     }
   }
 }

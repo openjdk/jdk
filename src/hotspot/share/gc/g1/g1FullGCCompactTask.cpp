@@ -44,8 +44,8 @@ public:
 
   bool do_heap_region(HeapRegion* r) {
     uint region_index = r->hrm_index();
-    // There is nothing to do for compacted or always live regions.
-    if (_collector->is_compacted_or_always_live(region_index)) {
+    // There is nothing to do for compacted or skip marking regions.
+    if (_collector->is_compacted_or_skip_marking(region_index)) {
       return false;
     }
     assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold() ||
