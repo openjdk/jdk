@@ -3218,14 +3218,52 @@ public final class String
      * @since 1.8
      */
     public static String join(CharSequence delimiter, CharSequence... elements) {
-        Objects.requireNonNull(delimiter);
-        Objects.requireNonNull(elements);
-        // Number of elements not likely worth Arrays.stream overhead.
-        StringJoiner joiner = new StringJoiner(delimiter);
-        for (CharSequence cs: elements) {
-            joiner.add(cs);
+        var delim = delimiter.toString();
+        var elems = new String[elements.length];
+        for (int i = 0; i < elements.length; i++) {
+            elems[i] = String.valueOf(elements[i]);
         }
-        return joiner.toString();
+        return join("", "", delim, elems, elems.length);
+    }
+
+    /**
+     * Designated join routine.
+     *
+     * @param prefix the non-null prefix
+     * @param suffix the non-null suffix
+     * @param delimiter the non-null delimiter
+     * @param elements the non-null array of non-null elements
+     * @param size the number of elements in the array (<= elements.length)
+     * @return the joined string
+     */
+    static String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
+        int icoder = prefix.coder() | suffix.coder() | delimiter.coder();
+        long llen = (long) prefix.length() + suffix.length() + (long) Math.max(0, size - 1) * delimiter.length();
+        for (int i = 0; i < size; i++) {
+            var el = elements[i];
+            llen += el.length();
+            icoder |= el.coder();
+        }
+        byte coder = (byte) icoder;
+        int len = (int) llen;
+        if (llen != len) {
+            throw new OutOfMemoryError("Requested string length exceeds VM limit");
+        }
+
+        byte[] value = StringConcatHelper.newArray(((long) icoder << 32) | llen);
+        int off = 0;
+        prefix.getBytes(value, off, coder); off += prefix.length();
+        for (int i = 0; i < size; i++) {
+            if (i > 0) {
+                delimiter.getBytes(value, off, coder); off += delimiter.length();
+            }
+            var el = elements[i];
+            el.getBytes(value, off, coder); off += el.length();
+        }
+        suffix.getBytes(value, off, coder); off += suffix.length();
+        //assert off == value.length >> coder;
+
+        return new String(value, coder);
     }
 
     /**
@@ -3266,11 +3304,16 @@ public final class String
             Iterable<? extends CharSequence> elements) {
         Objects.requireNonNull(delimiter);
         Objects.requireNonNull(elements);
-        StringJoiner joiner = new StringJoiner(delimiter);
+        var delim = delimiter.toString();
+        var elems = new String[8];
+        int size = 0;
         for (CharSequence cs: elements) {
-            joiner.add(cs);
+            if (size >= elems.length) {
+                elems = Arrays.copyOf(elems, elems.length << 1);
+            }
+            elems[size++] = String.valueOf(cs);
         }
-        return joiner.toString();
+        return join("", "", delim, elems, size);
     }
 
     /**
