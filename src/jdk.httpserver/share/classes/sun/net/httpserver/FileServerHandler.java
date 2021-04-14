@@ -30,6 +30,7 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -149,7 +150,11 @@ public final class FileServerHandler implements HttpHandler {
         if (!contextPath.endsWith("/"))
             contextPath += "/";
         String requestPath = URI.create(contextPath).relativize(uri).getPath();
-        return root.resolve(requestPath).normalize();  // validated path
+        try {
+            return root.resolve(requestPath).normalize();
+        } catch (InvalidPathException ipe) {
+            return root;  // serve root if request path cannot be validated
+        }
     }
 
     Path indexFile(Path path) {

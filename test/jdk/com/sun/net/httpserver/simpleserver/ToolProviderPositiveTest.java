@@ -137,8 +137,7 @@ public class ToolProviderPositiveTest {
                 directory       - Directory to serve. Default: current directory.
                 output          - Output format. none|default|verbose. Default: default.
                 port            - Port to listen on. Default: 8000.
-                To stop the server, press Crtl + C.
-                """;
+                To stop the server, press Crtl + C.""";
 
         simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-h")
                 .resultChecker(r -> {

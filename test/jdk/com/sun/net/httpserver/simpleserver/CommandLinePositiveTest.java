@@ -132,8 +132,7 @@ public class CommandLinePositiveTest {
                 directory       - Directory to serve. Default: current directory.
                 output          - Output format. none|default|verbose. Default: default.
                 port            - Port to listen on. Default: 8000.
-                To stop the server, press Crtl + C.
-                """;
+                To stop the server, press Crtl + C.""";
 
         simpleserver(JAVA, "-m", "jdk.httpserver", "-h")
                 .resultChecker(r -> {
