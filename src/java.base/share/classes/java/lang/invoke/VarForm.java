@@ -125,8 +125,8 @@ final class VarForm {
             return memberName_table[mode]
                 = MethodHandles.Lookup.IMPL_LOOKUP
                     .resolveOrFail(REF_invokeStatic, implClass, methodName, type);
-        } catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new UnsupportedOperationException();
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError("Failed resolving VarHandle member name", e);
         }
     }
 
