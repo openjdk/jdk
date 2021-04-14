@@ -325,6 +325,11 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     SystemDictionary::print();
+  }
+
+  if (PrintClassLoaderDataGraphAtExit) {
+    ResourceMark rm;
+    MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::print();
   }
 

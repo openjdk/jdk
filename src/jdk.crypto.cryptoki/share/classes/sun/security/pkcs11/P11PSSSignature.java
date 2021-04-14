@@ -68,7 +68,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 final class P11PSSSignature extends SignatureSpi {
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     // mappings of digest algorithms and their output length in bytes
     private static final Hashtable<String, Integer> DIGEST_LENGTHS =
@@ -153,14 +153,14 @@ final class P11PSSSignature extends SignatureSpi {
     private int bytesProcessed = 0;
 
     // constant for signing mode
-    private final static int M_SIGN   = 1;
+    private static final int M_SIGN   = 1;
     // constant for verification mode
-    private final static int M_VERIFY = 2;
+    private static final int M_VERIFY = 2;
 
     // constant for type digesting, we do the hashing ourselves
-    private final static int T_DIGEST = 1;
+    private static final int T_DIGEST = 1;
     // constant for type update, token does everything
-    private final static int T_UPDATE = 2;
+    private static final int T_UPDATE = 2;
 
     P11PSSSignature(Token token, String algorithm, long mechId)
             throws NoSuchAlgorithmException, PKCS11Exception {

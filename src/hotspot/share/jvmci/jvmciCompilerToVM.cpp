@@ -32,6 +32,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -57,6 +58,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe_hp.hpp"
 

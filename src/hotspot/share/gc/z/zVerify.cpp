@@ -41,6 +41,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/thread.hpp"

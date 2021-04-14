@@ -41,6 +41,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
@@ -951,7 +952,7 @@ bool DependencySignature::equals(DependencySignature const& s1, DependencySignat
   return true;
 }
 
-/// Checking dependencies:
+/// Checking dependencies
 
 // This hierarchy walker inspects subtypes of a given type,
 // trying to find a "bad" class which breaks a dependency.
@@ -968,14 +969,14 @@ class ClassHierarchyWalker {
   Symbol* _signature;
 
   // special classes which are not allowed to be witnesses:
-  Klass*    _participants[PARTICIPANT_LIMIT+1];
-  int       _num_participants;
+  Klass*  _participants[PARTICIPANT_LIMIT+1];
+  uint    _num_participants;
 
   // cache of method lookups
   Method* _found_methods[PARTICIPANT_LIMIT+1];
 
   // if non-zero, tells how many witnesses to convert to participants
-  int       _record_witnesses;
+  uint    _record_witnesses;
 
   void initialize(Klass* participant) {
     _record_witnesses = 0;
@@ -1012,11 +1013,11 @@ class ClassHierarchyWalker {
     _signature = NULL;
     initialize(participant);
   }
-  ClassHierarchyWalker(Klass* participants[], int num_participants) {
+  ClassHierarchyWalker(Klass* participants[], uint num_participants) {
     _name      = NULL;
     _signature = NULL;
     initialize(NULL);
-    for (int i = 0; i < num_participants; ++i) {
+    for (uint i = 0; i < num_participants; ++i) {
       add_participant(participants[i]);
     }
   }
@@ -1028,14 +1029,14 @@ class ClassHierarchyWalker {
   }
 
   int num_participants() { return _num_participants; }
-  Klass* participant(int n) {
-    assert((uint)n <= (uint)_num_participants, "oob");
+  Klass* participant(uint n) {
+    assert(n <= _num_participants, "oob");
     return _participants[n];
   }
 
   // Note:  If n==num_participants, returns NULL.
-  Method* found_method(int n) {
-    assert((uint)n <= (uint)_num_participants, "oob");
+  Method* found_method(uint n) {
+    assert(n <= _num_participants, "oob");
     Method* fm = _found_methods[n];
     assert(n == _num_participants || fm != NULL, "proper usage");
     if (fm != NULL && fm->method_holder() != _participants[n]) {
@@ -1048,69 +1049,15 @@ class ClassHierarchyWalker {
     return fm;
   }
 
-#ifdef ASSERT
-  // Assert that m is inherited into ctxk, without intervening overrides.
-  // (May return true even if this is not true, in corner cases where we punt.)
-  bool check_method_context(InstanceKlass* ctxk, Method* m) {
-    if (m->method_holder() == ctxk)
-      return true;  // Quick win.
-    if (m->is_private())
-      return false; // Quick lose.  Should not happen.
-    if (!(m->is_public() || m->is_protected()))
-      // The override story is complex when packages get involved.
-      return true;  // Must punt the assertion to true.
-    Method* lm = ctxk->lookup_method(m->name(), m->signature());
-    if (lm == NULL && ctxk->is_instance_klass()) {
-      // It might be an interface method
-      lm = InstanceKlass::cast(ctxk)->lookup_method_in_ordered_interfaces(m->name(),
-                                                                          m->signature());
-    }
-    if (lm == m)
-      // Method m is inherited into ctxk.
-      return true;
-    if (lm != NULL) {
-      if (!(lm->is_public() || lm->is_protected())) {
-        // Method is [package-]private, so the override story is complex.
-        return true;  // Must punt the assertion to true.
-      }
-      if (lm->is_static()) {
-        // Static methods don't override non-static so punt
-        return true;
-      }
-      if (!Dependencies::is_concrete_method(lm, ctxk) &&
-          !Dependencies::is_concrete_method(m, ctxk)) {
-        // They are both non-concrete
-        if (lm->method_holder()->is_subtype_of(m->method_holder())) {
-          // Method m is overridden by lm, but both are non-concrete.
-          return true;
-        }
-        if (lm->method_holder()->is_interface() && m->method_holder()->is_interface() &&
-            ctxk->is_subtype_of(m->method_holder()) && ctxk->is_subtype_of(lm->method_holder())) {
-          // Interface method defined in multiple super interfaces
-          return true;
-        }
-      }
-    }
-    ResourceMark rm;
-    tty->print_cr("Dependency method not found in the associated context:");
-    tty->print_cr("  context = %s", ctxk->external_name());
-    tty->print(   "  method = "); m->print_short_name(tty); tty->cr();
-    if (lm != NULL) {
-      tty->print( "  found = "); lm->print_short_name(tty); tty->cr();
-    }
-    return false;
-  }
-#endif
-
   void add_participant(Klass* participant) {
     assert(_num_participants + _record_witnesses < PARTICIPANT_LIMIT, "oob");
-    int np = _num_participants++;
+    uint np = _num_participants++;
     _participants[np] = participant;
     _participants[np+1] = NULL;
     _found_methods[np+1] = NULL;
   }
 
-  void record_witnesses(int add) {
+  void record_witnesses(uint add) {
     if (add > PARTICIPANT_LIMIT)  add = PARTICIPANT_LIMIT;
     assert(_num_participants + add < PARTICIPANT_LIMIT, "oob");
     _record_witnesses = add;
@@ -1199,6 +1146,24 @@ class ClassHierarchyWalker {
     return false;  // not in list
   }
 
+  class CountingClassHierarchyIterator : public ClassHierarchyIterator {
+   private:
+    jlong _nof_steps;
+   public:
+    CountingClassHierarchyIterator(InstanceKlass* root) : ClassHierarchyIterator(root), _nof_steps(0) {}
+
+    void next() {
+      _nof_steps++;
+      ClassHierarchyIterator::next();
+    }
+
+    ~CountingClassHierarchyIterator() {
+      if (UsePerfData) {
+        _perf_find_witness_anywhere_steps_count->inc(_nof_steps);
+      }
+    }
+  };
+
  private:
   // the actual search method:
   Klass* find_witness_anywhere(InstanceKlass* context_type,
@@ -1233,54 +1198,90 @@ class ClassHierarchyWalker {
       return find_witness_anywhere(context_type, !participants_hide_witnesses);
     }
   }
+
+ private:
+  static PerfCounter* _perf_find_witness_anywhere_calls_count;
+  static PerfCounter* _perf_find_witness_anywhere_steps_count;
+  static PerfCounter* _perf_find_witness_in_calls_count;
+
+ public:
+  static void init();
+  static void print_statistics();
 };
 
-#ifndef PRODUCT
-static int deps_find_witness_calls = 0;
-static int deps_find_witness_steps = 0;
-static int deps_find_witness_recursions = 0;
-static int deps_find_witness_singles = 0;
-static int deps_find_witness_print = 0; // set to -1 to force a final print
-static bool count_find_witness_calls() {
-  if (TraceDependencies || LogCompilation) {
-    int pcount = deps_find_witness_print + 1;
-    bool final_stats      = (pcount == 0);
-    bool initial_call     = (pcount == 1);
-    bool occasional_print = ((pcount & ((1<<10) - 1)) == 0);
-    if (pcount < 0)  pcount = 1; // crude overflow protection
-    deps_find_witness_print = pcount;
-    if (TraceDependencies && VerifyDependencies && initial_call) {
-      warning("TraceDependencies results may be inflated by VerifyDependencies");
-    }
-    if (occasional_print || final_stats) {
-      // Every now and then dump a little info about dependency searching.
-      if (xtty != NULL) {
-       ttyLocker ttyl;
-       xtty->elem("deps_find_witness calls='%d' steps='%d' recursions='%d' singles='%d'",
-                   deps_find_witness_calls,
-                   deps_find_witness_steps,
-                   deps_find_witness_recursions,
-                   deps_find_witness_singles);
-      }
-      if (final_stats || (TraceDependencies && WizardMode)) {
-        ttyLocker ttyl;
-        tty->print_cr("Dependency check (find_witness) "
-                      "calls=%d, steps=%d (avg=%.1f), recursions=%d, singles=%d",
-                      deps_find_witness_calls,
-                      deps_find_witness_steps,
-                      (double)deps_find_witness_steps / deps_find_witness_calls,
-                      deps_find_witness_recursions,
-                      deps_find_witness_singles);
-      }
-    }
+PerfCounter* ClassHierarchyWalker::_perf_find_witness_anywhere_calls_count = NULL;
+PerfCounter* ClassHierarchyWalker::_perf_find_witness_anywhere_steps_count = NULL;
+PerfCounter* ClassHierarchyWalker::_perf_find_witness_in_calls_count       = NULL;
+
+void ClassHierarchyWalker::init() {
+  if (UsePerfData) {
+    EXCEPTION_MARK;
+    _perf_find_witness_anywhere_calls_count =
+        PerfDataManager::create_counter(SUN_CI, "findWitnessAnywhere", PerfData::U_Events, CHECK);
+    _perf_find_witness_anywhere_steps_count =
+        PerfDataManager::create_counter(SUN_CI, "findWitnessAnywhereSteps", PerfData::U_Events, CHECK);
+    _perf_find_witness_in_calls_count =
+        PerfDataManager::create_counter(SUN_CI, "findWitnessIn", PerfData::U_Events, CHECK);
+  }
+}
+
+#ifdef ASSERT
+// Assert that m is inherited into ctxk, without intervening overrides.
+// (May return true even if this is not true, in corner cases where we punt.)
+bool Dependencies::verify_method_context(InstanceKlass* ctxk, Method* m) {
+  if (m->is_private()) {
+    return false; // Quick lose.  Should not happen.
+  }
+  if (m->method_holder() == ctxk) {
+    return true;  // Quick win.
+  }
+  if (!(m->is_public() || m->is_protected())) {
+    // The override story is complex when packages get involved.
+    return true;  // Must punt the assertion to true.
+  }
+  Method* lm = ctxk->lookup_method(m->name(), m->signature());
+  if (lm == NULL && ctxk->is_instance_klass()) {
+    // It might be an interface method
+    lm = InstanceKlass::cast(ctxk)->lookup_method_in_ordered_interfaces(m->name(),
+                                                                        m->signature());
+  }
+  if (lm == m) {
+    // Method m is inherited into ctxk.
     return true;
+  }
+  if (lm != NULL) {
+    if (!(lm->is_public() || lm->is_protected())) {
+      // Method is [package-]private, so the override story is complex.
+      return true;  // Must punt the assertion to true.
+    }
+    if (lm->is_static()) {
+      // Static methods don't override non-static so punt
+      return true;
+    }
+    if (!Dependencies::is_concrete_method(lm, ctxk) &&
+        !Dependencies::is_concrete_method(m, ctxk)) {
+      // They are both non-concrete
+      if (lm->method_holder()->is_subtype_of(m->method_holder())) {
+        // Method m is overridden by lm, but both are non-concrete.
+        return true;
+      }
+      if (lm->method_holder()->is_interface() && m->method_holder()->is_interface() &&
+          ctxk->is_subtype_of(m->method_holder()) && ctxk->is_subtype_of(lm->method_holder())) {
+        // Interface method defined in multiple super interfaces
+        return true;
+      }
+    }
+  }
+  ResourceMark rm;
+  tty->print_cr("Dependency method not found in the associated context:");
+  tty->print_cr("  context = %s", ctxk->external_name());
+  tty->print(   "  method = "); m->print_short_name(tty); tty->cr();
+  if (lm != NULL) {
+    tty->print( "  found = "); lm->print_short_name(tty); tty->cr();
   }
   return false;
 }
-#else
-#define count_find_witness_calls() (0)
-#endif //PRODUCT
-
+#endif // ASSERT
 
 Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
                                              InstanceKlass* context_type,
@@ -1288,8 +1289,9 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
   assert(changes.involves_context(context_type), "irrelevant dependency");
   Klass* new_type = changes.new_type();
 
-  (void)count_find_witness_calls();
-  NOT_PRODUCT(deps_find_witness_singles++);
+  if (UsePerfData) {
+    _perf_find_witness_in_calls_count->inc();
+  }
 
   // Current thread must be in VM (not native mode, as in CI):
   assert(must_be_in_vm(), "raw oops here");
@@ -1308,11 +1310,7 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
   if (participants_hide_witnesses) {
     // If the new type is a subtype of a participant, we are done.
     for (int i = 0; i < num_participants(); i++) {
-      Klass* part = participant(i);
-      if (part == NULL)  continue;
-      assert(changes.involves_context(part) == new_type->is_subtype_of(part),
-             "correct marking of participants, b/c new_type is unique");
-      if (changes.involves_context(part)) {
+      if (changes.involves_context(participant(i))) {
         // new guy is protected from this check by previous participant
         return NULL;
       }
@@ -1333,12 +1331,11 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
   // Must not move the class hierarchy during this check:
   assert_locked_or_safepoint(Compile_lock);
 
-  bool do_counts = count_find_witness_calls();
+  if (UsePerfData) {
+    _perf_find_witness_anywhere_calls_count->inc();
+  }
 
   // Check the root of the sub-hierarchy first.
-  if (do_counts) {
-    NOT_PRODUCT(deps_find_witness_calls++);
-  }
 
   // (Note: Interfaces do not have subclasses.)
   // If it is an interface, search its direct implementors.
@@ -1363,10 +1360,8 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(InstanceKlass* context_type, 
 
   assert(!context_type->is_interface(), "not allowed");
 
-  for (ClassHierarchyIterator iter(context_type); !iter.done(); iter.next()) {
+  for (CountingClassHierarchyIterator iter(context_type); !iter.done(); iter.next()) {
     Klass* sub = iter.klass();
-
-    if (do_counts) { NOT_PRODUCT(deps_find_witness_steps++); }
 
     // Do not report participant types.
     if (is_participant(sub)) {
@@ -1392,18 +1387,27 @@ bool Dependencies::is_concrete_klass(Klass* k) {
   return true;
 }
 
-bool Dependencies::is_concrete_method(Method* m, Klass * k) {
-  // NULL is not a concrete method,
-  // statics are irrelevant to virtual call sites,
-  // abstract methods are not concrete,
-  // overpass (error) methods are not concrete if k is abstract
-  //
-  // note "true" is conservative answer --
-  //     overpass clause is false if k == NULL, implies return true if
-  //     answer depends on overpass clause.
-  return ! ( m == NULL || m -> is_static() || m -> is_abstract() ||
-             (m->is_overpass() && k != NULL && k -> is_abstract()) );
-}
+bool Dependencies::is_concrete_method(Method* m, Klass* k) {
+  // NULL is not a concrete method.
+  if (m == NULL) {
+    return false;
+  }
+  // Statics are irrelevant to virtual call sites.
+  if (m->is_static()) {
+    return false;
+  }
+  // Abstract methods are not concrete.
+  if (m->is_abstract()) {
+    return false;
+  }
+  // Overpass (error) methods are not concrete if k is abstract.
+  if (m->is_overpass() && k != NULL) {
+     return !k->is_abstract();
+  }
+  // Note "true" is conservative answer: overpass clause is false if k == NULL,
+  // implies return true if answer depends on overpass clause.
+  return true;
+ }
 
 
 Klass* Dependencies::find_finalizable_subclass(Klass* k) {
@@ -1538,7 +1542,7 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
     return NULL;
   }
   ClassHierarchyWalker wf(m);
-  assert(wf.check_method_context(ctxk, m), "proper context");
+  assert(verify_method_context(ctxk, m), "proper context");
   wf.record_witnesses(1);
   Klass* wit = wf.find_witness_definer(ctxk);
   if (wit != NULL)  return NULL;  // Too many witnesses.
@@ -1771,19 +1775,39 @@ bool KlassDepChange::involves_context(Klass* k) {
   return is_contained;
 }
 
-#ifndef PRODUCT
 void Dependencies::print_statistics() {
-  if (deps_find_witness_print != 0) {
-    // Call one final time, to flush out the data.
-    deps_find_witness_print = -1;
-    count_find_witness_calls();
+  ClassHierarchyWalker::print_statistics();
+}
+
+void ClassHierarchyWalker::print_statistics() {
+  if (UsePerfData) {
+    jlong deps_find_witness_calls   = _perf_find_witness_anywhere_calls_count->get_value();
+    jlong deps_find_witness_steps   = _perf_find_witness_anywhere_steps_count->get_value();
+    jlong deps_find_witness_singles = _perf_find_witness_in_calls_count->get_value();
+
+    ttyLocker ttyl;
+    tty->print_cr("Dependency check (find_witness) "
+                  "calls=" JLONG_FORMAT ", steps=" JLONG_FORMAT " (avg=%.1f), singles=" JLONG_FORMAT,
+                  deps_find_witness_calls,
+                  deps_find_witness_steps,
+                  (double)deps_find_witness_steps / deps_find_witness_calls,
+                  deps_find_witness_singles);
+    if (xtty != NULL) {
+      xtty->elem("deps_find_witness calls='" JLONG_FORMAT "' steps='" JLONG_FORMAT "' singles='" JLONG_FORMAT "'",
+                 deps_find_witness_calls,
+                 deps_find_witness_steps,
+                 deps_find_witness_singles);
+    }
   }
 }
-#endif
 
 CallSiteDepChange::CallSiteDepChange(Handle call_site, Handle method_handle) :
   _call_site(call_site),
   _method_handle(method_handle) {
   assert(_call_site()->is_a(vmClasses::CallSite_klass()), "must be");
   assert(_method_handle.is_null() || _method_handle()->is_a(vmClasses::MethodHandle_klass()), "must be");
+}
+
+void dependencies_init() {
+  ClassHierarchyWalker::init();
 }

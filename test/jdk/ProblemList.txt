@@ -521,7 +521,6 @@ java/awt/Mouse/MouseComboBoxTest/MouseComboBoxTest.java 8233564 macosx-all
 java/awt/Modal/NullModalityDialogTest/NullModalityDialogTest.java 8233565 macosx-all
 java/awt/keyboard/AllKeyCode/AllKeyCode.java 8242930 macosx-all
 java/awt/FullScreen/8013581/bug8013581.java 8169471 macosx-all
-java/awt/Focus/FocusSubRequestTest/FocusSubRequestTest.java 8233567 macosx-all
 java/awt/event/MouseEvent/RobotLWTest/RobotLWTest.java 8233568 macosx-all
 java/awt/event/MouseEvent/MultipleMouseButtonsTest/MultipleMouseButtonsTest.java 8233568 macosx-all
 java/awt/event/MouseEvent/ClickDuringKeypress/ClickDuringKeypress.java 8233568 macosx-all
@@ -550,6 +549,10 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 # jdk_foreign
 
 java/foreign/TestMismatch.java 8249684 macosx-all
+
+java/foreign/StdLibTest.java 8263512 macosx-aarch64
+java/foreign/TestVarArgs.java 8263512 macosx-aarch64
+java/foreign/valist/VaListTest.java 8263512 macosx-aarch64
 
 ############################################################################
 
@@ -796,6 +799,8 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 ############################################################################
 
 # jdk_util
+
+java/util/concurrent/locks/Lock/TimedAcquireLeak.java           8262897 macosx-aarch64
 
 ############################################################################
 
