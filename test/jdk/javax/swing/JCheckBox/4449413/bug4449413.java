@@ -49,6 +49,8 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -75,12 +77,22 @@ public class bug4449413 extends JFrame {
     private final MetalTheme defaultMetalTheme = new DefaultMetalTheme();
     private final MetalTheme oceanTheme = new OceanTheme();
 
+    private static bug4449413 instance;
+
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
 
-        SwingUtilities.invokeLater(() -> new bug4449413().createAndShowGUI());
+        SwingUtilities.invokeLater(() -> {
+            instance = new bug4449413();
+            instance.createAndShowGUI();
+        });
 
         boolean timeoutHappened = !latch.await(2, TimeUnit.MINUTES);
+        if (instance != null) {
+            instance.dispose();
+        }
+
+        System.out.println("Passed: " + !failed);
 
         if (timeoutHappened || failed) {
             throw new RuntimeException("Test failed!");
@@ -90,8 +102,14 @@ public class bug4449413 extends JFrame {
     private void createAndShowGUI() {
         addComponentsToPane();
 
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                latch.countDown();
+            }
+        });
+
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
         setVisible(true);
     }
@@ -138,7 +156,6 @@ public class bug4449413 extends JFrame {
         ActionListener actionListener = e -> {
             failed = e.getSource() == failButton;
             latch.countDown();
-            dispose();
         };
 
         passButton.addActionListener(actionListener);
