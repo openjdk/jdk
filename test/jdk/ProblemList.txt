@@ -859,7 +859,6 @@ java/awt/Modal/PrintDialogsTest/PrintDialogsTest.java 8068378 generic-all
 java/awt/dnd/DnDFileGroupDescriptor/DnDFileGroupDescriptor.html 8080185 macosx-all,linux-all
 javax/swing/JTabbedPane/4666224/bug4666224.html 8144124  macosx-all
 java/awt/event/MouseEvent/AltGraphModifierTest/AltGraphModifierTest.java 8162380 generic-all
-java/awt/Window/TranslucentJAppletTest/TranslucentJAppletTest.java 8163086 macosx-all
 java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-all,linux-all
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java 8185429 macosx-all
