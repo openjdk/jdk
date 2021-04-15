@@ -40,7 +40,6 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
-#include CPU_HEADER(depChecker)
 
 void*       Disassembler::_library               = NULL;
 bool        Disassembler::_tried_to_load_library = false;
