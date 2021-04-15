@@ -44,7 +44,7 @@ import sun.security.pkcs11.wrapper.*;
 final class Session implements Comparable<Session> {
 
     // time after which to close idle sessions, in milliseconds (3 minutes)
-    private final static long MAX_IDLE_TIME = 3 * 60 * 1000;
+    private static final long MAX_IDLE_TIME = 3 * 60 * 1000;
 
     // token instance
     final Token token;
