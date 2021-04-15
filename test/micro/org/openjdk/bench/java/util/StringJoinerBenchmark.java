@@ -41,8 +41,16 @@ import java.util.concurrent.TimeUnit;
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(jvmArgsAppend = {"-Xms2g", "-Xmx2g"})
+@Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Fork(value = 1, jvmArgsAppend = {"-Xms1g", "-Xmx1g"})
 public class StringJoinerBenchmark {
+
+    @Benchmark
+    public String join(Data data) {
+        String[] stringArray = data.stringArray;
+        return String.join(",", stringArray);
+    }
 
     @Benchmark
     public String stringJoiner(Data data) {
@@ -56,10 +64,10 @@ public class StringJoinerBenchmark {
         @Param({"latin", "cyrillic"})
         private String mode;
 
-        @Param({"8", "32"})
+        @Param({"8", "32", "128"})
         private int length;
 
-        @Param({"5", "10"})
+        @Param({"5", "20"})
         private int count;
 
         private String[] stringArray;
