@@ -671,7 +671,11 @@
           "Par compact uses a variable scale based on the density of the "  \
           "generation and treats this as the maximum value when the heap "  \
           "is either completely full or completely empty.  Par compact "    \
-          "also has a smaller default value; see arguments.cpp.")           \
+          "also has a smaller default value; see arguments.cpp. "           \
+          "G1 full gc treats this as an allowed garbage threshold to skip " \
+          "compaction of heap regions, i.e. if a heap region has less "     \
+          "garbage than this value, then the region will not be compacted"  \
+          "during G1 full GC.")                                             \
           range(0, 100)                                                     \
                                                                             \
   product(uint, MarkSweepAlwaysCompactCount,     4,                         \

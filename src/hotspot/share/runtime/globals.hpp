@@ -686,6 +686,9 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Print the system dictionary at exit")                            \
                                                                             \
+  notproduct(bool, PrintClassLoaderDataGraphAtExit, false,                  \
+          "Print the class loader data graph at exit")                      \
+                                                                            \
   product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
           "Dynamically resize system dictionaries as needed")               \
                                                                             \

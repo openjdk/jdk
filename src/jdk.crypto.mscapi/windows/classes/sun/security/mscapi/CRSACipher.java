@@ -62,20 +62,20 @@ import sun.security.util.KeyUtil;
 public final class CRSACipher extends CipherSpi {
 
     // constant for an empty byte array
-    private final static byte[] B0 = new byte[0];
+    private static final byte[] B0 = new byte[0];
 
     // mode constant for public key encryption
-    private final static int MODE_ENCRYPT = 1;
+    private static final int MODE_ENCRYPT = 1;
     // mode constant for private key decryption
-    private final static int MODE_DECRYPT = 2;
+    private static final int MODE_DECRYPT = 2;
     // mode constant for private key encryption (signing)
-    private final static int MODE_SIGN    = 3;
+    private static final int MODE_SIGN    = 3;
     // mode constant for public key decryption (verifying)
-    private final static int MODE_VERIFY  = 4;
+    private static final int MODE_VERIFY  = 4;
 
     // constant for PKCS#1 v1.5 RSA
-    private final static String PAD_PKCS1 = "PKCS1Padding";
-    private final static int PAD_PKCS1_LENGTH = 11;
+    private static final String PAD_PKCS1 = "PKCS1Padding";
+    private static final int PAD_PKCS1_LENGTH = 11;
 
     // current mode, one of MODE_* above. Set when init() is called
     private int mode;

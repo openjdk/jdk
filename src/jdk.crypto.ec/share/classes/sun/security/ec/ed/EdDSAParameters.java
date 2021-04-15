@@ -218,9 +218,9 @@ public class EdDSAParameters {
         return dom.apply(sigParams);
     }
 
-    private final static String prefixStr25519 =
+    private static final String prefixStr25519 =
         "SigEd25519 no Ed25519 collisions";
-    private final static String prefixStr448 = "SigEd448";
+    private static final String prefixStr448 = "SigEd448";
 
     // Used for Ed25519
     static byte[] dom2(EdDSAParameterSpec sigParams) {
