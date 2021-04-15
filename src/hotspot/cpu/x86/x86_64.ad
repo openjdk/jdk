@@ -8389,17 +8389,7 @@ instruct divI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
             "idivl   $div\n"
     "done:"        %}
   ins_encode %{
-    Label normal;
-    Label done;
-    __ cmp($rax$$Register, 0x80000000);
-    __ jccb(Assembler::notEqual, normal);
-    __ xorl($rdx$$Register, $rdx$$Register);
-    __ cmpl($div$$Register, -1);
-    __ jccb(Assembler::equal, done);
-    __ bind(normal);
-    __ cdql();
-    __ idivl($div$$Register);
-    __ bind(done);
+    __ corrected_idivl($div$$Register);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8421,18 +8411,7 @@ instruct divL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
             "idivq   $div\n"
     "done:"        %}
   ins_encode %{
-    Label normal;
-    Label done;
-    __ mov64($rdx$$Register, 0x8000000000000000);
-    __ cmpq($rax$$Register, $rdx$$Register);
-    __ jccb(Assembler::notEqual, normal);
-    __ xorl($rdx$$Register, $rdx$$Register);
-    __ cmpq($div$$Register, -1);
-    __ jccb(Assembler::equal, done);
-    __ bind(normal);
-    __ cdqq();
-    __ idivq($div$$Register);
-    __ bind(done);
+    __ corrected_idivq($div$$Register);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8454,17 +8433,7 @@ instruct divModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
             "idivl   $div\n"
     "done:"        %}
   ins_encode %{
-    Label normal;
-    Label done;
-    __ cmp($rax$$Register, 0x80000000);
-    __ jccb(Assembler::notEqual, normal);
-    __ xorl($rdx$$Register, $rdx$$Register);
-    __ cmpl($div$$Register, -1);
-    __ jccb(Assembler::equal, done);
-    __ bind(normal);
-    __ cdql();
-    __ idivl($div$$Register);
-    __ bind(done);
+    __ corrected_idivl($div$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -8487,18 +8456,7 @@ instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
             "idivq   $div\n"
     "done:"        %}
   ins_encode %{
-    Label normal;
-    Label done;
-    __ mov64($rdx$$Register, 0x8000000000000000);
-    __ cmpq($rax$$Register, $rdx$$Register);
-    __ jccb(Assembler::notEqual, normal);
-    __ xorl($rdx$$Register, $rdx$$Register);
-    __ cmpq($div$$Register, -1);
-    __ jccb(Assembler::equal, done);
-    __ bind(normal);
-    __ cdqq();
-    __ idivq($div$$Register);
-    __ bind(done);
+    __ corrected_idivq($div$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -8583,17 +8541,7 @@ instruct modI_rReg(rdx_RegI rdx, rax_RegI rax, no_rax_rdx_RegI div,
             "idivl   $div\n"
     "done:"        %}
   ins_encode %{
-    Label normal;
-    Label done;
-    __ cmp($rax$$Register, 0x80000000);
-    __ jccb(Assembler::notEqual, normal);
-    __ xorl($rdx$$Register, $rdx$$Register);
-    __ cmpl($div$$Register, -1);
-    __ jccb(Assembler::equal, done);
-    __ bind(normal);
-    __ cdql();
-    __ idivl($div$$Register);
-    __ bind(done);
+    __ corrected_idivl($div$$Register);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8615,18 +8563,7 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
             "idivq   $div\n"
     "done:"        %}
   ins_encode %{
-    Label normal;
-    Label done;
-    __ mov64($rdx$$Register, 0x8000000000000000);
-    __ cmpq($rdx$$Register, $rax$$Register);
-    __ jccb(Assembler::notEqual, normal);
-    __ xorl($rdx$$Register, $rdx$$Register);
-    __ cmpq($div$$Register, -1);
-    __ jccb(Assembler::equal, done);
-    __ bind(normal);
-    __ cdqq();
-    __ idivq($div$$Register);
-    __ bind(done);
+    __ corrected_idivq($div$$Register);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
