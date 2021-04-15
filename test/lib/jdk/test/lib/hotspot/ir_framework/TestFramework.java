@@ -107,7 +107,6 @@ public class TestFramework {
             Arrays.asList(
                     // The following substrings are part of more than one VM flag
                     "RAM",
-                    "G1",
                     "Heap",
                     "Trace",
                     "Print",
@@ -116,15 +115,12 @@ public class TestFramework {
                     "UseNewCode",
                     // The following substrings are only part of one VM flag (=exact match)
                     "CreateCoredumpOnCrash",
+                    "IgnoreUnrecognizedVMOptions",
                     "UnlockDiagnosticVMOptions",
+                    "UnlockExperimentalVMOptions",
                     "BackgroundCompilation",
                     "Xbatch",
-                    "TieredCompilation",
-                    "UseSerialGC",
-                    "UseParallelGC",
-                    "UseG1GC",
-                    "UseZGC",
-                    "UseShenandoahGC"
+                    "TieredCompilation"
             )
     );
 
