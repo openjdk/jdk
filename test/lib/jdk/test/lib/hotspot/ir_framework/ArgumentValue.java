@@ -292,10 +292,10 @@ class ArgumentValue {
         } else if (c.equals(long.class)) {
             return random.nextLong();
         } else if (c.equals(float.class)) {
-            // Get number between 0 and 1000.
+            // Get float between -10000 and 10000.
             return random.nextFloat() * 20000 - 10000;
         } else if (c.equals(double.class)) {
-            // Get number between 0 and 1000.
+            // Get double between -10000 and 10000.
             return random.nextDouble() * 20000 - 10000;
         } else {
             TestFormat.fail("Cannot generate random value for non-primitive type");
