@@ -50,15 +50,15 @@ public class TestFrameworkExecution {
         try {
             WHITE_BOX = WhiteBox.getWhiteBox();
         } catch (UnsatisfiedLinkError e) {
-            System.err.println("""
+            System.err.println("\n" + """
                                ##########################################################
-                                - Did you call a test-related interface method from 
-                                  TestFramework in main() of your test? Make sure to 
-                                  only call setup/run methods and no checks or 
+                                - Did you call a test-related interface method from
+                                  TestFramework in main() of your test? Make sure to
+                                  only call setup/run methods and no checks or
                                   assertions from main() of your test!
                                 - Are you rerunning the test VM (TestFrameworkExecution)
                                   directly after a JTreg run? Make sure to start it
-                                  from within JTwork/scratch and with the flag 
+                                  from within JTwork/scratch and with the flag
                                   -DReproduce=true!
                                ##########################################################
                                """);
@@ -1447,5 +1447,3 @@ class CustomRunTest extends AbstractTest {
         }
     }
 }
-
-
