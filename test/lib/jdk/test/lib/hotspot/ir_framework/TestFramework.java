@@ -914,7 +914,6 @@ public class TestFramework {
             // Maybe we run with flags that make IR verification impossible
             shouldVerifyIR = Boolean.parseBoolean(matcher.group(2));
             flagList.addAll(Arrays.asList(matcher.group(1).split(TEST_VM_FLAGS_DELIMITER)));
-            System.out.println(matcher.group(1));
         }
         return flagList;
     }
