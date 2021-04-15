@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,8 +300,9 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         int len = s.length();
         for (int i = 0 ; i < len ; i++) {
             int v = s.charAt(i);
-            out.write((v >>> 8) & 0xFF);
-            out.write((v >>> 0) & 0xFF);
+            writeBuffer[0] = (byte)(v >>> 8);
+            writeBuffer[1] = (byte)(v >>> 0);
+            out.write(writeBuffer, 0, 2);
         }
         incCount(len * 2);
     }
@@ -368,8 +369,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
             throw new UTFDataFormatException(tooLongMsg(str, utflen));
 
         final byte[] bytearr;
-        if (out instanceof DataOutputStream) {
-            DataOutputStream dos = (DataOutputStream)out;
+        if (out instanceof DataOutputStream dos) {
             if (dos.bytearr == null || (dos.bytearr.length < (utflen + 2)))
                 dos.bytearr = new byte[(utflen*2) + 2];
             bytearr = dos.bytearr;

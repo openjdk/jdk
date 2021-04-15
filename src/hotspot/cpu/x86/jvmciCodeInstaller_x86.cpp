@@ -26,6 +26,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"

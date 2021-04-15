@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,16 +36,18 @@
 
 package java.awt.image;
 
-import java.awt.Point;
 import java.awt.Graphics2D;
-import java.awt.color.*;
-import sun.java2d.cmm.ColorTransform;
-import sun.java2d.cmm.CMSManager;
-import sun.java2d.cmm.ProfileDeferralMgr;
-import sun.java2d.cmm.PCMM;
-import java.awt.geom.Rectangle2D;
-import java.awt.geom.Point2D;
+import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+
+import sun.java2d.cmm.CMSManager;
+import sun.java2d.cmm.ColorTransform;
+import sun.java2d.cmm.PCMM;
 
 /**
  * This class performs a pixel-by-pixel color conversion of the data in
@@ -76,13 +78,6 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
     RenderingHints   hints;
     boolean          gotProfiles;
     float[]          srcMinVals, srcMaxVals, dstMinVals, dstMaxVals;
-
-    /* the class initializer */
-    static {
-        if (ProfileDeferralMgr.deferring) {
-            ProfileDeferralMgr.activateProfiles();
-        }
-    }
 
     /**
      * Constructs a new ColorConvertOp which will convert

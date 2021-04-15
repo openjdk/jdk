@@ -32,6 +32,7 @@
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "utilities/lockFreeQueue.hpp"
 
 class G1ConcurrentRefineThread;
 class G1DirtyCardQueueSet;
@@ -48,8 +49,6 @@ public:
   // Flush before destroying; queue may be used to capture pending work while
   // doing something else, with auto-flush on completion.
   ~G1DirtyCardQueue();
-
-  inline G1DirtyCardQueueSet* dirty_card_qset() const;
 
   G1ConcurrentRefineStats* refinement_stats() const {
     return _refinement_stats;
@@ -76,43 +75,6 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     BufferNode* _tail;
     HeadTail() : _head(NULL), _tail(NULL) {}
     HeadTail(BufferNode* head, BufferNode* tail) : _head(head), _tail(tail) {}
-  };
-
-  // A lock-free FIFO of BufferNodes, linked through their next() fields.
-  // This class has a restriction that pop() may return NULL when there are
-  // buffers in the queue if there is a concurrent push/append operation.
-  class Queue {
-    BufferNode* volatile _head;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
-    BufferNode* volatile _tail;
-    DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
-
-    NONCOPYABLE(Queue);
-
-  public:
-    Queue() : _head(NULL), _tail(NULL) {}
-    DEBUG_ONLY(~Queue();)
-
-    // Return the first buffer in the queue.
-    // Thread-safe, but the result may change immediately.
-    BufferNode* top() const;
-
-    // Thread-safe add the buffer to the end of the queue.
-    void push(BufferNode& node) { append(node, node); }
-
-    // Thread-safe add the buffers from first to last to the end of the queue.
-    void append(BufferNode& first, BufferNode& last);
-
-    // Thread-safe attempt to remove and return the first buffer in the queue.
-    // Returns NULL if the queue is empty, or if a concurrent push/append
-    // interferes.  Uses GlobalCounter critical sections to address the ABA
-    // problem; this works with the buffer allocator's use of GlobalCounter
-    // synchronization.
-    BufferNode* pop();
-
-    // Take all the buffers from the queue, leaving the queue empty.
-    // Not thread-safe.
-    HeadTail take_all();
   };
 
   // Concurrent refinement may stop processing in the middle of a buffer if
@@ -202,9 +164,13 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   volatile size_t _num_cards;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
-  Queue _completed;           // Has inner padding, including trailer.
+  // LockFreeQueue has inner padding of one cache line.
+  LockFreeQueue<BufferNode, &BufferNode::next_ptr> _completed;
+  // Add a trailer padding after LockFreeQueue.
+  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
   // Buffers for which refinement is temporarily paused.
-  PausedBuffers _paused;      // Has inner padding, including trailer.
+  // PausedBuffers has inner padding, including trailer.
+  PausedBuffers _paused;
 
   G1FreeIdSet _free_ids;
 
@@ -250,6 +216,11 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // deallocate the buffer.  Otherwise, record it as paused.
   void handle_refined_buffer(BufferNode* node, bool fully_processed);
 
+  // Thread-safe attempt to remove and return the first buffer from
+  // the _completed queue.
+  // Returns NULL if the queue is empty, or if a concurrent push/append
+  // interferes. It uses GlobalCounter critical section to avoid ABA problem.
+  BufferNode* dequeue_completed_buffer();
   // Remove and return a completed buffer from the list, or return NULL
   // if none available.
   BufferNode* get_completed_buffer();
@@ -350,9 +321,5 @@ public:
   // Discard artificial increase of mutator refinement threshold.
   void discard_max_cards_padding();
 };
-
-inline G1DirtyCardQueueSet* G1DirtyCardQueue::dirty_card_qset() const {
-  return static_cast<G1DirtyCardQueueSet*>(qset());
-}
 
 #endif // SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_OS_HPP
 #define SHARE_RUNTIME_OS_HPP
 
-#include "jvm.h"
+#include "jvm_md.h"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -75,6 +75,11 @@ enum ThreadPriority {        // JLS 20.20.1-3
   MaxPriority      = 10,     // Highest priority, used for WatcherThread
                              // ensures that VMThread doesn't starve profiler
   CriticalPriority = 11      // Critical thread priority
+};
+
+enum WXMode {
+  WXWrite,
+  WXExec
 };
 
 // Executable parameter flag for os::commit_memory() and
@@ -182,6 +187,8 @@ class os: AllStatic {
 
   // unset environment variable
   static bool unsetenv(const char* name);
+  // Get environ pointer, platform independently
+  static char** get_environ();
 
   static bool have_special_privileges();
 
@@ -190,7 +197,6 @@ class os: AllStatic {
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
   static void   run_periodic_checks();
-  static bool   supports_monotonic_clock();
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -502,8 +508,12 @@ class os: AllStatic {
 
   static bool message_box(const char* title, const char* message);
 
-  // run cmd in a separate process and return its exit code; or -1 on failures
-  static int fork_and_exec(char *cmd, bool use_vfork_if_available = false);
+  // run cmd in a separate process and return its exit code; or -1 on failures.
+  // Note: only safe to use in fatal error situations.
+  // The "prefer_vfork" argument is only used on POSIX platforms to
+  // indicate whether vfork should be used instead of fork to spawn the
+  // child process (ignored on AIX, which always uses vfork).
+  static int fork_and_exec(const char *cmd, bool prefer_vfork = false);
 
   // Call ::exit() on all platforms but Windows
   static void exit(int num);
@@ -926,6 +936,11 @@ class os: AllStatic {
     Thread* _thread;
     bool _done;
   };
+
+#if defined(__APPLE__) && defined(AARCH64)
+  // Enables write or execute access to writeable and executable pages.
+  static void current_thread_enable_wx(WXMode mode);
+#endif // __APPLE__ && AARCH64
 
 #ifndef _WINDOWS
   // Suspend/resume support

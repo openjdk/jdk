@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ void CardTableBarrierSet::initialize_deferred_card_mark_barriers() {
   // Used for ReduceInitialCardMarks (when COMPILER2 or JVMCI is used);
   // otherwise remains unused.
 #if COMPILER2_OR_JVMCI
-  _defer_initial_card_mark = is_server_compilation_mode_vm() && ReduceInitialCardMarks
+  _defer_initial_card_mark = CompilerConfig::is_c2_or_jvmci_compiler_enabled() && ReduceInitialCardMarks
                              && (DeferInitialCardMark || card_mark_must_follow_store());
 #else
   assert(_defer_initial_card_mark == false, "Who would set it?");
@@ -164,7 +164,7 @@ void CardTableBarrierSet::flush_deferred_card_mark_barrier(JavaThread* thread) {
     assert(_defer_initial_card_mark, "Otherwise should be empty");
     {
       // Verify that the storage points to a parsable object in heap
-      DEBUG_ONLY(oop old_obj = oop(deferred.start());)
+      DEBUG_ONLY(oop old_obj = cast_to_oop(deferred.start());)
       assert(!_card_table->is_in_young(old_obj),
              "Else should have been filtered in on_slowpath_allocation_exit()");
       assert(oopDesc::is_oop(old_obj, true), "Not an oop");
@@ -192,5 +192,5 @@ void CardTableBarrierSet::on_thread_detach(Thread* thread) {
 }
 
 bool CardTableBarrierSet::card_mark_must_follow_store() const {
- return _card_table->scanned_concurrently();
+  return false;
 }

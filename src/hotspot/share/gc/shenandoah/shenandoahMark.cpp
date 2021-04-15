@@ -25,8 +25,6 @@
 
 #include "precompiled.hpp"
 
-#include "gc/shared/gcTrace.hpp"
-#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
@@ -35,20 +33,17 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "memory/iterator.inline.hpp"
 
 ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,  ShenandoahReferenceProcessor* rp) :
   MetadataVisitingOopIterateClosure(rp),
   _queue(q),
-  _heap(ShenandoahHeap::heap()),
-  _mark_context(_heap->marking_context()),
+  _mark_context(ShenandoahHeap::heap()->marking_context()),
   _weak(false)
 { }
 
 ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
   _queue(q),
-  _heap(ShenandoahHeap::heap()),
-  _mark_context(_heap->marking_context()) {
+  _mark_context(ShenandoahHeap::heap()->marking_context()) {
 }
 
 ShenandoahMark::ShenandoahMark() :

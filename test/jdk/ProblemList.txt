@@ -234,7 +234,6 @@ java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/TranslucentChoice.java 8221901 linux-all
 java/awt/Window/MultiWindowApp/ChildAlwaysOnTopTest.java 8222323 windows-all
 java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/Shaped.java  8222328 windows-all,linux-all,macosx-all
@@ -254,7 +253,6 @@ java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 linux-all
 java/awt/image/DrawImage/BlitRotateClippedArea.java 8255724 linux-all
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187 macosx-all,windows-all
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
-java/awt/print/PrinterJob/TestPgfmtSetMPA.java 8198343 generic-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
@@ -273,8 +271,6 @@ java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8197796 ge
 java/awt/TextArea/TextAreaScrolling/TextAreaScrolling.java 8196300 windows-all
 java/awt/print/PrinterJob/PSQuestionMark.java 7003378 generic-all
 java/awt/print/PrinterJob/GlyphPositions.java 7003378 generic-all
-java/awt/print/PrinterJob/Margins.java 8196301 windows-all,macosx-all
-java/awt/PrintJob/PrinterException.java 8196301 windows-all,macosx-all
 java/awt/Choice/PopupPosTest/PopupPosTest.java  8197811 windows-all
 java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all,linux-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
@@ -525,7 +521,6 @@ java/awt/Mouse/MouseComboBoxTest/MouseComboBoxTest.java 8233564 macosx-all
 java/awt/Modal/NullModalityDialogTest/NullModalityDialogTest.java 8233565 macosx-all
 java/awt/keyboard/AllKeyCode/AllKeyCode.java 8242930 macosx-all
 java/awt/FullScreen/8013581/bug8013581.java 8169471 macosx-all
-java/awt/Focus/FocusSubRequestTest/FocusSubRequestTest.java 8233567 macosx-all
 java/awt/event/MouseEvent/RobotLWTest/RobotLWTest.java 8233568 macosx-all
 java/awt/event/MouseEvent/MultipleMouseButtonsTest/MultipleMouseButtonsTest.java 8233568 macosx-all
 java/awt/event/MouseEvent/ClickDuringKeypress/ClickDuringKeypress.java 8233568 macosx-all
@@ -554,6 +549,12 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 # jdk_foreign
 
 java/foreign/TestMismatch.java 8249684 macosx-all
+
+java/foreign/StdLibTest.java 8263512 macosx-aarch64
+java/foreign/TestIntrinsics.java 8265183 macosx-aarch64
+java/foreign/TestUpcall.java 8265182 macosx-aarch64
+java/foreign/TestVarArgs.java 8263512 macosx-aarch64
+java/foreign/valist/VaListTest.java 8263512 macosx-aarch64
 
 ############################################################################
 
@@ -676,6 +677,9 @@ sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8209398 generic-all
 
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java  8243543 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java   8263059 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java 8248899 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
@@ -698,6 +702,7 @@ javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
+sun/security/ssl/SSLSocketImpl/SSLSocketImplThrowsWrongExceptions.java 8262409 linux-x64
 
 ############################################################################
 
@@ -730,10 +735,8 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradien
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java 8194128 macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java 8013450 macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 8024627 macosx-all
-javax/swing/JComboBox/6559152/bug6559152.java 8164484 linux-x64
 # The next test below is an intermittent failure
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
-javax/swing/JColorChooser/Test6827032.java 8197825 windows-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
@@ -789,7 +792,7 @@ com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
-com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-x64
+com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-all
 
 ############################################################################
 
@@ -798,6 +801,8 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-x6
 ############################################################################
 
 # jdk_util
+
+java/util/concurrent/locks/Lock/TimedAcquireLeak.java           8262897 macosx-aarch64
 
 ############################################################################
 
@@ -829,7 +834,6 @@ javax/script/Test7.java                                         8239361 generic-
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
-jdk/jfr/jmx/streaming/TestRotate.java                           8257215 generic-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 
@@ -840,8 +844,6 @@ jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-
 ############################################################################
 
 # jdk_jpackage
-
-tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java#id0    8248418 generic-all
 
 ############################################################################
 
@@ -858,7 +860,6 @@ java/awt/dnd/DnDFileGroupDescriptor/DnDFileGroupDescriptor.html 8080185 macosx-a
 javax/swing/JTabbedPane/4666224/bug4666224.html 8144124  macosx-all
 java/awt/event/MouseEvent/AltGraphModifierTest/AltGraphModifierTest.java 8162380 generic-all
 java/awt/Window/TranslucentJAppletTest/TranslucentJAppletTest.java 8163086 macosx-all
-java/awt/image/multiresolution/MultiResolutionIcon/IconTest.java 8250804 macosx-all,linux-all
 java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-all,linux-all
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java 8185429 macosx-all
@@ -875,6 +876,9 @@ java/awt/print/PageFormat/Orient.java 8016055 macosx-all
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java 8024986 macosx-all,linux-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macosx-all
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
+java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
+java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
+javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8260331 linux-x64
 
 
 ############################################################################

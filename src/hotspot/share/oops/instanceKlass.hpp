@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,11 @@
 #ifndef SHARE_OOPS_INSTANCEKLASS_HPP
 #define SHARE_OOPS_INSTANCEKLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/klassVtable.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
 #include "utilities/accessFlags.hpp"
@@ -41,6 +39,7 @@
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
+class klassItable;
 class RecordComponent;
 
 // An InstanceKlass is the VM level representation of a Java class.
@@ -328,7 +327,7 @@ class InstanceKlass: public Klass {
   // embedded nonstatic oop-map blocks follows here
   // embedded implementor of this interface follows here
   //   The embedded implementor only exists if the current klass is an
-  //   iterface. The possible values of the implementor fall into following
+  //   interface. The possible values of the implementor fall into following
   //   three cases:
   //     NULL: no implementor.
   //     A Klass* that's not itself: one implementor.
@@ -466,7 +465,7 @@ class InstanceKlass: public Klass {
   jushort nest_host_index() const { return _nest_host_index; }
   void set_nest_host_index(u2 i)  { _nest_host_index = i; }
   // dynamic nest member support
-  void set_nest_host(InstanceKlass* host, TRAPS);
+  void set_nest_host(InstanceKlass* host);
 
   // record components
   Array<RecordComponent*>* record_components() const { return _record_components; }
@@ -487,7 +486,7 @@ public:
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns NULL if there was no error.
-  const char* nest_host_error(TRAPS);
+  const char* nest_host_error();
   // Returns nest-host class, resolving and validating it if needed.
   // Returns NULL if resolution is not possible from the calling context.
   InstanceKlass* nest_host(TRAPS);
@@ -524,7 +523,7 @@ public:
   // packages returned by get_system_packages().
   // For packages whose classes are loaded from the boot loader class path, the
   // classpath_index indicates which entry on the boot loader class path.
-  void set_classpath_index(s2 path_index, TRAPS);
+  void set_classpath_index(s2 path_index);
   bool is_same_class_package(const Klass* class2) const;
   bool is_same_class_package(oop other_class_loader, const Symbol* other_class_name) const;
 
@@ -1017,10 +1016,10 @@ public:
 #endif
 
   // Access to the implementor of an interface.
-  Klass* implementor() const;
-  void set_implementor(Klass* k);
+  InstanceKlass* implementor() const;
+  void set_implementor(InstanceKlass* ik);
   int  nof_implementors() const;
-  void add_implementor(Klass* k);  // k is a new class that implements this interface
+  void add_implementor(InstanceKlass* ik);  // ik is a new class that implements this interface
   void init_implementor();           // initialize
 
   // link this class into the implementors list of every interface it implements
@@ -1088,7 +1087,7 @@ public:
   inline OopMapBlock* start_of_nonstatic_oop_maps() const;
   inline Klass** end_of_nonstatic_oop_maps() const;
 
-  inline Klass* volatile* adr_implementor() const;
+  inline InstanceKlass* volatile* adr_implementor() const;
   inline InstanceKlass** adr_unsafe_anonymous_host() const;
   inline address adr_fingerprint() const;
 
@@ -1109,7 +1108,9 @@ public:
 
   // Java itable
   klassItable itable() const;        // return klassItable wrapper
-  Method* method_at_itable(Klass* holder, int index, TRAPS);
+  Method* method_at_itable(InstanceKlass* holder, int index, TRAPS);
+  Method* method_at_itable_or_null(InstanceKlass* holder, int index, bool& itable_entry_found);
+  int vtable_index_of_interface_method(Method* method);
 
 #if INCLUDE_JVMTI
   void adjust_default_methods(bool* trace_name_printed);
@@ -1268,8 +1269,7 @@ public:
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
 
-  // jvm support
-  jint compute_modifier_flags(TRAPS) const;
+  jint compute_modifier_flags() const;
 
 public:
   // JVMTI support
@@ -1428,6 +1428,43 @@ class InnerClassesIterator : public StackObj {
   u2 inner_access_flags() const {
     return _inner_classes->at(
                _idx + InstanceKlass::inner_class_access_flags_offset);
+  }
+};
+
+// Iterator over class hierarchy under a particular class. Implements depth-first pre-order traversal.
+// Usage:
+//  for (ClassHierarchyIterator iter(root_klass); !iter.done(); iter.next()) {
+//    Klass* k = iter.klass();
+//    ...
+//  }
+class ClassHierarchyIterator : public StackObj {
+ private:
+  InstanceKlass* _root;
+  Klass*         _current;
+  bool           _visit_subclasses;
+
+ public:
+  ClassHierarchyIterator(InstanceKlass* root) : _root(root), _current(root), _visit_subclasses(true) {
+    assert(!root->is_interface(), "no subclasses");
+    assert(_root == _current, "required"); // initial state
+  }
+
+  bool done() {
+    return (_current == NULL);
+  }
+
+  // Make a step iterating over the class hierarchy under the root class.
+  // Skips subclasses if requested.
+  void next();
+
+  Klass* klass() {
+    assert(!done(), "sanity");
+    return _current;
+  }
+
+  // Skip subclasses of the current class.
+  void skip_subclasses() {
+    _visit_subclasses = false;
   }
 };
 

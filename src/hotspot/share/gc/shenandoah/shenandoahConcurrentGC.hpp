@@ -40,6 +40,7 @@ class ShenandoahConcurrentGC : public ShenandoahGC {
   friend class VM_ShenandoahFinalMarkStartEvac;
   friend class VM_ShenandoahInitUpdateRefs;
   friend class VM_ShenandoahFinalUpdateRefs;
+  friend class VM_ShenandoahFinalRoots;
 
 private:
   ShenandoahConcurrentMark  _mark;
@@ -59,6 +60,7 @@ private:
   void vmop_entry_final_mark();
   void vmop_entry_init_updaterefs();
   void vmop_entry_final_updaterefs();
+  void vmop_entry_final_roots();
 
   // Entry methods to normally STW GC operations. These set up logging, monitoring
   // and workers for net VM operation
@@ -66,18 +68,19 @@ private:
   void entry_final_mark();
   void entry_init_updaterefs();
   void entry_final_updaterefs();
+  void entry_final_roots();
 
   // Entry methods to normally concurrent GC operations. These set up logging, monitoring
   // for concurrent operation.
   void entry_reset();
   void entry_mark_roots();
   void entry_mark();
+  void entry_thread_roots();
   void entry_weak_refs();
   void entry_weak_roots();
   void entry_class_unloading();
   void entry_strong_roots();
   void entry_cleanup_early();
-  void entry_rendezvous_roots();
   void entry_evacuate();
   void entry_update_thread_roots();
   void entry_updaterefs();
@@ -89,17 +92,18 @@ private:
   void op_mark_roots();
   void op_mark();
   void op_final_mark();
+  void op_thread_roots();
   void op_weak_refs();
   void op_weak_roots();
   void op_class_unloading();
   void op_strong_roots();
   void op_cleanup_early();
-  void op_rendezvous_roots();
   void op_evacuate();
   void op_init_updaterefs();
   void op_updaterefs();
   void op_update_thread_roots();
   void op_final_updaterefs();
+  void op_final_roots();
   void op_cleanup_complete();
 
   // Messages for GC trace events, they have to be immortal for

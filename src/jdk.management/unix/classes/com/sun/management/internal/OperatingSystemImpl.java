@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,11 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                     if (cpuSet == null || cpuSet.length <= 0) {
                         cpuSet = containerMetrics.getCpuSetCpus();
                     }
-                    if (cpuSet != null && cpuSet.length > 0) {
+                    if (cpuSet == null) {
+                        // cgroups is mounted, but CPU resource is not limited.
+                        // We can assume the VM is run on the host CPUs.
+                        return getCpuLoad0();
+                    } else if (cpuSet.length > 0) {
                         double systemLoad = 0.0;
                         for (int cpu : cpuSet) {
                             double cpuLoad = getSingleCpuLoad0(cpu);

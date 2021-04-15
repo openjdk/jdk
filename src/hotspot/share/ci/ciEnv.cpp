@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,11 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
@@ -85,9 +87,9 @@
 
 ciObject*              ciEnv::_null_object_instance;
 
-#define WK_KLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
-WK_KLASSES_DO(WK_KLASS_DEFN)
-#undef WK_KLASS_DEFN
+#define VM_CLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
+VM_CLASSES_DO(VM_CLASS_DEFN)
+#undef VM_CLASS_DEFN
 
 ciSymbol*        ciEnv::_unloaded_cisymbol = NULL;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = NULL;
@@ -302,10 +304,10 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
   VM_ENTRY_MARK;
   if (handle == NULL) {
     // Cf. universe.cpp, creation of Universe::_null_ptr_exception_instance.
-    Klass* k = SystemDictionary::find(name, Handle(), Handle(), THREAD);
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(name, Handle(), Handle());
     jobject objh = NULL;
-    if (!HAS_PENDING_EXCEPTION && k != NULL) {
-      oop obj = InstanceKlass::cast(k)->allocate_instance(THREAD);
+    if (ik != NULL) {
+      oop obj = ik->allocate_instance(THREAD);
       if (!HAS_PENDING_EXCEPTION)
         objh = JNIHandles::make_global(Handle(THREAD, obj));
     }
@@ -403,7 +405,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
                                        ciSymbol* name,
                                        bool require_local) {
   ASSERT_IN_VM;
-  EXCEPTION_CONTEXT;
+  Thread* current = Thread::current();
 
   // Now we need to check the SystemDictionary
   Symbol* sym = name->get_symbol();
@@ -423,11 +425,11 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     return unloaded_klass;
   }
 
-  Handle loader(THREAD, (oop)NULL);
-  Handle domain(THREAD, (oop)NULL);
+  Handle loader;
+  Handle domain;
   if (accessing_klass != NULL) {
-    loader = Handle(THREAD, accessing_klass->loader());
-    domain = Handle(THREAD, accessing_klass->protection_domain());
+    loader = Handle(current, accessing_klass->loader());
+    domain = Handle(current, accessing_klass->protection_domain());
   }
 
   // setup up the proper type to return on OOM
@@ -440,14 +442,12 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   Klass* found_klass;
   {
     ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
-    MutexLocker ml(Compile_lock);
+    MutexLocker ml(current, Compile_lock);
     Klass* kls;
     if (!require_local) {
-      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader,
-                                                                       CHECK_AND_CLEAR_(fail_type));
+      kls = SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
     } else {
-      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain,
-                                                           CHECK_AND_CLEAR_(fail_type));
+      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
     }
     found_klass = kls;
   }
@@ -658,6 +658,8 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
       assert (constant->is_instance(), "must be an instance, or not? ");
       return ciConstant(T_OBJECT, constant);
     }
+  } else if (tag.is_unresolved_klass_in_error()) {
+    return ciConstant();
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
     // 4881222: allow ldc to take a class type
     ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
@@ -798,7 +800,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     }
 
     // Fake a method that is equivalent to a declared method.
-    ciInstanceKlass* holder    = get_instance_klass(SystemDictionary::MethodHandle_klass());
+    ciInstanceKlass* holder    = get_instance_klass(vmClasses::MethodHandle_klass());
     ciSymbol*        name      = ciSymbols::invokeBasic_name();
     ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
     return get_unloaded_method(holder, name, signature, accessor);
@@ -955,7 +957,7 @@ void ciEnv::register_method(ciMethod* target,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
                             RTMState  rtm_state,
-                            const GrowableArrayView<BufferBlob*>& native_invokers) {
+                            const GrowableArrayView<RuntimeStub*>& native_invokers) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
@@ -1117,7 +1119,7 @@ void ciEnv::register_method(ciMethod* target,
 // ------------------------------------------------------------------
 // ciEnv::comp_level
 int ciEnv::comp_level() {
-  if (task() == NULL)  return CompLevel_highest_tier;
+  if (task() == NULL)  return CompilationPolicy::highest_compile_level();
   return task()->comp_level();
 }
 

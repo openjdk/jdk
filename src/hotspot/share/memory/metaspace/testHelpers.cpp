@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ MetaspaceTestContext::MetaspaceTestContext(const char* name, size_t commit_limit
 
 MetaspaceTestContext::~MetaspaceTestContext() {
   DEBUG_ONLY(verify();)
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   delete _context;
   if (_rs.is_reserved()) {
     _rs.release();

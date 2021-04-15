@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8225055 8239804 8246774 8258338
+ * @bug      8225055 8239804 8246774 8258338 8261976
  * @summary  Record types
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -77,7 +77,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -98,7 +98,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -119,7 +119,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E()">R</a></span>()</code>""");
+                    <code><a href="#%3Cinit%3E()" class="member-name-link">R</a>()</code>""");
     }
 
     @Test
@@ -149,7 +149,7 @@ public class TestRecordTypes extends JavadocTester {
                     <dd><code><span id="param-r1">r1</span></code> - This is a component.</dd>
                     </dl>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -182,7 +182,7 @@ public class TestRecordTypes extends JavadocTester {
                     <dd><code><span id="param-r1">r1</span></code> - This is a component.</dd>
                     </dl>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -206,23 +206,23 @@ public class TestRecordTypes extends JavadocTester {
         // the documentation for the generated members.
         checkOrder("p/R.html",
                 """
-                    <section class="constructor-summary" id="constructor.summary">""",
-                "<a href=\"#%3Cinit%3E(int)\">R</a>",
+                    <section class="constructor-summary" id="constructor-summary">""",
+                "<a href=\"#%3Cinit%3E(int)\" class=\"member-name-link\">R</a>",
                 "Creates an instance of a <code>R</code> record class.",
                 """
-                    <section class="method-summary" id="method.summary">""",
+                    <section class="method-summary" id="method-summary">""",
                 """
-                    <a href="#equals(java.lang.Object)">equals</a>""",
+                    <a href="#equals(java.lang.Object)" class="member-name-link">equals</a>""",
                 """
                     Indicates whether some other object is "equal to" this one.""",
                 """
-                    <a href="#hashCode()">hashCode</a>""",
+                    <a href="#hashCode()" class="member-name-link">hashCode</a>""",
                 "Returns a hash code value for this object.",
-                "<a href=\"#r1()\">r1</a>",
+                "<a href=\"#r1()\" class=\"member-name-link\">r1</a>",
                 """
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component.""",
                 """
-                    <a href="#toString()">toString</a>""",
+                    <a href="#toString()" class="member-name-link">toString</a>""",
                 "Returns a string representation of this record class.",
                 "Method Details",
                 """
@@ -269,23 +269,23 @@ public class TestRecordTypes extends JavadocTester {
         // the documentation for the generated members.
         checkOrder("p/R.html",
                 """
-                    <section class="constructor-summary" id="constructor.summary">""",
-                "<a href=\"#%3Cinit%3E(int)\">R</a>",
+                    <section class="constructor-summary" id="constructor-summary">""",
+                "<a href=\"#%3Cinit%3E(int)\" class=\"member-name-link\">R</a>",
                 "Creates an instance of a <code>R</code> record class.",
                 """
-                    <section class="method-summary" id="method.summary">""",
+                    <section class="method-summary" id="method-summary">""",
                 """
-                    <a href="#equals(java.lang.Object)">equals</a>""",
+                    <a href="#equals(java.lang.Object)" class="member-name-link">equals</a>""",
                 """
                     Indicates whether some other object is "equal to" this one.""",
                 """
-                    <a href="#hashCode()">hashCode</a>""",
+                    <a href="#hashCode()" class="member-name-link">hashCode</a>""",
                 "Returns a hash code value for this object.",
-                "<a href=\"#r1()\">r1</a>",
+                "<a href=\"#r1()\" class=\"member-name-link\">r1</a>",
                 """
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component.""",
                 """
-                    <a href="#toString()">toString</a>""",
+                    <a href="#toString()" class="member-name-link">toString</a>""",
                 "Returns a string representation of this record class.",
                 "Method Details",
                 """
@@ -371,21 +371,21 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOrder("p/R.html",
                 """
-                    <section class="constructor-summary" id="constructor.summary">""",
-                "<a href=\"#%3Cinit%3E(int)\">R</a>",
+                    <section class="constructor-summary" id="constructor-summary">""",
+                "<a href=\"#%3Cinit%3E(int)\" class=\"member-name-link\">R</a>",
                 "User constructor.",
                 """
-                    <section class="method-summary" id="method.summary">""",
+                    <section class="method-summary" id="method-summary">""",
                 """
-                    <a href="#equals(java.lang.Object)">equals</a>""",
+                    <a href="#equals(java.lang.Object)" class="member-name-link">equals</a>""",
                 "User equals.",
                 """
-                    <a href="#hashCode()">hashCode</a>""",
+                    <a href="#hashCode()" class="member-name-link">hashCode</a>""",
                 "User hashCode.",
-                "<a href=\"#r1()\">r1</a>",
+                "<a href=\"#r1()\" class=\"member-name-link\">r1</a>",
                 "User accessor.",
                 """
-                    <a href="#toString()">toString</a>""",
+                    <a href="#toString()" class="member-name-link">toString</a>""",
                 "User toString."
         );
     }
@@ -463,7 +463,7 @@ public class TestRecordTypes extends JavadocTester {
 
         Set<ElementType> t = types.isEmpty() ? EnumSet.allOf(ElementType.class) : types;
         String anno = """
-            <a href="Anno.html" title="annotation in p">@Anno</a>""";
+            <a href="Anno.html" title="annotation interface in p">@Anno</a>""";
         String rcAnno = t.contains(ElementType.RECORD_COMPONENT) ? anno + " " : "";
         String fAnno = t.contains(ElementType.FIELD) ? "<span class=\"annotations\">" + anno + "\n</span>" : "";
         String pAnno = t.contains(ElementType.PARAMETER) ? anno + "\n " : "";
@@ -516,10 +516,10 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h2 title="Contents">Contents</h2>
                     <ul>
-                    <li><a href="#record.class">Record Classes</a></li>
+                    <li><a href="#record-class">Record Classes</a></li>
                     </ul>""",
                 """
-                    <div id="record.class">
+                    <div id="record-class">
                     <div class="caption"><span>Record Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Record Class</div>

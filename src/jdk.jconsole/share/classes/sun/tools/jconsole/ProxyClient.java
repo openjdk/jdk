@@ -87,8 +87,8 @@ public class ProxyClient implements JConsoleContext {
     private boolean vmConnector = false;
     private boolean sslRegistry = false;
     private boolean sslStub = false;
-    final private String connectionName;
-    final private String displayName;
+    private final String connectionName;
+    private final String displayName;
 
     private ClassLoadingMXBean    classLoadingMBean = null;
     private CompilationMXBean     compilationMBean = null;
@@ -103,7 +103,7 @@ public class ProxyClient implements JConsoleContext {
     private List<MemoryPoolProxy>           memoryPoolProxies = null;
     private List<GarbageCollectorMXBean>    garbageCollectorMBeans = null;
 
-    final static private String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
+    private static final String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
         "com.sun.management:type=HotSpotDiagnostic";
 
     private ProxyClient(String hostName, int port,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutex.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 
 G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
@@ -74,7 +75,7 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) 
   }
 
   // CodeCache is already processed in java roots
-  _process_strong_tasks.all_tasks_completed(n_workers(), G1RP_PS_CodeCache_oops_do);
+  _process_strong_tasks.all_tasks_claimed(G1RP_PS_CodeCache_oops_do);
 }
 
 // Adaptor to pass the closures to the strong roots in the VM.
@@ -105,9 +106,8 @@ void G1RootProcessor::process_strong_roots(OopClosure* oops,
 
   // CodeCache is already processed in java roots
   // refProcessor is not needed since we are inside a safe point
-  _process_strong_tasks.all_tasks_completed(n_workers(),
-                                            G1RP_PS_CodeCache_oops_do,
-                                            G1RP_PS_refProcessor_oops_do);
+  _process_strong_tasks.all_tasks_claimed(G1RP_PS_CodeCache_oops_do,
+                                          G1RP_PS_refProcessor_oops_do);
 }
 
 // Adaptor to pass the closures to all the roots in the VM.
@@ -143,7 +143,7 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
   process_code_cache_roots(blobs, NULL, 0);
 
   // refProcessor is not needed since we are inside a safe point
-  _process_strong_tasks.all_tasks_completed(n_workers(), G1RP_PS_refProcessor_oops_do);
+  _process_strong_tasks.all_tasks_claimed(G1RP_PS_refProcessor_oops_do);
 }
 
 void G1RootProcessor::process_java_roots(G1RootClosures* closures,
@@ -195,10 +195,10 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
   }
 #endif
 
-  for (int i = 0; i < _oop_storage_set_strong_par_state.par_state_count(); ++i) {
-    G1GCPhaseTimes::GCParPhases phase = G1GCPhaseTimes::GCParPhases(G1GCPhaseTimes::StrongOopStorageSetRoots + i);
+  for (auto id : EnumRange<OopStorageSet::StrongId>()) {
+    G1GCPhaseTimes::GCParPhases phase = G1GCPhaseTimes::strong_oopstorage_phase(id);
     G1GCParPhaseTimesTracker x(phase_times, phase, worker_id);
-    _oop_storage_set_strong_par_state.par_state(i)->oops_do(closures->strong_oops());
+    _oop_storage_set_strong_par_state.par_state(id)->oops_do(closures->strong_oops());
   }
 }
 

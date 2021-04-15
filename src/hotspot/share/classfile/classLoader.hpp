@@ -27,7 +27,7 @@
 
 #include "jimage.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
@@ -65,10 +65,10 @@ public:
   ClassPathEntry() : _next(NULL) {}
   // Attempt to locate file_name through this class path entry.
   // Returns a class file parsing stream if successfull.
-  virtual ClassFileStream* open_stream(const char* name, TRAPS) = 0;
+  virtual ClassFileStream* open_stream(Thread* current, const char* name) = 0;
   // Open the stream for a specific class loader
-  virtual ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS) {
-    return open_stream(name, THREAD);
+  virtual ClassFileStream* open_stream_for_loader(Thread* current, const char* name, ClassLoaderData* loader_data) {
+    return open_stream(current, name);
   }
 };
 
@@ -81,7 +81,7 @@ class ClassPathDirEntry: public ClassPathEntry {
     _dir = copy_path(dir);
   }
   virtual ~ClassPathDirEntry() {}
-  ClassFileStream* open_stream(const char* name, TRAPS);
+  ClassFileStream* open_stream(Thread* current, const char* name);
 };
 
 // Type definitions for zip file and zip file entry
@@ -108,8 +108,8 @@ class ClassPathZipEntry: public ClassPathEntry {
   const char* name() const { return _zip_name; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append, bool from_class_path_attr);
   virtual ~ClassPathZipEntry();
-  u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
-  ClassFileStream* open_stream(const char* name, TRAPS);
+  u1* open_entry(Thread* current, const char* name, jint* filesize, bool nul_terminate);
+  ClassFileStream* open_stream(Thread* current, const char* name);
   void contents_do(void f(const char* name, void* context), void* context);
 };
 
@@ -128,8 +128,8 @@ public:
   void close_jimage();
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   virtual ~ClassPathImageEntry();
-  ClassFileStream* open_stream(const char* name, TRAPS);
-  ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS);
+  ClassFileStream* open_stream(Thread* current, const char* name);
+  ClassFileStream* open_stream_for_loader(Thread* current, const char* name, ClassLoaderData* loader_data);
 };
 
 // ModuleClassPathList contains a linked list of ClassPathEntry's
@@ -182,12 +182,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_app_classfile_bytes_read;
   static PerfCounter* _perf_sys_classfile_bytes_read;
 
-  static PerfCounter* _sync_systemLoaderLockContentionRate;
-  static PerfCounter* _sync_nonSystemLoaderLockContentionRate;
-  static PerfCounter* _sync_JVMFindLoadedClassLockFreeCounter;
-  static PerfCounter* _sync_JVMDefineClassLockFreeCounter;
-  static PerfCounter* _sync_JNIDefineClassLockFreeCounter;
-
   static PerfCounter* _unsafe_defineClassCallCounter;
 
   // The boot class path consists of 3 ordered pieces:
@@ -228,9 +222,10 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static ClassPathEntry* _last_app_classpath_entry;)
   CDS_ONLY(static ClassPathEntry* _module_path_entries;)
   CDS_ONLY(static ClassPathEntry* _last_module_path_entry;)
-  CDS_ONLY(static void setup_app_search_path(const char* class_path);)
-  CDS_ONLY(static void setup_module_search_path(const char* path, TRAPS);)
-  static void add_to_app_classpath_entries(const char* path,
+  CDS_ONLY(static void setup_app_search_path(Thread* current, const char* class_path);)
+  CDS_ONLY(static void setup_module_search_path(Thread* current, const char* path);)
+  static void add_to_app_classpath_entries(Thread* current,
+                                           const char* path,
                                            ClassPathEntry* entry,
                                            bool check_for_duplicates);
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
@@ -246,8 +241,8 @@ class ClassLoader: AllStatic {
   //   - setup the boot loader's system class path
   //   - setup the boot loader's patch mod entries, if present
   //   - create the ModuleEntry for java.base
-  static void setup_bootstrap_search_path();
-  static void setup_boot_search_path(const char *class_path);
+  static void setup_bootstrap_search_path(Thread* current);
+  static void setup_bootstrap_search_path_impl(Thread* current, const char *class_path);
   static void setup_patch_mod_entries();
   static void create_javabase();
 
@@ -260,26 +255,26 @@ class ClassLoader: AllStatic {
   static int  _libzip_loaded; // used to sync loading zip.
   static void release_load_zip_library();
   static inline void load_zip_library_if_needed();
+  static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
 
  public:
-  static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
-                                                 bool throw_exception,
+  static ClassPathEntry* create_class_path_entry(Thread* current,
+                                                 const char *path, const struct stat* st,
                                                  bool is_boot_append,
-                                                 bool from_class_path_attr, TRAPS);
+                                                 bool from_class_path_attr);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
-  static bool get_canonical_path(const char* orig, char* out, int len);
+  static char* get_canonical_path(const char* orig, Thread* thread);
   static const char* file_name_for_class_name(const char* class_name,
                                               int class_name_len);
   static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data);
   static int crc32(int crc, const char* buf, int len);
-  static bool update_class_path_entry_list(const char *path,
+  static bool update_class_path_entry_list(Thread* current,
+                                           const char *path,
                                            bool check_for_duplicates,
                                            bool is_boot_append,
-                                           bool from_class_path_attr,
-                                           bool throw_exception=true);
-  CDS_ONLY(static void update_module_path_entry_list(const char *path, TRAPS);)
+                                           bool from_class_path_attr);
   static void print_bootclasspath();
 
   // Timing
@@ -305,31 +300,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_app_classfile_bytes_read() { return _perf_app_classfile_bytes_read; }
   static PerfCounter* perf_sys_classfile_bytes_read() { return _perf_sys_classfile_bytes_read; }
 
-  // Record how often system loader lock object is contended
-  static PerfCounter* sync_systemLoaderLockContentionRate() {
-    return _sync_systemLoaderLockContentionRate;
-  }
-
-  // Record how often non system loader lock object is contended
-  static PerfCounter* sync_nonSystemLoaderLockContentionRate() {
-    return _sync_nonSystemLoaderLockContentionRate;
-  }
-
-  // Record how many calls to JVM_FindLoadedClass w/o holding a lock
-  static PerfCounter* sync_JVMFindLoadedClassLockFreeCounter() {
-    return _sync_JVMFindLoadedClassLockFreeCounter;
-  }
-
-  // Record how many calls to JVM_DefineClass w/o holding a lock
-  static PerfCounter* sync_JVMDefineClassLockFreeCounter() {
-    return _sync_JVMDefineClassLockFreeCounter;
-  }
-
-  // Record how many calls to jni_DefineClass w/o holding a lock
-  static PerfCounter* sync_JNIDefineClassLockFreeCounter() {
-    return _sync_JNIDefineClassLockFreeCounter;
-  }
-
   // Record how many calls to Unsafe_DefineClass
   static PerfCounter* unsafe_defineClassCallCounter() {
     return _unsafe_defineClassCallCounter;
@@ -341,12 +311,13 @@ class ClassLoader: AllStatic {
   static void close_jrt_image();
 
   // Add a module's exploded directory to the boot loader's exploded module build list
-  static void add_to_exploded_build_list(Symbol* module_name, TRAPS);
+  static void add_to_exploded_build_list(Thread* current, Symbol* module_name);
 
   // Attempt load of individual class from either the patched or exploded modules build lists
-  static ClassFileStream* search_module_entries(const GrowableArray<ModuleClassPathList*>* const module_list,
+  static ClassFileStream* search_module_entries(Thread* current,
+                                                const GrowableArray<ModuleClassPathList*>* const module_list,
                                                 const char* const class_name,
-                                                const char* const file_name, TRAPS);
+                                                const char* const file_name);
 
   // Load individual .class file
   static InstanceKlass* load_class(Symbol* class_name, bool search_append_only, TRAPS);
@@ -366,9 +337,9 @@ class ClassLoader: AllStatic {
   static objArrayOop get_system_packages(TRAPS);
 
   // Initialization
-  static void initialize();
-  static void classLoader_init2(TRAPS);
-  CDS_ONLY(static void initialize_shared_path();)
+  static void initialize(TRAPS);
+  static void classLoader_init2(Thread* current);
+  CDS_ONLY(static void initialize_shared_path(Thread* current);)
   CDS_ONLY(static void initialize_module_path(TRAPS);)
 
   static int compute_Object_vtable();
@@ -395,7 +366,7 @@ class ClassLoader: AllStatic {
   static int num_module_path_entries();
   static void  exit_with_path_failure(const char* error, const char* message);
   static char* skip_uri_protocol(char* source);
-  static void  record_result(InstanceKlass* ik, const ClassFileStream* stream, TRAPS);
+  static void  record_result(Thread* current, InstanceKlass* ik, const ClassFileStream* stream);
 #endif
 
   static char* lookup_vm_options();

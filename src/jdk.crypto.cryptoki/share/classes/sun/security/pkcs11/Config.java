@@ -84,7 +84,7 @@ final class Config {
         osArch = props.get(2);
     }
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     private static void debug(Object o) {
         if (DEBUG) {
@@ -898,7 +898,7 @@ final class Config {
         });
     }
 
-    private final static CK_ATTRIBUTE[] CK_A0 = new CK_ATTRIBUTE[0];
+    private static final CK_ATTRIBUTE[] CK_A0 = new CK_ATTRIBUTE[0];
 
     private String parseOperation() throws IOException {
         String op = parseWord();
