@@ -61,23 +61,22 @@ Java_sun_nio_fs_UnixCopyFile_transfer
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
 #if defined(__linux__)
-    // Attempt to transfer within the kernel
+    // Transfer within the kernel
+    const size_t count = 1048576; // 1 MB to give cancellation a chance
     ssize_t bytes_sent;
     do {
-        // sendfile() will transfer at most 0x7ffff000 bytes
-        RESTARTABLE(sendfile64(dst, src, NULL, 0x7ffff000), bytes_sent);
+        // sendfile() can transfer at most 0x7ffff000 bytes
+        RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
+        if (bytes_sent == -1) {
+            throwUnixException(env, errno);
+            return;
+        }
         if (cancel != NULL && *cancel != 0) {
             throwUnixException(env, ECANCELED);
             return;
         }
     } while (bytes_sent > 0);
-
-    // sendfile() returns zero at src EOF
-    if (bytes_sent == 0) {
-        return;
-    }
-#endif
-
+#else
     // Transfer via user-space buffers
     char buf[8192];
 
@@ -107,4 +106,5 @@ Java_sun_nio_fs_UnixCopyFile_transfer
             len -= n;
         } while (len > 0);
     }
+#endif
 }
