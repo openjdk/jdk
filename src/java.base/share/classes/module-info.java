@@ -147,6 +147,7 @@ module java.base {
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
+        java.instrument,
         java.logging,
         java.management,
         java.naming,
@@ -174,6 +175,7 @@ module java.base {
     exports jdk.internal.logger to
         java.logging;
     exports jdk.internal.org.objectweb.asm to
+        java.instrument,
         jdk.jartool,
         jdk.jfr,
         jdk.jlink;
@@ -190,6 +192,7 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.misc to
         java.desktop,
+        java.instrument,
         java.logging,
         java.management,
         java.naming,

@@ -44,7 +44,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarFile;
 
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.VM;
 import jdk.internal.module.Modules;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /*
@@ -324,6 +329,67 @@ public class InstrumentationImpl implements Instrumentation {
             List<Class<?>> providers = e.getValue();
             providers.forEach(p -> Modules.addProvides(module, service, p));
         }
+    }
+
+    @Override
+    public Class<?> defineClass(ClassLoader loader, ProtectionDomain pd, byte[] bytes) {
+        int magic = readInt(bytes, 0);
+        if (magic != 0xCAFEBABE) {
+            throw new ClassFormatError("Incompatible magic value: " + magic);
+        }
+        int minor = readUnsignedShort(bytes, 4);
+        int major = readUnsignedShort(bytes, 6);
+        if (!VM.isSupportedClassFileVersion(major, minor)) {
+            throw new UnsupportedClassVersionError("Unsupported class file version " + major + "." + minor);
+        }
+
+        String name;
+        int accessFlags;
+        try {
+            ClassReader reader = new ClassReader(bytes);
+            // ClassReader::getClassName does not check if `this_class` is CONSTANT_Class_info
+            // workaround to read `this_class` using readConst and validate the value
+            int thisClass = reader.readUnsignedShort(reader.header + 2);
+            Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
+            if (!(constant instanceof Type type)) {
+                throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
+            }
+            if (!type.getDescriptor().startsWith("L")) {
+                throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
+            }
+            name = type.getClassName();
+            accessFlags = reader.readUnsignedShort(reader.header);
+        } catch (RuntimeException e) {
+            // ASM exceptions are poorly specified
+            ClassFormatError cfe = new ClassFormatError();
+            cfe.initCause(e);
+            throw cfe;
+        }
+
+        // must be a class or interface
+        if ((accessFlags & Opcodes.ACC_MODULE) != 0) {
+            throw new IllegalArgumentException("Not a class or interface: ACC_MODULE flag is set");
+        }
+
+        return SharedSecrets.getJavaLangAccess()
+                .defineClass(loader, name, bytes, pd, "__instrumentation_defined__");
+    }
+
+    private static int readInt(byte[] bytes, int offset) {
+        if ((offset+4) > bytes.length) {
+            throw new ClassFormatError("Invalid ClassFile structure");
+        }
+        return ((bytes[offset] & 0xFF) << 24)
+                | ((bytes[offset + 1] & 0xFF) << 16)
+                | ((bytes[offset + 2] & 0xFF) << 8)
+                | (bytes[offset + 3] & 0xFF);
+    }
+
+    private static int readUnsignedShort(byte[] bytes, int offset) {
+        if ((offset+2) > bytes.length) {
+            throw new ClassFormatError("Invalid ClassFile structure");
+        }
+        return ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
     }
 
     private Map<String, Set<Module>>

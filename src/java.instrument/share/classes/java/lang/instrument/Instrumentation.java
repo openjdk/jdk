@@ -536,6 +536,50 @@ public interface Instrumentation {
     appendToSystemClassLoaderSearch(JarFile jarfile);
 
     /**
+     * Defines a new class or interface for the given class loader using the specified
+     * class file. This has the same effect as if calling
+     * {@link ClassLoader#defineClass(String, byte[], int, int, ProtectionDomain)}.
+     *
+     * <p> The {@code bytes} parameter is the class bytes of a valid class file (as defined
+     * by the <em>The Java Virtual Machine Specification</em>) with a class name in the
+     * same package as the lookup class. </p>
+     *
+     * <p> This method does not run the class initializer. The class initializer may
+     * run at a later time, as detailed in section 12.4 of the <em>The Java Language
+     * Specification</em>. </p>
+     *
+     * <p>
+     * <cite>The Java Virtual Machine Specification</cite>
+     * specifies that a subsequent attempt to resolve a symbolic
+     * reference that the Java virtual machine has previously unsuccessfully attempted
+     * to resolve always fails with the same error that was thrown as a result of the
+     * initial resolution attempt. Consequently, if the JAR file contains an entry
+     * that corresponds to a class for which the Java virtual machine has
+     * unsuccessfully attempted to resolve a reference, then subsequent attempts to
+     * resolve that reference will fail with the same error as the initial attempt.
+     *
+     * @param loader The class loader in which the class is to be defined. This might
+     *               be {@code null} to represent the bootstrap class loader.
+     * @param pd    The class's protection domain or {@code null} for defining a
+     *              default protection domain with all permissions.
+     * @param bytes The class file of the class that is being defined.
+     * @throws java.lang.NullPointerException if passed <code>null</code> for the
+     * class file
+     * @throws java.lang.ClassFormatError if passed an invalid class file.\
+     * @throws java.lang.IllegalArgumentException if passed a non-injectable class
+     * file, for example a module-info
+     * @throws java.lang.UnsupportedClassVersionError if passed a class file in a
+     * version that the current VM does not support.
+     * @throws VerifyError if the newly created class cannot be verified
+     * @throws LinkageError if a class with the same name already was defined by
+     * the targeted class loader or if the class cannot be linked for any other reason
+     * @return The class that has been defined.
+     *
+     * @since 17
+     */
+    Class<?> defineClass(ClassLoader loader, ProtectionDomain pd, byte[] bytes);
+
+    /**
      * Returns whether the current JVM configuration supports
      * {@linkplain #setNativeMethodPrefix(ClassFileTransformer,String)
      * setting a native method prefix}.
