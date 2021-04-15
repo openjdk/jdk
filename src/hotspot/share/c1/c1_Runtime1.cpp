@@ -175,7 +175,7 @@ static bool caller_is_deopted(JavaThread* current) {
 
 // Stress deoptimization
 static void deopt_caller(JavaThread* current) {
-  if ( !caller_is_deopted(current)) {
+  if (!caller_is_deopted(current)) {
     RegisterMap reg_map(current, false);
     frame runtime_frame = current->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
