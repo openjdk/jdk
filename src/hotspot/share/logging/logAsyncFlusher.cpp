@@ -39,10 +39,15 @@ void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
   assert_lock_strong(&_lock);
 
   if (_buffer.size() >= AsyncLogBufferSize)  {
-    if (Verbose) {
-      const AsyncLogMessage* h = _buffer.front();
-      assert(h != NULL, "sanity check");
-      if (h->message() != NULL) {
+    const AsyncLogMessage* h = _buffer.front();
+    assert(h != NULL, "sanity check");
+
+    if (h->message() != nullptr) {
+      bool p_created;
+      uintx* counter = _stats.add_if_absent(h->output(), 0, &p_created);
+      *counter = *counter + 1;
+
+      if (Verbose) {
         // Temporarily turn off SerializeVMOutput so defaultStream will not
         // invoke set_owner(self) for tty_lock.
         FlagSetting t(SerializeVMOutput, false);
@@ -85,10 +90,27 @@ void LogAsyncFlusher::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator 
 
 LogAsyncFlusher::LogAsyncFlusher()
   : _should_terminate(false),
-    _lock(Mutex::tty, "async-log-monitor", true /* allow_vm_block */, Mutex::_safepoint_check_never) {
+    _lock(Mutex::tty, "async-log-monitor", true /* allow_vm_block */, Mutex::_safepoint_check_never),
+    _stats(17 /*table_size*/) {
   if (os::create_thread(this, os::asynclog_thread)) {
     os::start_thread(this);
   }
+}
+
+bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uintx* counter) {
+  LogDecorators decorators = output->decorators();
+  decorators.without(LogDecorators::tags_decorator);
+  LogDecorations decorations(LogLevel::Warning, decorators);
+  const int sz = 128;
+  char out_of_band[sz];
+
+  if (*counter > 0) {
+    jio_snprintf(out_of_band, sz, UINTX_FORMAT " messages dropped...", *counter);
+    output->write_blocking(decorations, out_of_band);
+    *counter = 0;
+  }
+
+  return true;
 }
 
 void LogAsyncFlusher::flush() {
@@ -97,6 +119,9 @@ void LogAsyncFlusher::flush() {
   { // critical area
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     _buffer.pop_all(&logs);
+
+    AsyncLogMapIterator iter;
+    _stats.iterate(&iter);
   }
 
   LinkedListIterator<AsyncLogMessage> it(logs.head());

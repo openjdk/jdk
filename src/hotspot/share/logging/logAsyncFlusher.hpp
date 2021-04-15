@@ -24,13 +24,13 @@
 #ifndef SHARE_LOGGING_ASYNC_FLUSHER_HPP
 #define SHARE_LOGGING_ASYNC_FLUSHER_HPP
 #include "logging/logDecorations.hpp"
+#include "logging/logFileOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/task.hpp"
+#include "utilities/hashtable.hpp"
 #include "utilities/linkedlist.hpp"
-#include "utilities/pair.hpp"
 
 template <typename E>
 class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, mtLogging> {
@@ -78,8 +78,6 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, mtLogging
   }
 };
 
-class LogFileOutput;
-
 class AsyncLogMessage {
   LogFileOutput& _output;
   mutable char* _message;
@@ -89,7 +87,7 @@ class AsyncLogMessage {
 
 public:
   AsyncLogMessage(LogFileOutput& output, const LogDecorations& decorations, const char* msg)
-    : _output(output), _decorators(decorations.get_decorators()),
+    : _output(output), _decorators(output.decorators()),
     _level(decorations.get_level()), _tagset(decorations.get_logTagSet()) {
       // allow to fail here, then _message is NULL
       _message = os::strdup(msg, mtLogging);
@@ -115,9 +113,14 @@ public:
   }
 
   const char* message() const { return _message; }
+  LogFileOutput* output() const { return &_output; }
 };
 
 typedef LinkedListDeque<AsyncLogMessage> AsyncLogBuffer;
+typedef KVHashtable<LogFileOutput*, uintx, mtLogging> AsyncLogMap;
+struct AsyncLogMapIterator {
+  bool do_entry(LogFileOutput* output, uintx* counter);
+};
 
 // Flusher is a NonJavaThread which manages a FIFO capacity-bound buffer.
 class LogAsyncFlusher : public NonJavaThread {
@@ -133,10 +136,10 @@ class LogAsyncFlusher : public NonJavaThread {
   //
   // It also roles as a lock to consolidate buffer's MT-safety.
   Monitor _lock;
+  AsyncLogMap _stats; // statistics of dropping messages.
   AsyncLogBuffer _buffer;
 
   LogAsyncFlusher();
-
   void enqueue_impl(const AsyncLogMessage& msg);
   void run() override;
   char* name() const override { return (char*)"AsyncLog Thread"; }

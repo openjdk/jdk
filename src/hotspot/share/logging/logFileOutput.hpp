@@ -33,6 +33,7 @@ class LogDecorations;
 // The log file output, with support for file rotation based on a target size.
 class LogFileOutput : public LogFileStreamOutput {
   friend class AsyncLogMessage;
+  friend struct AsyncLogMapIterator;
  private:
   static const char* const FileOpenMode;
   static const char* const FileCountOptionKey;

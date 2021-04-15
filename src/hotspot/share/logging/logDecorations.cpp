@@ -33,7 +33,13 @@
 const char* volatile LogDecorations::_host_name = NULL;
 
 LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, const LogDecorators &decorators)
-    : _level(level), _tagset(tagset) {
+    : _level(level), _tagset(&tagset) {
+  create_decorations(decorators);
+}
+
+LogDecorations::LogDecorations(LogLevelType level, const LogDecorators &decorators)
+    : _level(level), _tagset(nullptr) {
+  assert(!decorators.is_decorator(LogDecorators::tags_decorator), "_tagset can't be NULL");
   create_decorations(decorators);
 }
 
@@ -64,21 +70,6 @@ void LogDecorations::create_decorations(const LogDecorators &decorators) {
   }
   DECORATOR_LIST
 #undef DECORATOR
-
-  assert(get_decorators() == decorators, "sanity check");
-}
-
-LogDecorators LogDecorations::get_decorators() const {
-  LogDecorators decorators(LogDecorators::None);
-
-#define DECORATOR(full_name, abbr)                                        \
-  if (_decoration_offset[LogDecorators::full_name##_decorator] != NULL) { \
-    decorators.combine_with(LogDecorators::full_name##_decorator);        \
-  }
-  DECORATOR_LIST
-#undef DECORATOR
-
-  return decorators;
 }
 
 #define ASSERT_AND_RETURN(written, pos) \
@@ -146,7 +137,11 @@ char* LogDecorations::create_level_decoration(char* pos) {
 }
 
 char* LogDecorations::create_tags_decoration(char* pos) {
-  int written = _tagset.label(pos, DecorationsBufferSize - (pos - _decorations_buffer));
+  int written = 0;
+
+  if (_tagset != nullptr) {
+    _tagset->label(pos, DecorationsBufferSize - (pos - _decorations_buffer));
+  }
   ASSERT_AND_RETURN(written, pos)
 }
 

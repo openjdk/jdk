@@ -35,7 +35,7 @@ class LogDecorations {
   char _decorations_buffer[DecorationsBufferSize];
   char* _decoration_offset[LogDecorators::Count];
   LogLevelType _level;
-  const LogTagSet& _tagset;
+  const LogTagSet* _tagset;
   static const char* volatile _host_name;
 
   const char* host_name();
@@ -47,6 +47,7 @@ class LogDecorations {
 
  public:
   LogDecorations(LogLevelType level, const LogTagSet& tagset, const LogDecorators& decorators);
+  LogDecorations(LogLevelType level, const LogDecorators& decorators);
 
   void set_level(LogLevelType level) {
     _level = level;
@@ -55,7 +56,7 @@ class LogDecorations {
   LogLevelType get_level() const { return _level; }
 
   const LogTagSet& get_logTagSet() const {
-    return _tagset;
+    return *_tagset;
   }
 
   const char* decoration(LogDecorators::Decorator decorator) const {
@@ -64,8 +65,6 @@ class LogDecorations {
     }
     return _decoration_offset[decorator];
   }
-
-  LogDecorators get_decorators() const;
 };
 
 #endif // SHARE_LOGGING_LOGDECORATIONS_HPP

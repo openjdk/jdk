@@ -205,3 +205,17 @@ TEST_VM_F(AsyncLogTest, logMessage) {
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, strs));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "a noisy message from other logger"));
 }
+
+TEST_VM_F(AsyncLogTest, droppingMessage) {
+  set_log_config(TestLogFileName, "logging=debug", "none" /*decorators*/, "async=true");
+  const size_t sz = 100;
+  LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
+  ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
+  AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz);
+
+  for (size_t i=0; i < sz * 1000; ++i) {
+    log_debug(logging)("a lot of log...");
+  }
+  flusher->flush();
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped..."));
+}
