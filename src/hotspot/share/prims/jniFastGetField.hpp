@@ -65,6 +65,11 @@ class JNI_FastGetField : AllStatic {
   static address generate_fast_get_int_field0(BasicType type);
   static address generate_fast_get_float_field0(BasicType type);
 
+#ifdef AARCH64
+  template<int BType>
+  static address generate_fast_get_int_field1();
+#endif // AARCH64
+
  public:
 #if defined(_WINDOWS) && !defined(_WIN64)
   static GetBooleanField_t jni_fast_GetBooleanField_fp;
