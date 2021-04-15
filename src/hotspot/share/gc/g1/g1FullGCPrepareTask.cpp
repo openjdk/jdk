@@ -68,12 +68,10 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       // as we need skip these regions in the later compact step.
       force_pinned = true;
       if (hr->is_young()) {
-        // Old regions have BOTs info for performance consideration, but young regions
-        // lack of BOTs info.
-        // Young regions with high live ratio might not be compacted during full gc,
-        // and they will be converted to old regions after full gc, at this situation
-        // we need to update the BOTs of these "young" regions to ensure better BOTs
-        // access performance after full gc.
+        // G1 updates the BOT for old region contents incrementally, but young regions
+        // lack BOT information for performance reasons.
+        // Recreate BOT information of high live ratio young regions here to keep expected
+        // performance during scanning their card tables in the collection pauses later.
         update_bot(hr);
       }
       log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
@@ -167,16 +165,16 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::should_compact(HeapRegion*
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::update_bot(HeapRegion* hr) {
-  HeapWord* limit = hr->top();
+  HeapWord* const limit = hr->top();
   HeapWord* next_addr = hr->bottom();
   HeapWord* threshold = hr->initialize_threshold();
-  HeapWord* pre_addr;
+  HeapWord* prev_addr;
   while (next_addr < limit) {
-    pre_addr = next_addr;
+    prev_addr = next_addr;
     next_addr = _bitmap->get_next_marked_addr(next_addr + 1, limit);
 
     if (next_addr > threshold) {
-      threshold = hr->cross_threshold(pre_addr, next_addr);
+      threshold = hr->cross_threshold(prev_addr, next_addr);
     }
   }
   assert(next_addr == limit, "Should stop the scan at the limit.");
