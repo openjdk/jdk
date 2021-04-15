@@ -857,7 +857,8 @@ BINARY_OP_UNPREDICATED(vsubD, SubVD, D, 2, sve_fsub)
 // vector mask cast
 
 instruct vmaskcast(vReg dst) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && n->bottom_type()->is_vect()->length() == n->in(1)->bottom_type()->is_vect()->length() &&
+            n->bottom_type()->is_vect()->length_in_bytes() == n->in(1)->bottom_type()->is_vect()->length_in_bytes());
   match(Set dst (VectorMaskCast dst));
   ins_cost(0);
   format %{ "vmaskcast $dst\t# empty (sve)" %}

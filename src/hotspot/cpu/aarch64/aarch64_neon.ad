@@ -3293,7 +3293,9 @@ instruct storemask2L(vecD dst, vecX src, immI_8 size)
 
 instruct vmaskcastD(vecD dst)
 %{
-  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 8);
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 8 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 8 &&
+            n->bottom_type()->is_vect()->length() == n->in(1)->bottom_type()->is_vect()->length());
   match(Set dst (VectorMaskCast dst));
   ins_cost(0);
   format %{ "vmaskcast $dst\t# empty" %}
@@ -3305,7 +3307,9 @@ instruct vmaskcastD(vecD dst)
 
 instruct vmaskcastX(vecX dst)
 %{
-  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 16);
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 16 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 16 &&
+            n->bottom_type()->is_vect()->length() == n->in(1)->bottom_type()->is_vect()->length());
   match(Set dst (VectorMaskCast dst));
   ins_cost(0);
   format %{ "vmaskcast $dst\t# empty" %}

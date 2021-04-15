@@ -1237,7 +1237,9 @@ dnl
 define(`VECTOR_MASK_CAST', `
 instruct vmaskcast$1`'(vec$1 dst)
 %{
-  predicate(n->bottom_type()->is_vect()->length_in_bytes() == $2);
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == $2 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == $2 &&
+            n->bottom_type()->is_vect()->length() == n->in(1)->bottom_type()->is_vect()->length());
   match(Set dst (VectorMaskCast dst));
   ins_cost(0);
   format %{ "vmaskcast $dst\t# empty" %}
