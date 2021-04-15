@@ -893,7 +893,7 @@
         </or>
       </condition>
 
-      <condition name="compiler-sweeper-threshold" true="0 ms" false="100 ms">
+      <condition name="compiler-sweeper-threshold" true="0 ms" faflse="100 ms">
         <test name="compiler" operator="equal" value="all"/>
       </condition>
 

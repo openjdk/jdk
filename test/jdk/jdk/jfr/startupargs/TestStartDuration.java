@@ -54,7 +54,7 @@ public class TestStartDuration {
 
     private static void testDurationInRange(String duration, Duration durationString, boolean wait) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:StartFlightRecording=name=TestStartDuration,duration=" + duration, TestValues.class.getName(),
+            "-XX:StartFlightRecording:name=TestStartDuration,duration=" + duration, TestValues.class.getName(),
             durationString.toString(), wait ? "wait" : "");
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
 
@@ -64,7 +64,7 @@ public class TestStartDuration {
 
     private static void testDurationJavaVersion(String duration, boolean inRange) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:StartFlightRecording=name=TestStartDuration,duration=" + duration, "-version");
+            "-XX:StartFlightRecording:name=TestStartDuration,duration=" + duration, "-version");
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
 
         if (inRange) {

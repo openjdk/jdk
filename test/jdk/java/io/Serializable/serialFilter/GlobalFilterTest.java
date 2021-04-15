@@ -60,7 +60,7 @@ import org.testng.annotations.DataProvider;
  * @build GlobalFilterTest SerialFilterTest
  * @requires vm.hasJFR
  * @run testng/othervm/policy=security.policy
- *        -XX:StartFlightRecording=name=DeserializationEvent,dumponexit=true
+ *        -XX:StartFlightRecording:name=DeserializationEvent,dumponexit=true
  *        -Djava.security.properties=${test.src}/java.security-extra1
  *        -Djava.security.debug=properties GlobalFilterTest
  */

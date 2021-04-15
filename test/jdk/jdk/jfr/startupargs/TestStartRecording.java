@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:StartFlightRecording=name=TestStartRecording,settings=profile jdk.jfr.startupargs.TestStartRecording
+ * @run main/othervm -XX:StartFlightRecording:name=TestStartRecording,settings=profile jdk.jfr.startupargs.TestStartRecording
  */
 public class TestStartRecording {
 

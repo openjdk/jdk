@@ -37,7 +37,7 @@ import jdk.test.lib.jfr.CommonHelper;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:StartFlightRecording=name=TestStartDelay,delay=5000s jdk.jfr.startupargs.TestStartDelay
+ * @run main/othervm -XX:StartFlightRecording:name=TestStartDelay,delay=5000s jdk.jfr.startupargs.TestStartDelay
  */
 public class TestStartDelay {
 

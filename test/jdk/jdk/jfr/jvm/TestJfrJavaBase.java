@@ -55,7 +55,7 @@ public class TestJfrJavaBase {
                 TestJfrJavaBase.class.getName(), "runtest"));
             output.shouldHaveExitValue(0);
         } else {
-            output = ProcessTools.executeTestJava("-XX:StartFlightRecording=dumponexit=true",
+            output = ProcessTools.executeTestJava("-XX:StartFlightRecording:dumponexit=true",
                 "--limit-modules", "java.base", "-version");
             checkOutput(output);
             output.shouldHaveExitValue(1);

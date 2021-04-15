@@ -46,7 +46,7 @@ public class TestStartName {
 
     private static void testName(String recordingName, boolean validName) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:StartFlightRecording=name=" + recordingName, TestName.class.getName(), recordingName);
+            "-XX:StartFlightRecording:name=" + recordingName, TestName.class.getName(), recordingName);
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
 
         if (validName) {

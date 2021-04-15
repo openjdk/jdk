@@ -41,8 +41,8 @@ import jdk.test.lib.process.ProcessTools;
  */
 public class TestBadOptionValues {
 
-    private static final String START_FLIGHT_RECORDING = "-XX:StartFlightRecording=";
-    private static final String FLIGHT_RECORDER_OPTIONS = "-XX:FlightRecorderOptions=";
+    private static final String START_FLIGHT_RECORDING = "-XX:StartFlightRecording:";
+    private static final String FLIGHT_RECORDER_OPTIONS = "-XX:FlightRecorderOptions:";
 
     private static void test(String prepend, String expectedOutput, String... options) throws Exception {
         ProcessBuilder pb;

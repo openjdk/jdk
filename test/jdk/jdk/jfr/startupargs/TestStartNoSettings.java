@@ -36,7 +36,7 @@ import jdk.jfr.Recording;
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.startupargs.TestStartNoSettings
- *      -XX:StartFlightRecording=settings=none
+ *      -XX:StartFlightRecording:settings=none
  */
 public class TestStartNoSettings {
 
@@ -61,7 +61,7 @@ public class TestStartNoSettings {
         }
 
         if (!userEnabled)  {
-            throw new Exception("Expected 'UserEvent' to be enabled with -XX:StartFlightRecording=settings=none");
+            throw new Exception("Expected 'UserEvent' to be enabled with -XX:StartFlightRecording:settings=none");
         }
     }
 }

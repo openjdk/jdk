@@ -93,7 +93,7 @@ public class TestShutdownEvent {
                                 "-Xlog:jfr=debug",
                                 "-XX:-CreateCoredumpOnCrash",
                                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                                "-XX:StartFlightRecording=filename=./dumped.jfr,dumponexit=true,settings=default",
+                                "-XX:StartFlightRecording:filename=./dumped.jfr,dumponexit=true,settings=default",
                                 "jdk.jfr.event.runtime.TestShutdownEvent$TestMain",
                                 String.valueOf(subTestIndex));
         OutputAnalyzer output = ProcessTools.executeProcess(pb);

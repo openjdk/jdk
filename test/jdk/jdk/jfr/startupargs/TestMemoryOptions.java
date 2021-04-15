@@ -325,7 +325,7 @@ public class TestMemoryOptions {
         }
 
         public String getTestString() {
-            String optionString = "-XX:FlightRecorderOptions=";
+            String optionString = "-XX:FlightRecorderOptions:";
             for (Option o : optionList) {
                 String optionParamString = o.getOptionParamString();
                 if (optionParamString == null) {
@@ -334,7 +334,7 @@ public class TestMemoryOptions {
                 optionString = optionString.concat(optionParamString);
                 optionString = optionString.concat(",");
             }
-            if (optionString.equals("-XX:FlightRecorderOptions=")) {
+            if (optionString.equals("-XX:FlightRecorderOptions:")) {
                 return null;
             }
             // strip last ","

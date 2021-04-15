@@ -35,7 +35,7 @@ import jdk.test.lib.Asserts;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:StartFlightRecording=name=myrec,settings=profile -XX:FlightRecorderOptions=repository=./subdirectory/subdirectory1/subdirectory2/subdirectory3/subdirectory4/subdirectory5/subdirectory6/subdirectory7/subdirectory8/subdirectory9/subdirectory10/subdirectory11/subdirectory12/subdirectory13/subdirectory14/subdirectory15 jdk.jfr.startupargs.TestRepositoryPathLong
+ * @run main/othervm -XX:StartFlightRecording:name=myrec,settings=profile -XX:FlightRecorderOptions:repository=./subdirectory/subdirectory1/subdirectory2/subdirectory3/subdirectory4/subdirectory5/subdirectory6/subdirectory7/subdirectory8/subdirectory9/subdirectory10/subdirectory11/subdirectory12/subdirectory13/subdirectory14/subdirectory15 jdk.jfr.startupargs.TestRepositoryPathLong
  */
 public class TestRepositoryPathLong {
 

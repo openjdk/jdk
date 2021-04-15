@@ -37,7 +37,7 @@ import jdk.jfr.internal.PrivateAccess;
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main/othervm -XX:StartFlightRecording=flush-interval=2s jdk.jfr.startupargs.TestFlushInterval
+ * @run main/othervm -XX:StartFlightRecording:flush-interval=2s jdk.jfr.startupargs.TestFlushInterval
  */
 public class TestFlushInterval {
 
