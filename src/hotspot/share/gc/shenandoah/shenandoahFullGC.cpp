@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 
+#include "compiler/oopMap.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"

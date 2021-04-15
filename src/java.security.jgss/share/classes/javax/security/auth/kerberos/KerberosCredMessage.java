@@ -49,9 +49,9 @@ import java.util.Objects;
  */
 public final class KerberosCredMessage implements Destroyable {
 
-    final private KerberosPrincipal sender;
-    final private KerberosPrincipal recipient;
-    final private byte[] message;
+    private final KerberosPrincipal sender;
+    private final KerberosPrincipal recipient;
+    private final byte[] message;
 
     private boolean destroyed = false;
 
