@@ -35,4 +35,18 @@
 - (int)accessibilityLineForIndex:(int)index;
 - (NSRange)accessibilityRangeForLine:(int)line;
 - (nullable NSString *)accessibilityStringForRange:(NSRange)range;
+
+- (NSRange) accessibleRangeForPosition:(NSPoint)point;
+- (NSRange)accessibleRangeForIndex:(int)index;
+
+@property(readonly, nullable) NSString *accessibleSelectedText;
+@property(readonly, nullable) NSValue *accessibleSelectedTextRange;
+@property(readonly, nullable) NSNumber *accessibleNumberOfCharacters;
+@property(readonly, nullable) NSNumber *accessibleInsertionPointLineNumber;
+@property(readonly) BOOL accessibleIsValueSettable;
+@property(readonly) BOOL accessibleIsPasswordText;
+
+- (void)accessibleSetSelectedText:(nullable NSString *)accessibilitySelectedText;
+- (void)accessibleSetSelectedTextRange:(NSRange)accessibilitySelectedTextRange;
+
 @end
