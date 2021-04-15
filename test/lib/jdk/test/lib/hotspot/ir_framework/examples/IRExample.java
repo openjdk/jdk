@@ -81,6 +81,7 @@ public class IRExample {
             TestFramework.run(FailingExamples.class); // Secondly, run tests from FailingExamples
         } catch (IRViolationException e) {
             // Expected. Check output to see how IR failures are reported.
+            throw e;
         }
     }
 

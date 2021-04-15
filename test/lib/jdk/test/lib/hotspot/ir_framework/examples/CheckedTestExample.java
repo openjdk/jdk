@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
- 
+
 package jdk.test.lib.hotspot.ir_framework.examples;
 
 import jdk.test.lib.hotspot.ir_framework.*;
@@ -42,7 +42,7 @@ import jdk.test.lib.hotspot.ir_framework.*;
  *     <li><p>Invoke @Test method once again and then always invoke the @Check method once again.</li>
  * </ol>
  * <p>
- *     
+ *
  * Configurable things for checked tests:
  * <ul>
  *     <li><p>At @Test method:</li>

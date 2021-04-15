@@ -175,7 +175,7 @@ public class TestFramework {
      * Use this constructor if you want to use multiple run options (flags, helper classes, scenarios).
      * Use the associated add methods ({@link #addFlags(String...)}, @link #addScenarios(Scenario...)},
      * {@link #addHelperClasses(Class...)}) to set up everything and then start the testing by invoking {@link #start()}.
-     * 
+     *
      * @param testClass the class to be tested by the framework.
      * @see #TestFramework()
      */
@@ -251,10 +251,10 @@ public class TestFramework {
      *     <li><p>If you want to run your JTreg test with multiple flag combinations, use
      *            {@link #runWithScenarios(Scenario...)}</li>
      * </ul>
-     * 
+     *
      * @param testClass the class to be tested by the framework.
      * @param flags VM flags to be used for the test VM.
-     *              
+     *
      * @see #runWithFlags(String...)
      */
     public static void runWithFlags(Class<?> testClass, String... flags) {

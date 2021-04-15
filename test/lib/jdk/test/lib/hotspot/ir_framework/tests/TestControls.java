@@ -148,12 +148,12 @@ public class TestControls {
     public void testDontCompile() {
         executed[2]++;
     }
-    
+
     @DontCompile
     public static void dontCompile() {
         executed[3]++;
     }
-    
+
     @Run(test = "testDontCompile", mode = RunMode.STANDALONE)
     public void runTestDontCompile() throws NoSuchMethodException {
         for (int i = 0; i < 10000; i++) {

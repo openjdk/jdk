@@ -33,7 +33,7 @@ class TestRun {
             throw new TestRunException(failureMessage);
         }
     }
-    
+
     public static void fail(String failureMessage) {
         throw new TestRunException(failureMessage);
     }

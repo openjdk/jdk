@@ -43,15 +43,15 @@ import jdk.test.lib.hotspot.ir_framework.*;
  *
  * Configurable things for simple tests (no @Run or @Check) at @Test method:
  * <ul>
- *     <li><p>compLevel: Specify at which compilation level the test should be compiled by the framework at step <b>(**)</b>.</li>
- *                       If {@link CompLevel#WAIT_FOR_COMPILATION} is specified, the framework will continue invoke the 
- *                       method until HotSpot compiles it. If it is not compiled after 10s, an exception is thrown.
+ *     <li><p>compLevel: Specify at which compilation level the test should be compiled by the framework at step <b>(**)</b>.
+ *                       If {@link CompLevel#WAIT_FOR_COMPILATION} is specified, the framework will continue invoke the
+ *                       method until HotSpot compiles it. If it is not compiled after 10s, an exception is thrown.</li>
  *     <li><p>@Warmup: Change warm-up iterations of test (defined by default by TestFrameworkExecution.WARMUP_ITERATIONS)</li>
  *     <li><p>@Arguments: If a @Test method specifies arguments, you need to provide arguments by using @Arguments such
  *                        that the framework knows how to call the method. If you need more complex values, use @Run.</li>
  *     <li><p>@IR: Arbitrary number of @IR rules.</li>
  * </ul>
- * 
+ *
  * @see Test
  * @see Arguments
  * @see Warmup

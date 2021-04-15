@@ -30,7 +30,7 @@ import java.util.Map;
 
 /**
  * Test info class which provides some useful utility methods and information about a <b>custom run test</b>.
- * 
+ *
  * @see Run
  */
 public class RunInfo extends AbstractInfo {

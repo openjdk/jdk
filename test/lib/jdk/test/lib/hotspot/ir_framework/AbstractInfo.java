@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * Base info class which provides some useful utility methods and information about a test.
  * <p>
  * <b>Base tests</b> and <b>checked tests</b> use {@link TestInfo} while <b>custom run tests</b> use {@link RunInfo}.
- * 
+ *
  * @see Test
  * @see Check
  * @see Run
@@ -47,7 +47,7 @@ abstract public class AbstractInfo {
     AbstractInfo(Class<?> testClass) {
         this.testClass = testClass;
     }
-    
+
     /**
      * Returns a different boolean each time this method is invoked (switching between {@code false} and {@code true}).
      * The first invocation returns {@code false}.

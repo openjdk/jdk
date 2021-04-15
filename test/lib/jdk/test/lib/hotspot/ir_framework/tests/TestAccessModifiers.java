@@ -47,7 +47,7 @@ class PackagePrivate {
     @Arguments(Argument.DEFAULT)
     public void test2(int x) {
     }
-    
+
     @Test
     public static int staticPublicPrivate() {
         return 42;
@@ -59,7 +59,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     protected static int staticProtectedPrivate() {
         return 42;
@@ -83,7 +83,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     private static int staticPrivatePrivate() {
         return 42;
@@ -95,7 +95,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     public static int staticPublicDefault() {
         return 42;
@@ -107,7 +107,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     protected static int staticProtectedDefault() {
         return 42;
@@ -131,7 +131,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     private static int staticPrivateDefault() {
         return 42;
@@ -143,7 +143,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     public static int staticPublicProtected() {
         return 42;
@@ -155,7 +155,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     protected static int staticProtectedProtected() {
         return 42;
@@ -179,7 +179,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     private static int staticPrivateProtected() {
         return 42;
@@ -191,7 +191,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     public static int staticPublicPublic() {
         return 42;
@@ -203,7 +203,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     protected static int staticProtectedPublic() {
         return 42;
@@ -227,7 +227,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     private static int staticPrivatePublic() {
         return 42;
@@ -252,7 +252,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     private static int staticPrivatePrivate2() {
         return 42;
@@ -265,7 +265,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     public static int staticPublicDefault2() {
         return 42;
@@ -278,7 +278,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     protected static int staticProtectedDefault2() {
         return 42;
@@ -304,7 +304,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     private static int staticPrivateDefault2() {
         return 42;
@@ -317,7 +317,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     public static int staticPublicProtected2() {
         return 42;
@@ -330,7 +330,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     protected static int staticProtectedProtected2() {
         return 42;
@@ -356,7 +356,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     private static int staticPrivateProtected2() {
         return 42;
@@ -369,7 +369,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     public static int staticPublicPublic2() {
         return 42;
@@ -382,7 +382,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     protected static int staticProtectedPublic2() {
         return 42;
@@ -408,7 +408,7 @@ class PackagePrivate {
             throw new RuntimeException("Needs to be 42");
         }
     }
-    
+
     @Test
     private static int staticPrivatePublic2() {
         return 42;

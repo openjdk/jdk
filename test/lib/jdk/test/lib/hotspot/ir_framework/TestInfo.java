@@ -27,7 +27,7 @@ import java.lang.reflect.Method;
 
 /**
  * Test info class which provides some useful utility methods and information about a <b>checked test</b>.
- * 
+ *
  * @see Test
  * @see Check
  */
@@ -83,7 +83,7 @@ public class TestInfo extends AbstractInfo {
 
     /**
      * Returns a boolean indicating if the associated test method is compiled at {@code compLevel}.
-     * 
+     *
      * @param compLevel the compilation level.
      * @return {@code true} if the test method is compiled at {@code compLevel};
      *         {@code false} otherwise.

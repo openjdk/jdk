@@ -29,7 +29,7 @@ import jdk.test.lib.hotspot.ir_framework.*;
  * @test
  * @summary Example test to use the new test framework.
  * @library /test/lib
- * @run driver jdk.test.lib.hotspot.ir_framework.examples.RunExample
+ * @run driver jdk.test.lib.hotspot.ir_framework.examples.CustomRunTestExample
  */
 
 /**
@@ -56,19 +56,19 @@ import jdk.test.lib.hotspot.ir_framework.*;
  *     </ul>
  *     <li><p>At @Run method:</li>
  *     <ul>
- *         <li><p>@Warmup: Change warm-up iterations of @Run method (defined by default by 
+ *         <li><p>@Warmup: Change warm-up iterations of @Run method (defined by default by
  *                         TestFrameworkExecution.WARMUP_ITERATIONS)</li>
  *         <li><p>{@link Run#test}: Specify any number of @Test methods. They cannot be shared with other @Check or @Run
  *                                  methods.</li>
- *         <li><p>{@link Run#mode}: Choose between normal invocation as described above or {@link RunMode#STANDALONE}. 
- *                                  STANDALONE only invokes the @Run method once without warm-up or a compilation by the 
- *                                  Test Framework. The only thing done by the framework is the verification of any @IR 
+ *         <li><p>{@link Run#mode}: Choose between normal invocation as described above or {@link RunMode#STANDALONE}.
+ *                                  STANDALONE only invokes the @Run method once without warm-up or a compilation by the
+ *                                  Test Framework. The only thing done by the framework is the verification of any @IR
  *                                  rules afterwards. The STANDALONE @Run method needs to make sure that a C2 compilation
  *                                  is reliably triggered if there are any @IR rules.</li>
  *         <li><p>No @IR annotations</li>
  *     </ul>
  * </ul>
- * 
+ *
  * @see Run
  * @see Test
  * @see RunMode
