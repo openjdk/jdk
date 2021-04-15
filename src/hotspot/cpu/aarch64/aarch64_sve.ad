@@ -1330,7 +1330,7 @@ instruct vlsrL(vReg dst, vReg shift) %{
 
 instruct vasrB_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 16);
-  match(Set dst (RShiftVB src (ShiftCntV shift)));
+  match(Set dst (RShiftVB src (RShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_asr $dst, $src, $shift\t# vector (sve) (B)" %}
   ins_encode %{
@@ -1349,7 +1349,7 @@ instruct vasrB_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vasrS_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 8);
-  match(Set dst (RShiftVS src (ShiftCntV shift)));
+  match(Set dst (RShiftVS src (RShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_asr $dst, $src, $shift\t# vector (sve) (H)" %}
   ins_encode %{
@@ -1368,7 +1368,7 @@ instruct vasrS_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vasrI_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 4);
-  match(Set dst (RShiftVI src (ShiftCntV shift)));
+  match(Set dst (RShiftVI src (RShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_asr $dst, $src, $shift\t# vector (sve) (S)" %}
   ins_encode %{
@@ -1386,7 +1386,7 @@ instruct vasrI_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vasrL_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 2);
-  match(Set dst (RShiftVL src (ShiftCntV shift)));
+  match(Set dst (RShiftVL src (RShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_asr $dst, $src, $shift\t# vector (sve) (D)" %}
   ins_encode %{
@@ -1404,7 +1404,7 @@ instruct vasrL_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vlsrB_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 16);
-  match(Set dst (URShiftVB src (ShiftCntV shift)));
+  match(Set dst (URShiftVB src (RShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_lsr $dst, $src, $shift\t# vector (sve) (B)" %}
   ins_encode %{
@@ -1427,7 +1427,7 @@ instruct vlsrB_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vlsrS_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 8);
-  match(Set dst (URShiftVS src (ShiftCntV shift)));
+  match(Set dst (URShiftVS src (RShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_lsr $dst, $src, $shift\t# vector (sve) (H)" %}
   ins_encode %{
@@ -1450,7 +1450,7 @@ instruct vlsrS_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vlsrI_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 4);
-  match(Set dst (URShiftVI src (ShiftCntV shift)));
+  match(Set dst (URShiftVI src (RShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_lsr $dst, $src, $shift\t# vector (sve) (S)" %}
   ins_encode %{
@@ -1468,7 +1468,7 @@ instruct vlsrI_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vlsrL_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 2);
-  match(Set dst (URShiftVL src (ShiftCntV shift)));
+  match(Set dst (URShiftVL src (RShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_lsr $dst, $src, $shift\t# vector (sve) (D)" %}
   ins_encode %{
@@ -1486,7 +1486,7 @@ instruct vlsrL_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vlslB_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 16);
-  match(Set dst (LShiftVB src (ShiftCntV shift)));
+  match(Set dst (LShiftVB src (LShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_lsl $dst, $src, $shift\t# vector (sve) (B)" %}
   ins_encode %{
@@ -1504,7 +1504,7 @@ instruct vlslB_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vlslS_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 8);
-  match(Set dst (LShiftVS src (ShiftCntV shift)));
+  match(Set dst (LShiftVS src (LShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_lsl $dst, $src, $shift\t# vector (sve) (H)" %}
   ins_encode %{
@@ -1522,7 +1522,7 @@ instruct vlslS_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vlslI_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 4);
-  match(Set dst (LShiftVI src (ShiftCntV shift)));
+  match(Set dst (LShiftVI src (LShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_lsl $dst, $src, $shift\t# vector (sve) (S)" %}
   ins_encode %{
@@ -1535,7 +1535,7 @@ instruct vlslI_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vlslL_imm(vReg dst, vReg src, immI shift) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 2);
-  match(Set dst (LShiftVL src (ShiftCntV shift)));
+  match(Set dst (LShiftVL src (LShiftCntV shift)));
   ins_cost(SVE_COST);
   format %{ "sve_lsl $dst, $src, $shift\t# vector (sve) (D)" %}
   ins_encode %{
@@ -1549,7 +1549,8 @@ instruct vlslL_imm(vReg dst, vReg src, immI shift) %{
 instruct vshiftcntB(vReg dst, iRegIorL2I cnt) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 16 &&
             (n->bottom_type()->is_vect()->element_basic_type() == T_BYTE));
-  match(Set dst (ShiftCntV cnt));
+  match(Set dst (LShiftCntV cnt));
+  match(Set dst (RShiftCntV cnt));
   format %{ "sve_dup $dst, $cnt\t# vector shift count (sve) (B)" %}
   ins_encode %{
     __ sve_dup(as_FloatRegister($dst$$reg), __ B, as_Register($cnt$$reg));
@@ -1561,7 +1562,8 @@ instruct vshiftcntS(vReg dst, iRegIorL2I cnt) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 8 &&
             (n->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
             (n->bottom_type()->is_vect()->element_basic_type() == T_CHAR)));
-  match(Set dst (ShiftCntV cnt));
+  match(Set dst (LShiftCntV cnt));
+  match(Set dst (RShiftCntV cnt));
   format %{ "sve_dup $dst, $cnt\t# vector shift count (sve) (H)" %}
   ins_encode %{
     __ sve_dup(as_FloatRegister($dst$$reg), __ H, as_Register($cnt$$reg));
@@ -1572,7 +1574,8 @@ instruct vshiftcntS(vReg dst, iRegIorL2I cnt) %{
 instruct vshiftcntI(vReg dst, iRegIorL2I cnt) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 4 &&
             (n->bottom_type()->is_vect()->element_basic_type() == T_INT));
-  match(Set dst (ShiftCntV cnt));
+  match(Set dst (LShiftCntV cnt));
+  match(Set dst (RShiftCntV cnt));
   format %{ "sve_dup $dst, $cnt\t# vector shift count (sve) (S)" %}
   ins_encode %{
     __ sve_dup(as_FloatRegister($dst$$reg), __ S, as_Register($cnt$$reg));
@@ -1583,7 +1586,8 @@ instruct vshiftcntI(vReg dst, iRegIorL2I cnt) %{
 instruct vshiftcntL(vReg dst, iRegIorL2I cnt) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= 2 &&
             (n->bottom_type()->is_vect()->element_basic_type() == T_LONG));
-  match(Set dst (ShiftCntV cnt));
+  match(Set dst (LShiftCntV cnt));
+  match(Set dst (RShiftCntV cnt));
   format %{ "sve_dup $dst, $cnt\t# vector shift count (sve) (D)" %}
   ins_encode %{
     __ sve_dup(as_FloatRegister($dst$$reg), __ D, as_Register($cnt$$reg));

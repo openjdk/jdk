@@ -4185,7 +4185,7 @@ bool MatchRule::is_vector() const {
     "MaxReductionV", "MinReductionV",
     "AndReductionV", "OrReductionV", "XorReductionV",
     "MulAddVS2VI", "MacroLogicV",
-    "ShiftCntV",
+    "LShiftCntV","RShiftCntV",
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",

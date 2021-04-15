@@ -1926,11 +1926,11 @@ VLOGICAL(xor, eor,  xor, Xor, 16, B, X)
 
 // ------------------------------ Shift ---------------------------------------
 dnl
-define(`VSHIFTCNT', `
-instruct vshiftcnt$3$4`'(vec$5 dst, iRegIorL2I cnt) %{
+define(`LVSHIFTCNT', `
+instruct lvshiftcnt$3$4`'(vec$5 dst, iRegIorL2I cnt) %{
   predicate(ifelse($3, 8, n->as_Vector()->length_in_bytes() == 4 ||`
             ')n->as_Vector()->length_in_bytes() == $3);
-  match(Set dst (ShiftCntV cnt));
+  match(Set dst (LShiftCntV cnt));
   format %{ "$1  $dst, $cnt\t# shift count vector ($3$4)" %}
   ins_encode %{
     __ $2(as_FloatRegister($dst$$reg), __ T$3$4, as_Register($cnt$$reg));
@@ -1938,8 +1938,25 @@ instruct vshiftcnt$3$4`'(vec$5 dst, iRegIorL2I cnt) %{
   ins_pipe(vdup_reg_reg`'ifelse($5, D, 64, 128));
 %}')dnl
 dnl       $1   $2   $3  $4 $5
-VSHIFTCNT(dup, dup, 8,  B, D)
-VSHIFTCNT(dup, dup, 16, B, X)
+LVSHIFTCNT(dup, dup, 8,  B, D)
+LVSHIFTCNT(dup, dup, 16, B, X)
+dnl
+define(`RVSHIFTCNT', `
+instruct rvshiftcnt$3$4`'(vec$5 dst, iRegIorL2I cnt, vec$5 tmp) %{
+  predicate(ifelse($3, 8, n->as_Vector()->length_in_bytes() == 4 ||`
+            ')n->as_Vector()->length_in_bytes() == $3);
+  match(Set dst (RShiftCntV cnt));
+  effect(TEMP tmp);
+  format %{ "$1  $dst, $cnt\t# shift count vector ($3$4)" %}
+  ins_encode %{
+    __ $2(as_FloatRegister($tmp$$reg), __ T$3$4, as_Register($cnt$$reg));
+    __ negr(as_FloatRegister($dst$$reg), __ T$3$4, as_FloatRegister($tmp$$reg));
+  %}
+  ins_pipe(vdup_reg_reg`'ifelse($5, D, 64, 128));
+%}')dnl
+dnl       $1   $2   $3  $4 $5
+RVSHIFTCNT(dup, dup, 8,  B, D)
+RVSHIFTCNT(dup, dup, 16, B, X)
 dnl
 define(`VSLL', `
 instruct vsll$3$4`'(vec$6 dst, vec$6 src, vec$6 shift) %{
@@ -1959,45 +1976,37 @@ instruct vsll$3$4`'(vec$6 dst, vec$6 src, vec$6 shift) %{
 %}')dnl
 dnl
 define(`VSRA', `
-instruct vsra$3$4`'(vec$6 dst, vec$6 src, vec$6 shift, vec$6 tmp) %{
-  predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
+instruct vsra$2$3`'(vec$5 dst, vec$5 src, vec$5 shift) %{
+  predicate(ifelse($2$3, 8B, n->as_Vector()->length() == 4 ||`
             ',
-  $3$4, 4S, n->as_Vector()->length() == 2 ||`
-            ')n->as_Vector()->length() == $3);
-  match(Set dst (RShiftV$4 src shift));
+  $2$3, 4S, n->as_Vector()->length() == 2 ||`
+            ')n->as_Vector()->length() == $2);
+  match(Set dst (RShiftV$3 src shift));
   ins_cost(INSN_COST);
-  effect(TEMP tmp);
-  format %{ "$1  $tmp,$shift\t"
-            "$2  $dst,$src,$tmp\t# vector ($3$5)" %}
+  format %{ "$1  $dst,$src,$shift\t# vector ($2$4)" %}
   ins_encode %{
-    __ $1(as_FloatRegister($tmp$$reg), __ T`'ifelse($6, D, 8B, 16B),
-            as_FloatRegister($shift$$reg));
-    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+    __ $1(as_FloatRegister($dst$$reg), __ T$2$4,
             as_FloatRegister($src$$reg),
-            as_FloatRegister($tmp$$reg));
+            as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift`'ifelse($6, D, 64, 128));
+  ins_pipe(vshift`'ifelse($5, D, 64, 128));
 %}')dnl
 dnl
 define(`VSRL', `
-instruct vsrl$3$4`'(vec$6 dst, vec$6 src, vec$6 shift, vec$6 tmp) %{
-  predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
+instruct vsrl$2$3`'(vec$5 dst, vec$5 src, vec$5 shift) %{
+  predicate(ifelse($2$3, 8B, n->as_Vector()->length() == 4 ||`
             ',
-  $3$4, 4S, n->as_Vector()->length() == 2 ||`
-            ')n->as_Vector()->length() == $3);
-  match(Set dst (URShiftV$4 src shift));
+  $2$3, 4S, n->as_Vector()->length() == 2 ||`
+            ')n->as_Vector()->length() == $2);
+  match(Set dst (URShiftV$3 src shift));
   ins_cost(INSN_COST);
-  effect(TEMP tmp);
-  format %{ "$1  $tmp,$shift\t"
-            "$2  $dst,$src,$tmp\t# vector ($3$5)" %}
+  format %{ "$1  $dst,$src,$shift\t# vector ($2$4)" %}
   ins_encode %{
-    __ $1(as_FloatRegister($tmp$$reg), __ T`'ifelse($6, D, 8B, 16B),
-            as_FloatRegister($shift$$reg));
-    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+    __ $1(as_FloatRegister($dst$$reg), __ T$2$4,
             as_FloatRegister($src$$reg),
-            as_FloatRegister($tmp$$reg));
+            as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift`'ifelse($6, D, 64, 128));
+  ins_pipe(vshift`'ifelse($5, D, 64, 128));
 %}')dnl
 dnl
 define(`VSLL_IMM', `
@@ -2006,7 +2015,7 @@ instruct vsll$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
             ',
   $3$4, 4S, n->as_Vector()->length() == 2 ||`
             ')n->as_Vector()->length() == $3);
-  match(Set dst (LShiftV$4 src (ShiftCntV shift)));
+  match(Set dst (LShiftV$4 src (LShiftCntV shift)));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2040,7 +2049,7 @@ instruct vsra$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
             ',
   $3$4, 4S, n->as_Vector()->length() == 2 ||`
             ')n->as_Vector()->length() == $3);
-  match(Set dst (RShiftV$4 src (ShiftCntV shift)));
+  match(Set dst (RShiftV$4 src (RShiftCntV shift)));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2065,7 +2074,7 @@ instruct vsrl$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
             ',
   $3$4, 4S, n->as_Vector()->length() == 2 ||`
             ')n->as_Vector()->length() == $3);
-  match(Set dst (URShiftV$4 src (ShiftCntV shift)));
+  match(Set dst (URShiftV$4 src (RShiftCntV shift)));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2097,7 +2106,7 @@ dnl
 define(`VSRLA_IMM', `
 instruct vsrla$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
   predicate(n->as_Vector()->length() == $3);
-  match(Set dst (AddV$4 dst (URShiftV$4 src (ShiftCntV shift))));
+  match(Set dst (AddV$4 dst (URShiftV$4 src (RShiftCntV shift))));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2121,7 +2130,7 @@ dnl
 define(`VSRAA_IMM', `
 instruct vsraa$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
   predicate(n->as_Vector()->length() == $3);
-  match(Set dst (AddV$4 dst (RShiftV$4 src (ShiftCntV shift))));
+  match(Set dst (AddV$4 dst (RShiftV$4 src (RShiftCntV shift))));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
@@ -2149,7 +2158,7 @@ VSLL(sshl, sshl, 16, B, B, X)
 //
 // Case 1: The vector shift count is from replication.
 //        |            |
-//    LoadVector  ShiftCntV
+//    LoadVector  RShiftCntV
 //        |       /
 //     RShiftVI
 // Note: In inner loop, multiple neg instructions are used, which can be
@@ -2164,10 +2173,10 @@ VSLL(sshl, sshl, 16, B, B, X)
 //     RShiftVI
 //
 dnl  $1    $2    $3  $4 $5 $6
-VSRA(negr, sshl, 8,  B, B, D)
-VSRA(negr, sshl, 16, B, B, X)
-VSRL(negr, ushl, 8,  B, B, D)
-VSRL(negr, ushl, 16, B, B, X)
+VSRA(sshl, 8,  B, B, D)
+VSRA(sshl, 16, B, B, X)
+VSRL(ushl, 8,  B, B, D)
+VSRL(ushl, 16, B, B, X)
 VSLL_IMM(shl, shl, 8,  B, B, D)
 VSLL_IMM(shl, shl, 16, B, B, X)
 VSRA_IMM(sshr, sshr, 8,  B, B, D)
@@ -2176,10 +2185,10 @@ VSRL_IMM(ushr, ushr, 8,  B, B, D)
 VSRL_IMM(ushr, ushr, 16, B, B, X)
 VSLL(sshl, sshl, 4,  S, H, D)
 VSLL(sshl, sshl, 8,  S, H, X)
-VSRA(negr, sshl, 4,  S, H, D)
-VSRA(negr, sshl, 8,  S, H, X)
-VSRL(negr, ushl, 4,  S, H, D)
-VSRL(negr, ushl, 8,  S, H, X)
+VSRA(sshl, 4,  S, H, D)
+VSRA(sshl, 8,  S, H, X)
+VSRL(ushl, 4,  S, H, D)
+VSRL(ushl, 8,  S, H, X)
 VSLL_IMM(shl, shl, 4,  S, H, D)
 VSLL_IMM(shl, shl, 8,  S, H, X)
 VSRA_IMM(sshr, sshr, 4,  S, H, D)
@@ -2188,10 +2197,10 @@ VSRL_IMM(ushr, ushr, 4,  S, H, D)
 VSRL_IMM(ushr, ushr, 8,  S, H, X)
 VSLL(sshl, sshl, 2,  I, S, D)
 VSLL(sshl, sshl, 4,  I, S, X)
-VSRA(negr, sshl, 2,  I, S, D)
-VSRA(negr, sshl, 4,  I, S, X)
-VSRL(negr, ushl, 2,  I, S, D)
-VSRL(negr, ushl, 4,  I, S, X)
+VSRA(sshl, 2,  I, S, D)
+VSRA(sshl, 4,  I, S, X)
+VSRL(ushl, 2,  I, S, D)
+VSRL(ushl, 4,  I, S, X)
 VSLL_IMM(shl, shl, 2,  I, S, D)
 VSLL_IMM(shl, shl, 4,  I, S, X)
 VSRA_IMM(sshr, sshr, 2,  I, S, D)
@@ -2199,8 +2208,8 @@ VSRA_IMM(sshr, sshr, 4,  I, S, X)
 VSRL_IMM(ushr, ushr, 2,  I, S, D)
 VSRL_IMM(ushr, ushr, 4,  I, S, X)
 VSLL(sshl, sshl, 2,  L, D, X)
-VSRA(negr, sshl, 2,  L, D, X)
-VSRL(negr, ushl, 2,  L, D, X)
+VSRA(sshl, 2,  L, D, X)
+VSRL(ushl, 2,  L, D, X)
 VSLL_IMM(shl, shl, 2,  L, D, X)
 VSRA_IMM(sshr, sshr, 2,  L, D, X)
 VSRL_IMM(ushr, ushr, 2,  L, D, X)

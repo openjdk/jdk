@@ -803,7 +803,8 @@ define(`VSHIFT_COUNT', `
 instruct $1(vReg dst, iRegIorL2I cnt) %{
   predicate(UseSVE > 0 && n->as_Vector()->length() >= $3 &&
             ELEMENT_SHORT_CHAR($4, n));
-  match(Set dst (ShiftCntV cnt));
+  match(Set dst (LShiftCntV cnt));
+  match(Set dst (RShiftCntV cnt));
   format %{ "sve_dup $dst, $cnt\t# vector shift count (sve) ($2)" %}
   ins_encode %{
     __ sve_dup(as_FloatRegister($dst$$reg), __ $2, as_Register($cnt$$reg));
@@ -824,18 +825,18 @@ VSHIFT_TRUE_PREDICATE(vlsrB, URShiftVB, B, 16, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrS, URShiftVS, H,  8, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrI, URShiftVI, S,  4, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrL, URShiftVL, D,  2, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vasrB_imm, RShiftVB,  ShiftCntV, B, 16, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrS_imm, RShiftVS,  ShiftCntV, H,  8, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrI_imm, RShiftVI,  ShiftCntV, S,  4, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrL_imm, RShiftVL,  ShiftCntV, D,  2, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vlsrB_imm, URShiftVB, ShiftCntV, B, 16, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrS_imm, URShiftVS, ShiftCntV, H,  8, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrI_imm, URShiftVI, ShiftCntV, S,  4, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrL_imm, URShiftVL, ShiftCntV, D,  2, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlslB_imm, LShiftVB,  ShiftCntV, B, 16, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslS_imm, LShiftVS,  ShiftCntV, H,  8, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslI_imm, LShiftVI,  ShiftCntV, S,  4, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslL_imm, LShiftVL,  ShiftCntV, D,  2, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vasrB_imm, RShiftVB,  RShiftCntV, B, 16, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vasrS_imm, RShiftVS,  RShiftCntV, H,  8, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vasrI_imm, RShiftVI,  RShiftCntV, S,  4, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vasrL_imm, RShiftVL,  RShiftCntV, D,  2, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vlsrB_imm, URShiftVB, RShiftCntV, B, 16, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlsrS_imm, URShiftVS, RShiftCntV, H,  8, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlsrI_imm, URShiftVI, RShiftCntV, S,  4, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlsrL_imm, URShiftVL, RShiftCntV, D,  2, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlslB_imm, LShiftVB,  LShiftCntV, B, 16, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vlslS_imm, LShiftVS,  LShiftCntV, H,  8, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vlslI_imm, LShiftVI,  LShiftCntV, S,  4, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vlslL_imm, LShiftVL,  LShiftCntV, D,  2, sve_lsl)
 VSHIFT_COUNT(vshiftcntB, B, 16, T_BYTE)
 VSHIFT_COUNT(vshiftcntS, H,  8, T_SHORT)
 VSHIFT_COUNT(vshiftcntI, S,  4, T_INT)

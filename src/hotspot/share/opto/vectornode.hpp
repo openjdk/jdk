@@ -625,11 +625,19 @@ class URShiftVLNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------ShiftCntVNode---------------------------------
-// Vector shift count
-class ShiftCntVNode : public VectorNode {
+//------------------------------LShiftCntVNode---------------------------------
+// Vector left shift count
+class LShiftCntVNode : public VectorNode {
  public:
-  ShiftCntVNode(Node* cnt, const TypeVect* vt) : VectorNode(cnt,vt) {}
+  LShiftCntVNode(Node* cnt, const TypeVect* vt) : VectorNode(cnt,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------RShiftCntVNode---------------------------------
+// Vector right shift count
+class RShiftCntVNode : public VectorNode {
+ public:
+  RShiftCntVNode(Node* cnt, const TypeVect* vt) : VectorNode(cnt,vt) {}
   virtual int Opcode() const;
 };
 

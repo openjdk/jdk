@@ -348,7 +348,13 @@ bool VectorNode::is_shift(Node* n) {
 }
 
 bool VectorNode::is_vshift_cnt(Node* n) {
-  return is_vector_shift_count(n->Opcode());
+  switch (n->Opcode()) {
+  case Op_LShiftCntV:
+  case Op_RShiftCntV:
+    return true;
+  default:
+    return false;
+  }
 }
 
 // Check if input is loop invariant vector.
@@ -553,8 +559,23 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t) {
 }
 
 VectorNode* VectorNode::shift_count(int opc, Node* cnt, uint vlen, BasicType bt) {
-  assert(is_shift_opcode(opc), "Missed vector creation for '%s'", NodeClassNames[opc]);
-  return new ShiftCntVNode(cnt, TypeVect::make(bt, vlen));
+  // Match shift count type with shift vector type.
+  const TypeVect* vt = TypeVect::make(bt, vlen);
+  switch (opc) {
+  case Op_LShiftI:
+  case Op_LShiftL:
+    return new LShiftCntVNode(cnt, vt);
+  case Op_RShiftI:
+  case Op_RShiftL:
+  case Op_URShiftB:
+  case Op_URShiftS:
+  case Op_URShiftI:
+  case Op_URShiftL:
+    return new RShiftCntVNode(cnt, vt);
+  default:
+    fatal("Missed vector creation for '%s'", NodeClassNames[opc]);
+    return NULL;
+  }
 }
 
 bool VectorNode::is_vector_shift(int opc) {
@@ -580,7 +601,13 @@ bool VectorNode::is_vector_shift(int opc) {
 
 bool VectorNode::is_vector_shift_count(int opc) {
   assert(opc > _last_machine_leaf && opc < _last_opcode, "invalid opcode");
-  return opc == Op_ShiftCntV;
+  switch (opc) {
+  case Op_RShiftCntV:
+  case Op_LShiftCntV:
+    return true;
+  default:
+    return false;
+  }
 }
 
 static bool is_con_M1(Node* n) {
@@ -1134,8 +1161,8 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
     swap(shiftRCnt,shiftLCnt);
   }
 
-  shiftLCnt = phase->transform(new ShiftCntVNode(shiftLCnt, vt));
-  shiftRCnt = phase->transform(new ShiftCntVNode(shiftRCnt, vt));
+  shiftLCnt = phase->transform(new LShiftCntVNode(shiftLCnt, vt));
+  shiftRCnt = phase->transform(new RShiftCntVNode(shiftRCnt, vt));
 
   return new OrVNode(phase->transform(VectorNode::make(shiftLOpc, src, shiftLCnt, vlen, bt)),
                      phase->transform(VectorNode::make(shiftROpc, src, shiftRCnt, vlen, bt)),
