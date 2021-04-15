@@ -64,8 +64,8 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       assert(MarkSweepDeadRatio > 0,
              "only skip compaction for other regions when MarkSweepDeadRatio > 0");
 
-      // Force the high live ration region pinned,
-      // as we need skip these regions in the later compact step.
+      // Force the high live ratio region as compacting to skip these regions in the
+      // later compaction step.
       force_not_compacted = true;
       log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
                             hr->hrm_index(), _collector->live_words(hr->hrm_index()));
