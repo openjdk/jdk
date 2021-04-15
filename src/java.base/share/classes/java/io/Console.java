@@ -393,7 +393,7 @@ public final class Console implements Flushable
 
 
     /**
-     * Returns the {@link java.nio.charset.Charset Charset} object used in
+     * Returns the {@link java.nio.charset.Charset Charset} object used for
      * the {@code Console}.
      * <p>
      * The returned charset corresponds to the input and output source
@@ -401,7 +401,7 @@ public final class Console implements Flushable
      * It may not necessarily be the same as the default charset returned from
      * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
      *
-     * @return a {@link java.nio.charset.Charset Charset} object used in the
+     * @return a {@link java.nio.charset.Charset Charset} object used for the
      *          {@code Console}
      * @since 17
      */

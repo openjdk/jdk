@@ -48,7 +48,7 @@ import sun.nio.cs.StreamDecoder;
  *
  * <pre>
  * BufferedReader in
- *   = new BufferedReader(new InputStreamReader(System.in));
+ *   = new BufferedReader(new InputStreamReader(anInputStream));
  * </pre>
  *
  * @see BufferedReader
