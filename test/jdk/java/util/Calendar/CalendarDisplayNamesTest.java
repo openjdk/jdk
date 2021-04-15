@@ -50,7 +50,6 @@ public class CalendarDisplayNamesTest {
         for (final Locale locale : Locale.getAvailableLocales()) {
             for (final int style : styles) {
                 final Calendar cal = Calendar.getInstance();
-                cal.setLenient(false);
                 final Map<String, Integer> names = cal.getDisplayNames(Calendar.AM_PM, style, locale);
                 if (names == null) {
                     continue;
