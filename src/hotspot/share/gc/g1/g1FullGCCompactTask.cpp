@@ -35,15 +35,17 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-class G1ResetPinnedClosure : public HeapRegionClosure {
+// Do work for all not-compacted regions.
+class G1ResetNotCompactedClosure : public HeapRegionClosure {
   G1FullCollector* _collector;
 
 public:
-  G1ResetPinnedClosure(G1FullCollector* collector) : _collector(collector) { }
+  G1ResetNotCompactedClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* r) {
     uint region_index = r->hrm_index();
-    if (!_collector->is_in_pinned(region_index)) {
+    // There is nothing to do for compacted or skip marking regions.
+    if (_collector->is_compacted_or_skip_marking(region_index)) {
       return false;
     }
     assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold() ||
@@ -95,7 +97,7 @@ void G1FullGCCompactTask::work(uint worker_id) {
     compact_region(*it);
   }
 
-  G1ResetPinnedClosure hc(collector());
+  G1ResetNotCompactedClosure hc(collector());
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&hc, &_claimer, worker_id);
   log_task("Compaction task", worker_id, start);
 }
