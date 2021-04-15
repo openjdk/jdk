@@ -22,11 +22,10 @@
  */
 
 /*
- * @test %I% %E%
+ * @test
  * @key headful
  * @bug 6683728
  * @summary Tests that a JApplet in a translucent JFrame works properly
- * @author Kenneth.Russell@sun.com: area=Graphics
  * @compile -XDignore.symbol.file=true TranslucentJAppletTest.java
  * @run main TranslucentJAppletTest
  */
