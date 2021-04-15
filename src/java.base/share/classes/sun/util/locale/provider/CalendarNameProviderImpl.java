@@ -190,7 +190,8 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                                 continue;
                             }
                             if (field == AM_PM && !javatime && i > PM) {
-                                // when dealing with calendar fields, don't set AM_PM field value
+                                // Unlike in the case of java.time.format.DateTimeFormatter(Builder),
+                                // when dealing with java.util.Calendar, don't set AM_PM field value
                                 // to anything that isn't either AM or PM (this can happen when
                                 // day periods are involved)
                                 continue;
