@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -627,35 +627,35 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, length, length + 1, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char x = (char) vh.get(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.set(array, ci, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char x = (char) vh.getVolatile(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char x = (char) vh.getAcquire(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 char x = (char) vh.getOpaque(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setRelease(array, ci, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
 

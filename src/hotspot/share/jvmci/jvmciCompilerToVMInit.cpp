@@ -24,6 +24,7 @@
 // no precompiled headers
 #include "ci/ciUtilities.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -249,7 +250,6 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(UseSHA512Intrinsics)                                        \
   X86_ONLY(do_intx_flag(UseSSE))                                           \
   COMPILER2_PRESENT(do_bool_flag(UseSquareToLenIntrinsic))                 \
-  do_bool_flag(UseStackBanging)                                            \
   do_bool_flag(UseTLAB)                                                    \
   do_bool_flag(VerifyOops)                                                 \
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -824,7 +824,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
             lrg.set_scalable_reg_slots(Matcher::scalable_vector_reg_size(T_FLOAT));
           }
         }
-        assert(n_type->isa_vect() == NULL || lrg._is_vector || ireg == Op_RegD || ireg == Op_RegL,
+        assert(n_type->isa_vect() == NULL || lrg._is_vector ||
+               ireg == Op_RegD || ireg == Op_RegL  || ireg == Op_RegVectMask,
                "vector must be in vector registers");
 
         // Check for bound register masks
@@ -916,6 +917,10 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
             lrg._fat_proj = 1;
             lrg._is_bound = 1;
           }
+          break;
+        case Op_RegVectMask:
+          lrg.set_num_regs(RegMask::SlotsPerRegVectMask);
+          lrg.set_reg_pressure(1);
           break;
         case Op_RegF:
         case Op_RegI:
@@ -1036,8 +1041,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         const RegMask &lrgmask = lrg.mask();
         uint kreg = n->in(k)->ideal_reg();
         bool is_vect = RegMask::is_vector(kreg);
-        assert(n->in(k)->bottom_type()->isa_vect() == NULL ||
-               is_vect || kreg == Op_RegD || kreg == Op_RegL,
+        assert(n->in(k)->bottom_type()->isa_vect() == NULL || is_vect ||
+               kreg == Op_RegD || kreg == Op_RegL || kreg == Op_RegVectMask,
                "vector must be in vector registers");
         if (lrgmask.is_bound(kreg))
           lrg._is_bound = 1;
@@ -2406,9 +2411,9 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
                     worklist.push(check->in(m));
                   }
                 } else if (check->is_Con()) {
-                  if (is_derived) {
-                    // Derived is NULL+offset
-                    assert(!is_derived || check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad derived pointer");
+                  if (is_derived && check->bottom_type()->is_ptr()->_offset != 0) {
+                    // Derived is NULL+non-zero offset, base must be NULL.
+                    assert(check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad derived pointer");
                   } else {
                     assert(check->bottom_type()->is_ptr()->_offset == 0, "Bad base pointer");
                     // Base either ConP(NULL) or loadConP

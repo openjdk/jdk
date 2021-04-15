@@ -26,7 +26,6 @@
 #include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"

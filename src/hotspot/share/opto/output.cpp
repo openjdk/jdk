@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,7 +440,7 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
   // unexpected stack overflow (compiled method stack banging should
   // guarantee it doesn't happen) so we always need the stack bang in
   // a debug VM.
-  return (UseStackBanging && C->stub_function() == NULL &&
+  return (C->stub_function() == NULL &&
           (C->has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3
            DEBUG_ONLY(|| true)));
 }
@@ -826,8 +826,9 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       ciKlass* cik = t->is_oopptr()->klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
-      sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+      ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
+      sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
+                                    : new ObjectValue(spobj->_idx, klass_sv);
       set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -1099,8 +1100,9 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           ciKlass* cik = t->is_oopptr()->klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
-          ObjectValue* sv = new ObjectValue(spobj->_idx,
-                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+          ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
+          ObjectValue* sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
+                                        : new ObjectValue(spobj->_idx, klass_sv);
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);

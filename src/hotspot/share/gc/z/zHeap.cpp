@@ -42,6 +42,7 @@
 #include "gc/z/zWorkers.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/handshake.hpp"

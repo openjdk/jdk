@@ -29,6 +29,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -43,6 +44,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
@@ -83,8 +85,6 @@ bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
 bool   Arguments::_UseOnStackReplacement        = UseOnStackReplacement;
 bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
-intx   Arguments::_Tier3InvokeNotifyFreqLog     = Tier3InvokeNotifyFreqLog;
-intx   Arguments::_Tier4InvocationThreshold     = Tier4InvocationThreshold;
 size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
@@ -804,7 +804,7 @@ void Arguments::describe_range_error(ArgsRange errcode) {
 }
 
 static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
-  if (JVMFlagAccess::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::set_bool(flag, &value, origin) == JVMFlag::SUCCESS) {
     return true;
   } else {
     return false;
@@ -819,7 +819,7 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin
     return false;
   }
 
-  if (JVMFlagAccess::doubleAtPut(flag, &v, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::set_double(flag, &v, origin) == JVMFlag::SUCCESS) {
     return true;
   }
   return false;
@@ -851,35 +851,35 @@ static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
     if (is_neg) {
       int_v = -int_v;
     }
-    return JVMFlagAccess::intAtPut(flag, &int_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_int(flag, &int_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint()) {
     uint uint_v = (uint) v;
-    return JVMFlagAccess::uintAtPut(flag, &uint_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_uint(flag, &uint_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_intx()) {
     intx_v = (intx) v;
     if (is_neg) {
       intx_v = -intx_v;
     }
-    return JVMFlagAccess::intxAtPut(flag, &intx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_intx(flag, &intx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uintx()) {
     uintx uintx_v = (uintx) v;
-    return JVMFlagAccess::uintxAtPut(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_uintx(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint64_t()) {
     uint64_t uint64_t_v = (uint64_t) v;
-    return JVMFlagAccess::uint64_tAtPut(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_uint64_t(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_size_t()) {
     size_t size_t_v = (size_t) v;
-    return JVMFlagAccess::size_tAtPut(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_size_t(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_double()) {
     double double_v = (double) v;
-    return JVMFlagAccess::doubleAtPut(flag, &double_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_double(flag, &double_v, origin) == JVMFlag::SUCCESS;
   } else {
     return false;
   }
 }
 
 static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
-  if (JVMFlagAccess::ccstrAtPut(flag, &value, origin) != JVMFlag::SUCCESS) return false;
+  if (JVMFlagAccess::set_ccstr(flag, &value, origin) != JVMFlag::SUCCESS) return false;
   // Contract:  JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   return true;
@@ -887,7 +887,7 @@ static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin orig
 
 static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagOrigin origin) {
   const char* old_value = "";
-  if (JVMFlagAccess::ccstrAt(flag, &old_value) != JVMFlag::SUCCESS) return false;
+  if (JVMFlagAccess::get_ccstr(flag, &old_value) != JVMFlag::SUCCESS) return false;
   size_t old_len = old_value != NULL ? strlen(old_value) : 0;
   size_t new_len = strlen(new_value);
   const char* value;
@@ -904,7 +904,7 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagO
     value = buf;
     free_this_too = buf;
   }
-  (void) JVMFlagAccess::ccstrAtPut(flag, &value, origin);
+  (void) JVMFlagAccess::set_ccstr(flag, &value, origin);
   // JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   // JVMFlag made its own copy, so I must delete my own temp. buffer.
@@ -1456,14 +1456,6 @@ void Arguments::set_mode_flags(Mode mode) {
   AlwaysCompileLoopMethods   = Arguments::_AlwaysCompileLoopMethods;
   UseOnStackReplacement      = Arguments::_UseOnStackReplacement;
   BackgroundCompilation      = Arguments::_BackgroundCompilation;
-  if (TieredCompilation) {
-    if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
-      Tier3InvokeNotifyFreqLog = Arguments::_Tier3InvokeNotifyFreqLog;
-    }
-    if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
-      Tier4InvocationThreshold = Arguments::_Tier4InvocationThreshold;
-    }
-  }
 
   // Change from defaults based on mode
   switch (mode) {
@@ -1483,13 +1475,6 @@ void Arguments::set_mode_flags(Mode mode) {
     UseInterpreter           = false;
     BackgroundCompilation    = false;
     ClipInlining             = false;
-    // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
-    // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
-    // compile a level 4 (C2) and then continue executing it.
-    if (TieredCompilation) {
-      Tier3InvokeNotifyFreqLog = 0;
-      Tier4InvocationThreshold = 0;
-    }
     break;
   }
 }
@@ -2136,10 +2121,6 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
-  if (TieredCompilation) {
-    Arguments::_Tier3InvokeNotifyFreqLog = Tier3InvokeNotifyFreqLog;
-    Arguments::_Tier4InvocationThreshold = Tier4InvocationThreshold;
-  }
 
   // Remember the default value of SharedBaseAddress.
   Arguments::_default_SharedBaseAddress = SharedBaseAddress;
@@ -2272,6 +2253,11 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   // The values have also been chosen to fit inside a 32-bit signed type.
   const julong min_ThreadStackSize = 0;
   const julong max_ThreadStackSize = 1 * M;
+
+  // Make sure the above values match the range set in globals.hpp
+  const JVMTypedFlagLimit<intx>* limit = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(ThreadStackSize))->cast<intx>();
+  assert(min_ThreadStackSize == static_cast<julong>(limit->min()), "must be");
+  assert(max_ThreadStackSize == static_cast<julong>(limit->max()), "must be");
 
   const julong min_size = min_ThreadStackSize * K;
   const julong max_size = max_ThreadStackSize * K;
@@ -3097,16 +3083,10 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   UNSUPPORTED_OPTION(ProfileInterpreter);
 #endif
 
-
-#ifdef TIERED
   // Parse the CompilationMode flag
   if (!CompilationModeFlag::initialize()) {
     return JNI_ERR;
   }
-#else
-  // Tiered compilation is undefined.
-  UNSUPPORTED_OPTION(TieredCompilation);
-#endif
 
   if (!check_vm_args_consistency()) {
     return JNI_ERR;
@@ -3155,10 +3135,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   UNSUPPORTED_OPTION_INIT(Tier3AOTMinInvocationThreshold, 0);
   UNSUPPORTED_OPTION_INIT(Tier3AOTCompileThreshold, 0);
   UNSUPPORTED_OPTION_INIT(Tier3AOTBackEdgeThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier0AOTInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier0AOTMinInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier0AOTCompileThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier0AOTBackEdgeThreshold, 0);
 #ifndef PRODUCT
   UNSUPPORTED_OPTION(PrintAOTStatistics);
 #endif
@@ -3462,7 +3438,7 @@ char* Arguments::get_default_shared_archive_path() {
   const size_t len = jvm_path_len + file_sep_len + 20;
   default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
   jio_snprintf(default_archive_path, len,
-               UseCompressedOops ? "%s%sclasses.jsa": "%s%sclasses_nocoops.jsa",
+               LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
                jvm_path, os::file_separator());
   return default_archive_path;
 }
@@ -3991,11 +3967,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
-#ifndef TIERED
-  if (FLAG_IS_CMDLINE(CompilationMode)) {
-    warning("CompilationMode has no effect in non-tiered VMs");
+  if (TraceDependencies && VerifyDependencies) {
+    if (!FLAG_IS_DEFAULT(TraceDependencies)) {
+      warning("TraceDependencies results may be inflated by VerifyDependencies");
+    }
   }
-#endif
 
   apply_debugger_ergo();
 
@@ -4097,7 +4073,7 @@ jint Arguments::apply_ergo() {
     UseOptoBiasInlining = false;
   }
 
-  if (!EnableVectorSupport) {
+  if (!FLAG_IS_DEFAULT(EnableVectorSupport) && !EnableVectorSupport) {
     if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
       warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
     }

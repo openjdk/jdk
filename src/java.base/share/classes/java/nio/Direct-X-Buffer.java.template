@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,19 +198,30 @@ class Direct$Type$Buffer$RW$$BO$
     // For duplicates and slices
     //
     Direct$Type$Buffer$RW$$BO$(DirectBuffer db,         // package-private
-                               int mark, int pos, int lim, int cap,
-                               int off, MemorySegmentProxy segment)
+                               int mark, int pos, int lim, int cap, int off,
+#if[byte]
+                               FileDescriptor fd, boolean isSync,
+#end[byte]
+                               MemorySegmentProxy segment)
     {
 #if[rw]
-        super(mark, pos, lim, cap, segment);
-        address = db.address() + off;
+        super(mark, pos, lim, cap,
+#if[byte]
+              fd, isSync,
+#end[byte]
+              segment);
+        address = ((Buffer)db).address + off;
 #if[byte]
         cleaner = null;
 #end[byte]
         Object attachment = db.attachment();
         att = (attachment == null ? db : attachment);
 #else[rw]
-        super(db, mark, pos, lim, cap, off, segment);
+        super(db, mark, pos, lim, cap, off,
+#if[byte]
+              fd, isSync,
+#end[byte]
+              segment);
         this.isReadOnly = true;
 #end[rw]
     }
@@ -220,33 +231,53 @@ class Direct$Type$Buffer$RW$$BO$
         return null;
     }
 
-    public $Type$Buffer slice() {
+    public {#if[byte]?Mapped$Type$Buffer:$Type$Buffer} slice() {
         int pos = this.position();
         int lim = this.limit();
         int rem = (pos <= lim ? lim - pos : 0);
         int off = (pos << $LG_BYTES_PER_VALUE$);
         assert (off >= 0);
-        return new Direct$Type$Buffer$RW$$BO$(this, -1, 0, rem, rem, off, segment);
+        return new Direct$Type$Buffer$RW$$BO$(this,
+                                              -1,
+                                              0,
+                                              rem, 
+                                              rem,
+                                              off,
+#if[byte]
+                                              fileDescriptor(),
+                                              isSync(),
+#end[byte]
+                                              segment);
     }
 
     @Override
-    public $Type$Buffer slice(int index, int length) {
+    public {#if[byte]?Mapped$Type$Buffer:$Type$Buffer} slice(int index, int length) {
         Objects.checkFromIndexSize(index, length, limit());
         return new Direct$Type$Buffer$RW$$BO$(this,
                                               -1,
                                               0,
                                               length,
                                               length,
-                                              index, segment);
+                                              index << $LG_BYTES_PER_VALUE$,
+#if[byte]
+                                              fileDescriptor(),
+                                              isSync(),
+#end[byte]
+                                              segment);
     }
 
-    public $Type$Buffer duplicate() {
+    public {#if[byte]?Mapped$Type$Buffer:$Type$Buffer} duplicate() {
         return new Direct$Type$Buffer$RW$$BO$(this,
                                               this.markValue(),
                                               this.position(),
                                               this.limit(),
                                               this.capacity(),
-                                              0, segment);
+                                              0,
+#if[byte]
+                                              fileDescriptor(),
+                                              isSync(),
+#end[byte]
+                                              segment);
     }
 
     public $Type$Buffer asReadOnlyBuffer() {
@@ -256,7 +287,12 @@ class Direct$Type$Buffer$RW$$BO$
                                            this.position(),
                                            this.limit(),
                                            this.capacity(),
-                                           0, segment);
+                                           0,
+#if[byte]
+                                           fileDescriptor(),
+                                           isSync(),
+#end[byte]
+                                           segment);
 #else[rw]
         return duplicate();
 #end[rw]
@@ -505,7 +541,7 @@ class Direct$Type$Buffer$RW$$BO$
 #end[rw]
     }
 
-    public $Type$Buffer compact() {
+    public {#if[byte]?Mapped$Type$Buffer:$Type$Buffer} compact() {
 #if[rw]
         int pos = position();
         int lim = limit();

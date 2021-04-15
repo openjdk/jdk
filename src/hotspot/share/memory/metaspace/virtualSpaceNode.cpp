@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -80,7 +81,7 @@ void check_word_size_is_aligned_to_commit_granule(size_t word_size) {
 bool VirtualSpaceNode::commit_range(MetaWord* p, size_t word_size) {
   DEBUG_ONLY(check_pointer_is_aligned_to_commit_granule(p);)
   DEBUG_ONLY(check_word_size_is_aligned_to_commit_granule(word_size);)
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   // First calculate how large the committed regions in this range are
   const size_t committed_words_in_range = _commit_mask.get_committed_size_in_range(p, word_size);
@@ -156,7 +157,7 @@ bool VirtualSpaceNode::commit_range(MetaWord* p, size_t word_size) {
 //
 // Returns true if success, false if it did hit a commit limit.
 bool VirtualSpaceNode::ensure_range_is_committed(MetaWord* p, size_t word_size) {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(p != NULL && word_size > 0, "Sanity");
   MetaWord* p_start = align_down(p, Settings::commit_granule_bytes());
   MetaWord* p_end = align_up(p + word_size, Settings::commit_granule_bytes());
@@ -169,7 +170,7 @@ bool VirtualSpaceNode::ensure_range_is_committed(MetaWord* p, size_t word_size) 
 void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
   DEBUG_ONLY(check_pointer_is_aligned_to_commit_granule(p);)
   DEBUG_ONLY(check_word_size_is_aligned_to_commit_granule(word_size);)
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   // First calculate how large the committed regions in this range are
   const size_t committed_words_in_range = _commit_mask.get_committed_size_in_range(p, word_size);
@@ -248,6 +249,7 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
   if (!rs.is_reserved()) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to reserve memory for metaspace");
   }
+  MemTracker::record_virtual_memory_type(rs.base(), mtMetaspace);
   assert_is_aligned(rs.base(), chunklevel::MAX_CHUNK_BYTE_SIZE);
   InternalStats::inc_num_vsnodes_births();
   return new VirtualSpaceNode(rs, true, limiter, reserve_words_counter, commit_words_counter);
@@ -289,7 +291,7 @@ VirtualSpaceNode::~VirtualSpaceNode() {
 // Note that this just returns reserved memory; caller must take care of committing this
 //  chunk before using it.
 Metachunk* VirtualSpaceNode::allocate_root_chunk() {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert_is_aligned(free_words(), chunklevel::MAX_CHUNK_WORD_SIZE);
 
   if (free_words() >= chunklevel::MAX_CHUNK_WORD_SIZE) {
@@ -316,7 +318,7 @@ Metachunk* VirtualSpaceNode::allocate_root_chunk() {
 // The resulting target chunk resides at the same address as the original chunk.
 // The resulting splinters are added to freelists.
 void VirtualSpaceNode::split(chunklevel_t target_level, Metachunk* c, FreeChunkListVector* freelists) {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   // Get the area associated with this chunk and let it handle the splitting
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
   DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
@@ -334,7 +336,7 @@ void VirtualSpaceNode::split(chunklevel_t target_level, Metachunk* c, FreeChunkL
 // original chunk will be invalid and should not be accessed anymore! !!!
 Metachunk* VirtualSpaceNode::merge(Metachunk* c, FreeChunkListVector* freelists) {
   assert(c != NULL && c->is_free(), "Sanity");
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   // Get the rca associated with this chunk and let it handle the merging
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
@@ -354,7 +356,7 @@ Metachunk* VirtualSpaceNode::merge(Metachunk* c, FreeChunkListVector* freelists)
 // On success, true is returned, false otherwise.
 bool VirtualSpaceNode::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* freelists) {
   assert(c != NULL && c->is_in_use() && !c->is_root_chunk(), "Sanity");
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   // Get the rca associated with this chunk and let it handle the merging
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
@@ -376,7 +378,7 @@ bool VirtualSpaceNode::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* 
 // Returns true if the node has been deleted, false if not.
 // !! If this returns true, do not access the node from this point on. !!
 bool VirtualSpaceNode::attempt_purge(FreeChunkListVector* freelists) {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   if (!_owns_rs) {
     // We do not allow purging of nodes if we do not own the
@@ -434,7 +436,7 @@ size_t VirtualSpaceNode::committed_words() const {
 
 #ifdef ASSERT
 void VirtualSpaceNode::verify() const {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   verify_locked();
 }
 
@@ -442,7 +444,7 @@ volatile int test_access = 0;
 
 // Verify counters and basic structure. Slow mode: verify all chunks in depth
 void VirtualSpaceNode::verify_locked() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(base() != NULL, "Invalid base");
   assert(base() == (MetaWord*)_rs.base() &&
          word_size() == _rs.size() / BytesPerWord,

@@ -29,7 +29,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.security.AccessController;
 import java.text.Normalizer;
 import java.util.*;
 
@@ -251,7 +250,6 @@ public class AVA implements DerEncoder {
 
     private static DerValue parseHexString
         (Reader in, int format) throws IOException {
-        HexFormat hex = HexFormat.of();
         int c;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte b = 0;
@@ -263,7 +261,7 @@ public class AVA implements DerEncoder {
                 break;
             }
             try {
-                int cVal = hex.fromHexDigit(c);     // throws on invalid character
+                int cVal = HexFormat.fromHexDigit(c);     // throws on invalid character
                 if ((cNdx % 2) == 1) {
                     b = (byte)((b * 16) + (byte)(cVal));
                     baos.write(b);
@@ -502,14 +500,13 @@ public class AVA implements DerEncoder {
     private static Byte getEmbeddedHexPair(int c1, Reader in)
         throws IOException {
 
-        HexFormat hex = HexFormat.of();
-        if (hex.isHexDigit(c1)) {
+        if (HexFormat.isHexDigit(c1)) {
             int c2 = readChar(in, "unexpected EOF - " +
                         "escaped hex value must include two valid digits");
 
-            if (hex.isHexDigit(c2)) {
-                int hi = hex.fromHexDigit(c1);
-                int lo = hex.fromHexDigit(c2);
+            if (HexFormat.isHexDigit(c2)) {
+                int hi = HexFormat.fromHexDigit(c1);
+                int lo = HexFormat.fromHexDigit(c2);
                 return (byte)((hi<<4) + lo);
             } else {
                 throw new IOException

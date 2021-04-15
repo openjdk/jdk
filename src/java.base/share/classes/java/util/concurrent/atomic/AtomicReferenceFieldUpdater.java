@@ -62,7 +62,7 @@ import java.lang.invoke.VarHandle;
  *
  *   private static final AtomicReferenceFieldUpdater<Node, Node> leftUpdater =
  *     AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "left");
- *   private static AtomicReferenceFieldUpdater<Node, Node> rightUpdater =
+ *   private static final AtomicReferenceFieldUpdater<Node, Node> rightUpdater =
  *     AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
  *
  *   Node getLeft() { return left; }

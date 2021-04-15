@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1156,91 +1156,91 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double x = (double) vh.get(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.set(array, ci, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double x = (double) vh.getVolatile(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setVolatile(array, ci, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double x = (double) vh.getAcquire(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setRelease(array, ci, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double x = (double) vh.getOpaque(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setOpaque(array, ci, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.compareAndSet(array, ci, 1.0d, 2.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double r = (double) vh.compareAndExchange(array, ci, 2.0d, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double r = (double) vh.compareAndExchangeAcquire(array, ci, 2.0d, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double r = (double) vh.compareAndExchangeRelease(array, ci, 2.0d, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetPlain(array, ci, 1.0d, 2.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, 1.0d, 2.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, 1.0d, 2.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetRelease(array, ci, 1.0d, 2.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double o = (double) vh.getAndSet(array, ci, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double o = (double) vh.getAndSetAcquire(array, ci, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double o = (double) vh.getAndSetRelease(array, ci, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double o = (double) vh.getAndAdd(array, ci, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double o = (double) vh.getAndAddAcquire(array, ci, 1.0d);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 double o = (double) vh.getAndAddRelease(array, ci, 1.0d);
             });
 

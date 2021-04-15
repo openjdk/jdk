@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ module java.base {
     exports java.util.concurrent.locks;
     exports java.util.function;
     exports java.util.jar;
+    exports java.util.random;
     exports java.util.regex;
     exports java.util.spi;
     exports java.util.stream;
@@ -133,15 +134,16 @@ module java.base {
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
+    exports com.sun.crypto.provider to
+        jdk.crypto.cryptoki;
     exports sun.invoke.util to
         jdk.compiler,
         jdk.incubator.foreign;
     exports com.sun.security.ntlm to
         java.security.sasl;
-    exports jdk.internal to // for @HotSpotIntrinsicCandidate
+    exports jdk.internal.javac to
         java.compiler,
         jdk.compiler,
-        jdk.incubator.vector,
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
@@ -247,6 +249,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
+    exports jdk.internal.util.random to
+        jdk.random;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;
@@ -355,7 +359,6 @@ module java.base {
     exports jdk.internal.invoke to
         jdk.incubator.foreign;
 
-
     // the service types defined by the APIs in this module
 
     uses java.lang.System.LoggerFinder;
@@ -376,6 +379,7 @@ module java.base {
     uses java.time.chrono.AbstractChronology;
     uses java.time.chrono.Chronology;
     uses java.time.zone.ZoneRulesProvider;
+    uses java.util.random.RandomGenerator;
     uses java.util.spi.CalendarDataProvider;
     uses java.util.spi.CalendarNameProvider;
     uses java.util.spi.CurrencyNameProvider;
@@ -399,4 +403,10 @@ module java.base {
 
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
+
+    provides java.util.random.RandomGenerator with
+        java.security.SecureRandom,
+        java.util.Random,
+        java.util.SplittableRandom;
+
 }

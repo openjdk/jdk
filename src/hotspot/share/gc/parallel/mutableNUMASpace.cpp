@@ -30,6 +30,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/thread.inline.hpp"
@@ -791,51 +792,6 @@ void MutableNUMASpace::clear(bool mangle_space) {
    objects.
  */
 
-HeapWord* MutableNUMASpace::allocate(size_t size) {
-  Thread* thr = Thread::current();
-  int lgrp_id = thr->lgrp_id();
-  if (lgrp_id == -1 || !os::numa_has_group_homing()) {
-    lgrp_id = os::numa_get_group_id();
-    thr->set_lgrp_id(lgrp_id);
-  }
-
-  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
-
-  // It is possible that a new CPU has been hotplugged and
-  // we haven't reshaped the space accordingly.
-  if (i == -1) {
-    i = os::random() % lgrp_spaces()->length();
-  }
-
-  LGRPSpace* ls = lgrp_spaces()->at(i);
-  MutableSpace *s = ls->space();
-  HeapWord *p = s->allocate(size);
-
-  if (p != NULL) {
-    size_t remainder = s->free_in_words();
-    if (remainder < CollectedHeap::min_fill_size() && remainder > 0) {
-      s->set_top(s->top() - size);
-      p = NULL;
-    }
-  }
-  if (p != NULL) {
-    if (top() < s->top()) { // Keep _top updated.
-      MutableSpace::set_top(s->top());
-    }
-  }
-  // Make the page allocation happen here if there is no static binding..
-  if (p != NULL && !os::numa_has_static_binding()) {
-    for (HeapWord *i = p; i < p + size; i += os::vm_page_size() >> LogHeapWordSize) {
-      *(int*)i = 0;
-    }
-  }
-  if (p == NULL) {
-    ls->set_allocation_failed();
-  }
-  return p;
-}
-
-// This version is lock-free.
 HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   Thread* thr = Thread::current();
   int lgrp_id = thr->lgrp_id();

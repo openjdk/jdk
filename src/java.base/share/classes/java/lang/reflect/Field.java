@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,6 +199,8 @@ class Field extends AccessibleObject implements Member {
      * be used to decode the modifiers.
      *
      * @see Modifier
+     * @jls 8.3 Field Declarations
+     * @jls 9.3 Field (Constant) Declarations
      */
     public int getModifiers() {
         return modifiers;
@@ -211,6 +213,7 @@ class Field extends AccessibleObject implements Member {
      * @return {@code true} if and only if this field represents an element of
      * an enumerated class.
      * @since 1.5
+     * @jls 8.9.1 Enum Constants
      */
     public boolean isEnumConstant() {
         return (getModifiers() & Modifier.ENUM) != 0;
@@ -223,6 +226,9 @@ class Field extends AccessibleObject implements Member {
      * @return true if and only if this field is a synthetic
      * field as defined by the Java Language Specification.
      * @since 1.5
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      */
     public boolean isSynthetic() {
         return Modifier.isSynthetic(getModifiers());
@@ -279,8 +285,7 @@ class Field extends AccessibleObject implements Member {
      * and type.
      */
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof Field) {
-            Field other = (Field)obj;
+        if (obj instanceof Field other) {
             return (getDeclaringClass() == other.getDeclaringClass())
                 && (getName() == other.getName())
                 && (getType() == other.getType());

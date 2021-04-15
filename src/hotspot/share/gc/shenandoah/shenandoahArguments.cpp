@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ void ShenandoahArguments::initialize() {
 
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahLoadRefBarrier,         false);
-  FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, false);
+  FLAG_SET_DEFAULT(ShenandoahIUBarrier,              false);
   FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
 
@@ -111,10 +111,6 @@ void ShenandoahArguments::initialize() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(ParallelRefProcEnabled)) {
-    FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
-  }
-
   if (ShenandoahRegionSampling && FLAG_IS_DEFAULT(PerfDataMemorySize)) {
     // When sampling is enabled, max out the PerfData memory to get more
     // Shenandoah data in, including Matrix.
@@ -134,7 +130,7 @@ void ShenandoahArguments::initialize() {
   if (ShenandoahVerifyOptoBarriers &&
           (!FLAG_IS_DEFAULT(ShenandoahSATBBarrier)            ||
            !FLAG_IS_DEFAULT(ShenandoahLoadRefBarrier)         ||
-           !FLAG_IS_DEFAULT(ShenandoahStoreValEnqueueBarrier) ||
+           !FLAG_IS_DEFAULT(ShenandoahIUBarrier)              ||
            !FLAG_IS_DEFAULT(ShenandoahCASBarrier)             ||
            !FLAG_IS_DEFAULT(ShenandoahCloneBarrier)
           )) {

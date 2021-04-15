@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmClasses.hpp"
 #include "runtime/handles.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "opto/c2compiler.hpp"
@@ -75,7 +76,7 @@ bool C2Compiler::init_c2_runtime() {
 }
 
 void C2Compiler::initialize() {
-  assert(!is_c1_or_interpreter_only(), "C2 compiler is launched, it's not c1/interpreter only mode");
+  assert(!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci(), "C2 compiler is launched, it's not c1/interpreter only mode");
   // The first compiler thread that gets here will initialize the
   // small amount of global state (and runtime stubs) that C2 needs.
 
@@ -178,11 +179,11 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   switch (id) {
   case vmIntrinsics::_compressStringC:
   case vmIntrinsics::_compressStringB:
-    if (!Matcher::has_match_rule(Op_StrCompressedCopy)) return false;
+    if (!Matcher::match_rule_supported(Op_StrCompressedCopy)) return false;
     break;
   case vmIntrinsics::_inflateStringC:
   case vmIntrinsics::_inflateStringB:
-    if (!Matcher::has_match_rule(Op_StrInflatedCopy)) return false;
+    if (!Matcher::match_rule_supported(Op_StrInflatedCopy)) return false;
     break;
   case vmIntrinsics::_compareToL:
   case vmIntrinsics::_compareToU:
@@ -409,7 +410,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     if (!Matcher::match_rule_supported(Op_MulHiL)) return false;
     break;
   case vmIntrinsics::_getCallerClass:
-    if (SystemDictionary::reflect_CallerSensitive_klass() == NULL) return false;
+    if (vmClasses::reflect_CallerSensitive_klass() == NULL) return false;
     break;
   case vmIntrinsics::_onSpinWait:
     if (!Matcher::match_rule_supported(Op_OnSpinWait)) return false;
@@ -676,8 +677,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_VectorInsert:
   case vmIntrinsics::_VectorExtract:
     return EnableVectorSupport;
-  case vmIntrinsics::_blackhole:
-    break;
 
   default:
     return false;

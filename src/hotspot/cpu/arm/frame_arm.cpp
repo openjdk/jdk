@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -515,7 +516,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
       } else {
         obj = *(oop*)res_addr;
       }
-      assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
+      assert(Universe::is_in_heap_or_null(obj), "sanity check");
       *oop_result = obj;
       break;
     }

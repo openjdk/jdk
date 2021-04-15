@@ -251,8 +251,7 @@ class LibraryCallKit : public GraphKit {
 
   // Helper functions for inlining arraycopy
   bool inline_arraycopy();
-  AllocateArrayNode* tightly_coupled_allocation(Node* ptr,
-                                                RegionNode* slow_region);
+  AllocateArrayNode* tightly_coupled_allocation(Node* ptr);
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
   void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp,
                                       uint new_idx);
@@ -344,7 +343,5 @@ class LibraryCallKit : public GraphKit {
   }
 
   bool inline_getObjectSize();
-
-  bool inline_blackhole();
 };
 

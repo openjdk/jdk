@@ -292,7 +292,9 @@ class Heap$Type$Buffer$RW$
     public $Type$Buffer compact() {
 #if[rw]
         int pos = position();
-        int rem = limit() - pos;
+        int lim = limit();
+        assert (pos <= lim);
+        int rem = (pos <= lim ? lim - pos : 0);
         System.arraycopy(hb, ix(pos), hb, ix(0), rem);
         position(rem);
         limit(capacity());

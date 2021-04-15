@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,36 @@
 
 /*
  * @test
- * @bug 8020842
- * @summary SNIHostName does not throw IAE when hostname ends
- *          with a trailing dot
+ * @bug 8020842 8261969
+ * @summary SNIHostName does not throw IAE when hostname doesn't conform to
+ *          RFC 3490 or ends with a trailing dot
  */
 
 import javax.net.ssl.SNIHostName;
+import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 
 public class IllegalSNIName {
+
+    private static void checkHostname(String hostname) throws Exception {
+        try {
+            new SNIHostName(hostname);
+            throw new RuntimeException("Expected to get IllegalArgumentException for "
+                    + hostname);
+        } catch (IllegalArgumentException iae) {
+            // That's the right behavior.
+        }
+    }
+
+    private static void checkHostname(byte[] encodedHostname) throws Exception {
+        try {
+            new SNIHostName(encodedHostname);
+            throw new RuntimeException("Expected to get IllegalArgumentException for "
+                    + HexFormat.ofDelimiter(":").formatHex(encodedHostname));
+        } catch (IllegalArgumentException iae) {
+            // That's the right behavior.
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         String[] illegalNames = {
@@ -38,17 +60,13 @@ public class IllegalSNIName {
                 "example..com",
                 "com\u3002",
                 "com.",
-                "."
-            };
+                ".",
+                "example^com"
+        };
 
         for (String name : illegalNames) {
-            try {
-                SNIHostName hostname = new SNIHostName(name);
-                throw new Exception(
-                    "Expected to get IllegalArgumentException for " + name);
-            } catch (IllegalArgumentException iae) {
-                // That's the right behavior.
-            }
+            checkHostname(name);
+            checkHostname(name.getBytes(StandardCharsets.UTF_8));
         }
     }
 }

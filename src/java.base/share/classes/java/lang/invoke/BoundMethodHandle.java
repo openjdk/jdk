@@ -301,7 +301,7 @@ abstract class BoundMethodHandle extends MethodHandle {
     static final class SpeciesData
             extends ClassSpecializer<BoundMethodHandle, String, SpeciesData>.SpeciesData {
         // This array is filled in lazily, as new species come into being over time.
-        @Stable final private SpeciesData[] extensions = new SpeciesData[ARG_TYPE_LIMIT];
+        @Stable private final SpeciesData[] extensions = new SpeciesData[ARG_TYPE_LIMIT];
 
         public SpeciesData(Specializer outer, String key) {
             outer.super(key);

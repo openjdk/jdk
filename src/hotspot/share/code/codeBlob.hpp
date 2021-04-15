@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,14 @@
 
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
-#include "compiler/oopMap.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+
+class ImmutableOopMap;
+class ImmutableOopMapSet;
+class OopMapSet;
 
 // CodeBlob Types
 // Used in the CodeCache to assign CodeBlobs to different CodeHeaps
@@ -440,6 +443,8 @@ public:
 class VtableBlob: public BufferBlob {
 private:
   VtableBlob(const char*, int);
+
+  void* operator new(size_t s, unsigned size) throw();
 
 public:
   // Creation

@@ -34,6 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -174,7 +175,7 @@ static oop construct_dcmd_instance(JfrJavaArguments* args, TRAPS) {
   args->set_name("<init>");
   args->set_signature("()V");
   JfrJavaSupport::new_object(args, CHECK_NULL);
-  return (oop)args->result()->get_jobject();
+  return args->result()->get_oop();
 }
 
 JfrDumpFlightRecordingDCmd::JfrDumpFlightRecordingDCmd(outputStream* output,
@@ -275,7 +276,7 @@ void JfrDumpFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(path_to_gc_roots);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
-  handle_dcmd_result(output(), (oop)result.get_jobject(), source, THREAD);
+  handle_dcmd_result(output(), result.get_oop(), source, THREAD);
 }
 
 JfrCheckFlightRecordingDCmd::JfrCheckFlightRecordingDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
@@ -336,7 +337,7 @@ void JfrCheckFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(verbose);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
-  handle_dcmd_result(output(), (oop)result.get_jobject(), source, THREAD);
+  handle_dcmd_result(output(), result.get_oop(), source, THREAD);
 }
 
 JfrStartFlightRecordingDCmd::JfrStartFlightRecordingDCmd(outputStream* output,
@@ -489,7 +490,7 @@ void JfrStartFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(path_to_gc_roots);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
-  handle_dcmd_result(output(), (oop)result.get_jobject(), source, THREAD);
+  handle_dcmd_result(output(), result.get_oop(), source, THREAD);
 }
 
 JfrStopFlightRecordingDCmd::JfrStopFlightRecordingDCmd(outputStream* output,
@@ -550,7 +551,7 @@ void JfrStopFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(filepath);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
-  handle_dcmd_result(output(), (oop)result.get_jobject(), source, THREAD);
+  handle_dcmd_result(output(), result.get_oop(), source, THREAD);
 }
 
 JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* output,
@@ -671,7 +672,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(sample_threads);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
-  handle_dcmd_result(output(), (oop)result.get_jobject(), source, THREAD);
+  handle_dcmd_result(output(), result.get_oop(), source, THREAD);
 }
 
 bool register_jfr_dcmds() {

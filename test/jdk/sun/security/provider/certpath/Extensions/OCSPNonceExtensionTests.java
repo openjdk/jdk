@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8046321
+ * @bug 8046321 8256895
  * @summary Unit tests for OCSPNonceExtension objects
  * @modules java.base/sun.security.provider.certpath
  *          java.base/sun.security.util
@@ -190,6 +190,12 @@ public class OCSPNonceExtensionTests {
                 try {
                     Extension zeroLenNonce = new OCSPNonceExtension(0);
                     throw new RuntimeException("Accepted a zero length nonce");
+                } catch (IllegalArgumentException iae) { }
+
+                // Length of the nonce exceeds the maximum 32 bytes
+                try {
+                    Extension bigLenNonce = new OCSPNonceExtension(33);
+                    throw new RuntimeException("Accepted a larger than 32 bytes of nonce");
                 } catch (IllegalArgumentException iae) { }
 
                 // Valid input to constructor

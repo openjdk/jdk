@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ static jvmtiEnv *jvmti = NULL;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jrawMonitorID access_lock;
+static jobject notifyFramePopThread = NULL;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static int flag = 0;
@@ -188,25 +189,27 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *env,
 
     if (flag) {
         mark(jvmti_env, JVMTI_EVENT_METHOD_ENTRY);
-        err = jvmti_env->IsMethodNative(method, &isNative);
-        if (err != JVMTI_ERROR_NONE) {
-            result = STATUS_FAILED;
-            printf("(IsMethodNative) unexpected error: %s (%d)\n",
-                   TranslateError(err), err);
-        }
-        if (isNative == JNI_FALSE) {
-            err = jvmti_env->NotifyFramePop(thr, 0);
-            if (err == JVMTI_ERROR_NONE) {
-                enable(jvmti_env, JVMTI_EVENT_FRAME_POP);
-            } else {
+        if (env->IsSameObject(notifyFramePopThread, thr)) {
+            err = jvmti_env->IsMethodNative(method, &isNative);
+            if (err != JVMTI_ERROR_NONE) {
                 result = STATUS_FAILED;
-                printf("(NotifyFramePop) unexpected error: %s (%d)\n",
+                printf("(IsMethodNative) unexpected error: %s (%d)\n",
                        TranslateError(err), err);
             }
+            if (isNative == JNI_FALSE) {
+                err = jvmti_env->NotifyFramePop(thr, 0);
+                if (err == JVMTI_ERROR_NONE) {
+                    enable(jvmti_env, JVMTI_EVENT_FRAME_POP);
+                } else {
+                    result = STATUS_FAILED;
+                    printf("(NotifyFramePop) unexpected error: %s (%d)\n",
+                           TranslateError(err), err);
+                }
+            }
+            enable(jvmti_env, JVMTI_EVENT_CLASS_LOAD);
+            enable(jvmti_env, JVMTI_EVENT_CLASS_PREPARE);
+            disable(jvmti_env, JVMTI_EVENT_METHOD_ENTRY);
         }
-        enable(jvmti_env, JVMTI_EVENT_CLASS_LOAD);
-        enable(jvmti_env, JVMTI_EVENT_CLASS_PREPARE);
-        disable(jvmti_env, JVMTI_EVENT_METHOD_ENTRY);
     }
 }
 
@@ -392,8 +395,9 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_SetEventNotificationMode_setnotif001_enableEv(JNIEnv *env,
-        jclass cls) {
+        jclass cls, jobject framePopThread) {
     setWatches(jvmti, env, cls);
+    notifyFramePopThread = env->NewGlobalRef(framePopThread);
     enable(jvmti, JVMTI_EVENT_METHOD_ENTRY);
     enable(jvmti, JVMTI_EVENT_METHOD_EXIT);
     enable(jvmti, JVMTI_EVENT_THREAD_START);

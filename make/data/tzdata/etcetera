@@ -26,12 +26,11 @@
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
-# These entries are mostly present for historical reasons, so that
-# people in areas not otherwise covered by the tz files could "zic -l"
-# to a timezone that was right for their area.  These days, the
-# tz files cover almost all the inhabited world, and the only practical
-# need now for the entries that are not on UTC are for ships at sea
-# that cannot use POSIX TZ settings.
+# These entries are for uses not otherwise covered by the tz database.
+# Their main practical use is for platforms like Android that lack
+# support for POSIX-style TZ strings.  On such platforms these entries
+# can be useful if the timezone database is wrong or if a ship or
+# aircraft at sea is not in a timezone.
 
 # Starting with POSIX 1003.1-2001, the entries below are all
 # unnecessary as settings for the TZ environment variable.  E.g.,

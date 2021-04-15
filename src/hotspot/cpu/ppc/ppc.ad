@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2021 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1155,15 +1155,41 @@ static int cc_to_biint(int cc, int flags_reg) {
 // is the number of bytes (not instructions) which will be inserted before
 // the instruction. The padding must match the size of a NOP instruction.
 
-// Currently not used on this platform.
-
-//=============================================================================
-
-// Indicate if the safepoint node needs the polling page as an input.
-bool SafePointNode::needs_polling_address_input() {
-  // The address is loaded from thread by a seperate node.
-  return true;
+// Add nop if a prefixed (two-word) instruction is going to cross a 64-byte boundary.
+// (See Section 1.6 of Power ISA Version 3.1)
+static int compute_prefix_padding(int current_offset) {
+  assert(PowerArchitecturePPC64 >= 10 && (CodeEntryAlignment & 63) == 0,
+         "Code buffer must be aligned to a multiple of 64 bytes");
+  if (is_aligned(current_offset + BytesPerInstWord, 64)) {
+    return BytesPerInstWord;
+  }
+  return 0;
 }
+
+int loadConI32Node::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
+int loadConL34Node::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
+int addI_reg_imm32Node::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
+int addL_reg_imm34Node::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
+int addP_reg_imm34Node::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
+int cmprb_Whitespace_reg_reg_prefixedNode::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
 
 //=============================================================================
 
@@ -1376,6 +1402,10 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("save return pc\n\t");
     st->print("push frame %ld\n\t", -framesize);
   }
+
+  if (C->stub_function() == NULL) {
+    st->print("nmethod entry barrier\n\t");
+  }
 }
 #endif
 
@@ -1430,7 +1460,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   int bangsize = C->output()->bang_size_in_bytes();
   assert(bangsize >= framesize || bangsize <= 0, "stack bang size incorrect");
-  if (C->output()->need_stack_bang(bangsize) && UseStackBanging) {
+  if (C->output()->need_stack_bang(bangsize)) {
     // Unfortunately we cannot use the function provided in
     // assembler.cpp as we have to emulate the pipes. So I had to
     // insert the code of generate_stack_overflow_check(), see
@@ -1484,7 +1514,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
       bang_offset += page_size;
     }
     // R11 trashed
-  } // C->output()->need_stack_bang(framesize) && UseStackBanging
+  } // C->output()->need_stack_bang(framesize)
 
   unsigned int bytes = (unsigned int)framesize;
   long offset = Assembler::align_addr(bytes, frame::alignment_in_bytes);
@@ -1529,6 +1559,11 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ std(return_pc, _abi0(lr), callers_sp);
   }
 
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm, push_frame_temp);
+  }
+
   C->output()->set_frame_complete(cbuf.insts_size());
 }
 
@@ -1553,7 +1588,7 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("pop frame\n\t");
 
   if (do_polling() && C->is_method_compilation()) {
-    st->print("touch polling page\n\t");
+    st->print("safepoint poll\n\t");
   }
 }
 #endif
@@ -1568,18 +1603,11 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   const bool method_needs_polling = do_polling() && C->is_method_compilation();
   const bool method_is_frameless  = false /* TODO: PPC port C->is_frameless_method()*/;
   const Register return_pc        = R31;  // Must survive C-call to enable_stack_reserved_zone().
-  const Register polling_page     = R12;
+  const Register temp             = R12;
 
   if (!method_is_frameless) {
     // Restore return pc relative to callers' sp.
     __ ld(return_pc, ((int)framesize) + _abi0(lr), R1_SP);
-  }
-
-  if (method_needs_polling) {
-    __ ld(polling_page, in_bytes(JavaThread::polling_page_offset()), R16_thread);
-  }
-
-  if (!method_is_frameless) {
     // Move return pc to LR.
     __ mtlr(return_pc);
     // Pop frame (fixed frame-size).
@@ -1591,10 +1619,13 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (method_needs_polling) {
-    // We need to mark the code position where the load from the safepoint
-    // polling page was emitted as relocInfo::poll_return_type here.
-    __ relocate(relocInfo::poll_return_type);
-    __ load_from_polling_page(polling_page);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!UseSIGTRAP && !C->output()->in_scratch_emit_size()) {
+      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      __ relocate(relocInfo::poll_return_type);
+    }
+    __ safepoint_poll(*code_stub, temp, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -1896,7 +1927,7 @@ uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
 
 #ifndef PRODUCT
 void MachNopNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
-  st->print("NOP \t// %d nops to pad for loops.", _count);
+  st->print("NOP \t// %d nops to pad for loops or prefixed instructions.", _count);
 }
 #endif
 
@@ -2149,6 +2180,14 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 
 const bool Matcher::has_predicated_vectors(void) {
   return false;
+}
+
+const RegMask* Matcher::predicate_reg_mask(void) {
+  return NULL;
+}
+
+const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+  return NULL;
 }
 
 bool Matcher::supports_vector_variable_shifts(void) {
@@ -3024,36 +3063,6 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ stfd($src$$FloatRegister, Idisp, $mem$$base$$Register);
-  %}
-
-  // Use release_store for card-marking to ensure that previous
-  // oop-stores are visible before the card-mark change.
-  enc_class enc_cms_card_mark(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
-    // FIXME: Implement this as a cmove and use a fixed condition code
-    // register which is written on every transition to compiled code,
-    // e.g. in call-stub and when returning from runtime stubs.
-    //
-    // Proposed code sequence for the cmove implementation:
-    //
-    // Label skip_release;
-    // __ beq(CCRfixed, skip_release);
-    // __ release();
-    // __ bind(skip_release);
-    // __ stb(card mark);
-
-    C2_MacroAssembler _masm(&cbuf);
-    Label skip_storestore;
-
-    __ li(R0, 0);
-    __ membar(Assembler::StoreStore);
-
-    // Do the store.
-    if ($mem$$index == 0) {
-      __ stb(R0, $mem$$disp, $mem$$base$$Register);
-    } else {
-      assert(0 == $mem$$disp, "no displacement possible with indexed load/stores on ppc");
-      __ stbx(R0, $mem$$base$$Register, $mem$$index$$Register);
-    }
   %}
 
   enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
@@ -4041,6 +4050,15 @@ operand immIhi16() %{
   interface(CONST_INTER);
 %}
 
+// Integer Immediate: 32-bit immediate for prefixed addi and load/store.
+operand immI32() %{
+  predicate(PowerArchitecturePPC64 >= 10);
+  op_cost(0);
+  match(ConI);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immInegpow2() %{
   predicate(is_power_of_2(-(juint)(n->get_int())));
   match(ConI);
@@ -4276,6 +4294,15 @@ operand immL32hi16() %{
 // Long Immediate: 32-bit
 operand immL32() %{
   predicate(Assembler::is_simm(n->get_long(), 32));
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long Immediate: 34-bit, immediate field in prefixed addi and load/store.
+operand immL34() %{
+  predicate(PowerArchitecturePPC64 >= 10 && Assembler::is_simm(n->get_long(), 34));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -5816,6 +5843,23 @@ instruct loadConI32_lo16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct loadConI32(iRegIdst dst, immI32 src) %{
+  match(Set dst src);
+  // This macro is valid only in Power 10 and up, but adding the following predicate here
+  // caused a build error, so we comment it out for now.
+  // predicate(PowerArchitecturePPC64 >= 10);
+  ins_cost(DEFAULT_COST+1);
+
+  format %{ "PLI     $dst, $src" %}
+  size(8);
+  ins_encode %{
+    assert( ((intptr_t)(__ pc()) & 0x3c) != 0x3c, "Bad alignment for prefixed instruction at " INTPTR_FORMAT, (intptr_t)(__ pc()));
+    __ pli($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+  ins_alignment(2);
+%}
+
 instruct loadConI_Ex(iRegIdst dst, immI src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*2);
@@ -5885,6 +5929,24 @@ instruct loadConL32_Ex(iRegLdst dst, immL32 src) %{
     loadConL32hi16(tmpL, srcHi);
     loadConL32_lo16(dst, tmpL, srcLo);
   %}
+%}
+
+// Load 34-bit long constant using prefixed addi. No constant pool entries required.
+instruct loadConL34(iRegLdst dst, immL34 src) %{
+  match(Set dst src);
+  // This macro is valid only in Power 10 and up, but adding the following predicate here
+  // caused a build error, so we comment it out for now.
+  // predicate(PowerArchitecturePPC64 >= 10);
+  ins_cost(DEFAULT_COST+1);
+
+  format %{ "PLI     $dst, $src \t// long" %}
+  size(8);
+  ins_encode %{
+    assert( ((intptr_t)(__ pc()) & 0x3c) != 0x3c, "Bad alignment for prefixed instruction at " INTPTR_FORMAT, (intptr_t)(__ pc()));
+    __ pli($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+  ins_alignment(2);
 %}
 
 // Load long constant 0x????000000000000.
@@ -6592,37 +6654,15 @@ instruct storeD(memory mem, regD src) %{
 
 //----------Store Instructions With Zeros--------------------------------------
 
-// Card-mark for CMS garbage collection.
-// This cardmark does an optimization so that it must not always
-// do a releasing store. For this, it gets the address of
-// CMSCollectorCardTableBarrierSetBSExt::_requires_release as input.
-// (Using releaseFieldAddr in the match rule is a hack.)
-instruct storeCM_CMS(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
-  match(Set mem (StoreCM mem releaseFieldAddr));
-  effect(TEMP crx);
-  predicate(false);
-  ins_cost(MEMORY_REF_COST);
-
-  // See loadConP.
-  ins_cannot_rematerialize(true);
-
-  format %{ "STB     #0, $mem \t// CMS card-mark byte (must be 0!), checking requires_release in [$releaseFieldAddr]" %}
-  ins_encode( enc_cms_card_mark(mem, releaseFieldAddr, crx) );
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct storeCM_G1(memory mem, immI_0 zero) %{
+instruct storeCM(memory mem, immI_0 zero) %{
   match(Set mem (StoreCM mem zero));
-  predicate(UseG1GC);
   ins_cost(MEMORY_REF_COST);
 
-  ins_cannot_rematerialize(true);
-
-  format %{ "STB     #0, $mem \t// CMS card-mark byte store (G1)" %}
+  format %{ "STB     #0, $mem \t// CMS card-mark byte store" %}
   size(8);
   ins_encode %{
     __ li(R0, 0);
-    //__ release(); // G1: oops are allowed to get visible after dirty marking
+    // No release barrier: Oops are allowed to get visible after marking.
     guarantee($mem$$base$$Register != R1_SP, "use frame_slots_bias");
     __ stb(R0, $mem$$disp, $mem$$base$$Register);
   %}
@@ -8521,6 +8561,21 @@ instruct addI_reg_immhi16(iRegIdst dst, iRegIsrc src1, immIhi16 src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Immediate Addition using prefixed addi
+instruct addI_reg_imm32(iRegIdst dst, iRegIsrc src1, immI32 src2) %{
+  match(Set dst (AddI src1 src2));
+  predicate(PowerArchitecturePPC64 >= 10);
+  ins_cost(DEFAULT_COST+1);
+  format %{ "PADDI   $dst, $src1, $src2" %}
+  size(8);
+  ins_encode %{
+    assert( ((intptr_t)(__ pc()) & 0x3c) != 0x3c, "Bad alignment for prefixed instruction at " INTPTR_FORMAT, (intptr_t)(__ pc()));
+    __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+  ins_alignment(2);
+%}
+
 // Long Addition
 instruct addL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   match(Set dst (AddL src1 src2));
@@ -8595,6 +8650,23 @@ instruct addL_reg_immhi16(iRegLdst dst, iRegLsrc src1, immL32hi16 src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Long Immediate Addition using prefixed addi
+// No constant pool entries required.
+instruct addL_reg_imm34(iRegLdst dst, iRegLsrc src1, immL34 src2) %{
+  match(Set dst (AddL src1 src2));
+  predicate(PowerArchitecturePPC64 >= 10);
+  ins_cost(DEFAULT_COST+1);
+
+  format %{ "PADDI   $dst, $src1, $src2" %}
+  size(8);
+  ins_encode %{
+    assert( ((intptr_t)(__ pc()) & 0x3c) != 0x3c, "Bad alignment for prefixed instruction at " INTPTR_FORMAT, (intptr_t)(__ pc()));
+    __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+  ins_alignment(2);
+%}
+
 // Pointer Register Addition
 instruct addP_reg_reg(iRegPdst dst, iRegP_N2P src1, iRegLsrc src2) %{
   match(Set dst (AddP src1 src2));
@@ -8630,6 +8702,23 @@ instruct addP_reg_immhi16(iRegPdst dst, iRegP_N2P src1, immL32hi16 src2) %{
     __ addis($dst$$Register, $src1$$Register, ($src2$$constant)>>16);
   %}
   ins_pipe(pipe_class_default);
+%}
+
+// Pointer Immediate Addition using prefixed addi
+// No constant pool entries required.
+instruct addP_reg_imm34(iRegPdst dst, iRegP_N2P src1, immL34 src2) %{
+  match(Set dst (AddP src1 src2));
+  predicate(PowerArchitecturePPC64 >= 10);
+  ins_cost(DEFAULT_COST+1);
+
+  format %{ "PADDI    $dst, $src1, $src2" %}
+  size(8);
+  ins_encode %{
+    assert( ((intptr_t)(__ pc()) & 0x3c) != 0x3c, "Bad alignment for prefixed instruction at " INTPTR_FORMAT, (intptr_t)(__ pc()));
+    __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+  ins_alignment(2);
 %}
 
 //---------------------
@@ -11934,6 +12023,7 @@ instruct cmprb_UpperCase_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, fla
 
 instruct cmprb_Whitespace_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
   match(Set dst (Whitespace src1));
+  predicate(PowerArchitecturePPC64 <= 9);
   effect(TEMP src2, TEMP crx);
   ins_cost(4 * DEFAULT_COST);
 
@@ -11951,6 +12041,29 @@ instruct cmprb_Whitespace_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, fl
     __ setb($dst$$Register, $crx$$CondRegister);
   %}
   ins_pipe(pipe_class_default);
+%}
+
+// Power 10 version, using prefixed addi to load 32-bit constant
+instruct cmprb_Whitespace_reg_reg_prefixed(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+  match(Set dst (Whitespace src1));
+  predicate(PowerArchitecturePPC64 >= 10);
+  effect(TEMP src2, TEMP crx);
+  ins_cost(3 * DEFAULT_COST);
+
+  format %{ "PLI     $src2, 0x201C0D09\n\t"
+            "CMPRB   $crx, 1, $src1, $src2\n\t"
+            "SETB    $dst, $crx" %}
+  size(16);
+  ins_encode %{
+    // 0x09 to 0x0D, 0x1C to 0x20
+    assert( ((intptr_t)(__ pc()) & 0x3c) != 0x3c, "Bad alignment for prefixed instruction at " INTPTR_FORMAT, (intptr_t)(__ pc()));
+    __ pli($src2$$Register, 0x201C0D09);
+    // compare src with ranges 0x09 to 0x0D and 0x1C to 0x20
+    __ cmprb($crx$$CondRegister, 1, $src1$$Register, $src2$$Register);
+    __ setb($dst$$Register, $crx$$CondRegister);
+  %}
+  ins_pipe(pipe_class_default);
+  ins_alignment(2);
 %}
 
 //----------Branches---------------------------------------------------------

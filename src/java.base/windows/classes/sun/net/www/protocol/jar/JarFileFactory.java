@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,17 +71,99 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
         return get(url, true);
     }
 
-    JarFile get(URL url, boolean useCaches) throws IOException {
+    /**
+     * Get or create a {@code JarFile} for the given {@code url}.
+     * If {@code useCaches} is true, this method attempts to find
+     * a jar file in the cache, and if so, returns it.
+     * If no jar file is found in the cache, or {@code useCaches}
+     * is false, the method creates a new jar file.
+     * If the URL points to a local file, the returned jar file
+     * will not be put in the cache yet.
+     * The caller should then call {@link #cacheIfAbsent(URL, JarFile)}
+     * with the returned jar file, if updating the cache is desired.
+     * @param url the jar file url
+     * @param useCaches whether the cache should be used
+     * @return a new or cached jar file.
+     * @throws IOException if the jar file couldn't be created
+     */
+    JarFile getOrCreate(URL url, boolean useCaches) throws IOException {
+        if (useCaches == false) {
+            return get(url, false);
+        }
+        URL patched = urlFor(url);
+        if (!URLJarFile.isFileURL(patched)) {
+            // A temporary file will be created, we can prepopulate
+            // the cache in this case.
+            return get(url, useCaches);
+        }
+
+        // We have a local file. Do not prepopulate the cache.
+        JarFile result;
+        synchronized (instance) {
+            result = getCachedJarFile(patched);
+        }
+        if (result == null) {
+            result = URLJarFile.getJarFile(patched, this);
+        }
+        if (result == null)
+            throw new FileNotFoundException(url.toString());
+        return result;
+    }
+
+    /**
+     * Close the given jar file if it isn't present in the cache.
+     * Otherwise, does nothing.
+     * @param url the jar file URL
+     * @param jarFile the jar file to close
+     * @return true if the jar file has been closed, false otherwise.
+     * @throws IOException if an error occurs while closing the jar file.
+     */
+    boolean closeIfNotCached(URL url, JarFile jarFile) throws IOException {
+        url = urlFor(url);
+        JarFile result;
+        synchronized (instance) {
+            result = getCachedJarFile(url);
+        }
+        if (result != jarFile) jarFile.close();
+        return result != jarFile;
+    }
+
+    boolean cacheIfAbsent(URL url, JarFile jarFile) {
+        try {
+            url = urlFor(url);
+        } catch (IOException x) {
+            // should not happen
+            return false;
+        }
+        JarFile cached;
+        synchronized (instance) {
+            String key = urlKey(url);
+            cached = fileCache.get(key);
+            if (cached == null) {
+                fileCache.put(key, jarFile);
+                urlCache.put(jarFile, url);
+            }
+        }
+        return cached == null || cached == jarFile;
+    }
+
+    private URL urlFor(URL url) throws IOException {
         if (url.getProtocol().equalsIgnoreCase("file")) {
             // Deal with UNC pathnames specially. See 4180841
 
             String host = url.getHost();
             if (host != null && !host.isEmpty() &&
-                !host.equalsIgnoreCase("localhost")) {
+                    !host.equalsIgnoreCase("localhost")) {
 
                 url = new URL("file", "", "//" + host + url.getPath());
             }
         }
+        return url;
+    }
+
+    JarFile get(URL url, boolean useCaches) throws IOException {
+
+        url = urlFor(url);
 
         JarFile result;
         JarFile local_result;
@@ -116,7 +198,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
     /**
      * Callback method of the URLJarFileCloseController to
-     * indicate that the JarFile is close. This way we can
+     * indicate that the JarFile is closed. This way we can
      * remove the JarFile from the cache
      */
     public void close(JarFile jarFile) {
@@ -133,10 +215,10 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
         /* if the JAR file is cached, the permission will always be there */
         if (result != null) {
-            Permission perm = getPermission(result);
-            if (perm != null) {
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                Permission perm = getPermission(result);
+                if (perm != null) {
                     try {
                         sm.checkPermission(perm);
                     } catch (SecurityException se) {

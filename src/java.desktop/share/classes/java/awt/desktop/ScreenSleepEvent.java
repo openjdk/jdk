@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt.desktop;
 import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
+import java.io.Serial;
 
 /**
  * Event sent when the displays attached to the system enter and exit power save
@@ -42,6 +43,7 @@ public final class ScreenSleepEvent extends AppEvent {
     /**
      * Use serialVersionUID from JDK 9 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 7521606180376544150L;
 
     /**

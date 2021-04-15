@@ -158,8 +158,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
 
         private void shutdown() {
-            if (delegate instanceof ExecutorService) {
-                ExecutorService service = (ExecutorService)delegate;
+            if (delegate instanceof ExecutorService service) {
                 PrivilegedAction<?> action = () -> {
                     service.shutdown();
                     return null;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -587,6 +587,30 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 
 ################################################################################
 #
+# Enable the alternative CDS core region alignment
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],
+[
+  UTIL_ARG_ENABLE(NAME: compatible-cds-alignment, DEFAULT: false,
+      RESULT: ENABLE_COMPATIBLE_CDS_ALIGNMENT,
+      DESC: [enable use alternative compatible cds core region alignment],
+      DEFAULT_DESC: [disabled],
+      CHECKING_MSG: [if compatible cds region alignment enabled],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if CDS archive is available])
+        if test "x$ENABLE_CDS" = "xfalse"; then
+          AVAILABLE=false
+          AC_MSG_RESULT([no (CDS is disabled)])
+        else
+          AVAILABLE=true
+          AC_MSG_RESULT([yes])
+        fi
+      ])
+  AC_SUBST(ENABLE_COMPATIBLE_CDS_ALIGNMENT)
+])
+
+################################################################################
+#
 # Disallow any output from containing absolute paths from the build system.
 # This setting defaults to allowed on debug builds and not allowed on release
 # builds.
@@ -640,7 +664,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     SOURCE_DATE=$($DATE +"%s")
     AC_MSG_RESULT([$SOURCE_DATE, from 'current'])
   elif test "x$with_source_date" = xversion; then
-    # Use the date from version-numbers
+    # Use the date from version-numbers.conf
     UTIL_GET_EPOCH_TIMESTAMP(SOURCE_DATE, $DEFAULT_VERSION_DATE)
     if test "x$SOURCE_DATE" = x; then
       AC_MSG_RESULT([unavailable])

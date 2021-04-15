@@ -1,5 +1,5 @@
-// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -57,28 +57,26 @@ dnl
 // ====================VECTOR INSTRUCTIONS==================================
 
 // ------------------------------ Load/store/reinterpret -----------------------
-
-// Load vector (16 bits)
-instruct loadV2(vecD dst, memory mem)
+define(`VLoadStore', `
+// ifelse(load, $3, Load, Store) Vector ($6 bits)
+instruct $3V$4`'(vec$5 $7, vmem$4 mem)
 %{
-  predicate(n->as_LoadVector()->memory_size() == 2);
-  match(Set dst (LoadVector mem));
+  predicate($8`n->as_'ifelse(load, $3, Load, Store)Vector()->memory_size() == $4);
+  match(Set ifelse(load, $3, dst (LoadVector mem), mem (StoreVector mem src)));
   ins_cost(4 * INSN_COST);
-  format %{ "ldrh   $dst,$mem\t# vector (16 bits)" %}
-  ins_encode( aarch64_enc_ldrvH(dst, mem) );
-  ins_pipe(vload_reg_mem64);
-%}
-
-// Store Vector (16 bits)
-instruct storeV2(vecD src, memory mem)
-%{
-  predicate(n->as_StoreVector()->memory_size() == 2);
-  match(Set mem (StoreVector mem src));
-  ins_cost(4 * INSN_COST);
-  format %{ "strh   $mem,$src\t# vector (16 bits)" %}
-  ins_encode( aarch64_enc_strvH(src, mem) );
-  ins_pipe(vstore_reg_mem64);
-%}
+  format %{ "$1   ifelse(load, $3, `$dst,$mem', `$mem,$src')\t# vector ($6 bits)" %}
+  ins_encode( `aarch64_enc_'ifelse(load, $3, ldr, str)v$2($7, mem) );
+  ins_pipe(v$3`_reg_mem'ifelse(eval($4 * 8), 128, 128, 64));
+%}')dnl
+dnl        $1    $2 $3     $4  $5 $6   $7   $8
+VLoadStore(ldrh, H, load,  2,  D, 16,  dst, )
+VLoadStore(ldrs, S, load,  4,  D, 32,  dst, )
+VLoadStore(ldrd, D, load,  8,  D, 64,  dst, )
+VLoadStore(ldrq, Q, load, 16,  X, 128, dst, UseSVE == 0 && )
+VLoadStore(strh, H, store, 2,  D, 16,  src, )
+VLoadStore(strs, S, store, 4,  D, 32,  src, )
+VLoadStore(strd, D, store, 8,  D, 64,  src, )
+VLoadStore(strq, Q, store, 16, X, 128, src, )
 dnl
 define(`REINTERPRET', `
 instruct reinterpret$1`'(vec$1 dst)
@@ -97,16 +95,18 @@ dnl         $1 $2
 REINTERPRET(D, 8)
 REINTERPRET(X, 16)
 dnl
-define(`REINTERPRET_X', `
-instruct reinterpret$1`'2$2`'(vec$2 dst, vec$1 src)
+
+instruct reinterpretD2X(vecX dst, vecD src)
 %{
-  predicate(n->bottom_type()->is_vect()->length_in_bytes() == $3 &&
-            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == $4);
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 16 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 8);
   match(Set dst (VectorReinterpret src));
   ins_cost(INSN_COST);
-  format %{ " # reinterpret $dst,$src" %}
+  format %{ " # reinterpret $dst,$src\t# D2X" %}
   ins_encode %{
-    // If register is the same, then move is not needed.
+    // If registers are the same, no register move is required - the
+    // upper 64 bits of 'src' are expected to have been initialized
+    // to zero.
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
       __ orr(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
@@ -114,11 +114,24 @@ instruct reinterpret$1`'2$2`'(vec$2 dst, vec$1 src)
     }
   %}
   ins_pipe(vlogical64);
-%}')dnl
-dnl           $1 $2 $3  $4
-REINTERPRET_X(D, X, 16, 8)
-REINTERPRET_X(X, D, 8,  16)
-dnl
+%}
+
+instruct reinterpretX2D(vecD dst, vecX src)
+%{
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 8 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 16);
+  match(Set dst (VectorReinterpret src));
+  ins_cost(INSN_COST);
+  format %{ " # reinterpret $dst,$src\t# X2D" %}
+  ins_encode %{
+    // Resize the vector from 128-bits to 64-bits. The higher 64-bits of
+    // the "dst" register must be cleared to zero.
+    __ orr(as_FloatRegister($dst$$reg), __ T8B,
+           as_FloatRegister($src$$reg),
+           as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vlogical64);
+%}
 
 // ------------------------------ Vector cast -------------------------------
 dnl
@@ -536,6 +549,30 @@ dnl               $1   $2   $3
 REDUCE_MAX_MIN_2L(max, Max, GT)
 REDUCE_MAX_MIN_2L(min, Min, LT)
 dnl
+define(`REDUCE_MINMAX_FORD', `
+instruct reduce_$1$4$5(vReg$5 dst, vReg$5 $6src, vec$7 vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_`'ifelse($5, F, FLOAT, DOUBLE));
+  match(Set dst (ifelse($1, max, Max, Min)ReductionV $6src vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "$2 $dst, ifelse($4, 2, $vsrc`, 'ifelse($5, F, S, D), ` T4S, $vsrc')\n\t"
+            "$3 $dst, $dst, $$6src\t# $1 reduction$4$5" %}
+  ins_encode %{
+    __ $2(as_FloatRegister($dst$$reg), ifelse($4, 4, `__ T4S, as_FloatRegister($vsrc$$reg))',
+                                              $4$5, 2F, `as_FloatRegister($vsrc$$reg), __ S)',
+                                              $4$5, 2D, `as_FloatRegister($vsrc$$reg), __ D)');
+    __ $3(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($$6src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}')dnl
+dnl                $1   $2     $3     $4 $5 $6 $7
+REDUCE_MINMAX_FORD(max, fmaxp, fmaxs, 2, F, f, D)
+REDUCE_MINMAX_FORD(max, fmaxv, fmaxs, 4, F, f, X)
+REDUCE_MINMAX_FORD(max, fmaxp, fmaxd, 2, D, d, X)
+REDUCE_MINMAX_FORD(min, fminp, fmins, 2, F, f, D)
+REDUCE_MINMAX_FORD(min, fminv, fmins, 4, F, f, X)
+REDUCE_MINMAX_FORD(min, fminp, fmind, 2, D, d, X)
+dnl
 define(`REDUCE_LOGIC_OP_8B', `
 instruct reduce_$1`'8B(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp)
 %{
@@ -836,7 +873,7 @@ instruct vcm$1$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2, immI cond)
             n->as_VectorMaskCmp()->get_predicate() == BoolTest::$1 &&
             n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "$6cm$1  $dst, $src1, $src2\t# vector cmp ($2$3)" %}
+  format %{ "$6cm$1  $dst, T$2$5, $src1, $src2\t# vector cmp ($2$3)" %}
   ins_cost(INSN_COST);
   ins_encode %{
     __ $6cm$1(as_FloatRegister($dst$$reg), __ T$2$5,
@@ -883,8 +920,8 @@ instruct vcmne$1$2`'(vec$3 dst, vec$3 src1, vec$3 src2, immI cond)
             n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
             n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($2));
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "$5cmeq  $dst, $src1, $src2\n\t# vector cmp ($1$2)"
-            "not   $dst, $dst\t" %}
+  format %{ "$5cmeq  $dst, T$1$4, $src1, $src2\n\t# vector cmp ($1$2)"
+            "not   $dst, T$6, $dst\t" %}
   ins_cost(INSN_COST);
   ins_encode %{
     __ $5cmeq(as_FloatRegister($dst$$reg), __ T$1$4,
@@ -912,7 +949,7 @@ instruct vcm$1$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2, immI cond)
             n->as_VectorMaskCmp()->get_predicate() == BoolTest::$1 &&
             n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "$6cm$7  $dst, $src2, $src1\t# vector cmp ($2$3)" %}
+  format %{ "$6cm$7  $dst, T$2$5, $src2, $src1\t# vector cmp ($2$3)" %}
   ins_cost(INSN_COST);
   ins_encode %{
     __ $6cm$7(as_FloatRegister($dst$$reg), __ T$2$5,
@@ -987,7 +1024,7 @@ instruct vnot$1$2`'(vec$3 dst, vec$3 src, imm$2_M1 m1)
   predicate(n->as_Vector()->length_in_bytes() == $4);
   MATCH_RULE($2)
   ins_cost(INSN_COST);
-  format %{ "not  $dst, $src\t# vector ($5)" %}
+  format %{ "not  $dst, T$5, $src\t# vector ($5)" %}
   ins_encode %{
     __ notr(as_FloatRegister($dst$$reg), __ T$5,
             as_FloatRegister($src$$reg));
@@ -998,6 +1035,32 @@ dnl        $1 $2 $3 $4  $5
 VECTOR_NOT(2, I, D, 8,  8B)
 VECTOR_NOT(4, I, X, 16, 16B)
 VECTOR_NOT(2, L, X, 16, 16B)
+undefine(MATCH_RULE)
+// ------------------------------ Vector and_not -------------------------------
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (AndV src1 (XorV src2 (ReplicateB m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateS m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateI m1))));',
+`match(Set dst (AndV src1 (XorV src2 (ReplicateL m1))));')')dnl
+dnl
+define(`VECTOR_AND_NOT', `
+instruct vand_not$1$2`'(vec$3 dst, vec$3 src1, vec$3 src2, imm$2_M1 m1)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == $4);
+  MATCH_RULE($2)
+  ins_cost(INSN_COST);
+  format %{ "bic  $dst, T$5, $src1, $src2\t# vector ($5)" %}
+  ins_encode %{
+    __ bic(as_FloatRegister($dst$$reg), __ T$5,
+           as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}')dnl
+dnl            $1 $2 $3 $4  $5
+VECTOR_AND_NOT(2, I, D, 8,  8B)
+VECTOR_AND_NOT(4, I, X, 16, 16B)
+VECTOR_AND_NOT(2, L, X, 16, 16B)
 undefine(MATCH_RULE)
 dnl
 // ------------------------------ Vector max/min -------------------------------
@@ -1013,7 +1076,7 @@ instruct v$1$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2)
   PREDICATE(`$2$3', $2, TYPE2DATATYPE($3))
   match(Set dst ($5V src1 src2));
   ins_cost(INSN_COST);
-  format %{ "$1v  $dst, $src1, $src2\t# vector ($2$3)" %}
+  format %{ "$1v  $dst, T$2`'iTYPE2SIMD($3), $src1, $src2\t# vector ($2$3)" %}
   ins_encode %{
     __ $1v(as_FloatRegister($dst$$reg), __ T$2`'iTYPE2SIMD($3),
             as_FloatRegister($src1$$reg),
@@ -1043,8 +1106,8 @@ instruct v$1`'2L`'(vecX dst, vecX src1, vecX src2)
   match(Set dst ($2V src1 src2));
   ins_cost(INSN_COST);
   effect(TEMP dst);
-  format %{ "cmgt  $dst, $src1, $src2\t# vector (2L)\n\t"
-            "bsl   $dst, $$3, $$4\t# vector (16B)" %}
+  format %{ "cmgt  $dst, T2D, $src1, $src2\t# vector (2L)\n\t"
+            "bsl   $dst, T16B, $$3, $$4\t# vector (16B)" %}
   ins_encode %{
     __ cmgt(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
@@ -1053,7 +1116,7 @@ instruct v$1`'2L`'(vecX dst, vecX src1, vecX src2)
   %}
   ins_pipe(vdop128);
 %}')dnl
-dnl                $1   $2   $3    $4
+dnl                 $1   $2   $3    $4
 VECTOR_MAX_MIN_LONG(max, Max, src1, src2)
 VECTOR_MAX_MIN_LONG(min, Min, src2, src1)
 dnl
@@ -1066,7 +1129,7 @@ instruct vbsl$1B`'(vec$2 dst, vec$2 src1, vec$2 src2)
   predicate(n->as_Vector()->length_in_bytes() == $1);
   match(Set dst (VectorBlend (Binary src1 src2) dst));
   ins_cost(INSN_COST);
-  format %{ "bsl  $dst, $src2, $src1\t# vector ($1B)" %}
+  format %{ "bsl  $dst, T$1B, $src2, $src1\t# vector ($1B)" %}
   ins_encode %{
     __ bsl(as_FloatRegister($dst$$reg), __ T$1B,
            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
@@ -1090,7 +1153,7 @@ instruct $1mask$2B`'(vec$3 dst, vec$3 src $5 $6)
   PREDICATE($1, $2)
   match(Set dst (Vector$4Mask src $6));
   ins_cost(INSN_COST);
-  format %{ "negr  $dst, $src\t# $1 mask ($2B to $2B)" %}
+  format %{ "negr  $dst, T$2B, $src\t# $1 mask ($2B to $2B)" %}
   ins_encode %{
     __ negr(as_FloatRegister($dst$$reg), __ T$2B, as_FloatRegister($src$$reg));
   %}
@@ -1113,8 +1176,8 @@ instruct $1mask$2S`'(vec$3 dst, vec$4 src $9 $10)
   PREDICATE($1, $2)
   match(Set dst (Vector$5Mask src $10));
   ins_cost(INSN_COST);
-  format %{ "$6  $dst, $src\n\t"
-            "negr  $dst, $dst\t# $1 mask ($2$7 to $2$8)" %}
+  format %{ "$6  $dst, T8$8, $src, T8$7\n\t"
+            "negr  $dst, T8$8, $dst\t# $1 mask ($2$7 to $2$8)" %}
   ins_encode %{
     __ $6(as_FloatRegister($dst$$reg), __ T8$8, as_FloatRegister($src$$reg), __ T8$7);
     __ negr(as_FloatRegister($dst$$reg), __ T8$8, as_FloatRegister($dst$$reg));
@@ -1140,9 +1203,9 @@ instruct $1mask$2I`'(vec$3 dst, vec$4 src $12 $13)
   PREDICATE($1, $2)
   match(Set dst (Vector$5Mask src $13));
   ins_cost(INSN_COST);
-  format %{ "$6  $dst, $src\t# $2$7 to $2$8\n\t"
-            "$6  $dst, $dst\t# $2$8 to $2$9\n\t"
-            "negr   $dst, $dst\t# $1 mask ($2$7 to $2$9)" %}
+  format %{ "$6  $dst, T$10$8, $src, T$10$7\t# $2$7 to $2$8\n\t"
+            "$6  $dst, T$11$9, $dst, T$11$8\t# $2$8 to $2$9\n\t"
+            "negr   $dst, T$11$9, $dst\t# $1 mask ($2$7 to $2$9)" %}
   ins_encode %{
     __ $6(as_FloatRegister($dst$$reg), __ T$10$8, as_FloatRegister($src$$reg), __ T$10$7);
     __ $6(as_FloatRegister($dst$$reg), __ T$11$9, as_FloatRegister($dst$$reg), __ T$11$8);
@@ -1164,10 +1227,10 @@ instruct loadmask2L(vecX dst, vecD src)
              n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE));
   match(Set dst (VectorLoadMask src));
   ins_cost(INSN_COST);
-  format %{ "uxtl  $dst, $src\t# 2B to 2S\n\t"
-            "uxtl  $dst, $dst\t# 2S to 2I\n\t"
-            "uxtl  $dst, $dst\t# 2I to 2L\n\t"
-            "neg   $dst, $dst\t# load mask (2B to 2L)" %}
+  format %{ "uxtl  $dst, T8H, $src, T8B\t# 2B to 2S\n\t"
+            "uxtl  $dst, T4S, $dst, T4H\t# 2S to 2I\n\t"
+            "uxtl  $dst, T2D, $dst, T2S\t# 2I to 2L\n\t"
+            "neg   $dst, T2D, $dst\t# load mask (2B to 2L)" %}
   ins_encode %{
     __ uxtl(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg), __ T8B);
     __ uxtl(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($dst$$reg), __ T4H);
@@ -1182,10 +1245,10 @@ instruct storemask2L(vecD dst, vecX src, immI_8 size)
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (VectorStoreMask src size));
   ins_cost(INSN_COST);
-  format %{ "xtn  $dst, $src\t# 2L to 2I\n\t"
-            "xtn  $dst, $dst\t# 2I to 2S\n\t"
-            "xtn  $dst, $dst\t# 2S to 2B\n\t"
-            "neg  $dst, $dst\t# store mask (2L to 2B)" %}
+  format %{ "xtn  $dst, T2S, $src, T2D\t# 2L to 2I\n\t"
+            "xtn  $dst, T4H, $dst, T4S\t# 2I to 2S\n\t"
+            "xtn  $dst, T8B, $dst, T8H\t# 2S to 2B\n\t"
+            "neg  $dst, T8B, $dst\t# store mask (2L to 2B)" %}
   ins_encode %{
     __ xtn(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg), __ T2D);
     __ xtn(as_FloatRegister($dst$$reg), __ T4H, as_FloatRegister($dst$$reg), __ T4S);
@@ -1230,7 +1293,7 @@ instruct loadshuffle$1B`'(vec$2 dst, vec$2 src)
             n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
   match(Set dst (VectorLoadShuffle src));
   ins_cost(INSN_COST);
-  format %{ "mov  $dst, $src\t# get $1B shuffle" %}
+  format %{ "mov  $dst, T$1B, $src\t# get $1B shuffle" %}
   ins_encode %{
     __ orr(as_FloatRegister($dst$$reg), __ T$1B,
            as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
@@ -1248,7 +1311,7 @@ instruct loadshuffle$1S`'(vec$2 dst, vec$3 src)
             n->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
   match(Set dst (VectorLoadShuffle src));
   ins_cost(INSN_COST);
-  format %{ "uxtl  $dst, $src\t# $1B to $1H" %}
+  format %{ "uxtl  $dst, T8H, $src, T8B\t# $1B to $1H" %}
   ins_encode %{
     __ uxtl(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg), __ T8B);
   %}
@@ -1266,8 +1329,8 @@ instruct loadshuffle4I(vecX dst, vecD src)
             n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT));
   match(Set dst (VectorLoadShuffle src));
   ins_cost(INSN_COST);
-  format %{ "uxtl  $dst, $src\t# 4B to 4H \n\t"
-            "uxtl  $dst, $dst\t# 4H to 4S" %}
+  format %{ "uxtl  $dst, T8H, $src, T8B\t# 4B to 4H \n\t"
+            "uxtl  $dst, T4S, $dst, T4H\t# 4H to 4S" %}
   ins_encode %{
     __ uxtl(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg), __ T8B);
     __ uxtl(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($dst$$reg), __ T4H);
@@ -1303,7 +1366,7 @@ instruct rearrange$1B`'(vec$2 dst, vec$2 src, vec$2 shuffle)
   match(Set dst (VectorRearrange src shuffle));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst);
-  format %{ "tbl $dst, {$dst}, $shuffle\t# rearrange $1B" %}
+  format %{ "tbl $dst, T$1B, {$dst}, $shuffle\t# rearrange $1B" %}
   ins_encode %{
     __ tbl(as_FloatRegister($dst$$reg), __ T$1B,
            as_FloatRegister($src$$reg), 1, as_FloatRegister($shuffle$$reg));
@@ -1322,11 +1385,11 @@ instruct rearrange$1S`'(vec$2 dst, vec$2 src, vec$2 shuffle, vec$2 tmp0, vec$2 t
   match(Set dst (VectorRearrange src shuffle));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst, TEMP tmp0, TEMP tmp1);
-  format %{ "mov   $tmp0, CONSTANT\t# constant 0x0202020202020202\n\t"
-            "mov   $tmp1, CONSTANT\t# constant 0x0100010001000100\n\t"
-            "mulv  $dst, T$1H, $shuffle, $tmp0\n\t"
-            "addv  $dst, T$3B, $dst, $tmp1\n\t"
-            "tbl   $dst, {$src}, $dst\t# rearrange $1S" %}
+  format %{ "mov   $tmp0, T$3B, CONSTANT\t# constant 0x0202020202020202\n\t"
+            "mov   $tmp1, T$1H, CONSTANT\t# constant 0x0100010001000100\n\t"
+            "mulv  $dst, T$1H, T$1H, $shuffle, $tmp0\n\t"
+            "addv  $dst, T$3B, T$3B, $dst, $tmp1\n\t"
+            "tbl   $dst, T$3B, {$src}, 1, $dst\t# rearrange $1S" %}
   ins_encode %{
     __ mov(as_FloatRegister($tmp0$$reg), __ T$3B, 0x02);
     __ mov(as_FloatRegister($tmp1$$reg), __ T$1H, 0x0100);
@@ -1351,11 +1414,11 @@ instruct rearrange4I(vecX dst, vecX src, vecX shuffle, vecX tmp0, vecX tmp1)
   match(Set dst (VectorRearrange src shuffle));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst, TEMP tmp0, TEMP tmp1);
-  format %{ "mov   $tmp0, CONSTANT\t# constant 0x0404040404040404\n\t"
-            "mov   $tmp1, CONSTANT\t# constant 0x0302010003020100\n\t"
-            "mulv  $dst, T8H, $shuffle, $tmp0\n\t"
+  format %{ "mov   $tmp0, T16B, CONSTANT\t# constant 0x0404040404040404\n\t"
+            "mov   $tmp1, T4S, CONSTANT\t# constant 0x0302010003020100\n\t"
+            "mulv  $dst, T4S, $shuffle, $tmp0\n\t"
             "addv  $dst, T16B, $dst, $tmp1\n\t"
-            "tbl   $dst, {$src}, $dst\t# rearrange 4I" %}
+            "tbl   $dst, T16B, {$src}, 1, $dst\t# rearrange 4I" %}
   ins_encode %{
     __ mov(as_FloatRegister($tmp0$$reg), __ T16B, 0x04);
     __ mov(as_FloatRegister($tmp1$$reg), __ T4S, 0x03020100);
@@ -1378,11 +1441,12 @@ instruct anytrue_in_mask$1B`'(iRegINoSp dst, vec$2 src1, vec$2 src2, vec$2 tmp, 
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "addv  $tmp, T$1B, $src1\t# src1 and src2 are the same\n\t"
+  format %{ "addv  $tmp, T$1B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
             "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cset  $dst\t# anytrue $1B" %}
   ins_encode %{
+    // No need to use src2.
     __ addv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, zr);
@@ -1401,19 +1465,15 @@ instruct alltrue_in_mask$1B`'(iRegINoSp dst, vec$2 src1, vec$2 src2, vec$2 tmp, 
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "andr  $tmp, T$1B, $src1, $src2\t# src2 is maskAllTrue\n\t"
-            "notr  $tmp, T$1B, $tmp\n\t"
-            "addv  $tmp, T$1B, $tmp\n\t"
+  format %{ "uminv $tmp, T$1B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cmp   $dst, 0xff\n\t"
+            "cset  $dst\t# alltrue $1B" %}
   ins_encode %{
-    __ andr(as_FloatRegister($tmp$$reg), __ T$1B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($tmp$$reg));
-    __ addv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($tmp$$reg));
+    // No need to use src2.
+    __ uminv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
-    __ cmpw($dst$$Register, zr);
+    __ cmpw($dst$$Register, 0xff);
     __ csetw($dst$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -1430,7 +1490,7 @@ instruct vabs$3$4`'(vec$5 dst, vec$5 src)
   predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 || )n->as_Vector()->length() == $3);
   match(Set dst (AbsV$4 src));
   ins_cost(ifelse($4, F, INSN_COST * 3, $4, D, INSN_COST * 3, INSN_COST));
-  format %{ "$1  $dst, $src\t# vector ($3$6)" %}
+  format %{ "$1  $dst, T$3$6, $src\t# vector ($3$6)" %}
   ins_encode %{
     __ $2(as_FloatRegister($dst$$reg), __ T$3$6, as_FloatRegister($src$$reg));
   %}
@@ -1456,7 +1516,7 @@ instruct vabd$3$4`'(vec$5 dst, vec$5 src1, vec$5 src2)
   predicate(n->as_Vector()->length() == $3);
   match(Set dst (AbsV$4 (SubV$4 src1 src2)));
   ins_cost(INSN_COST * 3);
-  format %{ "$1  $dst, $src1, $src2\t# vector ($3$6)" %}
+  format %{ "$1  $dst, T$3$6, $src1, $src2\t# vector ($3$6)" %}
   ins_encode %{
     __ $2(as_FloatRegister($dst$$reg), __ T$3$6,
             as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
@@ -1468,3 +1528,788 @@ VFABD(fabd, fabd, 2, F, D, S, 64)
 VFABD(fabd, fabd, 4, F, X, S, 128)
 VFABD(fabd, fabd, 2, D, X, D, 128)
 dnl
+define(`VREPLICATE', `
+instruct replicate$3$4$5`'(vec$6 dst, $7 ifelse($7, immI0, zero, $7, immI, con, src))
+%{
+  predicate(ifelse($8, UseSVE == 0 && , $8,
+                   $8, , , $8`
+            ')n->as_Vector()->length() == $3);
+  match(Set dst (Replicate`'ifelse($7, immI0, I, $4) ifelse($7, immI0, zero, $7, immI, con, $7, zero, I, src)));
+  ins_cost(INSN_COST);
+  format %{ "$1  $dst, $ifelse($7, immI0, zero, $7, immI, con, src)`\t# vector ('ifelse($4$7, SimmI, $3H, $2, eor, 4I, $3$4)`)"' %}
+  ins_encode %{
+    __ $2(as_FloatRegister($dst$$reg), __ ifelse(
+            $2, eor, T16B, T$3`'$9),ifelse(
+            `$4 $7', `B immI', ` '$con$$constant & 0xff,
+            `$4 $7', `S immI', ` '$con$$constant & 0xffff,
+            `$4 $7', `I immI', ` '$con$$constant,
+            `$2', eor,`
+           as_FloatRegister($dst$$reg),
+           as_FloatRegister($dst$$reg)',
+            `$7', vRegF,`
+           as_FloatRegister($src$$reg)',
+            `$7', vRegD,`
+           as_FloatRegister($src$$reg)',
+           ` 'as_Register($src$$reg)));
+  %}
+  ins_pipe(ifelse($7, immI0, v$1_reg_imm,
+                  $7, immI,  v$1_reg_imm,
+                  $7, iRegIorL2I, v$1_reg_reg,
+                  $7, zero, vmovi_reg_imm,
+                  $7, iRegL, vdup_reg_reg,
+                  $4, F, vdup_reg_freg, vdup_reg_dreg)`'ifelse($6, X, 128, 64));
+%}')dnl
+dnl        $1    $2    $3  $4 $5     $6 $7          $8                                $9
+VREPLICATE(dup,  dup,  8,  B, ,      D, iRegIorL2I, n->as_Vector()->length() == 4 ||, B)
+VREPLICATE(dup,  dup,  16, B, ,      X, iRegIorL2I, UseSVE == 0 && ,                  B)
+VREPLICATE(movi, mov,  8,  B, _imm,  D, immI,       n->as_Vector()->length() == 4 ||, B)
+VREPLICATE(movi, mov,  16, B, _imm,  X, immI,       UseSVE == 0 && ,                  B)
+VREPLICATE(dup,  dup,  4,  S, ,      D, iRegIorL2I, n->as_Vector()->length() == 2 ||, H)
+VREPLICATE(dup,  dup,  8,  S, ,      X, iRegIorL2I, UseSVE == 0 && ,                  H)
+VREPLICATE(movi, mov,  4,  S, _imm,  D, immI,       n->as_Vector()->length() == 2 ||, H)
+VREPLICATE(movi, mov,  8,  S,  _imm, X, immI,       UseSVE == 0 && ,                  H)
+VREPLICATE(dup,  dup,  2,  I, ,      D, iRegIorL2I, ,                                 S)
+VREPLICATE(dup,  dup,  4,  I, ,      X, iRegIorL2I, UseSVE == 0 && ,                  S)
+VREPLICATE(movi, mov,  2,  I, _imm,  D, immI,       ,                                 S)
+VREPLICATE(movi, mov,  4,  I,  _imm, X, immI,       UseSVE == 0 && ,                  S)
+VREPLICATE(dup,  dup,  2,  L, ,      X, iRegL,      UseSVE == 0 && ,                  D)
+VREPLICATE(movi, eor,  2,  L, _zero, X, immI0,      UseSVE == 0 && ,                  D)
+VREPLICATE(dup,  dup,  2,  F, ,      D, vRegF,      ,                                 S)
+VREPLICATE(dup,  dup,  4,  F, ,      X, vRegF,      UseSVE == 0 && ,                  S)
+VREPLICATE(dup,  dup,  2,  D, ,      X, vRegD,      UseSVE == 0 && ,                  D)
+dnl
+
+// ====================REDUCTION ARITHMETIC====================================
+dnl
+define(`REDUCE_ADD_INT', `
+instruct reduce_add$1$2`'(iRegINoSp dst, iRegIorL2I isrc, vec$3 vsrc, ifelse($1, 2, iRegINoSp tmp, vecX vtmp), iRegINoSp ifelse($1, 2, tmp2, itmp))
+%{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (AddReductionVI isrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP ifelse($1, 2, tmp, vtmp), TEMP ifelse($1, 2, tmp2, itmp));
+  format %{ ifelse($1, 2, `"umov  $tmp, $vsrc, S, 0\n\t"
+            "umov  $tmp2, $vsrc, S, 1\n\t"
+            "addw  $tmp, $isrc, $tmp\n\t"
+            "addw  $dst, $tmp, $tmp2\t# add reduction2I"',`"addv  $vtmp, T4S, $vsrc\n\t"
+            "umov  $itmp, $vtmp, S, 0\n\t"
+            "addw  $dst, $itmp, $isrc\t# add reduction4I"')
+  %}
+  ins_encode %{
+    ifelse($1, 2, `__ umov($tmp$$Register, as_FloatRegister($vsrc$$reg), __ S, 0);
+    __ umov($tmp2$$Register, as_FloatRegister($vsrc$$reg), __ S, 1);
+    __ addw($tmp$$Register, $isrc$$Register, $tmp$$Register);
+    __ addw($dst$$Register, $tmp$$Register, $tmp2$$Register);', `__ addv(as_FloatRegister($vtmp$$reg), __ T4S,
+            as_FloatRegister($vsrc$$reg));
+    __ umov($itmp$$Register, as_FloatRegister($vtmp$$reg), __ S, 0);
+    __ addw($dst$$Register, $itmp$$Register, $isrc$$Register);')
+  %}
+  ins_pipe(pipe_class_default);
+%}')dnl
+dnl            $1 $2 $3
+REDUCE_ADD_INT(2, I, D)
+REDUCE_ADD_INT(4, I, X)
+dnl
+define(`REDUCE_MUL_INT', `
+instruct reduce_mul$1$2`'(iRegINoSp dst, iRegIorL2I isrc, vec$3 vsrc, ifelse($1, 2, iRegINoSp tmp`)', vecX vtmp`,' iRegINoSp itmp`)')
+%{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (MulReductionVI isrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP ifelse($1, 2, tmp, vtmp), TEMP ifelse($1, 2, dst, itmp`,' TEMP dst));
+  format %{ ifelse($1, 2, `"umov  $tmp, $vsrc, S, 0\n\t"
+            "mul   $dst, $tmp, $isrc\n\t"
+            "umov  $tmp, $vsrc, S, 1\n\t"
+            "mul   $dst, $tmp, $dst\t# mul reduction2I"',`"ins   $vtmp, D, $vsrc, 0, 1\n\t"
+            "mulv  $vtmp, T2S, $vtmp, $vsrc\n\t"
+            "umov  $itmp, $vtmp, S, 0\n\t"
+            "mul   $dst, $itmp, $isrc\n\t"
+            "umov  $itmp, $vtmp, S, 1\n\t"
+            "mul   $dst, $itmp, $dst\t# mul reduction4I"')
+  %}
+  ins_encode %{
+    ifelse($1, 2, `__ umov($tmp$$Register, as_FloatRegister($vsrc$$reg), __ S, 0);
+    __ mul($dst$$Register, $tmp$$Register, $isrc$$Register);
+    __ umov($tmp$$Register, as_FloatRegister($vsrc$$reg), __ S, 1);
+    __ mul($dst$$Register, $tmp$$Register, $dst$$Register);', `__ ins(as_FloatRegister($vtmp$$reg), __ D,
+           as_FloatRegister($vsrc$$reg), 0, 1);
+    __ mulv(as_FloatRegister($vtmp$$reg), __ T2S,
+            as_FloatRegister($vtmp$$reg), as_FloatRegister($vsrc$$reg));
+    __ umov($itmp$$Register, as_FloatRegister($vtmp$$reg), __ S, 0);
+    __ mul($dst$$Register, $itmp$$Register, $isrc$$Register);
+    __ umov($itmp$$Register, as_FloatRegister($vtmp$$reg), __ S, 1);
+    __ mul($dst$$Register, $itmp$$Register, $dst$$Register);')
+  %}
+  ins_pipe(pipe_class_default);
+%}')dnl
+dnl            $1 $2 $3
+REDUCE_MUL_INT(2, I, D)
+REDUCE_MUL_INT(4, I, X)
+dnl
+define(`REDUCE_MULORADD_FORD', `
+instruct reduce_$6$2$3`'(vReg$3 dst, vReg$3 $4src, vec$5 vsrc, vec$5 tmp)
+%{
+  match(Set dst (ifelse($6, add, Add, Mul)ReductionV$3 $4src vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP tmp, TEMP dst);
+  format %{ "$1 $dst, $$4src, $vsrc\n\t"
+            "ins   $tmp, ifelse($3, F, S, D), $vsrc, 0, 1\n\t"
+            ifelse($2, 2, `"$1 $dst, $dst, $tmp\t# $6 reduction$2$3"',
+            `"$1 $dst, $dst, $tmp\n\t"
+            "ins   $tmp, S, $vsrc, 0, 2\n\t"
+            "$1 $dst, $dst, $tmp\n\t"
+            "ins   $tmp, S, $vsrc, 0, 3\n\t"
+            "$1 $dst, $dst, $tmp\t# $6 reduction4F"')
+  %}
+  ins_encode %{
+    __ $1(as_FloatRegister($dst$$reg),
+             as_FloatRegister($$4src$$reg), as_FloatRegister($vsrc$$reg));
+    __ ins(as_FloatRegister($tmp$$reg), __ ifelse($3, F, S, D),
+           as_FloatRegister($vsrc$$reg), 0, 1);
+    __ $1(as_FloatRegister($dst$$reg),
+             as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));ifelse($2, 4, `
+    __ ins(as_FloatRegister($tmp$$reg), __ ifelse($3, F, S, D),
+           as_FloatRegister($vsrc$$reg), 0, 2);
+    __ $1(as_FloatRegister($dst$$reg),
+             as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));
+    __ ins(as_FloatRegister($tmp$$reg), __ S,
+           as_FloatRegister($vsrc$$reg), 0, 3);
+    __ $1(as_FloatRegister($dst$$reg),
+             as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));')
+  %}
+  ins_pipe(pipe_class_default);
+%}')dnl
+dnl                  $1     $2 $3 $4 $5 $6
+REDUCE_MULORADD_FORD(fadds, 2, F, f, D, add)
+REDUCE_MULORADD_FORD(fadds, 4, F, f, X, add)
+REDUCE_MULORADD_FORD(fmuls, 2, F, f, D, mul)
+REDUCE_MULORADD_FORD(fmuls, 4, F, f, X, mul)
+REDUCE_MULORADD_FORD(faddd, 2, D, d, X, add)
+REDUCE_MULORADD_FORD(fmuld, 2, D, d, X, mul)
+
+// ====================VECTOR ARITHMETIC=======================================
+
+// --------------------------------- ADD --------------------------------------
+define(`VADD', `
+instruct vadd$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2)
+%{ifelse($2$3, 8B, `
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);',
+         $2$3, 4S, `
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);',
+         $2$5, 2D, , `
+  predicate(n->as_Vector()->length() == $2);')
+  match(Set dst (AddV$3 src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "$1  $dst,$src1,$src2\t# vector ($2$5)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($dst$$reg), __ T$2`'ifelse($5, L, D, $5),
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vdop`'ifelse($3, F, _fp, $3, D, _fp)`'ifelse($4, D, 64, 128));
+%}')dnl
+dnl  $1    $2  $3 $4 $5
+VADD(addv, 8,  B, D, B)
+VADD(addv, 16, B, X, B)
+VADD(addv, 4,  S, D, H)
+VADD(addv, 8,  S, X, H)
+VADD(addv, 2,  I, D, S)
+VADD(addv, 4,  I, X, S)
+VADD(addv, 2,  L, X, L)
+VADD(fadd, 2,  F, D, S)
+VADD(fadd, 4,  F, X, S)
+VADD(fadd, 2,  D, X, D)
+
+// --------------------------------- SUB --------------------------------------
+define(`VSUB', `
+instruct vsub$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2)
+%{ifelse($2$3, 8B, `
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);',
+         $2$3, 4S, `
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);',`
+  predicate(n->as_Vector()->length() == $2);')
+  match(Set dst (SubV$3 src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "$1  $dst,$src1,$src2\t# vector ($2$5)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($dst$$reg), __ T$2`'ifelse($5, L, D, $5),
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vdop`'ifelse($3, F, _fp, $3, D, _fp)`'ifelse($4, D, 64, 128));
+%}')dnl
+dnl  $1    $2  $3 $4 $5
+VSUB(subv, 8,  B, D, B)
+VSUB(subv, 16, B, X, B)
+VSUB(subv, 4,  S, D, H)
+VSUB(subv, 8,  S, X, H)
+VSUB(subv, 2,  I, D, S)
+VSUB(subv, 4,  I, X, S)
+VSUB(subv, 2,  L, X, L)
+VSUB(fsub, 2,  F, D, S)
+VSUB(fsub, 4,  F, X, S)
+VSUB(fsub, 2,  D, X, D)
+
+// --------------------------------- MUL --------------------------------------
+define(`VMUL', `
+instruct vmul$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2)
+%{ifelse($2$3, 8B, `
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);',
+         $2$3, 4S, `
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);',`
+  predicate(n->as_Vector()->length() == $2);')
+  match(Set dst (MulV$3 src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "$1  $dst,$src1,$src2\t# vector ($2$5)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($dst$$reg), __ T$2`'ifelse($5, L, D, $5),
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmul`'ifelse($3, F, div_fp, $3, D, div_fp)`'ifelse($4, D, 64, 128));
+%}')dnl
+dnl  $1    $2  $3 $4 $5
+VMUL(mulv, 8,  B, D, B)
+VMUL(mulv, 16, B, X, B)
+VMUL(mulv, 4,  S, D, H)
+VMUL(mulv, 8,  S, X, H)
+VMUL(mulv, 2,  I, D, S)
+VMUL(mulv, 4,  I, X, S)
+VMUL(fmul, 2,  F, D, S)
+VMUL(fmul, 4,  F, X, S)
+VMUL(fmul, 2,  D, X, D)
+
+// --------------------------------- MLA --------------------------------------
+define(`VMLA', `ifelse($1, fmla, `
+// dst + src1 * src2')
+instruct vmla$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2)
+%{ifelse($2$3, 4S, `
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);', $1, fmla, `
+  predicate(UseFMA && n->as_Vector()->length() == $2);', `
+  predicate(n->as_Vector()->length() == $2);')
+  match(Set dst (ifelse($1, mlav, `AddV'$3` dst (MulV$3 src1 src2)', FmaV$3  `dst (Binary src1 src2)')));
+  ins_cost(INSN_COST);
+  format %{ "$1  $dst,$src1,$src2\t# vector ($2$5)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($dst$$reg), __ T$2`'ifelse($5, L, D, $5),
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vm`'ifelse($3, F, uldiv_fp, $3, D, uldiv_fp, la)`'ifelse($4, D, 64, 128));
+%}')dnl
+dnl  $1   $2  $3 $4 $5
+VMLA(mlav, 4,  S, D, H)
+VMLA(mlav, 8,  S, X, H)
+VMLA(mlav, 2,  I, D, S)
+VMLA(mlav, 4,  I, X, S)
+VMLA(fmla, 2,  F, D, S)
+VMLA(fmla, 4,  F, X, S)
+VMLA(fmla, 2,  D, X, D)
+
+// --------------------------------- MLS --------------------------------------
+define(`VMLS', `ifelse($1, fmls, `
+// dst - src1 * src2')
+instruct vmls$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2) %{ifelse($2$3, 4S, `
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);', $1, fmls, `
+  predicate(UseFMA && n->as_Vector()->length() == $2);', `
+  predicate(n->as_Vector()->length() == $2);')
+  match(Set dst (ifelse($1, mlsv, `SubV'$3` dst (MulV$3 src1 src2)', FmaV$3  `dst (Binary (NegV'$3 `src1) src2)));
+  match(Set dst (FmaV$3  dst (Binary src1 (NegV'$3 `src2))')));
+  ins_cost(INSN_COST);
+  format %{ "$1  $dst,$src1,$src2\t# vector ($2$5)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($dst$$reg), __ T$2`'ifelse($5, L, D, $5),
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vm`'ifelse($3, F, uldiv_fp, $3, D, uldiv_fp, la)`'ifelse($4, D, 64, 128));
+%}')dnl
+dnl  $1   $2  $3 $4 $5
+VMLS(mlsv, 4,  S, D, H)
+VMLS(mlsv, 8,  S, X, H)
+VMLS(mlsv, 2,  I, D, S)
+VMLS(mlsv, 4,  I, X, S)
+VMLS(fmls, 2,  F, D, S)
+VMLS(fmls, 4,  F, X, S)
+VMLS(fmls, 2,  D, X, D)
+
+// --------------- Vector Multiply-Add Shorts into Integer --------------------
+
+instruct vmuladdS2I(vecX dst, vecX src1, vecX src2, vecX tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
+  match(Set dst (MulAddVS2VI src1 src2));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "smullv  $tmp, $src1, $src2\t# vector (4H)\n\t"
+            "smullv  $dst, $src1, $src2\t# vector (8H)\n\t"
+            "addpv   $dst, $tmp, $dst\t# vector (4S)\n\t" %}
+  ins_encode %{
+    __ smullv(as_FloatRegister($tmp$$reg), __ T4H,
+              as_FloatRegister($src1$$reg),
+              as_FloatRegister($src2$$reg));
+    __ smullv(as_FloatRegister($dst$$reg), __ T8H,
+              as_FloatRegister($src1$$reg),
+              as_FloatRegister($src2$$reg));
+    __ addpv(as_FloatRegister($dst$$reg), __ T4S,
+             as_FloatRegister($tmp$$reg),
+             as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(vmuldiv_fp128);
+%}
+
+// --------------------------------- DIV --------------------------------------
+define(`VDIV', `
+instruct vdiv$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2)
+%{
+  predicate(n->as_Vector()->length() == $2);
+  match(Set dst (DivV$3 src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "$1  $dst,$src1,$src2\t# vector ($2$5)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($dst$$reg), __ T$2`'ifelse($5, L, D, $5),
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmuldiv_fp`'ifelse($4, D, 64, 128));
+%}')dnl
+dnl  $1    $2  $3 $4 $5
+VDIV(fdiv, 2,  F, D, S)
+VDIV(fdiv, 4,  F, X, S)
+VDIV(fdiv, 2,  D, X, D)
+
+// --------------------------------- SQRT -------------------------------------
+define(`VSQRT', `
+instruct vsqrt$2$3`'(vec$4 dst, vec$4 src)
+%{
+  predicate(n->as_Vector()->length() == $2);
+  match(Set dst (SqrtV$3 src));
+  format %{ "$1  $dst, $src\t# vector ($2$3)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($dst$$reg), __ T$2$5, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(v`'ifelse($2$3, 2F, unop, sqrt)_fp`'ifelse($4, D, 64, 128));
+%}')dnl
+dnl   $1     $2  $3 $4 $5
+VSQRT(fsqrt, 2,  F, D, S)
+VSQRT(fsqrt, 4,  F, X, S)
+VSQRT(fsqrt, 2,  D, X, D)
+
+// --------------------------------- NEG --------------------------------------
+define(`VNEG', `
+instruct vneg$2$3`'(vec$4 dst, vec$4 src)
+%{
+  predicate(n->as_Vector()->length() == $2);
+  match(Set dst (NegV$3 src));
+  ins_cost(INSN_COST * 3);
+  format %{ "$1  $dst,$src\t# vector ($2$5)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($dst$$reg), __ T$2`'ifelse($5, L, D, $5),
+            as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp`'ifelse($4, D, 64, 128));
+%}')dnl
+dnl  $1    $2  $3 $4 $5
+VNEG(fneg, 2,  F, D, S)
+VNEG(fneg, 4,  F, X, S)
+VNEG(fneg, 2,  D, X, D)
+dnl
+define(`VLOGICAL', `
+instruct v$3$5$6`'(vec$7 dst, vec$7 src1, vec$7 src2)
+%{
+  predicate(ifelse($5, 8, n->as_Vector()->length_in_bytes() == 4 ||`
+            ')n->as_Vector()->length_in_bytes() == $5);
+  match(Set dst ($4V src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "$1  $dst,$src1,$src2\t# vector ($5$6)" %}
+  ins_encode %{
+    __ $2(as_FloatRegister($dst$$reg), __ T$5$6,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vlogical`'ifelse($7, D, 64, 128));
+%}')dnl
+
+// --------------------------------- AND --------------------------------------
+dnl      $1   $2    $3   $4   $5  $6 $7
+VLOGICAL(and, andr, and, And, 8,  B, D)
+VLOGICAL(and, andr, and, And, 16, B, X)
+
+// --------------------------------- OR ---------------------------------------
+VLOGICAL(orr, orr,  or,  Or,  8,  B, D)
+VLOGICAL(orr, orr,  or,  Or,  16, B, X)
+
+// --------------------------------- XOR --------------------------------------
+VLOGICAL(xor, eor,  xor, Xor, 8,  B, D)
+VLOGICAL(xor, eor,  xor, Xor, 16, B, X)
+
+// ------------------------------ Shift ---------------------------------------
+dnl
+define(`VSHIFTCNT', `
+instruct vshiftcnt$3$4`'(vec$5 dst, iRegIorL2I cnt) %{
+  predicate(ifelse($3, 8, n->as_Vector()->length_in_bytes() == 4 ||`
+            ')n->as_Vector()->length_in_bytes() == $3);
+  match(Set dst (LShiftCntV cnt));
+  match(Set dst (RShiftCntV cnt));
+  format %{ "$1  $dst, $cnt\t# shift count vector ($3$4)" %}
+  ins_encode %{
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$4, as_Register($cnt$$reg));
+  %}
+  ins_pipe(vdup_reg_reg`'ifelse($5, D, 64, 128));
+%}')dnl
+dnl       $1   $2   $3  $4 $5
+VSHIFTCNT(dup, dup, 8,  B, D)
+VSHIFTCNT(dup, dup, 16, B, X)
+dnl
+define(`VSLL', `
+instruct vsll$3$4`'(vec$6 dst, vec$6 src, vec$6 shift) %{
+  predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
+            ',
+  $3$4, 4S, n->as_Vector()->length() == 2 ||`
+            ')n->as_Vector()->length() == $3);
+  match(Set dst (LShiftV$4 src shift));
+  ins_cost(INSN_COST);
+  format %{ "$1  $dst,$src,$shift\t# vector ($3$5)" %}
+  ins_encode %{
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+            as_FloatRegister($src$$reg),
+            as_FloatRegister($shift$$reg));
+  %}
+  ins_pipe(vshift`'ifelse($6, D, 64, 128));
+%}')dnl
+dnl
+define(`VSRA', `
+instruct vsra$3$4`'(vec$6 dst, vec$6 src, vec$6 shift, vec$6 tmp) %{
+  predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
+            ',
+  $3$4, 4S, n->as_Vector()->length() == 2 ||`
+            ')n->as_Vector()->length() == $3);
+  match(Set dst (RShiftV$4 src shift));
+  ins_cost(INSN_COST);
+  effect(TEMP tmp);
+  format %{ "$1  $tmp,$shift\t"
+            "$2  $dst,$src,$tmp\t# vector ($3$5)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($tmp$$reg), __ T`'ifelse($6, D, 8B, 16B),
+            as_FloatRegister($shift$$reg));
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+            as_FloatRegister($src$$reg),
+            as_FloatRegister($tmp$$reg));
+  %}
+  ins_pipe(vshift`'ifelse($6, D, 64, 128));
+%}')dnl
+dnl
+define(`VSRL', `
+instruct vsrl$3$4`'(vec$6 dst, vec$6 src, vec$6 shift, vec$6 tmp) %{
+  predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
+            ',
+  $3$4, 4S, n->as_Vector()->length() == 2 ||`
+            ')n->as_Vector()->length() == $3);
+  match(Set dst (URShiftV$4 src shift));
+  ins_cost(INSN_COST);
+  effect(TEMP tmp);
+  format %{ "$1  $tmp,$shift\t"
+            "$2  $dst,$src,$tmp\t# vector ($3$5)" %}
+  ins_encode %{
+    __ $1(as_FloatRegister($tmp$$reg), __ T`'ifelse($6, D, 8B, 16B),
+            as_FloatRegister($shift$$reg));
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+            as_FloatRegister($src$$reg),
+            as_FloatRegister($tmp$$reg));
+  %}
+  ins_pipe(vshift`'ifelse($6, D, 64, 128));
+%}')dnl
+dnl
+define(`VSLL_IMM', `
+instruct vsll$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
+  predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
+            ',
+  $3$4, 4S, n->as_Vector()->length() == 2 ||`
+            ')n->as_Vector()->length() == $3);
+  match(Set dst (LShiftV$4 src (LShiftCntV shift)));
+  ins_cost(INSN_COST);
+  format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
+  ins_encode %{ifelse($4, B,`
+    int sh = (int)$shift$$constant;
+    if (sh >= 8) {
+      __ eor(as_FloatRegister($dst$$reg), __ ifelse($6, D, T8B, T16B),
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+             as_FloatRegister($src$$reg), sh);
+    }', $4, S,`
+    int sh = (int)$shift$$constant;
+    if (sh >= 16) {
+      __ eor(as_FloatRegister($dst$$reg), __ ifelse($6, D, T8B, T16B),
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+             as_FloatRegister($src$$reg), sh);
+    }', `
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+           as_FloatRegister($src$$reg),
+           (int)$shift$$constant);')
+  %}
+  ins_pipe(vshift`'ifelse($6, D, 64, 128)_imm);
+%}')dnl
+define(`VSRA_IMM', `
+instruct vsra$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
+  predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
+            ',
+  $3$4, 4S, n->as_Vector()->length() == 2 ||`
+            ')n->as_Vector()->length() == $3);
+  match(Set dst (RShiftV$4 src (RShiftCntV shift)));
+  ins_cost(INSN_COST);
+  format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
+  ins_encode %{ifelse($4, B,`
+    int sh = (int)$shift$$constant;
+    if (sh >= 8) sh = 7;
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+           as_FloatRegister($src$$reg), sh);', $4, S,`
+    int sh = (int)$shift$$constant;
+    if (sh >= 16) sh = 15;
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+           as_FloatRegister($src$$reg), sh);', `
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);')
+  %}
+  ins_pipe(vshift`'ifelse($6, D, 64, 128)_imm);
+%}')dnl
+dnl
+define(`VSRL_IMM', `
+instruct vsrl$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
+  predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
+            ',
+  $3$4, 4S, n->as_Vector()->length() == 2 ||`
+            ')n->as_Vector()->length() == $3);
+  match(Set dst (URShiftV$4 src (RShiftCntV shift)));
+  ins_cost(INSN_COST);
+  format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
+  ins_encode %{ifelse($4, B,`
+    int sh = (int)$shift$$constant;
+    if (sh >= 8) {
+      __ eor(as_FloatRegister($dst$$reg), __ ifelse($6, D, T8B, T16B),
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+             as_FloatRegister($src$$reg), sh);
+    }', $4, S,`
+    int sh = (int)$shift$$constant;
+    if (sh >= 16) {
+      __ eor(as_FloatRegister($dst$$reg), __ ifelse($6, D, T8B, T16B),
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+             as_FloatRegister($src$$reg), sh);
+    }', `
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);')
+  %}
+  ins_pipe(vshift`'ifelse($6, D, 64, 128)_imm);
+%}')dnl
+dnl
+define(`VSRLA_IMM', `
+instruct vsrla$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
+  predicate(n->as_Vector()->length() == $3);
+  match(Set dst (AddV$4 dst (URShiftV$4 src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
+  ins_encode %{ifelse($4, B,`
+    int sh = (int)$shift$$constant;
+    if (sh < 8) {
+      __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+             as_FloatRegister($src$$reg), sh);
+    }', $4, S,`
+    int sh = (int)$shift$$constant;
+    if (sh < 16) {
+      __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+             as_FloatRegister($src$$reg), sh);
+    }', `
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);')
+  %}
+  ins_pipe(vshift`'ifelse($6, D, 64, 128)_imm);
+%}')dnl
+dnl
+define(`VSRAA_IMM', `
+instruct vsraa$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
+  predicate(n->as_Vector()->length() == $3);
+  match(Set dst (AddV$4 dst (RShiftV$4 src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
+  ins_encode %{ifelse($4, B,`
+    int sh = (int)$shift$$constant;
+    if (sh >= 8) sh = 7;
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+           as_FloatRegister($src$$reg), sh);', $4, S,`
+    int sh = (int)$shift$$constant;
+    if (sh >= 16) sh = 15;
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+           as_FloatRegister($src$$reg), sh);', `
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$5,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);')
+  %}
+  ins_pipe(vshift`'ifelse($6, D, 64, 128)_imm);
+%}')dnl
+dnl  $1    $2    $3  $4 $5 $6
+VSLL(sshl, sshl, 8,  B, B, D)
+VSLL(sshl, sshl, 16, B, B, X)
+
+// Right shifts with vector shift count on aarch64 SIMD are implemented
+// as left shift by negative shift count.
+// There are two cases for vector shift count.
+//
+// Case 1: The vector shift count is from replication.
+//        |            |
+//    LoadVector  RShiftCntV
+//        |       /
+//     RShiftVI
+// Note: In inner loop, multiple neg instructions are used, which can be
+// moved to outer loop and merge into one neg instruction.
+//
+// Case 2: The vector shift count is from loading.
+// This case isn't supported by middle-end now. But it's supported by
+// panama/vectorIntrinsics(JEP 338: Vector API).
+//        |            |
+//    LoadVector  LoadVector
+//        |       /
+//     RShiftVI
+//
+dnl  $1    $2    $3  $4 $5 $6
+VSRA(negr, sshl, 8,  B, B, D)
+VSRA(negr, sshl, 16, B, B, X)
+VSRL(negr, ushl, 8,  B, B, D)
+VSRL(negr, ushl, 16, B, B, X)
+VSLL_IMM(shl, shl, 8,  B, B, D)
+VSLL_IMM(shl, shl, 16, B, B, X)
+VSRA_IMM(sshr, sshr, 8,  B, B, D)
+VSRA_IMM(sshr, sshr, 16, B, B, X)
+VSRL_IMM(ushr, ushr, 8,  B, B, D)
+VSRL_IMM(ushr, ushr, 16, B, B, X)
+VSLL(sshl, sshl, 4,  S, H, D)
+VSLL(sshl, sshl, 8,  S, H, X)
+VSRA(negr, sshl, 4,  S, H, D)
+VSRA(negr, sshl, 8,  S, H, X)
+VSRL(negr, ushl, 4,  S, H, D)
+VSRL(negr, ushl, 8,  S, H, X)
+VSLL_IMM(shl, shl, 4,  S, H, D)
+VSLL_IMM(shl, shl, 8,  S, H, X)
+VSRA_IMM(sshr, sshr, 4,  S, H, D)
+VSRA_IMM(sshr, sshr, 8,  S, H, X)
+VSRL_IMM(ushr, ushr, 4,  S, H, D)
+VSRL_IMM(ushr, ushr, 8,  S, H, X)
+VSLL(sshl, sshl, 2,  I, S, D)
+VSLL(sshl, sshl, 4,  I, S, X)
+VSRA(negr, sshl, 2,  I, S, D)
+VSRA(negr, sshl, 4,  I, S, X)
+VSRL(negr, ushl, 2,  I, S, D)
+VSRL(negr, ushl, 4,  I, S, X)
+VSLL_IMM(shl, shl, 2,  I, S, D)
+VSLL_IMM(shl, shl, 4,  I, S, X)
+VSRA_IMM(sshr, sshr, 2,  I, S, D)
+VSRA_IMM(sshr, sshr, 4,  I, S, X)
+VSRL_IMM(ushr, ushr, 2,  I, S, D)
+VSRL_IMM(ushr, ushr, 4,  I, S, X)
+VSLL(sshl, sshl, 2,  L, D, X)
+VSRA(negr, sshl, 2,  L, D, X)
+VSRL(negr, ushl, 2,  L, D, X)
+VSLL_IMM(shl, shl, 2,  L, D, X)
+VSRA_IMM(sshr, sshr, 2,  L, D, X)
+VSRL_IMM(ushr, ushr, 2,  L, D, X)
+VSRAA_IMM(ssra, ssra, 8,  B, B, D)
+VSRAA_IMM(ssra, ssra, 16, B, B, X)
+VSRAA_IMM(ssra, ssra, 4,  S, H, D)
+VSRAA_IMM(ssra, ssra, 8,  S, H, X)
+VSRAA_IMM(ssra, ssra, 2,  I, S, D)
+VSRAA_IMM(ssra, ssra, 4,  I, S, X)
+VSRAA_IMM(ssra, ssra, 2,  L, D, X)
+VSRLA_IMM(usra, usra, 8,  B, B, D)
+VSRLA_IMM(usra, usra, 16, B, B, X)
+VSRLA_IMM(usra, usra, 4,  S, H, D)
+VSRLA_IMM(usra, usra, 8,  S, H, X)
+VSRLA_IMM(usra, usra, 2,  I, S, D)
+VSRLA_IMM(usra, usra, 4,  I, S, X)
+VSRLA_IMM(usra, usra, 2,  L, D, X)
+dnl
+define(`VMINMAX', `
+instruct v$1$3`'ifelse($5, S, F, D)`'(vec$6 dst, vec$6 src1, vec$6 src2)
+%{
+  predicate(n->as_Vector()->length() == $3 && n->bottom_type()->is_vect()->element_basic_type() == T_`'ifelse($5, S, FLOAT, DOUBLE));
+  match(Set dst ($2V src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "f$1  $dst,$src1,$src2\t# vector ($3$4)" %}
+  ins_encode %{
+    __ f$1(as_FloatRegister($dst$$reg), __ T$3$5,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vdop_fp`'ifelse($6, D, 64, 128));
+%}')dnl
+dnl     $1   $2   $3 $4 $5 $6
+VMINMAX(max, Max, 2, F, S, D)
+VMINMAX(max, Max, 4, S, S, X)
+VMINMAX(max, Max, 2, D, D, X)
+VMINMAX(min, Min, 2, F, S, D)
+VMINMAX(min, Min, 4, S, S, X)
+VMINMAX(min, Min, 2, D, D, X)
+
+instruct vround2D_reg(vecX dst, vecX src, immI rmode) %{
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (RoundDoubleModeV src rmode));
+  format %{ "frint  $dst, $src, $rmode" %}
+  ins_encode %{
+    switch ($rmode$$constant) {
+      case RoundDoubleModeNode::rmode_rint:
+        __ frintn(as_FloatRegister($dst$$reg), __ T2D,
+                  as_FloatRegister($src$$reg));
+        break;
+      case RoundDoubleModeNode::rmode_floor:
+        __ frintm(as_FloatRegister($dst$$reg), __ T2D,
+                  as_FloatRegister($src$$reg));
+        break;
+      case RoundDoubleModeNode::rmode_ceil:
+        __ frintp(as_FloatRegister($dst$$reg), __ T2D,
+                  as_FloatRegister($src$$reg));
+        break;
+    }
+  %}
+  ins_pipe(vdop_fp128);
+%}
+dnl
+define(`VPOPCOUNT', `
+instruct vpopcount$1$2`'(vec$5 dst, vec$5 src) %{
+  predicate(UsePopCountInstruction && n->as_Vector()->length() == $1);
+  match(Set dst (PopCountVI src));
+  format %{
+    "cnt     $dst, $src\t# vector ($3B)\n\t"
+    "uaddlp  $dst, $dst\t# vector ($3B)\n\t"
+    "uaddlp  $dst, $dst\t# vector ($4H)"
+  %}
+  ins_encode %{
+    __ cnt(as_FloatRegister($dst$$reg), __ T$3B,
+           as_FloatRegister($src$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T$3B,
+              as_FloatRegister($dst$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T$4H,
+              as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}')dnl
+dnl       $1 $2 $3  $4 $5
+VPOPCOUNT(4, I, 16, 8, X)
+VPOPCOUNT(2, I, 8,  4, D)

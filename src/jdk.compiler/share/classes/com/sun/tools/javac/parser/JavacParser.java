@@ -490,9 +490,13 @@ public class JavacParser implements Parser {
 
     /** Diagnose a modifier flag from the set, if any. */
     protected void checkNoMods(long mods) {
+        checkNoMods(token.pos, mods);
+    }
+
+    protected void checkNoMods(int pos, long mods) {
         if (mods != 0) {
             long lowestMod = mods & -mods;
-            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.ModNotAllowedHere(Flags.asFlagSet(lowestMod)));
+            log.error(DiagnosticFlag.SYNTAX, pos, Errors.ModNotAllowedHere(Flags.asFlagSet(lowestMod)));
         }
     }
 
@@ -932,17 +936,30 @@ public class JavacParser implements Parser {
             if (token.kind == INSTANCEOF) {
                 int pos = token.pos;
                 nextToken();
+                int patternPos = token.pos;
+                JCModifiers mods = optFinal(0);
                 int typePos = token.pos;
-                JCExpression type = parseType();
+                JCExpression type = unannotatedType(false);
                 JCTree pattern;
                 if (token.kind == IDENTIFIER) {
                     checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
-                    JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                     JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), type, null));
-                    TreeInfo.getStartPos(var);
-                    pattern = toP(F.at(typePos).BindingPattern(var));
-                    TreeInfo.getStartPos(pattern);
+                    pattern = toP(F.at(patternPos).BindingPattern(var));
                 } else {
+                    checkNoMods(typePos, mods.flags & ~Flags.DEPRECATED);
+                    if (mods.annotations.nonEmpty()) {
+                        checkSourceLevel(mods.annotations.head.pos, Feature.TYPE_ANNOTATIONS);
+                        List<JCAnnotation> typeAnnos =
+                                mods.annotations
+                                    .map(decl -> {
+                                        JCAnnotation typeAnno = F.at(decl.pos)
+                                                                 .TypeAnnotation(decl.annotationType,
+                                                                                  decl.args);
+                                        endPosTable.replaceTree(decl, typeAnno);
+                                        return typeAnno;
+                                    });
+                        type = insertAnnotationsToMostInner(type, typeAnnos, false);
+                    }
                     pattern = type;
                 }
                 odStack[top] = F.at(pos).TypeTest(odStack[top], pattern);
@@ -1864,7 +1881,7 @@ public class JavacParser implements Parser {
         }
     }
 
-    private final static Fragment[][] decisionTable = new Fragment[][] {
+    private static final Fragment[][] decisionTable = new Fragment[][] {
         /*              VAR                              EXPLICIT                         IMPLICIT  */
         /* VAR      */ {null,                            VarAndExplicitNotAllowed,        VarAndImplicitNotAllowed},
         /* EXPLICIT */ {VarAndExplicitNotAllowed,        null,                            ImplicitAndExplicitNotAllowed},
@@ -2804,6 +2821,7 @@ public class JavacParser implements Parser {
             accept(LBRACE);
             List<JCCase> cases = switchBlockStatementGroups();
             JCSwitch t = to(F.at(pos).Switch(selector, cases));
+            t.endpos = token.endPos;
             accept(RBRACE);
             return t;
         }
@@ -3321,13 +3339,15 @@ public class JavacParser implements Parser {
         if (elemType.hasTag(IDENT)) {
             Name typeName = ((JCIdent)elemType).name;
             if (restrictedTypeNameStartingAtSource(typeName, pos, !compound && localDecl) != null) {
-                if (type.hasTag(TYPEARRAY) && !compound) {
+                if (typeName != names.var) {
+                    reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedHere(typeName));
+                } else if (type.hasTag(TYPEARRAY) && !compound) {
                     //error - 'var' and arrays
-                    reportSyntaxError(pos, Errors.RestrictedTypeNotAllowedArray(typeName));
+                    reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
                 } else {
                     if(compound)
                         //error - 'var' in compound local var decl
-                        reportSyntaxError(pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
+                        reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
                     startPos = TreeInfo.getStartPos(mods);
                     if (startPos == Position.NOPOS)
                         startPos = TreeInfo.getStartPos(type);

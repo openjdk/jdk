@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1207,9 +1207,26 @@ void PhaseCFG::dump_headers() {
     }
   }
 }
+#endif // !PRODUCT
+
+#ifdef ASSERT
+void PhaseCFG::verify_memory_writer_placement(const Block* b, const Node* n) const {
+  if (!n->is_memory_writer()) {
+    return;
+  }
+  CFGLoop* home_or_ancestor = find_block_for_node(n->in(0))->_loop;
+  bool found = false;
+  do {
+    if (b->_loop == home_or_ancestor) {
+      found = true;
+      break;
+    }
+    home_or_ancestor = home_or_ancestor->parent();
+  } while (home_or_ancestor != NULL);
+  assert(found, "block b is not in n's home loop or an ancestor of it");
+}
 
 void PhaseCFG::verify() const {
-#ifdef ASSERT
   // Verify sane CFG
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
@@ -1221,26 +1238,7 @@ void PhaseCFG::verify() const {
       if (j >= 1 && n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
         assert(j == 1 || block->get_node(j-1)->is_Phi(), "CreateEx must be first instruction in block");
       }
-      // Verify that memory-writing nodes (such as stores and calls) are placed
-      // in their original loop L (given by the control input) or in an ancestor
-      // of L. This is guaranteed by the freq. estimation model for reducible
-      // CFGs, and by special handling in PhaseCFG::schedule_late() otherwise.
-      if (n->is_Mach() && n->bottom_type()->has_memory() && n->in(0) != NULL) {
-        Block* original_block = find_block_for_node(n->in(0));
-        assert(original_block != NULL, "missing block for memory-writing node");
-        CFGLoop* original_or_ancestor = original_block->_loop;
-        assert(block->_loop != NULL && original_or_ancestor != NULL, "no loop");
-        bool found = false;
-        do {
-          if (block->_loop == original_or_ancestor) {
-            found = true;
-            break;
-          }
-          original_or_ancestor = original_or_ancestor->parent();
-        } while (original_or_ancestor != NULL);
-        assert(found, "memory-writing node is not placed in its original loop "
-                      "or an ancestor of it");
-      }
+      verify_memory_writer_placement(block, n);
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
       }
@@ -1283,9 +1281,8 @@ void PhaseCFG::verify() const {
       assert(block->_num_succs == 2, "Conditional branch must have two targets");
     }
   }
-#endif
 }
-#endif
+#endif // ASSERT
 
 UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_ARRAY(uint,max)) {
   Copy::zero_to_bytes( _indices, sizeof(uint)*max );

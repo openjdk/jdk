@@ -54,14 +54,14 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 final class TemplateManager {
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     // constant for any operation (either O_IMPORT or O_GENERATE)
-    final static String O_ANY      = "*";
+    static final String O_ANY      = "*";
     // constant for operation create ("importing" existing key material)
-    final static String O_IMPORT   = "import";
+    static final String O_IMPORT   = "import";
     // constant for operation generate (generating new key material)
-    final static String O_GENERATE = "generate";
+    static final String O_GENERATE = "generate";
 
     private static class KeyAndTemplate {
         final TemplateKey key;
@@ -186,7 +186,7 @@ final class TemplateManager {
      */
     private static final class Template {
 
-        private final static CK_ATTRIBUTE[] A0 = new CK_ATTRIBUTE[0];
+        private static final CK_ATTRIBUTE[] A0 = new CK_ATTRIBUTE[0];
 
         private CK_ATTRIBUTE[] attributes;
 

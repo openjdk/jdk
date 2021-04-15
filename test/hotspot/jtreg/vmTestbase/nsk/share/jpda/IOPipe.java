@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public class IOPipe extends SocketIOPipe {
       *
       * @see DebugeeArgumentHandler#createDebugeeIOPipe(Log)
       */
+    @Deprecated
     public IOPipe(DebugeeArgumentHandler argumentHandler, Log log) {
         this(log, getTestHost(argumentHandler), argumentHandler.getPipePortNumber(),
                 (long)argumentHandler.getWaitTime() * 60 * 1000, false);
@@ -62,6 +63,7 @@ public class IOPipe extends SocketIOPipe {
       *
       * @deprecated Use Debugee.createIOPipe() instead.
       */
+    @Deprecated
     public IOPipe(DebugeeProcess debugee) {
         this(debugee.getLog(),
                 debugee.getArgumentHandler().getDebugeeHost(),

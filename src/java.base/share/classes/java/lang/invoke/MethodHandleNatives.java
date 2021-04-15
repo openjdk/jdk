@@ -667,11 +667,8 @@ class MethodHandleNatives {
 
     static boolean canBeCalledVirtual(MemberName mem) {
         assert(mem.isInvocable());
-        switch (mem.getName()) {
-        case "getContextClassLoader":
-            return canBeCalledVirtual(mem, java.lang.Thread.class);
-        }
-        return false;
+        return mem.getName().equals("getContextClassLoader") &&
+            canBeCalledVirtual(mem, java.lang.Thread.class);
     }
 
     static boolean canBeCalledVirtual(MemberName symbolicRef, Class<?> definingClass) {

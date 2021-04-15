@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,14 @@
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -248,16 +250,6 @@ static void pop_param_registers(MacroAssembler* masm, int fp_regs_in_arguments) 
 // All vector registers are saved by default on ARM.
 bool SharedRuntime::is_wide_vector(int size) {
   return false;
-}
-
-size_t SharedRuntime::trampoline_size() {
-  return 16;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  InlinedAddress dest(destination);
-  __ indirect_jump(dest, Rtemp);
-  __ bind_literal(dest);
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
@@ -1504,18 +1496,17 @@ void SharedRuntime::generate_deopt_blob() {
   // Compilers generate code that bang the stack by as much as the
   // interpreter would need. So this stack banging should never
   // trigger a fault. Verify that it does not on non product builds.
-  // See if it is enough stack to push deoptimized frames
-  if (UseStackBanging) {
-    // The compiled method that we are deoptimizing was popped from the stack.
-    // If the stack bang results in a stack overflow, we don't return to the
-    // method that is being deoptimized. The stack overflow exception is
-    // propagated to the caller of the deoptimized method. Need to get the pc
-    // from the caller in LR and restore FP.
-    __ ldr(LR, Address(R2, 0));
-    __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-    __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
-    __ arm_stack_overflow_check(R8, Rtemp);
-  }
+  // See if it is enough stack to push deoptimized frames.
+  //
+  // The compiled method that we are deoptimizing was popped from the stack.
+  // If the stack bang results in a stack overflow, we don't return to the
+  // method that is being deoptimized. The stack overflow exception is
+  // propagated to the caller of the deoptimized method. Need to get the pc
+  // from the caller in LR and restore FP.
+  __ ldr(LR, Address(R2, 0));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ arm_stack_overflow_check(R8, Rtemp);
 #endif
   __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
 
@@ -1700,22 +1691,21 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   __ add(SP, SP, Rtemp);
 
-  // See if it is enough stack to push deoptimized frames
+  // See if it is enough stack to push deoptimized frames.
 #ifdef ASSERT
   // Compilers generate code that bang the stack by as much as the
   // interpreter would need. So this stack banging should never
   // trigger a fault. Verify that it does not on non product builds.
-  if (UseStackBanging) {
-    // The compiled method that we are deoptimizing was popped from the stack.
-    // If the stack bang results in a stack overflow, we don't return to the
-    // method that is being deoptimized. The stack overflow exception is
-    // propagated to the caller of the deoptimized method. Need to get the pc
-    // from the caller in LR and restore FP.
-    __ ldr(LR, Address(R2, 0));
-    __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-    __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
-    __ arm_stack_overflow_check(R8, Rtemp);
-  }
+  //
+  // The compiled method that we are deoptimizing was popped from the stack.
+  // If the stack bang results in a stack overflow, we don't return to the
+  // method that is being deoptimized. The stack overflow exception is
+  // propagated to the caller of the deoptimized method. Need to get the pc
+  // from the caller in LR and restore FP.
+  __ ldr(LR, Address(R2, 0));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ arm_stack_overflow_check(R8, Rtemp);
 #endif
   __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
   __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
@@ -1899,10 +1889,12 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
-                                               int shadow_space_bytes,
-                                               const GrowableArray<VMReg>& input_registers,
-                                               const GrowableArray<VMReg>& output_registers) {
+#ifdef COMPILER2
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
+                                                int shadow_space_bytes,
+                                                const GrowableArray<VMReg>& input_registers,
+                                                const GrowableArray<VMReg>& output_registers) {
   Unimplemented();
   return nullptr;
 }
+#endif
