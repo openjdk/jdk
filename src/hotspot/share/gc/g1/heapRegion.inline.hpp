@@ -141,7 +141,12 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
     assert(is_continues_humongous(), "This case can only happen for humongous regions");
     return (p == humongous_start_region()->bottom());
   }
-  if (ClassUnloadingWithConcurrentMark) {
+  // In full gc, we might have skipped compacting some heap regions with high live ratio,
+  // for objs in these regions, the corresponding class info might have been unloaded if
+  // they're not marked in the full gc.
+  // So, only when ClassUnloading is false, it's safe to tell an obj is indeed an obj when
+  // it's under the top of the region, otherwise we have to go to the slow path below.
+  if (ClassUnloading) {
     return !g1h->is_obj_dead(cast_to_oop(p), this);
   }
   return p < top();
