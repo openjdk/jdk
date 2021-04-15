@@ -22,6 +22,7 @@
  *
  */
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "logging/logAsyncFlusher.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logHandle.hpp"

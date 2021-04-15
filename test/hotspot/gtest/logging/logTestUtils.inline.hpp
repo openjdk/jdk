@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logStream.hpp"
