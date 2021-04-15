@@ -413,7 +413,7 @@ void Mutex::check_rank(Thread* thread) {
     // of m2 be less than the rank of m1. This prevents circular waits.
     if (least != NULL && least->rank() <= this->rank()) {
       if (least->rank() > Mutex::tty) {
-        // Printing owned locks acquires tty lock. If lowest rank is below or equal
+        // Printing owned locks acquires tty lock. If the least rank was below or equal
         // tty, then deadlock detection code would circle back here, until we run
         // out of stack and crash hard. Print locks only when it is safe.
         thread->print_owned_locks();
