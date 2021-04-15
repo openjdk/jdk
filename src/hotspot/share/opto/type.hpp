@@ -163,8 +163,6 @@ private:
   // join to ensure my lattice is symmetric up and down.  Dual is computed
   // lazily, on demand, and cached in _dual.
   const Type *_dual;            // Cached dual value
-  // Table for efficient dualing of base types
-  static const TYPES dual_type[lastype];
 
 #ifdef ASSERT
   // One type is interface, the other is oop

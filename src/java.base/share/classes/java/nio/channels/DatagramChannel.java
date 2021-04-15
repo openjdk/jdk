@@ -172,7 +172,7 @@ public abstract class DatagramChannel
      * java.nio.channels.spi.SelectorProvider} object.  The channel will not be
      * connected.
      *
-     * @apiNote <a href="package-summary.html#unixdomain">Unix domain</a> sockets
+     * @apiNote {@linkplain java.net.UnixDomainSocketAddress Unix domain} sockets
      * are not supported by DatagramChannel.
      *
      * @param   family

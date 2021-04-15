@@ -25,10 +25,15 @@ package vm.mlvm.meth.share;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.management.MemoryUsage;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import nsk.share.test.LazyIntArrayToString;
 import nsk.share.test.TestUtils;
@@ -63,8 +68,45 @@ public class MHTransformationGen {
 
     private static final boolean USE_THROW_CATCH = false; // Test bugs
 
+    private static final Optional<MemoryPoolMXBean> NON_SEGMENTED_CODE_CACHE_POOL;
+    private static final Optional<MemoryPoolMXBean> NON_NMETHODS_POOL;
+    private static final Optional<MemoryPoolMXBean> PROFILED_NMETHODS_POOL;
+    private static final Optional<MemoryPoolMXBean> NON_PROFILED_NMETHODS_POOL ;
+
+    // Limit numbers are arbitrary, feel free to change if arguably necessary
+    private static final int NON_SEGMENTED_CACHE_ALLOWANCE = 2_000_000;
+    private static final int SEGMENTED_CACHE_ALLOWANCE = 1_000_000;
+
+    static {
+        var pools = ManagementFactory.getMemoryPoolMXBeans();
+        NON_SEGMENTED_CODE_CACHE_POOL = pools.stream()
+            .filter(pool -> pool.getName().equals("CodeCache")).findFirst();
+        NON_NMETHODS_POOL = pools.stream()
+            .filter(pool -> pool.getName().equals("CodeHeap 'non-nmethods'")).findFirst();
+        PROFILED_NMETHODS_POOL = pools.stream()
+            .filter(pool -> pool.getName().equals("CodeHeap 'profiled nmethods'")).findFirst();
+        NON_PROFILED_NMETHODS_POOL = pools.stream()
+            .filter(pool -> pool.getName().equals("CodeHeap 'non-profiled nmethods'")).findFirst();
+    }
+
     public static class ThrowCatchTestException extends Throwable {
         private static final long serialVersionUID = -6749961303738648241L;
+    }
+
+    private static final boolean isCodeCacheEffectivelyFull() {
+        var result = new Object() { boolean value = false; };
+
+        BiConsumer<MemoryPoolMXBean, Integer> check = (pool, limit) -> {
+            var usage = pool.getUsage();
+            result.value |= usage.getMax() - usage.getUsed() < limit;
+        };
+
+        NON_SEGMENTED_CODE_CACHE_POOL.ifPresent(pool -> check.accept(pool, NON_SEGMENTED_CACHE_ALLOWANCE));
+        NON_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
+        PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
+        NON_PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
+
+        return result.value;
     }
 
     @SuppressWarnings("unused")
@@ -87,7 +129,14 @@ public class MHTransformationGen {
 
         List<MHTFPair> pendingPWTFs = new LinkedList<MHTFPair>();
 
-        for ( int i = nextInt(MAX_CYCLES); i > 0; i-- ) {
+        final int cyclesToBuild = nextInt(MAX_CYCLES);
+        for ( int i = 0; i < cyclesToBuild; i++) {
+            if (isCodeCacheEffectivelyFull()) {
+                Env.traceNormal("Not enought code cache to build up MH sequences anymore. " +
+                        " Has only been able to achieve " + i + " out of " + cyclesToBuild);
+                break;
+            }
+
             MHCall lastCall = graph.computeInboundCall();
             Argument[] lastArgs = lastCall.getArgs();
             MethodType type = lastCall.getTargetMH().type();

@@ -1889,6 +1889,9 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, DynamicDumpSharedSpaces, false,                             \
           "Dynamic archive")                                                \
                                                                             \
+  product(bool, RecordDynamicDumpInfo, false,                               \
+          "Record class info for jcmd VM.cds dynamic_dump")                 \
+                                                                            \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
                                                                             \
