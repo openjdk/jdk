@@ -172,9 +172,9 @@ public class GZIPHeaderBuilder {
      *        byte[] size and fill it before the byte[] in header.
      * @param filename              the original file name in ISO-8859-1 character set
      * @param fileComment           the file comment in ISO_8859-1 character set.
-     *                              
+     *
      * @return Bytes of header data generated.
-     * 
+     *
      * @throws ZipException         If extra field size is out of range.
      *                              Or if extra filed data layout is incorrect.
      * @throws IllegalArgumentException     If compress method is not {@code Deflater.DEFLATED}.
@@ -203,7 +203,7 @@ public class GZIPHeaderBuilder {
         };
         // write head.
         baos.write(head);
-        
+
         if ((flags & GZIPHeaderData.FHCRC) == GZIPHeaderData.FHCRC) {
             crc.update(head, 0, head.length);
         }
@@ -275,8 +275,9 @@ public class GZIPHeaderBuilder {
         }
         return baos.toByteArray();
     }
-    
-    /** verify extra field data layout.
+
+    /**
+     * Verify extra field data layout.
      * Per RFC 1952:
      * If the FEXTRA bit is set, an "extra field" is present in
      * the header, with total length XLEN bytes.  It consists of a
