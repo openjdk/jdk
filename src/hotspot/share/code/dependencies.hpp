@@ -397,10 +397,10 @@ class Dependencies: public ResourceObj {
 
   // Checking old assertions at run-time (in the VM only):
   static Klass* check_evol_method(Method* m);
-  static Klass* check_leaf_type(Klass* ctxk);
-  static Klass* check_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck, KlassDepChange* changes = NULL);
-  static Klass* check_unique_concrete_method(Klass* ctxk, Method* uniqm, KlassDepChange* changes = NULL);
-  static Klass* check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes = NULL);
+  static Klass* check_leaf_type(InstanceKlass* ctxk);
+  static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, KlassDepChange* changes = NULL);
+  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, KlassDepChange* changes = NULL);
+  static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, KlassDepChange* changes = NULL);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned Klass* is NULL if the dependency assertion is still
   // valid.  A non-NULL Klass* is a 'witness' to the assertion
@@ -417,8 +417,12 @@ class Dependencies: public ResourceObj {
   // It is used by DepStream::spot_check_dependency_at.
 
   // Detecting possible new assertions:
-  static Klass*  find_unique_concrete_subtype(Klass* ctxk);
-  static Method* find_unique_concrete_method(Klass* ctxk, Method* m);
+  static Klass*  find_unique_concrete_subtype(InstanceKlass* ctxk);
+  static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m);
+
+#ifdef ASSERT
+  static bool verify_method_context(InstanceKlass* ctxk, Method* m);
+#endif // ASSERT
 
   // Create the encoding which will be stored in an nmethod.
   void encode_content_bytes();
@@ -576,7 +580,7 @@ class Dependencies: public ResourceObj {
                                    return _xi[i]; }
     Metadata* argument(int i);     // => recorded_oop_at(argument_index(i))
     oop argument_oop(int i);         // => recorded_oop_at(argument_index(i))
-    Klass* context_type();
+    InstanceKlass* context_type();
 
     bool is_klass_type()         { return Dependencies::is_klass_type(type()); }
 
@@ -610,7 +614,7 @@ class Dependencies: public ResourceObj {
   };
   friend class Dependencies::DepStream;
 
-  static void print_statistics() PRODUCT_RETURN;
+  static void print_statistics();
 };
 
 
@@ -719,13 +723,13 @@ class DepChange : public StackObj {
 class KlassDepChange : public DepChange {
  private:
   // each change set is rooted in exactly one new type (at present):
-  Klass* _new_type;
+  InstanceKlass* _new_type;
 
   void initialize();
 
  public:
   // notes the new type, marks it and all its super-types
-  KlassDepChange(Klass* new_type)
+  KlassDepChange(InstanceKlass* new_type)
     : _new_type(new_type)
   {
     initialize();
@@ -741,7 +745,7 @@ class KlassDepChange : public DepChange {
     nm->mark_for_deoptimization(/*inc_recompile_counts=*/true);
   }
 
-  Klass* new_type() { return _new_type; }
+  InstanceKlass* new_type() { return _new_type; }
 
   // involves_context(k) is true if k is new_type or any of the super types
   bool involves_context(Klass* k);

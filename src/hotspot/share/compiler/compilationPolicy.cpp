@@ -112,7 +112,7 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
 }
 
 static inline CompLevel adjust_level_for_compilability_query(CompLevel comp_level) {
-  if (comp_level == CompLevel_all) {
+  if (comp_level == CompLevel_any) {
      if (CompilerConfig::is_c1_only()) {
        comp_level = CompLevel_simple;
      } else if (CompilerConfig::is_c2_or_jvmci_compiler_only()) {
@@ -125,7 +125,7 @@ static inline CompLevel adjust_level_for_compilability_query(CompLevel comp_leve
 // Returns true if m is allowed to be compiled
 bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
   // allow any levels for WhiteBox
-  assert(WhiteBoxAPI || comp_level == CompLevel_all || is_compile(comp_level), "illegal compilation level");
+  assert(WhiteBoxAPI || comp_level == CompLevel_any || is_compile(comp_level), "illegal compilation level");
 
   if (m->is_abstract()) return false;
   if (DontCompileHugeMethods && m->code_size() > HugeMethodLimit) return false;
@@ -140,7 +140,7 @@ bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
     return false;
   }
   comp_level = adjust_level_for_compilability_query((CompLevel) comp_level);
-  if (comp_level == CompLevel_all || is_compile(comp_level)) {
+  if (comp_level == CompLevel_any || is_compile(comp_level)) {
     return !m->is_not_compilable(comp_level);
   }
   return false;
@@ -150,7 +150,7 @@ bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
 bool CompilationPolicy::can_be_osr_compiled(const methodHandle& m, int comp_level) {
   bool result = false;
   comp_level = adjust_level_for_compilability_query((CompLevel) comp_level);
-  if (comp_level == CompLevel_all || is_compile(comp_level)) {
+  if (comp_level == CompLevel_any || is_compile(comp_level)) {
     result = !m->is_not_osr_compilable(comp_level);
   }
   return (result && can_be_compiled(m, comp_level));

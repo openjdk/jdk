@@ -156,10 +156,11 @@ static void
 replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRasInfo *srcInfo,
                      const MTLRasterFormatInfo *rfi,
                      int dx1, int dy1, int dx2, int dy2) {
-    const int sw = srcInfo->bounds.x2 - srcInfo->bounds.x1;
-    const int sh = srcInfo->bounds.y2 - srcInfo->bounds.y1;
-    const int dw = dx2 - dx1;
-    const int dh = dy2 - dy1;
+    const int sw = MIN(srcInfo->bounds.x2 - srcInfo->bounds.x1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+    const int sh = MIN(srcInfo->bounds.y2 - srcInfo->bounds.y1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+    const int dw = MIN(dx2 - dx1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+    const int dh = MIN(dy2 - dy1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+
     if (dw < sw || dh < sh) {
         J2dTraceLn4(J2D_TRACE_ERROR, "replaceTextureRegion: dest size: (%d, %d) less than source size: (%d, %d)", dw, dh, sw, sh);
         return;
@@ -800,23 +801,45 @@ MTLBlitLoops_CopyArea(JNIEnv *env,
        (dstBounds.x1 < dstBounds.x2 && dstBounds.y1 < dstBounds.y2))
    {
         @autoreleasepool {
-            id<MTLCommandBuffer> cb = [mtlc createCommandBuffer];
-            id<MTLBlitCommandEncoder> blitEncoder = [cb blitCommandEncoder];
+            struct TxtVertex quadTxVerticesBuffer[6];
+            MTLPooledTextureHandle * interHandle =
+                [mtlc.texturePool getTexture:texWidth
+                                      height:texHeight
+                                      format:MTLPixelFormatBGRA8Unorm];
+            if (interHandle == nil) {
+                J2dTraceLn(J2D_TRACE_ERROR,
+                    "MTLBlitLoops_CopyArea: texture handle is null");
+                return;
+            }
+            [[mtlc getCommandBufferWrapper] registerPooledTexture:interHandle];
 
-            // Create an intrermediate buffer
-            int totalBuffsize = srcWidth * srcHeight * 4;
-            id <MTLBuffer> buff = [[mtlc.device newBufferWithLength:totalBuffsize options:MTLResourceStorageModePrivate] autorelease];
+            id<MTLTexture> interTexture = interHandle.texture;
 
-            [blitEncoder copyFromTexture:dstOps->pTexture
-                    sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(srcBounds.x1, srcBounds.y1, 0) sourceSize:MTLSizeMake(srcWidth, srcHeight, 1)
-                     toBuffer:buff destinationOffset:0 destinationBytesPerRow:(srcWidth * 4) destinationBytesPerImage:totalBuffsize];
+            /*
+             * We need to consider common states like clipping while
+             * performing copyArea, thats why we use drawTex2Tex and
+             * get encoder with appropriate state from EncoderManager
+             * and not directly use MTLBlitCommandEncoder for texture copy.
+             */
 
-            [blitEncoder copyFromBuffer:buff
-                    sourceOffset:0 sourceBytesPerRow:srcWidth*4 sourceBytesPerImage:totalBuffsize sourceSize:MTLSizeMake(srcWidth, srcHeight, 1)
-                    toTexture:dstOps->pTexture destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(dstBounds.x1, dstBounds.y1, 0)];
-            [blitEncoder endEncoding];
+            // copy content to intermediate texture
+            drawTex2Tex(mtlc, dstOps->pTexture, interTexture, dstOps->isOpaque,
+                        JNI_FALSE, INTERPOLATION_NEAREST_NEIGHBOR,
+                        0, 0, texWidth, texHeight, 0, 0, texWidth, texHeight);
 
-            [cb commit];
+            // copy content with appropriate bounds to destination texture
+            drawTex2Tex(mtlc, interTexture, dstOps->pTexture, JNI_FALSE,
+                        dstOps->isOpaque, INTERPOLATION_NEAREST_NEIGHBOR,
+                        srcBounds.x1, srcBounds.y1, srcBounds.x2, srcBounds.y2,
+                        dstBounds.x1, dstBounds.y1, dstBounds.x2, dstBounds.y2);
+            [mtlc.encoderManager endEncoder];
+            MTLCommandBufferWrapper * cbwrapper =
+                [mtlc pullCommandBufferWrapper];
+            id<MTLCommandBuffer> commandbuf = [cbwrapper getCommandBuffer];
+            [commandbuf addCompletedHandler:^(id <MTLCommandBuffer> commandbuf) {
+                [cbwrapper release];
+            }];
+            [commandbuf commit];
         }
    }
 }

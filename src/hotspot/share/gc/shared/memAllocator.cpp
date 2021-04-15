@@ -173,6 +173,7 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   assert(!_thread->has_pending_exception(),
          "shouldn't be allocating with pending exception");
   // Allocation of an oop can always invoke a safepoint.
+  assert(_thread->is_Java_thread(), "non Java threads shouldn't allocate on the Heap");
   _thread->check_for_valid_safepoint_state();
 }
 #endif

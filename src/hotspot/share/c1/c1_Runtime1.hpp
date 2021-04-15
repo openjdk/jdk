@@ -133,36 +133,36 @@ class Runtime1: public AllStatic {
                                        Register arg1 = noreg, Register arg2 = noreg, Register arg3 = noreg);
 
   // runtime entry points
-  static void new_instance    (JavaThread* thread, Klass* klass);
-  static void new_type_array  (JavaThread* thread, Klass* klass, jint length);
-  static void new_object_array(JavaThread* thread, Klass* klass, jint length);
-  static void new_multi_array (JavaThread* thread, Klass* klass, int rank, jint* dims);
+  static void new_instance    (JavaThread* current, Klass* klass);
+  static void new_type_array  (JavaThread* current, Klass* klass, jint length);
+  static void new_object_array(JavaThread* current, Klass* klass, jint length);
+  static void new_multi_array (JavaThread* current, Klass* klass, int rank, jint* dims);
 
-  static address counter_overflow(JavaThread* thread, int bci, Method* method);
+  static address counter_overflow(JavaThread* current, int bci, Method* method);
 
-  static void unimplemented_entry   (JavaThread* thread, StubID id);
+  static void unimplemented_entry(JavaThread* current, StubID id);
 
-  static address exception_handler_for_pc(JavaThread* thread);
+  static address exception_handler_for_pc(JavaThread* current);
 
-  static void throw_range_check_exception(JavaThread* thread, int index, arrayOopDesc* a);
-  static void throw_index_exception(JavaThread* thread, int index);
-  static void throw_div0_exception(JavaThread* thread);
-  static void throw_null_pointer_exception(JavaThread* thread);
-  static void throw_class_cast_exception(JavaThread* thread, oopDesc* object);
-  static void throw_incompatible_class_change_error(JavaThread* thread);
-  static void throw_array_store_exception(JavaThread* thread, oopDesc* object);
+  static void throw_range_check_exception(JavaThread* current, int index, arrayOopDesc* a);
+  static void throw_index_exception(JavaThread* current, int index);
+  static void throw_div0_exception(JavaThread* current);
+  static void throw_null_pointer_exception(JavaThread* current);
+  static void throw_class_cast_exception(JavaThread* current, oopDesc* object);
+  static void throw_incompatible_class_change_error(JavaThread* current);
+  static void throw_array_store_exception(JavaThread* current, oopDesc* object);
 
-  static void monitorenter(JavaThread* thread, oopDesc* obj, BasicObjectLock* lock);
-  static void monitorexit (JavaThread* thread, BasicObjectLock* lock);
+  static void monitorenter(JavaThread* current, oopDesc* obj, BasicObjectLock* lock);
+  static void monitorexit (JavaThread* current, BasicObjectLock* lock);
 
-  static void deoptimize(JavaThread* thread, jint trap_request);
+  static void deoptimize(JavaThread* current, jint trap_request);
 
-  static int access_field_patching(JavaThread* thread);
-  static int move_klass_patching(JavaThread* thread);
-  static int move_mirror_patching(JavaThread* thread);
-  static int move_appendix_patching(JavaThread* thread);
+  static int access_field_patching(JavaThread* current);
+  static int move_klass_patching(JavaThread* current);
+  static int move_mirror_patching(JavaThread* current);
+  static int move_appendix_patching(JavaThread* current);
 
-  static void patch_code(JavaThread* thread, StubID stub_id);
+  static void patch_code(JavaThread* current, StubID stub_id);
 
  public:
   // initialization
@@ -189,7 +189,7 @@ class Runtime1: public AllStatic {
   // directly accessible leaf routine
   static int  is_instance_of(oopDesc* mirror, oopDesc* obj);
 
-  static void predicate_failed_trap(JavaThread* thread);
+  static void predicate_failed_trap(JavaThread* current);
 
   static void print_statistics()                 PRODUCT_RETURN;
 };
