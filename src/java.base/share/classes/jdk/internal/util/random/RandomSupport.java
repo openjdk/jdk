@@ -1407,10 +1407,6 @@ public class RandomSupport {
      * only to extend this class and provide implementations for the methods
      * {@link RandomGenerator#nextInt() nextInt}(),
      * {@link RandomGenerator#nextLong() nextLong}(),
-     * {@link AbstractSpliteratorGenerator#makeIntsSpliterator(long, long, int, int) makeIntsSpliterator}(index, fence, origin, bound),
-     * {@link AbstractSpliteratorGenerator#makeLongsSpliterator(long, long, long, long) makeLongsSpliterator}(index, fence, origin, bound),
-     * and
-     * {@link AbstractSpliteratorGenerator#makeDoublesSpliterator(long, long, double, double) makeDoublesSpliterator}(index, fence, origin, bound).
      *
      * <p> This class is not public; it provides shared code to the public
      * classes {@link AbstractSplittableGenerator}, and
@@ -1427,8 +1423,7 @@ public class RandomSupport {
          * satisfy the interface RandomGenerator.  An implementation of this
          * interface need only extend this class and provide implementations
          * of six methods: nextInt, nextLong, and nextDouble (the versions
-         * that take no arguments) and makeIntsSpliterator,
-         * makeLongsSpliterator, and makeDoublesSpliterator.
+         * that take no arguments).
          *
          * File organization: First the non-public abstract methods needed
          * to create spliterators, then the main public methods.
@@ -1649,20 +1644,6 @@ public class RandomSupport {
          * Explicit constructor.
          */
         protected AbstractArbitrarilyJumpableGenerator() {
-        }
-
-        // Methods required by class AbstractSpliteratorGenerator
-
-        protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-            return new RandomIntsSpliterator(this, index, fence, origin, bound);
-        }
-
-        protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-            return new RandomLongsSpliterator(this, index, fence, origin, bound);
-        }
-
-        protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-            return new RandomDoublesSpliterator(this, index, fence, origin, bound);
         }
 
         // Similar methods used by this class
@@ -2091,18 +2072,6 @@ public class RandomSupport {
          * Explicit constructor.
          */
         protected AbstractSplittableGenerator() {
-        }
-
-        protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-            return new RandomIntsSpliterator(this, index, fence, origin, bound);
-        }
-
-        protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-            return new RandomLongsSpliterator(this, index, fence, origin, bound);
-        }
-
-        protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-            return new RandomDoublesSpliterator(this, index, fence, origin, bound);
         }
 
         Spliterator<SplittableGenerator> makeSplitsSpliterator(long index, long fence, SplittableGenerator source) {
