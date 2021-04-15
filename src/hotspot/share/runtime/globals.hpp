@@ -686,6 +686,9 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Print the system dictionary at exit")                            \
                                                                             \
+  notproduct(bool, PrintClassLoaderDataGraphAtExit, false,                  \
+          "Print the class loader data graph at exit")                      \
+                                                                            \
   product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
@@ -1885,6 +1888,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, DynamicDumpSharedSpaces, false,                             \
           "Dynamic archive")                                                \
+                                                                            \
+  product(bool, RecordDynamicDumpInfo, false,                               \
+          "Record class info for jcmd VM.cds dynamic_dump")                 \
                                                                             \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \

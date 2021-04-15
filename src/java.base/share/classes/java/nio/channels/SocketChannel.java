@@ -332,7 +332,7 @@ public abstract class SocketChannel
      * another socket can bind to the same name. If a socket channel to a Unix
      * Domain socket is <i>implicitly</i> bound by connecting it without calling
      * bind first, then its socket is
-     * <a href="../../java/net/UnixDomainSocketAddress.html#unnamed">unnamed</a>
+     * <a href="../../../java/net/UnixDomainSocketAddress.html#unnamed">unnamed</a>
      * with no corresponding socket file in the file-system. If a socket channel
      * to a Unix Domain socket is <i>automatically</i> bound by calling {@code
      * bind(null)} this results in an unnamed socket also.

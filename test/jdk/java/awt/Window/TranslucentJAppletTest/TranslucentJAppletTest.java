@@ -27,7 +27,7 @@
  * @summary Tests that a JApplet in a translucent JFrame works properly
  * @author Kenneth.Russell@sun.com: area=Graphics
  * @compile -XDignore.symbol.file=true TranslucentJAppletTest.java
- * @run main/manual/othervm TranslucentJAppletTest
+ * @run main TranslucentJAppletTest
  */
 
 import java.awt.*;

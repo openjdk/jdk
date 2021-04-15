@@ -239,7 +239,7 @@ var getJibProfilesCommon = function (input, data) {
 
     // List of the main profile names used for iteration
     common.main_profile_names = [
-        "linux-x64", "linux-x86", "macosx-x64",
+        "linux-x64", "linux-x86", "macosx-x64", "macosx-aarch64",
         "windows-x64", "windows-x86", "windows-aarch64",
         "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x"
     ];
@@ -396,7 +396,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "15";
+    common.boot_jdk_version = (input.build_os == 'macosx' && input.build_cpu == 'aarch64') ? "16" : "15";
     common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
@@ -445,6 +445,14 @@ var getJibProfilesProfiles = function (input, common, data) {
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.
                 "SETFILE=/usr/bin/SetFile"),
+        },
+
+        "macosx-aarch64": {
+            target_os: "macosx",
+            target_cpu: "aarch64",
+            dependencies: ["devkit", "gtest"],
+            configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
+                "--with-macosx-version-max=11.00.00"),
         },
 
         "windows-x64": {
@@ -557,7 +565,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         });
 
     // Generate -gcov profiles
-    [ "linux-aarch64", "linux-x64", "macosx-x64" ].forEach(function (name) {
+    [ "linux-aarch64", "linux-x64", "macosx-x64", "macosx-aarch64" ].forEach(function (name) {
         var gcovName = name + "-gcov";
         profiles[gcovName] = clone(profiles[name]);
         profiles[gcovName].default_make_targets = ["product-bundles", "test-bundles"];
@@ -646,7 +654,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         });
 
     // JCov profiles build JCov-instrumented JDK image based on images provided through dependencies.
-    [ "linux-aarch64", "linux-x64", "macosx-x64", "windows-x64" ]
+    [ "linux-aarch64", "linux-x64", "macosx-x64", "macosx-aarch64", "windows-x64" ]
         .forEach(function (name) {
             var jcovName = name + "-jcov";
             profiles[jcovName] = clone(common.main_profile_base);
@@ -674,6 +682,10 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             platform: "osx-x64",
             jdk_subdir: "jdk-" + data.version +  ".jdk/Contents/Home",
+        },
+        "macosx-aarch64": {
+            platform: "osx-aarch64",
+            jdk_subdir: "jdk-" + data.version + ".jdk/Contents/Home",
         },
         "windows-x64": {
             platform: "windows-x64",
@@ -842,7 +854,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     });
 
     // Artifacts of JCov profiles
-    [ "linux-aarch64", "linux-x64", "macosx-x64", "windows-x64" ]
+    [ "linux-aarch64", "linux-x64", "macosx-x64", "macosx-aarch64", "windows-x64" ]
         .forEach(function (name) {
             var o = artifactData[name]
             var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
@@ -862,7 +874,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         });
 
     // Artifacts of gcov (native-code-coverage) profiles
-    [ "linux-aarch64", "linux-x64", "macosx-x64" ].forEach(function (name) {
+    [ "linux-aarch64", "linux-x64", "macosx-x64", "macosx-aarch64" ].forEach(function (name) {
         var o = artifactData[name]
         var pf = o.platform
         var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
@@ -974,8 +986,11 @@ var getJibProfilesProfiles = function (input, common, data) {
     // This gives us a guaranteed working version of lldb for the jtreg failure handler.
     if (input.build_os == "macosx") {
         macosxRunTestExtra = {
-            environment_path: input.get("devkit", "install_path")
-                + "/Xcode.app/Contents/Developer/usr/bin"
+            dependencies: [ "lldb" ],
+            environment_path: [
+                input.get("gnumake", "install_path") + "/bin",
+                input.get("lldb", "install_path") + "/Xcode.app/Contents/Developer/usr/bin",
+            ],
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
@@ -1030,7 +1045,7 @@ var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
         linux_x64: "gcc10.2.0-OL6.4+1.0",
-        macosx_x64: "Xcode11.3.1-MacOSX10.15+1.1",
+        macosx: "Xcode12.4+1.0",
         windows_x64: "VS2019-16.7.2+1.1",
         linux_aarch64: "gcc10.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
@@ -1043,6 +1058,8 @@ var getJibProfilesDependencies = function (input, common) {
         : input.target_platform);
     if (input.target_platform == "windows_aarch64") {
         devkit_platform = "windows_x64";
+    } else if (input.target_os == "macosx") {
+        devkit_platform = "macosx";
     }
     var devkit_cross_prefix = "";
     if (!(input.target_os == "windows")) {
@@ -1061,13 +1078,18 @@ var getJibProfilesDependencies = function (input, common) {
         boot_jdk_platform = "windows-" + input.build_cpu;
         boot_jdk_ext = ".zip";
     }
-
-    var makeBinDir = (input.build_os == "windows"
-        ? input.get("gnumake", "install_path") + "/cygwin/bin"
-        : input.get("gnumake", "install_path") + "/bin");
-
-    var dependencies = {
-        boot_jdk: {
+    var boot_jdk;
+    if (boot_jdk_platform == 'osx-aarch64') {
+        boot_jdk = {
+            organization: common.organization,
+            ext: "tar.gz",
+            module: "jdk-macosx_aarch64",
+            revision: "16+1.0-beta1",
+            configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
+            environment_path: common.boot_jdk_home + "/bin"
+        }
+    } else {
+        boot_jdk = {
             server: "jpg",
             product: "jdk",
             version: common.boot_jdk_version,
@@ -1076,7 +1098,15 @@ var getJibProfilesDependencies = function (input, common) {
                 + boot_jdk_platform + "_bin" + boot_jdk_ext,
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
-        },
+        }
+    }
+
+    var makeBinDir = (input.build_os == "windows"
+        ? input.get("gnumake", "install_path") + "/cygwin/bin"
+        : input.get("gnumake", "install_path") + "/bin");
+
+    var dependencies = {
+        boot_jdk: boot_jdk,
 
         devkit: {
             organization: common.organization,
@@ -1093,6 +1123,13 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "tar.gz",
             module: "devkit-" + input.build_platform,
             revision: devkit_platform_revisions[input.build_platform]
+        },
+
+        lldb: {
+            organization: common.organization,
+            ext: "tar.gz",
+            module: "devkit-macosx" + (input.build_cpu == "x64" ? "_x64" : ""),
+            revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.1" : devkit_platform_revisions[devkit_platform])
         },
 
         cups: {

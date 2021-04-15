@@ -1610,6 +1610,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // Deferred transition to VM, so we can stash away the return oop before GC
   // Note that this transition is not needed when throwing an exception, because
   // there is no oop to retain.
+  JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
     post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
   JRT_BLOCK_END
