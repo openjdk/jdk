@@ -24,6 +24,7 @@
 // no precompiled headers
 #include "ci/ciUtilities.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,15 +20,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.api.consumer.log;
 
-import java.applet.Applet;
-import java.awt.TextField;
+import jdk.jfr.Recording;
 
-public class TestApplet extends Applet {
-    TextField textField = null;
+/**
+ * @test
+ * @summary Tests that event logging can't be turned on and off
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @build jdk.jfr.api.consumer.log.LogAnalyzer
+ * @run main/othervm
+ *      -Xlog:jfr+event*=debug,jfr+system=debug:file=disk-on-off.log
+ *      jdk.jfr.api.consumer.log.TestDiskOnOff
+ */
+public class TestDiskOnOff {
 
-    public void init() {
-        textField = new TextField(25);
-        add(textField);
+    public static void main(String... args) throws Exception {
+        LogAnalyzer la = new LogAnalyzer("disk-on-off.log");
+        try (Recording r = new Recording()) {
+            r.start();
+            la.await("Log stream started");
+        }
+        la.await("Log stream stopped");
+        try (Recording r = new Recording()) {
+            r.start();
+            la.await("Log stream started");
+        }
+        la.await("Log stream stopped");
     }
 }

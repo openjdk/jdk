@@ -48,6 +48,17 @@ class ReservedSpace {
   ReservedSpace(char* base, size_t size, size_t alignment, bool special,
                 bool executable);
  protected:
+  // Helpers to clear and set members during initialization. Two members
+  // require special treatment:
+  //  * _fd_for_heap     - The fd is set once and should not be cleared
+  //                       even if the reservation has to be retried.
+  //  * _noaccess_prefix - Used for compressed heaps and updated after
+  //                       the reservation is initialized. Always set to
+  //                       0 during initialization.
+  void clear_members();
+  void initialize_members(char* base, size_t size, size_t alignment,
+                          bool special, bool executable);
+
   void initialize(size_t size, size_t alignment, bool large,
                   char* requested_address,
                   bool executable);

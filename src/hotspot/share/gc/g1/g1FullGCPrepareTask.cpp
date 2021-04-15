@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 #include "utilities/ticks.hpp"
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
-  bool force_pinned = false;
+  bool force_not_compacted = false;
   if (should_compact(hr)) {
     assert(!hr->is_humongous(), "moving humongous objects not supported.");
     prepare_for_compaction(hr);
@@ -54,7 +54,7 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
         free_humongous_region(hr);
       }
     } else if (hr->is_open_archive()) {
-      bool is_empty = _bitmap->get_next_marked_addr(hr->bottom(), hr->top()) >= hr->top();
+      bool is_empty = _collector->live_words(hr->hrm_index()) == 0;
       if (is_empty) {
         free_open_archive_region(hr);
       }
@@ -62,11 +62,10 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       // nothing to do with closed archive region
     } else {
       assert(MarkSweepDeadRatio > 0,
-                "it should not trigger skipping compaction, when MarkSweepDeadRatio == 0");
-
-      // Force the high live ration region pinned,
-      // as we need skip these regions in the later compact step.
-      force_pinned = true;
+             "only skip compaction for other regions when MarkSweepDeadRatio > 0");
+      // Force the high live ratio region as compacting to skip these regions in the
+      // later compaction step.
+      force_not_compacted = true;
       if (hr->is_young()) {
         // G1 updates the BOT for old region contents incrementally, but young regions
         // lack BOT information for performance reasons.
@@ -81,7 +80,7 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
 
   // Reset data structures not valid after Full GC.
   reset_region_metadata(hr);
-  _collector->update_attribute_table(hr, force_pinned);
+  _collector->update_attribute_table(hr, force_not_compacted);
 
   return false;
 }

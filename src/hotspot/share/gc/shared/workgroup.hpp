@@ -346,57 +346,27 @@ public:
 // sub-tasks from a set (possibly an enumeration), claim sub-tasks
 // in sequential order. This is ideal for claiming dynamically
 // partitioned tasks (like striding in the parallel remembered
-// set scanning). Note that unlike the above class this is
-// a stack object - is there any reason for it not to be?
+// set scanning).
 
-class SequentialSubTasksDone : public StackObj {
-protected:
-  uint _n_tasks;     // Total number of tasks available.
-  volatile uint _n_claimed;   // Number of tasks claimed.
-  // _n_threads is used to determine when a sub task is done.
-  // See comments on SubTasksDone::_n_threads
-  uint _n_threads;   // Total number of parallel threads.
-  volatile uint _n_completed; // Number of completed threads.
+class SequentialSubTasksDone : public CHeapObj<mtInternal> {
 
-  void clear();
+  uint _num_tasks;     // Total number of tasks available.
+  volatile uint _num_claimed;   // Number of tasks claimed.
+
+  NONCOPYABLE(SequentialSubTasksDone);
 
 public:
-  SequentialSubTasksDone() {
-    clear();
+  SequentialSubTasksDone(uint num_tasks) : _num_tasks(num_tasks), _num_claimed(0) { }
+  ~SequentialSubTasksDone() {
+    // Claiming may try to claim more tasks than there are.
+    assert(_num_claimed >= _num_tasks, "Claimed %u tasks of %u", _num_claimed, _num_tasks);
   }
-  ~SequentialSubTasksDone() {}
-
-  // True iff the object is in a valid state.
-  bool valid();
-
-  // number of tasks
-  uint n_tasks() const { return _n_tasks; }
-
-  // Get/set the number of parallel threads doing the tasks to t.
-  // Should be called before the task starts but it is safe
-  // to call this once a task is running provided that all
-  // threads agree on the number of threads.
-  uint n_threads() { return _n_threads; }
-  void set_n_threads(uint t) { _n_threads = t; }
-
-  // Set the number of tasks to be claimed to t. As above,
-  // should be called before the tasks start but it is safe
-  // to call this once a task is running provided all threads
-  // agree on the number of tasks.
-  void set_n_tasks(uint t) { _n_tasks = t; }
 
   // Attempt to claim the next unclaimed task in the sequence,
   // returning true if successful, with t set to the index of the
-  // claimed task.  Returns false if there are no more unclaimed tasks
-  // in the sequence.
+  // claimed task. Returns false if there are no more unclaimed tasks
+  // in the sequence. In this case t is undefined.
   bool try_claim_task(uint& t);
-
-  // The calling thread asserts that it has attempted to claim
-  // all the tasks it possibly can in the sequence. Every thread
-  // claiming tasks must promise call this. Returns true if this
-  // is the last thread to complete so that the thread can perform
-  // cleanup if necessary.
-  bool all_tasks_completed();
 };
 
 #endif // SHARE_GC_SHARED_WORKGROUP_HPP
