@@ -71,7 +71,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
     public GZIPOutputStream(OutputStream out,
                             int size,
                             boolean syncFlush,
-                            GZIPHeaderData gzipHeaderData)
+                            GZIPHeaderBuilder.GZIPHeaderData gzipHeaderData)
             throws IOException
     {
         super(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true),
@@ -79,9 +79,9 @@ public class GZIPOutputStream extends DeflaterOutputStream {
                 syncFlush);
         usesDefaultDeflater = true;
         if (gzipHeaderData == null) {
-            gzipHeaderData = new GZIPHeaderData((byte)Deflater.DEFLATED);
+            gzipHeaderData = new GZIPHeaderBuilder().build();
         }
-        writeHeader(gzipHeaderData.getBytes());
+        writeHeader(gzipHeaderData.headerBytes());
         crc.reset();
     }
 
@@ -175,7 +175,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @since 17
      */
     public GZIPOutputStream(OutputStream out,
-                            GZIPHeaderData gzipHeaderData)
+                            GZIPHeaderBuilder.GZIPHeaderData gzipHeaderData)
         throws IOException
     {
         this(out, 512, false, gzipHeaderData);

@@ -30,7 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.CRC32;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.GZIPHeaderData;
+import java.util.zip.GZIPHeaderBuilder;
 
 /**
  * @test
@@ -122,7 +122,12 @@ public class GZIPOutputStreamHeaderTest {
         CRC32 crc = new CRC32();
         crc.reset();
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        GZIPHeaderData headerData = new GZIPHeaderData(generateHeaderCrc, xfield, fname, fcomment);
+        GZIPHeaderBuilder.GZIPHeaderData headerData = new GZIPHeaderBuilder()
+                                                            .withExtraFieldBytes(xfield)
+                                                            .withFileName(fname)
+                                                            .withFileComment(fcomment)
+                                                            .calculateHeaderCRC(generateHeaderCrc)
+                                                            .build();
         try (final GZIPOutputStream gzipOutputStream = new GZIPOutputStream(baos, headerData);) {
             gzipOutputStream.write(data.getBytes(StandardCharsets.UTF_8));
         }
