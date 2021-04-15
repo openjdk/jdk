@@ -1591,12 +1591,12 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          * @return true.
          * @see #getAccessibleActionCount
          */
-        public boolean doAccessibleAction(int direction) {
-            if (direction < 0 || direction > 1) {
+        public boolean doAccessibleAction(int i) {
+            if (i < 0 || i > 1) {
                 return false;
             }
             //0 is increment, 1 is decrrement
-            int delta = ((direction > 0) ? -1 : 1);
+            int delta = ((i > 0) ? -1 : 1);
             JSlider.this.setValue(oldModelValue + delta);
             return true;
         }
