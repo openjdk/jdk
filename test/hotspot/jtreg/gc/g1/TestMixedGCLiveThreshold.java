@@ -65,9 +65,9 @@ public class TestMixedGCLiveThreshold {
 
         Asserts.assertEquals(regionsSelected, expectedRebuild,
                              (expectedRebuild ?
-                             "No Regions selected for rebuild. G1MixedGCLiveThresholdPercent="+ liveThresholdPercent +
+                             "No Regions selected for rebuild. G1MixedGCLiveThresholdPercent=" + liveThresholdPercent +
                              " at least one region should be selected" :
-                             "Regions selected for rebuild. G1MixedGCLiveThresholdPercent="+ liveThresholdPercent +
+                             "Regions selected for rebuild. G1MixedGCLiveThresholdPercent=" + liveThresholdPercent +
                              " no regions should be selected")
                             );
         output.shouldHaveExitValue(0);
@@ -85,7 +85,7 @@ public class TestMixedGCLiveThreshold {
                                        "-Xms10M",
                                        "-Xmx10M"});
 
-        basicOpts.add("-XX:G1MixedGCLiveThresholdPercent="+percent);
+        basicOpts.add("-XX:G1MixedGCLiveThresholdPercent=" + percent);
 
         basicOpts.add(GCTest.class.getName());
 
