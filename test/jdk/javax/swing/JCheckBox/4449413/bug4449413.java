@@ -66,7 +66,7 @@ public class bug4449413 extends JFrame {
             """;
 
     private static final String INSTRUCTIONS_ADDITIONS_METAL = """
-            
+
             2. Uncheck the "Use Ocean Theme" check box.
                If now at least one of the controls' check marks is not visible:
                the test fails.
