@@ -95,8 +95,8 @@ class HandshakeState {
   // Returns false if the JavaThread finished all its handshake operations.
   // If the method returns true there is still potential work to be done,
   // but we need to check for a safepoint before.
-  // (this is due to a suspension handshake which put the JavaThread in blocked
-  // state so a safepoint may be in-progress)
+  // (This is due to a suspension handshake which put the JavaThread in blocked
+  // state so a safepoint may be in-progress.)
   bool process_self_inner();
 
   bool have_non_self_executable_operation();

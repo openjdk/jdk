@@ -422,6 +422,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
         // thread that suspended us.
         _recursions = 0;
         _succ = NULL;
+        // Don't need a full fence after clearing successor here because of the call to exit().
         exit(current, false /* not_suspended */);
         SafepointMechanism::process_if_requested(current);
         // Since we are going to _thread_blocked we skip setting _thread_in_vm here.
@@ -969,6 +970,8 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
       assert(current->thread_state() == _thread_in_vm, "invariant");
 
       current->frame_anchor()->make_walkable(current);
+      // Thread must be walkable before it is blocked.
+      // Read in reverse order.
       OrderAccess::storestore();
       current->set_thread_state(_thread_blocked);
       current->_ParkEvent->park();
@@ -1556,7 +1559,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       if (SafepointMechanism::should_process(current)) {
         if (_succ == current) {
             _succ = NULL;
-            OrderAccess::fence();
+            OrderAccess::fence(); // always do a full fence when successor is cleared
         }
         SafepointMechanism::process_if_requested(current);
       }

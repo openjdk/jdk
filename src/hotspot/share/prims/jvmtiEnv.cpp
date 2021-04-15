@@ -949,7 +949,7 @@ JvmtiEnv::SuspendThread(JavaThread* java_thread) {
   }
   if (!JvmtiSuspendControl::suspend(java_thread)) {
     // Either the thread is already suspended or
-    // the thread was in the process of exiting:
+    // it was in process of exiting.
     if (java_thread->is_exiting()) {
       return JVMTI_ERROR_THREAD_NOT_ALIVE;
     }
@@ -990,12 +990,12 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
     }
     if (!JvmtiSuspendControl::suspend(java_thread)) {
       // Either the thread is already suspended or
-      // the thread was in the process of exiting:
+      // it was in process of exiting.
       if (java_thread->is_exiting()) {
         results[i] = JVMTI_ERROR_THREAD_NOT_ALIVE;
         continue;
       }
-      results[i] =  JVMTI_ERROR_THREAD_SUSPENDED;
+      results[i] = JVMTI_ERROR_THREAD_SUSPENDED;
       continue;
     }
     results[i] = JVMTI_ERROR_NONE;  // indicate successful suspend
@@ -1003,11 +1003,11 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
   if (self_index >= 0) {
     if (!JvmtiSuspendControl::suspend(current)) {
       // Either the thread is already suspended or
-      // the thread was in the process of exiting:
+      // it was in process of exiting.
       if (current->is_exiting()) {
         results[self_index] = JVMTI_ERROR_THREAD_NOT_ALIVE;
       } else {
-        results[self_index] =  JVMTI_ERROR_THREAD_SUSPENDED;
+        results[self_index] = JVMTI_ERROR_THREAD_SUSPENDED;
       }
     } else {
       results[self_index] = JVMTI_ERROR_NONE;  // indicate successful suspend
