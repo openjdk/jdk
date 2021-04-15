@@ -111,12 +111,10 @@ public class NarrowNamesTest {
             expectedFieldValues.put("n", null);
             testAM_PM(US, ALL_STYLES, expectedFieldValues);
         } else {
-            Map<String, Integer> expectedFieldValues = new HashMap<>();
-            expectedFieldValues.put("AM", Calendar.AM);
-            expectedFieldValues.put("PM", Calendar.PM);
-            expectedFieldValues.put("a", Calendar.AM);
-            expectedFieldValues.put("p", Calendar.PM);
-            testAM_PM(US, ALL_STYLES, expectedFieldValues);
+            testMap(US, AM_PM, ALL_STYLES,
+                    "AM", "PM",
+                    RESET_INDEX,
+                    "a", "p");
         }
         testMap(JAJPJP, DAY_OF_WEEK, NARROW_STANDALONE,
                 "", // 1-based indexing for DAY_OF_WEEK
