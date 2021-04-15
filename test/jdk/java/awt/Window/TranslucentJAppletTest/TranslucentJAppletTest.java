@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  */
 
 /*
- * @test %I% %E%
+ * @test
+ * @key headful
  * @bug 6683728
  * @summary Tests that a JApplet in a translucent JFrame works properly
- * @author Kenneth.Russell@sun.com: area=Graphics
  * @compile -XDignore.symbol.file=true TranslucentJAppletTest.java
- * @run main/manual/othervm TranslucentJAppletTest
+ * @run main TranslucentJAppletTest
  */
 
 import java.awt.*;

@@ -1891,7 +1891,7 @@ public class MethodHandles {
              *
              * <p> By default, a hidden class or interface may be unloaded
              * even if the class loader that is marked as its defining loader is
-             * <a href="../ref/package.html#reachability">reachable</a>.
+             * <a href="../ref/package-summary.html#reachability">reachable</a>.
 
              *
              * @jls 12.7 Unloading of Classes and Interfaces
@@ -2031,7 +2031,7 @@ public class MethodHandles {
          *
          * By default, however, a hidden class or interface may be unloaded even if
          * the class loader that is marked as its defining loader is
-         * <a href="../ref/package.html#reachability">reachable</a>.
+         * <a href="../ref/package-summary.html#reachability">reachable</a>.
          * This behavior is useful when a hidden class or interface serves multiple
          * classes defined by arbitrary class loaders.  In other cases, a hidden
          * class or interface may be linked to a single class (or a small number of classes)

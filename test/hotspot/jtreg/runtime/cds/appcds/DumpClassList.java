@@ -83,10 +83,6 @@ public class DumpClassList {
                                    appClass[0])
             .assertNormalExit(output -> {
                 output.shouldContain("hello world");
-                // skip classes outside of jrt image
-                output.shouldContain("skip writing class java/lang/NewClass");
-                // but classes on -Xbootclasspath/a should not be skipped
-                output.shouldNotContain("skip writing class boot/append/Foo");
             });
 
         CDSOptions opts = (new CDSOptions())

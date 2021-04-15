@@ -3192,6 +3192,34 @@ Method* InstanceKlass::method_at_itable_or_null(InstanceKlass* holder, int index
   return NULL; // offset entry not found
 }
 
+int InstanceKlass::vtable_index_of_interface_method(Method* intf_method) {
+  assert(is_linked(), "required");
+  assert(intf_method->method_holder()->is_interface(), "not an interface method");
+  assert(is_subtype_of(intf_method->method_holder()), "interface not implemented");
+
+  int vtable_index = Method::invalid_vtable_index;
+  Symbol* name = intf_method->name();
+  Symbol* signature = intf_method->signature();
+
+  // First check in default method array
+  if (!intf_method->is_abstract() && default_methods() != NULL) {
+    int index = find_method_index(default_methods(),
+                                  name, signature,
+                                  Klass::OverpassLookupMode::find,
+                                  Klass::StaticLookupMode::find,
+                                  Klass::PrivateLookupMode::find);
+    if (index >= 0) {
+      vtable_index = default_vtable_indices()->at(index);
+    }
+  }
+  if (vtable_index == Method::invalid_vtable_index) {
+    // get vtable_index for miranda methods
+    klassVtable vt = vtable();
+    vtable_index = vt.index_of_miranda(name, signature);
+  }
+  return vtable_index;
+}
+
 #if INCLUDE_JVMTI
 // update default_methods for redefineclasses for methods that are
 // not yet in the vtable due to concurrent subclass define and superinterface
@@ -3644,7 +3672,7 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
                                              const ModuleEntry* module_entry,
                                              const ClassFileStream* cfs) const {
-  log_to_classlist(cfs);
+  log_to_classlist();
 
   if (!log_is_enabled(Info, class, load)) {
     return;
@@ -4237,53 +4265,37 @@ unsigned char * InstanceKlass::get_cached_class_file_bytes() {
 }
 #endif
 
-void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
+bool InstanceKlass::is_shareable() const {
 #if INCLUDE_CDS
+  ClassLoaderData* loader_data = class_loader_data();
+  if (!SystemDictionaryShared::is_sharing_possible(loader_data)) {
+    return false;
+  }
+
+  if (is_hidden() || unsafe_anonymous_host() != NULL) {
+    return false;
+  }
+
+  if (module()->is_patched()) {
+    return false;
+  }
+
+  return true;
+#else
+  return false;
+#endif
+}
+
+void InstanceKlass::log_to_classlist() const {
+#if INCLUDE_CDS
+  ResourceMark rm;
   if (ClassListWriter::is_enabled()) {
     if (!ClassLoader::has_jrt_entry()) {
        warning("DumpLoadedClassList and CDS are not supported in exploded build");
        DumpLoadedClassList = NULL;
        return;
     }
-    ClassLoaderData* loader_data = class_loader_data();
-    if (!SystemDictionaryShared::is_sharing_possible(loader_data)) {
-      return;
-    }
-    bool skip = false;
-    if (is_shared()) {
-      assert(stream == NULL, "shared class with stream");
-      if (is_hidden()) {
-        // Don't include archived lambda proxy class in the classlist.
-        assert(!is_non_strong_hidden(), "unexpected non-strong hidden class");
-        return;
-      }
-    } else {
-      assert(stream != NULL, "non-shared class without stream");
-      // skip hidden class and unsafe anonymous class.
-      if ( is_hidden() || unsafe_anonymous_host() != NULL) {
-        return;
-      }
-      oop class_loader = loader_data->class_loader();
-      if (class_loader == NULL || SystemDictionary::is_platform_class_loader(class_loader)) {
-        // For the boot and platform class loaders, skip classes that are not found in the
-        // java runtime image, such as those found in the --patch-module entries.
-        // These classes can't be loaded from the archive during runtime.
-        if (!stream->from_boot_loader_modules_image() && strncmp(stream->source(), "jrt:", 4) != 0) {
-          skip = true;
-        }
-
-        if (class_loader == NULL && ClassLoader::contains_append_entry(stream->source())) {
-          // .. but don't skip the boot classes that are loaded from -Xbootclasspath/a
-          // as they can be loaded from the archive during runtime.
-          skip = false;
-        }
-      }
-    }
-    ResourceMark rm;
-    if (skip) {
-      tty->print_cr("skip writing class %s from source %s to classlist file",
-                    name()->as_C_string(), stream->source());
-    } else {
+    if (is_shareable()) {
       ClassListWriter w;
       w.stream()->print_cr("%s", name()->as_C_string());
       w.stream()->flush();
