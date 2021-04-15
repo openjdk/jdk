@@ -53,7 +53,6 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
@@ -216,6 +215,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment)
     _narrow_oop_mode = CompressedOops::mode();
     _narrow_oop_base = CompressedOops::base();
     _narrow_oop_shift = CompressedOops::shift();
+    _heap_begin = CompressedOops::begin();
     _heap_end = CompressedOops::end();
   }
   _compressed_oops = UseCompressedOops;
@@ -657,7 +657,7 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
   jint manifest_size;
 
   assert(cpe->is_jar_file() && ent->is_jar(), "the shared class path entry is not a JAR file");
-  char* manifest = ClassLoaderExt::read_manifest(cpe, &manifest_size, CHECK);
+  char* manifest = ClassLoaderExt::read_manifest(THREAD, cpe, &manifest_size);
   if (manifest != NULL) {
     ManifestStream* stream = new ManifestStream((u1*)manifest,
                                                 manifest_size);
@@ -665,7 +665,7 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
       ent->set_is_signed();
     } else {
       // Copy the manifest into the shared archive
-      manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
+      manifest = ClassLoaderExt::read_raw_manifest(THREAD, cpe, &manifest_size);
       Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
                                                       manifest_size,
                                                       CHECK);
@@ -1236,17 +1236,14 @@ void FileMapInfo::open_for_write(const char* path) {
 void FileMapInfo::write_header() {
   _file_offset = 0;
   seek_to_position(_file_offset);
-  char* base_archive_name = NULL;
-  if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
-    base_archive_name = (char*)Arguments::GetSharedArchivePath();
-    header()->set_base_archive_name_size(strlen(base_archive_name) + 1);
-    header()->set_base_archive_is_default(FLAG_IS_DEFAULT(SharedArchiveFile));
-  }
-
   assert(is_file_position_aligned(), "must be");
   write_bytes(header(), header()->header_size());
-  if (base_archive_name != NULL) {
-    write_bytes(base_archive_name, header()->base_archive_name_size());
+
+  if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
+    char* base_archive_name = (char*)Arguments::GetSharedArchivePath();
+    if (base_archive_name != NULL) {
+      write_bytes(base_archive_name, header()->base_archive_name_size());
+    }
   }
 }
 
@@ -1310,7 +1307,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else if (HeapShared::is_heap_region(region)) {
     assert(!DynamicDumpSharedSpaces, "must be");
     requested_base = base;
-    mapping_offset = (size_t)CompressedOops::encode_not_null((oop)base);
+    mapping_offset = (size_t)CompressedOops::encode_not_null(cast_to_oop(base));
     assert(mapping_offset == (size_t)(uint32_t)mapping_offset, "must be 32-bit only");
   } else {
     char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
@@ -1657,7 +1654,7 @@ char* FileMapInfo::map_bitmap_region() {
     return NULL;
   }
 
-  if (VerifySharedSpaces && !region_crc_check(bitmap_base, si->used_aligned(), si->crc())) {
+  if (VerifySharedSpaces && !region_crc_check(bitmap_base, si->used(), si->crc())) {
     log_error(cds)("relocation bitmap CRC error");
     if (!os::unmap_memory(bitmap_base, si->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
@@ -1815,6 +1812,8 @@ void FileMapInfo::map_heap_regions_impl() {
                 p2i(narrow_klass_base()), narrow_klass_shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
+  log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                p2i(header()->heap_begin()), p2i(header()->heap_end()));
 
   log_info(cds)("The current max heap size = " SIZE_FORMAT "M, HeapRegion::GrainBytes = " SIZE_FORMAT,
                 MaxHeapSize/M, HeapRegion::GrainBytes);
@@ -1822,6 +1821,8 @@ void FileMapInfo::map_heap_regions_impl() {
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
+  log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
 
   if (narrow_klass_base() != CompressedKlassPointers::base() ||
       narrow_klass_shift() != CompressedKlassPointers::shift()) {
@@ -1832,14 +1833,17 @@ void FileMapInfo::map_heap_regions_impl() {
   if (narrow_oop_mode() != CompressedOops::mode() ||
       narrow_oop_base() != CompressedOops::base() ||
       narrow_oop_shift() != CompressedOops::shift()) {
-    log_info(cds)("CDS heap data need to be relocated because the archive was created with an incompatible oop encoding mode.");
+    log_info(cds)("CDS heap data needs to be relocated because the archive was created with an incompatible oop encoding mode.");
     _heap_pointers_need_patching = true;
   } else {
     MemRegion range = get_heap_regions_range_with_current_oop_encoding_mode();
     if (!CompressedOops::is_in(range)) {
-      log_info(cds)("CDS heap data need to be relocated because");
+      log_info(cds)("CDS heap data needs to be relocated because");
       log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
       log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT, p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
+      _heap_pointers_need_patching = true;
+    } else if (header()->heap_end() != CompressedOops::end()) {
+      log_info(cds)("CDS heap data needs to be relocated to the end of the runtime heap to reduce fragmentation");
       _heap_pointers_need_patching = true;
     }
   }
@@ -1856,7 +1860,7 @@ void FileMapInfo::map_heap_regions_impl() {
     // that they are now near the top of the runtime time. This can be done by
     // the simple math of adding the delta as shown above.
     address dumptime_heap_end = header()->heap_end();
-    address runtime_heap_end = (address)CompressedOops::end();
+    address runtime_heap_end = CompressedOops::end();
     delta = runtime_heap_end - dumptime_heap_end;
   }
 
@@ -1872,7 +1876,7 @@ void FileMapInfo::map_heap_regions_impl() {
     // open regions.
     size_t align = size_t(relocated_closed_heap_region_bottom) % HeapRegion::GrainBytes;
     delta -= align;
-    log_info(cds)("CDS heap data need to be relocated lower by a further " SIZE_FORMAT
+    log_info(cds)("CDS heap data needs to be relocated lower by a further " SIZE_FORMAT
                   " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes",
                   align, delta);
     HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
@@ -2000,6 +2004,7 @@ void FileMapInfo::patch_archived_heap_embedded_pointers() {
     return;
   }
 
+  log_info(cds)("patching heap embedded pointers");
   patch_archived_heap_embedded_pointers(closed_archive_heap_ranges,
                                         num_closed_archive_heap_ranges,
                                         MetaspaceShared::first_closed_archive_heap_region);
@@ -2336,11 +2341,16 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
       const char* path = scpe->name();
       struct stat st;
       if (os::stat(path, &st) != 0) {
-        char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128); ;
-        jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
+        char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
+        jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
         THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
       } else {
-        ent = ClassLoader::create_class_path_entry(path, &st, /*throw_exception=*/true, false, false, CHECK_NULL);
+        ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false);
+        if (ent == NULL) {
+          char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
+          jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
+          THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
+        }
       }
     }
 
@@ -2370,9 +2380,8 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
   const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
-  ClassFileStream* cfs = cpe->open_stream_for_loader(file_name, loader_data, THREAD);
-  assert(!HAS_PENDING_EXCEPTION &&
-         cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
+  ClassFileStream* cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
+  assert(cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
   log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
                         cfs->source(), cfs->length());
   return cfs;

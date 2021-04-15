@@ -31,6 +31,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/vmStructs_compiler_runtime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
+#include "oops/klassVtable.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -182,6 +183,9 @@
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   jlong)                                 \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
   nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
+  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              intptr_t*)                             \
+  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              intptr_t*)                             \
+  nonstatic_field(JavaThread,                  _jvmci_reserved_oop0,                          oop)                                   \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
@@ -683,6 +687,8 @@
   declare_function(JVMCIRuntime::new_multi_array_or_null) \
   declare_function(JVMCIRuntime::dynamic_new_array_or_null) \
   declare_function(JVMCIRuntime::dynamic_new_instance_or_null) \
+  \
+  declare_function(JVMCIRuntime::invoke_static_method_one_arg) \
   \
   declare_function(JVMCIRuntime::vm_message) \
   declare_function(JVMCIRuntime::identity_hash_code) \

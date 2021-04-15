@@ -62,6 +62,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -218,7 +219,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
   if (UseSharedSpaces) {
     int size = FileMapInfo::get_number_of_shared_paths();
     if (size > 0) {
-      SystemDictionaryShared::allocate_shared_data_arrays(size, THREAD);
+      SystemDictionaryShared::allocate_shared_data_arrays(size, CHECK);
       if (!DynamicDumpSharedSpaces) {
         FileMapInfo* info;
         if (FileMapInfo::dynamic_info() == NULL) {
@@ -529,18 +530,25 @@ void VM_PopulateDumpSharedSpace::doit() {
   vm_direct_exit(0);
 }
 
-static GrowableArray<ClassLoaderData*>* _loaded_cld = NULL;
-
 class CollectCLDClosure : public CLDClosure {
-  void do_cld(ClassLoaderData* cld) {
-    if (_loaded_cld == NULL) {
-      _loaded_cld = new (ResourceObj::C_HEAP, mtClassShared)GrowableArray<ClassLoaderData*>(10, mtClassShared);
-    }
-    if (!cld->is_unloading()) {
-      cld->inc_keep_alive();
-      _loaded_cld->append(cld);
+  GrowableArray<ClassLoaderData*> _loaded_cld;
+public:
+  CollectCLDClosure() {}
+  ~CollectCLDClosure() {
+    for (int i = 0; i < _loaded_cld.length(); i++) {
+      ClassLoaderData* cld = _loaded_cld.at(i);
+      cld->dec_keep_alive();
     }
   }
+  void do_cld(ClassLoaderData* cld) {
+    if (!cld->is_unloading()) {
+      cld->inc_keep_alive();
+      _loaded_cld.append(cld);
+    }
+  }
+
+  int nof_cld() const                { return _loaded_cld.length(); }
+  ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
 bool MetaspaceShared::linking_required(InstanceKlass* ik) {
@@ -558,23 +566,28 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
     // The following function is used to resolve all Strings in the statically
     // dumped classes to archive all the Strings. The archive heap is not supported
     // for the dynamic archive.
-    ik->constants()->resolve_class_constants(CHECK_0); // may throw OOM when interning strings.
+    ik->constants()->resolve_class_constants(CHECK_(false)); // may throw OOM when interning strings.
   }
   return res;
 }
 
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
+  ResourceMark rm;
   CollectCLDClosure collect_cld;
   {
+    // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
+    // We cannot link the classes while holding this lock (or else we may run into deadlock).
+    // Therefore, we need to first collect all the CLDs, and then link their classes after
+    // releasing the lock.
     MutexLocker lock(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::loaded_cld_do(&collect_cld);
   }
 
   while (true) {
     bool has_linked = false;
-    for (int i = 0; i < _loaded_cld->length(); i++) {
-      ClassLoaderData* cld = _loaded_cld->at(i);
+    for (int i = 0; i < collect_cld.nof_cld(); i++) {
+      ClassLoaderData* cld = collect_cld.cld_at(i);
       for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
         if (klass->is_instance_klass()) {
           InstanceKlass* ik = InstanceKlass::cast(klass);
@@ -591,28 +604,19 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
     // Class linking includes verification which may load more classes.
     // Keep scanning until we have linked no more classes.
   }
-
-  for (int i = 0; i < _loaded_cld->length(); i++) {
-    ClassLoaderData* cld = _loaded_cld->at(i);
-    cld->dec_keep_alive();
-  }
 }
 
 void MetaspaceShared::prepare_for_dumping() {
   Arguments::assert_is_dumping_archive();
   Arguments::check_unsupported_dumping_properties();
 
-  EXCEPTION_MARK;
-  ClassLoader::initialize_shared_path(THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
-    vm_exit_during_initialization("ClassLoader::initialize_shared_path() failed unexpectedly");
-  }
+  ClassLoader::initialize_shared_path(Thread::current());
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
-void MetaspaceShared::preload_and_dump(TRAPS) {
+void MetaspaceShared::preload_and_dump() {
+  EXCEPTION_MARK;
   ResourceMark rm(THREAD);
   preload_and_dump_impl(THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -709,9 +713,9 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (use_full_module_graph()) {
-    HeapShared::reset_archived_object_states(CHECK);
-  }
+    if (use_full_module_graph()) {
+      HeapShared::reset_archived_object_states(CHECK);
+    }
 #endif
 
   VM_PopulateDumpSharedSpace op;
@@ -1332,6 +1336,34 @@ void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
   }
 }
 
+// For -XX:PrintSharedArchiveAndExit
+class CountSharedSymbols : public SymbolClosure {
+ private:
+   int _count;
+ public:
+   CountSharedSymbols() : _count(0) {}
+  void do_symbol(Symbol** sym) {
+    _count++;
+  }
+  int total() { return _count; }
+
+};
+
+// For -XX:PrintSharedArchiveAndExit
+class CountSharedStrings : public OopClosure {
+ private:
+  int _count;
+ public:
+  CountSharedStrings() : _count(0) {}
+  void do_oop(oop* p) {
+    _count++;
+  }
+  void do_oop(narrowOop* p) {
+    _count++;
+  }
+  int total() { return _count; }
+};
+
 // Read the miscellaneous data from the shared file, and
 // serialize it out to its various destinations.
 
@@ -1366,10 +1398,30 @@ void MetaspaceShared::initialize_shared_spaces() {
   }
 
   if (PrintSharedArchiveAndExit) {
-    if (PrintSharedDictionary) {
-      tty->print_cr("\nShared classes:\n");
-      SystemDictionaryShared::print_on(tty);
+    // Print archive names
+    if (dynamic_mapinfo != nullptr) {
+      tty->print_cr("\n\nBase archive name: %s", Arguments::GetSharedArchivePath());
+      tty->print_cr("Base archive version %d", static_mapinfo->version());
+    } else {
+      tty->print_cr("Static archive name: %s", static_mapinfo->full_path());
+      tty->print_cr("Static archive version %d", static_mapinfo->version());
     }
+
+    SystemDictionaryShared::print_shared_archive(tty);
+    if (dynamic_mapinfo != nullptr) {
+      tty->print_cr("\n\nDynamic archive name: %s", dynamic_mapinfo->full_path());
+      tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
+      SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
+    }
+
+    // collect shared symbols and strings
+    CountSharedSymbols cl;
+    SymbolTable::shared_symbols_do(&cl);
+    tty->print_cr("Number of shared symbols: %d", cl.total());
+    CountSharedStrings cs;
+    StringTable::shared_oops_do(&cs);
+    tty->print_cr("Number of shared strings: %d", cs.total());
+    tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
     if (FileMapInfo::current_info() == NULL || _archive_loading_failed) {
       tty->print_cr("archive is invalid");
       vm_exit(1);

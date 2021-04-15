@@ -39,7 +39,6 @@
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
@@ -482,7 +481,7 @@ extern "C" void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
   if (Universe::heap()->is_in(p)) {
-    oop obj = oop(p);
+    oop obj = cast_to_oop(p);
     obj->print();
   } else {
     tty->print(PTR_FORMAT, p2i(p));

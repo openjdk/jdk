@@ -79,8 +79,15 @@ void  StackObj::operator delete [](void* p)           { ShouldNotCallThis(); }
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
                                  MetaspaceObj::Type type, TRAPS) throw() {
-  // Klass has it's own operator new
+  // Klass has its own operator new
   return Metaspace::allocate(loader_data, word_size, type, THREAD);
+}
+
+void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
+                                 size_t word_size,
+                                 MetaspaceObj::Type type) throw() {
+  assert(!Thread::current()->is_Java_thread(), "only allowed by non-Java thread");
+  return Metaspace::allocate(loader_data, word_size, type);
 }
 
 bool MetaspaceObj::is_valid(const MetaspaceObj* p) {

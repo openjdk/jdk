@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -664,7 +664,7 @@ abstract class MethodHandleImpl {
                                    DONT_INLINE_THRESHOLD);
     }
 
-    private final static class Makers {
+    private static final class Makers {
         /** Constructs reinvoker lambda form which block inlining during JIT-compilation for a particular method handle */
         static final Function<MethodHandle, LambdaForm> PRODUCE_BLOCK_INLINING_FORM = new Function<MethodHandle, LambdaForm>() {
             @Override
@@ -1227,7 +1227,6 @@ abstract class MethodHandleImpl {
         GUARD_WITH_CATCH,
         TRY_FINALLY,
         LOOP,
-        NEW_ARRAY,
         ARRAY_LOAD,
         ARRAY_STORE,
         ARRAY_LENGTH,
@@ -1292,119 +1291,7 @@ abstract class MethodHandleImpl {
         return new IntrinsicMethodHandle(SimpleMethodHandle.make(type, form), intrinsicName);
     }
 
-    /// Collection of multiple arguments.
-
-    private static MethodHandle findCollector(String name, int nargs, Class<?> rtype, Class<?>... ptypes) {
-        MethodType type = MethodType.genericMethodType(nargs)
-                .changeReturnType(rtype)
-                .insertParameterTypes(0, ptypes);
-        try {
-            return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, name, type);
-        } catch (ReflectiveOperationException ex) {
-            return null;
-        }
-    }
-
-    private static final Object[] NO_ARGS_ARRAY = {};
-    private static Object[] makeArray(Object... args) { return args; }
-    private static Object[] array() { return NO_ARGS_ARRAY; }
-    private static Object[] array(Object a0)
-                { return makeArray(a0); }
-    private static Object[] array(Object a0, Object a1)
-                { return makeArray(a0, a1); }
-    private static Object[] array(Object a0, Object a1, Object a2)
-                { return makeArray(a0, a1, a2); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3)
-                { return makeArray(a0, a1, a2, a3); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4)
-                { return makeArray(a0, a1, a2, a3, a4); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5)
-                { return makeArray(a0, a1, a2, a3, a4, a5); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6)
-                { return makeArray(a0, a1, a2, a3, a4, a5, a6); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7)
-                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7,
-                                  Object a8)
-                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7,
-                                  Object a8, Object a9)
-                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-
-    private static final int ARRAYS_COUNT = 11;
     private static final @Stable MethodHandle[] ARRAYS = new MethodHandle[MAX_ARITY + 1];
-
-    // filling versions of the above:
-    // using Integer len instead of int len and no varargs to avoid bootstrapping problems
-    private static Object[] fillNewArray(Integer len, Object[] /*not ...*/ args) {
-        Object[] a = new Object[len];
-        fillWithArguments(a, 0, args);
-        return a;
-    }
-    private static Object[] fillNewTypedArray(Object[] example, Integer len, Object[] /*not ...*/ args) {
-        Object[] a = Arrays.copyOf(example, len);
-        assert(a.getClass() != Object[].class);
-        fillWithArguments(a, 0, args);
-        return a;
-    }
-    private static void fillWithArguments(Object[] a, int pos, Object... args) {
-        System.arraycopy(args, 0, a, pos, args.length);
-    }
-    // using Integer pos instead of int pos to avoid bootstrapping problems
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0)
-                { fillWithArguments(a, pos, a0); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1)
-                { fillWithArguments(a, pos, a0, a1); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2)
-                { fillWithArguments(a, pos, a0, a1, a2); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3)
-                { fillWithArguments(a, pos, a0, a1, a2, a3); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7,
-                                  Object a8)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7,
-                                  Object a8, Object a9)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); return a; }
-
-    private static final int FILL_ARRAYS_COUNT = 11; // current number of fillArray methods
-    private static final @Stable MethodHandle[] FILL_ARRAYS = new MethodHandle[FILL_ARRAYS_COUNT];
-
-    private static MethodHandle getFillArray(int count) {
-        assert (count > 0 && count < FILL_ARRAYS_COUNT);
-        MethodHandle mh = FILL_ARRAYS[count];
-        if (mh != null) {
-            return mh;
-        }
-        mh = findCollector("fillArray", count, Object[].class, Integer.class, Object[].class);
-        FILL_ARRAYS[count] = mh;
-        return mh;
-    }
-
-    private static Object copyAsPrimitiveArray(Wrapper w, Object... boxes) {
-        Object a = w.makeArray(boxes.length);
-        w.copyArrayUnboxing(boxes, 0, a, 0, boxes.length);
-        return a;
-    }
 
     /** Return a method handle that takes the indicated number of Object
      *  arguments and returns an Object array of them, as if for varargs.
@@ -1414,96 +1301,10 @@ abstract class MethodHandleImpl {
         if (mh != null) {
             return mh;
         }
-        if (nargs < ARRAYS_COUNT) {
-            mh = findCollector("array", nargs, Object[].class);
-        } else {
-            mh = buildVarargsArray(getConstantHandle(MH_fillNewArray),
-                    getConstantHandle(MH_arrayIdentity), nargs);
-        }
+        mh = makeCollector(Object[].class, nargs);
         assert(assertCorrectArity(mh, nargs));
-        mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
         return ARRAYS[nargs] = mh;
     }
-
-    private static boolean assertCorrectArity(MethodHandle mh, int arity) {
-        assert(mh.type().parameterCount() == arity) : "arity != "+arity+": "+mh;
-        return true;
-    }
-
-    // Array identity function (used as getConstantHandle(MH_arrayIdentity)).
-    static <T> T[] identity(T[] x) {
-        return x;
-    }
-
-    private static MethodHandle buildVarargsArray(MethodHandle newArray, MethodHandle finisher, int nargs) {
-        // Build up the result mh as a sequence of fills like this:
-        //   finisher(fill(fill(newArrayWA(23,x1..x10),10,x11..x20),20,x21..x23))
-        // The various fill(_,10*I,___*[J]) are reusable.
-        int leftLen = Math.min(nargs, LEFT_ARGS);  // absorb some arguments immediately
-        int rightLen = nargs - leftLen;
-        MethodHandle leftCollector = newArray.bindTo(nargs);
-        leftCollector = leftCollector.asCollector(Object[].class, leftLen);
-        MethodHandle mh = finisher;
-        if (rightLen > 0) {
-            MethodHandle rightFiller = fillToRight(LEFT_ARGS + rightLen);
-            if (mh.equals(getConstantHandle(MH_arrayIdentity)))
-                mh = rightFiller;
-            else
-                mh = MethodHandles.collectArguments(mh, 0, rightFiller);
-        }
-        if (mh.equals(getConstantHandle(MH_arrayIdentity)))
-            mh = leftCollector;
-        else
-            mh = MethodHandles.collectArguments(mh, 0, leftCollector);
-        return mh;
-    }
-
-    private static final int LEFT_ARGS = FILL_ARRAYS_COUNT - 1;
-    private static final @Stable MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY + 1];
-    /** fill_array_to_right(N).invoke(a, argL..arg[N-1])
-     *  fills a[L]..a[N-1] with corresponding arguments,
-     *  and then returns a.  The value L is a global constant (LEFT_ARGS).
-     */
-    private static MethodHandle fillToRight(int nargs) {
-        MethodHandle filler = FILL_ARRAY_TO_RIGHT[nargs];
-        if (filler != null)  return filler;
-        filler = buildFiller(nargs);
-        assert(assertCorrectArity(filler, nargs - LEFT_ARGS + 1));
-        return FILL_ARRAY_TO_RIGHT[nargs] = filler;
-    }
-    private static MethodHandle buildFiller(int nargs) {
-        if (nargs <= LEFT_ARGS)
-            return getConstantHandle(MH_arrayIdentity);  // no args to fill; return the array unchanged
-        // we need room for both mh and a in mh.invoke(a, arg*[nargs])
-        final int CHUNK = LEFT_ARGS;
-        int rightLen = nargs % CHUNK;
-        int midLen = nargs - rightLen;
-        if (rightLen == 0) {
-            midLen = nargs - (rightLen = CHUNK);
-            if (FILL_ARRAY_TO_RIGHT[midLen] == null) {
-                // build some precursors from left to right
-                for (int j = LEFT_ARGS % CHUNK; j < midLen; j += CHUNK)
-                    if (j > LEFT_ARGS)  fillToRight(j);
-            }
-        }
-        if (midLen < LEFT_ARGS) rightLen = nargs - (midLen = LEFT_ARGS);
-        assert(rightLen > 0);
-        MethodHandle midFill = fillToRight(midLen);  // recursive fill
-        MethodHandle rightFill = getFillArray(rightLen).bindTo(midLen);  // [midLen..nargs-1]
-        assert(midFill.type().parameterCount()   == 1 + midLen - LEFT_ARGS);
-        assert(rightFill.type().parameterCount() == 1 + rightLen);
-
-        // Combine the two fills:
-        //   right(mid(a, x10..x19), x20..x23)
-        // The final product will look like this:
-        //   right(mid(newArrayLeft(24, x0..x9), x10..x19), x20..x23)
-        if (midLen == LEFT_ARGS)
-            return rightFill;
-        else
-            return MethodHandles.collectArguments(rightFill, 0, midFill);
-    }
-
-    static final int MAX_JVM_ARITY = 255;  // limit imposed by the JVM
 
     /** Return a method handle that takes the indicated number of
      *  typed arguments and returns an array of them.
@@ -1512,7 +1313,6 @@ abstract class MethodHandleImpl {
     static MethodHandle varargsArray(Class<?> arrayType, int nargs) {
         Class<?> elemType = arrayType.getComponentType();
         if (elemType == null)  throw new IllegalArgumentException("not an array: "+arrayType);
-        // FIXME: Need more special casing and caching here.
         if (nargs >= MAX_JVM_ARITY/2 - 1) {
             int slots = nargs;
             final int MAX_ARRAY_SLOTS = MAX_JVM_ARITY - 1;  // 1 for receiver MH
@@ -1527,33 +1327,19 @@ abstract class MethodHandleImpl {
         MethodHandle cache[] = Makers.TYPED_COLLECTORS.get(elemType);
         MethodHandle mh = nargs < cache.length ? cache[nargs] : null;
         if (mh != null)  return mh;
-        if (nargs == 0) {
-            Object example = java.lang.reflect.Array.newInstance(arrayType.getComponentType(), 0);
-            mh = MethodHandles.constant(arrayType, example);
-        } else if (elemType.isPrimitive()) {
-            MethodHandle builder = getConstantHandle(MH_fillNewArray);
-            MethodHandle producer = buildArrayProducer(arrayType);
-            mh = buildVarargsArray(builder, producer, nargs);
-        } else {
-            Class<? extends Object[]> objArrayType = arrayType.asSubclass(Object[].class);
-            Object[] example = Arrays.copyOf(NO_ARGS_ARRAY, 0, objArrayType);
-            MethodHandle builder = getConstantHandle(MH_fillNewTypedArray).bindTo(example);
-            MethodHandle producer = getConstantHandle(MH_arrayIdentity); // must be weakly typed
-            mh = buildVarargsArray(builder, producer, nargs);
-        }
-        mh = mh.asType(MethodType.methodType(arrayType, Collections.<Class<?>>nCopies(nargs, elemType)));
-        mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
+        mh = makeCollector(arrayType, nargs);
         assert(assertCorrectArity(mh, nargs));
         if (nargs < cache.length)
             cache[nargs] = mh;
         return mh;
     }
 
-    private static MethodHandle buildArrayProducer(Class<?> arrayType) {
-        Class<?> elemType = arrayType.getComponentType();
-        assert(elemType.isPrimitive());
-        return getConstantHandle(MH_copyAsPrimitiveArray).bindTo(Wrapper.forPrimitiveType(elemType));
+    private static boolean assertCorrectArity(MethodHandle mh, int arity) {
+        assert(mh.type().parameterCount() == arity) : "arity != "+arity+": "+mh;
+        return true;
     }
+
+    static final int MAX_JVM_ARITY = 255;  // limit imposed by the JVM
 
     /*non-public*/
     static void assertSame(Object mh1, Object mh2) {
@@ -1845,7 +1631,7 @@ abstract class MethodHandleImpl {
         }
         @Override
         public String toString() {
-            StringBuffer sb = new StringBuffer("LoopClauses -- ");
+            StringBuilder sb = new StringBuilder("LoopClauses -- ");
             for (int i = 0; i < 4; ++i) {
                 if (i > 0) {
                     sb.append("       ");
@@ -2089,21 +1875,94 @@ abstract class MethodHandleImpl {
         return r;
     }
 
+    // see varargsArray method for chaching/package-private version of this
+    private static MethodHandle makeCollector(Class<?> arrayType, int parameterCount) {
+        MethodType type = MethodType.methodType(arrayType, Collections.nCopies(parameterCount, arrayType.componentType()));
+        MethodHandle newArray = MethodHandles.arrayConstructor(arrayType);
+
+        LambdaForm form = makeCollectorForm(type.basicType(), arrayType);
+
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
+        BoundMethodHandle mh;
+        try {
+            mh = (BoundMethodHandle) data.factory().invokeBasic(type, form, (Object) newArray);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+        assert(mh.type() == type);
+        return mh;
+    }
+
+    private static LambdaForm makeCollectorForm(MethodType basicType, Class<?> arrayType) {
+        MethodType lambdaType = basicType.invokerType();
+        int parameterCount = basicType.parameterCount();
+
+        // Only share the lambda form for empty arrays and reference types.
+        // Sharing based on the basic type alone doesn't work because
+        // we need a separate lambda form for byte/short/char/int which
+        // are all erased to int otherwise.
+        // Other caching for primitive types happens at the MethodHandle level (see varargsArray).
+        boolean isReferenceType = !arrayType.componentType().isPrimitive();
+        boolean isSharedLambdaForm = parameterCount == 0 || isReferenceType;
+        if (isSharedLambdaForm) {
+            LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_COLLECTOR);
+            if (lform != null) {
+                return lform;
+            }
+        }
+
+        // use erased accessor for reference types
+        MethodHandle storeFunc = isReferenceType
+                ? ArrayAccessor.OBJECT_ARRAY_SETTER
+                : makeArrayElementAccessor(arrayType, ArrayAccess.SET);
+
+        final int THIS_MH      = 0;  // the BMH_L
+        final int ARG_BASE     = 1;  // start of incoming arguments
+        final int ARG_LIMIT    = ARG_BASE + parameterCount;
+
+        int nameCursor = ARG_LIMIT;
+        final int GET_NEW_ARRAY       = nameCursor++;
+        final int CALL_NEW_ARRAY      = nameCursor++;
+        final int STORE_ELEMENT_BASE  = nameCursor;
+        final int STORE_ELEMENT_LIMIT = STORE_ELEMENT_BASE + parameterCount;
+        nameCursor = STORE_ELEMENT_LIMIT;
+
+        Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
+        names[THIS_MH]          = names[THIS_MH].withConstraint(data);
+        names[GET_NEW_ARRAY]    = new Name(data.getterFunction(0), names[THIS_MH]);
+
+        MethodHandle invokeBasic = MethodHandles.basicInvoker(MethodType.methodType(Object.class, int.class));
+        names[CALL_NEW_ARRAY] = new Name(new NamedFunction(invokeBasic), names[GET_NEW_ARRAY], parameterCount);
+        for (int storeIndex = 0,
+             storeNameCursor = STORE_ELEMENT_BASE,
+             argCursor = ARG_BASE;
+             storeNameCursor < STORE_ELEMENT_LIMIT;
+             storeIndex++, storeNameCursor++, argCursor++){
+
+            names[storeNameCursor] = new Name(new NamedFunction(storeFunc, Intrinsic.ARRAY_STORE),
+                    names[CALL_NEW_ARRAY], storeIndex, names[argCursor]);
+        }
+
+        LambdaForm lform = new LambdaForm(lambdaType.parameterCount(), names, CALL_NEW_ARRAY, Kind.COLLECTOR);
+        if (isSharedLambdaForm) {
+            lform = basicType.form().setCachedLambdaForm(MethodTypeForm.LF_COLLECTOR, lform);
+        }
+        return lform;
+    }
+
     // Indexes into constant method handles:
     static final int
-            MH_cast                  =  0,
-            MH_selectAlternative     =  1,
-            MH_copyAsPrimitiveArray  =  2,
-            MH_fillNewTypedArray     =  3,
-            MH_fillNewArray          =  4,
-            MH_arrayIdentity         =  5,
-            MH_countedLoopPred       =  6,
-            MH_countedLoopStep       =  7,
-            MH_initIterator          =  8,
-            MH_iteratePred           =  9,
-            MH_iterateNext           = 10,
-            MH_Array_newInstance     = 11,
-            MH_LIMIT                 = 12;
+            MH_cast                  = 0,
+            MH_selectAlternative     = 1,
+            MH_countedLoopPred       = 2,
+            MH_countedLoopStep       = 3,
+            MH_initIterator          = 4,
+            MH_iteratePred           = 5,
+            MH_iterateNext           = 6,
+            MH_Array_newInstance     = 7,
+            MH_LIMIT                 = 8;
 
     static MethodHandle getConstantHandle(int idx) {
         MethodHandle handle = HANDLES[idx];
@@ -2132,18 +1991,6 @@ abstract class MethodHandleImpl {
                 case MH_cast:
                     return IMPL_LOOKUP.findVirtual(Class.class, "cast",
                             MethodType.methodType(Object.class, Object.class));
-                case MH_copyAsPrimitiveArray:
-                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "copyAsPrimitiveArray",
-                            MethodType.methodType(Object.class, Wrapper.class, Object[].class));
-                case MH_arrayIdentity:
-                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "identity",
-                            MethodType.methodType(Object[].class, Object[].class));
-                case MH_fillNewArray:
-                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "fillNewArray",
-                            MethodType.methodType(Object[].class, Integer.class, Object[].class));
-                case MH_fillNewTypedArray:
-                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "fillNewTypedArray",
-                            MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
                 case MH_selectAlternative:
                     return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "selectAlternative",
                             MethodType.methodType(MethodHandle.class, boolean.class, MethodHandle.class, MethodHandle.class));

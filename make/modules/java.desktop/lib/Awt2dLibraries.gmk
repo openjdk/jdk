@@ -468,7 +468,8 @@ else
         maybe-uninitialized class-memaccess
    HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
-        undef missing-field-initializers range-loop-analysis
+        undef missing-field-initializers range-loop-analysis \
+        deprecated-declarations c++11-narrowing
    HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138
 
    LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
@@ -505,12 +506,6 @@ else
 endif
 
 LIBFONTMANAGER_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
-
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  # Turn off all warnings for sunFont.c. This is needed because the specific warning
-  # about discarding 'const' qualifier cannot be turned off individually.
-  BUILD_LIBFONTMANAGER_sunFont.c_CFLAGS := -w
-endif
 
 # LDFLAGS clarification:
 #   Filter relevant linker flags disallowing unresolved symbols as we cannot

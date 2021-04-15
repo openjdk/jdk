@@ -42,13 +42,6 @@ import jdk.internal.access.SharedSecrets;
  * {@code PrivilegedActionException} is a "wrapper"
  * for an exception thrown by a privileged action.
  *
- * <p>As of release 1.4, this exception has been retrofitted to conform to
- * the general purpose exception-chaining mechanism.  The "exception thrown
- * by the privileged computation" that is provided at construction time and
- * accessed via the {@link #getException()} method is now known as the
- * <i>cause</i>, and may be accessed via the {@link Throwable#getCause()}
- * method, as well as the aforementioned "legacy method."
- *
  * @since 1.2
  * @see PrivilegedExceptionAction
  * @see AccessController#doPrivileged(PrivilegedExceptionAction)
@@ -73,7 +66,8 @@ public class PrivilegedActionException extends Exception {
      * Returns the exception thrown by the privileged computation that
      * resulted in this {@code PrivilegedActionException}.
      *
-     * <p>This method predates the general-purpose exception chaining facility.
+     * @apiNote
+     * This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *

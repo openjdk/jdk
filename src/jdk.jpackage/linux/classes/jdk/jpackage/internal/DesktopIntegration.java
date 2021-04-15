@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ final class DesktopIntegration {
     List<String> requiredPackages() {
         return Stream.of(List.of(this), nestedIntegrations).flatMap(
                 List::stream).map(DesktopIntegration::requiredPackagesSelf).flatMap(
-                List::stream).distinct().collect(Collectors.toList());
+                List::stream).distinct().toList();
     }
 
     Map<String, String> create() throws IOException {
@@ -525,7 +525,7 @@ final class DesktopIntegration {
 
     private static String stringifyShellCommands(List<String> commands) {
         return String.join(System.lineSeparator(), commands.stream().filter(
-                s -> s != null && !s.isEmpty()).collect(Collectors.toList()));
+                s -> s != null && !s.isEmpty()).toList());
     }
 
     private static class LinuxFileAssociation {

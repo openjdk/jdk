@@ -172,6 +172,8 @@ private:
   HeapRegionSet _humongous_set;
 
   void eagerly_reclaim_humongous_regions();
+
+  void rebuild_free_region_list();
   // Start a new incremental collection set for the next pause.
   void start_new_collection_set();
 
@@ -497,10 +499,13 @@ private:
   //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
+  // - if do_maximum_compaction is true, full gc will do a maximally
+  //   compacting collection, leaving no dead wood.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
   bool do_full_collection(bool explicit_gc,
-                          bool clear_all_soft_refs);
+                          bool clear_all_soft_refs,
+                          bool do_maximum_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   virtual void do_full_collection(bool clear_all_soft_refs);

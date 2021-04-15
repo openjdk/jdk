@@ -91,8 +91,7 @@ class Linux {
 
   static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec);
   static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, char* req_addr, bool exec);
-  static char* reserve_memory_special_huge_tlbfs_only(size_t bytes, char* req_addr, bool exec);
-  static char* reserve_memory_special_huge_tlbfs_mixed(size_t bytes, size_t alignment, char* req_addr, bool exec);
+  static bool commit_memory_special(size_t bytes, size_t page_size, char* req_addr, bool exec);
 
   static bool release_memory_special_impl(char* base, size_t bytes);
   static bool release_memory_special_shm(char* base, size_t bytes);
@@ -252,6 +251,40 @@ class Linux {
     Interleave
   };
   static NumaAllocationPolicy _current_numa_policy;
+
+#ifdef __GLIBC__
+  struct glibc_mallinfo {
+    int arena;
+    int ordblks;
+    int smblks;
+    int hblks;
+    int hblkhd;
+    int usmblks;
+    int fsmblks;
+    int uordblks;
+    int fordblks;
+    int keepcost;
+  };
+
+  struct glibc_mallinfo2 {
+    size_t arena;
+    size_t ordblks;
+    size_t smblks;
+    size_t hblks;
+    size_t hblkhd;
+    size_t usmblks;
+    size_t fsmblks;
+    size_t uordblks;
+    size_t fordblks;
+    size_t keepcost;
+  };
+
+  typedef struct glibc_mallinfo (*mallinfo_func_t)(void);
+  typedef struct glibc_mallinfo2 (*mallinfo2_func_t)(void);
+
+  static mallinfo_func_t _mallinfo;
+  static mallinfo2_func_t _mallinfo2;
+#endif
 
  public:
   static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }

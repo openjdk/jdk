@@ -51,8 +51,8 @@ OopStorage* JNIHandles::_global_handles = NULL;
 OopStorage* JNIHandles::_weak_global_handles = NULL;
 
 void jni_handles_init() {
-  JNIHandles::_global_handles = OopStorageSet::create_strong("JNI Global");
-  JNIHandles::_weak_global_handles = OopStorageSet::create_weak("JNI Weak");
+  JNIHandles::_global_handles = OopStorageSet::create_strong("JNI Global", mtInternal);
+  JNIHandles::_weak_global_handles = OopStorageSet::create_weak("JNI Weak", mtInternal);
 }
 
 jobject JNIHandles::make_local(oop obj) {

@@ -28,6 +28,7 @@
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
@@ -1088,7 +1089,8 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
 }
 
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
-                                         bool clear_all_soft_refs) {
+                                         bool clear_all_soft_refs,
+                                         bool do_maximum_compaction) {
   assert_at_safepoint_on_vm_thread();
 
   if (GCLocker::check_active_before_gc()) {
@@ -1099,7 +1101,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
 
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
 
   collector.prepare_collection();
@@ -1114,8 +1116,12 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   // Currently, there is no facility in the do_full_collection(bool) API to notify
   // the caller that the collection did not succeed (e.g., because it was locked
   // out by the GC locker). So, right now, we'll ignore the return value.
+  // When clear_all_soft_refs is set we want to do a maximum compaction
+  // not leaving any dead wood.
+  bool do_maximum_compaction = clear_all_soft_refs;
   bool dummy = do_full_collection(true,                /* explicit_gc */
-                                  clear_all_soft_refs);
+                                  clear_all_soft_refs,
+                                  do_maximum_compaction);
 }
 
 void G1CollectedHeap::resize_heap_if_necessary() {
@@ -1157,9 +1163,13 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   }
 
   if (do_gc) {
+    // When clear_all_soft_refs is set we want to do a maximum compaction
+    // not leaving any dead wood.
+    bool do_maximum_compaction = clear_all_soft_refs;
     // Expansion didn't work, we'll try to do a Full GC.
     *gc_succeeded = do_full_collection(false, /* explicit_gc */
-                                       clear_all_soft_refs);
+                                       clear_all_soft_refs,
+                                       do_maximum_compaction);
   }
 
   return NULL;
@@ -2871,7 +2881,8 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
   if (should_upgrade_to_full_gc(gc_cause())) {
     log_info(gc, ergo)("Attempting maximally compacting collection");
     bool result = do_full_collection(false /* explicit gc */,
-                                     true /* clear_all_soft_refs */);
+                                     true  /* clear_all_soft_refs */,
+                                     false /* do_maximum_compaction */);
     // do_full_collection only fails if blocked by GC locker, but
     // we've already checked for that above.
     assert(result, "invariant");
@@ -3514,7 +3525,7 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
     bool humongous_region_is_candidate(HeapRegion* region) const {
       assert(region->is_starts_humongous(), "Must start a humongous object");
 
-      oop obj = oop(region->bottom());
+      oop obj = cast_to_oop(region->bottom());
 
       // Dead objects cannot be eager reclaim candidates. Due to class
       // unloading it is unsafe to query their classes so we return early.
@@ -3979,6 +3990,8 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
 
   eagerly_reclaim_humongous_regions();
 
+  rebuild_free_region_list();
+
   record_obj_copy_mem_stats();
 
   evacuation_info.set_collectionset_used_before(collection_set()->bytes_used_before());
@@ -4029,7 +4042,6 @@ void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
                                             FreeRegionList* free_list) {
   assert(hr->is_humongous(), "this is only for humongous regions");
-  assert(free_list != NULL, "pre-condition");
   hr->clear_humongous();
   free_region(hr, free_list);
 }
@@ -4181,6 +4193,7 @@ class G1FreeCollectionSetTask : public AbstractGangTask {
 
       // Free the region and and its remembered set.
       _g1h->free_region(r, NULL);
+      _g1h->hr_printer()->cleanup(r);
     }
 
     void handle_failed_region(HeapRegion* r) {
@@ -4330,24 +4343,18 @@ void G1CollectedHeap::free_collection_set(G1CollectionSet* collection_set, G1Eva
   Ticks free_cset_end_time = Ticks::now();
   phase_times()->record_total_free_cset_time_ms((free_cset_end_time - free_cset_start_time).seconds() * 1000.0);
 
-  // Now rebuild the free region list.
-  _hrm.rebuild_free_list(workers());
-  phase_times()->record_total_rebuild_freelist_time_ms((Ticks::now() - free_cset_end_time).seconds() * 1000.0);
-
   collection_set->clear();
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {
- private:
-  FreeRegionList* _free_region_list;
   HeapRegionSet* _proxy_set;
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
- public:
+public:
 
-  G1FreeHumongousRegionClosure(FreeRegionList* free_region_list) :
-    _free_region_list(free_region_list), _proxy_set(NULL), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
+  G1FreeHumongousRegionClosure() :
+    _proxy_set(NULL), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
@@ -4357,7 +4364,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    oop obj = (oop)r->bottom();
+    oop obj = cast_to_oop(r->bottom());
     G1CMBitMap* next_bitmap = g1h->concurrent_mark()->next_mark_bitmap();
 
     // The following checks whether the humongous object is live are sufficient.
@@ -4432,7 +4439,8 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
       _freed_bytes += r->used();
       r->set_containing_set(NULL);
       _humongous_regions_reclaimed++;
-      g1h->free_humongous_region(r, _free_region_list);
+      g1h->free_humongous_region(r, NULL);
+      g1h->hr_printer()->cleanup(r);
       r = next;
     } while (r != NULL);
 
@@ -4463,27 +4471,21 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
 
   double start_time = os::elapsedTime();
 
-  FreeRegionList local_cleanup_list("Local Humongous Cleanup List");
-
-  G1FreeHumongousRegionClosure cl(&local_cleanup_list);
+  G1FreeHumongousRegionClosure cl;
   heap_region_iterate(&cl);
 
   remove_from_old_gen_sets(0, 0, cl.humongous_regions_reclaimed());
 
-  G1HRPrinter* hrp = hr_printer();
-  if (hrp->is_active()) {
-    FreeRegionListIterator iter(&local_cleanup_list);
-    while (iter.more_available()) {
-      HeapRegion* hr = iter.get_next();
-      hrp->cleanup(hr);
-    }
-  }
-
-  prepend_to_freelist(&local_cleanup_list);
   decrement_summary_bytes(cl.bytes_freed());
 
   phase_times()->record_fast_reclaim_humongous_time_ms((os::elapsedTime() - start_time) * 1000.0,
                                                        cl.humongous_objects_reclaimed());
+}
+
+void G1CollectedHeap::rebuild_free_region_list() {
+  Ticks start = Ticks::now();
+  _hrm.rebuild_free_list(workers());
+  phase_times()->record_total_rebuild_freelist_time_ms((Ticks::now() - start).seconds() * 1000.0);
 }
 
 class G1AbandonCollectionSetClosure : public HeapRegionClosure {

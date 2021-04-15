@@ -337,9 +337,8 @@ class LambdaFormEditor {
             k = m.get(key);
         } else if (c == null) {
             return null;
-        } else if (c instanceof Transform) {
+        } else if (c instanceof Transform t) {
             // one-element cache avoids overhead of an array
-            Transform t = (Transform)c;
             if (t.equals(key))  k = t;
         } else {
             Transform[] ta = (Transform[])c;
@@ -389,8 +388,7 @@ class LambdaFormEditor {
                     return form;
                 }
                 Transform[] ta;
-                if (c instanceof Transform) {
-                    Transform k = (Transform)c;
+                if (c instanceof Transform k) {
                     if (k.equals(key)) {
                         LambdaForm result = k.get();
                         if (result == null) {
@@ -647,57 +645,6 @@ class LambdaFormEditor {
             return form;
         }
         form = makeArgumentCombinationForm(pos, collectorType, false, dropResult);
-        return putInCache(key, form);
-    }
-
-    LambdaForm collectArgumentArrayForm(int pos, MethodHandle arrayCollector) {
-        MethodType collectorType = arrayCollector.type();
-        int collectorArity = collectorType.parameterCount();
-        assert(arrayCollector.intrinsicName() == Intrinsic.NEW_ARRAY);
-        Class<?> arrayType = collectorType.returnType();
-        Class<?> elementType = arrayType.getComponentType();
-        BasicType argType = basicType(elementType);
-        int argTypeKey = argType.ordinal();
-        if (argType.basicTypeClass() != elementType) {
-            // return null if it requires more metadata (like String[].class)
-            if (!elementType.isPrimitive())
-                return null;
-            argTypeKey = TYPE_LIMIT + Wrapper.forPrimitiveType(elementType).ordinal();
-        }
-        assert(collectorType.parameterList().equals(Collections.nCopies(collectorArity, elementType)));
-        byte kind = COLLECT_ARGS_TO_ARRAY;
-        TransformKey key = TransformKey.of(kind, pos, collectorArity, argTypeKey);
-        LambdaForm form = getInCache(key);
-        if (form != null) {
-            assert(form.arity == lambdaForm.arity - 1 + collectorArity);
-            return form;
-        }
-        LambdaFormBuffer buf = buffer();
-        buf.startEdit();
-
-        assert(pos + 1 <= lambdaForm.arity);
-        assert(pos > 0);  // cannot filter the MH arg itself
-
-        Name[] newParams = new Name[collectorArity];
-        for (int i = 0; i < collectorArity; i++) {
-            newParams[i] = new Name(pos + i, argType);
-        }
-        Name callCombiner = new Name(new NamedFunction(arrayCollector, Intrinsic.NEW_ARRAY),
-                                        (Object[]) /*...*/ newParams);
-
-        // insert the new expression
-        int exprPos = lambdaForm.arity();
-        buf.insertExpression(exprPos, callCombiner);
-
-        // insert new arguments
-        int argPos = pos + 1;  // skip result parameter
-        for (Name newParam : newParams) {
-            buf.insertParameter(argPos++, newParam);
-        }
-        assert(buf.lastIndexOf(callCombiner) == exprPos+newParams.length);
-        buf.replaceParameterByCopy(pos, exprPos+newParams.length);
-
-        form = buf.endEdit();
         return putInCache(key, form);
     }
 

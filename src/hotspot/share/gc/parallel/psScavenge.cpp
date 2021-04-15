@@ -27,6 +27,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psClosure.inline.hpp"
@@ -791,7 +792,7 @@ bool PSScavenge::should_attempt_scavenge() {
 void PSScavenge::set_young_generation_boundary(HeapWord* v) {
   _young_generation_boundary = v;
   if (UseCompressedOops) {
-    _young_generation_boundary_compressed = (uintptr_t)CompressedOops::encode((oop)v);
+    _young_generation_boundary_compressed = (uintptr_t)CompressedOops::encode(cast_to_oop(v));
   }
 }
 

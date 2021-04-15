@@ -835,7 +835,10 @@ void CodeHeap::verify() {
       }
     }
     assert(nseg == _next_segment, "CodeHeap: segment count mismatch. found %d, expected %d.", (int)nseg, (int)_next_segment);
-    assert((count == 0) || (extra_hops < (16 + 2*count)), "CodeHeap: many extra hops due to optimization. blocks: %d, extra hops: %d.", count, extra_hops);
+    assert(extra_hops <= _fragmentation_count, "CodeHeap: extra hops wrong. fragmentation: %d, extra hops: %d.", _fragmentation_count, extra_hops);
+    if (extra_hops >= (16 + 2 * count)) {
+      warning("CodeHeap: many extra hops due to optimization. blocks: %d, extra hops: %d.", count, extra_hops);
+    }
 
     // Verify that the number of free blocks is not out of hand.
     static int free_block_threshold = 10000;
