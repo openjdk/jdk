@@ -612,50 +612,6 @@ public class Random extends AbstractSpliteratorGenerator
         unsafe.putReferenceVolatile(this, seedOffset, new AtomicLong(seedVal));
     }
 
-    // Methods required by class AbstractSpliteratorGenerator
-
-    private static final class ThreadLocalRandomProxy extends Random {
-        @java.io.Serial
-        static final long serialVersionUID = 0L;
-
-        static final AbstractSpliteratorGenerator PROXY = new ThreadLocalRandomProxy();
-
-        public int nextInt() {
-            return ThreadLocalRandom.current().nextInt();
-        }
-
-        public long nextLong() {
-            return ThreadLocalRandom.current().nextLong();
-        }
-    }
-
-    @Override
-    final protected Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-        if (this instanceof ThreadLocalRandom) {
-            return new RandomIntsSpliterator(ThreadLocalRandomProxy.PROXY, index, fence, origin, bound);
-        } else {
-            return new RandomIntsSpliterator(this, index, fence, origin, bound);
-        }
-    }
-
-    @Override
-    final protected Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-        if (this instanceof ThreadLocalRandom) {
-            return new RandomLongsSpliterator(ThreadLocalRandomProxy.PROXY, index, fence, origin, bound);
-        } else {
-            return new RandomLongsSpliterator(this, index, fence, origin, bound);
-        }
-    }
-
-    @Override
-    final protected Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-        if (this instanceof ThreadLocalRandom) {
-            return new RandomDoublesSpliterator(ThreadLocalRandomProxy.PROXY, index, fence, origin, bound);
-        } else {
-            return new RandomDoublesSpliterator(this, index, fence, origin, bound);
-        }
-    }
-
     /**
      * Returns a stream producing the given {@code streamSize} number of
      * pseudorandom {@code int} values.
