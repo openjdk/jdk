@@ -34,13 +34,11 @@
 
 public class TestPow0Dot5Opt {
 
-  static double r1;
-
   static void test(double a) throws Exception {
     // pow(x, 0.5) isn't replaced with sqrt(x) for x < 0.0
     if (a < 0.0) return;
 
-    r1 = Math.sqrt(a);
+    double r1 = Math.sqrt(a);
     double r2 = Math.pow(a, 0.5);
     if (r1 != r2) {
       throw new RuntimeException("pow(" + a + ", 0.5), expected: " + r1 + ", actual: " + r2);
