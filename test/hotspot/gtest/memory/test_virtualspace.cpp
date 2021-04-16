@@ -662,7 +662,7 @@ public:
 
 TEST_VM(VirtualSpace, os_reserve_space_concurrent) {
   ReservedSpaceRunnable runnable;
-  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
+  ConcurrentTestRunner testRunner(&runnable, 30, 15000, INT_MAX);
   testRunner.run();
 }
 
@@ -675,6 +675,6 @@ public:
 
 TEST_VM(VirtualSpace, os_virtual_space_concurrent) {
   VirtualSpaceRunnable runnable;
-  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
+  ConcurrentTestRunner testRunner(&runnable, 30, 15000, INT_MAX);
   testRunner.run();
 }
