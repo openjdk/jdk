@@ -30,29 +30,42 @@ import java.io.ObjectOutputStream;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import javax.crypto.KeyGenerator;
 
 /*
  * @test
  * @bug 8185127
- * @summary Test key comparison between the Keys generated through KeyGenerator
+ * @summary Test key comparison for the Keys generated through KeyGenerator
  * @run main CompareKeys
  */
 public class CompareKeys {
 
     public static void main(String[] args) throws Exception {
 
-        for (KeyAlgo ka : KeyAlgo.values()) {
-            SecretKey k = ka.genSecretKey();
+        for (KeygenAlgo alg : getSupportedAlgo("KeyGenerator")) {
+            System.out.printf("Verifying provider %s and algorithm %s%n",
+                    alg.provider().getName(), alg.algoName());
+            SecretKey k = genSecretKey(alg.algoName(), alg.provider());
             checkKeyEquality(k, copy(k));
         }
 
-        for (KeyPairAlgo kpa : KeyPairAlgo.values()) {
-            KeyPair kp = kpa.genKeyPair();
+        for (KeygenAlgo alg : getSupportedAlgo("KeyPairGenerator")) {
+            System.out.printf("Verifying provider %s and algorithm %s%n",
+                    alg.provider().getName(), alg.algoName());
+            KeyPair kp = genKeyPair(alg.algoName(), alg.provider());
             checkKeyPairEquality(kp, copy(kp));
         }
         System.out.println("Done!");
+    }
+
+    @SuppressWarnings("preview")
+    private record KeygenAlgo(String algoName, Provider provider) {
+
     }
 
     private static void checkKeyPairEquality(KeyPair origkp, KeyPair copykp)
@@ -63,17 +76,25 @@ public class CompareKeys {
     }
 
     /**
-     * Compare original Key with another copy.
+     * Compare original KeyPair with another copy.
      */
     private static void checkKeyEquality(Key origKey, Key copyKey) {
 
-        if (!origKey.equals(copyKey)
+        if (!(origKey.equals(copyKey)
+                || origKey.hashCode() == copyKey.hashCode())
                 && !Arrays.equals(origKey.getEncoded(), copyKey.getEncoded())
-                && origKey.hashCode() != copyKey.hashCode()) {
+                && !origKey.getFormat().equals(copyKey.getFormat())) {
+            System.out.println("Result equals/hashCode: "
+                    + !(origKey.equals(copyKey)
+                    || origKey.hashCode() == copyKey.hashCode()));
+            System.out.println("Result encoded check: " + !Arrays.equals(
+                    origKey.getEncoded(), copyKey.getEncoded()));
+            System.out.println("Result format check: "
+                    + !origKey.getFormat().equals(copyKey.getFormat()));
             throw new RuntimeException("Key inequality found");
         }
-        System.out.printf("Equality check Passed for key Type:%s & Algo: %s%n",
-                origKey.getClass(), origKey.getAlgorithm());
+        System.out.printf("%s equality check Passed%n",
+                origKey.getClass().getName());
     }
 
     /**
@@ -97,57 +118,32 @@ public class CompareKeys {
         return copy;
     }
 
-    private enum KeyAlgo {
+    private static List<KeygenAlgo> getSupportedAlgo(String type)
+            throws Exception {
 
-        AES("AES"),
-        ARCFOUR("ARCFOUR"),
-        Blowfish("Blowfish"),
-        ChaCha20("ChaCha20"),
-        DES("DES"),
-        DESede("DESede"),
-        HmacMD5("HmacMD5"),
-        HmacSHA1("HmacSHA1"),
-        HmacSHA224("HmacSHA224"),
-        HmacSHA256("HmacSHA256"),
-        HmacSHA384("HmacSHA384"),
-        HmacSHA512("HmacSHA512"),
-        RC2("RC2");
-
-        private String algoName;
-
-        private KeyAlgo(String name) {
-            this.algoName = name;
+        List<KeygenAlgo> kgs = new LinkedList<>();
+        for (Provider p : Security.getProviders()) {
+            for (Provider.Service s : p.getServices()) {
+                // Remove the algorithms from the list which require
+                // pre-initialisation to make the Test generic across algorithms
+                if (s.getType().contains(type)
+                        && !s.getAlgorithm().startsWith("SunTls")) {
+                    kgs.add(new KeygenAlgo(s.getAlgorithm(), s.getProvider()));
+                }
+            }
         }
-
-        public SecretKey genSecretKey() throws Exception {
-            KeyGenerator kg = KeyGenerator.getInstance(this.algoName);
-            return kg.generateKey();
-        }
+        return kgs;
     }
 
-    private enum KeyPairAlgo {
+    public static SecretKey genSecretKey(String algoName, Provider provider)
+            throws Exception {
 
-        DiffieHellman("DiffieHellman"),
-        DSA("DSA"),
-        RSA("RSA"),
-        RSASSAPSS("RSASSA-PSS"),
-        EC("EC"),
-        EdDSA("EdDSA"),
-        Ed25519("Ed25519"),
-        Ed448("Ed448"),
-        XDH("XDH"),
-        X25519("X25519"),
-        X448("X448");
+        return KeyGenerator.getInstance(algoName, provider).generateKey();
+    }
 
-        private final String algoName;
+    public static KeyPair genKeyPair(String algoName, Provider provider)
+            throws Exception {
 
-        private KeyPairAlgo(String name) {
-            this.algoName = name;
-        }
-
-        public KeyPair genKeyPair() throws Exception {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance(this.algoName);
-            return kpg.generateKeyPair();
-        }
+        return KeyPairGenerator.getInstance(algoName, provider).generateKeyPair();
     }
 }
