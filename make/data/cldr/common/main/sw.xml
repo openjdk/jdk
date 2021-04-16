@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -342,7 +342,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro">Kiromania</language>
 			<language type="ro_MD">Kimoldova cha Romania</language>
 			<language type="rof">Kirombo</language>
-			<language type="root">Kiroot</language>
 			<language type="ru">Kirusi</language>
 			<language type="rup">Kiaromania</language>
 			<language type="rw">Kinyarwanda</language>
@@ -2415,9 +2414,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Santa Isabel</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Mfumo wa kuratibu saa ulimwenguni</standard>
@@ -2537,11 +2533,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Broken Hill</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melbourne</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Hobart</exemplarCity>
@@ -3574,6 +3570,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Johnston</exemplarCity>
@@ -5803,7 +5802,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Faranga ya Afrika Magharibi CFA</displayName>
 				<displayName count="one">faranga ya Afrika Magharibi CFA</displayName>
 				<displayName count="other">faranga za Afrika Magharibi CFA</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>Faranga ya CFP</displayName>
@@ -6049,7 +6048,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">karati {0}</unitPattern>
 				<unitPattern count="other">karati {0}</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>miligramu kwa kila desilita</displayName>
 				<unitPattern count="one">miligramu kwa kila desilita</unitPattern>
 				<unitPattern count="other">miligramu {0} kwa kila desilita</unitPattern>
@@ -7071,7 +7070,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">karati {0}</unitPattern>
 				<unitPattern count="other">karati {0}</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dL</displayName>
 				<unitPattern count="one">{0} mg/dL</unitPattern>
 				<unitPattern count="other">{0} mg/dL</unitPattern>
