@@ -124,7 +124,7 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
   assert(!is_humongous(), "Humongous objects not handled here");
   bool obj_is_dead = is_obj_dead(obj, prev_bitmap);
 
-  if (ClassUnloadingWithConcurrentMark && obj_is_dead) {
+  if (ClassUnloading && obj_is_dead) {
     assert(!block_is_obj(addr), "must be");
     *size = block_size_using_bitmap(addr, prev_bitmap);
   } else {
@@ -141,11 +141,13 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
     assert(is_continues_humongous(), "This case can only happen for humongous regions");
     return (p == humongous_start_region()->bottom());
   }
-  // In full gc, we might have skipped compacting some heap regions with high live ratio,
-  // for objs in these regions, the corresponding class info might have been unloaded if
-  // they're not marked in the full gc.
-  // So, only when ClassUnloading is false, it's safe to tell an obj is indeed an obj when
-  // it's under the top of the region, otherwise we have to go to the slow path below.
+  // When class unloading is enabled it is not safe to only consider top() to conclude if the
+  // given pointer is a valid object. The situation can occur both for class unloading in a
+  // Full GC and during a concurrent cycle.
+  // During a Full GC regions can be excluded from compaction due to high live ratio, and
+  // because of this there can be stale objects for unloaded classes left in these regions.
+  // During a concurrent cycle class unloading is done after marking is complete and objects
+  // for the unloaded classes will be stale until the regions are collected.
   if (ClassUnloading) {
     return !g1h->is_obj_dead(cast_to_oop(p), this);
   }
@@ -153,7 +155,7 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
 }
 
 inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
-  assert(ClassUnloadingWithConcurrentMark,
+  assert(ClassUnloading,
          "All blocks should be objects if class unloading isn't used, so this method should not be called. "
          "HR: [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ") "
          "addr: " PTR_FORMAT,
