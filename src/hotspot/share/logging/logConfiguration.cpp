@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "logging/logAsyncFlusher.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logDecorators.hpp"
@@ -276,6 +277,15 @@ void LogConfiguration::disable_outputs() {
   // Remove all outputs from all tagsets.
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     ts->disable_outputs();
+  }
+
+  // Handle jcmd VM.log disable
+  // ts->disable_outputs() above deletes output_list with RCU synchronization.
+  // Therefore, no new logging entry will enter asynchronous queue after then.
+  // flush pending entries before the LogOutput instances die.
+  LogAsyncFlusher* async = LogAsyncFlusher::instance();
+  if (async != nullptr) {
+    async->flush();
   }
 
   while (idx > 0) {
