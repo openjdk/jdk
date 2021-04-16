@@ -35,8 +35,8 @@
 public class TestPow0Dot5Opt {
 
   static void test(double a) throws Exception {
-    // pow(x, 0.5) is replaced with sqrt(x) if and only if x > 0.0
-    if (a <= 0.0) return;
+    // pow(x, 0.5) isn't replaced with sqrt(x) for x < 0.0
+    if (a < 0.0) return;
 
     double r1 = Math.sqrt(a);
     double r2 = Math.pow(a, 0.5);
@@ -52,6 +52,8 @@ public class TestPow0Dot5Opt {
         test(1.0 / j);
       }
     }
+
+    test(0.0);
 
     // Special case: pow(+0.0, 0.5) = 0.0
     double r = Math.pow(+0.0, 0.5);
