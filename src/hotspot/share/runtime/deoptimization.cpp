@@ -2472,7 +2472,7 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
 
 Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* current, jint trap_request, jint exec_mode) {
   // Enable WXWrite: current function is called from methods compiled by C2 directly
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
 
   if (TraceDeoptimization) {
     tty->print("Uncommon trap ");
