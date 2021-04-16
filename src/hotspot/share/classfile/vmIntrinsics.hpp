@@ -1141,6 +1141,8 @@ public:
   static Flags              flags_for(ID id);
 #endif
 
+  static bool class_has_intrinsics(vmSymbolID holder);
+
   static const char* short_name_as_C_string(ID id, char* buf, int size);
 
   // The methods below provide information related to compiling intrinsics.

@@ -1558,7 +1558,12 @@ vmSymbolID Method::klass_id_for_intrinsics(const Klass* holder) {
 
   // see if the klass name is well-known:
   Symbol* klass_name = ik->name();
-  return vmSymbols::find_sid(klass_name);
+  vmSymbolID id = vmSymbols::find_sid(klass_name);
+  if (id != vmSymbolID::NO_SID && vmIntrinsics::class_has_intrinsics(id)) {
+    return id;
+  } else {
+    return vmSymbolID::NO_SID;
+  }
 }
 
 void Method::init_intrinsic_id() {
@@ -1588,6 +1593,11 @@ void Method::init_intrinsic_id() {
 
   vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
   if (id != vmIntrinsics::_none) {
+#if 0
+    ResourceMark rm;
+    char buff[200];
+    log_info(cds,symboltable)("intrinsics %s = %s", external_name(), vmIntrinsics::short_name_as_C_string(id,  buff, sizeof(buff)));
+#endif
     set_intrinsic_id(id);
     if (id == vmIntrinsics::_Class_cast) {
       // Even if the intrinsic is rejected, we want to inline this simple method.

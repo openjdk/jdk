@@ -678,6 +678,32 @@ vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbolID holder,
 #undef VM_INTRINSIC_CASE
 }
 
+class vmIntrinsicsLookup {
+  bool _class_map[vmSymbols::number_of_symbols()];
+
+public:
+  constexpr vmIntrinsicsLookup() : _class_map() {
+
+#define VM_INTRINSIC_CLASS_MAP(id, klass, name, sig, fcode) \
+    _class_map[int(SID_ENUM(klass))] = true;
+
+    VM_INTRINSICS_DO(VM_INTRINSIC_CLASS_MAP,
+                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
+#undef VM_INTRINSIC_CLASS_MAP
+  }
+
+  bool class_has_intrinsics(vmSymbolID holder) const {
+    int index = vmSymbols::as_int(holder);
+    assert(0 <= index && index < int(sizeof(_class_map)), "must be");
+    return _class_map[index];
+  }
+};
+
+constexpr vmIntrinsicsLookup _intrinsics_lookup;
+
+bool vmIntrinsics::class_has_intrinsics(vmSymbolID holder) {
+  return _intrinsics_lookup.class_has_intrinsics(holder);
+}
 
 const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf, int buflen) {
   const char* str = name_at(id);
