@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@ package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.data.GraphDocument;
+import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
@@ -225,6 +227,22 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                 }
             });
 
+        Group group = getDiagram().getGraph().getGroup();
+        group.getChangedEvent().addListener(new ChangedListener<Group>() {
+                @Override
+                public void changed(Group gr) {
+                    closeOnRemovedOrEmptyGroup();
+                }
+            });
+        if (group.getParent() instanceof GraphDocument) {
+            final GraphDocument doc = (GraphDocument) group.getParent();
+            doc.getChangedEvent().addListener(new ChangedListener<GraphDocument>() {
+                    @Override
+                    public void changed(GraphDocument doc) {
+                        closeOnRemovedOrEmptyGroup();
+                    }
+                });
+        }
 
         toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
@@ -447,6 +465,14 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     @Override
     protected String preferredID() {
         return PREFERRED_ID;
+    }
+
+    private void closeOnRemovedOrEmptyGroup() {
+        Group group = getDiagram().getGraph().getGroup();
+        if (!group.getParent().getElements().contains(group) ||
+            group.getGraphs().isEmpty()) {
+            close();
+        }
     }
 
     private ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
