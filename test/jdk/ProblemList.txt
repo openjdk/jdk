@@ -679,9 +679,6 @@ sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-
 javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-all
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
 
-javax/net/ssl/DTLS/Retransmission.java                          8265364 macosx-aarch64
-javax/net/ssl/DTLS/RespondToRetransmit.java                     8265364 macosx-aarch64
-
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8209398 generic-all
