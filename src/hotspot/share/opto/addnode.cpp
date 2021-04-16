@@ -75,8 +75,8 @@ static bool commute(PhaseGVN* phase, Node* add) {
     Node *in21 = in2->in(1);
     Node *in22 = in2->in(2);
 
-    if (in11 == in21 && in12 == in22 ||
-        in11 == in22 && in12 == in21) {
+    if ((in11 == in21 && in12 == in22) ||
+        (in11 == in22 && in12 == in21)) {
       add->set_req(1, in11);
       add->set_req(2, in22);
       PhaseIterGVN* igvn = phase->is_IterGVN();
