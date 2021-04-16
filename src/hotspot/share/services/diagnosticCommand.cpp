@@ -141,6 +141,9 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, true));
 #endif // INCLUDE_JVMTI
 
+#if INCLUDE_CDS
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
+#endif // INCLUDE_CDS
 }
 
 #ifndef HAVE_EXTRA_DCMD
@@ -924,6 +927,60 @@ void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
   VM_DumpTouchedMethods dumper(output());
   VMThread::execute(&dumper);
 }
+
+#if INCLUDE_CDS
+DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
+                                     DCmdWithParser(output, heap),
+  _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
+  _filename("filename", "Name of shared archive to be dumped", "STRING", false)
+{
+  _dcmdparser.add_dcmd_argument(&_suboption);
+  _dcmdparser.add_dcmd_argument(&_filename);
+}
+
+void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
+  jboolean is_static;
+  const char* scmd = _suboption.value();
+  const char* file = _filename.value();
+
+  if (strcmp(scmd, "static_dump") == 0) {
+    is_static = JNI_TRUE;
+    output()->print_cr("Static dump:");
+  } else if (strcmp(scmd, "dynamic_dump") == 0) {
+    is_static = JNI_FALSE;
+    output()->print_cr("Dynamic dump:");
+    if (!UseSharedSpaces) {
+      output()->print_cr("Dynamic dump is unsupported when base CDS archive is not loaded");
+      return;
+    }
+    if (!RecordDynamicDumpInfo) {
+      output()->print_cr("Dump dynamic should run with -XX:+RecordDynamicDumpInfo");
+      return;
+    }
+  } else {
+    output()->print_cr("Invalid command for VM.cds, valid input is static_dump or dynamic_dump");
+    return;
+  }
+
+  // call CDS.dumpSharedArchive
+  Handle fileh;
+  if (file != NULL) {
+    fileh =  java_lang_String::create_from_str(_filename.value(), CHECK);
+  }
+  Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
+  Klass*  cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
+  JavaValue result(T_VOID);
+  JavaCallArguments args;
+  args.push_int(is_static);
+  args.push_oop(fileh);
+  JavaCalls::call_static(&result,
+                         cds_klass,
+                         vmSymbols::dumpSharedArchive(),
+                         vmSymbols::dumpSharedArchive_signature(),
+                         &args, CHECK);
+}
+#endif // INCLUDE_CDS
+
 #if INCLUDE_JVMTI
 extern "C" typedef char const* (JNICALL *debugInit_startDebuggingViaCommandPtr)(JNIEnv* env, jthread thread, char const** transport_name,
                                                                                 char const** address, jboolean* first_start);
