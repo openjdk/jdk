@@ -64,6 +64,10 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
+compiler/whitebox/ClearMethodStateTest.java 8265360 macosx-aarch64
+compiler/whitebox/EnqueueMethodForCompilationTest.java 8265360 macosx-aarch64
+compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
+
 #############################################################################
 
 # :hotspot_gc
