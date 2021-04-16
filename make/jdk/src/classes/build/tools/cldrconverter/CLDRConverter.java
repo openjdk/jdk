@@ -1038,6 +1038,10 @@ public class CLDRConverter {
                 Objects.nonNull(p) &&
                 !candidates.get(i+1).equals(p)) {
                 List<Locale> applied = candidates.subList(0, i+1);
+                if (applied.contains(p)) {
+                    // avoid circular recursion (could happen with nb/no case)
+                    continue;
+                }
                 applied.addAll(applyParentLocales(baseName, defCon.getCandidateLocales(baseName, p)));
                 return applied;
             }
