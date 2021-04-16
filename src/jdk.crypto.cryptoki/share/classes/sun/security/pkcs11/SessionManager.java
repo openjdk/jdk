@@ -26,11 +26,9 @@
 package sun.security.pkcs11;
 
 import java.util.*;
-
 import java.security.ProviderException;
 
 import sun.security.util.Debug;
-
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
@@ -171,7 +169,9 @@ final class SessionManager {
             System.out.println("Killing session (" + location + ") active: "
                 + activeSessions.get());
         }
-        closeSession(session);
+
+        session.kill();
+        activeSessions.decrementAndGet();
         return null;
     }
 
@@ -179,13 +179,17 @@ final class SessionManager {
         if ((session == null) || (token.isValid() == false)) {
             return null;
         }
-
         if (session.hasObjects()) {
             objSessions.release(session);
         } else {
             opSessions.release(session);
         }
         return null;
+    }
+
+    void clearPools() {
+        objSessions.closeAll();
+        opSessions.closeAll();
     }
 
     void demoteObjSession(Session session) {
@@ -196,6 +200,7 @@ final class SessionManager {
             System.out.println("Demoting session, active: " +
                 activeSessions.get());
         }
+
         boolean present = objSessions.remove(session);
         if (present == false) {
             // session is currently in use
@@ -238,6 +243,8 @@ final class SessionManager {
         private final SessionManager mgr;
         private final AbstractQueue<Session> pool;
         private final int SESSION_MAX = 5;
+        // access is synchronized on 'this'
+        private volatile boolean closed = false;
 
         // Object session pools can contain unlimited sessions.
         // Operation session pools are limited and enforced by the queue.
@@ -260,7 +267,7 @@ final class SessionManager {
 
         void release(Session session) {
             // Object session pools never return false, only Operation ones
-            if (!pool.offer(session)) {
+            if (closed || !pool.offer(session)) {
                 mgr.closeSession(session);
                 free();
             }
@@ -268,6 +275,9 @@ final class SessionManager {
 
         // Free any old operation session if this queue is full
         void free() {
+            // quick return path
+            if (pool.size() == 0) return;
+
             int n = SESSION_MAX;
             int i = 0;
             Session oldestSession;
@@ -291,6 +301,14 @@ final class SessionManager {
             }
         }
 
+        // empty out all sessions inside 'pool' and close them.
+        // however the Pool can still accept sessions
+        void closeAll() {
+            closed = true;
+            Session s;
+            while ((s = pool.poll()) != null) {
+                mgr.killSession(s);
+            }
+        }
     }
-
 }

@@ -38,9 +38,7 @@ import javax.security.auth.login.LoginException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.ConfirmationCallback;
 import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.TextOutputCallback;
 
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
@@ -84,6 +82,8 @@ public final class SunPKCS11 extends AuthProvider {
     private volatile Token token;
 
     private TokenPoller poller;
+
+    static NativeResourceCleaner cleaner;
 
     Token getToken() {
         return token;
@@ -892,13 +892,19 @@ public final class SunPKCS11 extends AuthProvider {
     // background thread that periodically checks for token insertion
     // if no token is present. We need to do that in a separate thread because
     // the insertion check may block for quite a long time on some tokens.
-    private static class TokenPoller implements Runnable {
+    private static class TokenPoller extends Thread {
         private final SunPKCS11 provider;
         private volatile boolean enabled;
+
         private TokenPoller(SunPKCS11 provider) {
+            super((ThreadGroup)null, "Poller-" + provider.getName());
+            setContextClassLoader(null);
+            setDaemon(true);
+            setPriority(Thread.MIN_PRIORITY);
             this.provider = provider;
             enabled = true;
         }
+        @Override
         public void run() {
             int interval = provider.config.getInsertionCheckInterval();
             while (enabled) {
@@ -927,13 +933,8 @@ public final class SunPKCS11 extends AuthProvider {
         if (poller != null) {
             return;
         }
-        final TokenPoller poller = new TokenPoller(this);
-        Thread t = new Thread(null, poller, "Poller " + getName(), 0, false);
-        t.setContextClassLoader(null);
-        t.setDaemon(true);
-        t.setPriority(Thread.MIN_PRIORITY);
-        t.start();
-        this.poller = poller;
+        poller = new TokenPoller(this);
+        poller.start();
     }
 
     // destroy the poller thread, if active
@@ -956,6 +957,43 @@ public final class SunPKCS11 extends AuthProvider {
         return (token != null) && token.isValid();
     }
 
+    private class NativeResourceCleaner extends Thread {
+        private long sleepMillis = config.getResourceCleanerShortInterval();
+        private int count = 0;
+        boolean p11RefFound, SessRefFound;
+
+        private NativeResourceCleaner() {
+            super((ThreadGroup)null, "Cleanup-SunPKCS11");
+            setContextClassLoader(null);
+            setDaemon(true);
+            setPriority(Thread.MIN_PRIORITY);
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    sleep(sleepMillis);
+                } catch (InterruptedException ie) {
+                    break;
+                }
+                p11RefFound = P11Key.drainRefQueue();
+                SessRefFound = Session.drainRefQueue();
+                if (!p11RefFound && !SessRefFound) {
+                    count++;
+                } else {
+                    count = 0;
+                    sleepMillis = config.getResourceCleanerShortInterval();
+                }
+                if (count > 100) {
+                    // no reference freed for some time
+                    // increase the sleep time
+                    sleepMillis = config.getResourceCleanerLongInterval();
+                }
+            }
+        }
+    }
+
     // destroy the token. Called if we detect that it has been removed
     synchronized void uninitToken(Token token) {
         if (this.token != token) {
@@ -971,7 +1009,10 @@ public final class SunPKCS11 extends AuthProvider {
                 return null;
             }
         });
-        createPoller();
+        // keep polling for token insertion unless configured not to
+        if (removable && !config.getDestroyTokenAfterLogout()) {
+            createPoller();
+        }
     }
 
     private static boolean isLegacy(CK_MECHANISM_INFO mechInfo)
@@ -1118,6 +1159,10 @@ public final class SunPKCS11 extends AuthProvider {
         });
 
         this.token = token;
+        if (cleaner == null) {
+            cleaner = new NativeResourceCleaner();
+            cleaner.start();
+        }
     }
 
     private static final class P11Service extends Service {
@@ -1329,12 +1374,12 @@ public final class SunPKCS11 extends AuthProvider {
                         ("authProvider." + this.getName()));
         }
 
-        if (hasValidToken() == false) {
+        if (!hasValidToken()) {
             throw new LoginException("No token present");
+
         }
 
         // see if a login is required
-
         if ((token.tokenInfo.flags & CKF_LOGIN_REQUIRED) == 0) {
             if (debug != null) {
                 debug.println("login operation not required for token - " +
@@ -1446,7 +1491,6 @@ public final class SunPKCS11 extends AuthProvider {
      *  this provider's <code>getName</code> method
      */
     public void logout() throws LoginException {
-
         if (!isConfigured()) {
             throw new IllegalStateException("Configuration is required");
         }
@@ -1472,9 +1516,12 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         try {
-            if (token.isLoggedInNow(null) == false) {
+            if (!token.isLoggedInNow(null)) {
                 if (debug != null) {
                     debug.println("user not logged in");
+                }
+                if (config.getDestroyTokenAfterLogout()) {
+                    token.destroy();
                 }
                 return;
             }
@@ -1483,7 +1530,6 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // perform token logout
-
         Session session = null;
         try {
             session = token.getOpSession();
@@ -1504,6 +1550,9 @@ public final class SunPKCS11 extends AuthProvider {
             throw le;
         } finally {
             token.releaseSession(session);
+            if (config.getDestroyTokenAfterLogout()) {
+                token.destroy();
+            }
         }
     }
 

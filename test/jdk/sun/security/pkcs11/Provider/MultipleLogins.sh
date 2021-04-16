@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
 #
 
 # @test
-# @bug 4850423
-# @summary login facilities for hardware tokens
-#
-# @run shell Login.sh
+# @bug 7777777
+# @summary
+# @library /test/lib/
+# @build jdk.test.lib.util.ForceGC
+# @run shell MultipleLogins.sh
 
 # set a few environment variables so that the shell-script can run stand-alone
 # in the source directory
@@ -38,10 +39,10 @@ if [ "${TESTCLASSES}" = "" ] ; then
     TESTCLASSES=`pwd`
 fi
 
-# if running by hand on windows, change this to appropriate value
-if [ "${TESTJAVA}" = "" ] ; then
-    TESTJAVA="/net/radiant/export1/charlie/mustang/build/solaris-sparc"
+if [ "${TESTCLASSPATH}" = "" ] ; then
+    TESTCLASSPATH=`pwd`
 fi
+
 if [ "${COMPILEJAVA}" = "" ]; then
     COMPILEJAVA="${TESTJAVA}"
 fi
@@ -49,7 +50,6 @@ echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
 echo COMPILEJAVA=${COMPILEJAVA}
-echo CPAPPEND=${CPAPPEND}
 echo ""
 
 # let java test exit if platform unsupported
@@ -107,28 +107,28 @@ ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 # compile test
 
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-        -classpath ${TESTSRC}${FS}.. \
+        -classpath ${TESTCLASSPATH} \
         -d ${TESTCLASSES} \
         --add-modules jdk.crypto.cryptoki \
         --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED \
         ${TESTSRC}${FS}..${FS}..${FS}..${FS}..${FS}..${FS}lib${FS}jdk${FS}test${FS}lib${FS}artifacts${FS}*.java \
-        ${TESTSRC}${FS}Login.java \
+        ${TESTSRC}${FS}MultipleLogins.java \
         ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
 # run test
 
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-        -classpath ${TESTCLASSES}${PS}${CPAPPEND} \
+        -classpath ${TESTCLASSPATH} \
         --add-modules jdk.crypto.cryptoki \
         --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \
-        -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}Login-nss.txt \
+        -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}MultipleLogins-nss.txt \
         -DNO_DEFAULT=true \
         -DNO_DEIMOS=true \
         -Dtest.src=${TESTSRC} \
         -Dtest.classes=${TESTCLASSES} \
         -Djava.security.debug=${DEBUG} \
-        Login sm Login.policy
+        MultipleLogins sm Login.policy
 
 # save error status
 status=$?

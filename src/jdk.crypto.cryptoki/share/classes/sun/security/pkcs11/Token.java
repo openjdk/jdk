@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,8 +291,12 @@ class Token implements Serializable {
     }
 
     void destroy() {
-        valid = false;
+        secretCache.clear();
+        privateCache.clear();
+
+        sessionManager.clearPools();
         provider.uninitToken(this);
+        valid = false;
     }
 
     Session getObjSession() throws PKCS11Exception {
