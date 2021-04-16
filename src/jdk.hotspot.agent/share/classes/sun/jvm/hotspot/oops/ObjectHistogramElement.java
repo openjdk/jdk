@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class ObjectHistogramElement {
   }
 
   public int compare(ObjectHistogramElement other) {
-    return (int) (other.size - size);
+    return Long.compare(other.size, size);
   }
 
   /** Klass for this ObjectHistogramElement */
@@ -86,7 +86,7 @@ public class ObjectHistogramElement {
           ObjArrayKlass oak = (ObjArrayKlass) ak;
           Klass bottom = oak.getBottomKlass();
           int dim = (int) oak.getDimension();
-          StringBuffer buf = new StringBuffer();
+          StringBuilder buf = new StringBuilder();
           if (bottom instanceof TypeArrayKlass) {
             buf.append(((TypeArrayKlass) bottom).getElementTypeName());
           } else if (bottom instanceof InstanceKlass) {

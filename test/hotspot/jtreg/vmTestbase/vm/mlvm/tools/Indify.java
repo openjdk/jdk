@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ public class Indify {
     public boolean keepgoing = false;
     public boolean expandProperties = false;
     public boolean overwrite = false;
-    public boolean quiet = false;
+    public boolean quiet = true;
     public boolean verbose = false;
     public boolean transitionalJSR292 = true;  // default to false later
     public boolean all = false;

@@ -34,7 +34,7 @@
 			<pluralRange start="other" end="one"   result="one"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="af an bg ca en es et eu fi ia io nb pcm sv ur">
+		<pluralRanges locales="af an bg ca en es et eu fi ia io nb no pcm sv ur">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>

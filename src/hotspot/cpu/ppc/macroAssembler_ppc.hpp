@@ -666,7 +666,7 @@ class MacroAssembler: public Assembler {
                                    bool try_bias = UseBiasedLocking, bool use_rtm = false);
 
   // Check if safepoint requested and if so branch
-  void safepoint_poll(Label& slow_path, Register temp_reg);
+  void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level);

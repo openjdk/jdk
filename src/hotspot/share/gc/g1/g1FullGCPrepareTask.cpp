@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,11 @@
 #include "utilities/ticks.hpp"
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
-  if (hr->is_pinned()) {
+  bool force_not_compacted = false;
+  if (should_compact(hr)) {
+    assert(!hr->is_humongous(), "moving humongous objects not supported.");
+    prepare_for_compaction(hr);
+  } else {
     // There is no need to iterate and forward objects in pinned regions ie.
     // prepare them for compaction. The adjust pointers phase will skip
     // work for them.
@@ -50,24 +54,27 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
         free_humongous_region(hr);
       }
     } else if (hr->is_open_archive()) {
-      bool is_empty = _bitmap->get_next_marked_addr(hr->bottom(), hr->top()) >= hr->top();
+      bool is_empty = _collector->live_words(hr->hrm_index()) == 0;
       if (is_empty) {
         free_open_archive_region(hr);
       }
+    } else if (hr->is_closed_archive()) {
+      // nothing to do with closed archive region
     } else {
-      // There are no other pinned regions than humongous or all kinds of archive regions
-      // at this time.
-      assert(hr->is_closed_archive(), "Only closed archive regions can also be pinned.");
+      assert(MarkSweepDeadRatio > 0,
+             "only skip compaction for other regions when MarkSweepDeadRatio > 0");
+
+      // Force the high live ratio region as compacting to skip these regions in the
+      // later compaction step.
+      force_not_compacted = true;
+      log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
+                            hr->hrm_index(), _collector->live_words(hr->hrm_index()));
     }
-  } else {
-    assert(!hr->is_humongous(), "moving humongous objects not supported.");
-    prepare_for_compaction(hr);
   }
 
   // Reset data structures not valid after Full GC.
   reset_region_metadata(hr);
-
-  _collector->update_attribute_table(hr);
+  _collector->update_attribute_table(hr, force_not_compacted);
 
   return false;
 }
@@ -138,6 +145,16 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_open_archive_region(H
   _g1h->free_region(hr, &dummy_free_list);
   prepare_for_compaction(hr);
   dummy_free_list.remove_all();
+}
+
+bool G1FullGCPrepareTask::G1CalculatePointersClosure::should_compact(HeapRegion* hr) {
+  if (hr->is_pinned()) {
+    return false;
+  }
+  size_t live_words = _collector->live_words(hr->hrm_index());
+  size_t live_words_threshold = _collector->scope()->region_compaction_threshold();
+  // High live ratio region will not be compacted.
+  return live_words <= live_words_threshold;
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {

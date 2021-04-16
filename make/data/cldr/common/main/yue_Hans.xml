@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -460,7 +460,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro_MD">摩尔多瓦文</language>
 			<language type="rof">兰博文</language>
 			<language type="rom">吉普赛文</language>
-			<language type="root">根语言</language>
 			<language type="rtm">罗图马岛文</language>
 			<language type="ru">俄文</language>
 			<language type="rue">卢森尼亚文</language>
@@ -4412,9 +4411,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>圣伊萨贝尔</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>檀香山</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>协调世界时间</standard>
@@ -4534,11 +4530,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>布罗肯希尔</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>克黎</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>墨尔本</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>克黎</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>荷巴特</exemplarCity>
@@ -5571,6 +5567,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>诺姆</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>檀香山</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>强斯顿</exemplarCity>
@@ -8298,7 +8297,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="XOF">
 				<displayName>法郎 (CFA–BCEAO)</displayName>
 				<displayName count="other">法郎 (CFA–BCEAO)</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName draft="contributed">帕拉狄昂</displayName>
@@ -8603,7 +8602,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>克拉</displayName>
 				<unitPattern count="other">{0} 克拉</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>毫克/公合</displayName>
 				<unitPattern count="other">{0} 毫克/公合</unitPattern>
 			</unit>
@@ -9453,7 +9452,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>克拉</displayName>
 				<unitPattern count="other">{0} 克拉</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>毫克/公合</displayName>
 				<unitPattern count="other">{0} 毫克/公合</unitPattern>
 			</unit>
@@ -10418,7 +10417,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 公厘</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<unitPattern count="other" draft="contributed">{0}µm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<unitPattern count="other" draft="contributed">{0}nm</unitPattern>
@@ -10476,7 +10475,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="contributed">{0}mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<unitPattern count="other" draft="contributed">{0}µg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<unitPattern count="other" draft="contributed">{0}tn</unitPattern>

@@ -453,6 +453,66 @@ instruct vxor(vReg dst, vReg src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector not
+
+instruct vnotI(vReg dst, vReg src, immI_M1 m1) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst (XorV src (ReplicateB m1)));
+  match(Set dst (XorV src (ReplicateS m1)));
+  match(Set dst (XorV src (ReplicateI m1)));
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $src\t# vector (sve) B/H/S" %}
+  ins_encode %{
+    __ sve_not(as_FloatRegister($dst$$reg), __ D,
+               ptrue, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vnotL(vReg dst, vReg src, immL_M1 m1) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst (XorV src (ReplicateL m1)));
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $src\t# vector (sve) D" %}
+  ins_encode %{
+    __ sve_not(as_FloatRegister($dst$$reg), __ D,
+               ptrue, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+// vector and_not
+
+instruct vand_notI(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst (AndV src1 (XorV src2 (ReplicateB m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateS m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateI m1))));
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst, $src1, $src2\t# vector (sve) B/H/S" %}
+  ins_encode %{
+    __ sve_bic(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg),
+               as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vand_notL(vReg dst, vReg src1, vReg src2, immL_M1 m1) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst (AndV src1 (XorV src2 (ReplicateL m1))));
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst, $src1, $src2\t# vector (sve) D" %}
+  ins_encode %{
+    __ sve_bic(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg),
+               as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
 // vector float div
 
 instruct vdivF(vReg dst_src1, vReg src2) %{

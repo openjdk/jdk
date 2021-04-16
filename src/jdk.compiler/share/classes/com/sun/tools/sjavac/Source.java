@@ -148,7 +148,7 @@ public class Source implements Comparable<Source> {
     }
     // Parse a line that looks like this:
     // S C /code/alfa/A.java 1357631228000
-    static public Source load(Package lastPackage, String l, boolean isGenerated) {
+    public static Source load(Package lastPackage, String l, boolean isGenerated) {
         int sp = l.indexOf(' ',4);
         if (sp == -1) return null;
         String name = l.substring(4,sp);
@@ -185,7 +185,7 @@ public class Source implements Comparable<Source> {
      * Detects the existence of module-info.java files and presumes that the directory it resides in
      * is the name of the current module.
      */
-    static public void scanRoot(File root,
+    public static void scanRoot(File root,
                                 Set<String> suffixes,
                                 List<String> excludes,
                                 List<String> includes,

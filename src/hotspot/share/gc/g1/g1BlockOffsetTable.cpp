@@ -327,7 +327,8 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, size_t* ind
 void G1BlockOffsetTablePart::verify() const {
   assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
   size_t start_card = _bot->index_for(_hr->bottom());
-  size_t end_card = _bot->index_for(_hr->top() - 1);
+  // Do not verify beyond the BOT allocation threshold.
+  size_t end_card = MIN2(_bot->index_for(_hr->top() - 1), _next_offset_index - 1);
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {
     u_char entry = _bot->offset_array(current_card);

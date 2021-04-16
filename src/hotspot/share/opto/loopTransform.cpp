@@ -3701,16 +3701,6 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
     for (SimpleDUIterator iter(n); iter.has_next(); iter.next()) {
       Node* use = iter.get();
       if (!lpt->_body.contains(use)) {
-        if (n->is_CountedLoop() && n->as_CountedLoop()->is_strip_mined()) {
-          // In strip-mined counted loops, the CountedLoopNode may be
-          // used by the address polling node of the outer safepoint.
-          // Skip this use because it's safe.
-          Node* sfpt = n->as_CountedLoop()->outer_safepoint();
-          Node* polladr = sfpt->in(TypeFunc::Parms+0);
-          if (use == polladr) {
-            continue;
-          }
-        }
         msg = "node is used outside loop";
         msg_node = n;
         break;

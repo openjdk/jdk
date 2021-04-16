@@ -233,7 +233,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   inline_block  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
   stub_block = *ctrl;
 
-  Node* mask_gen =  new VectorMaskGenNode(length, TypeLong::LONG, Type::get_const_basic_type(type));
+  Node* mask_gen =  new VectorMaskGenNode(length, TypeVect::VECTMASK, Type::get_const_basic_type(type));
   transform_later(mask_gen);
 
   unsigned vec_size = lane_count *  type2aelembytes(type);
@@ -826,9 +826,9 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     (*ctrl)->in(0)->isa_MemBar()->set_trailing_partial_array_copy();
   }
 
-  _igvn.replace_node(_memproj_fallthrough, out_mem);
-  _igvn.replace_node(_ioproj_fallthrough, *io);
-  _igvn.replace_node(_fallthroughcatchproj, *ctrl);
+  _igvn.replace_node(_callprojs.fallthrough_memproj, out_mem);
+  _igvn.replace_node(_callprojs.fallthrough_ioproj, *io);
+  _igvn.replace_node(_callprojs.fallthrough_catchproj, *ctrl);
 
 #ifdef ASSERT
   const TypeOopPtr* dest_t = _igvn.type(dest)->is_oopptr();
@@ -1074,11 +1074,11 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
   _igvn.replace_node(ac, call);
   transform_later(call);
 
-  extract_call_projections(call);
-  *ctrl = _fallthroughcatchproj->clone();
+  call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
+  *ctrl = _callprojs.fallthrough_catchproj->clone();
   transform_later(*ctrl);
 
-  Node* m = _memproj_fallthrough->clone();
+  Node* m = _callprojs.fallthrough_memproj->clone();
   transform_later(m);
 
   uint alias_idx = C->get_alias_index(adr_type);
@@ -1091,7 +1091,7 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
   }
   transform_later(out_mem);
 
-  *io = _ioproj_fallthrough->clone();
+  *io = _callprojs.fallthrough_ioproj->clone();
   transform_later(*io);
 
   return out_mem;
@@ -1326,9 +1326,9 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
       merge_mem = generate_slow_arraycopy(ac, &ctrl, mem, &io, TypePtr::BOTTOM, src, src_offset, dest, dest_offset, length, false);
     }
 
-    _igvn.replace_node(_memproj_fallthrough, merge_mem);
-    _igvn.replace_node(_ioproj_fallthrough, io);
-    _igvn.replace_node(_fallthroughcatchproj, ctrl);
+    _igvn.replace_node(_callprojs.fallthrough_memproj, merge_mem);
+    _igvn.replace_node(_callprojs.fallthrough_ioproj, io);
+    _igvn.replace_node(_callprojs.fallthrough_catchproj, ctrl);
     return;
   }
 

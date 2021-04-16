@@ -1459,6 +1459,8 @@ private:
   void kmovwl(KRegister dst, Register src);
   void kmovwl(KRegister dst, Address src);
   void kmovwl(Register dst, KRegister src);
+  void kmovwl(Address dst, KRegister src);
+  void kmovwl(KRegister dst, KRegister src);
   void kmovdl(KRegister dst, Register src);
   void kmovdl(Register dst, KRegister src);
   void kmovql(KRegister dst, KRegister src);

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -480,7 +480,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">มอลโดวา</language>
 			<language type="rof">รอมโบ</language>
 			<language type="rom">โรมานี</language>
-			<language type="root">รูท</language>
 			<language type="rtm" draft="contributed">โรทูมัน</language>
 			<language type="ru">รัสเซีย</language>
 			<language type="rue" draft="contributed">รูซิน</language>
@@ -4477,9 +4476,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>ซานตาอิซาเบล</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>โฮโนลูลู</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>เวลาสากลเชิงพิกัด</standard>
@@ -4599,11 +4595,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>โบรกเคนฮิลล์</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>คูร์รี</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>เมลเบิร์น</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>คูร์รี</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>โฮบาร์ต</exemplarCity>
@@ -5636,6 +5632,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>นอม</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>โฮโนลูลู</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>จอห์นสตัน</exemplarCity>
@@ -8185,7 +8184,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XOF">
 				<displayName>ฟรังก์เซฟาธนาคารกลางรัฐแอฟริกาตะวันตก</displayName>
 				<displayName count="other">ฟรังก์เซฟาธนาคารกลางรัฐแอฟริกาตะวันตก</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>พัลเลเดียม</displayName>
@@ -8470,7 +8469,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>กะรัต</displayName>
 				<unitPattern count="other">{0} กะรัต</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>มิลลิกรัมต่อเดซิลิตร</displayName>
 				<unitPattern count="other">{0} มิลลิกรัมต่อเดซิลิตร</unitPattern>
 			</unit>
@@ -9307,7 +9306,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>กะรัต</displayName>
 				<unitPattern count="other">{0} กะรัต</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>มก./ดล.</displayName>
 				<unitPattern count="other">{0} มก./ดล.</unitPattern>
 			</unit>
