@@ -988,10 +988,10 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
 
       bool selected_for_rebuild;
       if (hr->is_humongous()) {
-        bool const is_live = _cm->liveness(hr->humongous_start_region()->hrm_index()) > 0;
+        bool const is_live = _cm->live_words(hr->humongous_start_region()->hrm_index()) > 0;
         selected_for_rebuild = tracking_policy->update_humongous_before_rebuild(hr, is_live);
       } else {
-        size_t const live_bytes = _cm->liveness(hr->hrm_index());
+        size_t const live_bytes = _cm->live_bytes(hr->hrm_index());
         selected_for_rebuild = tracking_policy->update_before_rebuild(hr, live_bytes);
       }
       if (selected_for_rebuild) {
@@ -1029,7 +1029,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
 
     void update_marked_bytes(HeapRegion* hr) {
       uint const region_idx = hr->hrm_index();
-      size_t const marked_words = _cm->liveness(region_idx);
+      size_t const marked_words = _cm->live_words(region_idx);
       // The marking attributes the object's size completely to the humongous starts
       // region. We need to distribute this value across the entire set of regions a
       // humongous object spans.
@@ -1042,7 +1042,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
         }
       } else {
         log_trace(gc, marking)("Adding " SIZE_FORMAT " words to region %u (%s)", marked_words, region_idx, hr->get_type_str());
-        add_marked_bytes_and_note_end(hr, marked_words * HeapWordSize);
+        add_marked_bytes_and_note_end(hr, _cm->live_bytes(region_idx));
       }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -443,9 +443,11 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             if (gcInfoHack && propertyName.equals("CompositeType"))
                 continue;
 
-            Method old =
-                getterMap.put(decapitalize(propertyName),
-                            method);
+            // Don't decapitalize if this is a record component name.
+            // We only decapitalize for getXxxx(), isXxxx(), and setXxxx()
+            String name = c.isRecord() && method.getName().equals(propertyName)
+                    ? propertyName : decapitalize(propertyName);
+            Method old = getterMap.put(name, method);
             if (old != null) {
                 final String msg =
                     "Class " + c.getName() + " has method name clash: " +
@@ -863,6 +865,9 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                     new CompositeBuilderViaFrom(targetClass, itemNames),
                 },
                 {
+                    new RecordCompositeBuilder(targetClass, itemNames),
+                },
+                {
                     new CompositeBuilderViaConstructor(targetClass, itemNames),
                 },
                 {
@@ -1139,14 +1144,14 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     /** Builder for when the target class has a constructor that is
         annotated with {@linkplain ConstructorParameters &#64;ConstructorParameters}
         or {@code @ConstructorProperties} so we can see the correspondence to getters.  */
-    private static final class CompositeBuilderViaConstructor
+    private static class CompositeBuilderViaConstructor
             extends CompositeBuilder {
 
         CompositeBuilderViaConstructor(Class<?> targetClass, String[] itemNames) {
             super(targetClass, itemNames);
         }
 
-        private String[] getConstPropValues(Constructor<?> ctr) {
+        String[] getConstPropValues(Constructor<?> ctr) {
             // is constructor annotated by javax.management.ConstructorParameters ?
             ConstructorParameters ctrProps = ctr.getAnnotation(ConstructorParameters.class);
             if (ctrProps != null) {
@@ -1171,8 +1176,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             }
 
             if (annotatedConstrList.isEmpty())
-                return "no constructor has either @ConstructorParameters " +
-                       "or @ConstructorProperties annotation";
+                return reportNoConstructor();
 
             annotatedConstructors = newList();
 
@@ -1196,9 +1200,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             // so we can test unambiguity.
             Set<BitSet> getterIndexSets = newSet();
             for (Constructor<?> constr : annotatedConstrList) {
-                String annotationName =
-                    constr.isAnnotationPresent(ConstructorParameters.class) ?
-                        "@ConstructorParameters" : "@ConstructorProperties";
+                String matchingMechanism = matchingMechanism(constr);
 
                 String[] propertyNames = getConstPropValues(constr);
 
@@ -1206,7 +1208,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                 if (paramTypes.length != propertyNames.length) {
                     final String msg =
                         "Number of constructor params does not match " +
-                        annotationName + " annotation: " + constr;
+                                referenceMechannism(matchingMechanism) +": " + constr;
                     throw new InvalidObjectException(msg);
                 }
 
@@ -1219,7 +1221,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                     String propertyName = propertyNames[i];
                     if (!getterMap.containsKey(propertyName)) {
                         String msg =
-                            annotationName + " includes name " + propertyName +
+                            matchingMechanism + " includes name " + propertyName +
                             " which does not correspond to a property";
                         for (String getterName : getterMap.keySet()) {
                             if (getterName.equalsIgnoreCase(propertyName)) {
@@ -1234,7 +1236,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                     paramIndexes[getterIndex] = i;
                     if (present.get(getterIndex)) {
                         final String msg =
-                            annotationName + " contains property " +
+                            matchingMechanism + " contains property " +
                             propertyName + " more than once: " + constr;
                         throw new InvalidObjectException(msg);
                     }
@@ -1243,7 +1245,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                     Type propertyType = getter.getGenericReturnType();
                     if (!propertyType.equals(paramTypes[i])) {
                         final String msg =
-                            annotationName + " gives property " + propertyName +
+                            matchingMechanism + " gives property " + propertyName +
                             " of type " + propertyType + " for parameter " +
                             " of type " + paramTypes[i] + ": " + constr;
                         throw new InvalidObjectException(msg);
@@ -1252,10 +1254,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
 
                 if (!getterIndexSets.add(present)) {
                     final String msg =
-                        "More than one constructor has " +
-                        "@ConstructorParameters or @ConstructorProperties " +
-                        "annotation with this set of names: " +
-                        Arrays.toString(propertyNames);
+                            reportMultipleConstructorsFoundFor(propertyNames);
                     throw new InvalidObjectException(msg);
                 }
 
@@ -1292,10 +1291,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                                  i = u.nextSetBit(i+1))
                                 names.add(itemNames[i]);
                             final String msg =
-                                "Constructors with @ConstructorParameters or " +
-                                "@ConstructorProperties annotation " +
-                                "would be ambiguous for these items: " +
-                                names;
+                                    reportConstructorsAmbiguousFor(names);
                             throw new InvalidObjectException(msg);
                         }
                     }
@@ -1305,7 +1301,41 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             return null; // success!
         }
 
-        final Object fromCompositeData(CompositeData cd,
+        String reportNoConstructor() {
+            return "no constructor has either @ConstructorParameters " +
+                    "or @ConstructorProperties annotation";
+        }
+
+        String matchingMechanism(Constructor<?> constr) {
+            return constr.isAnnotationPresent(ConstructorParameters.class) ?
+                    "@ConstructorParameters" : "@ConstructorProperties";
+        }
+
+        String referenceMechannism(String matchingMechanism) {
+            return matchingMechanism + " annotation";
+        }
+
+        String reportMultipleConstructorsFoundFor(String... propertyNames) {
+            return "More than one constructor has " +
+                    "@ConstructorParameters or @ConstructorProperties " +
+                    "annotation with this set of names: " +
+                    Arrays.toString(propertyNames);
+        }
+
+        String reportConstructorsAmbiguousFor(Set<String> names) {
+            return "Constructors with @ConstructorParameters or " +
+                    "@ConstructorProperties annotation " +
+                    "would be ambiguous for these items: " +
+                    names;
+        }
+
+        String reportNoConstructorFoundFor(Set<String> names) {
+            return  "No constructor has either @ConstructorParameters " +
+                    "or @ConstructorProperties annotation for this set of " +
+                    "items: " + names;
+        }
+
+        Object fromCompositeData(CompositeData cd,
                                        String[] itemNames,
                                        MXBeanMapping[] mappings)
                 throws InvalidObjectException {
@@ -1330,10 +1360,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             }
 
             if (max == null) {
-                final String msg =
-                    "No constructor has either @ConstructorParameters " +
-                    "or @ConstructorProperties annotation for this set of " +
-                    "items: " + ct.keySet();
+                final String msg = reportNoConstructorFoundFor(ct.keySet());
                 throw new InvalidObjectException(msg);
             }
 
@@ -1377,6 +1404,73 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         }
 
         private List<Constr> annotatedConstructors;
+    }
+
+    /** Builder for when the target class is a record */
+    private static final class RecordCompositeBuilder
+            extends CompositeBuilderViaConstructor {
+
+        RecordCompositeBuilder(Class<?> targetClass, String[] itemNames) {
+            super(targetClass, itemNames);
+        }
+
+        String[] getConstPropValues(Constructor<?> ctor) {
+            var components = getTargetClass().getRecordComponents();
+            var ptypes = ctor.getGenericParameterTypes();
+            if (components.length != ptypes.length) {
+                return super.getConstPropValues(ctor);
+            }
+            var len = components.length;
+            String[] res = new String[len];
+            for (int i=0; i < len ; i++) {
+                if (!ptypes[i].equals(components[i].getGenericType())) {
+                    return super.getConstPropValues(ctor);
+                }
+                res[i] = components[i].getName();
+            }
+            return res;
+        }
+
+        String applicable(Method[] getters) throws InvalidObjectException {
+            Class<?> targetClass = getTargetClass();
+            if (!targetClass.isRecord())
+                return "class is not a record";
+
+            return super.applicable(getters);
+        }
+
+        @Override
+        Object fromCompositeData(CompositeData cd, String[] itemNames, MXBeanMapping[] mappings)
+                throws InvalidObjectException {
+            return super.fromCompositeData(cd, itemNames, mappings);
+        }
+
+        String reportNoConstructor() {
+            return "canonical constructor for record not found";
+        }
+
+        String matchingMechanism(Constructor<?> constr) {
+            return "canonical constructor";
+        }
+
+        String referenceMechannism(String matchingMechanism) {
+            return matchingMechanism;
+        }
+
+        String reportMultipleConstructorsFoundFor(String... propertyNames) {
+            return "More than one constructor has this set of names: " +
+                    Arrays.toString(propertyNames);
+        }
+
+        String reportConstructorsAmbiguousFor(Set<String> names) {
+            return "Constructors would be ambiguous for these items: " +
+                    names;
+        }
+
+        String reportNoConstructorFoundFor(Set<String> names) {
+            return  "No constructor has this set of " +
+                    "items: " + names;
+        }
     }
 
     /** Builder for when the target class is an interface and contains
@@ -1504,7 +1598,16 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     public static String propertyName(Method m) {
         String rest = null;
         String name = m.getName();
-        if (name.startsWith("get"))
+        var c = m.getDeclaringClass();
+        if (c.isRecord()) {
+            for (var rc : c.getRecordComponents()) {
+                if (name.equals(rc.getName())
+                        && m.getReturnType() == rc.getType()) {
+                    rest = name;
+                    break;
+                }
+            }
+        } else if (name.startsWith("get"))
             rest = name.substring(3);
         else if (name.startsWith("is") && m.getReturnType() == boolean.class)
             rest = name.substring(2);

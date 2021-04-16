@@ -156,10 +156,11 @@ static void
 replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRasInfo *srcInfo,
                      const MTLRasterFormatInfo *rfi,
                      int dx1, int dy1, int dx2, int dy2) {
-    const int sw = srcInfo->bounds.x2 - srcInfo->bounds.x1;
-    const int sh = srcInfo->bounds.y2 - srcInfo->bounds.y1;
-    const int dw = dx2 - dx1;
-    const int dh = dy2 - dy1;
+    const int sw = MIN(srcInfo->bounds.x2 - srcInfo->bounds.x1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+    const int sh = MIN(srcInfo->bounds.y2 - srcInfo->bounds.y1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+    const int dw = MIN(dx2 - dx1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+    const int dh = MIN(dy2 - dy1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+
     if (dw < sw || dh < sh) {
         J2dTraceLn4(J2D_TRACE_ERROR, "replaceTextureRegion: dest size: (%d, %d) less than source size: (%d, %d)", dw, dh, sw, sh);
         return;
