@@ -82,7 +82,8 @@ public class TestSkipRebuildRemsetPhase {
         }
 
         private static Object alloc() {
-            // G1MixedGCLiveThresholdPercent=20
+            // Since G1MixedGCLiveThresholdPercent is 20%, make sure to allocate object larger than that
+            // so that it will not be collected and the expected message printed.
             final int objectSize = WhiteBox.getWhiteBox().g1RegionSize() / 3;
             Object ret = new byte[objectSize];
             return ret;
