@@ -575,7 +575,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   RegionSizeBytesMask = RegionSizeBytes - 1;
 
   guarantee(RegionCount == 0, "we should only set it once");
-  RegionCount = max_heap_size / RegionSizeBytes;
+  RegionCount = align_up(max_heap_size, RegionSizeBytes) / RegionSizeBytes;
   guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
 
   guarantee(HumongousThresholdWords == 0, "we should only set it once");
