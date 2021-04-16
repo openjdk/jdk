@@ -2436,7 +2436,7 @@ public class RandomSupport {
             // designed to work even if SALT_SHIFT does not evenly divide 64
             // (the number of bits in a long value).
             long bits = nextLong();
-            long multiplier = (1 << SALT_SHIFT) - 1;
+            long multiplier = (1L << SALT_SHIFT) - 1;
             long salt = multiplier << (64 - SALT_SHIFT);
             while ((salt & multiplier) != 0) {
                 long digit = Math.multiplyHigh(bits, multiplier);

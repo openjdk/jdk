@@ -64,7 +64,6 @@
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -224,10 +223,6 @@ void print_bytecode_count() {
 
 // General statistics printing (profiling ...)
 void print_statistics() {
-  if (MemProfiling) {
-    MemProfiler::disengage();
-  }
-
   if (CITime) {
     CompileBroker::print_times();
   }
@@ -330,6 +325,11 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     SystemDictionary::print();
+  }
+
+  if (PrintClassLoaderDataGraphAtExit) {
+    ResourceMark rm;
+    MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::print();
   }
 

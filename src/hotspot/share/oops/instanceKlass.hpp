@@ -361,6 +361,9 @@ class InstanceKlass: public Klass {
     return (_misc_flags & shared_loader_type_bits()) == 0;
   }
 
+  // Check if the class can be shared in CDS
+  bool is_shareable() const;
+
   void clear_shared_class_loader_type() {
     _misc_flags &= ~shared_loader_type_bits();
   }
@@ -1110,6 +1113,7 @@ public:
   klassItable itable() const;        // return klassItable wrapper
   Method* method_at_itable(InstanceKlass* holder, int index, TRAPS);
   Method* method_at_itable_or_null(InstanceKlass* holder, int index, bool& itable_entry_found);
+  int vtable_index_of_interface_method(Method* method);
 
 #if INCLUDE_JVMTI
   void adjust_default_methods(bool* trace_name_printed);
@@ -1260,7 +1264,7 @@ private:
   void mark_newly_obsolete_methods(Array<Method*>* old_methods, int emcp_method_count);
 #endif
   // log class name to classlist
-  void log_to_classlist(const ClassFileStream* cfs) const;
+  void log_to_classlist() const;
 public:
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
