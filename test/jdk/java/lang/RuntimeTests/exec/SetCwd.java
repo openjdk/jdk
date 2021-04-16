@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,52 +28,66 @@
  *          Runtime.exec(String[] command, String[] env, File path) and
  *          Runtime.exec(String command, String[] env, File path).
  *
- * @build SetCwd
- * @run shell setcwd.sh
+ * @library /test/lib
+ * @run testng/othervm SetCwd
  */
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
 import java.io.*;
 
+import static jdk.test.lib.Asserts.assertTrue;
+
 public class SetCwd {
-    public static void testExec(String cmd, String[] cmdarray, boolean flag)
-        throws Exception {
-        File dir = new File(".");
-        File[] files = dir.listFiles();
-        String curDir = dir.getCanonicalPath();
 
-        for (int i = 0; i < files.length; i++) {
-            File f = files[i];
-            if (f.isDirectory() && (new File(f, "SetCwd.class")).exists()) {
-                String newDir = f.getCanonicalPath();
-                // exec a new SetCwd in the sub directory
-                Process p = null;
-                if (flag) {
-                    p = Runtime.getRuntime().exec(cmd, null, f);
-                } else {
-                    p = Runtime.getRuntime().exec(cmdarray, null, f);
-                }
+    private static final String TEST_CLASSES = System.getProperty(
+            "test.classes", ".");
 
-                BufferedReader in = new BufferedReader
-                    (new InputStreamReader(p.getInputStream()));
-                // Read back output from child
-                String s = in.readLine();
-                if (!s.startsWith(newDir)) {
-                    throw new Exception("inconsistent directory after exec");
-                }
-                // Join on the child
-                p.waitFor();
-            }
-        }
-        System.out.println(curDir);
+    private static final String[] CMD_ARRAY = new String[2];
+
+    @BeforeTest
+    public static void setUp() throws Exception {
+        CMD_ARRAY[0] = System.getProperty("java.home") + File.separator +
+                "bin" + File.separator + "java";
+        CMD_ARRAY[1] = SimpleProcess.class.getName();
     }
 
-    public static void main (String args[]) throws Exception {
-        String cmdarray[] = new String[2];
-        cmdarray[0] = System.getProperty("java.home") + File.separator +
-            "bin" + File.separator + "java";
-        cmdarray[1] = "SetCwd";
-        String cmd = cmdarray[0] + " " + cmdarray[1];
-        // test the two new methods
-        testExec(cmd, null, true);
-        testExec(null, cmdarray, false);
+    @Test
+    public void testRuntimeExecWithArray() throws Exception {
+        Process process = Runtime.getRuntime().exec(CMD_ARRAY, null,
+                new File(TEST_CLASSES));
+        verifyProcessOutput(process);
+    }
+
+    @Test
+    public void testRuntimeExecWithString() throws Exception {
+        String cmd = String.join(" ", CMD_ARRAY);
+        Process process = Runtime.getRuntime().exec(cmd, null,
+                new File(TEST_CLASSES));
+        verifyProcessOutput(process);
+    }
+
+    // Verify the process has executed by comparing its output with the expected
+    private void verifyProcessOutput(Process process) throws Exception {
+        process.waitFor();
+        assertTrue(process.exitValue() == 0);
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()))) {
+            String line = reader.readLine();
+            if (!line.startsWith(TEST_CLASSES)) {
+                String error = String.format("Expected process output first line: " +
+                        "'%s' Actual: '%s'", TEST_CLASSES, line);
+                throw new Exception(error);
+            }
+        }
+    }
+
+    // This class main will be the entry point for test subprocesses
+    static class SimpleProcess {
+        public static void main (String[] args) throws Exception {
+            File dir = new File(".");
+            System.out.println(dir.getCanonicalPath());
+        }
     }
 }
