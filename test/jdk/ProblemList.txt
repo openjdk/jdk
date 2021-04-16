@@ -754,7 +754,6 @@ javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
 javax/swing/JInternalFrame/Test6325652.java 8224977 macosx-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099,8208565 macosx-all,linux-all
-javax/swing/UIDefaults/6302464/bug6302464.java 8199079 macosx-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
