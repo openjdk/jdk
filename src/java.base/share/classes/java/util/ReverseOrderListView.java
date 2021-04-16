@@ -291,7 +291,7 @@ class ReverseOrderListView<E> implements List<E> {
     // ========== List ==========
 
     public void add(int index, E element) {
-        base.add(base.size() - index - 1, element);
+        base.add(base.size() - index, element);
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {

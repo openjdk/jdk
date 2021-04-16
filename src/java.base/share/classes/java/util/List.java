@@ -789,7 +789,7 @@ public interface List<E> extends ReversibleCollection<E> {
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
      */
-    default void addFirst(E e) { this.add(e); }
+    default void addFirst(E e) { this.add(0, e); }
 
     /**
      * Adds an element at the end of this collection.
@@ -798,7 +798,7 @@ public interface List<E> extends ReversibleCollection<E> {
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
      */
-    default void addLast(E e) { this.add(this.size(), e); }
+    default void addLast(E e) { this.add(e); }
 
     /**
      * Gets the element at the front of this collection.
