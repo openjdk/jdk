@@ -357,7 +357,7 @@ void ConstantPool::add_dumped_interned_strings() {
 
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
-  if (!_pool_holder->is_linked() && MetaspaceShared::is_old_class(_pool_holder)) {
+  if (!_pool_holder->is_linked() && !_pool_holder->is_rewritten()) {
     return;
   }
   assert(is_constantPool(), "ensure C++ vtable is restored");
