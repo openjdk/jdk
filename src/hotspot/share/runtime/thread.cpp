@@ -2144,32 +2144,19 @@ void JavaThread::verify_not_published() {
 }
 #endif
 
-// Slow path when the native==>VM/Java barriers detect a safepoint is in
-// progress or when _suspend_flags is non-zero.
-// Current thread needs to self-suspend if there is a suspend request and/or
-// block if a safepoint is in progress.
-// Async exception ISN'T checked.
-// Note only the ThreadInVMfromNative transition can call this function
-// directly and when thread state is _thread_in_native_trans
-void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
-  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
-
-  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
-}
-
-// Slow path when the native==>VM/Java barriers detect a safepoint is in
-// progress or when _suspend_flags is non-zero.
-// Current thread needs to self-suspend if there is a suspend request and/or
-// block if a safepoint is in progress.
-// Also check for pending async exception (not including unsafe access error).
-// Note only the native==>VM/Java barriers can call this function and when
+// Slow path when the native==>Java barriers detect a safepoint/handshake is
+// pending, when _suspend_flags is non-zero or when we need to process a stack
+// watermark. Also check for pending async exceptions (except unsafe access error).
+// Note only the native==>Java barriers can call this function and when
 // thread state is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
+  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
+  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
+
   // Enable WXWrite: called directly from interpreter native wrapper.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
-  check_safepoint_and_suspend_for_native_trans(thread);
+  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
 
   // After returning from native, it could be that the stack frames are not
   // yet safe to use. We catch such situations in the subsequent stack watermark

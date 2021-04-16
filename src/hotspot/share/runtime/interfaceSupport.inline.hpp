@@ -111,18 +111,18 @@ class ThreadStateTransition : public StackObj {
   static inline void transition_from_native(JavaThread *thread, JavaThreadState to) {
     assert((to & 1) == 0, "odd numbers are transitions states");
     assert(thread->thread_state() == _thread_in_native, "coming from wrong thread state");
+    assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
+
     // Change to transition state and ensure it is seen by the VM thread.
     thread->set_thread_state_fence(_thread_in_native_trans);
 
     // We never install asynchronous exceptions when coming (back) in
     // to the runtime from native code because the runtime is not set
     // up to handle exceptions floating around at arbitrary points.
-    if (SafepointMechanism::should_process(thread) || thread->is_suspend_after_native()) {
-      JavaThread::check_safepoint_and_suspend_for_native_trans(thread);
-    }
-
+    SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
     thread->set_thread_state(to);
   }
+
  protected:
    void trans(JavaThreadState from, JavaThreadState to)  { transition(_thread, from, to); }
    void trans_from_java(JavaThreadState to)              { transition_from_java(_thread, to); }

@@ -1240,7 +1240,6 @@ class JavaThread: public Thread {
       }
     } while (do_self_suspend);
   }
-  static void check_safepoint_and_suspend_for_native_trans(JavaThread *thread);
   // Check for async exception in addition to safepoint and suspend request.
   static void check_special_condition_for_native_trans(JavaThread *thread);
 
