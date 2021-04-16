@@ -421,9 +421,9 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc"],
             configure_args: concat(
-                (input.build_cpu == "x64" ? common.configure_args_64bit : "--openjdk-target=x86_64-linux-gnu"),
+                (input.build_cpu == "x64" ? common.configure_args_64bit
+                 : "--openjdk-target=x86_64-linux-gnu"),
                 "--with-zlib=system", "--disable-dtrace",
-                (input.build_cpu != "x64" ? "--openjdk-target=x86_64-linux-gnu" : null),
                 (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
                     "--build=x86_64-unknown-linux-gnu" ] : [])),
         },
