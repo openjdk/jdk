@@ -104,7 +104,8 @@ class ConsoleIOContext extends IOContext {
 
     String prefix = "";
 
-    ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout) throws Exception {
+    ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout,
+                     boolean interactive, int columns, int rows) throws Exception {
         this.repl = repl;
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
@@ -122,9 +123,16 @@ class ConsoleIOContext extends IOContext {
             if (System.getProperty("test.jdk") != null) {
                 terminal = new TestTerminal(nonBlockingInput, cmdout);
             } else {
-                terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout);
-                setupReader = r -> r.unsetOpt(Option.BRACKETED_PASTE);
-                allowIncompleteInputs = true;
+                Size size = null;
+                if (columns != (-1) && rows != (-1)) {
+                    size = new Size(columns, rows);
+                }
+                terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout, interactive,
+                                                      size);
+                if (!interactive) {
+                    setupReader = r -> r.unsetOpt(Option.BRACKETED_PASTE);
+                    allowIncompleteInputs = true;
+                }
             }
             input.setInputStream(cmdin);
         } else {
@@ -1269,10 +1277,13 @@ class ConsoleIOContext extends IOContext {
         private final NonBlockingReader inputReader;
         private final Size bufferSize;
 
-        public ProgrammaticInTerminal(InputStream input, OutputStream output) throws Exception {
-            this(input, output, "dumb",
-                 new Size(80, DEFAULT_HEIGHT),
-                 new Size(Integer.MAX_VALUE - 1, DEFAULT_HEIGHT));
+        public ProgrammaticInTerminal(InputStream input, OutputStream output,
+                                       boolean interactive, Size size) throws Exception {
+            this(input, output, interactive ? "ansi" : "dumb",
+                 size != null ? size : new Size(80, DEFAULT_HEIGHT),
+                 size != null ? size
+                              : interactive ? new Size(80, DEFAULT_HEIGHT)
+                                            : new Size(Integer.MAX_VALUE - 1, DEFAULT_HEIGHT));
         }
 
         protected ProgrammaticInTerminal(InputStream input, OutputStream output,
