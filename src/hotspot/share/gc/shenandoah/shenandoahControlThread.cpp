@@ -48,6 +48,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
   _alloc_failure_waiters_lock(Mutex::leaf, "ShenandoahAllocFailureGC_lock", true, Monitor::_safepoint_check_always),
   _gc_waiters_lock(Mutex::leaf, "ShenandoahRequestedGC_lock", true, Monitor::_safepoint_check_always),
+  _control_lock(Mutex::leaf - 1, "ShenandoahControlGC_lock", true, Monitor::_safepoint_check_never),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
@@ -317,7 +318,13 @@ void ShenandoahControlThread::run_service() {
       sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
       last_sleep_adjust_time = current;
     }
-    os::naked_short_sleep(sleep);
+
+    {
+      // The timed wait is necessary because this thread has a responsibility to send
+      // 'alloc_words' to the pacer when it does not perform a GC.
+      MonitorLocker lock(&_control_lock, Mutex::_no_safepoint_check_flag);
+      lock.wait(ShenandoahControlIntervalMax);
+    }
   }
 
   // Wait for the actual stop(), can't leave run_service() earlier.
@@ -507,12 +514,18 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   while (current_gc_id < required_gc_id) {
     _gc_requested.set();
     _requested_gc_cause = cause;
+    notify_control_thread();
 
     if (cause != GCCause::_wb_breakpoint) {
       ml.wait();
     }
     current_gc_id = get_gc_id();
   }
+}
+
+void ShenandoahControlThread::notify_control_thread() {
+  MonitorLocker locker(&_control_lock, Mutex::_no_safepoint_check_flag);
+  _control_lock.notify();
 }
 
 void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req) {

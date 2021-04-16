@@ -69,6 +69,7 @@ private:
   // to make complete explicit cycle for for demanding customers.
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
+  Monitor _control_lock;
   ShenandoahPeriodicTask _periodic_task;
   ShenandoahPeriodicPacerNotify _periodic_pacer_notify_task;
 
@@ -116,6 +117,7 @@ private:
 
   bool check_soft_max_changed() const;
 
+  void notify_control_thread();
 public:
   // Constructor
   ShenandoahControlThread();
