@@ -1098,9 +1098,11 @@ void G1Policy::decide_on_conc_mark_initiation() {
 }
 
 void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {
+  bool mixed_gc_pending = false;
   if (has_rebuilt_remembered_sets) {
     G1CollectionSetCandidates* candidates = G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions());
     _collection_set->set_candidates(candidates);
+    mixed_gc_pending = next_gc_should_be_mixed("request mixed gcs", "request young-only gcs");
   }
 
   if (log_is_enabled(Trace, gc, liveness)) {
@@ -1108,7 +1110,6 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
     _g1h->heap_region_iterate(&cl);
   }
 
-  bool mixed_gc_pending = next_gc_should_be_mixed("request mixed gcs", "request young-only gcs");
   if (!mixed_gc_pending) {
     clear_collection_set_candidates();
     abort_time_to_mixed_tracking();

@@ -410,7 +410,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _max_concurrent_workers(0),
 
   _region_mark_stats(NEW_C_HEAP_ARRAY(G1RegionMarkStats, _g1h->max_reserved_regions(), mtGC)),
-  _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_reserved_regions(), mtGC))
+  _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_reserved_regions(), mtGC)),
+  _needs_remembered_set_rebuild(false)
 {
   assert(CGC_lock != NULL, "CGC_lock must be initialized");
 
@@ -1150,7 +1151,8 @@ void G1ConcurrentMark::remark() {
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
                                       _g1h->num_regions(), cl.total_selected_for_rebuild());
-      set_total_selected_for_rebuild(cl.total_selected_for_rebuild());
+
+      _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
     }
     {
       GCTraceTime(Debug, gc, phases) debug("Reclaim Empty Regions", _gc_timer_cm);
@@ -1321,13 +1323,13 @@ void G1ConcurrentMark::cleanup() {
   double start = os::elapsedTime();
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup before");
-  bool has_rebuilt_remembered_sets = (total_selected_for_rebuild() > 0);
-  if (has_rebuilt_remembered_sets) {
+
+  if (needs_remembered_set_rebuild()) {
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
     G1UpdateRemSetTrackingAfterRebuild cl(_g1h);
     _g1h->heap_region_iterate(&cl);
   } else {
-    log_debug(gc, remset, tracking)("No Remembered Sets To Update After Rebuild");
+    log_debug(gc, phases)("No Remembered Sets to update after rebuild");
   }
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
@@ -1343,7 +1345,7 @@ void G1ConcurrentMark::cleanup() {
 
   {
     GCTraceTime(Debug, gc, phases) debug("Finalize Concurrent Mark Cleanup", _gc_timer_cm);
-    policy->record_concurrent_mark_cleanup_end(has_rebuilt_remembered_sets);
+    policy->record_concurrent_mark_cleanup_end(needs_remembered_set_rebuild());
   }
 }
 
@@ -1958,8 +1960,8 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
 void G1ConcurrentMark::rebuild_rem_set_concurrently() {
   // If Remark did not select any regions for RemSet rebuild,
   // skip the rebuild remembered set phase
-  if (total_selected_for_rebuild() == 0) {
-    log_debug(gc, remset, tracking)("Skipping Remembered Set Rebuild. No Regions Selected For Rebuild.");
+  if (!needs_remembered_set_rebuild()) {
+    log_debug(gc, marking)("Skipping Remembered Set Rebuild. No regions selected for rebuild");
     return;
   }
   _g1h->rem_set()->rebuild_rem_set(this, _concurrent_workers, _worker_id_offset);
