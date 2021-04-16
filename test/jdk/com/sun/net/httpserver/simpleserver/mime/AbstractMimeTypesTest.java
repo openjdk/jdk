@@ -33,12 +33,11 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.Function;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import org.testng.annotations.BeforeTest;
@@ -54,7 +53,7 @@ public abstract class AbstractMimeTypesTest {
     static final boolean ENABLE_LOGGING = true;
     static final String FILE_NAME = "empty-file-of-type";
     final Properties ACTUAL_MIME_TYPES = new Properties();
-    final Map<String,String> MIME_TYPES_PER_EXTENSION = new LinkedHashMap<>();
+    final Properties EXPECTED_MIME_TYPES = new Properties();
     Path root;
 
     @BeforeTest
@@ -67,14 +66,16 @@ public abstract class AbstractMimeTypesTest {
             logger.addHandler(ch);
         }
         getActualOperatingSystemSpecificMimeTypes(ACTUAL_MIME_TYPES);
-        root = createFileTreeFromMimeTypes();
+        getExpectedOperatingSystemSpecificMimeTypes(EXPECTED_MIME_TYPES);
+        root = createFileTreeFromMimeTypes(EXPECTED_MIME_TYPES);
     }
 
-    private List<String> getFileTypes() {
-        return ACTUAL_MIME_TYPES
+
+    private List<String> getFileTypes(Properties input) {
+        return input
                 .entrySet()
                 .stream()
-                .map(entry -> deserialize((String) entry.getKey(), ";") )
+                .map(entry -> deserialize((String) entry.getValue(), ";") )
                 .filter(properties -> properties.containsKey("file_extensions") )
                 .flatMap(properties -> Arrays.asList(
                         ((String)properties.get("file_extensions")).split(",")
@@ -83,9 +84,32 @@ public abstract class AbstractMimeTypesTest {
                 .collect(Collectors.toList());
     }
 
-    private Path createFileTreeFromMimeTypes() throws IOException {
+    private Map<String,String> getMimeTypesPerFileType(Properties input) {
+        return input
+                .entrySet()
+                .stream()
+                .filter( entry -> ((String)entry.getValue()).contains("file_extensions"))
+                .flatMap(entry ->
+                        Arrays.asList(
+                                ((String)deserialize((String) entry.getValue(), ";")
+                                        .get("file_extensions")).split(",")
+                        )
+                        .stream()
+                        .map( extension ->
+                                Map.entry(extension, entry.getKey().toString())
+                        )
+                )
+                .collect(
+                      Collectors.toMap(
+                          entry -> entry.getKey(),
+                          entry -> entry.getValue()
+                      )
+                );
+    }
+
+    private Path createFileTreeFromMimeTypes(Properties properties) throws IOException {
         final Path root = Files.createDirectory(CWD.resolve(getClass().getSimpleName()));
-        for (String type : getFileTypes()) {
+        for (String type : getFileTypes(properties)) {
             Files.createFile(root.resolve(toFileName(type)));
         }
         return root;
@@ -98,6 +122,7 @@ public abstract class AbstractMimeTypesTest {
     protected Properties deserialize(String serialized) {
         return deserialize(serialized,null);
     }
+
     protected Properties deserialize(String serialized, String delimiter) {
         try {
             Properties properties = new Properties();
@@ -127,13 +152,23 @@ public abstract class AbstractMimeTypesTest {
     }
 
     protected abstract Properties getActualOperatingSystemSpecificMimeTypes(Properties properties) throws Exception;
-    protected abstract Properties getExpectedOperatingSystemSpecificMimeTypes() throws Exception;
+    protected abstract Properties getExpectedOperatingSystemSpecificMimeTypes(Properties properties) throws Exception;
+
+    @Test
+    public void testNoDuplicateFileExtensions() throws Exception {
+        List<String> fileTypesList = getFileTypes(ACTUAL_MIME_TYPES);
+        Set<String> fileTypesSet = new LinkedHashSet<>(fileTypesList);
+        assertEquals(
+                fileTypesList.size(),
+                fileTypesSet.size(),
+                "actual MIME types (JDK main codebase) contain duplicate file extensions"
+        );
+    }
 
     @Test
     public void verifyMimeTypeDefinitions() throws Exception {
-        Properties expectedOperatingSystemSpecificMimeTypes = getExpectedOperatingSystemSpecificMimeTypes();
         assertEquals(
-                expectedOperatingSystemSpecificMimeTypes,
+                EXPECTED_MIME_TYPES,
                 ACTUAL_MIME_TYPES,
                 "expected MIME types (JDK test codebase) differ from actual MIME types (JDK main codebase)"
         );
@@ -145,21 +180,30 @@ public abstract class AbstractMimeTypesTest {
         ss.start();
         try {
             final var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            for (String type : getFileTypes()) {
+            final Map<String, String> mimeTypesPerFileType = getMimeTypesPerFileType(EXPECTED_MIME_TYPES);
+            for (String fileExtension : getFileTypes(EXPECTED_MIME_TYPES)) {
                 final var uri = URI.create(
                                     "http://localhost:%s/%s".formatted(
                                             ss.getAddress().getPort(),
-                                            toFileName(type)
+                                            toFileName(fileExtension)
                                     )
                 );
                 final var request = HttpRequest.newBuilder(uri).build();
                 final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 assertEquals(response.statusCode(), 200);
-                assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
+                assertEquals(
+                        response.headers().firstValue("content-type").get(),
+                        mimeTypesPerFileType.get(fileExtension)
+                );
             }
         } finally {
             ss.stop(0);
         }
+    }
+
+    @Test
+    public void testUnKnownMimeTypeHeaders() throws Exception {
+        throw new UnsupportedOperationException("should test for unknown type, check docs for applicatiopn octet stream");
     }
 
 
