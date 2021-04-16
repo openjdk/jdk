@@ -700,7 +700,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   }
 }
 
-Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem, Node* toobig_false, Node* size_in_bytes,
+Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobig_false, Node* size_in_bytes,
                                  Node*& i_o, Node*& needgc_ctrl,
                                  Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
                                  intx prefetch_lines) const {
@@ -720,7 +720,7 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem,
   //       this will require extensive changes to the loop optimization in order to
   //       prevent a degradation of the optimization.
   //       See comment in memnode.hpp, around line 227 in class LoadPNode.
-  Node *eden_end = macro->make_load(ctrl, mem, eden_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node *eden_end = macro->make_load(toobig_false, mem, eden_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
 
   // We need a Region for the loop-back contended case.
   enum { fall_in_path = 1, contended_loopback_path = 2 };
@@ -743,7 +743,7 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem,
   // Load(-locked) the heap top.
   // See note above concerning the control input when using a TLAB
   Node *old_eden_top = UseTLAB
-    ? new LoadPNode      (ctrl, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered)
+    ? new LoadPNode      (toobig_false, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered)
     : new LoadPLockedNode(contended_region, contended_phi_rawmem, eden_top_adr, MemNode::acquire);
 
   macro->transform_later(old_eden_top);
