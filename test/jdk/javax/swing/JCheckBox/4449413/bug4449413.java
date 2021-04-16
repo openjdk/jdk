@@ -56,21 +56,18 @@ import java.util.concurrent.TimeUnit;
 
 public class bug4449413 extends JFrame {
 
-    private static final String INSTRUCTIONS = """
-            There are eight controls with black backgrounds.
-            Four enabled (on the left side) and four disabled (on the right side)
-            checkboxes and radiobuttons.
+    private static final String INSTRUCTIONS =
+            "There are eight controls with black backgrounds.\n" +
+            "Four enabled (on the left side) and four disabled (on the right side)\n" +
+            "checkboxes and radiobuttons.\n\n" +
+            "1. If at least one of the controls' check marks is not visible:\n" +
+            "   the test fails.\n";
 
-            1. If at least one of the controls' check marks is not visible:
-               the test fails.
-            """;
-
-    private static final String INSTRUCTIONS_ADDITIONS_METAL = """
-
-            2. Uncheck the "Use Ocean Theme" check box.
-               If now at least one of the controls' check marks is not visible:
-               the test fails.
-            """;
+    private static final String INSTRUCTIONS_ADDITIONS_METAL =
+            "\n" +
+            "2. Uncheck the \"Use Ocean Theme\" check box.\n" +
+            "   If now at least one of the controls' check marks is not visible:\n" +
+            "   the test fails.\n";
 
     private static final CountDownLatch latch = new CountDownLatch(1);
     private static volatile boolean failed = true;
