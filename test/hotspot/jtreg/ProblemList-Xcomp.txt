@@ -28,5 +28,3 @@
 #############################################################################
 
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
-
-runtime/logging/RedefineClasses.java 8265218 linux-x64
