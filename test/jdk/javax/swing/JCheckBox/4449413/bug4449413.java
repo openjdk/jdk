@@ -91,9 +91,12 @@ public class bug4449413 extends JFrame {
         });
 
         boolean timeoutHappened = !latch.await(2, TimeUnit.MINUTES);
-        if (instance != null) {
-            instance.dispose();
-        }
+
+        SwingUtilities.invokeAndWait(() -> {
+            if (instance != null) {
+                instance.dispose();
+            }
+        });
 
         System.out.println("Passed: " + !failed);
 
