@@ -26,6 +26,7 @@ package jdk.jfr.startupargs;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import sun.hotspot.WhiteBox;
 
 /**
  * @test
@@ -37,7 +38,9 @@ import jdk.test.lib.process.ProcessTools;
  *          java.management
  *          jdk.jfr
  *
- * @run main jdk.jfr.startupargs.TestBadOptionValues
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI jdk.jfr.startupargs.TestBadOptionValues
  */
 public class TestBadOptionValues {
 
@@ -136,8 +139,13 @@ public class TestBadOptionValues {
             "memorysize=1m,threadbuffersize=2m");
 
         // computed globalbuffersize smaller than threadbuffersize
-        test(FLIGHT_RECORDER_OPTIONS, "Decrease globalbuffersize or increase memorysize or adjust global/threadbuffersize",
-            "memorysize=1m,numglobalbuffers=256");
+        // test is on when vm page isn't larger than 4K, avoiding both buffer sizes align to vm page size
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        long smallPageSize = wb.getVMPageSize();
+        if (smallPageSize <= 4096) {
+            test(FLIGHT_RECORDER_OPTIONS, "Decrease globalbuffersize or increase memorysize or adjust global/threadbuffersize",
+                "memorysize=1m,numglobalbuffers=256");
+        }
 
         test(FLIGHT_RECORDER_OPTIONS, "Parsing error memory size value: invalid value",
             "threadbuffersize=a",
