@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Intel Corporation.
+ * Copyright (c) 2018, 2021, Intel Corporation.
  * Intel Short Vector Math Library (SVML) Source Code
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
