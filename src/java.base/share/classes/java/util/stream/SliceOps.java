@@ -105,7 +105,7 @@ final class SliceOps {
                                         long skip, long limit) {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
-        long adjustedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
+        long normalizedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
 
         return new ReferencePipeline.StatefulOp<T, T>(upstream, StreamShape.REFERENCE,
                                                       flags(limit)) {
@@ -114,7 +114,7 @@ final class SliceOps {
                 // For parallel streams, the exact output size is that reported by the slice op's spliterator,
                 // since a slice op is a stateful op whose spliterator is the source spliterator
                 // (see AbstractPipeline.sourceSpliterator).
-                // Otherwise, for sequential streams the extract output size that of the prior pipeline stage reduced
+                // Otherwise, for sequential streams the extact output size that of the prior pipeline stage reduced
                 // by the skip and limit
                 return isParallel() ? sourceSize
                     : calcSize(super.exactOutputSize(sourceSize), skip, normalizedLimit);
@@ -190,7 +190,7 @@ final class SliceOps {
             Sink<T> opWrapSink(int flags, Sink<T> sink) {
                 return new Sink.ChainedReference<>(sink) {
                     long n = skip;
-                    long m = adjustedLimit;
+                    long m = normalizedLimit;
 
                     @Override
                     public void begin(long size) {
@@ -237,10 +237,14 @@ final class SliceOps {
         return new IntPipeline.StatefulOp<Integer>(upstream, StreamShape.INT_VALUE,
                                                    flags(limit)) {
             @Override
-            long adjustSize(long size) {
-                // For parallel streams, spliterator size is already adjusted
-                return isParallel() ? super.adjustSize(size)
-                    : calcSize(super.adjustSize(size), skip, adjustedLimit);
+            long exactOutputSize(long sourceSize) {
+                // For parallel streams, the exact output size is that reported by the slice op's spliterator,
+                // since a slice op is a stateful op whose spliterator is the source spliterator
+                // (see AbstractPipeline.sourceSpliterator).
+                // Otherwise, for sequential streams the extact output size that of the prior pipeline stage reduced
+                // by the skip and limit
+                return isParallel() ? sourceSize
+                    : calcSize(super.exactOutputSize(sourceSize), skip, normalizedLimit);
             }
 
             Spliterator.OfInt unorderedSkipLimitSpliterator(
@@ -307,7 +311,7 @@ final class SliceOps {
             Sink<Integer> opWrapSink(int flags, Sink<Integer> sink) {
                 return new Sink.ChainedInt<>(sink) {
                     long n = skip;
-                    long m = adjustedLimit;
+                    long m = normalizedLimit;
 
                     @Override
                     public void begin(long size) {
@@ -349,15 +353,19 @@ final class SliceOps {
                                       long skip, long limit) {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
-        long adjustedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
+        long normalizedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
 
         return new LongPipeline.StatefulOp<Long>(upstream, StreamShape.LONG_VALUE,
                                                  flags(limit)) {
             @Override
-            long adjustSize(long size) {
-                // For parallel streams, spliterator size is already adjusted
-                return isParallel() ? super.adjustSize(size)
-                    : calcSize(super.adjustSize(size), skip, adjustedLimit);
+            long exactOutputSize(long sourceSize) {
+                // For parallel streams, the exact output size is that reported by the slice op's spliterator,
+                // since a slice op is a stateful op whose spliterator is the source spliterator
+                // (see AbstractPipeline.sourceSpliterator).
+                // Otherwise, for sequential streams the extact output size that of the prior pipeline stage reduced
+                // by the skip and limit
+                return isParallel() ? sourceSize
+                    : calcSize(super.exactOutputSize(sourceSize), skip, normalizedLimit);
             }
 
             Spliterator.OfLong unorderedSkipLimitSpliterator(
@@ -424,7 +432,7 @@ final class SliceOps {
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
                 return new Sink.ChainedLong<>(sink) {
                     long n = skip;
-                    long m = adjustedLimit;
+                    long m = normalizedLimit;
 
                     @Override
                     public void begin(long size) {
@@ -466,15 +474,19 @@ final class SliceOps {
                                           long skip, long limit) {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
-        long adjustedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
+        long normalizedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
 
         return new DoublePipeline.StatefulOp<Double>(upstream, StreamShape.DOUBLE_VALUE,
                                                      flags(limit)) {
             @Override
-            long adjustSize(long size) {
-                // For parallel streams, spliterator size is already adjusted
-                return isParallel() ? super.adjustSize(size)
-                    : calcSize(super.adjustSize(size), skip, adjustedLimit);
+            long exactOutputSize(long sourceSize) {
+                // For parallel streams, the exact output size is that reported by the slice op's spliterator,
+                // since a slice op is a stateful op whose spliterator is the source spliterator
+                // (see AbstractPipeline.sourceSpliterator).
+                // Otherwise, for sequential streams the extact output size that of the prior pipeline stage reduced
+                // by the skip and limit
+                return isParallel() ? sourceSize
+                    : calcSize(super.exactOutputSize(sourceSize), skip, normalizedLimit);
             }
 
             Spliterator.OfDouble unorderedSkipLimitSpliterator(
@@ -541,7 +553,7 @@ final class SliceOps {
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
                 return new Sink.ChainedDouble<>(sink) {
                     long n = skip;
-                    long m = adjustedLimit;
+                    long m = normalizedLimit;
 
                     @Override
                     public void begin(long size) {
