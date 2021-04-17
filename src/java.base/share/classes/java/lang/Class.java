@@ -2361,6 +2361,19 @@ public final class Class<T> implements java.io.Serializable,
      * Conversely, if {@link #isRecord()} returns {@code true}, then this method
      * returns a non-null value.
      *
+     * <p> This method can be used to find the record canonical constructor:
+     *
+     * <pre>{@code
+     * static <T extends Record>
+     * Constructor<T> getCanonicalConstructor(Class<T> cls)
+     *     throws NoSuchMethodException {
+     *   Class<?>[] paramTypes =
+     *     Arrays.stream(cls.getRecordComponents())
+     *           .map(RecordComponent::getType)
+     *           .toArray(Class<?>[]::new);
+     *   return cls.getDeclaredConstructor(paramTypes);
+     * }}</pre>
+     *
      * @return  An array of {@code RecordComponent} objects representing all the
      *          record components of this record class, or {@code null} if this
      *          class is not a record class
