@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Objects;
 
 /**
  * A character stream whose source is a string.
@@ -76,23 +77,26 @@ public class StringReader extends Reader {
     /**
      * Reads characters into a portion of an array.
      *
-     * @param      cbuf  Destination buffer
-     * @param      off   Offset at which to start writing characters
-     * @param      len   Maximum number of characters to read
+     * <p> If {@code len} is zero, then no characters are read and {@code 0} is
+     * returned; otherwise, there is an attempt to read at least one character.
+     * If no character is available because the stream is at its end, the value
+     * {@code -1} is returned; otherwise, at least one character is read and
+     * stored into {@code cbuf}.
      *
-     * @return     The number of characters read, or -1 if the end of the
-     *             stream has been reached
+     * @param      cbuf  {@inheritDoc}
+     * @param      off   {@inheritDoc}
+     * @param      len   {@inheritDoc}
      *
-     * @throws     IOException  If an I/O error occurs
-     * @throws     IndexOutOfBoundsException {@inheritDoc}
+     * @return     {@inheritDoc}
+     *
+     * @throws     IndexOutOfBoundsException  {@inheritDoc}
+     * @throws     IOException  {@inheritDoc}
      */
-    public int read(char cbuf[], int off, int len) throws IOException {
+    public int read(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
             ensureOpen();
-            if ((off < 0) || (off > cbuf.length) || (len < 0) ||
-                ((off + len) > cbuf.length) || ((off + len) < 0)) {
-                throw new IndexOutOfBoundsException();
-            } else if (len == 0) {
+            Objects.checkFromIndexSize(off, len, cbuf.length);
+            if (len == 0) {
                 return 0;
             }
             if (next >= length)

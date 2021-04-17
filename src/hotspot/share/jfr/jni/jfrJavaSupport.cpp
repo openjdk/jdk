@@ -139,7 +139,7 @@ void JfrJavaSupport::notify_all(jobject object, TRAPS) {
   HandleMark hm(THREAD);
   Handle h_obj(THREAD, resolve_non_null(object));
   assert(h_obj.not_null(), "invariant");
-  ObjectSynchronizer::jni_enter(h_obj, THREAD);
+  ObjectSynchronizer::jni_enter(h_obj, THREAD->as_Java_thread());
   ObjectSynchronizer::notifyall(h_obj, THREAD);
   ObjectSynchronizer::jni_exit(h_obj(), THREAD);
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
@@ -162,7 +162,7 @@ static void object_construction(JfrJavaArguments* args, JavaValue* result, Insta
   result->set_type(T_VOID); // constructor result type
   JfrJavaSupport::call_special(args, CHECK);
   result->set_type(T_OBJECT); // set back to original result type
-  result->set_jobject(cast_from_oop<jobject>(h_obj()));
+  result->set_oop(h_obj());
 }
 
 static void array_construction(JfrJavaArguments* args, JavaValue* result, InstanceKlass* klass, int array_length, TRAPS) {
@@ -175,7 +175,7 @@ static void array_construction(JfrJavaArguments* args, JavaValue* result, Instan
   ObjArrayKlass::cast(ak)->initialize(THREAD);
   HandleMark hm(THREAD);
   objArrayOop arr = ObjArrayKlass::cast(ak)->allocate(array_length, CHECK);
-  result->set_jobject(cast_from_oop<jobject>(arr));
+  result->set_oop(arr);
 }
 
 static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
@@ -199,7 +199,7 @@ static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
 static void handle_result(JavaValue* result, bool global_ref, Thread* t) {
   assert(result != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
-  const oop result_oop = (const oop)result->get_jobject();
+  const oop result_oop = result->get_oop();
   if (result_oop == NULL) {
     return;
   }
@@ -343,7 +343,7 @@ static void write_specialized_field(JfrJavaArguments* args, const Handle& h_oop,
       write_long_field(h_oop, fd, args->param(1).get_jlong());
       break;
     case T_OBJECT:
-      write_oop_field(h_oop, fd, (oop)args->param(1).get_jobject());
+      write_oop_field(h_oop, fd, args->param(1).get_oop());
       break;
     case T_ADDRESS:
       write_oop_field(h_oop, fd, JfrJavaSupport::resolve_non_null(args->param(1).get_jobject()));
@@ -376,7 +376,7 @@ static void read_specialized_field(JavaValue* result, const Handle& h_oop, field
       result->set_jlong(h_oop->long_field(fd->offset()));
       break;
     case T_OBJECT:
-      result->set_jobject(cast_from_oop<jobject>(h_oop->obj_field(fd->offset())));
+      result->set_oop(h_oop->obj_field(fd->offset()));
       break;
     default:
       ShouldNotReachHere();
@@ -457,7 +457,7 @@ void JfrJavaSupport::get_field_local_ref(JfrJavaArguments* args, TRAPS) {
   assert(result->get_type() == T_OBJECT, "invariant");
 
   read_field(args, result, CHECK);
-  const oop obj = (const oop)result->get_jobject();
+  const oop obj = result->get_oop();
 
   if (obj != NULL) {
     result->set_jobject(local_jni_handle(obj, THREAD));
@@ -472,7 +472,7 @@ void JfrJavaSupport::get_field_global_ref(JfrJavaArguments* args, TRAPS) {
   assert(result != NULL, "invariant");
   assert(result->get_type() == T_OBJECT, "invariant");
   read_field(args, result, CHECK);
-  const oop obj = (const oop)result->get_jobject();
+  const oop obj = result->get_oop();
   if (obj != NULL) {
     result->set_jobject(global_jni_handle(obj, THREAD));
   }
@@ -488,25 +488,27 @@ Klass* JfrJavaSupport::klass(const jobject handle) {
 }
 
 // caller needs ResourceMark
+const char* JfrJavaSupport::c_str(oop string, Thread* t) {
+  DEBUG_ONLY(check_java_thread_in_vm(t));
+  char* resource_copy = NULL;
+  const typeArrayOop value = java_lang_String::value(string);
+  if (value != NULL) {
+    const int length = java_lang_String::utf8_length(string, value);
+    resource_copy = NEW_RESOURCE_ARRAY_IN_THREAD(t, char, (length + 1));
+    if (resource_copy == NULL) {
+      JfrJavaSupport::throw_out_of_memory_error("Unable to allocate thread local native memory", t);
+      return NULL;
+    }
+    assert(resource_copy != NULL, "invariant");
+    java_lang_String::as_utf8_string(string, value, resource_copy, length + 1);
+  }
+  return resource_copy;
+}
+
+// caller needs ResourceMark
 const char* JfrJavaSupport::c_str(jstring string, Thread* t) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
-  if (string == NULL) {
-    return NULL;
-  }
-  const char* temp = NULL;
-  const oop java_string = resolve_non_null(string);
-  const typeArrayOop value = java_lang_String::value(java_string);
-  if (value != NULL) {
-    const size_t length = java_lang_String::utf8_length(java_string, value);
-    temp = NEW_RESOURCE_ARRAY_IN_THREAD(t, const char, (length + 1));
-    if (temp == NULL) {
-       JfrJavaSupport::throw_out_of_memory_error("Unable to allocate thread local native memory", t);
-       return NULL;
-    }
-    assert(temp != NULL, "invariant");
-    java_lang_String::as_utf8_string(java_string, value, const_cast<char*>(temp), (int) length + 1);
-  }
-  return temp;
+  return string != NULL ? c_str(resolve_non_null(string), t) : NULL;
 }
 
 /*
@@ -602,10 +604,9 @@ const char* const JDK_JFR_MODULE_NAME = "jdk.jfr";
 const char* const JDK_JFR_PACKAGE_NAME = "jdk/jfr";
 
 static bool is_jdk_jfr_module_in_readability_graph() {
-  Thread* const t = Thread::current();
   // take one of the packages in the module to be located and query for its definition.
   TempNewSymbol pkg_sym = SymbolTable::new_symbol(JDK_JFR_PACKAGE_NAME);
-  return Modules::is_package_defined(pkg_sym, Handle(), t);
+  return Modules::is_package_defined(pkg_sym, Handle());
 }
 
 static void print_module_resolution_error(outputStream* stream) {

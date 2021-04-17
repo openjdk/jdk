@@ -25,7 +25,7 @@
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
  *      8167967 8172528 8175200 8178830 8182257 8186332 8182765 8025091
- *      8203791 8184205 8249633
+ *      8203791 8184205 8249633 8261976
  * @summary Test of the JavaFX doclet features.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -176,7 +176,7 @@ public class TestJavaFX extends JavadocTester {
                     <dt>Since:</dt>
                     <dd>JavaFX 8.0</dd>""",
                 """
-                    <section class="property-summary" id="property.summary">
+                    <section class="property-summary" id="property-summary">
                     <h2>Property Summary</h2>
                     <div class="caption"><span>Properties</span></div>
                     <div class="summary-table three-column-summary">""",
@@ -223,7 +223,7 @@ public class TestJavaFX extends JavadocTester {
 
         checkOutput("pkg1/D.html", true,
                 """
-                    <h3 id="properties.inherited.from.class.pkg1.C">Properties inherited from class&\
+                    <h3 id="properties-inherited-from-class-pkg1.C">Properties inherited from class&\
                     nbsp;pkg1.<a href="C.html" title="class in pkg1">C</a></h3>
                     <code><a href="C.html#pausedProperty">paused</a>, <a href="C.html#rateProperty">rate</a></code></div>""");
 
@@ -246,7 +246,7 @@ public class TestJavaFX extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("pkg2/Test.html", true,
                 """
-                    <section class="property-details" id="property.detail">
+                    <section class="property-details" id="property-detail">
                     <h2>Property Details</h2>
                     <ul class="member-list">
                     <li>
@@ -276,7 +276,7 @@ public class TestJavaFX extends JavadocTester {
                     </ul>
                     </section>""",
                 """
-                    <section class="property-summary" id="property.summary">
+                    <section class="property-summary" id="property-summary">
                     <h2>Property Summary</h2>
                     <div class="caption"><span>Properties</span></div>
                     <div class="summary-table three-column-summary">""");

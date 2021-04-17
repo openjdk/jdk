@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,6 +99,18 @@ if [ "x$OUT" = x ]; then
     elif [ `uname -m` = mips64el ]; then
       OUT=mips64el-unknown-linux-gnu
     fi
+  fi
+fi
+
+# Test and fix cpu on macos-aarch64, uname -p reports arm, buildsys expects aarch64
+echo $OUT | grep arm-apple-darwin > /dev/null 2> /dev/null
+if test $? != 0; then
+  # The GNU version of uname may be on the PATH which reports arm64 instead
+  echo $OUT | grep arm64-apple-darwin > /dev/null 2> /dev/null
+fi
+if test $? = 0; then
+  if [ `uname -m` = arm64 ]; then
+    OUT=aarch64`echo $OUT | sed -e 's/[^-]*//'`
   fi
 fi
 

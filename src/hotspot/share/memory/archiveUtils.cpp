@@ -33,10 +33,11 @@
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;
@@ -236,8 +237,7 @@ void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t neede
 void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
   _rs = rs;
   _vs = vs;
-  // Start with 0 committed bytes. The memory will be committed as needed by
-  // MetaspaceShared::commit_to().
+  // Start with 0 committed bytes. The memory will be committed as needed.
   if (!_vs->initialize(*_rs, 0)) {
     fatal("Unable to allocate memory for shared space");
   }
@@ -247,7 +247,7 @@ void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
 
 void DumpRegion::pack(DumpRegion* next) {
   assert(!is_packed(), "sanity");
-  _end = (char*)align_up(_top, MetaspaceShared::reserved_space_alignment());
+  _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
   _is_packed = true;
   if (next != NULL) {
     next->_rs = _rs;
@@ -340,21 +340,12 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
       ClassListWriter w;
       w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
       CDSIndyInfo cii;
-      ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, THREAD);
+      ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, CHECK);
       GrowableArray<const char*>* indy_items = cii.items();
       for (int i = 0; i < indy_items->length(); i++) {
         w.stream()->print(" %s", indy_items->at(i));
       }
       w.stream()->cr();
     }
-  }
-}
-
-void ArchiveUtils::check_for_oom(oop exception) {
-  assert(exception != nullptr, "Sanity check");
-  if (exception->is_a(vmClasses::OutOfMemoryError_klass())) {
-    vm_direct_exit(-1,
-      err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-              SIZE_FORMAT "M", MaxHeapSize/M));
   }
 }

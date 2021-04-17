@@ -643,6 +643,9 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             exec.setToolProvider(JavaTool.JPACKAGE);
         } else {
             exec.setExecutable(JavaTool.JPACKAGE);
+            if (TKit.isWindows()) {
+                exec.setWindowsTmpDir(System.getProperty("java.io.tmpdir"));
+            }
         }
 
         return exec;
@@ -723,7 +726,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                         .filter(path -> path.getFileName().equals(appImageFileName))
                         .map(Path::toString)
                         .collect(Collectors.toList());
-                if (isImagePackageType() || TKit.isOSX()) {
+                if (isImagePackageType() || (TKit.isOSX() && !isRuntime())) {
                     List<String> expected = List.of(
                             AppImageFile.getPathInAppImage(rootDir).toString());
                     TKit.assertStringListEquals(expected, appImageFiles,
@@ -750,11 +753,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         if (!isRuntime()) {
             TKit.assertExecutableFileExists(appLauncherPath());
             TKit.assertFileExists(appLauncherCfgPath(null));
-        }
 
-        if (TKit.isOSX()) {
-            TKit.assertFileExists(appRuntimeDirectory().resolve(
-                    "Contents/MacOS/libjli.dylib"));
+            if (TKit.isOSX()) {
+                TKit.assertFileExists(appRuntimeDirectory().resolve(
+                        "Contents/MacOS/libjli.dylib"));
+            }
         }
 
         return this;

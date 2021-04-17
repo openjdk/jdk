@@ -23,9 +23,7 @@
  */
 
 #include "precompiled.hpp"
-
 #include <new>
-
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
@@ -47,13 +45,14 @@
 #include "logging/log.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "memory/iterator.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspace/testHelpers.hpp"
-#include "memory/iterator.hpp"
+#include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "memory/oopFactory.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -79,6 +78,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
@@ -252,21 +252,6 @@ WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
                 SpaceAlignment,
                 HeapAlignment);
 }
-WB_END
-
-#ifndef PRODUCT
-// Forward declaration
-void TestReservedSpace_test();
-void TestReserveMemorySpecial_test();
-void TestVirtualSpace_test();
-#endif
-
-WB_ENTRY(void, WB_RunMemoryUnitTests(JNIEnv* env, jobject o))
-#ifndef PRODUCT
-  TestReservedSpace_test();
-  TestReserveMemorySpecial_test();
-  TestVirtualSpace_test();
-#endif
 WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
@@ -848,6 +833,25 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   return (code->is_alive() && !code->is_marked_for_deoptimization());
 WB_END
 
+static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
+  if (comp == NULL) {
+    return true;
+  }
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp);
+  if (directive->ExcludeOption) {
+    return true;
+  }
+  return false;
+}
+
+static bool can_be_compiled_at_level(methodHandle& mh, jboolean is_osr, int level) {
+  if (is_osr) {
+    return CompilationPolicy::can_be_osr_compiled(mh, level);
+  } else {
+    return CompilationPolicy::can_be_compiled(mh, level);
+  }
+}
+
 WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level, jboolean is_osr))
   if (method == NULL || comp_level > CompilationPolicy::highest_compile_level()) {
     return false;
@@ -856,11 +860,32 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  if (is_osr) {
-    return CompilationPolicy::can_be_osr_compiled(mh, comp_level);
-  } else {
-    return CompilationPolicy::can_be_compiled(mh, comp_level);
+
+  // The ExcludeOption directive is evaluated lazily upon compilation attempt. If a method was not tried to be compiled by
+  // a compiler, yet, the method object is not set to be not compilable by that compiler. Thus, evaluate the compiler directive
+  // to exclude a compilation of 'method'.
+  if (comp_level == CompLevel_any) {
+    // Both compilers could have ExcludeOption set. Check all combinations.
+    bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), mh);
+    bool excluded_c2 = is_excluded_for_compiler(CompileBroker::compiler2(), mh);
+    if (excluded_c1 && excluded_c2) {
+      // Compilation of 'method' excluded by both compilers.
+      return false;
+    }
+
+    if (excluded_c1) {
+      // C1 only has ExcludeOption set: Check if compilable with C2.
+      return can_be_compiled_at_level(mh, is_osr, CompLevel_full_optimization);
+    } else if (excluded_c2) {
+      // C2 only has ExcludeOption set: Check if compilable with C1.
+      return can_be_compiled_at_level(mh, is_osr, CompLevel_simple);
+    }
+  } else if (comp_level > CompLevel_none && is_excluded_for_compiler(CompileBroker::compiler((int)comp_level), mh)) {
+    // Compilation of 'method' excluded by compiler used for 'comp_level'.
+    return false;
   }
+
+  return can_be_compiled_at_level(mh, is_osr, (int)comp_level);
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobject method))
@@ -1224,58 +1249,38 @@ WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
   return NULL;
 WB_END
 
-WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
-  int result;
-  if (GetVMFlag <JVM_FLAG_TYPE(int)> (thread, env, name, &result)) {
+template <typename T, int type_enum>
+jobject GetVMFlag_longBox(JNIEnv* env, JavaThread* thread, jstring name) {
+  T result;
+  if (GetVMFlag <T, type_enum> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
   return NULL;
+}
+
+WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(int)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUintVMFlag(JNIEnv* env, jobject o, jstring name))
-  uint result;
-  if (GetVMFlag <JVM_FLAG_TYPE(uint)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(uint)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetIntxVMFlag(JNIEnv* env, jobject o, jstring name))
-  intx result;
-  if (GetVMFlag <JVM_FLAG_TYPE(intx)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(intx)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUintxVMFlag(JNIEnv* env, jobject o, jstring name))
-  uintx result;
-  if (GetVMFlag <JVM_FLAG_TYPE(uintx)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(uintx)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
-  uint64_t result;
-  if (GetVMFlag <JVM_FLAG_TYPE(uint64_t)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(uint64_t)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetSizeTVMFlag(JNIEnv* env, jobject o, jstring name))
-  size_t result;
-  if (GetVMFlag <JVM_FLAG_TYPE(size_t)> (thread, env, name, &result)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(size_t)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))
@@ -1348,17 +1353,15 @@ WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring 
     ccstrValue = env->GetStringUTFChars(value, NULL);
     CHECK_JNI_EXCEPTION(env);
   }
-  ccstr ccstrResult = ccstrValue;
-  bool needFree;
   {
+    ccstr param = ccstrValue;
     ThreadInVMfromNative ttvfn(thread); // back to VM
-    needFree = SetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &ccstrResult);
+    if (SetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &param)) {
+      assert(param == NULL, "old value is freed automatically and not returned");
+    }
   }
   if (value != NULL) {
     env->ReleaseStringUTFChars(value, ccstrValue);
-  }
-  if (needFree) {
-    FREE_C_HEAP_ARRAY(char, ccstrResult);
   }
 WB_END
 
@@ -1703,23 +1706,30 @@ WB_END
 
 WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jboolean is_open,
                                 jstring version, jstring location, jobjectArray packages))
-  Modules::define_module(module, is_open, version, location, packages, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::define_module(h_module, is_open, version, location, packages, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExports(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
-  Modules::add_module_exports_qualified(from_module, package, to_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_to_module (THREAD, JNIHandles::resolve(to_module));
+  Modules::add_module_exports_qualified(h_from_module, package, h_to_module, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAllUnnamed(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports_to_all_unnamed(module, package, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports_to_all_unnamed(h_module, package, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAll(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports(module, package, NULL, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports(h_module, package, Handle(), CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jobject source_module))
-  Modules::add_reads_module(from_module, source_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_source_module (THREAD, JNIHandles::resolve(source_module));
+  Modules::add_reads_module(h_from_module, h_source_module, CHECK);
 WB_END
 
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
@@ -1749,8 +1759,14 @@ WB_ENTRY(jlong, WB_MetaspaceCapacityUntilGC(JNIEnv* env, jobject wb))
   return (jlong) MetaspaceGC::capacity_until_GC();
 WB_END
 
-WB_ENTRY(jlong, WB_MetaspaceReserveAlignment(JNIEnv* env, jobject wb))
-  return (jlong)Metaspace::reserve_alignment();
+// The function is only valid when CDS is available.
+WB_ENTRY(jlong, WB_MetaspaceSharedRegionAlignment(JNIEnv* env, jobject wb))
+#if INCLUDE_CDS
+  return (jlong)MetaspaceShared::core_region_alignment();
+#else
+  ShouldNotReachHere();
+  return 0L;
+#endif
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
@@ -2349,7 +2365,6 @@ static JNINativeMethod methods[] = {
   {CC"getCompressedOopsMaxHeapSize", CC"()J",
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
-  {CC"runMemoryUnitTests", CC"()V",                   (void*)&WB_RunMemoryUnitTests},
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
 #if INCLUDE_CDS
@@ -2475,7 +2490,7 @@ static JNINativeMethod methods[] = {
      CC"(Ljava/lang/ClassLoader;J)J",                 (void*)&WB_AllocateMetaspace },
   {CC"incMetaspaceCapacityUntilGC", CC"(J)J",         (void*)&WB_IncMetaspaceCapacityUntilGC },
   {CC"metaspaceCapacityUntilGC", CC"()J",             (void*)&WB_MetaspaceCapacityUntilGC },
-  {CC"metaspaceReserveAlignment", CC"()J",            (void*)&WB_MetaspaceReserveAlignment },
+  {CC"metaspaceSharedRegionAlignment", CC"()J",       (void*)&WB_MetaspaceSharedRegionAlignment },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },

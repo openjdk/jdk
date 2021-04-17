@@ -117,7 +117,7 @@ void vmClasses::resolve_all(TRAPS) {
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
-  ClassLoader::classLoader_init2(CHECK);
+  ClassLoader::classLoader_init2(THREAD);
 
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;
@@ -239,7 +239,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   }
 
   klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
-  SystemDictionary::load_shared_class_misc(klass, loader_data, CHECK);
+  SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int hash = dictionary->compute_hash(klass->name());
   dictionary->add_klass(hash, klass->name(), klass);

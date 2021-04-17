@@ -32,11 +32,11 @@
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/compilerThread.hpp"
-#include "compiler/oopMap.hpp"
 #include "oops/methodData.hpp"
 #include "runtime/thread.hpp"
 
 class CompileTask;
+class OopMapSet;
 
 // ciEnv
 //
@@ -380,7 +380,7 @@ public:
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
                        RTMState                  rtm_state = NoRTM,
-                       const GrowableArrayView<BufferBlob*>& native_invokers = GrowableArrayView<BufferBlob*>::EMPTY);
+                       const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY);
 
 
   // Access to certain well known ciObjects.

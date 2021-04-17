@@ -418,13 +418,7 @@ class ConstantPool : public Metadata {
 
   Klass* klass_at(int which, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, true, THREAD);
-  }
-
-  // Version of klass_at that doesn't save the resolution error, called during deopt
-  Klass* klass_at_ignore_error(int which, TRAPS) {
-    constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, false, THREAD);
+    return klass_at_impl(h_this, which, THREAD);
   }
 
   CPKlassSlot klass_slot_at(int which) const {
@@ -666,10 +660,10 @@ class ConstantPool : public Metadata {
   }
   // Compare a bootstrap specifier data in the operands arrays
   bool compare_operand_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
-                          int bsms_attribute_index2, TRAPS);
+                          int bsms_attribute_index2);
   // Find a bootstrap specifier data in the operands array
   int find_matching_operand(int bsms_attribute_index, const constantPoolHandle& search_cp,
-                            int operands_cur_len, TRAPS);
+                            int operands_cur_len);
   // Resize the operands array with delta_len and delta_size
   void resize_operands(int delta_len, int delta_size, TRAPS);
   // Extend the operands array with the length and size of the ext_cp operands
@@ -886,8 +880,7 @@ class ConstantPool : public Metadata {
 
   // Implementation of methods that needs an exposed 'this' pointer, in order to
   // handle GC while executing the method
-  static Klass* klass_at_impl(const constantPoolHandle& this_cp, int which,
-                              bool save_resolution_error, TRAPS);
+  static Klass* klass_at_impl(const constantPoolHandle& this_cp, int which, TRAPS);
   static oop string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS);
 
   static void trace_class_resolution(const constantPoolHandle& this_cp, Klass* k);
@@ -903,7 +896,6 @@ class ConstantPool : public Metadata {
                                                bool must_resolve, Handle if_not_available, TRAPS);
 
   // Exception handling
-  static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception);
   static void save_and_throw_exception(const constantPoolHandle& this_cp, int which, constantTag tag, TRAPS);
 
  public:
@@ -911,15 +903,15 @@ class ConstantPool : public Metadata {
   static void throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS);
 
   // Merging ConstantPool* support:
-  bool compare_entry_to(int index1, const constantPoolHandle& cp2, int index2, TRAPS);
+  bool compare_entry_to(int index1, const constantPoolHandle& cp2, int index2);
   void copy_cp_to(int start_i, int end_i, const constantPoolHandle& to_cp, int to_i, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
     copy_cp_to_impl(h_this, start_i, end_i, to_cp, to_i, THREAD);
   }
   static void copy_cp_to_impl(const constantPoolHandle& from_cp, int start_i, int end_i, const constantPoolHandle& to_cp, int to_i, TRAPS);
-  static void copy_entry_to(const constantPoolHandle& from_cp, int from_i, const constantPoolHandle& to_cp, int to_i, TRAPS);
+  static void copy_entry_to(const constantPoolHandle& from_cp, int from_i, const constantPoolHandle& to_cp, int to_i);
   static void copy_operands(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
-  int  find_matching_entry(int pattern_i, const constantPoolHandle& search_cp, TRAPS);
+  int  find_matching_entry(int pattern_i, const constantPoolHandle& search_cp);
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }
   void increment_and_save_version(int version) {

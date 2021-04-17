@@ -1693,8 +1693,8 @@ class G1RebuildRemSetTask: public AbstractGangTask {
         // Step to the next live object within the MemRegion if needed.
         if (is_live(_current)) {
           // Non-objArrays were scanned by the previous part of that region.
-          if (_current < mr.start() && !oop(_current)->is_objArray()) {
-            _current += oop(_current)->size();
+          if (_current < mr.start() && !cast_to_oop(_current)->is_objArray()) {
+            _current += cast_to_oop(_current)->size();
             // We might have positioned _current on a non-live object. Reposition to the next
             // live one if needed.
             move_if_below_tams();
@@ -1715,7 +1715,7 @@ class G1RebuildRemSetTask: public AbstractGangTask {
       }
 
       oop next() const {
-        oop result = oop(_current);
+        oop result = cast_to_oop(_current);
         assert(is_live(_current),
                "Object " PTR_FORMAT " must be live TAMS " PTR_FORMAT " below %d mr " PTR_FORMAT " " PTR_FORMAT " outside %d",
                p2i(_current), p2i(_tams), _tams > _current, p2i(_mr.start()), p2i(_mr.end()), _mr.contains(result));
@@ -1739,7 +1739,7 @@ class G1RebuildRemSetTask: public AbstractGangTask {
       size_t marked_words = 0;
 
       if (hr->is_humongous()) {
-        oop const humongous_obj = oop(hr->humongous_start_region()->bottom());
+        oop const humongous_obj = cast_to_oop(hr->humongous_start_region()->bottom());
         if (is_humongous_live(humongous_obj, bitmap, top_at_mark_start, top_at_rebuild_start)) {
           // We need to scan both [bottom, TAMS) and [TAMS, top_at_rebuild_start);
           // however in case of humongous objects it is sufficient to scan the encompassing
@@ -1821,7 +1821,7 @@ public:
                                         "TAMS " PTR_FORMAT " "
                                         "TARS " PTR_FORMAT,
                                         region_idx,
-                                        _cm->liveness(region_idx) * HeapWordSize,
+                                        _cm->live_bytes(region_idx),
                                         time.seconds() * 1000.0,
                                         marked_bytes,
                                         p2i(hr->bottom()),

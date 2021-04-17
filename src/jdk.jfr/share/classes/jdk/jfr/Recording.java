@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public final class Recording implements Closeable {
      *         FlightRecorderPermission "accessFlightRecorder" is not set.
      */
     public Recording() {
-        this(new HashMap<String, String>());
+        this(Map.of());
      }
 
     /**
@@ -436,7 +436,7 @@ public final class Recording implements Closeable {
          * @since 14
          */
         /*package private*/ void setFlushInterval(Duration interval) {
-            Objects.nonNull(interval);
+            Objects.requireNonNull(interval);
             if (interval.isNegative()) {
                 throw new IllegalArgumentException("Stream interval can't be negative");
             }

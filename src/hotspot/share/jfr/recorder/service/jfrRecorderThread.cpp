@@ -97,7 +97,7 @@ bool JfrRecorderThread::start(JfrCheckpointManager* cp_manager, JfrPostBox* post
   create_thread_args.push_oop(SystemDictionary::java_system_loader());
 
   JfrJavaSupport::call_static(&create_thread_args, CHECK_false);
-  instanceHandle h_thread_oop(THREAD, (instanceOop)result.get_jobject());
+  instanceHandle h_thread_oop(THREAD, (instanceOop)result.get_oop());
   assert(h_thread_oop.not_null(), "invariant");
   // attempt thread start
   Thread* const t = start_thread(h_thread_oop, recorderthread_entry,THREAD);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.awt.peer.WindowPeer;
 import java.util.Objects;
 
 import sun.java2d.SunGraphicsEnvironment;
+import sun.java2d.MacOSFlags;
+import sun.java2d.metal.MTLGraphicsConfig;
 import sun.java2d.opengl.CGLGraphicsConfig;
 
 import static java.awt.peer.ComponentPeer.SET_BOUNDS;
@@ -54,7 +56,10 @@ public final class CGraphicsDevice extends GraphicsDevice
     private volatile Rectangle bounds;
     private volatile int scale;
 
-    private final GraphicsConfiguration config;
+    private GraphicsConfiguration config;
+    private static boolean metalPipelineEnabled = false;
+    private static boolean oglPipelineEnabled = false;
+
 
     private static AWTPermission fullScreenExclusivePermission;
 
@@ -63,7 +68,64 @@ public final class CGraphicsDevice extends GraphicsDevice
 
     public CGraphicsDevice(final int displayID) {
         this.displayID = displayID;
-        config = CGLGraphicsConfig.getConfig(this);
+
+        if (MacOSFlags.isMetalEnabled()) {
+            // Try to create MTLGraphicsConfig, if it fails,
+            // try to create CGLGraphicsConfig as a fallback
+            this.config = MTLGraphicsConfig.getConfig(this, displayID);
+
+            if (this.config != null) {
+                metalPipelineEnabled = true;
+            } else {
+                // Try falling back to OpenGL pipeline
+                if (MacOSFlags.isMetalVerbose()) {
+                    System.out.println("Metal rendering pipeline" +
+                        " initialization failed,using OpenGL" +
+                        " rendering pipeline");
+                }
+
+                this.config = CGLGraphicsConfig.getConfig(this);
+
+                if (this.config != null) {
+                    oglPipelineEnabled = true;
+                }
+            }
+        } else {
+            // Try to create CGLGraphicsConfig, if it fails,
+            // try to create MTLGraphicsConfig as a fallback
+            this.config = CGLGraphicsConfig.getConfig(this);
+
+            if (this.config != null) {
+                oglPipelineEnabled = true;
+            } else {
+                // Try falling back to Metal pipeline
+                if (MacOSFlags.isOGLVerbose()) {
+                    System.out.println("OpenGL rendering pipeline" +
+                        " initialization failed,using Metal" +
+                        " rendering pipeline");
+                }
+
+                this.config = MTLGraphicsConfig.getConfig(this, displayID);
+
+                if (this.config != null) {
+                    metalPipelineEnabled = true;
+                }
+            }
+        }
+
+        if (!metalPipelineEnabled && !oglPipelineEnabled) {
+            // This indicates fallback to other rendering pipeline also failed.
+            // Should never reach here
+            throw new InternalError("Error - unable to initialize any" +
+                " rendering pipeline.");
+        }
+
+        if (metalPipelineEnabled && MacOSFlags.isMetalVerbose()) {
+            System.out.println("Metal pipeline enabled on screen " + displayID);
+        } else if (oglPipelineEnabled && MacOSFlags.isOGLVerbose()) {
+            System.out.println("OpenGL pipeline enabled on screen " + displayID);
+        }
+
         // initializes default device state, might be redundant step since we
         // call "displayChanged()" later anyway, but we do not want to leave the
         // device in an inconsistent state after construction
@@ -263,6 +325,10 @@ public final class CGraphicsDevice extends GraphicsDevice
     @Override
     public DisplayMode[] getDisplayModes() {
         return nativeGetDisplayModes(displayID);
+    }
+
+    public static boolean usingMetalPipeline() {
+        return metalPipelineEnabled;
     }
 
     private void initScaleFactor() {

@@ -30,6 +30,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -60,6 +61,7 @@
 #include "memory/iterator.hpp"
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -1297,5 +1299,5 @@ oop GenCollectedHeap::handle_failed_promotion(Generation* old_gen,
   if (result != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
   }
-  return oop(result);
+  return cast_to_oop(result);
 }

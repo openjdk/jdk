@@ -112,8 +112,7 @@ Klass* AOTCodeHeap::lookup_klass(const char* name, int len, const Method* method
     log_debug(aot, class, resolve)("Probe failed for AOT class %s", name);
     return NULL;
   }
-  Klass* k = SystemDictionary::find_instance_or_array_klass(sym, loader, protection_domain, thread);
-  assert(!thread->has_pending_exception(), "should not throw");
+  Klass* k = SystemDictionary::find_instance_or_array_klass(sym, loader, protection_domain);
 
   if (k != NULL) {
     log_info(aot, class, resolve)("%s %s (lookup)", caller->method_holder()->external_name(), k->external_name());

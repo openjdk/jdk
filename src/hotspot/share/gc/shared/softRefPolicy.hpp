@@ -45,9 +45,7 @@ class SoftRefPolicy {
 
   bool should_clear_all_soft_refs() { return _should_clear_all_soft_refs; }
   void set_should_clear_all_soft_refs(bool v) { _should_clear_all_soft_refs = v; }
-  // Returns the current value of _should_clear_all_soft_refs.
-  // _should_clear_all_soft_refs is set to false as a side effect.
-  bool use_should_clear_all_soft_refs(bool v);
+
   bool all_soft_refs_clear() { return _all_soft_refs_clear; }
   void set_all_soft_refs_clear(bool v) { _all_soft_refs_clear = v; }
 

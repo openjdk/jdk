@@ -55,7 +55,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -1033,6 +1033,11 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
 void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // cpu
   st->print("CPU:");
+#if defined(__APPLE__) && !defined(ZERO)
+   if (VM_Version::is_cpu_emulated()) {
+     st->print(" (EMULATED)");
+   }
+#endif
   st->print(" total %d", os::processor_count());
   // It's not safe to query number of active processors after crash
   // st->print("(active %d)", os::active_processor_count()); but we can

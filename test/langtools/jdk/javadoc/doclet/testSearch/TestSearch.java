@@ -25,7 +25,7 @@
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
- *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994
+ *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994 8263528
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -420,8 +420,8 @@ public class TestSearch extends JavadocTester {
                 "<div class=\"nav-list-search\">",
                 """
                     <label for="search">SEARCH:</label>
-                    <input type="text" id="search" value="search" disabled="disabled">
-                    <input type="reset" id="reset" value="reset" disabled="disabled">
+                    <input type="text" id="search-input" value="search" disabled="disabled">
+                    <input type="reset" id="reset-button" value="reset" disabled="disabled">
                     """);
         checkOutput(fileName, true,
                 "<div class=\"flex-box\">");

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 
+#include "compiler/oopMap.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -48,7 +49,7 @@
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -124,10 +125,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
   // Degenerated GC may carry concurrent root flags when upgrading to
   // full GC. We need to reset it before mutators resume.
-  if (ClassUnloading) {
-    heap->set_concurrent_strong_root_in_progress(false);
-    heap->set_concurrent_weak_root_in_progress(false);
-  }
+  heap->set_concurrent_strong_root_in_progress(false);
+  heap->set_concurrent_weak_root_in_progress(false);
 
   heap->set_full_gc_in_progress(true);
 
@@ -179,15 +178,14 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
     rp->abandon_partial_discovery();
 
-    // f. Set back forwarded objects bit back, in case some steps above dropped it.
-    heap->set_has_forwarded_objects(has_forwarded_objects);
-
-    // g. Sync pinned region status from the CP marks
+    // f. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     // The rest of prologue:
     BiasedLocking::preserve_marks();
     _preserved_marks->init(heap->workers()->active_workers());
+
+    assert(heap->has_forwarded_objects() == has_forwarded_objects, "This should not change");
   }
 
   if (UseTLAB) {
@@ -363,7 +361,7 @@ public:
     assert(_compact_point + obj_size <= _to_region->end(), "must fit");
     shenandoah_assert_not_forwarded(NULL, p);
     _preserved_marks->push_if_necessary(p, p->mark());
-    p->forward_to(oop(_compact_point));
+    p->forward_to(cast_to_oop(_compact_point));
     _compact_point += obj_size;
   }
 };
@@ -462,7 +460,7 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
 
     if (r->is_humongous_start() && r->is_stw_move_allowed()) {
       // From-region candidate: movable humongous region
-      oop old_obj = oop(r->bottom());
+      oop old_obj = cast_to_oop(r->bottom());
       size_t words_size = old_obj->size();
       size_t num_regions = ShenandoahHeapRegion::required_regions(words_size * HeapWordSize);
 
@@ -471,7 +469,7 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
       if (start >= to_begin && start != r->index()) {
         // Fits into current window, and the move is non-trivial. Record the move then, and continue scan.
         _preserved_marks->get(0)->push_if_necessary(old_obj, old_obj->mark());
-        old_obj->forward_to(oop(heap->get_region(start)->bottom()));
+        old_obj->forward_to(cast_to_oop(heap->get_region(start)->bottom()));
         to_end = start;
         continue;
       }
@@ -519,7 +517,7 @@ public:
 
   void heap_region_do(ShenandoahHeapRegion* r) {
     if (r->is_humongous_start()) {
-      oop humongous_obj = oop(r->bottom());
+      oop humongous_obj = cast_to_oop(r->bottom());
       if (!_ctx->is_marked(humongous_obj)) {
         assert(!r->has_live(),
                "Region " SIZE_FORMAT " is not marked, should not have live", r->index());
@@ -844,7 +842,7 @@ public:
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
       HeapWord* compact_to = cast_from_oop<HeapWord*>(p->forwardee());
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
-      oop new_obj = oop(compact_to);
+      oop new_obj = cast_to_oop(compact_to);
       new_obj->init_mark();
     }
   }
@@ -941,7 +939,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
   for (size_t c = heap->num_regions(); c > 0; c--) {
     ShenandoahHeapRegion* r = heap->get_region(c - 1);
     if (r->is_humongous_start()) {
-      oop old_obj = oop(r->bottom());
+      oop old_obj = cast_to_oop(r->bottom());
       if (!old_obj->is_forwarded()) {
         // No need to move the object, it stays at the same slot
         continue;
@@ -960,7 +958,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
                                    heap->get_region(new_start)->bottom(),
                                    words_size);
 
-      oop new_obj = oop(heap->get_region(new_start)->bottom());
+      oop new_obj = cast_to_oop(heap->get_region(new_start)->bottom());
       new_obj->init_mark();
 
       {

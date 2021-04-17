@@ -96,13 +96,13 @@ import com.sun.jndi.ldap.ext.StartTlsResponseImpl;
  * @author Rosanna Lee
  */
 
-final public class LdapCtx extends ComponentDirContext
+public final class LdapCtx extends ComponentDirContext
     implements EventDirContext, LdapContext {
 
     /*
      * Used to store arguments to the search method.
      */
-    final static class SearchArgs {
+    static final class SearchArgs {
         Name name;
         String filter;
         SearchControls cons;

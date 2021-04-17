@@ -825,59 +825,95 @@ bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;
 GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = NULL;
 
+#ifdef ASSERT
+inline static void assert_valid_static_string_field(fieldDescriptor* fd) {
+  assert(fd->has_initial_value(), "caller should have checked this");
+  assert(fd->field_type() == T_OBJECT, "caller should have checked this");
+  // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
+  // during DumpSharedSpaces
+  assert(fd->signature()->equals("Ljava/lang/String;"), "just checking");
+}
+#endif
+
+static void initialize_static_string_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
+  DEBUG_ONLY(assert_valid_static_string_field(fd);)
+  oop string = fd->string_initial_value(CHECK);
+  mirror()->obj_field_put(fd->offset(), string);
+}
+
+#if INCLUDE_CDS_JAVA_HEAP
+static void initialize_static_string_field_for_dump(fieldDescriptor* fd, Handle mirror) {
+  DEBUG_ONLY(assert_valid_static_string_field(fd);)
+  assert(DumpSharedSpaces, "must be");
+  if (HeapShared::is_archived_object(mirror())) {
+    // Archive the String field and update the pointer.
+    oop s = mirror()->obj_field(fd->offset());
+    oop archived_s = StringTable::create_archived_string(s);
+    mirror()->obj_field_put(fd->offset(), archived_s);
+  } else {
+    guarantee(false, "Unexpected");
+  }
+}
+#endif
+
+static void initialize_static_primitive_field(fieldDescriptor* fd, Handle mirror) {
+  assert(fd->has_initial_value(), "caller should have checked this");
+  BasicType t = fd->field_type();
+  switch (t) {
+  case T_BYTE:
+    mirror()->byte_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_BOOLEAN:
+    mirror()->bool_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_CHAR:
+    mirror()->char_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_SHORT:
+    mirror()->short_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_INT:
+    mirror()->int_field_put(fd->offset(), fd->int_initial_value());
+    break;
+  case T_FLOAT:
+    mirror()->float_field_put(fd->offset(), fd->float_initial_value());
+    break;
+  case T_DOUBLE:
+    mirror()->double_field_put(fd->offset(), fd->double_initial_value());
+    break;
+  case T_LONG:
+    mirror()->long_field_put(fd->offset(), fd->long_initial_value());
+    break;
+  default:
+    // Illegal ConstantValue attribute in class file should have been
+    // caught during classfile parsing.
+    ShouldNotReachHere();
+  }
+}
+
 static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
   assert(mirror.not_null() && fd->is_static(), "just checking");
   if (fd->has_initial_value()) {
-    BasicType t = fd->field_type();
-    switch (t) {
-      case T_BYTE:
-        mirror()->byte_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_BOOLEAN:
-        mirror()->bool_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_CHAR:
-        mirror()->char_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_SHORT:
-        mirror()->short_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_INT:
-        mirror()->int_field_put(fd->offset(), fd->int_initial_value());
-        break;
-      case T_FLOAT:
-        mirror()->float_field_put(fd->offset(), fd->float_initial_value());
-        break;
-      case T_DOUBLE:
-        mirror()->double_field_put(fd->offset(), fd->double_initial_value());
-        break;
-      case T_LONG:
-        mirror()->long_field_put(fd->offset(), fd->long_initial_value());
-        break;
-      case T_OBJECT:
-        {
-          // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
-          // during DumpSharedSpaces
-          assert(fd->signature()->equals("Ljava/lang/String;"),
-                 "just checking");
-          if (DumpSharedSpaces && HeapShared::is_archived_object(mirror())) {
-            // Archive the String field and update the pointer.
-            oop s = mirror()->obj_field(fd->offset());
-            oop archived_s = StringTable::create_archived_string(s);
-            mirror()->obj_field_put(fd->offset(), archived_s);
-          } else {
-            oop string = fd->string_initial_value(CHECK);
-            mirror()->obj_field_put(fd->offset(), string);
-          }
-        }
-        break;
-      default:
-        THROW_MSG(vmSymbols::java_lang_ClassFormatError(),
-                  "Illegal ConstantValue attribute in class file");
+    if (fd->field_type() != T_OBJECT) {
+      initialize_static_primitive_field(fd, mirror);
+    } else {
+      initialize_static_string_field(fd, mirror, CHECK);
     }
   }
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+static void initialize_static_field_for_dump(fieldDescriptor* fd, Handle mirror) {
+  assert(mirror.not_null() && fd->is_static(), "just checking");
+  if (fd->has_initial_value()) {
+    if (fd->field_type() != T_OBJECT) {
+      initialize_static_primitive_field(fd, mirror);
+    } else {
+      initialize_static_string_field_for_dump(fd, mirror);
+    }
+  }
+}
+#endif
 
 void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   assert(InstanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
@@ -932,7 +968,7 @@ void java_lang_Class::initialize_mirror_fields(Klass* k,
 }
 
 // Set the java.lang.Module module field in the java_lang_Class mirror
-void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle module, TRAPS) {
+void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Handle mirror, Handle module) {
   if (module.is_null()) {
     // During startup, the module may be NULL only if java.base has not been defined yet.
     // Put the class on the fixup_module_list to patch later when the java.lang.Module
@@ -941,7 +977,7 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
 
     bool javabase_was_defined = false;
     {
-      MutexLocker m1(THREAD, Module_lock);
+      MutexLocker m1(current, Module_lock);
       // Keep list of classes needing java.base module fixup
       if (!ModuleEntryTable::javabase_defined()) {
         assert(k->java_mirror() != NULL, "Class's mirror is null");
@@ -958,7 +994,7 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
       assert(javabase_entry != NULL && javabase_entry->module() != NULL,
              "Setting class module field, " JAVA_BASE_NAME " should be defined");
-      Handle javabase_handle(THREAD, javabase_entry->module());
+      Handle javabase_handle(current, javabase_entry->module());
       set_module(mirror(), javabase_handle());
     }
   } else {
@@ -991,7 +1027,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
   // to support Class.getModifiers().  Instance classes recalculate
   // the cached flags after the class file is parsed, but before the
   // class is put into the system dictionary.
-  int computed_modifiers = k->compute_modifier_flags(CHECK);
+  int computed_modifiers = k->compute_modifier_flags();
   k->set_modifier_flags(computed_modifiers);
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
@@ -1051,7 +1087,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
     // Set the module field in the java_lang_Class instance.  This must be done
     // after the mirror is set.
-    set_mirror_module_field(k, mirror, module, THREAD);
+    set_mirror_module_field(THREAD->as_Java_thread(), k, mirror, module);
 
     if (comp_mirror() != NULL) {
       // Set after k->java_mirror() is published, because compiled code running
@@ -1080,7 +1116,7 @@ class ResetMirrorField: public FieldClosure {
     assert(_m.not_null(), "Mirror cannot be NULL");
 
     if (fd->is_static() && fd->has_initial_value()) {
-      initialize_static_field(fd, _m, Thread::current());
+      initialize_static_field_for_dump(fd, _m);
       return;
     }
 
@@ -1358,7 +1394,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   k->set_java_mirror(mirror);
 
-  set_mirror_module_field(k, mirror, module, THREAD);
+  set_mirror_module_field(THREAD->as_Java_thread(), k, mirror, module);
 
   if (log_is_enabled(Trace, cds, heap, mirror)) {
     ResourceMark rm(THREAD);
@@ -1437,7 +1473,7 @@ objArrayOop java_lang_Class::signers(oop java_class) {
 }
 void java_lang_Class::set_signers(oop java_class, objArrayOop signers) {
   assert(_signers_offset != 0, "must be set");
-  java_class->obj_field_put(_signers_offset, (oop)signers);
+  java_class->obj_field_put(_signers_offset, signers);
 }
 
 oop java_lang_Class::class_data(oop java_class) {
@@ -1958,6 +1994,7 @@ int java_lang_Throwable::_backtrace_offset;
 int java_lang_Throwable::_detailMessage_offset;
 int java_lang_Throwable::_stackTrace_offset;
 int java_lang_Throwable::_depth_offset;
+int java_lang_Throwable::_cause_offset;
 int java_lang_Throwable::_static_unassigned_stacktrace_offset;
 
 #define THROWABLE_FIELDS_DO(macro) \
@@ -1965,6 +2002,7 @@ int java_lang_Throwable::_static_unassigned_stacktrace_offset;
   macro(_detailMessage_offset, k, "detailMessage", string_signature,                  false); \
   macro(_stackTrace_offset,    k, "stackTrace",    java_lang_StackTraceElement_array, false); \
   macro(_depth_offset,         k, "depth",         int_signature,                     false); \
+  macro(_cause_offset,         k, "cause",         throwable_signature,               false); \
   macro(_static_unassigned_stacktrace_offset, k, "UNASSIGNED_STACK", java_lang_StackTraceElement_array, true)
 
 void java_lang_Throwable::compute_offsets() {
@@ -2005,6 +2043,9 @@ oop java_lang_Throwable::message(oop throwable) {
   return throwable->obj_field(_detailMessage_offset);
 }
 
+oop java_lang_Throwable::cause(oop throwable) {
+  return throwable->obj_field(_cause_offset);
+}
 
 // Return Symbol for detailed_message or NULL
 Symbol* java_lang_Throwable::detail_message(oop throwable) {
@@ -2377,7 +2418,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
     }
     {
       // Call getCause() which doesn't necessarily return the _cause field.
-      EXCEPTION_MARK;
+      ExceptionMark em(THREAD);
       JavaValue cause(T_OBJECT);
       JavaCalls::call_virtual(&cause,
                               throwable,
@@ -2390,7 +2431,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
         CLEAR_PENDING_EXCEPTION;
         throwable = Handle();
       } else {
-        throwable = Handle(THREAD, (oop) cause.get_jobject());
+        throwable = Handle(THREAD, cause.get_oop());
         if (throwable.not_null()) {
           st->print("Caused by: ");
           print(throwable(), st);
@@ -2840,7 +2881,7 @@ void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const metho
   Handle mname(THREAD, stackFrame->obj_field(_memberName_offset));
   InstanceKlass* ik = method->method_holder();
   CallInfo info(method(), ik, CHECK);
-  MethodHandles::init_method_MemberName(mname, info, THREAD);
+  MethodHandles::init_method_MemberName(mname, info);
   // set bci
   java_lang_StackFrameInfo::set_bci(stackFrame(), bci);
   // method may be redefined; store the version
