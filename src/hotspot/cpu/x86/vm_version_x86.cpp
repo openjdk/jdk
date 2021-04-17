@@ -898,6 +898,16 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
+  if (supports_avx2() && UseAdler32Intrinsics) {
+    if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      UseAdler32Intrinsics = true;
+    }
+  } else if (UseAdler32Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAdler32Intrinsics))
+      warning("Adler32 Intrinsics requires avx2 instructions (not available on this CPU)");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+
   if (supports_sse4_2() && supports_clmul()) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       UseCRC32CIntrinsics = true;
@@ -991,11 +1001,6 @@ void VM_Version::get_processor_features() {
 
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
-  if (UseAdler32Intrinsics) {
-    warning("Adler32Intrinsics not available on this CPU.");
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 
   if (!supports_rtm() && UseRTMLocking) {

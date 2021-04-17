@@ -3244,6 +3244,18 @@ void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, Address src, int 
   Assembler::vpmullw(dst, nds, src, vector_len);
 }
 
+void MacroAssembler::vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len) {
+  // Used in sign-bit flipping with aligned address.
+  bool aligned_adr = (((intptr_t)src.target() & 15) == 0);
+  assert((UseAVX > 0) || aligned_adr, "SSE mode requires address alignment 16 bytes");
+  if (reachable(src)) {
+    Assembler::vpmulld(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch1, src);
+    Assembler::vpmulld(dst, nds, Address(rscratch1, 0), vector_len);
+  }
+}
+
 void MacroAssembler::vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpsubb(dst, nds, src, vector_len);
