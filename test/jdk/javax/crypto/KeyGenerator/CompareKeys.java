@@ -63,7 +63,7 @@ public class CompareKeys {
     }
 
     @SuppressWarnings("preview")
-            private record KeygenAlgo(String algoName, Provider provider) {
+    private record KeygenAlgo(String algoName, Provider provider) {
 
     }
 
@@ -119,6 +119,9 @@ public class CompareKeys {
             for (Provider.Service s : p.getServices()) {
                 // Remove the algorithms from the list which require
                 // pre-initialisation to make the Test generic across algorithms
+                // SunMSCAPI provider removed too because of incompatibilty
+                // for serialization and with PKCS8EncodedKeySpec for certain
+                // algorithms like RSA.
                 if (s.getType().contains(type)
                         && !((s.getAlgorithm().startsWith("SunTls"))
                         || s.getProvider().getName().equals("SunMSCAPI"))) {
