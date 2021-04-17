@@ -22,20 +22,44 @@
  */
 
 import java.io.Console;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
  * @bug 8264208
  * @summary Tests Console.charset() method
- * @build CharsetTest
- * @run shell runCharsetTest.sh en_US.ISO8859-1 ISO-8859-1
- * @run shell runCharsetTest.sh en_US.US-ASCII US-ASCII
- * @run shell runCharsetTest.sh en_US.UTF-8 UTF-8
- * @run shell runCharsetTest.sh en_US.FOO ignored
+ * @requires (os.family == "linux") | (os.family == "mac")
+ * @library /test/lib
+ * @run main CharsetTest en_US.ISO8859-1 ISO-8859-1
+ * @run main CharsetTest en_US.US-ASCII US-ASCII
+ * @run main CharsetTest en_US.UTF-8 UTF-8
+ * @run main CharsetTest en_US.FOO ignored
  */
 public class CharsetTest {
-    public static void main(String... args) {
-        Console con = System.console();
-        System.out.println(con.charset());
+    public static void main(String... args) throws Throwable {
+        if (args.length == 0) {
+            // no arg means child java process being tested.
+            Console con = System.console();
+            System.out.println(con.charset());
+        } else {
+            // invoking `expect` command
+            var testSrc = System.getProperty("test.src", ".");
+            var testClasses = System.getProperty("test.classes", ".");
+            var jdkDir = System.getProperty("test.jdk");
+            OutputAnalyzer output = ProcessTools.executeProcess(
+                    "expect",
+                    "-n",
+                    testSrc + "/script.exp",
+                    jdkDir + "/bin/java",
+                    args[0],
+                    args[1],
+                    testClasses);
+            output.reportDiagnosticSummary();
+            var eval = output.getExitValue();
+            if (eval != 0) {
+                throw new RuntimeException("Exitval: " + eval);
+            }
+        }
     }
 }
