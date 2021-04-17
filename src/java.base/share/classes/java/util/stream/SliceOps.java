@@ -229,7 +229,7 @@ final class SliceOps {
                                     long skip, long limit) {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
-        long adjustedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
+        long normalizedLimit = limit >= 0 ? limit : Long.MAX_VALUE;
 
         return new IntPipeline.StatefulOp<Integer>(upstream, StreamShape.INT_VALUE,
                                                    flags(limit)) {
