@@ -749,21 +749,10 @@
   static_field(VM_Version, _zva_length, int)                            \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
 
-#define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
-  declare_constant(VM_Version::CPU_FP)                  \
-  declare_constant(VM_Version::CPU_ASIMD)               \
-  declare_constant(VM_Version::CPU_EVTSTRM)             \
-  declare_constant(VM_Version::CPU_AES)                 \
-  declare_constant(VM_Version::CPU_PMULL)               \
-  declare_constant(VM_Version::CPU_SHA1)                \
-  declare_constant(VM_Version::CPU_SHA2)                \
-  declare_constant(VM_Version::CPU_CRC32)               \
-  declare_constant(VM_Version::CPU_LSE)                 \
-  declare_constant(VM_Version::CPU_STXR_PREFETCH)       \
-  declare_constant(VM_Version::CPU_A53MAC)
+#define DECLARE_INT_CPU_FEATURE_CONSTANT(id, name, bit) GENERATE_VM_INT_CONSTANT_ENTRY(VM_Version::CPU_##id)
+#define VM_INT_CPU_FEATURE_CONSTANTS CPU_FEATURE_FLAGS(DECLARE_INT_CPU_FEATURE_CONSTANT)
 
 #endif
-
 
 #ifdef X86
 
@@ -776,53 +765,8 @@
   declare_constant(frame::interpreter_frame_sender_sp_offset)       \
   declare_constant(frame::interpreter_frame_last_sp_offset)
 
-#define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
-  declare_constant(VM_Version::CPU_CX8)                             \
-  declare_constant(VM_Version::CPU_CMOV)                            \
-  declare_constant(VM_Version::CPU_FXSR)                            \
-  declare_constant(VM_Version::CPU_HT)                              \
-  declare_constant(VM_Version::CPU_MMX)                             \
-  declare_constant(VM_Version::CPU_3DNOW_PREFETCH)                  \
-  declare_constant(VM_Version::CPU_SSE)                             \
-  declare_constant(VM_Version::CPU_SSE2)                            \
-  declare_constant(VM_Version::CPU_SSE3)                            \
-  declare_constant(VM_Version::CPU_SSSE3)                           \
-  declare_constant(VM_Version::CPU_SSE4A)                           \
-  declare_constant(VM_Version::CPU_SSE4_1)                          \
-  declare_constant(VM_Version::CPU_SSE4_2)                          \
-  declare_constant(VM_Version::CPU_POPCNT)                          \
-  declare_constant(VM_Version::CPU_LZCNT)                           \
-  declare_constant(VM_Version::CPU_TSC)                             \
-  declare_constant(VM_Version::CPU_TSCINV)                          \
-  declare_constant(VM_Version::CPU_AVX)                             \
-  declare_constant(VM_Version::CPU_AVX2)                            \
-  declare_constant(VM_Version::CPU_AES)                             \
-  declare_constant(VM_Version::CPU_ERMS)                            \
-  declare_constant(VM_Version::CPU_CLMUL)                           \
-  declare_constant(VM_Version::CPU_BMI1)                            \
-  declare_constant(VM_Version::CPU_BMI2)                            \
-  declare_constant(VM_Version::CPU_RTM)                             \
-  declare_constant(VM_Version::CPU_ADX)                             \
-  declare_constant(VM_Version::CPU_AVX512F)                         \
-  declare_constant(VM_Version::CPU_AVX512DQ)                        \
-  declare_constant(VM_Version::CPU_AVX512PF)                        \
-  declare_constant(VM_Version::CPU_AVX512ER)                        \
-  declare_constant(VM_Version::CPU_AVX512CD)                        \
-  declare_constant(VM_Version::CPU_AVX512BW)                        \
-  declare_constant(VM_Version::CPU_AVX512VL)                        \
-  declare_constant(VM_Version::CPU_SHA)                             \
-  declare_constant(VM_Version::CPU_FMA)                             \
-  declare_constant(VM_Version::CPU_VZEROUPPER)                      \
-  declare_constant(VM_Version::CPU_AVX512_VPOPCNTDQ)                \
-  declare_constant(VM_Version::CPU_AVX512_VPCLMULQDQ)               \
-  declare_constant(VM_Version::CPU_AVX512_VAES)                     \
-  declare_constant(VM_Version::CPU_AVX512_VNNI)                     \
-  declare_constant(VM_Version::CPU_FLUSH)                           \
-  declare_constant(VM_Version::CPU_FLUSHOPT)                        \
-  declare_constant(VM_Version::CPU_CLWB)                            \
-  declare_constant(VM_Version::CPU_AVX512_VBMI2)                    \
-  declare_constant(VM_Version::CPU_AVX512_VBMI)                     \
-  declare_constant(VM_Version::CPU_HV)
+#define DECLARE_LONG_CPU_FEATURE_CONSTANT(id, name, bit) GENERATE_VM_LONG_CONSTANT_ENTRY(VM_Version::CPU_##id)
+#define VM_LONG_CPU_FEATURE_CONSTANTS CPU_FEATURE_FLAGS(DECLARE_LONG_CPU_FEATURE_CONSTANT)
 
 #endif
 
@@ -899,7 +843,9 @@ VMIntConstantEntry JVMCIVMStructs::localHotSpotVMIntConstants[] = {
                               GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
                               GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #endif
-
+#ifdef VM_INT_CPU_FEATURE_CONSTANTS
+  VM_INT_CPU_FEATURE_CONSTANTS
+#endif
   GENERATE_VM_INT_CONSTANT_LAST_ENTRY()
 };
 
@@ -912,9 +858,12 @@ VMLongConstantEntry JVMCIVMStructs::localHotSpotVMLongConstants[] = {
                         GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
                         GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
                         GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
-
+#ifdef VM_LONG_CPU_FEATURE_CONSTANTS
+  VM_LONG_CPU_FEATURE_CONSTANTS
+#endif
   GENERATE_VM_LONG_CONSTANT_LAST_ENTRY()
 };
+#undef DECLARE_CPU_FEATURE_FLAG
 
 VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,

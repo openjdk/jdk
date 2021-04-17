@@ -23,6 +23,7 @@
 package jdk.vm.ci.code;
 
 import java.nio.ByteOrder;
+import java.util.Set;
 
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
@@ -89,6 +90,11 @@ public abstract class Architecture {
         this.machineCodeCallDisplacementOffset = nativeCallDisplacementOffset;
         this.returnAddressSize = returnAddressSize;
     }
+
+    /**
+     * Gets the set of CPU features supported by the current platform.
+     */
+    public abstract Set<? extends CPUFeatureName> getFeatures();
 
     /**
      * Converts this architecture to a string.

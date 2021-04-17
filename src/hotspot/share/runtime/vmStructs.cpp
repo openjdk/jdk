@@ -2913,6 +2913,9 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
                           GENERATE_C1_VM_INT_CONSTANT_ENTRY,
                           GENERATE_C2_VM_INT_CONSTANT_ENTRY,
                           GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+#ifdef VM_INT_CPU_FEATURE_CONSTANTS
+  VM_INT_CPU_FEATURE_CONSTANTS
+#endif
 
   GENERATE_VM_INT_CONSTANT_LAST_ENTRY()
 };
@@ -2946,6 +2949,9 @@ VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
                            GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
                            GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
                            GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+#ifdef VM_LONG_CPU_FEATURE_CONSTANTS
+  VM_LONG_CPU_FEATURE_CONSTANTS
+#endif
 
   GENERATE_VM_LONG_CONSTANT_LAST_ENTRY()
 };

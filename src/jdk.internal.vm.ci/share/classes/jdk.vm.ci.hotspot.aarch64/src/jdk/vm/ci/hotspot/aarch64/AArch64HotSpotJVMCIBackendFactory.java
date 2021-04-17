@@ -25,8 +25,10 @@ package jdk.vm.ci.hotspot.aarch64;
 import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.EnumSet;
+import java.util.Map;
 
 import jdk.vm.ci.aarch64.AArch64;
+import jdk.vm.ci.aarch64.AArch64.CPUFeature;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
@@ -43,48 +45,15 @@ import jdk.vm.ci.runtime.JVMCIBackend;
 
 public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
-    private static EnumSet<AArch64.CPUFeature> computeFeatures(@SuppressWarnings("unused") AArch64HotSpotVMConfig config) {
+    private static EnumSet<AArch64.CPUFeature> computeFeatures(AArch64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
-        EnumSet<AArch64.CPUFeature> features = EnumSet.noneOf(AArch64.CPUFeature.class);
-
-        if ((config.vmVersionFeatures & config.aarch64FP) != 0) {
-            features.add(AArch64.CPUFeature.FP);
-        }
-        if ((config.vmVersionFeatures & config.aarch64ASIMD) != 0) {
-            features.add(AArch64.CPUFeature.ASIMD);
-        }
-        if ((config.vmVersionFeatures & config.aarch64EVTSTRM) != 0) {
-            features.add(AArch64.CPUFeature.EVTSTRM);
-        }
-        if ((config.vmVersionFeatures & config.aarch64AES) != 0) {
-            features.add(AArch64.CPUFeature.AES);
-        }
-        if ((config.vmVersionFeatures & config.aarch64PMULL) != 0) {
-            features.add(AArch64.CPUFeature.PMULL);
-        }
-        if ((config.vmVersionFeatures & config.aarch64SHA1) != 0) {
-            features.add(AArch64.CPUFeature.SHA1);
-        }
-        if ((config.vmVersionFeatures & config.aarch64SHA2) != 0) {
-            features.add(AArch64.CPUFeature.SHA2);
-        }
-        if ((config.vmVersionFeatures & config.aarch64CRC32) != 0) {
-            features.add(AArch64.CPUFeature.CRC32);
-        }
-        if ((config.vmVersionFeatures & config.aarch64LSE) != 0) {
-            features.add(AArch64.CPUFeature.LSE);
-        }
-        if ((config.vmVersionFeatures & config.aarch64STXR_PREFETCH) != 0) {
-            features.add(AArch64.CPUFeature.STXR_PREFETCH);
-        }
-        if ((config.vmVersionFeatures & config.aarch64A53MAC) != 0) {
-            features.add(AArch64.CPUFeature.A53MAC);
-        }
-
+        EnumSet<CPUFeature> features = EnumSet.noneOf(CPUFeature.class);
+        Map<String, Long> constants = config.getStore().getConstants();
+        HotSpotJVMCIBackendFactory.convertFeatures(features, constants, config.vmVersionFeatures, CPUFeature::valueOf);
         return features;
     }
 
-    private static EnumSet<AArch64.Flag> computeFlags(@SuppressWarnings("unused") AArch64HotSpotVMConfig config) {
+    private static EnumSet<AArch64.Flag> computeFlags(AArch64HotSpotVMConfig config) {
         EnumSet<AArch64.Flag> flags = EnumSet.noneOf(AArch64.Flag.class);
 
         if (config.useCRC32) {

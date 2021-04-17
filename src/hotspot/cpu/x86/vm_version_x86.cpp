@@ -45,7 +45,10 @@ int VM_Version::_model;
 int VM_Version::_stepping;
 bool VM_Version::_has_intel_jcc_erratum;
 VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
-const char* VM_Version::_features_names[] = { FEATURES_NAMES };
+
+#define DECLARE_CPU_FEATURE_NAME(id, name, bit) name,
+const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_NAME)};
+#undef DECLARE_CPU_FEATURE_FLAG
 
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = 0;
@@ -782,7 +785,6 @@ void VM_Version::get_processor_features() {
               cores_per_cpu(), threads_per_core(),
               cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   assert(res > 0, "not enough temporary space allocated");
-  assert(log2i_exact((uint64_t)CPU_MAX_FEATURE) + 1 == sizeof(_features_names) / sizeof(char*), "wrong size features_names");
   insert_features_names(buf + res, sizeof(buf) - res, _features_names);
 
   _features_string = os::strdup(buf);

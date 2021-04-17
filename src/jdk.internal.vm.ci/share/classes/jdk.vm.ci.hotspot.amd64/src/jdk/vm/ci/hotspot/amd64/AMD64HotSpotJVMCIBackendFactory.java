@@ -25,8 +25,11 @@ package jdk.vm.ci.hotspot.amd64;
 import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.EnumSet;
+import java.util.Map;
+import java.util.function.Function;
 
 import jdk.vm.ci.amd64.AMD64;
+import jdk.vm.ci.amd64.AMD64.CPUFeature;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
@@ -43,90 +46,16 @@ import jdk.vm.ci.runtime.JVMCIBackend;
 
 public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
-    private static EnumSet<AMD64.CPUFeature> computeFeatures(AMD64HotSpotVMConfig config) {
+    private static EnumSet<CPUFeature> computeFeatures(AMD64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
-        EnumSet<AMD64.CPUFeature> features = EnumSet.noneOf(AMD64.CPUFeature.class);
-        if ((config.vmVersionFeatures & config.amd643DNOWPREFETCH) != 0) {
-            features.add(AMD64.CPUFeature.AMD_3DNOW_PREFETCH);
-        }
+        EnumSet<CPUFeature> features = EnumSet.noneOf(CPUFeature.class);
         assert config.useSSE >= 2 : "minimum config for x64";
         features.add(AMD64.CPUFeature.SSE);
         features.add(AMD64.CPUFeature.SSE2);
-        if ((config.vmVersionFeatures & config.amd64SSE3) != 0) {
-            features.add(AMD64.CPUFeature.SSE3);
-        }
-        if ((config.vmVersionFeatures & config.amd64SSSE3) != 0) {
-            features.add(AMD64.CPUFeature.SSSE3);
-        }
-        if ((config.vmVersionFeatures & config.amd64SSE4A) != 0) {
-            features.add(AMD64.CPUFeature.SSE4A);
-        }
-        if ((config.vmVersionFeatures & config.amd64SSE41) != 0) {
-            features.add(AMD64.CPUFeature.SSE4_1);
-        }
-        if ((config.vmVersionFeatures & config.amd64SSE42) != 0) {
-            features.add(AMD64.CPUFeature.SSE4_2);
-        }
-        if ((config.vmVersionFeatures & config.amd64POPCNT) != 0) {
-            features.add(AMD64.CPUFeature.POPCNT);
-        }
-        if ((config.vmVersionFeatures & config.amd64LZCNT) != 0) {
-            features.add(AMD64.CPUFeature.LZCNT);
-        }
-        if ((config.vmVersionFeatures & config.amd64ERMS) != 0) {
-            features.add(AMD64.CPUFeature.ERMS);
-        }
-        if ((config.vmVersionFeatures & config.amd64AVX) != 0) {
-            features.add(AMD64.CPUFeature.AVX);
-        }
-        if ((config.vmVersionFeatures & config.amd64AVX2) != 0) {
-            features.add(AMD64.CPUFeature.AVX2);
-        }
-        if ((config.vmVersionFeatures & config.amd64AES) != 0) {
-            features.add(AMD64.CPUFeature.AES);
-        }
-        if ((config.vmVersionFeatures & config.amd643DNOWPREFETCH) != 0) {
-            features.add(AMD64.CPUFeature.AMD_3DNOW_PREFETCH);
-        }
-        if ((config.vmVersionFeatures & config.amd64BMI1) != 0) {
-            features.add(AMD64.CPUFeature.BMI1);
-        }
-        if ((config.vmVersionFeatures & config.amd64BMI2) != 0) {
-            features.add(AMD64.CPUFeature.BMI2);
-        }
-        if ((config.vmVersionFeatures & config.amd64RTM) != 0) {
-            features.add(AMD64.CPUFeature.RTM);
-        }
-        if ((config.vmVersionFeatures & config.amd64ADX) != 0) {
-            features.add(AMD64.CPUFeature.ADX);
-        }
-        if ((config.vmVersionFeatures & config.amd64AVX512F) != 0) {
-            features.add(AMD64.CPUFeature.AVX512F);
-        }
-        if ((config.vmVersionFeatures & config.amd64AVX512DQ) != 0) {
-            features.add(AMD64.CPUFeature.AVX512DQ);
-        }
-        if ((config.vmVersionFeatures & config.amd64AVX512PF) != 0) {
-            features.add(AMD64.CPUFeature.AVX512PF);
-        }
-        if ((config.vmVersionFeatures & config.amd64AVX512ER) != 0) {
-            features.add(AMD64.CPUFeature.AVX512ER);
-        }
-        if ((config.vmVersionFeatures & config.amd64AVX512CD) != 0) {
-            features.add(AMD64.CPUFeature.AVX512CD);
-        }
-        if ((config.vmVersionFeatures & config.amd64AVX512BW) != 0) {
-            features.add(AMD64.CPUFeature.AVX512BW);
-        }
-        if ((config.vmVersionFeatures & config.amd64AVX512VL) != 0) {
-            features.add(AMD64.CPUFeature.AVX512VL);
-        }
-        if ((config.vmVersionFeatures & config.amd64SHA) != 0) {
-            features.add(AMD64.CPUFeature.SHA);
-        }
-        if ((config.vmVersionFeatures & config.amd64FMA) != 0) {
-            features.add(AMD64.CPUFeature.FMA);
-        }
+
+        Map<String, Long> constants = config.getStore().getConstants();
+        Function<String, CPUFeature> nameToFeature = name -> name.equals("3DNOW_PREFETCH") ? CPUFeature.AMD_3DNOW_PREFETCH : CPUFeature.valueOf(name);
+        HotSpotJVMCIBackendFactory.convertFeatures(features, constants, config.vmVersionFeatures, nameToFeature);
         return features;
     }
 
