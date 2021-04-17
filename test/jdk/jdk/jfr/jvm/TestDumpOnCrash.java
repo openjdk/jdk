@@ -112,7 +112,7 @@ public class TestDumpOnCrash {
                 "-Xmx64m",
                 "-XX:-CreateCoredumpOnCrash",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                "-XX:StartFlightRecording=" + flightRecordingOptions,
+                "-XX:StartFlightRecording:" + flightRecordingOptions,
                 crasher.getName(),
                 signal)
             .start();

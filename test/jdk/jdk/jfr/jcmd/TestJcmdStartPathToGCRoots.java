@@ -44,15 +44,15 @@ public class TestJcmdStartPathToGCRoots {
     public static void main(String[] args) throws Exception {
 
         JcmdHelper.jcmd("JFR.start", "path-to-gc-roots=true");
-        assertCutoff("infinity", "Expected cutoff to be '0 ns' wuth -XX:StartFlightRecording=path-to-gc-roots=true");
+        assertCutoff("infinity", "Expected cutoff to be '0 ns' wuth -XX:StartFlightRecording:path-to-gc-roots=true");
         closeRecording();
 
         JcmdHelper.jcmd("JFR.start", "path-to-gc-roots=false");
-        assertCutoff("0 ns", "Expected cutoff to be '0 ns' with -XX:StartFlightRecording=path-to-gc-roots=false");
+        assertCutoff("0 ns", "Expected cutoff to be '0 ns' with -XX:StartFlightRecording:path-to-gc-roots=false");
         closeRecording();
 
         JcmdHelper.jcmd("JFR.start");
-        assertCutoff("0 ns", "Expected cutoff to be '0 ns' with -XX:StartFlightRecording=");
+        assertCutoff("0 ns", "Expected cutoff to be '0 ns' with -XX:StartFlightRecording:");
         closeRecording();
     }
 

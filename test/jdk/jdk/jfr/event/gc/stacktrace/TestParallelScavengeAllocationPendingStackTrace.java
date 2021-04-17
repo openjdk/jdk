@@ -29,7 +29,7 @@ package jdk.jfr.event.gc.stacktrace;
  *
  * @requires vm.gc == "null" | vm.gc == "Parallel"
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseParallelGC -Xlog:gc* -XX:+FlightRecorder jdk.jfr.event.gc.stacktrace.TestParallelScavengeAllocationPendingStackTrace
+ * @run main/othervm -XX:+UseParallelGC -Xlog:gc* jdk.jfr.event.gc.stacktrace.TestParallelScavengeAllocationPendingStackTrace
  */
 public class TestParallelScavengeAllocationPendingStackTrace {
 

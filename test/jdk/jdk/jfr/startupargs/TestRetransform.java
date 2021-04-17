@@ -35,8 +35,8 @@ import jdk.test.lib.jfr.SimpleEvent;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -XX:FlightRecorderOptions=retransform=false jdk.jfr.startupargs.TestRetransform
- * @run main/othervm -XX:FlightRecorderOptions=retransform=true jdk.jfr.startupargs.TestRetransform
+ * @run main/othervm -XX:FlightRecorderOptions:retransform=false jdk.jfr.startupargs.TestRetransform
+ * @run main/othervm -XX:FlightRecorderOptions:retransform=true jdk.jfr.startupargs.TestRetransform
  */
 public class TestRetransform {
     private static class TestEvent extends Event {

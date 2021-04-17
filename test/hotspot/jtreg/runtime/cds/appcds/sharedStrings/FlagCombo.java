@@ -55,7 +55,7 @@ public class FlagCombo {
 
         if (args.length == 0) {
             SharedStringsUtils.runWithArchiveAuto("HelloString",
-                "-XX:StartFlightRecording=dumponexit=true");
+                "-XX:StartFlightRecording:dumponexit=true");
         }
 
         SharedStringsUtils.runWithArchive("HelloString", "-XX:+UnlockDiagnosticVMOptions",

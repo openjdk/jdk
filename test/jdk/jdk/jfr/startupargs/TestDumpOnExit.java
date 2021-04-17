@@ -52,27 +52,27 @@ public class TestDumpOnExit {
         // Test without security manager and a file name relative to current directory
         testDumponExit(() -> dumpPath,
                 "-Xlog:jfr=trace",
-                "-XX:StartFlightRecording=filename=./dumped.jfr,dumponexit=true,settings=profile",
+                "-XX:StartFlightRecording:filename=./dumped.jfr,dumponexit=true,settings=profile",
                 "jdk.jfr.startupargs.TestDumpOnExit$TestMain"
         );
         // Test a memory recording without a security manager
         testDumponExit(() -> findJFRFileInCurrentDirectory(),
                 "-Xlog:jfr=trace",
-                "-XX:StartFlightRecording=dumponexit=true,disk=false",
+                "-XX:StartFlightRecording:dumponexit=true,disk=false",
                 "jdk.jfr.startupargs.TestDumpOnExit$TestMain"
         );
 
         // Test with security manager and a file name relative to current directory
         testDumponExit(() -> dumpPath,
                 "-Xlog:jfr=trace",
-                "-XX:StartFlightRecording=filename=./dumped.jfr,dumponexit=true,settings=profile",
+                "-XX:StartFlightRecording:filename=./dumped.jfr,dumponexit=true,settings=profile",
                 "-Djava.security.manager",
                 "jdk.jfr.startupargs.TestDumpOnExit$TestMain"
         );
         // Test with security manager but without a name
         testDumponExit(() -> findJFRFileInCurrentDirectory(),
                 "-Xlog:jfr=trace",
-                "-XX:StartFlightRecording=dumponexit=true,settings=profile",
+                "-XX:StartFlightRecording:dumponexit=true,settings=profile",
                 "-Djava.security.manager",
                 "jdk.jfr.startupargs.TestDumpOnExit$TestMain"
         );

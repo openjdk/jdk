@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+FlightRecorder -XX:FlightRecorderOptions=maxchunksize=2097152 jdk.jfr.jcmd.TestJcmdStartWithOptions
+ * @run main/othervm -XX:FlightRecorderOptions:maxchunksize=2097152 jdk.jfr.jcmd.TestJcmdStartWithOptions
  */
 public class TestJcmdStartWithOptions {
 

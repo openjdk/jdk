@@ -33,7 +33,7 @@ import jdk.jfr.Registered;
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.annotations.TestRegisteredFalseAndRunning
- * @run main/othervm -XX:FlightRecorderOptions=retransform=false jdk.jfr.api.metadata.annotations.TestRegisteredFalseAndRunning
+ * @run main/othervm -XX:FlightRecorderOptions:retransform=false jdk.jfr.api.metadata.annotations.TestRegisteredFalseAndRunning
  */
 public class TestRegisteredFalseAndRunning {
     @Registered(false)
