@@ -736,10 +736,22 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
 
   case TypeFunc::Parms: {       // Normal returns
     uint ideal_reg = tf()->range()->field_at(TypeFunc::Parms)->ideal_reg();
-    OptoRegPair regs = is_CallRuntime()
-      ? match->c_return_value(ideal_reg)  // Calls into C runtime
-      : match->  return_value(ideal_reg); // Calls into compiled Java code
+    OptoRegPair regs = Opcode() == Op_CallLeafVector
+      ? match->vector_return_value(ideal_reg)      // Calls into assembly vector routine
+      : is_CallRuntime()
+        ? match->c_return_value(ideal_reg)  // Calls into C runtime
+        : match->  return_value(ideal_reg); // Calls into compiled Java code
     RegMask rm = RegMask(regs.first());
+
+    // If the return is in vector, compute appropriate regmask taking into account the whole range
+    if(ideal_reg >= Op_VecS && ideal_reg <= Op_VecZ) {
+      if(OptoReg::is_valid(regs.second())) {
+        for (OptoReg::Name r = regs.first(); r <= regs.second(); r = OptoReg::add(r, 1)) {
+          rm.Insert(r);
+        }
+      }
+    }
+
     if( OptoReg::is_valid(regs.second()) )
       rm.Insert( regs.second() );
     return new MachProjNode(this,proj->_con,rm,ideal_reg);
@@ -1195,6 +1207,11 @@ void CallRuntimeNode::dump_spec(outputStream *st) const {
   CallNode::dump_spec(st);
 }
 #endif
+uint CallLeafVectorNode::size_of() const { return sizeof(*this); }
+bool CallLeafVectorNode::cmp( const Node &n ) const {
+  CallLeafVectorNode &call = (CallLeafVectorNode&)n;
+  return CallLeafNode::cmp(call) && _num_bits == call._num_bits;
+}
 
 //=============================================================================
 uint CallNativeNode::size_of() const { return sizeof(*this); }
@@ -1264,6 +1281,21 @@ void CallNativeNode::dump_spec(outputStream *st) const {
 //------------------------------calling_convention-----------------------------
 void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
   SharedRuntime::c_calling_convention(sig_bt, parm_regs, /*regs2=*/nullptr, argcnt);
+}
+
+void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
+#ifdef ASSERT
+  assert(tf()->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte == _num_bits,
+         "return vector size must match");
+  const TypeTuple* d = tf()->domain();
+  for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
+    Node* arg = in(i);
+    assert(arg->bottom_type()->is_vect()->length_in_bytes() * BitsPerByte == _num_bits,
+           "vector argument size must match");
+  }
+#endif
+
+  Matcher::vector_calling_convention(parm_regs, _num_bits, argcnt);
 }
 
 void CallNativeNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {

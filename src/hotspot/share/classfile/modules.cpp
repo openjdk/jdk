@@ -464,9 +464,13 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     if (EnableVectorSupport && EnableVectorReboxing && FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing)) {
       FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, true);
     }
+    if (EnableVectorSupport && FLAG_IS_DEFAULT(UseVectorStubs)) {
+      FLAG_SET_DEFAULT(UseVectorStubs, true);
+    }
     log_info(compilation)("EnableVectorSupport=%s",            (EnableVectorSupport            ? "true" : "false"));
     log_info(compilation)("EnableVectorReboxing=%s",           (EnableVectorReboxing           ? "true" : "false"));
     log_info(compilation)("EnableVectorAggressiveReboxing=%s", (EnableVectorAggressiveReboxing ? "true" : "false"));
+    log_info(compilation)("UseVectorStubs=%s",                 (UseVectorStubs                 ? "true" : "false"));
   }
 #endif // COMPILER2
 }

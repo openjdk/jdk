@@ -69,6 +69,26 @@ public class VectorSupport {
     public static final int VECTOR_OP_CAST        = 17;
     public static final int VECTOR_OP_REINTERPRET = 18;
 
+    // Math routines
+    public static final int VECTOR_OP_TAN = 101;
+    public static final int VECTOR_OP_TANH = 102;
+    public static final int VECTOR_OP_SIN = 103;
+    public static final int VECTOR_OP_SINH = 104;
+    public static final int VECTOR_OP_COS = 105;
+    public static final int VECTOR_OP_COSH = 106;
+    public static final int VECTOR_OP_ASIN = 107;
+    public static final int VECTOR_OP_ACOS = 108;
+    public static final int VECTOR_OP_ATAN = 109;
+    public static final int VECTOR_OP_ATAN2 = 110;
+    public static final int VECTOR_OP_CBRT = 111;
+    public static final int VECTOR_OP_LOG = 112;
+    public static final int VECTOR_OP_LOG10 = 113;
+    public static final int VECTOR_OP_LOG1P = 114;
+    public static final int VECTOR_OP_POW = 115;
+    public static final int VECTOR_OP_EXP = 116;
+    public static final int VECTOR_OP_EXPM1 = 117;
+    public static final int VECTOR_OP_HYPOT = 118;
+
     // enum BoolTest
     public static final int BT_eq = 0;
     public static final int BT_ne = 4;

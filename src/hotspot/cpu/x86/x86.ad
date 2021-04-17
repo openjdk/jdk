@@ -1686,6 +1686,11 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
           }
       }
       break;
+    case Op_CallLeafVector:
+      if (size_in_bits == 512 && !VM_Version::supports_avx512vlbwdq()) {
+        return false;
+      }
+      break;
     case Op_AddReductionVI:
       if (bt == T_INT && (UseSSE < 3 || !VM_Version::supports_ssse3())) {
         return false;
@@ -1953,6 +1958,10 @@ const int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Min size which can be loaded into vector is 4 bytes.
   int size = (type2aelembytes(bt) == 1) ? 4 : 2;
+  // Support for calling svml double64 vectors
+  if (bt == T_DOUBLE) {
+    size = 1;
+  }
   return MIN2(size,max_size);
 }
 

@@ -1552,6 +1552,20 @@ bool Matcher::supports_vector_variable_shifts(void) {
   return false; // not supported
 }
 
+// Vector calling convention not yet implemented.
+const bool Matcher::supports_vector_calling_convention(void) {
+  return false;
+}
+
+void Matcher::vector_calling_convention(VMRegPair *regs, uint num_bits, uint total_args_passed) {
+  (void) SharedRuntime::vector_calling_convention(regs, num_bits, total_args_passed);
+}
+
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
+}
+
 bool Matcher::supports_vector_variable_rotates(void) {
   return false; // not supported
 }
