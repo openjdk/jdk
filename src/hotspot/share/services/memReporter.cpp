@@ -304,7 +304,7 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
     }
     // Don't report if site has reserved less than one unit of whatever our scale is
     if (scale() > 1 && amount_in_current_scale(virtual_memory_site->reserved()) == 0) {
-      num_omitted ++;
+      num_omitted++;
       continue;
     }
     const NativeCallStack* stack = virtual_memory_site->call_stack();
