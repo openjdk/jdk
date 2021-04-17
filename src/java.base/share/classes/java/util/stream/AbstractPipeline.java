@@ -467,7 +467,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     @Override
     final <P_IN> long exactOutputSizeIfKnown(Spliterator<P_IN> spliterator) {
         long size = StreamOpFlag.SIZED.isKnown(getStreamAndOpFlags()) ? spliterator.getExactSizeIfKnown() : -1;
-        return size == -1 ? size : adjustSize(size);
+        return size == -1 ? size : exactOutputSize(size);
     }
 
     /**
