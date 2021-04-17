@@ -471,13 +471,13 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     }
 
     /**
-     * Adjusts the exact size of the resulting stream using source spliterator size.
+     * Returns the exact output size of the pipeline given the exact size reported by the source spliterator.
      *
-     * @param size exact size of the output reported by source spliterator
-     * @return adjusted size
+     * @param sourceSize the exact size reported by the source spliterator
+     * @return the exact output size
      */
-    long adjustSize(long size) {
-        return previousStage == null ? size : previousStage.adjustSize(size);
+    long exactOutputSize(long sourceSize) {
+        return previousStage == null ? sourceSize : previousStage.exactOutputSize(sourceSize);
     }
 
     @Override
