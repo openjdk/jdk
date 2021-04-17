@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,17 +89,13 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   return memory_pools;
 }
 
-void SerialHeap::young_process_roots(StrongRootsScope* scope,
-                                     OopIterateClosure* root_closure,
+void SerialHeap::young_process_roots(OopIterateClosure* root_closure,
                                      OopIterateClosure* old_gen_closure,
                                      CLDClosure* cld_closure) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations);
 
-  process_roots(scope, SO_ScavengeCodeCache, root_closure,
+  process_roots(SO_ScavengeCodeCache, root_closure,
                 cld_closure, cld_closure, &mark_code_closure);
 
-  rem_set()->at_younger_refs_iterate();
-  old_gen()->younger_refs_iterate(old_gen_closure, scope->n_threads());
-
-  _process_strong_tasks->all_tasks_completed(scope->n_threads());
+  old_gen()->younger_refs_iterate(old_gen_closure);
 }

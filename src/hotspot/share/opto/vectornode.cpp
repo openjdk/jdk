@@ -1225,25 +1225,37 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       ciKlass* vbox_klass = vbox->box_type()->klass();
       const TypeVect* in_vt = vbox->vec_type();
       const TypeVect* out_vt = type()->is_vect();
-      assert(in_vt->length() == out_vt->length(), "mismatch on number of elements");
-      Node* value = vbox->in(VectorBoxNode::Value);
 
-      bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
-      bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
-      if (is_vector_mask) {
-        // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
-        value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
-        return new VectorLoadMaskNode(value, out_vt);
-      } else if (is_vector_shuffle) {
-        if (is_shuffle_to_vector()) {
-          // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
-          return new VectorCastB2XNode(value, out_vt);
+      if (in_vt->length() == out_vt->length()) {
+        Node* value = vbox->in(VectorBoxNode::Value);
+
+        bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+        bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+        if (is_vector_mask) {
+          if (in_vt->length_in_bytes() == out_vt->length_in_bytes() &&
+              Matcher::match_rule_supported_vector(Op_VectorMaskCast, out_vt->length(), out_vt->element_basic_type())) {
+            // Apply "VectorUnbox (VectorBox vmask) ==> VectorMaskCast (vmask)"
+            // directly. This could avoid the transformation ordering issue from
+            // "VectorStoreMask (VectorLoadMask vmask) => vmask".
+            return new VectorMaskCastNode(value, out_vt);
+          }
+          // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
+          value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
+          return new VectorLoadMaskNode(value, out_vt);
+        } else if (is_vector_shuffle) {
+          if (is_shuffle_to_vector()) {
+            // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
+            return new VectorCastB2XNode(value, out_vt);
+          } else {
+            // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
+            return new VectorLoadShuffleNode(value, out_vt);
+          }
         } else {
-          // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
-          return new VectorLoadShuffleNode(value, out_vt);
+          // Vector type mismatch is only supported for masks and shuffles, but sometimes it happens in pathological cases.
         }
       } else {
-        assert(false, "type mismatch on vector: %s", vbox_klass->name()->as_utf8());
+        // Vector length mismatch.
+        // Sometimes happen in pathological cases (e.g., when unboxing happens in effectively dead code).
       }
     }
   }
@@ -1273,8 +1285,18 @@ const TypeFunc* VectorBoxNode::vec_box_type(const TypeInstPtr* box_type) {
   return TypeFunc::make(domain, range);
 }
 
+Node* ShiftVNode::Identity(PhaseGVN* phase) {
+  Node* in2 = in(2);
+  // Shift by ZERO does nothing
+  if (is_vshift_cnt(in2) && phase->find_int_type(in2->in(1)) == TypeInt::ZERO) {
+    return in(1);
+  }
+  return this;
+}
+
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);
 }
+
 #endif // !PRODUCT

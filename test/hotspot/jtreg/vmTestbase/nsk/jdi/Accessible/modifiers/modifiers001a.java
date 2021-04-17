@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ public class modifiers001a {
 
     // Classes must be loaded and linked, so all fields must be
     // initialized
-    Boolean   Z0 = new Boolean(false);
-    Byte      B0 = new Byte((byte)1);
-    Character C0 = new Character('c');
-    Double    D0 = new Double(1);
-    Float     F0 = new Float(1);
-    Integer   I0 = new Integer(1);
-    Long      L0 = new Long(1);
+    Boolean   Z0 = Boolean.valueOf(false);
+    Byte      B0 = Byte.valueOf((byte)1);
+    Character C0 = Character.valueOf('c');
+    Double    D0 = Double.valueOf(1);
+    Float     F0 = Float.valueOf(1);
+    Integer   I0 = Integer.valueOf(1);
+    Long      L0 = Long.valueOf(1);
     String    S0 = new String("s");
     Object    O0 = new Object();
 

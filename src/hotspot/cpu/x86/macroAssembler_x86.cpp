@@ -42,6 +42,7 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -2524,6 +2525,59 @@ void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scrat
   }
 }
 
+void MacroAssembler::kmov(KRegister dst, Address src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
+void MacroAssembler::kmov(Address dst, KRegister src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
+void MacroAssembler::kmov(KRegister dst, KRegister src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
+void MacroAssembler::kmov(Register dst, KRegister src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
+void MacroAssembler::kmov(KRegister dst, Register src) {
+  if (VM_Version::supports_avx512bw()) {
+    kmovql(dst, src);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    kmovwl(dst, src);
+  }
+}
+
+void MacroAssembler::kmovql(KRegister dst, AddressLiteral src, Register scratch_reg) {
+  if (reachable(src)) {
+    kmovql(dst, as_Address(src));
+  } else {
+    lea(scratch_reg, src);
+    kmovql(dst, Address(scratch_reg, 0));
+  }
+}
 
 void MacroAssembler::kmovwl(KRegister dst, AddressLiteral src, Register scratch_reg) {
   if (reachable(src)) {
@@ -2731,7 +2785,6 @@ void MacroAssembler::reset_last_Java_frame(Register java_thread, bool clear_fp) 
   }
   // Always clear the pc because it could have been set by make_walkable()
   movptr(Address(java_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
-  movptr(Address(java_thread, JavaThread::saved_rbp_address_offset()), NULL_WORD);
   vzeroupper();
 }
 
@@ -3001,6 +3054,16 @@ void MacroAssembler::vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src
   } else {
     lea(rscratch1, src);
     vaddss(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vpaddb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(UseAVX > 0, "requires some form of AVX");
+  if (reachable(src)) {
+    Assembler::vpaddb(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpaddb(dst, nds, Address(rscratch, 0), vector_len);
   }
 }
 
@@ -4930,7 +4993,7 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
 #if COMPILER2_OR_JVMCI
 
 // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM/ZMM registers
-void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp) {
+void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, KRegister mask) {
   // cnt - number of qwords (8-byte words).
   // base - start address, qword aligned.
   Label L_zero_64_bytes, L_loop, L_sloop, L_tail, L_end;
@@ -4963,7 +5026,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   if (use64byteVector) {
     addptr(cnt, 8);
     jccb(Assembler::equal, L_end);
-    fill64_masked_avx(3, base, 0, xtmp, k2, cnt, rtmp, true);
+    fill64_masked_avx(3, base, 0, xtmp, mask, cnt, rtmp, true);
     jmp(L_end);
   } else {
     addptr(cnt, 4);
@@ -4982,7 +5045,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   addptr(cnt, 4);
   jccb(Assembler::lessEqual, L_end);
   if (UseAVX > 2 && MaxVectorSize >= 32 && VM_Version::supports_avx512vl()) {
-    fill32_masked_avx(3, base, 0, xtmp, k2, cnt, rtmp);
+    fill32_masked_avx(3, base, 0, xtmp, mask, cnt, rtmp);
   } else {
     decrement(cnt);
 
@@ -4996,7 +5059,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
 }
 
 // Clearing constant sized memory using YMM/ZMM registers.
-void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp) {
+void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp, KRegister mask) {
   assert(UseAVX > 2 && VM_Version::supports_avx512vlbw(), "");
   bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
 
@@ -5021,8 +5084,8 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
         break;
       case 3:
         movl(rtmp, 0x7);
-        kmovwl(k2, rtmp);
-        evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_256bit);
+        kmovwl(mask, rtmp);
+        evmovdqu(T_LONG, mask, Address(base, disp), xtmp, Assembler::AVX_256bit);
         break;
       case 4:
         evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
@@ -5030,8 +5093,8 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
       case 5:
         if (use64byteVector) {
           movl(rtmp, 0x1F);
-          kmovwl(k2, rtmp);
-          evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_512bit);
+          kmovwl(mask, rtmp);
+          evmovdqu(T_LONG, mask, Address(base, disp), xtmp, Assembler::AVX_512bit);
         } else {
           evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
           movq(Address(base, disp + 32), xtmp);
@@ -5040,8 +5103,8 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
       case 6:
         if (use64byteVector) {
           movl(rtmp, 0x3F);
-          kmovwl(k2, rtmp);
-          evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_512bit);
+          kmovwl(mask, rtmp);
+          evmovdqu(T_LONG, mask, Address(base, disp), xtmp, Assembler::AVX_512bit);
         } else {
           evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
           evmovdqu(T_LONG, k0, Address(base, disp + 32), xtmp, Assembler::AVX_128bit);
@@ -5050,13 +5113,13 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
       case 7:
         if (use64byteVector) {
           movl(rtmp, 0x7F);
-          kmovwl(k2, rtmp);
-          evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_512bit);
+          kmovwl(mask, rtmp);
+          evmovdqu(T_LONG, mask, Address(base, disp), xtmp, Assembler::AVX_512bit);
         } else {
           evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
           movl(rtmp, 0x7);
-          kmovwl(k2, rtmp);
-          evmovdqu(T_LONG, k2, Address(base, disp + 32), xtmp, Assembler::AVX_256bit);
+          kmovwl(mask, rtmp);
+          evmovdqu(T_LONG, mask, Address(base, disp + 32), xtmp, Assembler::AVX_256bit);
         }
         break;
       default:
@@ -5066,7 +5129,8 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
   }
 }
 
-void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMRegister xtmp, bool is_large) {
+void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMRegister xtmp,
+                               bool is_large, KRegister mask) {
   // cnt      - number of qwords (8-byte words).
   // base     - start address, qword aligned.
   // is_large - if optimizers know cnt is larger than InitArrayShortSize
@@ -5106,7 +5170,7 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
     shlptr(cnt, 3); // convert to number of bytes
     rep_stosb();
   } else if (UseXMMForObjInit) {
-    xmm_clear_mem(base, cnt, tmp, xtmp);
+    xmm_clear_mem(base, cnt, tmp, xtmp, mask);
   } else {
     NOT_LP64(shlptr(cnt, 1);) // convert to number of 32-bit words for 32-bit VM
     rep_stos();
@@ -7738,7 +7802,7 @@ void MacroAssembler::crc32c_ipl_alg2_alt2(Register in_out, Register in1, Registe
 void MacroAssembler::char_array_compress(Register src, Register dst, Register len,
   XMMRegister tmp1Reg, XMMRegister tmp2Reg,
   XMMRegister tmp3Reg, XMMRegister tmp4Reg,
-  Register tmp5, Register result) {
+  Register tmp5, Register result, KRegister mask1, KRegister mask2) {
   Label copy_chars_loop, return_length, return_zero, done;
 
   // rsi: src
@@ -7790,14 +7854,14 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     movl(result, 0xFFFFFFFF);
     shlxl(result, result, tmp5);
     notl(result);
-    kmovdl(k3, result);
+    kmovdl(mask2, result);
 
-    evmovdquw(tmp1Reg, k3, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
-    evpcmpuw(k2, k3, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
-    ktestd(k2, k3);
+    evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
+    evpcmpuw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    ktestd(mask1, mask2);
     jcc(Assembler::carryClear, return_zero);
 
-    evpmovwb(Address(dst, 0), k3, tmp1Reg, Assembler::AVX_512bit);
+    evpmovwb(Address(dst, 0), mask2, tmp1Reg, Assembler::AVX_512bit);
 
     addptr(src, tmp5);
     addptr(src, tmp5);
@@ -7818,8 +7882,8 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 
     bind(copy_32_loop);
     evmovdquw(tmp1Reg, Address(src, len, Address::times_2), /*merge*/ false, Assembler::AVX_512bit);
-    evpcmpuw(k2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
-    kortestdl(k2, k2);
+    evpcmpuw(mask1, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    kortestdl(mask1, mask1);
     jcc(Assembler::carryClear, return_zero);
 
     // All elements in current processed chunk are valid candidates for
@@ -7840,14 +7904,14 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     shlxl(result, result, len);
     notl(result);
 
-    kmovdl(k3, result);
+    kmovdl(mask2, result);
 
-    evmovdquw(tmp1Reg, k3, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
-    evpcmpuw(k2, k3, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
-    ktestd(k2, k3);
+    evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
+    evpcmpuw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    ktestd(mask1, mask2);
     jcc(Assembler::carryClear, return_zero);
 
-    evpmovwb(Address(dst, 0), k3, tmp1Reg, Assembler::AVX_512bit);
+    evpmovwb(Address(dst, 0), mask2, tmp1Reg, Assembler::AVX_512bit);
     jmp(return_length);
 
     bind(below_threshold);
@@ -7947,7 +8011,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 //     }
 //   }
 void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len,
-  XMMRegister tmp1, Register tmp2) {
+  XMMRegister tmp1, Register tmp2, KRegister mask) {
   Label copy_chars_loop, done, below_threshold, avx3_threshold;
   // rsi: src
   // rdi: dst
@@ -8000,9 +8064,9 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
     movl(tmp3_aliased, -1);
     shlxl(tmp3_aliased, tmp3_aliased, tmp2);
     notl(tmp3_aliased);
-    kmovdl(k2, tmp3_aliased);
-    evpmovzxbw(tmp1, k2, Address(src, 0), Assembler::AVX_512bit);
-    evmovdquw(Address(dst, 0), k2, tmp1, /*merge*/ true, Assembler::AVX_512bit);
+    kmovdl(mask, tmp3_aliased);
+    evpmovzxbw(tmp1, mask, Address(src, 0), Assembler::AVX_512bit);
+    evmovdquw(Address(dst, 0), mask, tmp1, /*merge*/ true, Assembler::AVX_512bit);
 
     jmp(done);
     bind(avx3_threshold);

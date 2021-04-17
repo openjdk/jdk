@@ -91,7 +91,7 @@ void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
     if (MemTracker::tracking_level() == NMT_detail) {
       ThreadCritical tc;
       assert(_simple_thread_stacks != NULL, "Must be initialized");
-      SimpleThreadStackSite site((address)base, size);
+      SimpleThreadStackSite site((address)base, size, NativeCallStack::empty_stack()); // Fake object just to serve as compare target for delete
       bool removed = _simple_thread_stacks->remove(site);
       assert(removed, "Must exist");
     }

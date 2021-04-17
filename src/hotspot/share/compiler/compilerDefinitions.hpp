@@ -28,7 +28,7 @@
 #include "compiler/compiler_globals.hpp"
 #include "jvmci/jvmci_globals.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 
 // The (closed set) of concrete compiler classes.
 enum CompilerType {
@@ -55,8 +55,8 @@ enum MethodCompilation {
 
 // Enumeration to distinguish tiers of compilation
 enum CompLevel {
-  CompLevel_any               = -2,
-  CompLevel_all               = -2,
+  CompLevel_any               = -2,        // Used for querying the state
+  CompLevel_all               = -2,        // Used for changing the state
   CompLevel_aot               = -1,
   CompLevel_none              = 0,         // Interpreter
   CompLevel_simple            = 1,         // C1
@@ -143,9 +143,7 @@ public:
   static bool is_aot()               { return AOT_ONLY(has_aot() && UseAOT) NOT_AOT(false);                 }
   static bool is_jvmci_compiler()    { return JVMCI_ONLY(has_jvmci() && UseJVMCICompiler) NOT_JVMCI(false); }
   static bool is_jvmci()             { return JVMCI_ONLY(has_jvmci() && EnableJVMCI) NOT_JVMCI(false);      }
-  static bool is_interpreter_only() {
-    return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
-  }
+  static bool is_interpreter_only();
 
   // is_*_only() functions describe situations in which the JVM is in one way or another
   // forced to use a particular compiler or their combination. The constraint functions
@@ -158,7 +156,7 @@ public:
   static bool is_c1_only() {
     if (!is_interpreter_only() && has_c1()) {
       const bool c1_only = !has_c2() && !is_jvmci_compiler();
-      const bool tiered_degraded_to_c1_only = TieredStopAtLevel >= CompLevel_simple && TieredStopAtLevel < CompLevel_full_optimization;
+      const bool tiered_degraded_to_c1_only = TieredCompilation && TieredStopAtLevel >= CompLevel_simple && TieredStopAtLevel < CompLevel_full_optimization;
       const bool c1_only_compilation_mode = CompilationModeFlag::quick_only();
       return c1_only || tiered_degraded_to_c1_only || c1_only_compilation_mode;
     }
@@ -177,9 +175,10 @@ public:
   // Is the JVM in a configuration that permits only c1-compiled methods at level 1?
   static bool is_c1_simple_only() {
     if (is_c1_only()) {
-      const bool tiered_degraded_to_level_1 = TieredStopAtLevel == CompLevel_simple;
+      const bool tiered_degraded_to_level_1 = TieredCompilation && TieredStopAtLevel == CompLevel_simple;
       const bool c1_only_compilation_mode = CompilationModeFlag::quick_only();
-      return tiered_degraded_to_level_1 || c1_only_compilation_mode;
+      const bool tiered_off = !TieredCompilation;
+      return tiered_degraded_to_level_1 || c1_only_compilation_mode || tiered_off;
     }
     return false;
   }

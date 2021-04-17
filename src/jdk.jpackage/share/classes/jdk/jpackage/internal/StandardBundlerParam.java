@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@ import java.util.stream.Stream;
 class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
     private static final String JAVABASEJMOD = "java.base.jmod";
-    private final static String DEFAULT_VERSION = "1.0";
-    private final static String DEFAULT_RELEASE = "1";
-    private final static String[] DEFAULT_JLINK_OPTIONS = {
+    private static final String DEFAULT_VERSION = "1.0";
+    private static final String DEFAULT_RELEASE = "1";
+    private static final String[] DEFAULT_JLINK_OPTIONS = {
             "--strip-native-commands",
             "--strip-debug",
             "--no-man-pages",
@@ -191,6 +191,14 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     Path.class,
                     params -> null,
                     (s, p) -> Path.of(s)
+            );
+
+    static final StandardBundlerParam<String> ABOUT_URL =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.ABOUT_URL.getId(),
+                    String.class,
+                    params -> null,
+                    (s, p) -> s
             );
 
     static final StandardBundlerParam<String> VENDOR =
@@ -387,7 +395,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> {
                         List<Path> modulePath = Stream.of(s.split(File.pathSeparator))
                                 .map(Path::of)
-                                .collect(Collectors.toList());
+                                .toList();
                         Path javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
 
                         // Add the default JDK module path to the module path.
@@ -395,7 +403,8 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                             List<Path> jdkModulePath = getDefaultModulePath();
 
                             if (jdkModulePath != null) {
-                                modulePath.addAll(jdkModulePath);
+                                modulePath = Stream.concat(modulePath.stream(),
+                                        jdkModulePath.stream()).toList();
                                 javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
                             }
                         }

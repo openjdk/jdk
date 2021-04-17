@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class watch001a {
         fS1 = flag ? fS1 :  new boolean[] {fS0};
         fS2 = flag ? fS2 :  new boolean[][] {fS1};
 
-        FS0 = flag ? FS0 : new Boolean(false);
+        FS0 = flag ? FS0 : Boolean.valueOf(false);
         FS1 = flag ? FS1 : new Boolean[] {FS0};
         FS2 = flag ? FS2 : new Boolean[][] {FS1};
 
@@ -98,11 +98,11 @@ public class watch001a {
             fT0 = flag ? fT0 : Float.MIN_VALUE;
             fV0 = flag ? fV0 : Integer.MIN_VALUE;
 
-            FP0 = flag ? FP0 : new Byte(Byte.MIN_VALUE) ;
-            FU0 = flag ? FU0 : new Character(Character.MIN_VALUE);
-            FR0 = flag ? FR0 : new Double(Double.MIN_VALUE);
-            FT0 = flag ? FT0 : new Float(Float.MIN_VALUE);
-            FV0 = flag ? FV0 : new Long(Long.MIN_VALUE);
+            FP0 = flag ? FP0 : Byte.valueOf(Byte.MIN_VALUE) ;
+            FU0 = flag ? FU0 : Character.valueOf(Character.MIN_VALUE);
+            FR0 = flag ? FR0 : Double.valueOf(Double.MIN_VALUE);
+            FT0 = flag ? FT0 : Float.valueOf(Float.MIN_VALUE);
+            FV0 = flag ? FV0 : Long.valueOf(Long.MIN_VALUE);
 
             fP1 = flag ? fP1 : new byte[] {fP0};
             fP2 = flag ? fP2 : new byte[][] {fP1};

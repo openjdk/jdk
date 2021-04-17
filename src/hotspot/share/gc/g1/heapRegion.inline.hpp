@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
   assert(!is_humongous(), "Humongous objects not handled here");
   bool obj_is_dead = is_obj_dead(obj, prev_bitmap);
 
-  if (ClassUnloadingWithConcurrentMark && obj_is_dead) {
+  if (ClassUnloading && obj_is_dead) {
     assert(!block_is_obj(addr), "must be");
     *size = block_size_using_bitmap(addr, prev_bitmap);
   } else {
@@ -141,14 +141,21 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
     assert(is_continues_humongous(), "This case can only happen for humongous regions");
     return (p == humongous_start_region()->bottom());
   }
-  if (ClassUnloadingWithConcurrentMark) {
-    return !g1h->is_obj_dead(oop(p), this);
+  // When class unloading is enabled it is not safe to only consider top() to conclude if the
+  // given pointer is a valid object. The situation can occur both for class unloading in a
+  // Full GC and during a concurrent cycle.
+  // During a Full GC regions can be excluded from compaction due to high live ratio, and
+  // because of this there can be stale objects for unloaded classes left in these regions.
+  // During a concurrent cycle class unloading is done after marking is complete and objects
+  // for the unloaded classes will be stale until the regions are collected.
+  if (ClassUnloading) {
+    return !g1h->is_obj_dead(cast_to_oop(p), this);
   }
   return p < top();
 }
 
 inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
-  assert(ClassUnloadingWithConcurrentMark,
+  assert(ClassUnloading,
          "All blocks should be objects if class unloading isn't used, so this method should not be called. "
          "HR: [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ") "
          "addr: " PTR_FORMAT,
@@ -175,7 +182,7 @@ inline size_t HeapRegion::block_size(const HeapWord *addr) const {
   }
 
   if (block_is_obj(addr)) {
-    return oop(addr)->size();
+    return cast_to_oop(addr)->size();
   }
 
   return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap());
@@ -198,9 +205,8 @@ inline void HeapRegion::reset_compacted_after_full_gc() {
   reset_after_full_gc_common();
 }
 
-inline void HeapRegion::reset_pinned_after_full_gc() {
+inline void HeapRegion::reset_not_compacted_after_full_gc() {
   assert(!is_free(), "should not have compacted free region");
-  assert(is_pinned(), "must be");
 
   assert(compaction_top() == bottom(),
          "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
@@ -236,7 +242,7 @@ inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarke
     // some extra work done by get_next_marked_addr for
     // the case where next_addr is marked.
     if (bitmap->is_marked(next_addr)) {
-      oop current = oop(next_addr);
+      oop current = cast_to_oop(next_addr);
       next_addr += closure->apply(current);
     } else {
       next_addr = bitmap->get_next_marked_addr(next_addr, limit);
@@ -268,6 +274,7 @@ inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t min_word_size,
 inline void HeapRegion::note_start_of_marking() {
   _next_marked_bytes = 0;
   _next_top_at_mark_start = top();
+  _gc_efficiency = -1.0;
 }
 
 inline void HeapRegion::note_end_of_marking() {
@@ -287,7 +294,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
                                                         G1CollectedHeap* g1h) {
   assert(is_humongous(), "precondition");
   HeapRegion* sr = humongous_start_region();
-  oop obj = oop(sr->bottom());
+  oop obj = cast_to_oop(sr->bottom());
 
   // If concurrent and klass_or_null is NULL, then space has been
   // allocated but the object has not yet been published by setting
@@ -367,7 +374,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
 
   const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
   while (true) {
-    oop obj = oop(cur);
+    oop obj = cast_to_oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
     assert(obj->klass_or_null() != NULL,
            "Unparsable heap at " PTR_FORMAT, p2i(cur));

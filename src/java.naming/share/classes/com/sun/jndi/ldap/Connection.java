@@ -123,13 +123,13 @@ public final class Connection implements Runnable {
     private static final int dump = 0; // > 0 r, > 1 rw
 
 
-    final private Thread worker;    // Initialized in constructor
+    private final Thread worker;    // Initialized in constructor
 
     private boolean v3 = true;       // Set in setV3()
 
-    final public String host;  // used by LdapClient for generating exception messages
+    public final String host;  // used by LdapClient for generating exception messages
                          // used by StartTlsResponse when creating an SSL socket
-    final public int port;     // used by LdapClient for generating exception messages
+    public final int port;     // used by LdapClient for generating exception messages
                          // used by StartTlsResponse when creating an SSL socket
 
     private boolean bound = false;   // Set in setBound()
@@ -153,7 +153,7 @@ public final class Connection implements Runnable {
 
     // For processing "disconnect" unsolicited notification
     // Initialized in constructor
-    final private LdapClient parent;
+    private final LdapClient parent;
 
     // Incremented and returned in sync getMsgId()
     private int outMsgId = 0;
@@ -238,7 +238,7 @@ public final class Connection implements Runnable {
             outStream = new BufferedOutputStream(sock.getOutputStream());
 
         } catch (InvocationTargetException e) {
-            Throwable realException = e.getTargetException();
+            Throwable realException = e.getCause();
             // realException.printStackTrace();
 
             CommunicationException ce =

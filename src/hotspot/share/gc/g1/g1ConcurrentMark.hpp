@@ -50,10 +50,6 @@ class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 class ThreadClosure;
 
-PRAGMA_DIAG_PUSH
-// warning C4522: multiple assignment operators specified
-PRAGMA_DISABLE_MSVC_WARNING(4522)
-
 // This is a container class for either an oop or a continuation address for
 // mark stack entries. Both are pushed onto the mark stack.
 class G1TaskQueueEntry {
@@ -76,7 +72,7 @@ public:
 
   oop obj() const {
     assert(!is_array_slice(), "Trying to read array slice " PTR_FORMAT " as oop", p2i(_holder));
-    return (oop)_holder;
+    return cast_to_oop(_holder);
   }
 
   HeapWord* slice() const {
@@ -88,8 +84,6 @@ public:
   bool is_array_slice() const { return ((uintptr_t)_holder & ArraySliceBit) != 0; }
   bool is_null() const { return _holder == NULL; }
 };
-
-PRAGMA_DIAG_POP
 
 typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
@@ -465,9 +459,11 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   HeapWord* volatile* _top_at_rebuild_starts;
 public:
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
-  // Liveness of the given region as determined by concurrent marking, i.e. the amount of
+  // Live words in the given region as determined by concurrent marking, i.e. the amount of
   // live words between bottom and nTAMS.
-  size_t liveness(uint region) const { return _region_mark_stats[region]._live_words; }
+  size_t live_words(uint region) const { return _region_mark_stats[region]._live_words; }
+  // Returns the liveness value in bytes.
+  size_t live_bytes(uint region) const { return live_words(region) * HeapWordSize; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
@@ -616,10 +612,6 @@ private:
     // Initial value for the hash seed, used in the work stealing code
     init_hash_seed                = 17
   };
-
-  // Number of entries in the per-task stats entry. This seems enough to have a very
-  // low cache miss rate.
-  static const uint RegionMarkStatsCacheSize = 1024;
 
   G1CMObjArrayProcessor       _objArray_processor;
 

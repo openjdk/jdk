@@ -26,9 +26,9 @@
 
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
+#include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
-#include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
@@ -74,4 +74,9 @@ void VM_ShenandoahInitUpdateRefs::doit() {
 void VM_ShenandoahFinalUpdateRefs::doit() {
   ShenandoahGCPauseMark mark(_gc_id, SvcGCMarker::CONCURRENT);
   _gc->entry_final_updaterefs();
+}
+
+void VM_ShenandoahFinalRoots::doit() {
+  ShenandoahGCPauseMark mark(_gc_id, SvcGCMarker::CONCURRENT);
+  _gc->entry_final_roots();
 }

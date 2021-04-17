@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,7 @@ G1FullGCReferenceProcessingExecutor::G1RefProcTaskProxy::G1RefProcTaskProxy(Proc
                                                                       G1FullCollector* collector) :
      AbstractGangTask("G1 reference processing task"),
      _proc_task(proc_task),
-     _collector(collector),
-     _terminator(_collector->workers(), _collector->oop_queue_set()) { }
+     _collector(collector) { }
 
 void G1FullGCReferenceProcessingExecutor::G1RefProcTaskProxy::work(uint worker_id) {
   G1FullGCMarker* marker = _collector->marker(worker_id);

@@ -1063,10 +1063,10 @@ public class Types {
      * Is t a subtype of s?<br>
      * (not defined for Method and ForAll types)
      */
-    final public boolean isSubtype(Type t, Type s) {
+    public final boolean isSubtype(Type t, Type s) {
         return isSubtype(t, s, true);
     }
-    final public boolean isSubtypeNoCapture(Type t, Type s) {
+    public final boolean isSubtypeNoCapture(Type t, Type s) {
         return isSubtype(t, s, false);
     }
     public boolean isSubtype(Type t, Type s, boolean capture) {
@@ -4076,17 +4076,13 @@ public class Types {
             return buf.toList();
         }
 
-        private Type arraySuperType = null;
+        private Type arraySuperType;
         private Type arraySuperType() {
             // initialized lazily to avoid problems during compiler startup
             if (arraySuperType == null) {
-                synchronized (this) {
-                    if (arraySuperType == null) {
-                        // JLS 10.8: all arrays implement Cloneable and Serializable.
-                        arraySuperType = makeIntersectionType(List.of(syms.serializableType,
-                                syms.cloneableType), true);
-                    }
-                }
+                // JLS 10.8: all arrays implement Cloneable and Serializable.
+                arraySuperType = makeIntersectionType(List.of(syms.serializableType,
+                        syms.cloneableType), true);
             }
             return arraySuperType;
         }
@@ -4901,7 +4897,7 @@ public class Types {
      * Void if a second argument is not needed.
      */
     public static abstract class DefaultTypeVisitor<R,S> implements Type.Visitor<R,S> {
-        final public R visit(Type t, S s)               { return t.accept(this, s); }
+        public final R visit(Type t, S s)               { return t.accept(this, s); }
         public R visitClassType(ClassType t, S s)       { return visitType(t, s); }
         public R visitWildcardType(WildcardType t, S s) { return visitType(t, s); }
         public R visitArrayType(ArrayType t, S s)       { return visitType(t, s); }
@@ -4928,7 +4924,7 @@ public class Types {
      * Void if a second argument is not needed.
      */
     public static abstract class DefaultSymbolVisitor<R,S> implements Symbol.Visitor<R,S> {
-        final public R visit(Symbol s, S arg)                   { return s.accept(this, arg); }
+        public final R visit(Symbol s, S arg)                   { return s.accept(this, arg); }
         public R visitClassSymbol(ClassSymbol s, S arg)         { return visitSymbol(s, arg); }
         public R visitMethodSymbol(MethodSymbol s, S arg)       { return visitSymbol(s, arg); }
         public R visitOperatorSymbol(OperatorSymbol s, S arg)   { return visitSymbol(s, arg); }
@@ -4981,7 +4977,7 @@ public class Types {
      * visitor; use Void if no return type is needed.
      */
     public static abstract class UnaryVisitor<R> extends SimpleVisitor<R,Void> {
-        final public R visit(Type t) { return t.accept(this, null); }
+        public final R visit(Type t) { return t.accept(this, null); }
     }
 
     /**
@@ -4995,7 +4991,7 @@ public class Types {
      * not needed.
      */
     public static class MapVisitor<S> extends DefaultTypeVisitor<Type,S> {
-        final public Type visit(Type t) { return t.accept(this, null); }
+        public final Type visit(Type t) { return t.accept(this, null); }
         public Type visitType(Type t, S s) { return t; }
     }
 

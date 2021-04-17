@@ -156,13 +156,7 @@ enum G1Barrier {
   G1BarrierNoOptRoots  // Do not collect optional roots.
 };
 
-enum G1Mark {
-  G1MarkNone,
-  G1MarkFromRoot,
-  G1MarkPromotedFromRoot
-};
-
-template <G1Barrier barrier, G1Mark do_mark_object>
+template <G1Barrier barrier, bool should_mark>
 class G1ParCopyClosure : public G1ParCopyHelper {
 public:
   G1ParCopyClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :

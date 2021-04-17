@@ -29,8 +29,6 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -64,9 +62,9 @@
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
@@ -110,7 +108,6 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/vminfo.h>
-#include <sys/wait.h>
 
 // Missing prototypes for various system APIs.
 extern "C"
@@ -933,7 +930,6 @@ void os::free_thread(OSThread* osthread) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
   return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }
@@ -1047,54 +1043,6 @@ char * os::local_time_string(char *buf, size_t buflen) {
 
 struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
   return localtime_r(clock, res);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// runtime exit support
-
-// Note: os::shutdown() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::shutdown(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::shutdown() {
-
-  // allow PerfMemory to attempt cleanup of any persistent resources
-  perfMemory_exit();
-
-  // needs to remove object in file system
-  AttachListener::abort();
-
-  // flush buffered output, finish log files
-  ostream_abort();
-
-  // Check for abort hook
-  abort_hook_t abort_hook = Arguments::abort_hook();
-  if (abort_hook != NULL) {
-    abort_hook();
-  }
-}
-
-// Note: os::abort() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::abort(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
-  os::shutdown();
-  if (dump_core) {
-    ::abort(); // dump core
-  }
-
-  ::exit(1);
-}
-
-// Die immediately, no exit hook, no abort hook, no cleanup.
-// Dump a core file, if possible, for debugging.
-void os::die() {
-  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
-    // For TimeoutInErrorHandlingTest.java, we just kill the VM
-    // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
-  } else {
-    ::abort();
-  }
 }
 
 intx os::current_thread_id() {
@@ -3152,64 +3100,6 @@ size_t os::current_stack_size() {
   return s;
 }
 
-extern char** environ;
-
-// Run the specified command in a separate process. Return its exit value,
-// or -1 on failure (e.g. can't fork a new process).
-// Unlike system(), this function can be called from signal handler. It
-// doesn't block SIGINT et al.
-int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
-  char* argv[4] = { (char*)"sh", (char*)"-c", cmd, NULL};
-
-  pid_t pid = fork();
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    // Try to be consistent with system(), which uses "/usr/bin/sh" on AIX.
-    execve("/usr/bin/sh", argv, environ);
-
-    // execve failed
-    _exit(-1);
-
-  } else {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
-    int status;
-
-    // Wait for the child process to exit. This returns immediately if
-    // the child has already exited. */
-    while (waitpid(pid, &status, 0) < 0) {
-      switch (errno) {
-        case ECHILD: return 0;
-        case EINTR: break;
-        default: return -1;
-      }
-    }
-
-    if (WIFEXITED(status)) {
-      // The child exited normally; get its exit code.
-      return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
-      // The child exited because of a signal.
-      // The best value to return is 0x80 + signal number,
-      // because that is what all Unix shells do, and because
-      // it allows callers to distinguish between process exit and
-      // process death by signal.
-      return 0x80 + WTERMSIG(status);
-    } else {
-      // Unknown exit code; pass it through.
-      return status;
-    }
-  }
-  return -1;
-}
-
 // Get the default path to the core file
 // Returns the length of the string
 int os::get_core_path(char* buffer, size_t bufferSize) {
@@ -3225,12 +3115,6 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 
   return strlen(buffer);
 }
-
-#ifndef PRODUCT
-void TestReserveMemorySpecial_test() {
-  // No tests available for this platform
-}
-#endif
 
 bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);

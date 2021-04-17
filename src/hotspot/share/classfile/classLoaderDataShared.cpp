@@ -27,6 +27,7 @@
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "runtime/handles.inline.hpp"

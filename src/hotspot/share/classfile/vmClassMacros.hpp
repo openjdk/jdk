@@ -25,10 +25,10 @@
 #ifndef SHARE_CLASSFILE_VMCLASSMACROS_HPP
 #define SHARE_CLASSFILE_VMCLASSMACROS_HPP
 
-// _VM_CLASS_ENUM - internal: should be used only by VMClass*.{hpp,cpp}
+// _VM_CLASS_ENUM - internal: should be used only by vmClass*.{hpp,cpp}
 #define _VM_CLASS_ENUM(kname)    kname##_knum
 
-#define VM_CLASS_ID(kname)      VMClassID::_VM_CLASS_ENUM(kname)
+#define VM_CLASS_ID(kname)      vmClassID::_VM_CLASS_ENUM(kname)
 
 // VM_CLASSES_DO iterates the classes that are directly referenced
 // by the VM, suhch as java.lang.Object and java.lang.String. These
@@ -37,7 +37,7 @@
 //
 // Each VM class has a short klass name (like Object_klass),
 // and a vmSymbol name (like java_lang_Object). Both of these can
-// be used to find the VMClassID for this class. The following two
+// be used to find the vmClassID for this class. The following two
 // macros will evaluate to the same value:
 //
 //    VM_CLASS_ID(Object_klass)

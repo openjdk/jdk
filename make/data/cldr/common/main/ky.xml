@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -308,7 +308,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro">румынча</language>
 			<language type="ro_MD">молдованча</language>
 			<language type="rof">ромбочо</language>
-			<language type="root">түпкү</language>
 			<language type="ru">орусча</language>
 			<language type="rup">аромунча</language>
 			<language type="rw">руандача</language>
@@ -2278,9 +2277,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Санта Изабел</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Гонолулу</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Бирдиктүү дүйнөлүк убакыт</standard>
@@ -2400,11 +2396,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Броукен Хил</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Керри</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Мельбурн</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Керри</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Хобарт</exemplarCity>
@@ -3437,6 +3433,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Гонолулу</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Жонстон</exemplarCity>
@@ -5620,7 +5619,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>КФА франкы</displayName>
 				<displayName count="one">КФА франкы</displayName>
 				<displayName count="other">КФА франкы</displayName>
-				<symbol>CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>КФП франкы</displayName>
@@ -5836,7 +5835,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} карат</unitPattern>
 				<unitPattern count="other">{0} карат</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>децилитрга миллиграмм</displayName>
 				<unitPattern count="one">децилитрга {0} миллиграмм</unitPattern>
 				<unitPattern count="other">децилитрга {0} миллиграмм</unitPattern>
@@ -6753,7 +6752,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} кт</unitPattern>
 				<unitPattern count="other">{0} кт</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>мг/дл</displayName>
 				<unitPattern count="one">{0} мг/дл</unitPattern>
 				<unitPattern count="other">{0} мг/дл</unitPattern>
@@ -7059,9 +7058,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} мм</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µметр</displayName>
-				<unitPattern count="one">{0} µм</unitPattern>
-				<unitPattern count="other">{0} µм</unitPattern>
+				<displayName>μметр</displayName>
+				<unitPattern count="one">{0} μм</unitPattern>
+				<unitPattern count="other">{0} μм</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>нм</displayName>

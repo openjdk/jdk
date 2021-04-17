@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -260,7 +261,7 @@ void TemplateTable::fconst(int value)
   transition(vtos, ftos);
   switch (value) {
   case 0:
-    __ fmovs(v0, zr);
+    __ fmovs(v0, 0.0);
     break;
   case 1:
     __ fmovs(v0, 1.0);
@@ -279,7 +280,7 @@ void TemplateTable::dconst(int value)
   transition(vtos, dtos);
   switch (value) {
   case 0:
-    __ fmovd(v0, zr);
+    __ fmovd(v0, 0.0);
     break;
   case 1:
     __ fmovd(v0, 1.0);

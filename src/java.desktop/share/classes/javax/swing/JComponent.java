@@ -599,7 +599,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #setComponentPopupMenu
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public JPopupMenu getComponentPopupMenu() {
 
         if(!getInheritsPopupMenu()) {
@@ -656,14 +656,17 @@ public abstract class JComponent extends Container implements Serializable,
 
 
     /**
-     * Resets the UI property to a value from the current look and feel.
-     * <code>JComponent</code> subclasses must override this method
+     * This method is called to update the UI property to a value from the
+     * current look and feel.
+     * {@code JComponent} subclasses must override this method
      * like this:
      * <pre>
      *   public void updateUI() {
      *      setUI((SliderUI)UIManager.getUI(this);
      *   }
      *  </pre>
+     *
+     * @implSpec The default implementation of this method does nothing.
      *
      * @see #setUI
      * @see UIManager#getLookAndFeel
@@ -2851,6 +2854,8 @@ public abstract class JComponent extends Container implements Serializable,
      * potentially multiple lightweight applications running in a single VM)
      * can have their own setting. An applet can safely alter its default
      * locale because it will have no affect on other applets (or the browser).
+     * Passing {@code null} will reset the current locale back
+     * to VM's default locale.
      *
      * @param l the desired default <code>Locale</code> for new components.
      * @see #getDefaultLocale
@@ -2929,7 +2934,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @since 1.3
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e,
                                         int condition, boolean pressed) {
         InputMap map = getInputMap(condition, false);
@@ -2958,7 +2963,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @param pressed true if the key is pressed
      * @return true if there is a key binding for <code>e</code>
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     boolean processKeyBindings(KeyEvent e, boolean pressed) {
       if (!SwingUtilities.isValidKeyEventForKeyBindings(e)) {
           return false;
@@ -4516,7 +4521,7 @@ public abstract class JComponent extends Container implements Serializable,
      *          return value for this method
      * @see #getVisibleRect
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     static final void computeVisibleRect(Component c, Rectangle visibleRect) {
         Container p = c.getParent();
         Rectangle bounds = c.getBounds();
@@ -4685,7 +4690,7 @@ public abstract class JComponent extends Container implements Serializable,
      *          or <code>null</code> if not in any container
      */
     @BeanProperty(bound = false)
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public Container getTopLevelAncestor() {
         for(Container p = this; p != null; p = p.getParent()) {
             if(p instanceof Window || p instanceof Applet) {
@@ -5093,7 +5098,7 @@ public abstract class JComponent extends Container implements Serializable,
         this.paintingChild = paintingChild;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     void _paintImmediately(int x, int y, int w, int h) {
         Graphics g;
         Container c;

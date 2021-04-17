@@ -78,7 +78,7 @@ public final class EventInstrumentation {
     }
 
     static final class FieldInfo {
-        private final static Type STRING = Type.getType(String.class);
+        private static final Type STRING = Type.getType(String.class);
         final String fieldName;
         final String fieldDescriptor;
         final String internalClassName;
@@ -195,9 +195,8 @@ public final class EventInstrumentation {
                     if (values != null && values.size() == 2) {
                         Object key = values.get(0);
                         Object value = values.get(1);
-                        if (key instanceof String && value != null) {
+                        if (key instanceof String keyName && value != null) {
                             if (type == value.getClass()) {
-                                String keyName = (String) key;
                                 if ("value".equals(keyName)) {
                                    return (T) value;
                                 }

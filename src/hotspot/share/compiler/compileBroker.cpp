@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "jvm.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -50,13 +50,13 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
@@ -64,6 +64,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/debug.hpp"
@@ -795,7 +796,7 @@ Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
   Handle string = java_lang_String::create_from_str(name, CHECK_NH);
   Handle thread_group(THREAD, Universe::system_thread_group());
   return JavaCalls::construct_new_instance(
-                       SystemDictionary::Thread_klass(),
+                       vmClasses::Thread_klass(),
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
@@ -1005,7 +1006,8 @@ void CompileBroker::init_compiler_sweeper_threads() {
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        MutexLocker mu(Threads_lock);
+        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
       }
     }
@@ -1025,7 +1027,8 @@ void CompileBroker::init_compiler_sweeper_threads() {
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        MutexLocker mu(Threads_lock);
+        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
       }
     }
@@ -1111,7 +1114,8 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        MutexLocker mu(Threads_lock);
+        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added compiler thread %s (available memory: %dMB, available non-profiled code cache: %dMB)",
                       ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_np/M));
       }
@@ -1131,7 +1135,8 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        MutexLocker mu(Threads_lock);
+        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added compiler thread %s (available memory: %dMB, available profiled code cache: %dMB)",
                       ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_p/M));
       }
@@ -1272,7 +1277,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
         vframeStream vfst(thread->as_Java_thread());
         for (; !vfst.at_end(); vfst.next()) {
           if (vfst.method()->is_static_initializer() ||
-              (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
+              (vfst.method()->method_holder()->is_subclass_of(vmClasses::ClassLoader_klass()) &&
                   vfst.method()->name() == vmSymbols::loadClass_name())) {
             blocking = false;
             break;
@@ -1382,8 +1387,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
-  if (comp == NULL || !comp->can_compile_method(method) ||
-      compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
+  if (comp == NULL || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return NULL;
   }
 
@@ -1428,8 +1432,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // Note: A native method implies non-osr compilation which is
   //       checked with an assertion at the entry of this method.
   if (method->is_native() && !method->is_method_handle_intrinsic()) {
-    bool in_base_library;
-    address adr = NativeLookup::lookup(method, in_base_library, THREAD);
+    address adr = NativeLookup::lookup(method, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // In case of an exception looking up the method, we just forget
       // about it. The interpreter will kick-in and throw the exception.
@@ -1560,16 +1563,14 @@ bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int os
   bool is_native = method->is_native();
   // Some compilers may not support the compilation of natives.
   AbstractCompiler *comp = compiler(comp_level);
-  if (is_native &&
-      (!CICompileNatives || comp == NULL || !comp->supports_native())) {
+  if (is_native && (!CICompileNatives || comp == NULL)) {
     method->set_not_compilable_quietly("native methods not supported", comp_level);
     return true;
   }
 
   bool is_osr = (osr_bci != standard_entry_bci);
   // Some compilers may not support on stack replacement.
-  if (is_osr &&
-      (!CICompileOSR || comp == NULL || !comp->supports_osr())) {
+  if (is_osr && (!CICompileOSR || comp == NULL)) {
     method->set_not_osr_compilable("OSR not supported", comp_level);
     return true;
   }

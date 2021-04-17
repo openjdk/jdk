@@ -36,7 +36,7 @@ public:
   static void load_klass_from_Class(MacroAssembler* _masm, Register klass_reg, Register temp_reg, Register temp2_reg);
 
   static void verify_klass(MacroAssembler* _masm,
-                           Register obj_reg, VMClassID klass_id,
+                           Register obj_reg, vmClassID klass_id,
                            Register temp_reg, Register temp2_reg,
                            const char* error_message = "wrong klass") NOT_DEBUG_RETURN;
 

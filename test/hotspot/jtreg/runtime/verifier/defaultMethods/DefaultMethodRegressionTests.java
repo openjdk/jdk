@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,10 @@ public class DefaultMethodRegressionTests {
     }
     void testLostOverloadedMethod() {
         C c = new C();
-        assertEquals(c.bbb(new Integer(1)), 22);
-        assertEquals(c.bbb(new Float(1.1)), 33);
-        assertEquals(c.bbb(new Long(1L)), 44);
-        assertEquals(c.bbb(new Double(0.01)), 55);
+        assertEquals(c.bbb(Integer.valueOf(1)), 22);
+        assertEquals(c.bbb(Float.valueOf(1.1F)), 33);
+        assertEquals(c.bbb(Long.valueOf(1L)), 44);
+        assertEquals(c.bbb(Double.valueOf(0.01)), 55);
         assertEquals(c.bbb(new String("")), 66);
     }
     // Test to ensure that the inference verifier accepts older classfiles

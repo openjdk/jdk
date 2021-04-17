@@ -290,7 +290,7 @@ public final class StackWalker {
 
     static final EnumSet<Option> DEFAULT_EMPTY_OPTION = EnumSet.noneOf(Option.class);
 
-    private final static StackWalker DEFAULT_WALKER =
+    private static final StackWalker DEFAULT_WALKER =
         new StackWalker(DEFAULT_EMPTY_OPTION);
 
     private final Set<Option> options;

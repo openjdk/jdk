@@ -75,7 +75,7 @@ static NSRange javaIntArrayToNSRange(JNIEnv* env, jintArray array) {
                            sjm_getAccessibleName, fAccessible, fComponent);
         CHECK_EXCEPTION();
         if (axName != NULL) {
-            NSString* str = JNFJavaToNSString(env, axName);
+            NSString* str = JavaStringToNSString(env, axName);
             (*env)->DeleteLocalRef(env, axName);
             return str;
         }
@@ -100,7 +100,7 @@ static NSRange javaIntArrayToNSRange(JNIEnv* env, jintArray array) {
     jobject jrange = (*env)->CallStaticObjectMethod(env, sjc_CAccessibleText, jm_getTextRange,
                        axEditableText, 0, getAxTextCharCount(env, axEditableText, fComponent), fComponent);
     CHECK_EXCEPTION();
-    NSString *string = JNFJavaToNSString(env, jrange); // AWT_THREADING Safe (AWTRunLoop)
+    NSString *string = JavaStringToNSString(env, jrange);
 
     (*env)->DeleteLocalRef(env, jrange);
     (*env)->DeleteLocalRef(env, axEditableText);
@@ -116,7 +116,7 @@ static NSRange javaIntArrayToNSRange(JNIEnv* env, jintArray array) {
     DECLARE_STATIC_METHOD_RETURN(jm_getVisibleCharacterRange, sjc_CAccessibleText, "getVisibleCharacterRange",
                           "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)[I", DEFAULT_RANGE);
     jintArray axTextRange = (*env)->CallStaticObjectMethod(env, sjc_CAccessibleText,
-                 jm_getVisibleCharacterRange, fAccessible, fComponent); // AWT_THREADING Safe (AWTRunLoop)
+                 jm_getVisibleCharacterRange, fAccessible, fComponent);
     CHECK_EXCEPTION();
     if (axTextRange == NULL) return DEFAULT_RANGE;
 
@@ -130,10 +130,10 @@ static NSRange javaIntArrayToNSRange(JNIEnv* env, jintArray array) {
     DECLARE_STATIC_METHOD_RETURN(jm_getStringForRange, sjc_CAccessibleText, "getStringForRange",
                  "(Ljavax/accessibility/Accessible;Ljava/awt/Component;II)Ljava/lang/String;", nil);
     jstring jstringForRange = (jstring)(*env)->CallStaticObjectMethod(env, sjc_CAccessibleText, jm_getStringForRange,
-                            fAccessible, fComponent, range.location, range.length); // AWT_THREADING Safe (AWTRunLoop)
+                            fAccessible, fComponent, range.location, range.length);
     CHECK_EXCEPTION();
     if (jstringForRange == NULL) return @"";
-    NSString* str = JNFJavaToNSString(env, jstringForRange);
+    NSString* str = JavaStringToNSString(env, jstringForRange);
     (*env)->DeleteLocalRef(env, jstringForRange);
     return str;
 }

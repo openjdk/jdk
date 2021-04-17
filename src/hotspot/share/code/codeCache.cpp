@@ -36,6 +36,8 @@
 #include "code/pcDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/oopMap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -968,6 +970,9 @@ void CodeCache::initialize() {
 
 void codeCache_init() {
   CodeCache::initialize();
+}
+
+void AOTLoader_init() {
   // Load AOT libraries and add AOT code heaps.
   AOTLoader::initialize();
 }

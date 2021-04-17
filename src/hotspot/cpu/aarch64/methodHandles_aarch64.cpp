@@ -65,7 +65,7 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj, VMClassID klass_id,
+                                 Register obj, vmClassID klass_id,
                                  const char* error_message) {
   InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
   Klass* klass = vmClasses::klass_at(klass_id);
@@ -444,7 +444,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
 #ifndef PRODUCT
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh,
+                              oopDesc* mh,
                               intptr_t* saved_regs,
                               intptr_t* entry_sp) {  }
 

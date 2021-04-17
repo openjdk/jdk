@@ -25,6 +25,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -40,7 +41,7 @@
 #include "utilities/sizes.hpp"
 
 // Resolve and allocate String
-JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_string_by_symbol(JavaThread *thread, void* string_result, const char* name))
+JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_string_by_symbol(JavaThread* current, void* string_result, const char* name))
   JRT_BLOCK
     oop str = *(oop*)string_result; // Is it resolved already?
     if (str == NULL) { // Do resolution
@@ -53,26 +54,27 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_string_by_symbol(JavaThread *thre
       *(oop*)string_result = str; // Store result
     }
     assert(str != NULL, "Should be allocated!");
-    thread->set_vm_result(str);
+    current->set_vm_result(str);
   JRT_BLOCK_END
 JRT_END
 
 
 
-Klass* CompilerRuntime::resolve_klass_helper(JavaThread *thread, const char* name, int len, TRAPS) {
-  ResourceMark rm(THREAD);
+Klass* CompilerRuntime::resolve_klass_helper(const char* name, int len, TRAPS) {
+  JavaThread* current = THREAD->as_Java_thread();
+  ResourceMark rm(current);
   // last java frame on stack (which includes native call frames)
-  RegisterMap cbl_map(thread, false);
+  RegisterMap cbl_map(current, false);
   // Skip stub
-  frame caller_frame = thread->last_frame().sender(&cbl_map);
+  frame caller_frame = current->last_frame().sender(&cbl_map);
   CodeBlob* caller_cb = caller_frame.cb();
   guarantee(caller_cb != NULL && caller_cb->is_compiled(), "must be called from compiled method");
   CompiledMethod* caller_nm = caller_cb->as_compiled_method_or_null();
-  methodHandle caller(THREAD, caller_nm->method());
+  methodHandle caller(current, caller_nm->method());
 
   // Use class loader of aot method.
-  Handle loader(THREAD, caller->method_holder()->class_loader());
-  Handle protection_domain(THREAD, caller->method_holder()->protection_domain());
+  Handle loader(current, caller->method_holder()->class_loader());
+  Handle protection_domain(current, caller->method_holder()->protection_domain());
 
   TempNewSymbol sym = SymbolTable::new_symbol(name, len);
   if (sym != NULL && Signature::has_envelope(sym)) {
@@ -88,7 +90,7 @@ Klass* CompilerRuntime::resolve_klass_helper(JavaThread *thread, const char* nam
 }
 
 // Resolve Klass
-JRT_BLOCK_ENTRY(Klass*, CompilerRuntime::resolve_klass_by_symbol(JavaThread *thread, Klass** klass_result, const char* name))
+JRT_BLOCK_ENTRY(Klass*, CompilerRuntime::resolve_klass_by_symbol(JavaThread* current, Klass** klass_result, const char* name))
   Klass* k = NULL;
   JRT_BLOCK
     k = *klass_result; // Is it resolved already?
@@ -96,7 +98,7 @@ JRT_BLOCK_ENTRY(Klass*, CompilerRuntime::resolve_klass_by_symbol(JavaThread *thr
       // First 2 bytes of name contains length (number of bytes).
       int len = Bytes::get_Java_u2((address)name);
       name += 2;
-      k = CompilerRuntime::resolve_klass_helper(thread, name, len, CHECK_NULL);
+      k = CompilerRuntime::resolve_klass_helper(name, len, CHECK_NULL);
       *klass_result = k; // Store result
     }
   JRT_BLOCK_END
@@ -106,7 +108,7 @@ JRT_END
 
 
 Method* CompilerRuntime::resolve_method_helper(Klass* klass, const char* method_name, int method_name_len,
-                                                               const char* signature_name, int signature_name_len) {
+                                               const char* signature_name, int signature_name_len) {
   Method* m = NULL;
   TempNewSymbol name_symbol = SymbolTable::probe(method_name, method_name_len);
   TempNewSymbol signature_symbol = SymbolTable::probe(signature_name, signature_name_len);
@@ -127,13 +129,13 @@ Method* CompilerRuntime::resolve_method_helper(Klass* klass, const char* method_
   return m;
 }
 
-JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_dynamic_invoke(JavaThread *thread, oop* appendix_result))
+JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_dynamic_invoke(JavaThread* current, oop* appendix_result))
   JRT_BLOCK
   {
-    ResourceMark rm(THREAD);
-    vframeStream vfst(thread, true);  // Do not skip and javaCalls
+    ResourceMark rm(current);
+    vframeStream vfst(current, true);  // Do not skip and javaCalls
     assert(!vfst.at_end(), "Java frame must exist");
-    methodHandle caller(THREAD, vfst.method());
+    methodHandle caller(current, vfst.method());
     InstanceKlass* holder = caller->method_holder();
     int bci = vfst.bci();
     Bytecode_invoke bytecode(caller, bci);
@@ -141,7 +143,7 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_dynamic_invoke(JavaThread *thread
 
     // Make sure it's resolved first
     CallInfo callInfo;
-    constantPoolHandle cp(THREAD, holder->constants());
+    constantPoolHandle cp(current, holder->constants());
     ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index, true));
     Bytecodes::Code invoke_code = bytecode.invoke_code();
     if (!cp_cache_entry->is_resolved(invoke_code)) {
@@ -154,10 +156,10 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_dynamic_invoke(JavaThread *thread
         vmassert(cp_cache_entry->is_resolved(invoke_code), "sanity");
     }
 
-    Handle appendix(THREAD, cp_cache_entry->appendix_if_resolved(cp));
+    Handle appendix(current, cp_cache_entry->appendix_if_resolved(cp));
     Klass *appendix_klass = appendix.is_null() ? NULL : appendix->klass();
 
-    methodHandle adapter_method(THREAD, cp_cache_entry->f1_as_method());
+    methodHandle adapter_method(current, cp_cache_entry->f1_as_method());
     InstanceKlass *adapter_klass = adapter_method->method_holder();
 
     if (appendix_klass != NULL && appendix_klass->is_instance_klass()) {
@@ -178,12 +180,12 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_dynamic_invoke(JavaThread *thread
     }
 
     *appendix_result = appendix();
-    thread->set_vm_result(appendix());
+    current->set_vm_result(appendix());
   }
   JRT_BLOCK_END
 JRT_END
 
-JRT_BLOCK_ENTRY(MethodCounters*, CompilerRuntime::resolve_method_by_symbol_and_load_counters(JavaThread *thread, MethodCounters** counters_result, Klass* klass, const char* data))
+JRT_BLOCK_ENTRY(MethodCounters*, CompilerRuntime::resolve_method_by_symbol_and_load_counters(JavaThread* current, MethodCounters** counters_result, Klass* klass, const char* data))
   MethodCounters* c = *counters_result; // Is it resolved already?
   JRT_BLOCK
      if (c == NULL) { // Do resolution
@@ -203,7 +205,7 @@ JRT_BLOCK_ENTRY(MethodCounters*, CompilerRuntime::resolve_method_by_symbol_and_l
        assert(m != NULL, "Method must resolve successfully");
 
        // Create method counters immediately to avoid check at runtime.
-       c = m->get_method_counters(thread);
+       c = m->get_method_counters(current);
        if (c == NULL) {
          THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "Cannot allocate method counters");
        }
@@ -215,7 +217,7 @@ JRT_BLOCK_ENTRY(MethodCounters*, CompilerRuntime::resolve_method_by_symbol_and_l
 JRT_END
 
 // Resolve and initialize Klass
-JRT_BLOCK_ENTRY(Klass*, CompilerRuntime::initialize_klass_by_symbol(JavaThread *thread, Klass** klass_result, const char* name))
+JRT_BLOCK_ENTRY(Klass*, CompilerRuntime::initialize_klass_by_symbol(JavaThread* current, Klass** klass_result, const char* name))
   Klass* k = NULL;
   JRT_BLOCK
     k = klass_result[0]; // Is it initialized already?
@@ -225,7 +227,7 @@ JRT_BLOCK_ENTRY(Klass*, CompilerRuntime::initialize_klass_by_symbol(JavaThread *
         // First 2 bytes of name contains length (number of bytes).
         int len = Bytes::get_Java_u2((address)name);
         const char *cname = name + 2;
-        k = CompilerRuntime::resolve_klass_helper(thread,  cname, len, CHECK_NULL);
+        k = CompilerRuntime::resolve_klass_helper(cname, len, CHECK_NULL);
         klass_result[1] = k; // Store resolved result
       }
       Klass* k0 = klass_result[0]; // Is it initialized already?
@@ -246,34 +248,34 @@ JRT_BLOCK_ENTRY(Klass*, CompilerRuntime::initialize_klass_by_symbol(JavaThread *
 JRT_END
 
 
-JRT_BLOCK_ENTRY(void, CompilerRuntime::invocation_event(JavaThread *thread, MethodCounters* counters))
+JRT_BLOCK_ENTRY(void, CompilerRuntime::invocation_event(JavaThread* current, MethodCounters* counters))
   JRT_BLOCK
-    methodHandle mh(THREAD, counters->method());
-    RegisterMap map(thread, false);
+    methodHandle mh(current, counters->method());
+    RegisterMap map(current, false);
     // Compute the enclosing method
-    frame fr = thread->last_frame().sender(&map);
+    frame fr = current->last_frame().sender(&map);
     CompiledMethod* cm = fr.cb()->as_compiled_method_or_null();
     assert(cm != NULL && cm->is_compiled(), "Sanity check");
-    methodHandle emh(THREAD, cm->method());
-    CompilationPolicy::event(emh, mh, InvocationEntryBci, InvocationEntryBci, CompLevel_aot, cm, THREAD);
+    methodHandle emh(current, cm->method());
+    CompilationPolicy::event(emh, mh, InvocationEntryBci, InvocationEntryBci, CompLevel_aot, cm, CHECK);
   JRT_BLOCK_END
 JRT_END
 
-JRT_BLOCK_ENTRY(void, CompilerRuntime::backedge_event(JavaThread *thread, MethodCounters* counters, int branch_bci, int target_bci))
+JRT_BLOCK_ENTRY(void, CompilerRuntime::backedge_event(JavaThread* current, MethodCounters* counters, int branch_bci, int target_bci))
   assert(branch_bci != InvocationEntryBci && target_bci != InvocationEntryBci, "Wrong bci");
   assert(target_bci <= branch_bci, "Expected a back edge");
   JRT_BLOCK
-    methodHandle mh(THREAD, counters->method());
-    RegisterMap map(thread, false);
+    methodHandle mh(current, counters->method());
+    RegisterMap map(current, false);
 
     // Compute the enclosing method
-    frame fr = thread->last_frame().sender(&map);
+    frame fr = current->last_frame().sender(&map);
     CompiledMethod* cm = fr.cb()->as_compiled_method_or_null();
     assert(cm != NULL && cm->is_compiled(), "Sanity check");
-    methodHandle emh(THREAD, cm->method());
-    nmethod* osr_nm = CompilationPolicy::event(emh, mh, branch_bci, target_bci, CompLevel_aot, cm, THREAD);
+    methodHandle emh(current, cm->method());
+    nmethod* osr_nm = CompilationPolicy::event(emh, mh, branch_bci, target_bci, CompLevel_aot, cm, CHECK);
     if (osr_nm != NULL) {
-      Deoptimization::deoptimize_frame(thread, fr.id());
+      Deoptimization::deoptimize_frame(current, fr.id());
     }
   JRT_BLOCK_END
 JRT_END

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,6 +327,19 @@ public interface JavaLangAccess {
      * @throws IllegalArgumentException for malformed surrogates
      */
     byte[] getBytesUTF8NoRepl(String s);
+
+    /**
+     * Inflated copy from byte[] to char[], as defined by StringLatin1.inflate
+     */
+    void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+
+    /**
+     * Decodes ASCII from the source byte array into the destination
+     * char array.
+     *
+     * @return the number of bytes successfully decoded, at most len
+     */
+    int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Set the cause of Throwable

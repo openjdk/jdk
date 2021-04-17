@@ -28,12 +28,14 @@
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -248,16 +250,6 @@ static void pop_param_registers(MacroAssembler* masm, int fp_regs_in_arguments) 
 // All vector registers are saved by default on ARM.
 bool SharedRuntime::is_wide_vector(int size) {
   return false;
-}
-
-size_t SharedRuntime::trampoline_size() {
-  return 16;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  InlinedAddress dest(destination);
-  __ indirect_jump(dest, Rtemp);
-  __ bind_literal(dest);
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
@@ -1897,10 +1889,12 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
-                                               int shadow_space_bytes,
-                                               const GrowableArray<VMReg>& input_registers,
-                                               const GrowableArray<VMReg>& output_registers) {
+#ifdef COMPILER2
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
+                                                int shadow_space_bytes,
+                                                const GrowableArray<VMReg>& input_registers,
+                                                const GrowableArray<VMReg>& output_registers) {
   Unimplemented();
   return nullptr;
 }
+#endif

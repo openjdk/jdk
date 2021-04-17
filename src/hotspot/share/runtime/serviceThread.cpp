@@ -29,12 +29,14 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/serviceThread.hpp"
@@ -95,7 +97,7 @@ void ServiceThread::initialize() {
   // Initialize thread_oop to put it into the system threadGroup
   Handle thread_group (THREAD, Universe::system_thread_group());
   Handle thread_oop = JavaCalls::construct_new_instance(
-                          SystemDictionary::Thread_klass(),
+                          vmClasses::Thread_klass(),
                           vmSymbols::threadgroup_string_void_signature(),
                           thread_group,
                           string,
