@@ -43,7 +43,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
-import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -51,6 +50,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.ArrayDecoder;
@@ -3236,32 +3237,38 @@ public final class String
      * @param size the number of elements in the array (<= elements.length)
      * @return the joined string
      */
+    @ForceInline
     static String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
         int icoder = prefix.coder() | suffix.coder() | delimiter.coder();
-        long llen = (long) prefix.length() + suffix.length() + (long) Math.max(0, size - 1) * delimiter.length();
+        long len = (long) prefix.length() + suffix.length() + (long) Math.max(0, size - 1) * delimiter.length();
+        // assert len > 0L; // max: (long) Integer.MAX_VALUE << 32
+        // following loop wil add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
+        // so len can overflow at most once
         for (int i = 0; i < size; i++) {
             var el = elements[i];
-            llen += el.length();
+            len += el.length();
             icoder |= el.coder();
         }
         byte coder = (byte) icoder;
-        int len = (int) llen;
-        if (llen != len) {
+        // long len overflow check, char -> byte length, int len overflow check
+        if (len < 0L || (len <<= coder) != (int) len) {
             throw new OutOfMemoryError("Requested string length exceeds VM limit");
         }
+        byte[] value = StringConcatHelper.newArray(len);
 
-        byte[] value = StringConcatHelper.newArray(((long) icoder << 32) | llen);
         int off = 0;
         prefix.getBytes(value, off, coder); off += prefix.length();
-        for (int i = 0; i < size; i++) {
-            if (i > 0) {
-                delimiter.getBytes(value, off, coder); off += delimiter.length();
-            }
-            var el = elements[i];
+        if (size > 0) {
+            var el = elements[0];
             el.getBytes(value, off, coder); off += el.length();
+            for (int i = 1; i < size; i++) {
+                delimiter.getBytes(value, off, coder); off += delimiter.length();
+                el = elements[i];
+                el.getBytes(value, off, coder); off += el.length();
+            }
         }
-        suffix.getBytes(value, off, coder); off += suffix.length();
-        //assert off == value.length >> coder;
+        suffix.getBytes(value, off, coder);
+        // assert off + suffix.length() == value.length >> coder;
 
         return new String(value, coder);
     }
