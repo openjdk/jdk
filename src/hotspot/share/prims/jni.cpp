@@ -3732,7 +3732,7 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
 
   ThreadStateTransition::transition_from_native(thread, _thread_in_vm);
   Threads::destroy_vm();
-  // Should not change thread state, VM is gone
+  // Don't bother restoring thread state, VM is gone.
   vm_created = 0;
   return JNI_OK;
 }
