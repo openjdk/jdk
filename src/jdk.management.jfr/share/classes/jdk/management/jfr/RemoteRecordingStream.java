@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,6 @@ import jdk.jfr.internal.management.EventByteStream;
  * usage on a remote host and print the events to standard out.
  *
  * <pre>
- * {
  *     {@literal
  *     String host = "com.example";
  *     int port = 4711;
@@ -83,7 +82,7 @@ import jdk.jfr.internal.management.EventByteStream;
  *         rs.onEvent("jdk.GCPhasePause", System.out::println);
  *         rs.start();
  *     }
- * }
+ *     }
  * </pre>
  *
  * @since 16
