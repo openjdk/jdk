@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,6 @@ public class PwriteDirect {
 
     private static boolean initTests() throws Exception {
         Path p = DirectIOTest.createTempFile();
-        if (!DirectIOTest.isDirectIOSupportedByFS(p)) {
-            Files.delete(p);
-            return false;
-        }
         try {
             FileStore fs = Files.getFileStore(p);
             alignment = (int)fs.getBlockSize();

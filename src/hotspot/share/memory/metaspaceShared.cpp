@@ -145,6 +145,33 @@ static bool shared_base_valid(char* shared_base) {
 #endif
 }
 
+class DumpClassListCLDClosure : public CLDClosure {
+  fileStream *_stream;
+public:
+  DumpClassListCLDClosure(fileStream* f) : CLDClosure() { _stream = f; }
+  void do_cld(ClassLoaderData* cld) {
+    for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
+      if (klass->is_instance_klass()) {
+        InstanceKlass* ik = InstanceKlass::cast(klass);
+        if (ik->is_shareable()) {
+          _stream->print_cr("%s", ik->name()->as_C_string());
+        }
+      }
+    }
+  }
+};
+
+void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
+  fileStream stream(file_name, "w");
+  if (stream.is_open()) {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    DumpClassListCLDClosure collect_classes(&stream);
+    ClassLoaderDataGraph::loaded_cld_do(&collect_classes);
+  } else {
+    THROW_MSG(vmSymbols::java_io_IOException(), "Failed to open file");
+  }
+}
+
 static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
   if (specified_base != NULL && aligned_base < specified_base) {
     // SharedBaseAddress is very high (e.g., 0xffffffffffffff00) so

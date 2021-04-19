@@ -32,6 +32,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -57,6 +58,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe_hp.hpp"
 
@@ -729,10 +731,11 @@ C2V_END
 C2V_VMENTRY_0(jint, getVtableIndexForInterfaceMethod, (JNIEnv* env, jobject, jobject jvmci_type, jobject jvmci_method))
   Klass* klass = JVMCIENV->asKlass(jvmci_type);
   methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
+  InstanceKlass* holder = method->method_holder();
   if (klass->is_interface()) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Interface %s should be handled in Java code", klass->external_name()));
   }
-  if (!method->method_holder()->is_interface()) {
+  if (!holder->is_interface()) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Method %s is not held by an interface, this case should be handled in Java code", method->name_and_sig_as_C_string()));
   }
   if (!klass->is_instance_klass()) {
@@ -740,6 +743,9 @@ C2V_VMENTRY_0(jint, getVtableIndexForInterfaceMethod, (JNIEnv* env, jobject, job
   }
   if (!InstanceKlass::cast(klass)->is_linked()) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Class %s must be linked", klass->external_name()));
+  }
+  if (!klass->is_subtype_of(holder)) {
+    JVMCI_THROW_MSG_0(InternalError, err_msg("Class %s does not implement interface %s", klass->external_name(), holder->external_name()));
   }
   return LinkResolver::vtable_index_of_interface_method(klass, method);
 C2V_END

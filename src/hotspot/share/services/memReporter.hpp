@@ -56,6 +56,9 @@ class MemReporterBase : public StackObj {
     return _output;
   }
   // Current reporting scale
+  size_t scale() const {
+    return _scale;
+  }
   inline const char* current_scale() const {
     return NMTUtil::scale_name(_scale);
   }
@@ -144,10 +147,10 @@ class MemDetailReporter : public MemSummaryReporter {
   void report_detail();
   // Report virtual memory map
   void report_virtual_memory_map();
-  // Report malloc allocation sites
-  void report_malloc_sites();
-  // Report virtual memory reservation sites
-  void report_virtual_memory_allocation_sites();
+  // Report malloc allocation sites; returns number of omitted sites
+  int report_malloc_sites();
+  // Report virtual memory reservation sites; returns number of omitted sites
+  int report_virtual_memory_allocation_sites();
 
   // Report a virtual memory region
   void report_virtual_memory_region(const ReservedMemoryRegion* rgn);

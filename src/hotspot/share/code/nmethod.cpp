@@ -38,6 +38,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
@@ -1169,7 +1170,7 @@ void nmethod::inc_decompile_count() {
 
 bool nmethod::try_transition(int new_state_int) {
   signed char new_state = new_state_int;
-#ifdef DEBUG
+#ifdef ASSERT
   if (new_state != unloaded) {
     assert_lock_strong(CompiledMethod_lock);
   }
