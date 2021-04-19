@@ -25,6 +25,8 @@ package jdk.test.lib.hotspot.ir_framework;
 
 import java.io.*;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,9 +36,14 @@ import java.util.regex.Pattern;
  */
 class IRMatcher {
     private static final boolean PRINT_IR_ENCODING = Boolean.parseBoolean(System.getProperty("PrintIREncoding", "false"));
+    private static final Pattern irEncodingPattern =
+            Pattern.compile("(?<=" + IREncodingPrinter.START + "\\R)[\\s\\S]*(?=" + IREncodingPrinter.END + ")");
+    private static final Pattern compileIdPattern = Pattern.compile("compile_id='(\\d+)'");
+
     private final Map<String, IRMethod> compilations;
     private final Class<?> testClass;
     private final Map<Method, List<String>> fails;
+    private final Pattern compileIdPatternForTestClass;
     private final String hotspotPidFileName;
     private IRMethod irMethod; // Current IR method to which rules are applied
     private Method method; // Current method to which rules are applied
@@ -44,9 +51,11 @@ class IRMatcher {
     private int irRuleIndex; // Current IR rule index;
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
-        this.compilations =  new LinkedHashMap<>();
+        this.compilations =  new HashMap<>();
         this.fails = new HashMap<>();
         this.testClass = testClass;
+        this.compileIdPatternForTestClass = Pattern.compile("compile_id='(\\d+)'.*" + Pattern.quote(testClass.getCanonicalName())
+                                                            + " (\\S+)");
         this.hotspotPidFileName = hotspotPidFileName;
         setupTestMethods(irEncoding);
         if (TestFramework.VERBOSE || PRINT_IR_ENCODING) {
@@ -61,13 +70,13 @@ class IRMatcher {
      * Sets up a map testname -> IRMethod (containing the PrintIdeal and PrintOptoAssembly output for testname).
      */
     private void setupTestMethods(String irEncoding) {
-        Map<String, Integer[]> irRulesMap = parseIREncoding(irEncoding);
+        Map<String, int[]> irRulesMap = parseIREncoding(irEncoding);
         for (Method m : testClass.getDeclaredMethods()) {
             method = m;
             IR[] irAnnos =  m.getAnnotationsByType(IR.class);
             if (irAnnos.length > 0) {
                 // Validation of legal @IR attributes and placement of the annotation was already done in Test VM.
-                Integer[] ids = irRulesMap.get(m.getName());
+                int[] ids = irRulesMap.get(m.getName());
                 TestFramework.check(ids != null, "Should find method name in validIrRulesMap for " + m);
                 TestFramework.check(ids.length > 0, "Did not find any rule indices for " + m);
                 TestFramework.check(ids[ids.length - 1] < irAnnos.length, "Invalid IR rule index found in validIrRulesMap for " + m);
@@ -82,11 +91,9 @@ class IRMatcher {
     /**
      * Read the IR encoding emitted by the test VM to decide if an @IR rule must be checked for a method.
      */
-    private Map<String, Integer[]>  parseIREncoding(String irEncoding) {
-        Map<String, Integer[]> irRulesMap = new HashMap<>();
-        String patternString = "(?<=" + IREncodingPrinter.START + "\\R)[\\s\\S]*(?=" + IREncodingPrinter.END + ")";
-        Pattern pattern = Pattern.compile(patternString);
-        Matcher matcher = pattern.matcher(irEncoding);
+    private Map<String, int[]>  parseIREncoding(String irEncoding) {
+        Map<String, int[]> irRulesMap = new HashMap<>();
+        Matcher matcher = irEncodingPattern.matcher(irEncoding);
         TestFramework.check(matcher.find(), "Did not find IR encoding");
         String[] lines = matcher.group(0).split("\\R");
 
@@ -95,12 +102,16 @@ class IRMatcher {
             String line = lines[i].trim();
             String[] splitComma = line.split(",");
             if (splitComma.length < 2) {
-                throw new TestFrameworkException("Invalid IR match rule encoding");
+                TestFramework.fail("Invalid IR match rule encoding. No comma found: " + splitComma[0]);
             }
             String testName = splitComma[0];
-            Integer[] irRulesIdx = new Integer[splitComma.length - 1];
+            int[] irRulesIdx = new int[splitComma.length - 1];
             for (int j = 1; j < splitComma.length; j++) {
-                irRulesIdx[j - 1] = Integer.valueOf(splitComma[j]);
+                try {
+                    irRulesIdx[j - 1] = Integer.parseInt(splitComma[j]);
+                } catch (NumberFormatException e) {
+                    TestFramework.fail("Invalid IR match rule encoding. No number found: " + splitComma[j]);
+                }
             }
             irRulesMap.put(testName, irRulesIdx);
         }
@@ -113,7 +124,7 @@ class IRMatcher {
      */
     private void parseHotspotPidFile() {
         Map<Integer, String> compileIdMap = new HashMap<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(new File(System.getProperty("user.dir") + File.separator + hotspotPidFileName)))) {
+        try (BufferedReader br = Files.newBufferedReader(Paths.get("", hotspotPidFileName))) {
             String line;
             StringBuilder builder = new StringBuilder();
             boolean append = false;
@@ -203,8 +214,7 @@ class IRMatcher {
      * and IR encoding from the test VM specifies that this method has @IR rules to be checked).
      */
     private void addTestMethodCompileId(Map<Integer, String> compileIdMap, String line) {
-        Pattern pattern = Pattern.compile("compile_id='(\\d+)'.*" + Pattern.quote(testClass.getCanonicalName()) + " (\\S+)");
-        Matcher matcher = pattern.matcher(line);
+        Matcher matcher = compileIdPatternForTestClass.matcher(line);
         if (matcher.find()) {
             // Only care about test class entries. Might have non-class entries as well if user specified additional
             // compile commands. Ignore these.
@@ -239,8 +249,7 @@ class IRMatcher {
      * Returns null if not an interesting method (i.e. from test class).
      */
     private String getMethodName(Map<Integer, String> compileIdMap, String line) {
-        Pattern pattern = Pattern.compile("compile_id='(\\d+)'");
-        Matcher matcher = pattern.matcher(line);
+        Matcher matcher = compileIdPattern.matcher(line);
         TestFramework.check(matcher.find(), "Is " + hotspotPidFileName + " corrupted?");
         int compileId = getCompileId(matcher);
         return compileIdMap.get(compileId);
@@ -270,15 +279,13 @@ class IRMatcher {
             System.out.println("Output of " + method + ":");
             System.out.println(testOutput);
         }
-        for (Integer id : irMethod.getRuleIds()) {
-            applyIRRule(id);
-        }
+        Arrays.stream(irMethod.getRuleIds()).forEach(this::applyIRRule);
     }
 
     /**
      * Apply a single @IR rule as part of a method.
      */
-    private void applyIRRule(Integer id) {
+    private void applyIRRule(int id) {
         irAnno = irMethod.getIrAnno(id);
         irRuleIndex = id;
         StringBuilder failMsg = new StringBuilder();
@@ -469,94 +476,5 @@ class IRMatcher {
             failuresBuilder.append(">>> Check stdout for compilation output of the failed methods\n\n");
             throw new IRViolationException(failuresBuilder.toString(), compilationsBuilder.toString());
         }
-    }
-}
-
-/**
- * Helper class to store information about a method that needs to be IR matched.
- */
-class IRMethod {
-    final private Method method;
-    final private Integer[] ruleIds;
-    final private IR[] irAnnos;
-    final private StringBuilder outputBuilder;
-    private String output;
-    private String idealOutput;
-    private String optoAssemblyOutput;
-    private boolean needsIdeal;
-    private boolean needsOptoAssembly;
-
-    public IRMethod(Method method, Integer[] ruleIds, IR[] irAnnos) {
-        this.method = method;
-        this.ruleIds = ruleIds;
-        this.irAnnos = irAnnos;
-        this.outputBuilder = new StringBuilder();
-        this.output = "";
-        this.idealOutput = "";
-        this.optoAssemblyOutput = "";
-    }
-
-    public Method getMethod() {
-        return method;
-    }
-
-    public Integer[] getRuleIds() {
-        return ruleIds;
-    }
-
-    public IR getIrAnno(int idx) {
-        return irAnnos[idx];
-    }
-
-    /**
-     * The Ideal output comes always before the Opto Assembly output. We might parse multiple C2 compilations of this method.
-     * Only keep the very last one by overriding 'output'.
-     */
-    public void appendIdealOutput(String idealOutput) {
-        outputBuilder.setLength(0);
-        this.idealOutput = "PrintIdeal:\n" + idealOutput;
-        outputBuilder.append(this.idealOutput);
-    }
-
-    /**
-     * The Opto Assembly output comes after the Ideal output. Simply append to 'output'.
-     */
-    public void appendOptoAssemblyOutput(String optoAssemblyOutput) {
-        this.optoAssemblyOutput = "PrintOptoAssembly:\n" + optoAssemblyOutput;
-        outputBuilder.append("\n\n").append(this.optoAssemblyOutput);
-        output = outputBuilder.toString();
-    }
-
-    public String getOutput() {
-        return output;
-    }
-
-    public String getIdealOutput() {
-        return idealOutput;
-    }
-
-    public String getOptoAssemblyOutput() {
-        return optoAssemblyOutput;
-    }
-
-    public void needsAllOutput() {
-        needsIdeal();
-        needsOptoAssembly();
-    }
-
-    public void needsIdeal() {
-        needsIdeal = true;
-    }
-
-    public boolean usesIdeal() {
-        return needsIdeal;
-    }
-
-    public void needsOptoAssembly() {
-        needsOptoAssembly = true;
-    }
-
-    public boolean usesOptoAssembly() {
-        return needsOptoAssembly;
     }
 }

@@ -23,6 +23,8 @@
 
 package jdk.test.lib.hotspot.ir_framework;
 
+import jdk.test.lib.Utils;
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Random;
@@ -38,7 +40,7 @@ import java.util.stream.Collectors;
  * @see Run
  */
 abstract public class AbstractInfo {
-    private static final Random random = new Random();
+    private static final Random random = Utils.getRandomInstance();
 
     protected final Class<?> testClass;
     private boolean toggleBool = false;

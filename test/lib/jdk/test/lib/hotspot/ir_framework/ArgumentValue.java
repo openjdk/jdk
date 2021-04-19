@@ -23,6 +23,8 @@
 
 package jdk.test.lib.hotspot.ir_framework;
 
+import jdk.test.lib.Utils;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -32,7 +34,7 @@ import java.util.Random;
  * This class represents an argument value specified by {@link Argument} in {@link Arguments}.
  */
 class ArgumentValue {
-    private static final Random random = new Random();
+    private static final Random random = Utils.getRandomInstance();
 
     private final Object argumentValue;
     private final boolean isRandomEach;

@@ -25,17 +25,15 @@ package jdk.test.lib.hotspot.ir_framework;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.helpers.ClassFileInstaller;
 import sun.hotspot.WhiteBox;
 
-import java.io.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -130,6 +128,15 @@ public class TestFramework {
     static final String TEST_VM_FLAGS_START = "##### TestFrameworkPrepareFlags - used by TestFramework #####";
     static final String TEST_VM_FLAGS_DELIMITER = " ";
     static final String TEST_VM_FLAGS_END = "----- END -----";
+    static final String RERUN_HINT = """
+                                       #############################################################
+                                        - To only run the failed tests use -DTest, -DExclude,
+                                          and/or -DScenarios.
+                                        - To also get the standard output of the test VM run with\s
+                                          -DReportStdout=true or for even more fine-grained logging
+                                          use -DVerbose=true.
+                                       #############################################################
+                                     """ + "\n";
 
     private static final int WARMUP_ITERATIONS = Integer.getInteger("Warmup", -1);
     private static final boolean PREFER_COMMAND_LINE_FLAGS = Boolean.getBoolean("PreferCommandLineFlags");
@@ -141,9 +148,10 @@ public class TestFramework {
     private static String lastTestVMOutput;
 
     private final Class<?> testClass;
-    private List<Class<?>> helperClasses = null;
+    private Set<Class<?>> helperClasses = null;
     private List<Scenario> scenarios = null;
-    private final List<String> flags = new ArrayList<>();
+    private Set<Integer> scenarioIndices = null;
+    private List<String> flags = null;
     private int defaultWarmup = -1;
     private TestFrameworkSocket socket;
     private Scenario scenario;
@@ -159,11 +167,7 @@ public class TestFramework {
      * {@link #addHelperClasses(Class...)}) to set up everything and then start the testing by invoking {@link #start()}.
      */
     public TestFramework() {
-        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-        this.testClass = walker.getCallerClass();
-        if (VERBOSE) {
-            System.out.println("Test class: " + testClass);
-        }
+        this(StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass());
     }
 
     /**
@@ -264,13 +268,11 @@ public class TestFramework {
      * ({@link ForceCompile @ForceCompile}, {@link DontCompile @DontCompile}, {@link ForceInline @ForceInline},
      * {@link DontInline @DontInline}) to be applied while testing {@code testClass} (also see description of
      * {@link TestFramework}).
-     * <ul>
-     *     <li><p>If a helper class is not in the same file as the test class, make sure that JTreg compiles it by using
-     *     {@literal @}compile in the JTreg header comment block.</li>
-     *     <li><p>If a class is used by the test class that does not specify any compile command annotations, you do not
-     *     need to include it in {@code helperClasses}. If no helper class specifies any compile commands, consider
-     *     using {@link #run()} or {@link #run(Class)}.</li>
-     * </ul>
+     *
+     * <p>
+     * If a class is used by the test class that does not specify any compile command annotations, you do not
+     * need to include it in {@code helperClasses}. If no helper class specifies any compile commands, consider
+     * using {@link #run()} or {@link #run(Class)}.
      *
      * @param testClass the class to be tested by the framework.
      * @param helperClasses helper classes containing compile command annotations ({@link ForceCompile},
@@ -333,6 +335,9 @@ public class TestFramework {
      */
     public TestFramework addFlags(String... flags) {
         TestRun.check(flags != null && Arrays.stream(flags).noneMatch(Objects::isNull), "A flag cannot be null");
+        if (this.flags == null) {
+            this.flags = new ArrayList<>();
+        }
         this.flags.addAll(Arrays.asList(flags));
         return this;
     }
@@ -341,16 +346,14 @@ public class TestFramework {
      * Add helper classes that can specify additional compile command annotations ({@link ForceCompile @ForceCompile},
      * {@link DontCompile @DontCompile}, {@link ForceInline @ForceInline}, {@link DontInline @DontInline}) to be applied
      * while testing {@code testClass} (also see description of {@link TestFramework}).
-     * <ul>
-     *     <li><p>If a helper class is not in the same file as the test class, make sure that JTreg compiles it by using
-     *            {@code @compile} in the JTreg header comment block.</li>
-     *     <li><p>If a class is used by the test class that does not specify any compile command annotations, you do not
-     *            need to include it with this method. If no helper class specifies any compile commands, you do
-     *            not need to call this method at all.</li>
-     * </ul>
      *
      * <p>
-     * The testing can be started by invoking {@link #start()}
+     * If a class is used by the test class that does not specify any compile command annotations, you do not need
+     * to include it with this method. If no helper class specifies any compile commands, you do not need to call
+     * this method at all.
+     *
+     * <p>
+     * The testing can be started by invoking {@link #start()}.
      *
      * @param helperClasses helper classes containing compile command annotations ({@link ForceCompile},
      *                      {@link DontCompile}, {@link ForceInline}, {@link DontInline}) to be applied
@@ -358,13 +361,15 @@ public class TestFramework {
      * @return the same framework instance.
      */
     public TestFramework addHelperClasses(Class<?>... helperClasses) {
-        TestRun.check(helperClasses != null && Arrays.stream(helperClasses).noneMatch(Objects::isNull), "A Helper class cannot be null");
+        TestRun.check(helperClasses != null && Arrays.stream(helperClasses).noneMatch(Objects::isNull),
+                      "A Helper class cannot be null");
         if (this.helperClasses == null) {
-            this.helperClasses = new ArrayList<>();
+            this.helperClasses = new HashSet<>();
         }
 
-        for (Class<?> helperClass : helperClasses) {
-            TestRun.check(!this.helperClasses.contains(helperClass), "Cannot add the same class twice: " + helperClass);
+        for (var helperClass : helperClasses) {
+            TestRun.check(!this.helperClasses.contains(helperClass),
+                          "Cannot add the same class twice: " + helperClass);
             this.helperClasses.add(helperClass);
         }
         return this;
@@ -383,11 +388,18 @@ public class TestFramework {
      * @return the same framework instance.
      */
     public TestFramework addScenarios(Scenario... scenarios) {
-        TestRun.check(scenarios != null && Arrays.stream(scenarios).noneMatch(Objects::isNull), "A scenario cannot be null");
+        TestFormat.check(scenarios != null && Arrays.stream(scenarios).noneMatch(Objects::isNull),
+                         "A scenario cannot be null");
         if (this.scenarios == null) {
-            this.scenarios = new ArrayList<>(Arrays.asList(scenarios));
-        } else {
-            this.scenarios.addAll(Arrays.asList(scenarios));
+            this.scenarios = new ArrayList<>();
+            this.scenarioIndices = new HashSet<>();
+        }
+
+        for (Scenario scenario : scenarios) {
+            int scenarioIndex = scenario.getIndex();
+            TestFormat.check(scenarioIndices.add(scenarioIndex),
+                             "Cannot define two scenarios with the same index " + scenarioIndex);
+            this.scenarios.add(scenario);
         }
         return this;
     }
@@ -398,7 +410,7 @@ public class TestFramework {
      */
     public void start() {
         installWhiteBox();
-        maybeDisableIRVerificationCompletely();
+        disableIRVerificationIfNotFeasible();
 
         if (scenarios == null) {
             try {
@@ -601,18 +613,18 @@ public class TestFramework {
     /**
      * Disable IR verification completely in certain cases.
      */
-    private void maybeDisableIRVerificationCompletely() {
+    private void disableIRVerificationIfNotFeasible() {
         if (VERIFY_IR) {
-            VERIFY_IR = hasIRAnnotations();
-            if (!VERIFY_IR) {
-                System.out.println("IR verification disabled due to test " + testClass + " not specifying any @IR annotations");
-                return;
-            }
-
             VERIFY_IR = Platform.isDebugBuild() && !Platform.isInt() && !Platform.isComp();
             if (!VERIFY_IR) {
                 System.out.println("IR verification disabled due to not running a debug build (required for PrintIdeal" +
                                    "and PrintOptoAssembly), running with -Xint, or -Xcomp (use warm-up of 0 instead)");
+                return;
+            }
+
+            VERIFY_IR = hasIRAnnotations();
+            if (!VERIFY_IR) {
+                System.out.println("IR verification disabled due to test " + testClass + " not specifying any @IR annotations");
                 return;
             }
 
@@ -631,12 +643,8 @@ public class TestFramework {
      */
     private void startWithScenarios() {
         Map<Scenario, Exception> exceptionMap = new TreeMap<>(Comparator.comparingInt(Scenario::getIndex));
-        Set<Integer> scenarioIndices = new HashSet<>();
         for (Scenario scenario : scenarios) {
             int scenarioIndex = scenario.getIndex();
-            TestFormat.check(!scenarioIndices.contains(scenarioIndex),
-                             "Cannot define two scenarios with the same index " + scenarioIndex);
-            scenarioIndices.add(scenarioIndex);
             try {
                 start(scenario);
             } catch (TestFormatException e) {
@@ -665,8 +673,7 @@ public class TestFramework {
             if (scenario != null) {
                 errorMsg = getScenarioTitleAndFlags(scenario);
             }
-            if (e instanceof IRViolationException) {
-                IRViolationException irException = (IRViolationException) e;
+            if (e instanceof IRViolationException irException) {
                 // For IR violations, only show the actual violations and not the (uninteresting) stack trace.
                 System.out.println((scenario != null ? "Scenario #" + scenario.getIndex() + " - " : "")
                                    + "Compilation(s) of failed matche(s):");
@@ -685,7 +692,7 @@ public class TestFramework {
         System.err.println(builder.toString());
         if (!VERBOSE && !REPORT_STDOUT && !TESTLIST && !EXCLUDELIST) {
             // Provide a hint to the user how to get additional output/debugging information.
-            System.err.println(JVMOutput.getRerunHint());
+            System.err.println(RERUN_HINT);
         }
         TestRun.fail(failedScenarios + ". Please check stderr for more information.");
     }
@@ -714,7 +721,10 @@ public class TestFramework {
         this.scenario = scenario;
         try {
             // Use TestFramework flags and scenario flags for new VMs.
-            List<String> additionalFlags = new ArrayList<>(flags);
+            List<String> additionalFlags = new ArrayList<>();
+            if (flags != null) {
+                additionalFlags.addAll(flags);
+            }
             if (scenario != null) {
                 List<String> scenarioFlags = scenario.getFlags();
                 String scenarioFlagsString = scenarioFlags.isEmpty() ? "" : " - [" + String.join(", ", scenarioFlags) + "]";
@@ -792,7 +802,7 @@ public class TestFramework {
 
     private void checkFlagVMExitCode(OutputAnalyzer oa) {
         String flagVMOutput = oa.getOutput();
-        final int exitCode = oa.getExitValue();
+        int exitCode = oa.getExitValue();
         if (VERBOSE && exitCode == 0) {
             System.out.println("--- OUTPUT TestFramework flag VM ---");
             System.out.println(flagVMOutput);
@@ -801,7 +811,7 @@ public class TestFramework {
         if (exitCode != 0) {
             System.err.println("--- OUTPUT TestFramework flag VM ---");
             System.err.println(flagVMOutput);
-            throw new RuntimeException("\nTestFramework flag VM exited with " + exitCode);
+            throw new RuntimeException("TestFramework flag VM exited with " + exitCode);
         }
     }
 
@@ -1013,7 +1023,7 @@ class JVMOutput {
         if (exitCode == 134) {
             stdOut = "\n\nStandard Output\n---------------\n" + getOutput();
         } else if (!stripRerunHint) {
-            rerunHint = getRerunHint();
+            rerunHint = TestFramework.RERUN_HINT;
         }
         if (exitCode == 0) {
             // IR exception
@@ -1021,206 +1031,6 @@ class JVMOutput {
         } else {
             return "TestFramework test VM exited with code " + exitCode + "\n"
                    + stdOut + "\n" + getCommandLine() + "\n\nError Output\n------------\n" + stdErr + "\n\n" + rerunHint;
-        }
-    }
-
-    public static String getRerunHint() {
-        return """
-                 #############################################################
-                  - To only run the failed tests use -DTest, -DExclude,
-                    and/or -DScenarios.
-                  - To also get the standard output of the test VM run with\s
-                    -DReportStdout=true or for even more fine-grained logging
-                    use -DVerbose=true.
-                 #############################################################
-               """ + "\n";
-    }
-}
-
-/**
- * Dedicated socket to send data from the flag and test VM back to the driver VM.
- */
-class TestFrameworkSocket {
-    static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
-
-    // Static fields used by flag and test VM only.
-    private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
-
-    private static final boolean REPRODUCE = Boolean.getBoolean("Reproduce");
-    private static final String HOSTNAME = null;
-    private static final String STDOUT_PREFIX = "[STDOUT]";
-    private static Socket clientSocket = null;
-    private static PrintWriter clientWriter = null;
-
-    private final String serverPortPropertyFlag;
-    private FutureTask<String> socketTask;
-    private ServerSocket serverSocket;
-
-    private static TestFrameworkSocket singleton = null;
-
-    private TestFrameworkSocket() {
-        try {
-            serverSocket = new ServerSocket(0);
-        } catch (IOException e) {
-            TestFramework.fail("Failed to create TestFramework server socket", e);
-        }
-        int port = serverSocket.getLocalPort();
-        if (TestFramework.VERBOSE) {
-            System.out.println("TestFramework server socket uses port " + port);
-        }
-        serverPortPropertyFlag = "-D" + SERVER_PORT_PROPERTY + "=" + port;
-    }
-
-    public static TestFrameworkSocket getSocket() {
-        if (singleton == null || singleton.serverSocket.isClosed()) {
-            singleton = new TestFrameworkSocket();
-            return singleton;
-        }
-        return singleton;
-    }
-
-    public String getPortPropertyFlag() {
-        return serverPortPropertyFlag;
-    }
-
-    public void start() {
-        socketTask = initSocketTask();
-        Thread socketThread = new Thread(socketTask);
-        socketThread.start();
-    }
-
-    /**
-     * Waits for client sockets (created by flag or test VM) to connect. Return the messages received by the clients.
-     */
-    private FutureTask<String> initSocketTask() {
-        return new FutureTask<>(() -> {
-            try (Socket clientSocket = serverSocket.accept();
-                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-            ) {
-                StringBuilder builder = new StringBuilder();
-                String next;
-                while ((next = in.readLine()) != null) {
-                    builder.append(next).append("\n");
-                }
-                return builder.toString();
-            } catch (IOException e) {
-                TestFramework.fail("Server socket error", e);
-                return null;
-            }
-        });
-    }
-
-    public void close() {
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            TestFramework.fail("Could not close socket", e);
-        }
-    }
-
-    /**
-     * Only called by flag and test VM to write to server socket.
-     */
-    public static void write(String msg, String type) {
-        write(msg, type, false);
-    }
-
-    /**
-     * Only called by flag and test VM to write to server socket.
-     */
-    public static void write(String msg, String type, boolean stdout) {
-        if (REPRODUCE) {
-            System.out.println("Debugging Test VM: Skip writing due to -DReproduce");
-            return;
-        }
-        TestFramework.check(SERVER_PORT != -1, "Server port was not set correctly for flag and/or test VM "
-                                              + "or method not called from flag or test VM");
-        try {
-            // Keep the client socket open until the flag or test VM terminates (calls closeClientSocket before exiting
-            // main()).
-            if (clientSocket == null) {
-                clientSocket = new Socket(HOSTNAME, SERVER_PORT);
-                clientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
-            }
-            if (stdout) {
-                msg = STDOUT_PREFIX + msg;
-            }
-            clientWriter.println(msg);
-        } catch (Exception e) {
-            // When the test VM is directly run, we should ignore all messages that would normally be sent to the
-            // driver VM.
-            String failMsg = "\n\n" + """
-                             ###########################################################
-                              Did you directly run the test VM (TestFrameworkExecution)
-                              to reproduce a bug?
-                              => Append the flag -DReproduce=true and try again!
-                             ###########################################################
-                             """;
-            TestRun.fail(failMsg, e);
-        }
-        if (TestFramework.VERBOSE) {
-            System.out.println("Written " + type + " to socket:");
-            System.out.println(msg);
-        }
-    }
-
-    /**
-     * Closes (and flushes) the printer to the socket and the socket itself. Is called as last thing before exiting
-     * the main() method of the flag and the test VM.
-     */
-    public static void closeClientSocket() {
-        if (clientSocket != null) {
-            try {
-                clientWriter.close();
-                clientSocket.close();
-            } catch (IOException e) {
-                throw new RuntimeException("Could not close TestFrameworkExecution socket", e);
-            }
-        }
-    }
-
-    /**
-     * Get the socket output of the flag VM.
-     */
-    public String getOutput() {
-        try {
-            return socketTask.get();
-
-        } catch (Exception e) {
-            TestFramework.fail("Could not read from socket task", e);
-            return null;
-        }
-    }
-
-    /**
-     * Get the socket output from the test VM by stripping all lines starting with a [STDOUT] output and printing them
-     * to the standard output.
-     */
-    public String getOutputPrintStdout() {
-        try {
-            String output = socketTask.get();
-            if (TestFramework.TESTLIST || TestFramework.EXCLUDELIST) {
-                StringBuilder builder = new StringBuilder();
-                Scanner scanner = new Scanner(output);
-                System.out.println("\nRun flag defined test list");
-                System.out.println("--------------------------");
-                while (scanner.hasNextLine()) {
-                    String line = scanner.nextLine();
-                    if (line.startsWith(STDOUT_PREFIX)) {
-                        line = "> " + line.substring(STDOUT_PREFIX.length());
-                        System.out.println(line);
-                    } else {
-                        builder.append(line).append("\n");
-                    }
-                }
-                System.out.println();
-                return builder.toString();
-            }
-            return output;
-
-        } catch (Exception e) {
-            TestFramework.fail("Could not read from socket task", e);
-            return null;
         }
     }
 }

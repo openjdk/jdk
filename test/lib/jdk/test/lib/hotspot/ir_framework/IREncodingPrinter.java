@@ -209,8 +209,7 @@ class IREncodingPrinter {
         return false;
     }
 
-    private boolean checkBooleanFlag(String flag, String value, Boolean actualFlagValue) {
-        boolean actualBooleanFlagValue = actualFlagValue;
+    private boolean checkBooleanFlag(String flag, String value, boolean actualFlagValue) {
         boolean booleanValue = false;
         if ("true".equalsIgnoreCase(value)) {
             booleanValue = true;
@@ -218,11 +217,10 @@ class IREncodingPrinter {
             TestFormat.failNoThrow("Invalid value \"" + value + "\" for boolean flag " + flag + failAt());
             return false;
         }
-        return booleanValue == actualBooleanFlagValue;
+        return booleanValue == actualFlagValue;
     }
 
-    private boolean checkLongFlag(String flag, String value, Long actualFlagValue) {
-        long actualLongFlagValue = actualFlagValue;
+    private boolean checkLongFlag(String flag, String value, long actualFlagValue) {
         long longValue;
         ParsedComparator<Long> parsedComparator;
         try {
@@ -245,11 +243,10 @@ class IREncodingPrinter {
                             + comparator + " for integer based flag " + flag + failAt());
             return false;
         }
-        return parsedComparator.getPredicate().test(actualLongFlagValue, longValue);
+        return parsedComparator.getPredicate().test(actualFlagValue, longValue);
     }
 
-    private boolean checkDoubleFlag(String flag, String value, Double actualFlagValue) {
-        double actualDoubleFlagValue = actualFlagValue;
+    private boolean checkDoubleFlag(String flag, String value, double actualFlagValue) {
         double doubleValue;
         ParsedComparator<Double> parsedComparator;
         try {
@@ -272,7 +269,7 @@ class IREncodingPrinter {
                     + comparator + " for floating point based flag " + flag + failAt());
             return false;
         }
-        return parsedComparator.getPredicate().test(actualDoubleFlagValue, doubleValue);
+        return parsedComparator.getPredicate().test(actualFlagValue, doubleValue);
     }
 
     private String failAt() {
