@@ -115,6 +115,7 @@ public:
     decl(SVE2,          "sve2",          28)  \
     decl(STXR_PREFETCH, "stxr_prefetch", 29)  \
     decl(A53MAC,        "a53mac",        30)
+
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1 << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
 #undef DECLARE_CPU_FEATURE_FLAG
