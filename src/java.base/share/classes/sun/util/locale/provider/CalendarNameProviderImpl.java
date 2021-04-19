@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,15 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                             if (name.isEmpty()) {
                                 continue;
                             }
-                            map.put(name, base + i);
+                            if (field == AM_PM && !javatime && i > PM) {
+                                // Unlike in the case of java.time.format.DateTimeFormatter(Builder),
+                                // when dealing with java.util.Calendar, don't set AM_PM field value
+                                // to anything that isn't either AM or PM (this can happen when
+                                // day periods are involved)
+                                continue;
+                            } else {
+                                map.put(name, base + i);
+                            }
                         }
                     }
                 }

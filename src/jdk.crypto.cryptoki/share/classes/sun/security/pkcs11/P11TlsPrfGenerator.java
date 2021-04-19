@@ -53,7 +53,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 final class P11TlsPrfGenerator extends KeyGeneratorSpi {
 
-    private final static String MSG =
+    private static final String MSG =
             "TlsPrfGenerator must be initialized using a TlsPrfParameterSpec";
 
     // token instance
