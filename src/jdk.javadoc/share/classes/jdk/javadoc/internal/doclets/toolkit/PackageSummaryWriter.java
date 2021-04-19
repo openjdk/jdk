@@ -73,53 +73,11 @@ public interface PackageSummaryWriter {
     void addRelatedPackagesSummary(Content summaryContentTree);
 
     /**
-     * Adds the table of interfaces to the documentation tree.
+     * Adds the table of all classes and interfaces to the documentation tree.
      *
      * @param summaryContentTree the content tree to which the summaries will be added
      */
-    void addInterfaceSummary(Content summaryContentTree);
-
-    /**
-     * Adds the table of classes to the documentation tree.
-     *
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addClassSummary(Content summaryContentTree);
-
-    /**
-     * Adds the table of enums to the documentation tree.
-     *
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addEnumSummary(Content summaryContentTree);
-
-    /**
-     * Adds the table of records to the documentation tree.
-     *
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addRecordSummary(Content summaryContentTree);
-
-    /**
-     * Adds the table of exceptions to the documentation tree.
-     *
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addExceptionSummary(Content summaryContentTree);
-
-    /**
-     * Adds the table of errors to the documentation tree.
-     *
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addErrorSummary(Content summaryContentTree);
-
-    /**
-     * Adds the table of annotation types to the documentation tree.
-     *
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addAnnotationTypeSummary(Content summaryContentTree);
+    void addAllClassesAndInterfacesSummary(Content summaryContentTree);
 
     /**
      * Adds the package description from the "packages.html" file to the documentation

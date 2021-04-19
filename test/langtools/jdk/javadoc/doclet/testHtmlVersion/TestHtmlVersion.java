@@ -97,7 +97,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="summary-table two-column-summary">""",
+                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -117,8 +117,9 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                         <section class="summary">
                         <ul class="summary-list">
-                        <li id="class-summary">
-                        <div class="caption"><span>Class Summary</span></div>
+                        <li>
+                        <div id="class-summary">
+                        <div class="caption"><span>Classes</span></div>
                         <div class="summary-table two-column-summary">""");
 
         // Test for package-tree page

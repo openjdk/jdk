@@ -806,31 +806,31 @@ public class TestSearch extends JavadocTester {
                     <button id="all-classes-table-tab0" role="tab" aria-selected="true" aria-control\
                     s="all-classes-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick\
                     ="show('all-classes-table', 'all-classes-table', 2)" class="active-table-tab">Al\
-                    l Classes</button>\
+                    l Classes and Interfaces</button>\
                     <button id="all-classes-table-tab1" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab1', 2)" class="table-tab">In\
-                    terface Summary</button>\
+                    terfaces</button>\
                     <button id="all-classes-table-tab2" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-tab">Cl\
-                    ass Summary</button>\
+                    asses</button>\
                     <button id="all-classes-table-tab3" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab3', 2)" class="table-tab">En\
-                    um Class Summary</button>\
-                    <button id="all-classes-table-tab4" role="tab" aria-selected="false" aria-contro\
-                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab4', 2)" class="table-tab">Ex\
-                    ception Summary</button>\
+                    um Classes</button>\
                     <button id="all-classes-table-tab5" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab5', 2)" class="table-tab">Er\
-                    ror Summary</button>\
+                    ck="show('all-classes-table', 'all-classes-table-tab5', 2)" class="table-tab">Ex\
+                    ceptions</button>\
                     <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
-                    notation Interfaces Summary</button>\
+                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">Er\
+                    rors</button>\
+                    <button id="all-classes-table-tab7" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab7', 2)" class="table-tab">An\
+                    notation Interfaces</button>\
                     </div>
                     <div id="all-classes-table.tabpanel" role="tabpanel">
                     <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">

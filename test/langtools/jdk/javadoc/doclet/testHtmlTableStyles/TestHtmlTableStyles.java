@@ -69,7 +69,7 @@ public class TestHtmlTableStyles extends JavadocTester {
 
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="caption"><span>Class Summary</span></div>
+                    <div class="caption"><span>Classes</span></div>
                     <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg1/class-use/TestTable.html", true,

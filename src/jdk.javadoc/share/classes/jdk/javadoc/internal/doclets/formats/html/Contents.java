@@ -124,14 +124,13 @@ public class Contents {
     public final Content module_;
     public final Content moduleSubNavLabel;
     public final Content modulesLabel;
-    public final Content navAnnotations;
     public final Content navAnnotationTypeMember;
     public final Content navAnnotationTypeOptionalMember;
     public final Content navAnnotationTypeRequiredMember;
+    public final Content navClassesAndInterfaces;
     public final Content navConstructor;
     public final Content navDescription;
     public final Content navEnum;
-    public final Content navEnums;
     public final Content navField;
     public final Content navHelpNavigation;
     public final Content navHelpPages;
@@ -140,8 +139,6 @@ public class Contents {
     public final Content navNested;
     public final Content navPackages;
     public final Content navProperty;
-    public final Content navRecords;
-    public final Content navRelated;
     public final Content navServices;
     public final Content nestedClassSummary;
     public final Content noScriptMessage;
@@ -186,14 +183,15 @@ public class Contents {
 
     private final EnumMap<VisibleMemberTable.Kind, Content> navLinkLabels;
 
-    public final String annotationTypeSummary;
-    public final String classSummary;
-    public final String enumSummary;
-    public final String errorSummary;
-    public final String exceptionSummary;
-    public final String interfaceSummary;
+    public final String allClassesAndInterfaces;
+    public final String annotationTypesString;
+    public final String classesString;
+    public final String enumsString;
+    public final String errorsString;
+    public final String exceptionsString;
+    public final String interfacesString;
     public final String packageSummary;
-    public final String recordSummary;
+    public final String recordsString;
 
     private final Resources resources;
 
@@ -279,13 +277,12 @@ public class Contents {
         module_ = getContent("doclet.module");
         moduleSubNavLabel = getContent("doclet.Module_Sub_Nav");
         modulesLabel = getContent("doclet.Modules");
-        navAnnotations = getContent("doclet.navAnnotations");
         navAnnotationTypeMember = getContent("doclet.navAnnotationTypeMember");
         navAnnotationTypeOptionalMember = getContent("doclet.navAnnotationTypeOptionalMember");
         navAnnotationTypeRequiredMember = getContent("doclet.navAnnotationTypeRequiredMember");
+        navClassesAndInterfaces = getContent("doclet.navClassesAndInterfaces");
         navConstructor = getContent("doclet.navConstructor");
         navEnum = getContent("doclet.navEnum");
-        navEnums = getContent("doclet.navEnums");
         navField = getContent("doclet.navField");
         navHelpNavigation = getContent("doclet.navNavigation");
         navHelpPages = getContent("doclet.navPages");
@@ -295,8 +292,6 @@ public class Contents {
         navNested = getContent("doclet.navNested");
         navPackages = getContent("doclet.navPackages");
         navProperty = getContent("doclet.navProperty");
-        navRecords = getContent("doclet.navRecords");
-        navRelated = getContent("doclet.navRelated");
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
         noScriptMessage = getContent("doclet.No_Script_Message");
@@ -350,14 +345,15 @@ public class Contents {
         navLinkLabels.put(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED,
                 getContent("doclet.navAnnotationTypeRequiredMember"));
 
-        this.annotationTypeSummary = resources.getText("doclet.Annotation_Types_Summary");
-        this.classSummary = resources.getText("doclet.Class_Summary");
-        this.enumSummary = resources.getText("doclet.Enum_Summary");
-        this.errorSummary = resources.getText("doclet.Error_Summary");
-        this.exceptionSummary = resources.getText("doclet.Exception_Summary");
-        this.interfaceSummary = resources.getText("doclet.Interface_Summary");
+        this.allClassesAndInterfaces = resources.getText("doclet.All_Classes_And_Interfaces");
+        this.annotationTypesString = resources.getText("doclet.AnnotationTypes");
+        this.classesString = resources.getText("doclet.Classes");
+        this.enumsString = resources.getText("doclet.Enums");
+        this.errorsString = resources.getText("doclet.Errors");
+        this.exceptionsString = resources.getText("doclet.Exceptions");
+        this.interfacesString = resources.getText("doclet.Interfaces");
         this.packageSummary = resources.getText("doclet.Package_Summary");
-        this.recordSummary = resources.getText("doclet.Record_Class_Summary");
+        this.recordsString = resources.getText("doclet.RecordClasses");
     }
 
     /**

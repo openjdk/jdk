@@ -353,10 +353,10 @@ ul.summary-list > li {
     font-weight:bold;
     clear:none;
     overflow:hidden;
-    padding:0px;
+    padding:0;
     padding-top:10px;
     padding-left:1px;
-    margin:0px;
+    margin:0;
     white-space:pre;
 }
 .caption a:link, .caption a:visited {
@@ -378,7 +378,10 @@ ul.summary-list > li {
     border: none;
     height:16px;
 }
-
+div.table-tabs {
+    padding:10px 0 0 1px;
+    margin:0;
+}
 div.table-tabs > button {
    border: none;
    cursor: pointer;

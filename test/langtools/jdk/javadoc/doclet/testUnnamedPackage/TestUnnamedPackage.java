@@ -71,7 +71,7 @@ public class TestUnnamedPackage extends JavadocTester {
         checkOutput("allclasses-index.html", true,
                 """
                     <div id="all-classes-table">
-                    <div class="caption"><span>Class Summary</span></div>
+                    <div class="caption"><span>Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>

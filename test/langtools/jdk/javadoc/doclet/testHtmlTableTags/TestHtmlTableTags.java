@@ -84,15 +84,11 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary">""",
-                """
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary">""",
-                """
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
@@ -306,15 +302,38 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="caption"><span>Class Summary</span></div>""",
-                """
-                    <div class="caption"><span>Interface Summary</span></div>""");
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id=\
+                    "class-summary-tab0" role="tab" aria-selected="true" aria-controls="class-summar\
+                    y.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('class-summa\
+                    ry', 'class-summary', 2)" class="active-table-tab">All Classes and Interfaces</b\
+                    utton>\
+                    <button id="class-summary-tab1" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab1', 2)" class="table-tab">Interfaces</button\
+                    >\
+                    <button id="class-summary-tab2" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab2', 2)" class="table-tab">Classes</button></\
+                    div>""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="caption"><span>Enum Class Summary</span></div>""",
-                """
-                    <div class="caption"><span>Annotation Interfaces Summary</span></div>""");
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id=\
+                    "class-summary-tab0" role="tab" aria-selected="true" aria-controls="class-summar\
+                    y.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('class-summa\
+                    ry', 'class-summary', 2)" class="active-table-tab">All Classes and Interfaces</b\
+                    utton>\
+                    <button id="class-summary-tab2" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab2', 2)" class="table-tab">Classes</button>\
+                    <button id="class-summary-tab3" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab3', 2)" class="table-tab">Enum Classes</butt\
+                    on>\
+                    <button id="class-summary-tab7" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab7', 2)" class="table-tab">Annotation Interfa\
+                    ces</button></div>""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
@@ -427,17 +446,11 @@ public class TestHtmlTableTags extends JavadocTester {
         checkOutput("pkg1/package-summary.html", true,
                 """
                     <div class="table-header col-first">Class</div>
-                    <div class="table-header col-last">Description</div>""",
-                """
-                    <div class="table-header col-first">Interface</div>
                     <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="table-header col-first">Enum Class</div>
-                    <div class="table-header col-last">Description</div>""",
-                """
-                    <div class="table-header col-first">Annotation Interface</div>
+                    <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>""");
 
         // Class documentation
@@ -559,26 +572,29 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="I1.html" title="interface in pkg1">I1</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-first odd-row-color class-summary class-summary-tab1"><a \
+                    href="I1.html" title="interface in pkg1">I1</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab1">
                     <div class="block">A sample interface used to test table tags.</div>
                     </div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C1.html" title="class in pkg1">C1</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a\
+                     href="C1.html" title="class in pkg1">C1</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab2">
                     <div class="block">A test class.</div>
                     </div>""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title\
-                    ="enum class in pkg2">C2.ModalExclusionType</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-first odd-row-color class-summary class-summary-tab3"><a \
+                    href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionType</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab3">
                     <div class="block">A sample enum.</div>
                     </div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C3.html" title="annotation interface in pkg2">C3</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-first even-row-color class-summary class-summary-tab7"><a\
+                     href="C3.html" title="annotation interface in pkg2">C3</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab7">
                     <div class="block">Test Annotation class.</div>
                     </div>""");
 
@@ -723,20 +739,24 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="I1.html" title="interface in pkg1">I1</a></div>
-                    <div class="col-last even-row-color"></div>""",
+                    <div class="col-first odd-row-color class-summary class-summary-tab1"><a \
+                    href="I1.html" title="interface in pkg1">I1</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab1"></div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C1.html" title="class in pkg1">C1</a></div>
-                    <div class="col-last even-row-color"></div>""");
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a\
+                     href="C1.html" title="class in pkg1">C1</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab2"></div>""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title\
-                    ="enum class in pkg2">C2.ModalExclusionType</a></div>
-                    <div class="col-last even-row-color"></div>""",
+                    <div class="col-first odd-row-color class-summary class-summary-tab3"><a \
+                    href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionTyp\
+                    e</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab3"></div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C3.html" title="annotation interface in pkg2">C3</a></div>
-                    <div class="col-last even-row-color"></div>""");
+                    <div class="col-first even-row-color class-summary class-summary-tab7"><a\
+                     href="C3.html" title="annotation interface in pkg2">C3</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab7"></div>""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,

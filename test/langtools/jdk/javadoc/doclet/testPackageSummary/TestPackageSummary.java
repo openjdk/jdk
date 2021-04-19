@@ -55,7 +55,9 @@ public class TestPackageSummary extends JavadocTester {
                     <div>
                     <ul class="sub-nav-list">
                     <li>Package:&nbsp;</li>
-                    <li><a href="#class-summary">Classes</a></li>
+                    <li>Description&nbsp;|&nbsp;</li>
+                    <li>Related Packages&nbsp;|&nbsp;</li>
+                    <li><a href="#class-summary">Classes and Interfaces</a></li>
                     </ul>
                     </div>""");
         checkOutput("pkg1/package-summary.html", true,
@@ -65,14 +67,8 @@ public class TestPackageSummary extends JavadocTester {
                     <ul class="sub-nav-list">
                     <li>Package:&nbsp;</li>
                     <li><a href="#package-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#related-package-summary">Related</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#interface-summary">Interfaces</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#class-summary">Classes</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#enum-summary">Enums</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#record-summary">Records</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#exception-summary">Exceptions</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#error-summary">Errors</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#annotation-interface-summary">Annotations</a></li>
+                    <li><a href="#related-package-summary">Related Packages</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#class-summary">Classes and Interfaces</a></li>
                     </ul>
                     </div>""");
         checkOutput("pkg1/sub/package-summary.html", true,
@@ -81,8 +77,9 @@ public class TestPackageSummary extends JavadocTester {
                     <div>
                     <ul class="sub-nav-list">
                     <li>Package:&nbsp;</li>
-                    <li><a href="#related-package-summary">Related</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#class-summary">Classes</a></li>
+                    <li>Description&nbsp;|&nbsp;</li>
+                    <li><a href="#related-package-summary">Related Packages</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#class-summary">Classes and Interfaces</a></li>
                     </ul>
                     </div>""");
     }
@@ -96,16 +93,16 @@ public class TestPackageSummary extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="C0.html" title="class in pkg">C0</a></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
-                    <div class="col-first odd-row-color"><a href="C1.html" title="class in pkg">C1</a></div>
-                    <div class="col-last odd-row-color">&nbsp;</div>
-                    <div class="col-first even-row-color"><a href="C2.html" title="class in pkg">C2</a></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
-                    <div class="col-first odd-row-color"><a href="C3.html" title="class in pkg">C3</a></div>
-                    <div class="col-last odd-row-color">&nbsp;</div>
-                    <div class="col-first even-row-color"><a href="C4.html" title="class in pkg">C4</a></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a href="C0.html" title="class in pkg">C0</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab2">&nbsp;</div>
+                    <div class="col-first odd-row-color class-summary class-summary-tab2"><a href="C1.html" title="class in pkg">C1</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab2">&nbsp;</div>
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a href="C2.html" title="class in pkg">C2</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab2">&nbsp;</div>
+                    <div class="col-first odd-row-color class-summary class-summary-tab2"><a href="C3.html" title="class in pkg">C3</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab2">&nbsp;</div>
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a href="C4.html" title="class in pkg">C4</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab2">&nbsp;</div>
                     """
         );
     }

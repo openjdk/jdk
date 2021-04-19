@@ -143,13 +143,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         Content summariesList = packageWriter.getSummariesList();
 
         buildRelatedPackagesSummary(summariesList);
-        buildInterfaceSummary(summariesList);
-        buildClassSummary(summariesList);
-        buildEnumSummary(summariesList);
-        buildRecordSummary(summariesList);
-        buildExceptionSummary(summariesList);
-        buildErrorSummary(summariesList);
-        buildAnnotationTypeSummary(summariesList);
+        buildAllClassesAndInterfacesSummary(summariesList);
 
         packageContentTree.add(packageWriter.getPackageSummary(summariesList));
     }
@@ -164,67 +158,14 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     }
 
     /**
-     * Builds the summary for any interfaces in this package.
+     * Builds the summary for all classes and interfaces in this package.
      *
      * @param summariesList the list of summaries to which the summary will be added
      */
-    protected void buildInterfaceSummary(Content summariesList) {
-        packageWriter.addInterfaceSummary(summariesList);
+    protected void buildAllClassesAndInterfacesSummary(Content summariesList) {
+        packageWriter.addAllClassesAndInterfacesSummary(summariesList);
     }
 
-    /**
-     * Builds the summary for any classes in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildClassSummary(Content summariesList) {
-        packageWriter.addClassSummary(summariesList);
-    }
-
-    /**
-     * Builds the summary for the enum types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildEnumSummary(Content summariesList) {
-        packageWriter.addEnumSummary(summariesList);
-    }
-
-    /**
-     * Builds the summary for any record types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildRecordSummary(Content summariesList) {
-        packageWriter.addRecordSummary(summariesList);
-    }
-
-    /**
-     * Builds the summary for any exception types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildExceptionSummary(Content summariesList) {
-        packageWriter.addExceptionSummary(summariesList);
-    }
-
-    /**
-     * Builds the summary for any error types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildErrorSummary(Content summariesList) {
-        packageWriter.addErrorSummary(summariesList);
-    }
-
-    /**
-     * Builds the summary for any annotation types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildAnnotationTypeSummary(Content summariesList) {
-        packageWriter.addAnnotationTypeSummary(summariesList);
-    }
 
     /**
      * Build the description of the summary.

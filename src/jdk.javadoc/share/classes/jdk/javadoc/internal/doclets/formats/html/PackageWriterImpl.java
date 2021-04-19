@@ -26,7 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.function.Predicate;
@@ -75,13 +75,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     protected PackageElement packageElement;
 
     private List<PackageElement> relatedPackages;
-    private SortedSet<TypeElement> interfaces;
-    private SortedSet<TypeElement> classes;
-    private SortedSet<TypeElement> enums;
-    private SortedSet<TypeElement> exceptions;
-    private SortedSet<TypeElement> errors;
-    private SortedSet<TypeElement> records;
-    private SortedSet<TypeElement> annotationTypes;
+    private SortedSet<TypeElement> allClasses;
 
     /**
      * The HTML tree for section tag.
@@ -150,27 +144,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
     private void computePackageData() {
         relatedPackages = findRelatedPackages();
         boolean isSpecified = utils.isSpecified(packageElement);
-        interfaces = filterClasses(isSpecified
-                ? utils.getTypeElementsAsSortedSet(utils.getInterfaces(packageElement))
-                : configuration.typeElementCatalog.interfaces(packageElement));
-        classes = filterClasses(isSpecified
-                ? utils.getTypeElementsAsSortedSet(utils.getOrdinaryClasses(packageElement))
-                : configuration.typeElementCatalog.ordinaryClasses(packageElement));
-        enums = filterClasses(isSpecified
-                ? utils.getTypeElementsAsSortedSet(utils.getEnums(packageElement))
-                : configuration.typeElementCatalog.enums(packageElement));
-        records = filterClasses(isSpecified
-                ? utils.getTypeElementsAsSortedSet(utils.getRecords(packageElement))
-                : configuration.typeElementCatalog.records(packageElement));
-        exceptions = filterClasses(isSpecified
-                ? utils.getTypeElementsAsSortedSet(utils.getExceptions(packageElement))
-                : configuration.typeElementCatalog.exceptions(packageElement));
-        errors = filterClasses(isSpecified
-                ? utils.getTypeElementsAsSortedSet(utils.getErrors(packageElement))
-                : configuration.typeElementCatalog.errors(packageElement));
-        annotationTypes = filterClasses(isSpecified
-                ? utils.getTypeElementsAsSortedSet(utils.getAnnotationTypes(packageElement))
-                : configuration.typeElementCatalog.annotationTypes(packageElement));
+        allClasses = filterClasses(isSpecified
+                ? utils.getAllClasses(packageElement)
+                : configuration.typeElementCatalog.allClasses(packageElement));
     }
 
     private SortedSet<TypeElement> filterClasses(SortedSet<TypeElement> types) {
@@ -216,27 +192,13 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 contents.moduleLabel);
         return super.getNavBar(pageMode, element)
                 .setNavLinkModule(linkContent)
-                .setSubNavLinks(() -> {
-                    List<Content> list = new ArrayList<>();
-                    if (!utils.getFullBody(packageElement).isEmpty() && !options.noComment()) {
-                        list.add(HtmlTree.LI(links.createLink(HtmlIds.PACKAGE_DESCRIPTION, contents.navDescription)));
-                    }
-                    subNavLink(list, relatedPackages, HtmlIds.RELATED_PACKAGE_SUMMARY, contents.navRelated);
-                    subNavLink(list, interfaces, HtmlIds.INTERFACE_SUMMARY, contents.interfaces);
-                    subNavLink(list, classes, HtmlIds.CLASS_SUMMARY, contents.classes);
-                    subNavLink(list, enums, HtmlIds.ENUM_SUMMARY, contents.navEnums);
-                    subNavLink(list, records, HtmlIds.RECORD_SUMMARY, contents.navRecords);
-                    subNavLink(list, exceptions, HtmlIds.EXCEPTION_SUMMARY, contents.exceptions);
-                    subNavLink(list, errors, HtmlIds.ERROR_SUMMARY, contents.errors);
-                    subNavLink(list, annotationTypes, HtmlIds.ANNOTATION_TYPE_SUMMARY, contents.navAnnotations);
-                    return list;
-                });
-    }
-
-    private void subNavLink(List<Content> list, Collection<? extends Element> elements, HtmlId id, Content label) {
-        if (elements != null && !elements.isEmpty()) {
-            list.add(HtmlTree.LI(links.createLink(id, label)));
-        }
+                .setSubNavLinks(() -> List.of(
+                        HtmlTree.LI(links.createLink(HtmlIds.PACKAGE_DESCRIPTION, contents.navDescription,
+                                !utils.getFullBody(packageElement).isEmpty() && !options.noComment())),
+                        HtmlTree.LI(links.createLink(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages,
+                                relatedPackages != null && !relatedPackages.isEmpty())),
+                        HtmlTree.LI(links.createLink(HtmlIds.CLASS_SUMMARY, contents.navClassesAndInterfaces,
+                                allClasses != null && !allClasses.isEmpty()))));
     }
 
     /**
@@ -277,80 +239,48 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 summaryContentTree, showModules);
     }
 
-    @Override
-    public void addInterfaceSummary(Content summaryContentTree) {
-        TableHeader tableHeader= new TableHeader(contents.interfaceLabel, contents.descriptionLabel);
-        addClassesSummary(interfaces, contents.interfaceSummary, tableHeader, summaryContentTree,
-                HtmlIds.INTERFACE_SUMMARY);
-    }
 
-    @Override
-    public void addClassSummary(Content summaryContentTree) {
-        TableHeader tableHeader= new TableHeader(contents.classLabel, contents.descriptionLabel);
-        addClassesSummary(classes, contents.classSummary, tableHeader, summaryContentTree,
-                HtmlIds.CLASS_SUMMARY);
-    }
-
-    @Override
-    public void addEnumSummary(Content summaryContentTree) {
-        TableHeader tableHeader= new TableHeader(contents.enum_, contents.descriptionLabel);
-        addClassesSummary(enums, contents.enumSummary, tableHeader, summaryContentTree,
-                HtmlIds.ENUM_SUMMARY);
-    }
-
-    @Override
-    public void addRecordSummary(Content summaryContentTree) {
-        TableHeader tableHeader= new TableHeader(contents.record, contents.descriptionLabel);
-        addClassesSummary(records, contents.recordSummary, tableHeader, summaryContentTree,
-                HtmlIds.RECORD_SUMMARY);
-    }
-
-    @Override
-    public void addExceptionSummary(Content summaryContentTree) {
-        TableHeader tableHeader= new TableHeader(contents.exception, contents.descriptionLabel);
-        addClassesSummary(exceptions, contents.exceptionSummary, tableHeader, summaryContentTree,
-                HtmlIds.EXCEPTION_SUMMARY);
-    }
-
-    @Override
-    public void addErrorSummary(Content summaryContentTree) {
-        TableHeader tableHeader= new TableHeader(contents.error, contents.descriptionLabel);
-        addClassesSummary(errors, contents.errorSummary, tableHeader, summaryContentTree,
-                HtmlIds.ERROR_SUMMARY);
-    }
-
-    @Override
-    public void addAnnotationTypeSummary(Content summaryContentTree) {
-        TableHeader tableHeader= new TableHeader(contents.annotationType, contents.descriptionLabel);
-        addClassesSummary(annotationTypes, contents.annotationTypeSummary, tableHeader, summaryContentTree,
-                 HtmlIds.ANNOTATION_TYPE_SUMMARY);
-    }
-
-    public void addClassesSummary(SortedSet<TypeElement> classes, String label,
-            TableHeader tableHeader, Content summaryContentTree, HtmlId id) {
-        if(!classes.isEmpty()) {
-            Table table = new Table(HtmlStyle.summaryTable)
-                    .setCaption(Text.of(label))
-                    .setHeader(tableHeader)
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
-
-            for (TypeElement klass : classes) {
+    /**
+     * Add all types to the content tree.
+     *
+     * @param summaryContentTree HtmlTree content to which the links will be added
+     */
+    public void addAllClassesAndInterfacesSummary(Content summaryContentTree) {
+        Table table = new Table(HtmlStyle.summaryTable)
+                .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                .setId(HtmlIds.CLASS_SUMMARY)
+                .setDefaultTab(contents.allClassesAndInterfaces)
+                .addTab(contents.interfacesString, utils::isInterface)
+                .addTab(contents.classesString, e -> utils.isOrdinaryClass((TypeElement)e))
+                .addTab(contents.enumsString, utils::isEnum)
+                .addTab(contents.recordsString, e -> utils.isRecord((TypeElement)e))
+                .addTab(contents.exceptionsString, e -> utils.isException((TypeElement)e))
+                .addTab(contents.errorsString, e -> utils.isError((TypeElement)e))
+                .addTab(contents.annotationTypesString, utils::isAnnotationType);
+        for (TypeElement typeElement : allClasses) {
+            if (typeElement != null && utils.isCoreClass(typeElement)) {
                 Content classLink = getLink(new HtmlLinkInfo(
-                        configuration, HtmlLinkInfo.Kind.PACKAGE, klass));
+                        configuration, HtmlLinkInfo.Kind.PACKAGE, typeElement));
                 ContentBuilder description = new ContentBuilder();
-                addPreviewSummary(klass, description);
-                if (utils.isDeprecated(klass)) {
-                    description.add(getDeprecatedPhrase(klass));
-                    List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(klass);
+                addPreviewSummary(typeElement, description);
+                if (utils.isDeprecated(typeElement)) {
+                    description.add(getDeprecatedPhrase(typeElement));
+                    List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(typeElement);
                     if (!tags.isEmpty()) {
-                        addSummaryDeprecatedComment(klass, tags.get(0), description);
+                        addSummaryDeprecatedComment(typeElement, tags.get(0), description);
                     }
                 } else {
-                    addSummaryComment(klass, description);
+                    addSummaryComment(typeElement, description);
                 }
-                table.addRow(classLink, description);
+                table.addRow(typeElement, Arrays.asList(classLink, description));
             }
-            summaryContentTree.add(HtmlTree.LI(table).setId(id));
+        }
+        if (!table.isEmpty()) {
+            summaryContentTree.add(HtmlTree.LI(table));
+            if (table.needsScript()) {
+                getMainBodyScript().append(table.getScript());
+            }
         }
     }
 
@@ -359,6 +289,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                                   boolean showModules) {
         if (!packages.isEmpty()) {
             Table table = new Table(HtmlStyle.summaryTable)
+                    .setId(HtmlIds.RELATED_PACKAGE_SUMMARY)
                     .setCaption(label)
                     .setHeader(tableHeader);
             if (showModules) {
@@ -393,8 +324,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     table.addRow(packageLink, description);
                 }
             }
-            summaryContentTree.add(HtmlTree.LI(table)
-                    .setId(HtmlIds.RELATED_PACKAGE_SUMMARY));
+            summaryContentTree.add(HtmlTree.LI(table));
         }
     }
 
