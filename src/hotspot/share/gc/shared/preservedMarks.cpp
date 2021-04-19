@@ -122,7 +122,7 @@ public:
 #endif // ASSERT
   }
 
-  ~RestorePreservedMarksTask() {
+  virtual ~RestorePreservedMarksTask() {
     assert(_total_size == _total_size_before, "total_size = %zu before = %zu", _total_size, _total_size_before);
 
     log_trace(gc)("Restored %zu marks", _total_size);
