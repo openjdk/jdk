@@ -36,6 +36,7 @@ UAE English locale, based on US English orthography, formats from en_001
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/r</pattern>
+							<datetimeSkeleton>rMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -123,6 +124,7 @@ UAE English locale, based on US English orthography, formats from en_001
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -213,6 +215,7 @@ UAE English locale, based on US English orthography, formats from en_001
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>

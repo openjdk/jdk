@@ -78,6 +78,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormat>
 							<pattern>r-MM-dd</pattern>
 							<pattern alt="variant">d/M/r</pattern>
+							<datetimeSkeleton alt="variant">rMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -184,6 +185,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormat>
 							<pattern>GGGGG y-MM-dd</pattern>
 							<pattern alt="variant">d/M/y GGGGG</pattern>
+							<datetimeSkeleton alt="variant">GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -376,6 +378,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormat>
 							<pattern>y-MM-dd</pattern>
 							<pattern alt="variant">d/M/yy</pattern>
+							<datetimeSkeleton alt="variant">yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -509,11 +512,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">

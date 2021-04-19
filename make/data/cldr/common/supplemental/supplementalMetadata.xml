@@ -52,14 +52,14 @@ For terms of use, see http://www.unicode.org/copyright.html
             <languageAlias type="zh_min_nan" replacement="nan" reason="deprecated"/> <!-- Minnan, Hokkien, Amoy, Taiwanese, Southern Min, Southern Fujian, Hoklo, Southern Fukien, Ho-lo -->
             <languageAlias type="zh_xiang" replacement="hsn" reason="deprecated"/> <!-- Xiang or Hunanese -->
             <languageAlias type="en_GB_oed" replacement="en_GB_oxendict" reason="deprecated"/>  <!-- English, Oxford English Dictionary spelling -->
-            
+
             <!-- deprecated iso codes -->
             <languageAlias type="in" replacement="id" reason="deprecated"/> <!-- Indonesian -->
             <languageAlias type="iw" replacement="he" reason="deprecated"/> <!-- Hebrew -->
             <languageAlias type="ji" replacement="yi" reason="deprecated"/> <!-- Yiddish -->
             <languageAlias type="jw" replacement="jv" reason="deprecated"/> <!-- Javanese -->
             <languageAlias type="mo" replacement="ro" reason="deprecated"/> <!-- Moldovan -->
-            <languageAlias type="scc" replacement="sr" reason="deprecated"/> <!-- Serbian --> 
+            <languageAlias type="scc" replacement="sr" reason="deprecated"/> <!-- Serbian -->
             <languageAlias type="scr" replacement="hr" reason="deprecated"/> <!-- Croatian -->
 			<languageAlias type="aam" replacement="aas" reason="deprecated"/> <!-- Aramanik -->
 			<languageAlias type="adp" replacement="dz" reason="deprecated"/> <!-- Adap -->
@@ -225,7 +225,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="zh_gan" replacement="gan" reason="deprecated"/>  <!-- Kan or Gan -->
 			<languageAlias type="zh_wuu" replacement="wuu" reason="deprecated"/>  <!-- Shanghainese or Wu -->
 			<languageAlias type="zh_yue" replacement="yue" reason="deprecated"/>  <!-- Cantonese -->
-			
+
 			<!-- miscellaneous deprecated -->
             <languageAlias type="no_bokmal" replacement="nb" reason="deprecated"/>
             <languageAlias type="no_nynorsk" replacement="nn" reason="deprecated"/>
@@ -406,7 +406,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="lav" replacement="lv" reason="overlong"/> <!-- [Latvian] -->
 			<languageAlias type="mlg" replacement="mg" reason="overlong"/> <!-- [Malagasy] -->
 			<languageAlias type="mah" replacement="mh" reason="overlong"/> <!-- [Marshallese] -->
-			<languageAlias type="mri" replacement="mi" reason="overlong"/> <!-- [Maori] -->
+			<languageAlias type="mri" replacement="mi" reason="overlong"/> <!-- [Māori] -->
 			<languageAlias type="mkd" replacement="mk" reason="overlong"/> <!-- [Macedonian] -->
 			<languageAlias type="mal" replacement="ml" reason="overlong"/> <!-- [Malayalam] -->
 			<languageAlias type="mon" replacement="mn" reason="overlong"/> <!-- [Mongolian] -->
@@ -504,7 +504,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="gre" replacement="el" reason="bibliographic"/> <!-- [Modern Greek (1453-)] -->
 			<languageAlias type="ice" replacement="is" reason="bibliographic"/> <!-- [Icelandic] -->
 			<languageAlias type="mac" replacement="mk" reason="bibliographic"/> <!-- [Macedonian] -->
-			<languageAlias type="mao" replacement="mi" reason="bibliographic"/> <!-- [Maori] -->
+			<languageAlias type="mao" replacement="mi" reason="bibliographic"/> <!-- [Māori] -->
 			<languageAlias type="may" replacement="ms" reason="bibliographic"/> <!-- [Malay (macrolanguage)] -->
 			<languageAlias type="per" replacement="fa" reason="bibliographic"/> <!-- [Persian] -->
 			<languageAlias type="rum" replacement="ro" reason="bibliographic"/> <!-- [Romanian, Moldavian, Moldovan] -->
@@ -517,7 +517,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="i_enochian" replacement="und_x_i_enochian" reason="legacy"/> <!-- irregular bcp47 code -->
 			<languageAlias type="i_mingo" replacement="see_x_i_mingo" reason="legacy"/> <!-- irregular bcp47 code -->
 			<languageAlias type="zh_min" replacement="nan_x_zh_min" reason="legacy"/> <!-- irregular bcp47 code -->
-			
+
 			<languageAlias type="und_aaland" replacement="und_AX" reason="deprecated"/>
 			<languageAlias type="hy_arevmda" replacement="hyw" reason="deprecated"/>
 			<languageAlias type="und_arevmda" replacement="und" reason="deprecated"/>
@@ -529,7 +529,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="und_hakka" replacement="und" reason="deprecated"/>
 			<languageAlias type="und_xiang" replacement="und" reason="deprecated"/>
 			<languageAlias type="und_hepburn_heploc" replacement="und_alalc97" reason="deprecated"/>
-			
+
             <!-- scripts -->
             <scriptAlias type="Qaai" replacement="Zinh" reason="deprecated"/>
             <!-- deprecated ISO territories in 3066 + CLDR ones (older deprecated ISO codes -->
@@ -1618,14 +1618,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- <subdivisionAlias type="zanl" replacement="za?" reason="deprecated"/> <!- - KwaZulu-Natal => ?? -->
 			<!-- end of data generated with GenerateSubdivisions -->
 
-			<!-- Curated subdivision data, if any -->	
-						
-			
+			<!-- Curated subdivision data, if any -->
+
+
             <!-- variants -->
             <variantAlias type="polytoni" replacement="polyton" reason="deprecated"/>
 			<variantAlias type="heploc" replacement="alalc97" reason="deprecated"/> <!-- heploc -->
-            <zoneAlias type="Africa/Timbuktu" replacement="Africa/Bamako" reason="deprecated"/>          
-            <zoneAlias type="Pacific/Yap" replacement="Pacific/Truk" reason="deprecated"/>          
+            <zoneAlias type="Africa/Timbuktu" replacement="Africa/Bamako" reason="deprecated"/>
+            <zoneAlias type="Pacific/Yap" replacement="Pacific/Truk" reason="deprecated"/>
             <zoneAlias type="Europe/Belfast" replacement="Europe/London" reason="deprecated"/>
             <zoneAlias type="SystemV/AST4ADT" replacement="America/Halifax" reason="deprecated"/>
             <zoneAlias type="SystemV/EST5EDT" replacement="America/New_York" reason="deprecated"/>
@@ -1642,7 +1642,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <zoneAlias type="SystemV/PST8" replacement="Pacific/Pitcairn" reason="deprecated"/>
             <zoneAlias type="SystemV/YST9" replacement="Pacific/Gambier" reason="deprecated"/>
             <zoneAlias type="SystemV/HST10" replacement="Pacific/Honolulu" reason="deprecated"/>
-            <zoneAlias type="HST" replacement="Pacific/Honolulu" reason="deprecated"/>       
+            <zoneAlias type="HST" replacement="Pacific/Honolulu" reason="deprecated"/>
             <zoneAlias type="Atlantic/Jan_Mayen" replacement="Europe/Oslo" reason="deprecated"/>
             <zoneAlias type="America/Shiprock" replacement="America/Denver" reason="deprecated"/>
             <zoneAlias type="Antarctica/South_Pole" replacement="Pacific/Auckland" reason="deprecated"/>
@@ -1654,7 +1654,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<defaultContent locales="
 			aa_ET af_ZA agq_CM ak_GH am_ET an_ES ar_001 arn_CL as_IN asa_TZ ast_ES
 			az_Arab_IR az_Cyrl_AZ az_Latn az_Latn_AZ
-			ba_RU bas_CM be_BY bem_ZM bez_TZ bg_BG bgn_PK blt_VN bm_ML bm_Nkoo_ML bn_BD
+			ba_RU bal_Arab bal_Arab_PK bal_Latn_PK bas_CM be_BY bem_ZM bez_TZ bg_BG bgn_PK blt_VN bm_ML bm_Nkoo_ML bn_BD
 			bo_CN br_FR brx_IN bs_Cyrl_BA bs_Latn bs_Latn_BA bss_CM byn_ER
 			ca_ES cad_US cch_NG ccp_BD ce_RU ceb_PH cgg_UG chr_US cic_US ckb_IQ co_FR cs_CZ
 			cu_RU cv_RU cy_GB
@@ -1662,7 +1662,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			ebu_KE ee_GH el_GR en_Dsrt_US en_US eo_001 es_ES et_EE eu_ES ewo_CM
 			fa_IR ff_Adlm_GN ff_Latn ff_Latn_SN fi_FI fil_PH fo_FO fr_FR fur_IT fy_NL
 			ga_IE gaa_GH gd_GB gez_ET gl_ES gn_PY gsw_CH gu_IN guz_KE gv_IM
-			ha_Arab_NG ha_NG haw_US he_IL hi_IN hi_Latn_IN hr_HR hsb_DE hu_HU hy_AM
+			ha_Arab_NG ha_NG haw_US he_IL hi_IN hi_Latn_IN hnj_Hmnp hnj_Hmnp_US hr_HR
+			hsb_DE hu_HU hy_AM
 			ia_001 id_ID ife_TG ig_NG ii_CN io_001 is_IS it_IT iu_CA iu_Latn_CA
 			ja_JP jbo_001 jgo_CM jmc_TZ jv_ID
 			ka_GE kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV ken_CM kgp_BR khq_ML ki_KE
@@ -1673,19 +1674,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			mai_IN mas_KE mer_KE mfe_MU mg_MG mgh_MZ mgo_CM mi_NZ mk_MK ml_IN mn_MN
 			mn_Mong_CN mni_Beng mni_Beng_IN mni_Mtei_IN moh_CA mr_IN ms_Arab_MY ms_MY mt_MT
 			mua_CM mus_US my_MM myv_RU mzn_IR
-			naq_NA nb nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA nso_ZA nus_SS
-			nv_US ny_MW nyn_UG
+			naq_NA nb nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA
+			nso_ZA nus_SS nv_US ny_MW nyn_UG
 			oc_FR om_ET or_IN os_GE osa_US
 			pa_Arab_PK pa_Guru pa_Guru_IN pcm_NG pl_PL prg_001 ps_AF pt_BR
 			qu_PE quc_GT
-			rm_CH rn_BI ro_RO rof_TZ ru_RU rw_RW rwk_TZ
+			rhg_Rohg rhg_Rohg_MM rm_CH rn_BI ro_RO rof_TZ ru_RU rw_RW rwk_TZ
 			sa_IN sah_RU saq_KE sat_Deva_IN sat_Olck sat_Olck_IN sbp_TZ sc_IT scn_IT
 			sd_Arab sd_Arab_PK sd_Deva_IN sdh_IR se_NO seh_MZ ses_ML sg_CF shi_Latn_MA
 			shi_Tfng shi_Tfng_MA si_LK sid_ET sk_SK sl_SI sma_SE smj_SE smn_FI sms_FI sn_ZW
 			so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER st_ZA su_Latn su_Latn_ID
 			sv_SE sw_TZ syr_IQ szl_PL
-			ta_IN te_IN teo_UG tg_TJ th_TH ti_ET tig_ER tk_TM tn_ZA to_TO tr_TR trv_TW
-			trw_PK ts_ZA tt_RU twq_NE tzm_MA
+			ta_IN te_IN teo_UG tg_TJ th_TH ti_ET tig_ER tk_TM tn_ZA to_TO tpi_PG tr_TR
+			trv_TW trw_PK ts_ZA tt_RU twq_NE tzm_MA
 			ug_CN uk_UA ur_PK uz_Arab_AF uz_Cyrl_UZ uz_Latn uz_Latn_UZ
 			vai_Latn_LR vai_Vaii vai_Vaii_LR ve_ZA vi_VN vo_001 vun_TZ
 			wa_BE wae_CH wal_ET wbp_AU wo_SN

@@ -197,7 +197,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Anchorage">
 				<usesMetazone to="1983-10-30 11:00" mzone="Alaska_Hawaii"/>
-				<usesMetazone to="1983-11-30 09:00" from="1983-10-30 11:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/Anguilla">
@@ -358,9 +357,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1996-01-01 03:00" mzone="GMT"/>
 			</timezone>
 			<timezone type="America/Dawson">
-				<usesMetazone to="1973-10-28 09:00" mzone="Yukon"/>
 				<usesMetazone to="2020-11-01 07:00" from="1973-10-28 09:00" mzone="America_Pacific"/>
-				<usesMetazone from="2020-11-01 07:00" mzone="America_Mountain"/>
+				<usesMetazone from="2020-11-01 07:00" mzone="Yukon"/>
 			</timezone>
 			<timezone type="America/Dawson_Creek">
 				<usesMetazone to="1972-08-30 09:00" mzone="America_Pacific"/>
@@ -489,9 +487,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Juneau">
 				<usesMetazone to="1980-04-27 10:00" mzone="America_Pacific"/>
-				<usesMetazone to="1980-10-26 10:00" from="1980-04-27 10:00" mzone="Yukon"/>
 				<usesMetazone to="1983-10-30 09:00" from="1980-10-26 10:00" mzone="America_Pacific"/>
-				<usesMetazone to="1983-11-30 09:00" from="1983-10-30 09:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/Kentucky/Monticello">
@@ -598,7 +594,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Nome">
 				<usesMetazone to="1983-10-30 12:00" mzone="Bering"/>
-				<usesMetazone to="1983-11-30 09:00" from="1983-10-30 12:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/Noronha">
@@ -702,7 +697,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Sitka">
 				<usesMetazone to="1983-10-30 09:00" mzone="America_Pacific"/>
-				<usesMetazone to="1983-11-30 09:00" from="1983-10-30 09:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/St_Barthelemy">
@@ -750,13 +744,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Whitehorse">
 				<usesMetazone to="2020-11-01 07:00" mzone="America_Pacific"/>
-				<usesMetazone from="2020-11-01 07:00" mzone="America_Mountain"/>
+				<usesMetazone from="2020-11-01 07:00" mzone="Yukon"/>
 			</timezone>
 			<timezone type="America/Winnipeg">
 				<usesMetazone mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Yakutat">
-				<usesMetazone to="1983-11-30 09:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/Yellowknife">
@@ -1897,7 +1890,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Yakutsk" territory="001" type="Asia/Yakutsk"/>
 			<mapZone other="Yekaterinburg" territory="001" type="Asia/Yekaterinburg"/>
 			<mapZone other="Yerevan" territory="001" type="Asia/Yerevan"/>
-			<mapZone other="Yukon" territory="001" type="America/Yakutat"/>
+			<mapZone other="Yukon" territory="001" type="America/Whitehorse"/>
 		</mapTimezones>
 	</metaZones>
 

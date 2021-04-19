@@ -11,11 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="en"/>
 		<territory type="NZ"/>
 	</identity>
-	<localeDisplayNames>
-		<languages>
-			<language type="mi">Māori</language>
-		</languages>
-	</localeDisplayNames>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -23,11 +18,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d/MM/y G</pattern>
+							<datetimeSkeleton>GyMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/MM/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -71,11 +68,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d/MM/y</pattern>
+							<datetimeSkeleton>yMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/MM/yy</pattern>
+							<datetimeSkeleton>yyMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>

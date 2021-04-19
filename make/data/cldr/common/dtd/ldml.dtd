@@ -46,7 +46,7 @@ $Revision$
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "39" >
+<!ATTLIST version cldrVersion CDATA #FIXED "40" >
     <!--@MATCH:any-->
     <!--@VALUE-->
 <!ATTLIST version draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -1406,7 +1406,7 @@ $Revision$
     <!--@VALUE-->
     <!--@DEPRECATED-->
 
-<!ELEMENT dateFormat ( alias | ( pattern*, displayName*, special* ) ) >
+<!ELEMENT dateFormat ( alias | ( pattern*, datetimeSkeleton*, displayName*, special* ) ) >
 <!ATTLIST dateFormat type NMTOKEN "standard" >
     <!--@MATCH:literal/standard-->
 <!ATTLIST dateFormat alt NMTOKENS #IMPLIED >
@@ -1438,6 +1438,18 @@ $Revision$
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
 <!ATTLIST pattern references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT datetimeSkeleton ( #PCDATA ) >
+<!ATTLIST datetimeSkeleton numbers CDATA #IMPLIED >
+    <!-- TODO: generalize this to be any (M=|d=)?<numberSystem> -->
+    <!--@MATCH:literal/M=romanlow, d=hanidays, hanidec, hebr, y=jpanyear-->
+    <!--@VALUE-->
+<!ATTLIST datetimeSkeleton alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST datetimeSkeleton draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST datetimeSkeleton references CDATA #IMPLIED >
     <!--@METADATA-->
 
 <!ELEMENT displayName ( #PCDATA ) >
@@ -1475,7 +1487,7 @@ $Revision$
     <!--@VALUE-->
     <!--@DEPRECATED-->
 
-<!ELEMENT timeFormat ( alias | ( pattern*, displayName*, special* ) ) >
+<!ELEMENT timeFormat ( alias | ( pattern*, datetimeSkeleton*, displayName*, special* ) ) >
 <!ATTLIST timeFormat type NMTOKEN "standard" >
     <!--@MATCH:literal/standard-->
 <!ATTLIST timeFormat alt NMTOKENS #IMPLIED >
@@ -1548,7 +1560,7 @@ $Revision$
 <!ELEMENT dateFormatItem ( #PCDATA ) >
 <!ATTLIST dateFormatItem id CDATA #REQUIRED >
     <!-- TODO rationalize this list -->
-    <!--@MATCH:literal/Bh, Bhm, Bhms, E, EBhm, EBhms, EEEEd, EHm, EHms, Ed, Ehm, Ehms, Gy, GyM, GyMMM, GyMMMEEEEd, GyMMMEd, GyMMMM, GyMMMMEd, GyMMMMd, GyMMMd, GyMd, H, HHmm, HHmmZ, HHmmss, Hm, HmZ, Hmm, Hms, Hmsv, Hmsvvvv, Hmv, Hmvvvv, M, MEEEEd, MEd, MMM, MMMEEEEd, MMMEd, MMMM, MMMMEEEEd, MMMMEd, MMMMW, MMMMd, MMMMdd, MMMd, MMMdd, MMd, MMdd, Md, Mdd, UM, UMMM, UMMMd, UMd, d, h, hhmm, hhmmss, hm, hms, hmsv, hmsvvvv, hmv, hmvvvv, mmss, ms, y, yM, yMEEEEd, yMEd, yMM, yMMM, yMMMEEEEd, yMMMEd, yMMMM, yMMMMEEEEd, yMMMMEd, yMMMMccccd, yMMMMd, yMMMd, yMMdd, yMd, yQ, yQQQ, yQQQQ, yw, yyyy, yyyyM, yyyyMEEEEd, yyyyMEd, yyyyMM, yyyyMMM, yyyyMMMEEEEd, yyyyMMMEd, yyyyMMMM, yyyyMMMMEd, yyyyMMMMccccd, yyyyMMMMd, yyyyMMMd, yyyyMMdd, yyyyMd, yyyyQQQ, yyyyQQQQ-->
+    <!--@MATCH:literal/Bh, Bhm, Bhms, E, EBhm, EBhms, EEEEd, EHm, EHms, Ed, Ehm, Ehms, Gy, GyM, GyMEEEEd, GyMMM, GyMMMEEEEd, GyMMMEd, GyMMMM, GyMMMMEd, GyMMMMd, GyMMMd, GyMd, H, HHmm, HHmmZ, HHmmss, Hm, HmZ, Hmm, Hms, Hmsv, Hmsvvvv, Hmv, Hmvvvv, M, MEEEEd, MEd, MMM, MMMEEEEd, MMMEd, MMMM, MMMMEEEEd, MMMMEd, MMMMW, MMMMd, MMMMdd, MMMd, MMMdd, MMd, MMdd, Md, Mdd, UM, UMMM, UMMMd, UMd, d, h, hhmm, hhmmss, hm, hms, hmsv, hmsvvvv, hmv, hmvvvv, mmss, ms, y, yM, yMEEEEd, yMEd, yMM, yMMM, yMMMEEEEd, yMMMEd, yMMMM, yMMMMEEEEd, yMMMMEd, yMMMMccccd, yMMMMd, yMMMd, yMMdd, yMd, yQ, yQQQ, yQQQQ, yw, yyyy, yyyyM, yyyyMEEEEd, yyyyMEd, yyyyMM, yyyyMMM, yyyyMMMEEEEd, yyyyMMMEd, yyyyMMMM, yyyyMMMMEd, yyyyMMMMccccd, yyyyMMMMd, yyyyMMMd, yyyyMMdd, yyyyMd, yyyyQQQ, yyyyQQQQ-->
 <!ATTLIST dateFormatItem count (zero | one | two | few | many | other) #IMPLIED >
 <!ATTLIST dateFormatItem alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->

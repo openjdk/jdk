@@ -1409,21 +1409,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>Gy年M月d日EEEE</pattern>
+							<datetimeSkeleton>GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>Gy/M/d</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1453,6 +1457,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">d日（E）</dateFormatItem>
 						<dateFormatItem id="Gy">Gy年</dateFormatItem>
+						<dateFormatItem id="GyMd">Gy/M/d</dateFormatItem>
 						<dateFormatItem id="GyMMM">Gy年M月</dateFormatItem>
 						<dateFormatItem id="GyMMMd">Gy年M月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">Gy年M月d日E</dateFormatItem>
@@ -1480,33 +1485,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>
@@ -2444,21 +2449,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern numbers="d=hanidays">rU年MMMd EEEE</pattern>
+							<datetimeSkeleton numbers="d=hanidays">rMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern numbers="d=hanidays">rU年MMMd</pattern>
+							<datetimeSkeleton numbers="d=hanidays">rMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern numbers="d=hanidays">r年MMMd</pattern>
+							<datetimeSkeleton numbers="d=hanidays">rMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>r/M/d</pattern>
+							<datetimeSkeleton>rMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2496,11 +2505,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">rU年MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">r年MMMd</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">rU年MMMdE</dateFormatItem>
-						<dateFormatItem id="h">ah時</dateFormatItem>
+						<dateFormatItem id="h">Bh時</dateFormatItem>
 						<dateFormatItem id="H">HH時</dateFormatItem>
-						<dateFormatItem id="hm">ah:mm</dateFormatItem>
+						<dateFormatItem id="hm">Bh:mm</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">ah:mm:ss</dateFormatItem>
+						<dateFormatItem id="hms">Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">MMM</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
@@ -2533,33 +2542,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">ah時至ah時</greatestDifference>
-							<greatestDifference id="h">ah時至h時</greatestDifference>
+							<greatestDifference id="B">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH至HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm至HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm至HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH [v]</greatestDifference>
@@ -2742,21 +2751,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日 EEEE</pattern>
+							<datetimeSkeleton draft="contributed">GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">G y/M/d</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2813,33 +2826,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>
@@ -3777,21 +3790,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>U年MMMd日EEEE</pattern>
+							<datetimeSkeleton>UMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>U年MMMd日</pattern>
+							<datetimeSkeleton>UMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>U年MMMd日</pattern>
+							<datetimeSkeleton>UMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>U/M/d</pattern>
+							<datetimeSkeleton>UMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -3852,26 +3869,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>
@@ -4054,21 +4071,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日 EEEE</pattern>
+							<datetimeSkeleton draft="contributed">GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">G y/M/d</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -4125,33 +4146,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>
@@ -4237,21 +4258,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G y年M月d日 EEEE</pattern>
+							<datetimeSkeleton>GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>G y/M/d</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -4285,19 +4310,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E Bh:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E ah:mm</dateFormatItem>
+						<dateFormatItem id="Ehm">E Bh:mm</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E ah:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ehms">E Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y年</dateFormatItem>
+						<dateFormatItem id="GyMd">G y/M/d</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y年M月</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y年M月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y年M月d日 E</dateFormatItem>
-						<dateFormatItem id="h">ah時</dateFormatItem>
+						<dateFormatItem id="h">Bh時</dateFormatItem>
 						<dateFormatItem id="H">H時</dateFormatItem>
-						<dateFormatItem id="hm">ah:mm</dateFormatItem>
+						<dateFormatItem id="hm">Bh:mm</dateFormatItem>
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
-						<dateFormatItem id="hms">ah:mm:ss</dateFormatItem>
+						<dateFormatItem id="hms">Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">M月</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
@@ -4324,33 +4350,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">ah時至ah時</greatestDifference>
-							<greatestDifference id="h">ah時至h時</greatestDifference>
+							<greatestDifference id="B">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH [v]</greatestDifference>
@@ -4719,43 +4745,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y年M月d日 EEEE</pattern>
+							<datetimeSkeleton>yMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y年M月d日</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y年M月d日</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y/M/d</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>ah:mm:ss [zzzz]</pattern>
+							<pattern>Bh:mm:ss [zzzz]</pattern>
+							<datetimeSkeleton>Bhmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>ah:mm:ss [z]</pattern>
+							<pattern>Bh:mm:ss [z]</pattern>
+							<datetimeSkeleton>Bhmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>ah:mm:ss</pattern>
+							<pattern>Bh:mm:ss</pattern>
+							<datetimeSkeleton>Bhmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>ah:mm</pattern>
+							<pattern>Bh:mm</pattern>
+							<datetimeSkeleton>Bhmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -4789,23 +4823,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E Bh:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E ah:mm</dateFormatItem>
+						<dateFormatItem id="Ehm">E Bh:mm</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E ah:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ehms">E Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">Gy年</dateFormatItem>
+						<dateFormatItem id="GyMd">G y/M/d</dateFormatItem>
 						<dateFormatItem id="GyMMM">Gy年M月</dateFormatItem>
 						<dateFormatItem id="GyMMMd">Gy年M月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">Gy年M月d日 E</dateFormatItem>
-						<dateFormatItem id="h">ah時</dateFormatItem>
+						<dateFormatItem id="h">Bh時</dateFormatItem>
 						<dateFormatItem id="H">H時</dateFormatItem>
-						<dateFormatItem id="hm">ah:mm</dateFormatItem>
+						<dateFormatItem id="hm">Bh:mm</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">ah:mm:ss</dateFormatItem>
+						<dateFormatItem id="hms">Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">ah:mm:ss [v]</dateFormatItem>
+						<dateFormatItem id="hmsv">Bh:mm:ss [v]</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss [v]</dateFormatItem>
-						<dateFormatItem id="hmv">ah:mm [v]</dateFormatItem>
+						<dateFormatItem id="hmv">Bh:mm [v]</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm [v]</dateFormatItem>
 						<dateFormatItem id="M">M月</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
@@ -4821,6 +4856,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yM">y/M</dateFormatItem>
 						<dateFormatItem id="yMd">y/M/d</dateFormatItem>
 						<dateFormatItem id="yMEd">y/M/d（E）</dateFormatItem>
+						<dateFormatItem id="yMEEEEd">y年M月d日 EEEE</dateFormatItem>
 						<dateFormatItem id="yMM">y/MM</dateFormatItem>
 						<dateFormatItem id="yMMM">y年M月</dateFormatItem>
 						<dateFormatItem id="yMMMd">y年M月d日</dateFormatItem>
@@ -4885,33 +4921,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">Gy年MMMd日, E – y年MMMd日, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">ah時至ah時</greatestDifference>
-							<greatestDifference id="h">ah時至h時</greatestDifference>
+							<greatestDifference id="B">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm – HH:mm [v]</greatestDifference>
 							<greatestDifference id="m">HH:mm – HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH – HH [v]</greatestDifference>
@@ -5097,21 +5133,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>Gy年M月d日EEEE</pattern>
+							<datetimeSkeleton>GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>Gy/M/d</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -5168,33 +5208,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>
@@ -5368,21 +5408,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日 EEEE</pattern>
+							<datetimeSkeleton draft="contributed">GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">G y/M/d</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -5439,33 +5483,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>
@@ -5639,21 +5683,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>Gy年M月d日EEEE</pattern>
+							<datetimeSkeleton>GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>Gy/M/d</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -5710,33 +5758,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>
@@ -6528,21 +6576,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>Gy年M月d日EEEE</pattern>
+							<datetimeSkeleton>GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>Gy/M/d</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -6570,11 +6622,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">Gy年M月</dateFormatItem>
 						<dateFormatItem id="GyMMMd">Gy年M月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">Gy年M月d日E</dateFormatItem>
-						<dateFormatItem id="h">ah時</dateFormatItem>
+						<dateFormatItem id="h">Bh時</dateFormatItem>
 						<dateFormatItem id="H">H時</dateFormatItem>
-						<dateFormatItem id="hm">ah:mm</dateFormatItem>
+						<dateFormatItem id="hm">Bh:mm</dateFormatItem>
 						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">ah:mm:ss</dateFormatItem>
+						<dateFormatItem id="hms">Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">M月</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
@@ -6599,33 +6651,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>
@@ -6799,21 +6851,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日 EEEE</pattern>
+							<datetimeSkeleton draft="contributed">GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">G y年M月d日</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">G y/M/d</pattern>
+							<datetimeSkeleton draft="contributed">GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -6870,33 +6926,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>
@@ -6983,21 +7039,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>Gy年M月d日 EEEE</pattern>
+							<datetimeSkeleton>GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>Gy年M月d日</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>Gy/M/d</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -7030,6 +7090,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">Gy年M月</dateFormatItem>
 						<dateFormatItem id="GyMMMd">Gy年M月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">Gy年M月d日E</dateFormatItem>
+						<dateFormatItem id="h">Bh時</dateFormatItem>
+						<dateFormatItem id="H">H時</dateFormatItem>
+						<dateFormatItem id="hm">Bh:mm</dateFormatItem>
+						<dateFormatItem id="Hm">H:mm</dateFormatItem>
+						<dateFormatItem id="hms">Bh:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">M月</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">M/d（E）</dateFormatItem>
@@ -7054,33 +7120,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d日至d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">ah時至ah時</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
+							<greatestDifference id="B" draft="contributed">Bh時至Bh時 [v]</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH [v]</greatestDifference>

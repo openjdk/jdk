@@ -34,6 +34,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languageGroup parent="cdd">ari cad kii paw wic</languageGroup>
 		<languageGroup parent="cel">br cy ga gd gv kw mga nrc obt owl sga wlm xbm xcb xce xga xpi</languageGroup>
 		<languageGroup parent="cmc">ace cje cjm hro huq jra rad rog</languageGroup>
+		<languageGroup parent="cpe">tpi</languageGroup>
 		<languageGroup parent="cpf">acf cks crs gcf gcr ht kmv lou mfe rcf</languageGroup>
 		<languageGroup parent="cpp">aoa cri fab kea mzs pap pov pre srm xmm</languageGroup>
 		<languageGroup parent="csu">avu bdh bex bot kcm led mdi mdj mhi mwm myb niy sba</languageGroup>

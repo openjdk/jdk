@@ -1454,8 +1454,7 @@ XXX Code for transations where no currency is involved
 		<language type="cjm" scripts="Cham"/>
 		<language type="cjm" scripts="Arab" alt="secondary"/>
 		<language type="cjs" scripts="Cyrl"/>
-		<language type="ckb" scripts="Arab"/>
-		<language type="ckb" territories="IQ IR" alt="secondary"/>
+		<language type="ckb" scripts="Arab" territories="IQ IR"/>
 		<language type="ckt" scripts="Cyrl"/>
 		<language type="co" scripts="Latn"/>
 		<language type="cop" scripts="Arab Copt Grek" alt="secondary"/>
@@ -1651,6 +1650,7 @@ XXX Code for transations where no currency is involved
 		<language type="hne" scripts="Deva"/>
 		<language type="hne" territories="IN" alt="secondary"/>
 		<language type="hnj" scripts="Laoo"/>
+		<language type="hnj" scripts="Hmnp" territories="US" alt="secondary"/>
 		<language type="hnn" scripts="Latn"/>
 		<language type="hnn" scripts="Hano" alt="secondary"/>
 		<language type="hno" scripts="Arab"/>
@@ -2064,6 +2064,8 @@ XXX Code for transations where no currency is involved
 		<language type="rej" scripts="Latn"/>
 		<language type="rej" scripts="Rjng" territories="ID" alt="secondary"/>
 		<language type="rgn" scripts="Latn"/>
+		<language type="rhg" scripts="Rohg"/>
+		<language type="rhg" scripts="Arab Latn" alt="secondary"/>
 		<language type="ria" scripts="Latn"/>
 		<language type="rif" scripts="Latn Tfng"/>
 		<language type="rif" territories="MA" alt="secondary"/>
@@ -2495,6 +2497,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="en" populationPercent="18"/>	<!--English-->
 			<languagePopulation type="rkt" literacyPercent="20" populationPercent="6.5" references="R1087"/>	<!--Rangpuri-->
 			<languagePopulation type="syl" literacyPercent="35" populationPercent="5"/>	<!--Sylheti-->
+			<languagePopulation type="rhg" populationPercent="0.52"/>	<!--Rohingya-->
 			<languagePopulation type="ccp" populationPercent="0.22"/>	<!--Chakma-->
 			<languagePopulation type="my" populationPercent="0.21"/>	<!--Burmese-->
 			<languagePopulation type="grt" populationPercent="0.073"/>	<!--Garo-->
@@ -3496,6 +3499,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="my" populationPercent="64" officialStatus="official"/>	<!--Burmese-->
 			<languagePopulation type="shn" populationPercent="6.4"/>	<!--Shan-->
 			<languagePopulation type="kac" populationPercent="1.7"/>	<!--Kachin-->
+			<languagePopulation type="rhg" populationPercent="1.6"/>	<!--Rohingya-->
 			<languagePopulation type="mnw" populationPercent="1.5"/>	<!--Mon-->
 			<languagePopulation type="kht" populationPercent="0.0075"/>	<!--Khamti-->
 		</territory>
@@ -3699,7 +3703,7 @@ XXX Code for transations where no currency is involved
 		</territory>
 		<territory type="NZ" gdp="189000000000" literacyPercent="99" population="4925480">	<!--New Zealand-->
 			<languagePopulation type="en" populationPercent="98" officialStatus="de_facto_official" references="R1203"/>	<!--English-->
-			<languagePopulation type="mi" populationPercent="2.8" officialStatus="official" references="R1044"/>	<!--Maori-->
+			<languagePopulation type="mi" populationPercent="2.8" officialStatus="official" references="R1044"/>	<!--Māori-->
 		</territory>
 		<territory type="OM" gdp="190100000000" literacyPercent="86.9" population="4664840">	<!--Oman-->
 			<languagePopulation type="ar" populationPercent="81" officialStatus="official"/>	<!--Arabic-->
@@ -4777,7 +4781,7 @@ XXX Code for transations where no currency is involved
 			regions="AD AM AO AT AW BE BF BJ BL BR CG CI CV DE EE FR GA GF GN GP GW HR IL IT KZ MC MD MF MQ MZ NC NL PM PT RE RO SI SR ST TG TR WF YT"/>
 		<hours preferred="H" allowed="H hB h" regions="AZ BA BG CH GE LI ME RS UA UZ XK"/>
 		<hours preferred="H" allowed="H hB h hb" regions="BO EC ES GQ PE"/>
-		<hours preferred="H" allowed="H hB hb h" regions="LV TL zu_ZA"/>
+		<hours preferred="H" allowed="H hB hb h" regions="CN LV TL zu_ZA"/>
 		<hours preferred="H" allowed="hB H" regions="CD IR"/>
 		<hours preferred="H" allowed="hB hb H h" regions="KE MM TZ UG"/>
 		<hours preferred="h" allowed="h H" regions="AS BT DJ ER GH IN LS PG PW SO TO VU WS"/>
@@ -4787,12 +4791,12 @@ XXX Code for transations where no currency is involved
 		<hours preferred="h" allowed="h hb H hB"
 			regions="AG AU BB BM BS CA DM FJ FM GD GM GU GY JM KI KN KY LC LR MH MP MW NZ SB SG SL SS SZ TC TT UM US VC VG VI ZM en_001"/>
 		<hours preferred="h" allowed="h hB H" regions="BD PK"/>
-		<hours preferred="h" allowed="h hB hb H" regions="AE BH DZ EG EH IQ JO KW LB LY MR OM PH PS QA SA SD SY TN YE ar_001"/>
+		<hours preferred="h" allowed="h hB hb H" regions="AE BH DZ EG EH HK IQ JO KW LB LY MO MR OM PH PS QA SA SD SY TN YE ar_001"/>
 		<hours preferred="h" allowed="hb hB h H" regions="BN MY"/>
 		<hours preferred="h" allowed="hB h H" regions="hi_IN kn_IN ml_IN te_IN"/>
 		<hours preferred="h" allowed="hB h H hb" regions="KH"/>
 		<hours preferred="h" allowed="hB h hb H" regions="ta_IN"/>
-		<hours preferred="h" allowed="hB hb h H" regions="CN HK MO TW ET gu_IN mr_IN pa_IN"/>
+		<hours preferred="h" allowed="hB hb h H" regions="TW ET gu_IN mr_IN pa_IN"/>
     </timeData>
 
     <measurementData>
@@ -5306,7 +5310,7 @@ XXX Code for transations where no currency is involved
     </codeMappings>
 
 	<parentLocales>
-		<parentLocale parent="root" locales="az_Arab az_Cyrl blt_Latn bm_Nkoo bs_Cyrl byn_Latn cu_Glag dje_Arab dyo_Arab en_Dsrt en_Shaw ff_Adlm ff_Arab ha_Arab hi_Latn iu_Latn kk_Arab ks_Deva ku_Arab ky_Arab ky_Latn ml_Arab mn_Mong mni_Mtei ms_Arab pa_Arab sat_Deva sd_Deva sd_Khoj sd_Sind shi_Latn so_Arab sr_Latn sw_Arab tg_Arab ug_Cyrl uz_Arab uz_Cyrl vai_Latn wo_Arab yo_Arab yue_Hans zh_Hant"/>
+		<parentLocale parent="root" locales="az_Arab az_Cyrl bal_Latn blt_Latn bm_Nkoo bs_Cyrl byn_Latn cu_Glag dje_Arab dyo_Arab en_Dsrt en_Shaw ff_Adlm ff_Arab ha_Arab hi_Latn iu_Latn kk_Arab ks_Deva ku_Arab ky_Arab ky_Latn ml_Arab mn_Mong mni_Mtei ms_Arab pa_Arab sat_Deva sd_Deva sd_Khoj sd_Sind shi_Latn so_Arab sr_Latn sw_Arab tg_Arab ug_Cyrl uz_Arab uz_Cyrl vai_Latn wo_Arab yo_Arab yue_Hans zh_Hant"/>
 		<parentLocale parent="en_001" locales="en_150 en_AG en_AI en_AU en_BB en_BM en_BS en_BW en_BZ en_CA en_CC en_CK en_CM en_CX en_CY en_DG en_DM en_ER en_FJ en_FK en_FM en_GB en_GD en_GG en_GH en_GI en_GM en_GY en_HK en_IE en_IL en_IM en_IN en_IO en_JE en_JM en_KE en_KI en_KN en_KY en_LC en_LR en_LS en_MG en_MO en_MS en_MT en_MU en_MW en_MY en_NA en_NF en_NG en_NR en_NU en_NZ en_PG en_PH en_PK en_PN en_PW en_RW en_SB en_SC en_SD en_SG en_SH en_SL en_SS en_SX en_SZ en_TC en_TK en_TO en_TT en_TV en_TZ en_UG en_VC en_VG en_VU en_WS en_ZA en_ZM en_ZW"/>
 		<parentLocale parent="en_150" locales="en_AT en_BE en_CH en_DE en_DK en_FI en_NL en_SE en_SI"/>
 		<parentLocale parent="es_419" locales="es_AR es_BO es_BR es_BZ es_CL es_CO es_CR es_CU es_DO es_EC es_GT es_HN es_MX es_NI es_PA es_PE es_PR es_PY es_SV es_US es_UY es_VE"/>

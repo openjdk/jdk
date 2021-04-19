@@ -383,7 +383,7 @@ annotations.
 			<language type="mgh">Makhuwa-Meetto</language>
 			<language type="mgo">Metaʼ</language>
 			<language type="mh">Marshallese</language>
-			<language type="mi">Maori</language>
+			<language type="mi">Māori</language>
 			<language type="mic">Mi'kmaq</language>
 			<language type="min">Minangkabau</language>
 			<language type="mk">Macedonian</language>
@@ -481,6 +481,7 @@ annotations.
 			<language type="rap">Rapanui</language>
 			<language type="rar">Rarotongan</language>
 			<language type="rgn">Romagnol</language>
+			<language type="rhg">Rohingya</language>
 			<language type="rif">Riffian</language>
 			<language type="rm">Romansh</language>
 			<language type="rn">Rundi</language>
@@ -689,6 +690,7 @@ annotations.
 			<script type="Chrs">Chorasmian</script>
 			<script type="Cirt">Cirth</script>
 			<script type="Copt">Coptic</script>
+			<script type="Cpmn">Cypro-Minoan</script>
 			<script type="Cprt">Cypriot</script>
 			<script type="Cyrl">Cyrillic</script>
 			<script type="Cyrs">Old Church Slavonic Cyrillic</script>
@@ -789,6 +791,7 @@ annotations.
 			<script type="Orya">Odia</script>
 			<script type="Osge">Osage</script>
 			<script type="Osma">Osmanya</script>
+			<script type="Ougr">Old Uyghur</script>
 			<script type="Palm">Palmyrene</script>
 			<script type="Pauc">Pau Cin Hau</script>
 			<script type="Perm">Old Permic</script>
@@ -801,7 +804,8 @@ annotations.
 			<script type="Prti">Inscriptional Parthian</script>
 			<script type="Qaag">Zawgyi</script>
 			<script type="Rjng">Rejang</script>
-			<script type="Rohg">Hanifi Rohingya</script>
+			<script type="Rohg">Hanifi</script>
+			<script type="Rohg" alt="stand-alone">Hanifi Rohingya</script>
 			<script type="Roro">Rongorongo</script>
 			<script type="Runr">Runic</script>
 			<script type="Samr">Samaritan</script>
@@ -839,9 +843,12 @@ annotations.
 			<script type="Thai">Thai</script>
 			<script type="Tibt">Tibetan</script>
 			<script type="Tirh">Tirhuta</script>
+			<script type="Tnsa">Tangsa</script>
+			<script type="Toto">Toto</script>
 			<script type="Ugar">Ugaritic</script>
 			<script type="Vaii">Vai</script>
 			<script type="Visp">Visible Speech</script>
+			<script type="Vith">Vithkuqi</script>
 			<script type="Wara">Varang Kshiti</script>
 			<script type="Wcho">Wancho</script>
 			<script type="Wole">Woleai</script>
@@ -1645,21 +1652,25 @@ annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, r(U)</pattern>
+							<datetimeSkeleton>rMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, r(U)</pattern>
+							<datetimeSkeleton>rMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, r</pattern>
+							<datetimeSkeleton>rMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>M/d/r</pattern>
+							<datetimeSkeleton>rMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1698,9 +1709,12 @@ annotations.
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">r(U)</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM r(U)</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM r</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, r</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, MMM d, r(U)</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, MMM d, r</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM r(U)</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">MMMM d, r(U)</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, MMMM d, r(U)</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -1720,15 +1734,16 @@ annotations.
 						<dateFormatItem id="UMMM">MMM U</dateFormatItem>
 						<dateFormatItem id="UMMMd">MMM d, U</dateFormatItem>
 						<dateFormatItem id="y">r(U)</dateFormatItem>
-						<dateFormatItem id="yMd">M/d/r</dateFormatItem>
 						<dateFormatItem id="yyyy">r(U)</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/r</dateFormatItem>
 						<dateFormatItem id="yyyyMd">M/d/r</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E, M/d/r</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">MMM r(U)</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM r</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">MMM d, r</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, MMM d, r(U)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, MMM d, r</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">MMMM r(U)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMd">MMMM d, r(U)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEd">E, MMMM d, r(U)</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ r(U)</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ r(U)</dateFormatItem>
 					</availableFormats>
@@ -1843,21 +1858,25 @@ annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>M/d/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1896,6 +1915,7 @@ annotations.
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -2279,21 +2299,25 @@ annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>M/d/yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2301,21 +2325,25 @@ annotations.
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -2354,6 +2382,7 @@ annotations.
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -2557,27 +2586,32 @@ annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d MMM y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
@@ -2672,21 +2706,25 @@ annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>M/d/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -4290,6 +4328,11 @@ annotations.
 					<generic>Yekaterinburg Time</generic>
 					<standard>Yekaterinburg Standard Time</standard>
 					<daylight>Yekaterinburg Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Yukon Time</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -6163,6 +6206,11 @@ annotations.
 				<unitPattern count="one">{0} millimole per liter</unitPattern>
 				<unitPattern count="other">{0} millimoles per liter</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>items</displayName>
+				<unitPattern count="one">{0} item</unitPattern>
+				<unitPattern count="other">{0} items</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>parts per million</displayName>
 				<unitPattern count="one">{0} part per million</unitPattern>
@@ -6404,6 +6452,11 @@ annotations.
 				<displayName>newtons</displayName>
 				<unitPattern count="one">{0} newton</unitPattern>
 				<unitPattern count="other">{0} newtons</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kilowatt-hour per 100 kilometers</displayName>
+				<unitPattern count="one">{0} kilowatt-hour per 100 kilometers</unitPattern>
+				<unitPattern count="other">{0} kilowatt-hours per 100 kilometers</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>gigahertz</displayName>
@@ -7100,6 +7153,11 @@ annotations.
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>item</displayName>
+				<unitPattern count="one">{0} item</unitPattern>
+				<unitPattern count="other">{0} item</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>parts/million</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
@@ -7341,6 +7399,11 @@ annotations.
 				<displayName>newton</displayName>
 				<unitPattern count="one">{0} N</unitPattern>
 				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -7964,6 +8027,11 @@ annotations.
 				<unitPattern count="one">{0}mmol/L</unitPattern>
 				<unitPattern count="other">{0}mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>item</displayName>
+				<unitPattern count="one">{0}item</unitPattern>
+				<unitPattern count="other">{0}item</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
@@ -8198,6 +8266,11 @@ annotations.
 				<displayName>N</displayName>
 				<unitPattern count="one">{0}N</unitPattern>
 				<unitPattern count="other">{0}N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="one">{0}kWh/100km</unitPattern>
+				<unitPattern count="other">{0}kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>

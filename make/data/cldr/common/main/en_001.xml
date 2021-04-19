@@ -58,6 +58,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/r</pattern>
+							<datetimeSkeleton>rMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -65,7 +66,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM r</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d MMM r(U)</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM r</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM r(U)</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM r(U)</dateFormatItem>
 						<dateFormatItem id="M">LL</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
@@ -74,12 +77,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="UMd">dd/MM/U</dateFormatItem>
 						<dateFormatItem id="UMMMd">d MMM U</dateFormatItem>
-						<dateFormatItem id="yMd">dd/MM/r</dateFormatItem>
 						<dateFormatItem id="yyyyM">MM/r</dateFormatItem>
 						<dateFormatItem id="yyyyMd">dd/MM/r</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E, dd/MM/r</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM r</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, d MMM r(U)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM r</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMd">d MMMM r(U)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEd">E, d MMMM r(U)</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
@@ -145,6 +149,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -157,6 +162,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="GyMd">dd/MM/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="M">LL</dateFormatItem>
@@ -296,6 +302,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
