@@ -111,6 +111,17 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
+    void handleMovedPermanently(HttpExchange exchange) throws IOException {
+        exchange.sendResponseHeaders(301, -1);
+        exchange.getResponseHeaders().set("Location", "http://"
+                + exchange.getRequestHeaders().getFirst("Host")
+                + exchange.getRequestURI().getPath() + "/");
+    }
+
+    void handleForbidden(HttpExchange exchange) throws IOException {
+        exchange.sendResponseHeaders(403, -1);
+    }
+
     void handleNotFound(HttpExchange exchange) throws IOException {
         var bytes = ("<h2>File not found</h2>"
                 + sanitize.apply(exchange.getRequestURI().getPath(), chars)
@@ -121,14 +132,6 @@ public final class FileServerHandler implements HttpHandler {
             os.write(bytes);
         }
     }
-
-    void handleMovedPermanently(HttpExchange exchange) throws IOException {
-        exchange.sendResponseHeaders(301, -1);
-        exchange.getResponseHeaders().set("Location", "http://"
-                + exchange.getRequestHeaders().getFirst("Host")
-                + exchange.getRequestURI().getPath() + "/");
-    }
-
 
     void discardRequestBody(HttpExchange exchange) throws IOException {
         try (InputStream is = exchange.getRequestBody()) {
@@ -145,15 +148,16 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     Path mapToPath(HttpExchange exchange, Path root) {
-        URI uri = exchange.getRequestURI();
+        URI rootURI = root.toUri();
+        URI requestURI = exchange.getRequestURI();
         String contextPath = exchange.getHttpContext().getPath();
         if (!contextPath.endsWith("/"))
             contextPath += "/";
-        String requestPath = URI.create(contextPath).relativize(uri).getPath();
+        String requestPath = URI.create(contextPath).relativize(requestURI).getPath();
         try {
-            return root.resolve(requestPath).normalize();
-        } catch (InvalidPathException ipe) {
-            return root;  // serve root if request path cannot be validated
+            return Path.of(rootURI.resolve(requestPath)).normalize();
+        } catch (IllegalArgumentException iae) {
+            return null;  // could not resolve request URI
         }
     }
 
@@ -258,13 +262,20 @@ public final class FileServerHandler implements HttpHandler {
         try (exchange) {
             discardRequestBody(exchange);
             Path path = mapToPath(exchange, root);
-            exchange.setAttribute("path", path);  // store path for output filter
-            if (!path.startsWith(root) || !Files.exists(path) || isHiddenOrSymLink(path))
-                handleNotFound(exchange);
-            if (exchange.getRequestMethod().equals("HEAD")) {
-                handleHEAD(exchange, path);
+            if (path != null) {
+                exchange.setAttribute("path", path);  // store path for output filter
+                if (!Files.exists(path) || isHiddenOrSymLink(path))
+                    handleNotFound(exchange);
+                if (!path.startsWith(root) || !Files.isReadable(path))
+                    handleForbidden(exchange);
+                if (exchange.getRequestMethod().equals("HEAD")) {
+                    handleHEAD(exchange, path);
+                } else {
+                    handleGET(exchange, path);
+                }
             } else {
-                handleGET(exchange, path);
+                exchange.setAttribute("path", "could not resolve request URI");
+                handleNotFound(exchange);
             }
         }
     }
