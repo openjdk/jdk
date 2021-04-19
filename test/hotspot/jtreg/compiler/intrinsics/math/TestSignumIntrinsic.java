@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test compiler intrinsics for signum
- * @requires os.arch=="aarch64"
+ * @requires os.arch=="aarch64" | os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib
  *
  * @run main/othervm
@@ -100,7 +100,7 @@ public class TestSignumIntrinsic {
             float arg = fcase[0];
             float expected = fcase[1];
             float calculated = Math.signum(arg);
-            Asserts.assertEQ(expected, calculated, "Unexpected float result");
+            Asserts.assertEQ(expected, calculated, "Unexpected float result from " + arg);
             accum += calculated;
         }
         return accum;
@@ -112,7 +112,7 @@ public class TestSignumIntrinsic {
             double arg = dcase[0];
             double expected = dcase[1];
             double calculated = Math.signum(arg);
-            Asserts.assertEQ(expected, calculated, "Unexpected double result");
+            Asserts.assertEQ(expected, calculated, "Unexpected double result from " + arg);
             accum += calculated;
         }
         return accum;

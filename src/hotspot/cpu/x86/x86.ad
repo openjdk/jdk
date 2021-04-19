@@ -5775,6 +5775,46 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktm
   ins_pipe( pipe_slow );
 %}
 
+// --------------------------------- Signum ---------------------------
+
+instruct signumF_reg(regF dst, regF zero, regF one, rFlagsReg cr) %{
+  match(Set dst (SignumF dst (Binary zero one)));
+  effect(KILL cr);
+  format %{ "signumF $dst, $dst" %}
+  ins_encode %{
+    Label exit;
+
+    __ ucomiss($dst$$XMMRegister, $zero$$XMMRegister);
+    __ jcc(Assembler::parity, exit);
+    __ jcc(Assembler::equal, exit);
+    __ movflt($dst$$XMMRegister, $one$$XMMRegister);
+    __ jcc(Assembler::above, exit);
+    __ movflt($dst$$XMMRegister, $zero$$XMMRegister);
+    __ subss($dst$$XMMRegister, $one$$XMMRegister);
+    __ bind(exit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumD_reg(regD dst, regD zero, regD one, rFlagsReg cr) %{
+  match(Set dst (SignumD dst (Binary zero one)));
+  effect(KILL cr);
+  format %{ "signumD $dst, $dst" %}
+  ins_encode %{
+    Label exit;
+
+    __ ucomisd($dst$$XMMRegister, $zero$$XMMRegister);
+    __ jcc(Assembler::parity, exit);
+    __ jcc(Assembler::equal, exit);
+    __ movdbl($dst$$XMMRegister, $one$$XMMRegister);
+    __ jcc(Assembler::above, exit);
+    __ movdbl($dst$$XMMRegister, $zero$$XMMRegister);
+    __ subsd($dst$$XMMRegister, $one$$XMMRegister);
+    __ bind(exit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // --------------------------------- Sqrt --------------------------------------
 
 instruct vsqrtF_reg(vec dst, vec src) %{
