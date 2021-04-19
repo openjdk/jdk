@@ -301,7 +301,9 @@ bool ciMethod::has_balanced_monitors() {
     ExceptionMark em(THREAD);
     ResourceMark rm(THREAD);
     GeneratePairingInfo gpi(method);
-    gpi.compute_map(CATCH);
+    if (!gpi.compute_map(THREAD)) {
+      assert(false, "Unexpected exception from compute_map");
+    }
     if (!gpi.monitor_safe()) {
       return false;
     }
