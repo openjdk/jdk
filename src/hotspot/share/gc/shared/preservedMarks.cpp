@@ -122,7 +122,7 @@ public:
 #endif // ASSERT
   }
 
-  virtual ~RestorePreservedMarksTask() {
+  ~RestorePreservedMarksTask() {
     assert(_total_size == _total_size_before, "total_size = %zu before = %zu", _total_size, _total_size_before);
 
     log_trace(gc)("Restored %zu marks", _total_size);
@@ -130,12 +130,13 @@ public:
 };
 
 void PreservedMarksSet::restore(WorkGang* workers) {
-  RestorePreservedMarksTask cl(this);
-
-  if (workers == nullptr) {
-    cl.work(0);
-  } else {
-    workers->run_task(&cl);
+  {
+    RestorePreservedMarksTask cl(this);
+    if (workers == nullptr) {
+      cl.work(0);
+    } else {
+      workers->run_task(&cl);
+    }
   }
 
   assert_empty();
