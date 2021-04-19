@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8265079
- * @run testng/othervm -Xverify:all -ea -esa TestVHInvokerCaching
+ * @run testng/othervm -Xverify:all TestVHInvokerCaching
  */
 
 import org.testng.annotations.DataProvider;
