@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.hotspot.aarch64;
 
+import static java.util.Collections.emptyMap;
 import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.EnumSet;
@@ -47,10 +48,8 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
 
     private static EnumSet<AArch64.CPUFeature> computeFeatures(AArch64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
-        EnumSet<CPUFeature> features = EnumSet.noneOf(CPUFeature.class);
         Map<String, Long> constants = config.getStore().getConstants();
-        HotSpotJVMCIBackendFactory.convertFeatures(features, constants, config.vmVersionFeatures, CPUFeature::valueOf);
-        return features;
+        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, emptyMap());
     }
 
     private static EnumSet<AArch64.Flag> computeFlags(AArch64HotSpotVMConfig config) {

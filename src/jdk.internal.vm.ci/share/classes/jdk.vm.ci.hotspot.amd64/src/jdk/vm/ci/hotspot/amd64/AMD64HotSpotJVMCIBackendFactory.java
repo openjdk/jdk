@@ -26,7 +26,6 @@ import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.function.Function;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
@@ -48,14 +47,12 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
 
     private static EnumSet<CPUFeature> computeFeatures(AMD64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
-        EnumSet<CPUFeature> features = EnumSet.noneOf(CPUFeature.class);
+        Map<String, Long> constants = config.getStore().getConstants();
+        Map<String, String> renaming = Map.of("3DNOW_PREFETCH", "AMD_3DNOW_PREFETCH");
         assert config.useSSE >= 2 : "minimum config for x64";
+        EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, renaming);
         features.add(AMD64.CPUFeature.SSE);
         features.add(AMD64.CPUFeature.SSE2);
-
-        Map<String, Long> constants = config.getStore().getConstants();
-        Function<String, CPUFeature> nameToFeature = name -> name.equals("3DNOW_PREFETCH") ? CPUFeature.AMD_3DNOW_PREFETCH : CPUFeature.valueOf(name);
-        HotSpotJVMCIBackendFactory.convertFeatures(features, constants, config.vmVersionFeatures, nameToFeature);
         return features;
     }
 
