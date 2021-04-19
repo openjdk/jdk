@@ -228,20 +228,10 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             });
 
         Group group = getDiagram().getGraph().getGroup();
-        group.getChangedEvent().addListener(new ChangedListener<Group>() {
-                @Override
-                public void changed(Group gr) {
-                    closeOnRemovedOrEmptyGroup();
-                }
-            });
+        group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
         if (group.getParent() instanceof GraphDocument) {
             final GraphDocument doc = (GraphDocument) group.getParent();
-            doc.getChangedEvent().addListener(new ChangedListener<GraphDocument>() {
-                    @Override
-                    public void changed(GraphDocument doc) {
-                        closeOnRemovedOrEmptyGroup();
-                    }
-                });
+            doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
 
         toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
