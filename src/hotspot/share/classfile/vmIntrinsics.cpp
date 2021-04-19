@@ -681,21 +681,35 @@ vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbolID holder,
 class vmIntrinsicsLookup {
   bool _class_map[vmSymbols::number_of_symbols()];
 
+  constexpr int as_index(vmSymbolID id) const {
+    int index = vmSymbols::as_int(id);
+    assert(0 <= index && index < int(sizeof(_class_map)), "must be");
+    return index;
+  }
+
+  constexpr void set_class_map(vmSymbolID id) {
+    _class_map[as_index(id)] = true;
+  }
+
 public:
   constexpr vmIntrinsicsLookup() : _class_map() {
 
 #define VM_INTRINSIC_CLASS_MAP(id, klass, name, sig, fcode) \
-    _class_map[int(SID_ENUM(klass))] = true;
+    set_class_map(SID_ENUM(klass));
 
     VM_INTRINSICS_DO(VM_INTRINSIC_CLASS_MAP,
                      VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
 #undef VM_INTRINSIC_CLASS_MAP
+
+
+    // A few slightly irregular cases. See Method::init_intrinsic_id
+    set_class_map(SID_ENUM(java_lang_StrictMath));
+    set_class_map(SID_ENUM(java_lang_invoke_MethodHandle));
+    set_class_map(SID_ENUM(java_lang_invoke_VarHandle));
   }
 
   bool class_has_intrinsics(vmSymbolID holder) const {
-    int index = vmSymbols::as_int(holder);
-    assert(0 <= index && index < int(sizeof(_class_map)), "must be");
-    return _class_map[index];
+    return _class_map[as_index(holder)];
   }
 };
 
