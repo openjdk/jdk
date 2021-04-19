@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @requires !vm.graal.enabled
  * @library /test/lib
  * @modules jdk.compiler
- * @run main/othervm StressHiddenClasses
+ * @run main/othervm/timeout=900 StressHiddenClasses
  */
 
 import java.lang.invoke.MethodType;
@@ -62,9 +62,13 @@ public class StressHiddenClasses {
                 }
             };
 
+            if (x % 1000 == 0) {
+                System.out.println("Executing iteration: " + x);
+            }
             parserThread.start();
             parserThread.join(PARSE_TIMEOUT);
 
+            // This code won't get executed as long as PARSE_TIMEOUT == 0.
             if (parserThread.isAlive()) {
                 System.out.println("parser thread may be hung!");
                 StackTraceElement[] stack = parserThread.getStackTrace();
