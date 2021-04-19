@@ -51,7 +51,7 @@ inline InstanceKlass* klassVtable::ik() const {
 }
 
 bool klassVtable::is_preinitialized_vtable() {
-  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite() && !MetaspaceShared::is_old_class(ik());
+  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite() && !_klass->is_shared_old_klass();
 }
 
 

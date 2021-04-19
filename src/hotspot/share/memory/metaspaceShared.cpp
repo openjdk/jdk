@@ -601,9 +601,13 @@ bool MetaspaceShared::is_old_class(InstanceKlass* ik) {
 }
 
 bool MetaspaceShared::linking_required(InstanceKlass* ik) {
+  bool is_old = is_old_class(ik);
+  if (is_old) {
+    ik->set_is_shared_old_klass();
+  }
   // For static CDS dump, do not link old classes.
   // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
-  return DumpSharedSpaces ? !is_old_class(ik) : !ik->is_shared_unregistered_class();
+  return DumpSharedSpaces ? !is_old : !ik->is_shared_unregistered_class();
 }
 
 bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {

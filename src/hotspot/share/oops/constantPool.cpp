@@ -138,11 +138,7 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(ConstantPool): %p", this);
 
   it->push(&_tags, MetaspaceClosure::_writable);
-  if (!pool_holder()->is_rewritten()) {
-    it->push(&_cache, MetaspaceClosure::_writable);
-  } else {
-    it->push(&_cache);
-  }
+  it->push(&_cache);
   it->push(&_pool_holder);
   it->push(&_operands);
   it->push(&_resolved_klasses, MetaspaceClosure::_writable);
@@ -397,7 +393,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 }
 
 void ConstantPool::remove_unshareable_info() {
-  if (!_pool_holder->is_linked() && MetaspaceShared::is_old_class(_pool_holder)) {
+  if (!_pool_holder->is_linked() && _pool_holder->is_shared_old_klass()) {
     return;
   }
   // Resolved references are not in the shared archive.
