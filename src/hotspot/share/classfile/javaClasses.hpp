@@ -1592,7 +1592,6 @@ class java_nio_Buffer: AllStatic {
   static int _limit_offset;
 
  public:
-  static int  limit_offset() { CHECK_INIT(_limit_offset); }
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 };

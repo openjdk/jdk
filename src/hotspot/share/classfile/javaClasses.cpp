@@ -4653,9 +4653,6 @@ void java_lang_AssertionStatusDirectives::set_deflt(oop o, bool val) {
   o->bool_field_put(_deflt_offset, val);
 }
 
-
-// Support for intrinsification of java.nio.Buffer.checkIndex
-
 int java_nio_Buffer::_limit_offset;
 
 #define BUFFER_FIELDS_DO(macro) \
