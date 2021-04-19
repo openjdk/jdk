@@ -59,7 +59,7 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- aften -->
 			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- nat -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="nb">
+		<dayPeriodRules locales="nb no">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- midnatt -->
 			<dayPeriodRule type="morning1" from="06:00" before="10:00"/>	<!-- morgen -->
 			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- formiddag -->
@@ -158,8 +158,8 @@
 			<dayPeriodRule type="noon" at="12:00"/>	<!-- полдень -->
 			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- утро -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- день -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- вечер -->
-			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- ночь -->
+			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- вечер -->
+			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- ночь -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="uk">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- північ -->
@@ -702,7 +702,7 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- aften -->
 			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- nat -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="nb">
+		<dayPeriodRules locales="nb no">
 			<dayPeriodRule type="morning1" from="06:00" before="10:00"/>	<!-- morgen -->
 			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- formiddag -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- ettermiddag -->
@@ -841,8 +841,8 @@
 		<dayPeriodRules locales="ru">
 			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- утро -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- день -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- вечер -->
-			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- ночь -->
+			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- вечер -->
+			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- ночь -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="uk">
 			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- ранок -->

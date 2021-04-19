@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +19,39 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/**
+ * @test
+ * @bug 8264958
+ * @summary C2 compilation fails with assert "n is later than its clone"
+ *
+ * @run main/othervm -Xbatch OuterStripMinedLoopLoadWronglyHoisted
  *
  */
 
-#include "precompiled.hpp"
-#include "compiler/disassembler.hpp"
-#include "depChecker_aarch64.hpp"
 
-// Nothing to do on aarch64
+public class OuterStripMinedLoopLoadWronglyHoisted {
+    int a;
+    int b;
+    short c;
+
+    void test() {
+        for (int i = 0; i < 10; ++i) {
+            a = c;
+            if (i > 1) {
+                b = 0;
+            }
+            c = (short)(b - 7);
+        }
+        a--;
+    }
+
+    public static void main(String[] args) {
+        OuterStripMinedLoopLoadWronglyHoisted t = new OuterStripMinedLoopLoadWronglyHoisted();
+        for (int i = 0; i < 100_000; ++i) {
+            t.test();
+        }
+    }
+}
+
