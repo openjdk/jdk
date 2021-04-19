@@ -26,7 +26,7 @@
  * @test
  * @bug 8189841 8253117 8263507
  * @summary Error in alternate row coloring in package-summary files
- * @summary Add links to page sections in sub-navigation of package summaries
+ * @summary Improve structure of package summary pages
  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.* TestPackageSummary
