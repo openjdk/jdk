@@ -451,4 +451,16 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
 }
 
+inline bool HeapRegion::evacuation_failed() const {
+  return Atomic::load(&_evacuation_failed);
+}
+
+inline bool HeapRegion::set_evacuation_failed() {
+  return !Atomic::load(&_evacuation_failed) && !Atomic::cmpxchg(&_evacuation_failed, false, true, memory_order_relaxed);
+}
+
+inline void HeapRegion::reset_evacuation_failed() {
+  Atomic::store(&_evacuation_failed, false);
+}
+
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP
