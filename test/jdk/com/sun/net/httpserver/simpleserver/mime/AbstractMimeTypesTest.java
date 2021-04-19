@@ -52,6 +52,7 @@ public abstract class AbstractMimeTypesTest {
     static final InetSocketAddress WILDCARD_ADDR = new InetSocketAddress(0);
     static final boolean ENABLE_LOGGING = true;
     static final String FILE_NAME = "empty-file-of-type";
+    static final String UNKNOWN_FILE_EXTENSION = ".unknown-file-extension";
     final Properties ACTUAL_MIME_TYPES = new Properties();
     final Properties EXPECTED_MIME_TYPES = new Properties();
     Path root;
@@ -70,18 +71,8 @@ public abstract class AbstractMimeTypesTest {
         root = createFileTreeFromMimeTypes(EXPECTED_MIME_TYPES);
     }
 
-
     private List<String> getFileTypes(Properties input) {
-        return input
-                .entrySet()
-                .stream()
-                .map(entry -> deserialize((String) entry.getValue(), ";") )
-                .filter(properties -> properties.containsKey("file_extensions") )
-                .flatMap(properties -> Arrays.asList(
-                        ((String)properties.get("file_extensions")).split(",")
-                        ).stream()
-                )
-                .collect(Collectors.toList());
+        return new ArrayList<>(getMimeTypesPerFileType(input).keySet());
     }
 
     private Map<String,String> getMimeTypesPerFileType(Properties input) {
@@ -112,6 +103,7 @@ public abstract class AbstractMimeTypesTest {
         for (String type : getFileTypes(properties)) {
             Files.createFile(root.resolve(toFileName(type)));
         }
+        Files.createFile(root.resolve(toFileName(UNKNOWN_FILE_EXTENSION)));
         return root;
     }
 
@@ -203,8 +195,26 @@ public abstract class AbstractMimeTypesTest {
 
     @Test
     public void testUnKnownMimeTypeHeaders() throws Exception {
-        throw new UnsupportedOperationException("should test for unknown type, check docs for applicatiopn octet stream");
+        final var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            final var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            final var uri = URI.create(
+                    "http://localhost:%s/%s".formatted(
+                            ss.getAddress().getPort(),
+                            toFileName(UNKNOWN_FILE_EXTENSION)
+                    )
+            );
+            final var request = HttpRequest.newBuilder(uri).build();
+            final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(
+                    response.headers().firstValue("content-type").get(),
+                    "application/octet-stream"
+            );
+        } finally {
+            ss.stop(0);
+        }
     }
-
 
 }
