@@ -432,7 +432,7 @@ public final class SunPKCS11 extends AuthProvider {
 
     // Map from mechanism to List of Descriptors that should be
     // registered if the mechanism is supported
-    private final static Map<Integer,List<Descriptor>> descriptors =
+    private static final Map<Integer,List<Descriptor>> descriptors =
         new HashMap<Integer,List<Descriptor>>();
 
     private static int[] m(long m1) {
@@ -480,29 +480,29 @@ public final class SunPKCS11 extends AuthProvider {
         }
     }
 
-    private final static String MD  = "MessageDigest";
+    private static final String MD  = "MessageDigest";
 
-    private final static String SIG = "Signature";
+    private static final String SIG = "Signature";
 
-    private final static String KPG = "KeyPairGenerator";
+    private static final String KPG = "KeyPairGenerator";
 
-    private final static String KG  = "KeyGenerator";
+    private static final String KG  = "KeyGenerator";
 
-    private final static String AGP = "AlgorithmParameters";
+    private static final String AGP = "AlgorithmParameters";
 
-    private final static String KF  = "KeyFactory";
+    private static final String KF  = "KeyFactory";
 
-    private final static String SKF = "SecretKeyFactory";
+    private static final String SKF = "SecretKeyFactory";
 
-    private final static String CIP = "Cipher";
+    private static final String CIP = "Cipher";
 
-    private final static String MAC = "Mac";
+    private static final String MAC = "Mac";
 
-    private final static String KA  = "KeyAgreement";
+    private static final String KA  = "KeyAgreement";
 
-    private final static String KS  = "KeyStore";
+    private static final String KS  = "KeyStore";
 
-    private final static String SR  = "SecureRandom";
+    private static final String SR  = "SecureRandom";
 
     static {
         // names of all the implementation classes

@@ -49,9 +49,13 @@ public class PSSSpec {
     private static final String P2PSS = P2SM + "/pss:RSAPSSParams";
     private static final String P2MGF = P2PSS + "/pss:MaskGenerationFunction";
 
+    private static final PSSParameterSpec DEFAULT_SPEC
+            = new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 32, PSSParameterSpec.TRAILER_FIELD_BC);
+
     public static void main(String[] args) throws Exception {
         unmarshal();
         marshal();
+        spec();
     }
 
     static void unmarshal() throws Exception {
@@ -99,9 +103,15 @@ public class PSSSpec {
         Utils.runAndCheckException(
                 () -> getSpec(XMLUtils.withText(doc, P2PSS + "/pss:SaltLength", "big")),
                 e -> Asserts.assertTrue(e instanceof MarshalException && e.getMessage().contains("Invalid salt length supplied"), e.getMessage()));
+        Utils.runAndCheckException(
+                () -> getSpec(XMLUtils.withText(doc, P2PSS + "/pss:SaltLength", "-1")),
+                e -> Asserts.assertTrue(e instanceof MarshalException && e.getMessage().contains("Invalid salt length supplied"), e.getMessage()));
         // Invalid TrailerField
         Utils.runAndCheckException(
                 () -> getSpec(XMLUtils.withText(doc, P2PSS + "/pss:TrailerField", "small")),
+                e -> Asserts.assertTrue(e instanceof MarshalException && e.getMessage().contains("Invalid trailer field supplied"), e.getMessage()));
+        Utils.runAndCheckException(
+                () -> getSpec(XMLUtils.withText(doc, P2PSS + "/pss:TrailerField", "-1")),
                 e -> Asserts.assertTrue(e instanceof MarshalException && e.getMessage().contains("Invalid trailer field supplied"), e.getMessage()));
 
         // Spec in original doc
@@ -121,8 +131,7 @@ public class PSSSpec {
         checkSpec(XMLUtils.withoutNode(doc, P2PSS + "/ds:DigestMethod"),
                 new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-384"), 32, 2));
         // Default PSS is SHA-256
-        checkSpec(XMLUtils.withoutNode(doc, P2PSS),
-                new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 32, 1));
+        checkSpec(XMLUtils.withoutNode(doc, P2PSS), DEFAULT_SPEC);
     }
 
     static void marshal() throws Exception {
@@ -133,8 +142,7 @@ public class PSSSpec {
         Document signedDoc;
 
         // Default sm. No need to describe at all
-        spec = new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 32, PSSParameterSpec.TRAILER_FIELD_BC);
-        signer.sm(SignatureMethod.RSA_PSS, new RSAPSSParameterSpec(spec));
+        signer.sm(SignatureMethod.RSA_PSS, new RSAPSSParameterSpec(DEFAULT_SPEC));
         signedDoc = signer.sign(doc);
         Asserts.assertTrue(!XMLUtils.sub(signedDoc, P2SM).hasChildNodes());
 
@@ -166,6 +174,20 @@ public class PSSSpec {
         Asserts.assertTrue(XMLUtils.sub(signedDoc, P2PSS + "/pss:TrailerField") == null);
     }
 
+    static void spec() throws Exception {
+        XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
+        SignatureMethod sm = fac.newSignatureMethod(SignatureMethod.RSA_PSS, null);
+        Asserts.assertTrue(equals(
+                ((RSAPSSParameterSpec)sm.getParameterSpec()).getPSSParameterSpec(),
+                DEFAULT_SPEC));
+
+        PSSParameterSpec special = new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-384"), 33, 2);
+        sm = fac.newSignatureMethod(SignatureMethod.RSA_PSS, new RSAPSSParameterSpec(special));
+        Asserts.assertTrue(equals(
+                ((RSAPSSParameterSpec)sm.getParameterSpec()).getPSSParameterSpec(),
+                special));
+    }
+
     static PSSParameterSpec getSpec(Document doc) throws Exception {
         var signatureNode = doc.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Signature").item(0);
         DOMValidateContext valContext = new DOMValidateContext(new SecretKeySpec(new byte[1], "WHAT"), signatureNode);
@@ -175,13 +197,13 @@ public class PSSSpec {
         if (spec instanceof RSAPSSParameterSpec pspec) {
             return pspec.getPSSParameterSpec();
         } else {
-            jdk.test.lib.Asserts.fail("Not PSSParameterSpec: " + spec.getClass());
+            Asserts.fail("Not PSSParameterSpec: " + spec.getClass());
             return null;
         }
     }
 
     static void checkSpec(Document doc, PSSParameterSpec expected) throws Exception {
-        jdk.test.lib.Asserts.assertTrue(equals(getSpec(doc), expected));
+        Asserts.assertTrue(equals(getSpec(doc), expected));
     }
 
     static boolean equals(PSSParameterSpec p1, PSSParameterSpec p2) {

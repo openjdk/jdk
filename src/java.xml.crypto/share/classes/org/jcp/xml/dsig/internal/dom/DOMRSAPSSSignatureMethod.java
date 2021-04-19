@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -116,15 +116,13 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
     void checkParams(SignatureMethodParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
-        if (params != null) {
-            if (!(params instanceof RSAPSSParameterSpec)) {
-                throw new InvalidAlgorithmParameterException
-                    ("params must be of type RSAPSSParameterSpec");
-            }
-
-            spec = ((RSAPSSParameterSpec) params).getPSSParameterSpec();
-            LOG.debug("Setting RSAPSSParameterSpec to: {}", params.toString());
+        if (!(params instanceof RSAPSSParameterSpec)) {
+            throw new InvalidAlgorithmParameterException
+                ("params must be of type RSAPSSParameterSpec");
         }
+
+        spec = ((RSAPSSParameterSpec) params).getPSSParameterSpec();
+        LOG.debug("Setting RSAPSSParameterSpec to: {}", params.toString());
     }
 
     public final AlgorithmParameterSpec getParameterSpec() {
@@ -232,14 +230,14 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
 
             int saltLength;
             try {
-                saltLength = saltLengthNode == null ? digestAlgorithm.getSaltLength() : Integer.parseInt(saltLengthNode.getTextContent());
+                saltLength = saltLengthNode == null ? digestAlgorithm.getSaltLength() : Integer.parseUnsignedInt(saltLengthNode.getTextContent());
             } catch (NumberFormatException ex) {
                 throw new MarshalException("Invalid salt length supplied: " + saltLengthNode.getTextContent());
             }
 
             int trailerField;
             try {
-                trailerField = trailerFieldNode == null ? 1 : Integer.parseInt(trailerFieldNode.getTextContent());
+                trailerField = trailerFieldNode == null ? 1 : Integer.parseUnsignedInt(trailerFieldNode.getTextContent());
             } catch (NumberFormatException ex) {
                 throw new MarshalException("Invalid trailer field supplied: " + trailerFieldNode.getTextContent());
             }

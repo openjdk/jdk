@@ -585,10 +585,14 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
         PSSParameterSpec pssParameterSpec;
 
         public enum DigestAlgorithm {
-//            SHA1("SHA-1", DigestMethod.SHA1, 20),
+            SHA224("SHA-224", DigestMethod.SHA224, 28),
             SHA256("SHA-256", DigestMethod.SHA256, 32),
             SHA384("SHA-384", DigestMethod.SHA384, 48),
-            SHA512("SHA-512", DigestMethod.SHA512, 64);
+            SHA512("SHA-512", DigestMethod.SHA512, 64),
+            SHA3_224("SHA3-224", DigestMethod.SHA3_224, 28),
+            SHA3_256("SHA3-256", DigestMethod.SHA3_256, 32),
+            SHA3_384("SHA3-384", DigestMethod.SHA3_384, 48),
+            SHA3_512("SHA3-512", DigestMethod.SHA3_512, 64);
 
             private final String xmlDigestAlgorithm;
             private final String digestAlgorithm;

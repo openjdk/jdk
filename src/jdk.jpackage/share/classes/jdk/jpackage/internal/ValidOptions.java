@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ class ValidOptions {
         options.put(CLIOptions.VENDOR.getId(), USE.ALL);
         options.put(CLIOptions.COPYRIGHT.getId(), USE.ALL);
         options.put(CLIOptions.PACKAGE_TYPE.getId(), USE.ALL);
+        options.put(CLIOptions.ICON.getId(), USE.ALL);
 
         options.put(CLIOptions.INPUT.getId(), USE.LAUNCHER);
         options.put(CLIOptions.MODULE.getId(), USE.LAUNCHER);
@@ -77,7 +78,6 @@ class ValidOptions {
         options.put(CLIOptions.ADD_MODULES.getId(), USE.LAUNCHER);
         options.put(CLIOptions.MAIN_JAR.getId(), USE.LAUNCHER);
         options.put(CLIOptions.APPCLASS.getId(), USE.LAUNCHER);
-        options.put(CLIOptions.ICON.getId(), USE.LAUNCHER);
         options.put(CLIOptions.ARGUMENTS.getId(), USE.LAUNCHER);
         options.put(CLIOptions.JAVA_OPTIONS.getId(), USE.LAUNCHER);
         options.put(CLIOptions.ADD_LAUNCHER.getId(), USE.LAUNCHER);
@@ -87,11 +87,16 @@ class ValidOptions {
         options.put(CLIOptions.INSTALL_DIR.getId(), USE.INSTALL);
         options.put(CLIOptions.PREDEFINED_APP_IMAGE.getId(), USE.INSTALL);
 
+        options.put(CLIOptions.ABOUT_URL.getId(), USE.INSTALL);
+
         options.put(CLIOptions.FILE_ASSOCIATIONS.getId(),
             (Platform.getPlatform() == Platform.MAC) ?  USE.ALL : USE.INSTALL);
 
         if (Platform.getPlatform() == Platform.WINDOWS) {
             options.put(CLIOptions.WIN_CONSOLE_HINT.getId(), USE.LAUNCHER);
+
+            options.put(CLIOptions.WIN_HELP_URL.getId(), USE.INSTALL);
+            options.put(CLIOptions.WIN_UPDATE_URL.getId(), USE.INSTALL);
 
             options.put(CLIOptions.WIN_MENU_HINT.getId(), USE.INSTALL);
             options.put(CLIOptions.WIN_MENU_GROUP.getId(), USE.INSTALL);

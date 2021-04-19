@@ -61,6 +61,8 @@ import java.security.interfaces.RSAKey;
 import java.security.spec.PSSParameterSpec;
 import java.util.*;
 
+// A collection of test utility methods for parsing, validating and
+// generating XML Signatures.
 public class XMLUtils {
 
     private static final XMLSignatureFactory FAC =
@@ -97,17 +99,19 @@ public class XMLUtils {
 
     //////////// CONVERT ////////////
 
+    // Converts a Document object to string
     public static String doc2string(Document doc) throws Exception {
         TransformerFactory tf = TransformerFactory.newInstance();
         Transformer transformer = tf.newTransformer();
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
         // Indentation would invalidate the signature
-//        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        // transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         StringWriter writer = new StringWriter();
         transformer.transform(new DOMSource(doc), new StreamResult(writer));
         return writer.getBuffer().toString();
     }
 
+    // Parses a string into a Document object
     public static Document string2doc(String input) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -115,8 +119,19 @@ public class XMLUtils {
                 parse(new InputSource(new StringReader(input)));
     }
 
+    // Clones a document
+    public static Document clone(Document d) throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document copiedDocument = db.newDocument();
+        Node copiedRoot = copiedDocument.importNode(d.getDocumentElement(), true);
+        copiedDocument.appendChild(copiedRoot);
+        return copiedDocument;
+    }
+
     //////////// QUERY AND EDIT ////////////
 
+    // An XPath object that recognizes ds and pss names
     public static final XPath XPATH;
 
     static {
@@ -163,21 +178,13 @@ public class XMLUtils {
     }
 
     // Returns a new document without a child element
-    public static Document withoutNode(Document d, String path) throws Exception {
+    public static Document withoutNode(Document d, String... paths) throws Exception {
         d = clone(d);
-        Element e = sub(d, path);
-        e.getParentNode().removeChild(e);
+        for (String path : paths) {
+            Element e = sub(d, path);
+            e.getParentNode().removeChild(e);
+        }
         return d;
-    }
-
-    // Clones a document
-    public static Document clone(Document d) throws Exception {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document copiedDocument = db.newDocument();
-        Node copiedRoot = copiedDocument.importNode(d.getDocumentElement(), true);
-        copiedDocument.appendChild(copiedRoot);
-        return copiedDocument;
     }
 
     //////////// SIGN ////////////
@@ -485,9 +492,9 @@ public class XMLUtils {
                     }
                     if (secureValidation != null) {
                         valContext.setProperty("org.jcp.xml.dsig.secureValidation",
-                                secureValidation.booleanValue());
+                                secureValidation);
                         valContext.setProperty("org.apache.jcp.xml.dsig.secureValidation",
-                                secureValidation.booleanValue());
+                                secureValidation);
                     }
                     return XMLSignatureFactory.getInstance("DOM")
                             .unmarshalXMLSignature(valContext).validate(valContext);
@@ -538,7 +545,7 @@ public class XMLUtils {
                 }
                 throw new KeySelectorException("No KeyValue element found!");
             }
-        };
+        }
     }
 
     //////////// MISC ////////////

@@ -190,7 +190,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
     }
 
     sTrans = cmsCreateMultiprofileTransform(iccArray, j,
-        inFormatter, outFormatter, renderType, 0);
+        inFormatter, outFormatter, renderType, cmsFLAGS_COPY_ALPHA);
 
     (*env)->ReleaseLongArrayElements(env, profileIDs, ids, 0);
 

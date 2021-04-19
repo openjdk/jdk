@@ -82,7 +82,7 @@ final class DCmdStart extends AbstractDCmd {
      * @throws DCmdException if recording could not be started
      */
     @SuppressWarnings("resource")
-    public String execute(String name, String[] settings, Long delay, Long duration, Boolean disk, String path, Long maxAge, Long maxSize, Long flush, Boolean dumpOnExit, Boolean pathToGcRoots) throws DCmdException {
+    public String[] execute(String name, String[] settings, Long delay, Long duration, Boolean disk, String path, Long maxAge, Long maxSize, Long flush, Boolean dumpOnExit, Boolean pathToGcRoots) throws DCmdException {
         if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
             Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing DCmdStart: name=" + name +
                     ", settings=" + Arrays.asList(settings) +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import jdk.jfr.internal.SecuritySupport;
  * an event stream.
  */
 public abstract class AbstractEventStream implements EventStream {
-    private final static AtomicLong counter = new AtomicLong();
+    private static final AtomicLong counter = new AtomicLong();
 
     private final Object terminated = new Object();
     private final Runnable flushOperation = () -> dispatcher().runFlushActions();
@@ -66,6 +66,8 @@ public abstract class AbstractEventStream implements EventStream {
 
     private volatile boolean closed;
 
+    private boolean daemon = false;
+
     AbstractEventStream(AccessControlContext acc, PlatformRecording recording, List<Configuration> configurations) throws IOException {
         this.accessControllerContext = Objects.requireNonNull(acc);
         this.recording = recording;
@@ -73,13 +75,13 @@ public abstract class AbstractEventStream implements EventStream {
     }
 
     @Override
-    abstract public void start();
+    public abstract void start();
 
     @Override
-    abstract public void startAsync();
+    public abstract void startAsync();
 
     @Override
-    abstract public void close();
+    public abstract void close();
 
     protected final Dispatcher dispatcher() {
         if (streamConfiguration.hasChanged()) { // quick check
@@ -101,9 +103,14 @@ public abstract class AbstractEventStream implements EventStream {
         streamConfiguration.setReuse(reuse);
     }
 
+    // Only used if -Xlog:jfr+event* is specified
+    public final void setDaemon(boolean daemon) {
+        this.daemon = daemon;
+    }
+
     @Override
     public final void setStartTime(Instant startTime) {
-        Objects.nonNull(startTime);
+        Objects.requireNonNull(startTime);
         synchronized (streamConfiguration) {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");
@@ -219,6 +226,7 @@ public abstract class AbstractEventStream implements EventStream {
         startInternal(startNanos);
         Runnable r = () -> run(accessControllerContext);
         thread = SecuritySupport.createThreadWitNoPermissions(nextThreadName(), r);
+        SecuritySupport.setDaemonThread(thread, daemon);
         thread.start();
     }
 
@@ -233,7 +241,7 @@ public abstract class AbstractEventStream implements EventStream {
     }
 
 
-    final protected void onFlush() {
+    protected final void onFlush() {
        Runnable r = getFlushOperation();
        if (r != null) {
            r.run();

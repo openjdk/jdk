@@ -804,7 +804,7 @@ class StoreVectorMaskedNode : public StoreVectorNode {
  public:
   StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
    : StoreVectorNode(c, mem, dst, at, src) {
-    assert(mask->bottom_type()->is_long(), "sanity");
+    assert(mask->bottom_type()->is_vectmask(), "sanity");
     init_class_id(Class_StoreVector);
     set_mismatched_access();
     add_req(mask);
@@ -822,7 +822,7 @@ class LoadVectorMaskedNode : public LoadVectorNode {
  public:
   LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask)
    : LoadVectorNode(c, mem, src, at, vt) {
-    assert(mask->bottom_type()->is_long(), "sanity");
+    assert(mask->bottom_type()->is_vectmask(), "sanity");
     init_class_id(Class_LoadVector);
     set_mismatched_access();
     add_req(mask);
@@ -845,6 +845,9 @@ class VectorMaskGenNode : public TypeNode {
   virtual int Opcode() const;
   const Type* get_elem_type()  { return _elemType;}
   virtual  uint  size_of() const { return sizeof(VectorMaskGenNode); }
+  virtual uint  ideal_reg() const {
+    return Op_RegVectMask;
+  }
 
   private:
    const Type* _elemType;
@@ -1235,6 +1238,17 @@ class VectorStoreMaskNode : public VectorNode {
   virtual Node* Identity(PhaseGVN* phase);
 
   static VectorStoreMaskNode* make(PhaseGVN& gvn, Node* in, BasicType in_type, uint num_elem);
+};
+
+class VectorMaskCastNode : public VectorNode {
+ public:
+  VectorMaskCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+    const TypeVect* in_vt = in->bottom_type()->is_vect();
+    assert(in_vt->length() == vt->length(), "vector length must match");
+    assert(type2aelembytes(in_vt->element_basic_type()) == type2aelembytes(vt->element_basic_type()), "element size must match");
+  }
+
+  virtual int Opcode() const;
 };
 
 // This is intended for use as a simple reinterpret node that has no cast.

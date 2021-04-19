@@ -239,6 +239,17 @@ public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
     /**
      * The <a href="http://www.w3.org/2007/05/xmldsig-more#rsa-pss">
      * RSASSA-PSS</a> signature method algorithm URI.
+     * <p>
+     * Calling {@link XMLSignatureFactory#newSignatureMethod
+     * XMLSignatureFactory.newSignatureMethod(RSA_PSS, null)} returns a
+     * {@code SignatureMethod} object that uses the default parameter as defined in
+     * <a href="https://tools.ietf.org/html/rfc6931#section-2.3.9">RFC 6931 Section 2.3.9</a>,
+     * which uses SHA-256 as the {@code DigestMethod}, MGF1 with SHA-256 as the
+     * {@code MaskGenerationFunction}, 32 as {@code SaltLength}, and 1 as
+     * {@code TrailerField}. This default parameter is represented as an
+     * {@link javax.xml.crypto.dsig.spec.RSAPSSParameterSpec RSAPSSParameterSpec}
+     * type and returned by the {@link #getParameterSpec()} method
+     * of the {@code SignatureMethod} object.
      *
      * @since 17
      */

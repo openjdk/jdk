@@ -48,7 +48,7 @@ import java.util.regex.Pattern;
  * or {@link javax.lang.model.element.Element "language model elements"}.
  * The usage is made explicit when it is not clear from the surrounding context.
  *
- * @see <a href="https://html.spec.whatwg.org/#classes>WhatWG: {@code class} attribute</a>
+ * @see <a href="https://html.spec.whatwg.org/#classes">WhatWG: {@code class} attribute</a>
  */
 public enum HtmlStyle {
     block,
@@ -439,6 +439,12 @@ public enum HtmlStyle {
     colSummaryItemName,
 
     /**
+     * The class of the cells in a table column used to display additional
+     * information without any particular style.
+     */
+    colPlain,
+
+    /**
      * The class of the second column of cells in a table.
      * This is typically the column that defines the name of a field or the
      * name and parameters of a method.
@@ -470,11 +476,10 @@ public enum HtmlStyle {
     // generated from documentation comments.
 
     /**
-     * The class of the element used to present the documentation comment for a type or member
-     * element.
+     * The class of the element used to present the documentation comment for a type element.
      * The content of the block tags will be in a nested element with class {@link #notes}.
      */
-    description,
+    classDescription,
 
     /**
      * The class of the element used to present the documentation comment for a module element,

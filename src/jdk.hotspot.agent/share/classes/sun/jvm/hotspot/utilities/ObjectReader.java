@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,7 +774,7 @@ public class ObjectReader {
       }
 
       protected String getClassName(int begin, int end) {
-         StringBuffer buf = new StringBuffer();
+         StringBuilder buf = new StringBuilder();
          for (int i = begin; i < end; i++) {
             char c = (char) (_signature.getByteAt(i) & 0xFF);
             if (c == '/') {

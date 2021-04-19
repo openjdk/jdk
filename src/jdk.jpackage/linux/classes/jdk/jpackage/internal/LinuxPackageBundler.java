@@ -56,7 +56,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     }
 
     @Override
-    final public boolean validate(Map<String, ? super Object> params)
+    public final boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
 
         // run basic validation to ensure requirements are met
@@ -106,12 +106,12 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     }
 
     @Override
-    final public String getBundleType() {
+    public final String getBundleType() {
         return "INSTALLER";
     }
 
     @Override
-    final public Path execute(Map<String, ? super Object> params,
+    public final Path execute(Map<String, ? super Object> params,
             Path outputParentDir) throws PackagerException {
         IOUtils.writableOutputDir(outputParentDir);
 
@@ -233,28 +233,28 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         return data;
     }
 
-    abstract protected List<ConfigException> verifyOutputBundle(
+    protected abstract List<ConfigException> verifyOutputBundle(
             Map<String, ? super Object> params, Path packageBundle);
 
-    abstract protected void initLibProvidersLookup(
+    protected abstract void initLibProvidersLookup(
             Map<String, ? super Object> params,
             LibProvidersLookup libProvidersLookup);
 
-    abstract protected List<ToolValidator> getToolValidators(
+    protected abstract List<ToolValidator> getToolValidators(
             Map<String, ? super Object> params);
 
-    abstract protected void doValidate(Map<String, ? super Object> params)
+    protected abstract void doValidate(Map<String, ? super Object> params)
             throws ConfigException;
 
-    abstract protected Map<String, String> createReplacementData(
+    protected abstract Map<String, String> createReplacementData(
             Map<String, ? super Object> params) throws IOException;
 
-    abstract protected Path buildPackageBundle(
+    protected abstract Path buildPackageBundle(
             Map<String, String> replacementData,
             Map<String, ? super Object> params, Path outputParentDir) throws
             PackagerException, IOException;
 
-    final protected PlatformPackage createMetaPackage(
+    protected final PlatformPackage createMetaPackage(
             Map<String, ? super Object> params) {
 
         Supplier<ApplicationLayout> packageLayout = () -> {

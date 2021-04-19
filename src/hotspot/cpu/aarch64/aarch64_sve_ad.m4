@@ -316,6 +316,57 @@ BINARY_OP_UNSIZED(vor, OrV, 16, sve_orr)
 
 // vector xor
 BINARY_OP_UNSIZED(vxor, XorV, 16, sve_eor)
+
+// vector not
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (XorV src (ReplicateB m1)));
+  match(Set dst (XorV src (ReplicateS m1)));
+  match(Set dst (XorV src (ReplicateI m1)));',
+`match(Set dst (XorV src (ReplicateL m1)));')')dnl
+dnl
+define(`VECTOR_NOT', `
+instruct vnot$1`'(vReg dst, vReg src, imm$1_M1 m1) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  MATCH_RULE($1)
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $src\t# vector (sve) $2" %}
+  ins_encode %{
+    __ sve_not(as_FloatRegister($dst$$reg), __ D,
+               ptrue, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl        $1,$2
+VECTOR_NOT(I, B/H/S)
+VECTOR_NOT(L, D)
+undefine(MATCH_RULE)
+
+// vector and_not
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (AndV src1 (XorV src2 (ReplicateB m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateS m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateI m1))));',
+`match(Set dst (AndV src1 (XorV src2 (ReplicateL m1))));')')dnl
+dnl
+define(`VECTOR_AND_NOT', `
+instruct vand_not$1`'(vReg dst, vReg src1, vReg src2, imm$1_M1 m1) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  MATCH_RULE($1)
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst, $src1, $src2\t# vector (sve) $2" %}
+  ins_encode %{
+    __ sve_bic(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg),
+               as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl            $1,$2
+VECTOR_AND_NOT(I, B/H/S)
+VECTOR_AND_NOT(L, D)
+undefine(MATCH_RULE)
 dnl
 dnl VDIVF($1,          $2  , $3         )
 dnl VDIVF(name_suffix, size, min_vec_len)
@@ -853,3 +904,18 @@ BINARY_OP_UNPREDICATED(vsubI, SubVI, S, 4, sve_sub)
 BINARY_OP_UNPREDICATED(vsubL, SubVL, D, 2, sve_sub)
 BINARY_OP_UNPREDICATED(vsubF, SubVF, S, 4, sve_fsub)
 BINARY_OP_UNPREDICATED(vsubD, SubVD, D, 2, sve_fsub)
+
+// vector mask cast
+
+instruct vmaskcast(vReg dst) %{
+  predicate(UseSVE > 0 && n->bottom_type()->is_vect()->length() == n->in(1)->bottom_type()->is_vect()->length() &&
+            n->bottom_type()->is_vect()->length_in_bytes() == n->in(1)->bottom_type()->is_vect()->length_in_bytes());
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vmaskcast $dst\t# empty (sve)" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(pipe_class_empty);
+%}
+

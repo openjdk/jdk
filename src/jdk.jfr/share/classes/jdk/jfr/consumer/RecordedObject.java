@@ -150,7 +150,7 @@ public class RecordedObject {
         JdkJfrConsumer.setAccess(access);
     }
 
-    private final static class UnsignedValue {
+    private static final class UnsignedValue {
         private final Object o;
 
         UnsignedValue(Object o) {
@@ -261,7 +261,7 @@ public class RecordedObject {
      * @see #hasField(String)
      *
      */
-    final public <T> T getValue(String name) {
+    public final <T> T getValue(String name) {
         @SuppressWarnings("unchecked")
         T t = (T) getValue(name, false);
         return t;
@@ -978,7 +978,7 @@ public class RecordedObject {
      * @return textual description of this object
      */
     @Override
-    final public String toString() {
+    public final String toString() {
         StringWriter s = new StringWriter();
         PrettyWriter p = new PrettyWriter(new PrintWriter(s));
         p.setStackDepth(5);

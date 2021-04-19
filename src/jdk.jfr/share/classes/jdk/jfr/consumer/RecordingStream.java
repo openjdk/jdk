@@ -67,7 +67,7 @@ import jdk.jfr.internal.consumer.EventDirectoryStream;
  */
 public final class RecordingStream implements AutoCloseable, EventStream {
 
-    final static class ChunkConsumer implements Consumer<Long> {
+    static final class ChunkConsumer implements Consumer<Long> {
 
         private final Recording recording;
 

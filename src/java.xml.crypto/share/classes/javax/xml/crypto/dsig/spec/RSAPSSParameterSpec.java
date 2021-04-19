@@ -32,8 +32,8 @@ import java.util.Objects;
 
 /**
  * Parameters for the <a href="http://www.w3.org/2007/05/xmldsig-more#rsa-pss">
- * XML Signature RSASSA-PSS Algorithm</a>. The parameters are expressed as a
- * {@link PSSParameterSpec} object encapsulated.
+ * XML Signature RSASSA-PSS Algorithm</a>. The parameters are represented as a
+ * {@link PSSParameterSpec} object.
  * <p>
  * The XML Schema Definition is defined as:
  * <pre><code>
@@ -65,16 +65,8 @@ import java.util.Objects;
  *    &lt;/xs:complexType&gt;
  * </code></pre>
  *
- * @implSpec
- * If the parameter is not specified when using the RSASSA-PSS signature
- * algorithm, the default parameter is used, which uses SHA-256 as the
- * {@code DigestMethod}, MGF1 with SHA-256 as the
- * {@code MaskGenerationFunction}, 32 as {@code SaltLength}, and 1 as
- * {@code TrailerField}. This is equivalent to the parameter-less signature
- * method as defined by http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1.
- *
  * @since 17
- * @see SignatureMethod
+ * @see SignatureMethod#RSA_PSS
  * @see <a href="https://www.ietf.org/rfc/rfc6931.txt">RFC 6931</a>
  */
 public final class RSAPSSParameterSpec implements SignatureMethodParameterSpec {
@@ -83,63 +75,22 @@ public final class RSAPSSParameterSpec implements SignatureMethodParameterSpec {
 
     /**
      * Creates a new {@code RSAPSSParameterSpec} object with the specified
-     * {@link PSSParameterSpec} object encapsulated.
+     * {@link PSSParameterSpec} object.
      *
-     * @param spec the input {@code PSSParameterSpec} to be encapsulated
+     * @param spec the input {@code PSSParameterSpec} object
+     *
+     * @throws NullPointerException if {@code spec} is null
      */
     public RSAPSSParameterSpec(PSSParameterSpec spec) {
         this.spec = Objects.requireNonNull(spec);
     }
 
     /**
-     * Returns the encapsulated {@code PSSParameterSpec} object.
+     * Returns the {@code PSSParameterSpec} object inside.
      *
-     * @return the encapsulated {@code PSSParameterSpec} object
+     * @return the {@code PSSParameterSpec} object inside
      */
     public PSSParameterSpec getPSSParameterSpec() {
         return spec;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(
-                spec.getDigestAlgorithm(),
-                spec.getSaltLength(),
-                spec.getTrailerField(),
-                mgfParamsAsString(spec));
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof RSAPSSParameterSpec)) {
-            return false;
-        }
-        PSSParameterSpec other = ((RSAPSSParameterSpec)obj).spec;
-        return Objects.equals(spec.getDigestAlgorithm(), other.getDigestAlgorithm())
-                && Objects.equals(mgfParamsAsString(spec), mgfParamsAsString(other))
-                && spec.getSaltLength() == other.getSaltLength()
-                && spec.getTrailerField() == other.getTrailerField();
-    }
-
-    private static String mgfParamsAsString(PSSParameterSpec spec) {
-        String output = spec.getMGFAlgorithm() + ":";
-        AlgorithmParameterSpec mgfSpec = spec.getMGFParameters();
-        if (mgfSpec instanceof MGF1ParameterSpec) {
-            output += ((MGF1ParameterSpec)mgfSpec).getDigestAlgorithm();
-        } else {
-            output += System.identityHashCode(mgfSpec);
-        }
-        return output;
-    }
-
-    @Override
-    public String toString() {
-        return "RSAPSSParameterSpec (dm:" + spec.getDigestAlgorithm()
-                + ", mgf:" + mgfParamsAsString(spec)
-                + ", sl:" + spec.getSaltLength()
-                + ", tf:" + spec.getTrailerField() + ")";
     }
 }

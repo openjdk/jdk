@@ -126,7 +126,7 @@ public:
 
     explicit DatabaseRecord(unsigned fieldCount);
 
-    explicit DatabaseRecord(DatabaseView& view) {
+    explicit DatabaseRecord(DatabaseView& view) : handle(MSIHANDLE(0)) {
         fetch(view);
     }
 
