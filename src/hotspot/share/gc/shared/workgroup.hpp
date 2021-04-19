@@ -59,7 +59,7 @@ class GangTaskDispatcher;
 
 // An abstract task to be worked on by a gang.
 // You subclass this to supply your own work() method
-class AbstractGangTask : public CHeapObj<mtInternal> {
+class AbstractGangTask {
   const char* _name;
   const uint _gc_id;
 
