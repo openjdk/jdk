@@ -24,15 +24,16 @@
 /**
  * @test
  * @bug 8264277
- * @library /test/jdk/java/security/testlibrary/ /test/lib
+ * @library /test/lib
  * @modules jdk.httpserver
  *          java.base/jdk.internal.misc
- * @require os.family != "windows"
+ * @requires os.family != "windows"
  * @summary check permissions for XML signature
  */
 
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.process.Proc;
 import jdk.test.lib.security.XMLUtils;
 
 import java.io.File;
