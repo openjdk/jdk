@@ -820,6 +820,10 @@ public final class Pattern
      *
      * <p> Comments mode can also be enabled via the embedded flag
      * expression&nbsp;{@code (?x)}.
+     *
+     * <p> Note that comments mode ignores whitespace within a character class
+     * contained in a pattern string. Such whitespace needs to be escaped
+     * in order to be treated as if comments mode were not enabled. </p>
      */
     public static final int COMMENTS = 0x04;
 
