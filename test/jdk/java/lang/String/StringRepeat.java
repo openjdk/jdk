@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary This exercises String#repeat patterns and limits.
- * @run main/othervm -Xmx2g StringRepeat
+ * @run main/othervm StringRepeat
  */
 
 /*
