@@ -549,7 +549,6 @@ void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
-
   record_pause(G1GCPauseType::Remark, _mark_remark_start_sec, end_time_sec);
 }
 
@@ -1098,16 +1097,19 @@ void G1Policy::decide_on_conc_mark_initiation() {
   }
 }
 
-void G1Policy::record_concurrent_mark_cleanup_end() {
-  G1CollectionSetCandidates* candidates = G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions());
-  _collection_set->set_candidates(candidates);
+void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {
+  bool mixed_gc_pending = false;
+  if (has_rebuilt_remembered_sets) {
+    G1CollectionSetCandidates* candidates = G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions());
+    _collection_set->set_candidates(candidates);
+    mixed_gc_pending = next_gc_should_be_mixed("request mixed gcs", "request young-only gcs");
+  }
 
   if (log_is_enabled(Trace, gc, liveness)) {
     G1PrintRegionLivenessInfoClosure cl("Post-Cleanup");
     _g1h->heap_region_iterate(&cl);
   }
 
-  bool mixed_gc_pending = next_gc_should_be_mixed("request mixed gcs", "request young-only gcs");
   if (!mixed_gc_pending) {
     clear_collection_set_candidates();
     abort_time_to_mixed_tracking();
@@ -1134,6 +1136,9 @@ class G1ClearCollectionSetCandidateRemSets : public HeapRegionClosure {
 };
 
 void G1Policy::clear_collection_set_candidates() {
+  if (_collection_set->candidates() == NULL) {
+    return;
+  }
   // Clear remembered sets of remaining candidate regions and the actual candidate
   // set.
   G1ClearCollectionSetCandidateRemSets cl;
@@ -1229,7 +1234,7 @@ bool G1Policy::next_gc_should_be_mixed(const char* true_action_str,
                                        const char* false_action_str) const {
   G1CollectionSetCandidates* candidates = _collection_set->candidates();
 
-  if (candidates->is_empty()) {
+  if (candidates == NULL || candidates->is_empty()) {
     log_debug(gc, ergo)("%s (candidate old regions not available)", false_action_str);
     return false;
   }

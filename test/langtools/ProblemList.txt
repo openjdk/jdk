@@ -33,6 +33,7 @@
 
 jdk/jshell/UserJdiUserRemoteTest.java                                           8173079    linux-all
 jdk/jshell/UserInputTest.java                                                   8169536    generic-all
+jdk/jshell/ToolBasicTest.java                                                   8265357    macosx-aarch64
 
 ###########################################################################
 #

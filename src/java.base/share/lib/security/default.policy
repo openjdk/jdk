@@ -99,6 +99,8 @@ grant codeBase "jrt:/java.xml.crypto" {
                    "accessClassInPackage.com.sun.org.apache.xpath.internal";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.org.apache.xpath.internal.*";
+    permission java.io.FilePermission "<<ALL FILES>>","read";
+    permission java.net.SocketPermission "*", "connect,resolve";
 };
 
 
