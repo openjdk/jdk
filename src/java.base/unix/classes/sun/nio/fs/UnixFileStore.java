@@ -179,6 +179,11 @@ abstract class UnixFileStore
      * @return <code>true</code> if enabled, <code>false</code> if disabled or unable to determine
      */
     protected boolean isExtendedAttributesEnabled(UnixPath path) {
+        if (!UnixNativeDispatcher.xattrSupported()) {
+            // avoid I/O if native code doesn't support xattr
+            return false;
+        }
+
         int fd = -1;
         try {
             fd = path.openForAttributeAccess(false);

@@ -63,6 +63,7 @@ protected:
     void prepare_for_compaction_work(G1FullGCCompactionPoint* cp, HeapRegion* hr);
     void free_humongous_region(HeapRegion* hr);
     void free_open_archive_region(HeapRegion* hr);
+    void update_bot(HeapRegion* hr);
 
     void reset_region_metadata(HeapRegion* hr);
 

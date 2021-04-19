@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,14 +23,33 @@
  * questions.
  */
 
-import java.applet.Applet;
-import java.awt.TextField;
+#import "SliderAccessibility.h"
 
-public class TestApplet extends Applet {
-    TextField textField = null;
+#define INCREMENT 0
+#define DECREMENT 1
 
-    public void init() {
-        textField = new TextField(25);
-        add(textField);
-    }
+/*
+ * Implementation of the accessibility peer for the slider role
+ */
+@implementation SliderAccessibility
+- (nullable NSString *)accessibilityLabel
+{
+    return [self accessibilityTitleAttribute];
 }
+
+- (nullable id)accessibilityValue
+{
+    return [self accessibilityValueAttribute];
+}
+
+- (BOOL)accessibilityPerformIncrement
+{
+    return [self performAccessibleAction:INCREMENT];
+}
+
+- (BOOL)accessibilityPerformDecrement
+{
+    return [self performAccessibleAction:DECREMENT];
+}
+
+@end

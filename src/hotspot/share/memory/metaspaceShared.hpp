@@ -144,6 +144,8 @@ public:
   // (Heap region alignments are decided by GC).
   static size_t core_region_alignment();
   static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
+  // print loaded classes names to file.
+  static void dump_loaded_classes(const char* file_name, TRAPS);
 #endif
 
   // Allocate a block of memory from the temporary "symbol" region.

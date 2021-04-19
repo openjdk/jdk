@@ -64,6 +64,10 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
+compiler/whitebox/ClearMethodStateTest.java 8265360 macosx-aarch64
+compiler/whitebox/EnqueueMethodForCompilationTest.java 8265360 macosx-aarch64
+compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
+
 #############################################################################
 
 # :hotspot_gc
@@ -140,13 +144,7 @@ vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
 
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInBootstrap/TestDescription.java 8013267 generic-all
-vmTestbase/vm/mlvm/meth/func/java/throwException/Test.java 8058176 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8058176 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/i2c_c2i/Test.java 8058176 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/sequences/Test.java 8058176 generic-all
-vmTestbase/vm/mlvm/meth/stress/gc/callSequencesDuringGC/Test.java 8058176 generic-all
-vmTestbase/vm/mlvm/meth/stress/java/sequences/Test.java 8058176 generic-all
-vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8058176 generic-all
+vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8257761 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all

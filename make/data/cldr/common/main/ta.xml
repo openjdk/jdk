@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -410,7 +410,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">மோல்டாவியன்</language>
 			<language type="rof">ரோம்போ</language>
 			<language type="rom">ரோமானி</language>
-			<language type="root">ரூட்</language>
 			<language type="ru">ரஷியன்</language>
 			<language type="rup">அரோமானியன்</language>
 			<language type="rw">கின்யாருவான்டா</language>
@@ -3180,9 +3179,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>சான்டா இசபெல்</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ஹோனோலூலூ</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ஒருங்கிணைந்த சர்வதேச நேரம்</standard>
@@ -3302,11 +3298,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>புரோக்கன் ஹில்</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>கியூரி</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>மெல்போர்ன்</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>கியூரி</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ஹோபர்ட்</exemplarCity>
@@ -4339,6 +4335,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>நோம்</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ஹோனோலூலூ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>ஜோன்ஸ்டன்</exemplarCity>
@@ -6652,7 +6651,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>மேற்கு ஆப்பிரிக்க CFA ஃப்ராங்க்</displayName>
 				<displayName count="one">மேற்கு ஆப்பிரிக்க CFA ஃப்ராங்க்</displayName>
 				<displayName count="other">மேற்கு ஆப்பிரிக்க CFA ஃப்ராங்க்குகள்</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>ஃப்ராங்க் (CFP)</displayName>
@@ -6895,7 +6894,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} காரட்</unitPattern>
 				<unitPattern count="other">{0} காரட்கள்</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>மில்லிகிராம்கள்/டெசிலிட்டர்</displayName>
 				<unitPattern count="one">{0} மில்லிகிராம்/டெசிலிட்டர்</unitPattern>
 				<unitPattern count="other">{0} மில்லிகிராம்கள்/டெசிலிட்டர்</unitPattern>
@@ -7914,7 +7913,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} கார.</unitPattern>
 				<unitPattern count="other">{0} கார.</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>மி.கி./டெ.லி.</displayName>
 				<unitPattern count="one">{0} மி.கி./டெ.லி.</unitPattern>
 				<unitPattern count="other">{0} மி.கி./டெ.லி.</unitPattern>
@@ -8251,9 +8250,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} மி.மீ.</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µமீ.</displayName>
-				<unitPattern count="one">{0} µமீ.</unitPattern>
-				<unitPattern count="other">{0} µமீ.</unitPattern>
+				<displayName>μமீ.</displayName>
+				<unitPattern count="one">{0} μமீ.</unitPattern>
+				<unitPattern count="other">{0} μமீ.</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>நா.மீ.</displayName>
@@ -8371,9 +8370,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} மி.கி.</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µகி</displayName>
-				<unitPattern count="one">{0} µகி</unitPattern>
-				<unitPattern count="other">{0} µகி</unitPattern>
+				<displayName>μகி</displayName>
+				<unitPattern count="one">{0} μகி</unitPattern>
+				<unitPattern count="other">{0} μகி</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>டன்</displayName>

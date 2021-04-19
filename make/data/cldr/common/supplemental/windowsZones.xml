@@ -9,7 +9,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 <supplementalData>
 	<version number="$Revision$"/>
 	<windowsZones>
-		<mapTimezones otherVersion="7e11500" typeVersion="2020a">
+		<mapTimezones otherVersion="7e11800" typeVersion="2021a">
 
 			<!-- (UTC-12:00) International Date Line West -->
 			<mapZone other="Dateline Standard Time" territory="001" type="Etc/GMT+12"/>
@@ -64,7 +64,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC-07:00) Arizona -->
 			<mapZone other="US Mountain Standard Time" territory="001" type="America/Phoenix"/>
-			<mapZone other="US Mountain Standard Time" territory="CA" type="America/Whitehorse America/Creston America/Dawson America/Dawson_Creek America/Fort_Nelson"/>
+			<mapZone other="US Mountain Standard Time" territory="CA" type="America/Creston America/Dawson_Creek America/Fort_Nelson"/>
 			<mapZone other="US Mountain Standard Time" territory="MX" type="America/Hermosillo"/>
 			<mapZone other="US Mountain Standard Time" territory="US" type="America/Phoenix"/>
 			<mapZone other="US Mountain Standard Time" territory="ZZ" type="Etc/GMT+7"/>
@@ -79,6 +79,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Mountain Standard Time" territory="MX" type="America/Ojinaga"/>
 			<mapZone other="Mountain Standard Time" territory="US" type="America/Denver America/Boise"/>
 			<mapZone other="Mountain Standard Time" territory="ZZ" type="MST7MDT"/>
+
+			<!-- (UTC-07:00) Yukon -->
+			<mapZone other="Yukon Standard Time" territory="001" type="America/Whitehorse"/>
+			<mapZone other="Yukon Standard Time" territory="CA" type="America/Whitehorse America/Dawson"/>
 
 			<!-- (UTC-06:00) Central America -->
 			<mapZone other="Central America Standard Time" territory="001" type="America/Guatemala"/>
@@ -263,9 +267,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Cape Verde Standard Time" territory="ZZ" type="Etc/GMT+1"/>
 
 			<!-- (UTC) Coordinated Universal Time -->
-			<mapZone other="UTC" territory="001" type="Etc/GMT"/>
-			<mapZone other="UTC" territory="GL" type="America/Danmarkshavn"/>
-			<mapZone other="UTC" territory="ZZ" type="Etc/GMT Etc/UTC"/>
+			<mapZone other="UTC" territory="001" type="Etc/UTC"/>
+			<mapZone other="UTC" territory="ZZ" type="Etc/UTC Etc/GMT"/>
 
 			<!-- (UTC+00:00) Dublin, Edinburgh, Lisbon, London -->
 			<mapZone other="GMT Standard Time" territory="001" type="Europe/London"/>
@@ -283,6 +286,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Greenwich Standard Time" territory="BF" type="Africa/Ouagadougou"/>
 			<mapZone other="Greenwich Standard Time" territory="CI" type="Africa/Abidjan"/>
 			<mapZone other="Greenwich Standard Time" territory="GH" type="Africa/Accra"/>
+			<mapZone other="Greenwich Standard Time" territory="GL" type="America/Danmarkshavn"/>
 			<mapZone other="Greenwich Standard Time" territory="GM" type="Africa/Banjul"/>
 			<mapZone other="Greenwich Standard Time" territory="GN" type="Africa/Conakry"/>
 			<mapZone other="Greenwich Standard Time" territory="GW" type="Africa/Bissau"/>
@@ -403,6 +407,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="South Africa Standard Time" territory="MW" type="Africa/Blantyre"/>
 			<mapZone other="South Africa Standard Time" territory="MZ" type="Africa/Maputo"/>
 			<mapZone other="South Africa Standard Time" territory="RW" type="Africa/Kigali"/>
+			<mapZone other="South Africa Standard Time" territory="SS" type="Africa/Juba"/>
 			<mapZone other="South Africa Standard Time" territory="SZ" type="Africa/Mbabane"/>
 			<mapZone other="South Africa Standard Time" territory="ZA" type="Africa/Johannesburg"/>
 			<mapZone other="South Africa Standard Time" territory="ZM" type="Africa/Lusaka"/>
@@ -474,7 +479,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="E. Africa Standard Time" territory="KM" type="Indian/Comoro"/>
 			<mapZone other="E. Africa Standard Time" territory="MG" type="Indian/Antananarivo"/>
 			<mapZone other="E. Africa Standard Time" territory="SO" type="Africa/Mogadishu"/>
-			<mapZone other="E. Africa Standard Time" territory="SS" type="Africa/Juba"/>
 			<mapZone other="E. Africa Standard Time" territory="TZ" type="Africa/Dar_es_Salaam"/>
 			<mapZone other="E. Africa Standard Time" territory="UG" type="Africa/Kampala"/>
 			<mapZone other="E. Africa Standard Time" territory="YT" type="Indian/Mayotte"/>

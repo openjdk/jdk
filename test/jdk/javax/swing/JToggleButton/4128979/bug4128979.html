@@ -1,5 +1,5 @@
 <!--
- Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,22 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-
 <html>
-<!--
-  @test
-  @bug 8010009
-  @summary [macosx] Unable type into online word games on MacOSX
-  @author petr.pchelko : area=awt.keyboard
-  @run clean *
-  @run build TestApplet
-  @run applet/manual=yesno KeyReleasedInAppletTest.html
-  -->
-<head>
-<title>KeyReleasedInAppletTest </title>
-</head>
 <body>
+This test requires Windows look and feel, just press Pass if you
+run it not on Windows.
 
-<h1>KeyReleasedInAppletTest<br>Bug ID:8010009 </h1>
+When the test starts you'll see toggle buttons in three rows
+two of which are toolbars.
 
-<p> See the dialog box (usually in upper left corner) for instructions</p>
+Make these buttons pressed, their background color must change
+to halftones between the button background colors and the ToggleButton
+highlight color (it is shown in the square below). 
 
-<APPLET CODE="KeyReleasedInAppletTest.class" WIDTH=200 HEIGHT=200></APPLET>
+If the background color does not change correctly for at least one button,
+the test fails. 
+
+<applet code="bug4128979.class" width=600 height=190></applet>
+
 </body>
 </html>
