@@ -1,5 +1,5 @@
 <!--
- Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,22 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-
 <html>
 <body>
-When the applet starts, you'll see eight controls with black backgrounds.
-Four enabled (on the left side) and four disabled (on the right side)
-checkboxes and radiobuttons.
+This test requires Windows look and feel, just press Pass if you
+run it not on Windows.
 
-1. If at least one of the controls' check marks is not visible:
-   the test fails.
+When the test starts you'll see toggle buttons in three rows
+two of which are toolbars.
 
-2. Uncheck the "Use Ocean Theme" check box. 
-   If now at least one of the controls' check marks is not visible:
-   the test fails.
+Make these buttons pressed, their background color must change
+to halftones between the button background colors and the ToggleButton
+highlight color (it is shown in the square below). 
 
-<applet  code="bug4449413.class" width=250 height=190></applet>
+If the background color does not change correctly for at least one button,
+the test fails. 
+
+<applet code="bug4128979.class" width=600 height=190></applet>
 
 </body>
 </html>
