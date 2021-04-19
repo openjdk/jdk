@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8000983 8008577 8247781
+ * @bug 8000983 8008577 8247781 8262108
  * @summary Unit test for narrow names support. This test is locale data-dependent
  *          and assumes that both COMPAT and CLDR have the same narrow names if not
  *          explicitly specified.
@@ -94,28 +94,10 @@ public class NarrowNamesTest {
                 "Sat"        // abb Saturday
                 );
         testMap(US, DAY_OF_WEEK, NARROW_FORMAT); // expect null
-        if (providers.startsWith("CLDR")) {
-            testMap(US, AM_PM, ALL_STYLES,
-                    "AM",
-                    "PM",
-                    "midnight",
-                    "noon",
-                    "in the morning",
-                    "",
-                    "in the afternoon",
-                    "",
-                    "in the evening",
-                    "",
-                    "at night",
-                    "",
-                    RESET_INDEX,
-                    "a", "p", "mi", "n", "", "", "", "", "", "", "", "");
-        } else {
-            testMap(US, AM_PM, ALL_STYLES,
-                    "AM", "PM",
-                    RESET_INDEX,
-                    "a", "p");
-        }
+        testMap(US, AM_PM, ALL_STYLES,
+                "AM", "PM",
+                RESET_INDEX,
+                "a", "p");
         testMap(JAJPJP, DAY_OF_WEEK, NARROW_STANDALONE,
                 "", // 1-based indexing for DAY_OF_WEEK
                 "\u65e5",
