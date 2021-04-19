@@ -627,12 +627,13 @@ void HandshakeState::do_self_suspend() {
 
 // This is the closure that prevents a suspended JavaThread from
 // escaping the suspend request.
-class ThreadSuspensionHandshake : public AsyncHandshakeClosure {
+class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
  public:
-  ThreadSuspensionHandshake() : AsyncHandshakeClosure("ThreadSuspension") {}
+  ThreadSelfSuspensionHandshake() : AsyncHandshakeClosure("ThreadSuspension") {}
   void do_thread(Thread* thr) {
-    JavaThread* target = thr->as_Java_thread();
-    target->handshake_state()->do_self_suspend();
+    JavaThread* thread_current = thr->as_Java_thread();
+    assert(thread_current == Thread::current(), "Must be self executed.");
+    thread_current->handshake_state()->do_self_suspend();
   }
 };
 
@@ -662,7 +663,7 @@ bool HandshakeState::suspend_with_handshake() {
   set_suspended(true);
   set_async_suspend_handshake(true);
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_handshakee));
-  ThreadSuspensionHandshake* ts = new ThreadSuspensionHandshake();
+  ThreadSelfSuspensionHandshake* ts = new ThreadSelfSuspensionHandshake();
   Handshake::execute(ts, _handshakee);
   return true;
 }

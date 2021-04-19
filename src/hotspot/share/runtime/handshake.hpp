@@ -34,7 +34,7 @@
 class HandshakeOperation;
 class JavaThread;
 class SuspendThreadHandshake;
-class ThreadSuspensionHandshake;
+class ThreadSelfSuspensionHandshake;
 
 // A handshake closure is a callback that is executed for a JavaThread
 // while it is in a safepoint/handshake-safe state. Depending on the
@@ -74,7 +74,7 @@ class JvmtiRawMonitor;
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
   friend JvmtiRawMonitor;
-  friend ThreadSuspensionHandshake;
+  friend ThreadSelfSuspensionHandshake;
   friend SuspendThreadHandshake;
   friend JavaThread;
   // This a back reference to the JavaThread,
@@ -125,13 +125,12 @@ class HandshakeState {
   // while handshake operations are being executed, the _handshakee
   // must take slow path, process_by_self(), if _lock is held.
   bool should_process() {
-    // When doing thread suspension the holder of the _lock
-    // can add an asynchronous handshake to queue.
+    // The holder of the _lock can add an asynchronous handshake to queue.
     // To make sure it is seen by the handshakee, the handshakee must first
-    // check the _lock, if held go to slow path.
+    // check the _lock, and if held go to slow path.
     // Since the handshakee is unsafe if _lock gets locked after this check
-    // we know another thread cannot process any handshakes.
-    // Now we can check queue if there is anything we should process.
+    // we know other threads cannot process any handshakes.
+    // Now we can check the queue to see if there is anything we should processs.
     if (_lock.is_locked()) {
       return true;
     }
