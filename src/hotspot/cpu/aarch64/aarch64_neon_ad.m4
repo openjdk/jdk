@@ -1258,6 +1258,27 @@ instruct storemask2L(vecD dst, vecX src, immI_8 size)
   ins_pipe(pipe_slow);
 %}
 
+// vector mask cast
+dnl
+define(`VECTOR_MASK_CAST', `
+instruct vmaskcast$1`'(vec$1 dst)
+%{
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == $2 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == $2 &&
+            n->bottom_type()->is_vect()->length() == n->in(1)->bottom_type()->is_vect()->length());
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vmaskcast $dst\t# empty" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(pipe_class_empty);
+%}')dnl
+dnl              $1 $2
+VECTOR_MASK_CAST(D, 8)
+VECTOR_MASK_CAST(X, 16)
+dnl
+
 //-------------------------------- LOAD_IOTA_INDICES----------------------------------
 dnl
 define(`PREDICATE', `ifelse($1, 8,

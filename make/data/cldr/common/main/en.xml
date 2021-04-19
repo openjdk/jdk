@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -488,7 +488,6 @@ annotations.
 			<language type="ro_MD">Moldavian</language>
 			<language type="rof">Rombo</language>
 			<language type="rom">Romany</language>
-			<language type="root">Root</language>
 			<language type="rtm">Rotuman</language>
 			<language type="ru">Russian</language>
 			<language type="rue">Rusyn</language>
@@ -861,7 +860,7 @@ annotations.
 			<script type="Zzzz">Unknown Script</script>
 		</scripts>
 		<territories>
-			<territory type="001">World</territory>
+			<territory type="001">world</territory>
 			<territory type="002">Africa</territory>
 			<territory type="003">North America</territory>
 			<territory type="005">South America</territory>
@@ -3235,13 +3234,6 @@ annotations.
 			<regionFormat type="daylight">{0} Daylight Time</regionFormat>
 			<regionFormat type="standard">{0} Standard Time</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-					<standard>HST</standard>
-					<daylight>HDT</daylight>
-				</short>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Coordinated Universal Time</standard>
@@ -3287,6 +3279,13 @@ annotations.
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 				<exemplarCity alt="formal">Kyiv</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>HST</generic>
+					<standard>HST</standard>
+					<daylight>HDT</daylight>
+				</short>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh City</exemplarCity>
@@ -6154,7 +6153,7 @@ annotations.
 				<unitPattern count="one">{0} karat</unitPattern>
 				<unitPattern count="other">{0} karats</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>milligrams per deciliter</displayName>
 				<unitPattern count="one">{0} milligram per deciliter</unitPattern>
 				<unitPattern count="other">{0} milligrams per deciliter</unitPattern>
@@ -7091,7 +7090,7 @@ annotations.
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dL</displayName>
 				<unitPattern count="one">{0} mg/dL</unitPattern>
 				<unitPattern count="other">{0} mg/dL</unitPattern>
@@ -7259,9 +7258,9 @@ annotations.
 				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName>µsecs</displayName>
-				<unitPattern count="one">{0} µs</unitPattern>
-				<unitPattern count="other">{0} µs</unitPattern>
+				<displayName>μsecs</displayName>
+				<unitPattern count="one">{0} μs</unitPattern>
+				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>nanosecs</displayName>
@@ -7427,9 +7426,9 @@ annotations.
 				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µmeters</displayName>
-				<unitPattern count="one">{0} µm</unitPattern>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<displayName>μmeters</displayName>
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nm</displayName>
@@ -7541,9 +7540,9 @@ annotations.
 				<unitPattern count="other">{0} mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µg</displayName>
-				<unitPattern count="one">{0} µg</unitPattern>
-				<unitPattern count="other">{0} µg</unitPattern>
+				<displayName>μg</displayName>
+				<unitPattern count="one">{0} μg</unitPattern>
+				<unitPattern count="other">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tons</displayName>
@@ -7955,7 +7954,7 @@ annotations.
 				<unitPattern count="one">{0}kt</unitPattern>
 				<unitPattern count="other">{0}kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dL</displayName>
 				<unitPattern count="one">{0}mg/dL</unitPattern>
 				<unitPattern count="other">{0}mg/dL</unitPattern>
@@ -8117,8 +8116,8 @@ annotations.
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μsec</displayName>
-				<unitPattern count="one">{0}µs</unitPattern>
-				<unitPattern count="other">{0}µs</unitPattern>
+				<unitPattern count="one">{0}μs</unitPattern>
+				<unitPattern count="other">{0}μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>ns</displayName>
@@ -8291,9 +8290,9 @@ annotations.
 				<unitPattern count="other">{0}mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µm</displayName>
-				<unitPattern count="one">{0}µm</unitPattern>
-				<unitPattern count="other">{0}µm</unitPattern>
+				<displayName>μm</displayName>
+				<unitPattern count="one">{0}μm</unitPattern>
+				<unitPattern count="other">{0}μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nm</displayName>
@@ -8411,9 +8410,9 @@ annotations.
 				<unitPattern count="other">{0}mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µg</displayName>
-				<unitPattern count="one">{0}µg</unitPattern>
-				<unitPattern count="other">{0}µg</unitPattern>
+				<displayName>μg</displayName>
+				<unitPattern count="one">{0}μg</unitPattern>
+				<unitPattern count="other">{0}μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ton</displayName>
