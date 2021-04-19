@@ -104,9 +104,14 @@ uintptr_t ZRelocate::relocate_object(ZForwarding* forwarding, uintptr_t from_add
       return to_addr;
     }
 
-    // Failed to relocate object. Wait for a worker thread to
-    // complete relocation of this page, and then forward object.
-    forwarding->wait_page_released();
+    // Failed to relocate object. Wait for a worker thread to complete
+    // relocation of this page, and then forward the object. If the GC
+    // aborts the relocation phase before the page has been relocated,
+    // then wait return false and we just forward the object in-place.
+    if (!forwarding->wait_page_released()) {
+      // Forward object in-place
+      return forwarding_insert(forwarding, from_addr, from_addr, &cursor);
+    }
   }
 
   // Forward object
@@ -340,8 +345,15 @@ public:
   }
 
   void do_forwarding(ZForwarding* forwarding) {
-    // Relocate objects
     _forwarding = forwarding;
+
+    // Check if we should abort
+    if (ZAbort::should_abort()) {
+      _forwarding->abort_page();
+      return;
+    }
+
+    // Relocate objects
     _forwarding->object_iterate(this);
 
     // Verify
@@ -396,10 +408,6 @@ public:
         small.do_forwarding(forwarding);
       } else {
         medium.do_forwarding(forwarding);
-      }
-
-      if (ZAbort::should_abort()) {
-        break;
       }
     }
   }

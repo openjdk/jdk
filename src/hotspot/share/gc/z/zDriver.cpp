@@ -400,9 +400,6 @@ public:
 
 #define concurrent(f)                 \
   do {                                \
-    if (should_terminate()) {         \
-      return;                         \
-    }                                 \
     concurrent_##f();                 \
     if (should_terminate()) {         \
       return;                         \
