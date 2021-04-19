@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,9 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
         this.diagramScene = scene;
         this.slot = slot;
         figureWidget = fw;
-        this.setToolTipText("<HTML>" + slot.getToolTipText() + "</HTML>");
+        if (!slot.getSource().getSourceNodes().isEmpty()) {
+            this.setToolTipText("<HTML>" + slot.getToolTipText() + "</HTML>");
+        }
         this.setCheckClipping(true);
         parent.addChild(this);
 

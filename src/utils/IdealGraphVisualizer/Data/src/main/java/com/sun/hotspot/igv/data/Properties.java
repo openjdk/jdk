@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -450,5 +450,37 @@ public class Properties implements Serializable, Iterable<Property> {
     @Override
     public Iterator<Property> iterator() {
         return new PropertiesIterator();
+    }
+
+    public final String resolveString(String string) {
+
+        StringBuilder sb = new StringBuilder();
+        boolean inBrackets = false;
+        StringBuilder curIdent = new StringBuilder();
+
+        for (int i = 0; i < string.length(); i++) {
+            char c = string.charAt(i);
+            if (inBrackets) {
+                if (c == ']') {
+                    String value = get(curIdent.toString());
+                    if (value == null) {
+                        value = "";
+                    }
+                    sb.append(value);
+                    inBrackets = false;
+                } else {
+                    curIdent.append(c);
+                }
+            } else {
+                if (c == '[') {
+                    inBrackets = true;
+                    curIdent = new StringBuilder();
+                } else {
+                    sb.append(c);
+                }
+            }
+        }
+
+        return sb.toString();
     }
 }
