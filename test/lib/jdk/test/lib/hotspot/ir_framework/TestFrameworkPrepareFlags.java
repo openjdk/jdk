@@ -86,8 +86,9 @@ class TestFrameworkPrepareFlags {
      * Emit test VM flags to standard output to parse them from the TestFramework "driver" VM again which adds them to the test VM.
      */
     private static void emitTestVMFlags(ArrayList<String> flags) {
-        String encoding = TestFramework.TEST_VM_FLAGS_START + "\n" + String.join(TestFramework.TEST_VM_FLAGS_DELIMITER, flags)
-                      + "\n" + TestFramework.TEST_VM_FLAGS_END;
+        String encoding = TestFramework.TEST_VM_FLAGS_START + System.lineSeparator()
+                          + String.join(TestFramework.TEST_VM_FLAGS_DELIMITER, flags)
+                          + System.lineSeparator() + TestFramework.TEST_VM_FLAGS_END;
         TestFrameworkSocket.write(encoding, "flag encoding");
     }
 

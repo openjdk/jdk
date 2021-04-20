@@ -50,7 +50,7 @@ public class TestFrameworkExecution {
         try {
             WHITE_BOX = WhiteBox.getWhiteBox();
         } catch (UnsatisfiedLinkError e) {
-            System.err.println("\n" + """
+            System.err.println(System.lineSeparator() + """
                                ##########################################################
                                 - Did you call a test-related interface method from
                                   TestFramework in main() of your test? Make sure to
@@ -788,8 +788,10 @@ public class TestFrameworkExecution {
             elapsed = System.currentTimeMillis() - started;
         } while (elapsed < 5000);
         StringBuilder builder = new StringBuilder();
-        forceCompileMap.forEach((key, value) -> builder.append("- ").append(key).append(" at CompLevel.").append(value).append("\n"));
-        throw new TestRunException("Could not force compile the following @ForceCompile methods:\n" + builder.toString());
+        forceCompileMap.forEach((key, value) -> builder.append("- ").append(key).append(" at CompLevel.").append(value)
+                                                       .append(System.lineSeparator()));
+        throw new TestRunException("Could not force compile the following @ForceCompile methods:"
+                                   + System.lineSeparator() + builder.toString());
     }
 
     /**
@@ -832,7 +834,8 @@ public class TestFrameworkExecution {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
-                builder.append(test.toString()).append(":\n").append(sw.toString()).append("\n\n");
+                builder.append(test.toString()).append(":").append(System.lineSeparator()).append(sw.toString())
+                       .append(System.lineSeparator()).append(System.lineSeparator());
                 failures++;
             }
             if (PRINT_TIMES || VERBOSE) {
@@ -851,17 +854,17 @@ public class TestFrameworkExecution {
 
         // Print execution times
         if (VERBOSE || PRINT_TIMES) {
-            System.out.println("\n\nTest execution times:");
+            System.out.println(System.lineSeparator() + System.lineSeparator() + "Test execution times:");
             for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                System.out.format("%-10s%15d ns\n", entry.getValue() + ":", entry.getKey());
+                System.out.format("%-10s%15d ns" + System.lineSeparator(), entry.getValue() + ":", entry.getKey());
             }
         }
 
         if (failures > 0) {
             // Finally, report all occurred exceptions in a nice format.
-            String msg = "\n\nTest Failures (" + failures + ")\n" +
-                         "----------------" + "-".repeat(String.valueOf(failures).length());
-            throw new TestRunException(msg + "\n" + builder.toString());
+            String msg = System.lineSeparator() + System.lineSeparator() + "Test Failures (" + failures + ")"
+                         + System.lineSeparator() + "----------------" + "-".repeat(String.valueOf(failures).length());
+            throw new TestRunException(msg + System.lineSeparator() + builder.toString());
         }
     }
 
@@ -1441,8 +1444,9 @@ class CustomRunTest extends AbstractTest {
                              + level.name() + " for " + test.getTestMethod() + ".";
             switch (mode) {
                 case STANDALONE -> throw new TestFrameworkException("Should not be called for STANDALONE method " + runMethod);
-                case NORMAL -> message = message + "\nCheck your @Run method " + runMethod + " to ensure that "
-                                         + test.getTestMethod() + " is called at least once in each iteration.";
+                case NORMAL -> message = message + System.lineSeparator() + "Check your @Run method " + runMethod
+                                         + " to ensure that " + test.getTestMethod()
+                                         + " is called at least once in each iteration.";
             }
             throw new TestRunException(message);
         }

@@ -196,7 +196,7 @@ class IRMatcher {
             line = line.replace("&apos;", "'");
             line = line.replace("&amp;", "&");
         }
-        builder.append(line).append("\n");
+        builder.append(line).append(System.lineSeparator());
     }
 
     private static int getCompileId(Matcher matcher) {
@@ -296,7 +296,7 @@ class IRMatcher {
             // Logged. Continue to check other rules.
         }
         if (!failMsg.isEmpty()) {
-            failMsg.insert(0, "@IR rule " + (id + 1) + ": \"" + irAnno + "\"\n");
+            failMsg.insert(0, "@IR rule " + (id + 1) + ": \"" + irAnno + "\"" + System.lineSeparator());
             fails.computeIfAbsent(method, k -> new ArrayList<>()).add(failMsg.toString());
         }
     }
@@ -345,7 +345,7 @@ class IRMatcher {
         List<String> failOnNodes = IRNode.mergeNodes(irAnno.failOn());
         Pattern pattern;
         Matcher matcher;
-        failMsg.append("- failOn: Graph contains forbidden nodes:\n");
+        failMsg.append("- failOn: Graph contains forbidden nodes:").append(System.lineSeparator());
         int nodeId = 1;
         for (String nodeRegex : failOnNodes) {
             pattern = Pattern.compile(nodeRegex);
@@ -353,9 +353,10 @@ class IRMatcher {
             long matchCount = matcher.results().count();
             if (matchCount > 0) {
                 matcher.reset();
-                failMsg.append("    Regex ").append(nodeId).append(": ").append(nodeRegex).append("\n");
-                failMsg.append("    Matched forbidden node").append(matchCount > 1 ? "s (" + matchCount + ")" : "").append(":\n");
-                matcher.results().forEach(r -> failMsg.append("      ").append(r.group()).append("\n"));
+                failMsg.append("    Regex ").append(nodeId).append(": ").append(nodeRegex).append(System.lineSeparator());
+                failMsg.append("    Matched forbidden node").append(matchCount > 1 ? "s (" + matchCount + ")" : "")
+                       .append(":").append(System.lineSeparator());
+                matcher.results().forEach(r -> failMsg.append("      ").append(r.group()).append(System.lineSeparator()));
             }
             nodeId++;
         }
@@ -396,7 +397,7 @@ class IRMatcher {
                 long actualCount = matcher.results().count();
                 if (!parsedComparator.getPredicate().test(actualCount, expectedCount)) {
                     if (!hasFails) {
-                        failMsg.append("- counts: Graph contains wrong number of nodes:\n");
+                        failMsg.append("- counts: Graph contains wrong number of nodes:").append(System.lineSeparator());
                         hasFails = true;
                     }
                     addCountsFail(failMsg, node, pattern, expectedCount, actualCount, countsId);
@@ -415,7 +416,7 @@ class IRMatcher {
      * to the user.
      */
     private void addCountsFail(StringBuilder failMsg, String node, Pattern pattern, long expectedCount, long actualCount, int countsId) {
-        failMsg.append("    Regex ").append(countsId).append(": ").append(node).append("\n");
+        failMsg.append("    Regex ").append(countsId).append(": ").append(node).append(System.lineSeparator());
         failMsg.append("    Expected ").append(expectedCount).append(" but found ").append(actualCount);
 
         if (actualCount > 0) {
@@ -429,11 +430,11 @@ class IRMatcher {
             } else {
                 irMethod.needsOptoAssembly();
             }
-            failMsg.append(" node").append(actualCount > 1 ? "s" : "").append(":\n");
-            matcher.results().forEach(r -> failMsg.append("      ").append(r.group()).append("\n"));
+            failMsg.append(" node").append(actualCount > 1 ? "s" : "").append(":").append(System.lineSeparator());
+            matcher.results().forEach(r -> failMsg.append("      ").append(r.group()).append(System.lineSeparator()));
         } else {
             irMethod.needsAllOutput();
-            failMsg.append(" nodes.\n");
+            failMsg.append(" nodes.").append(System.lineSeparator());
         }
     }
 
@@ -452,7 +453,7 @@ class IRMatcher {
             int failures = 0;
             for (Map.Entry<Method, List<String>> entry : fails.entrySet()) {
                 Method method = entry.getKey();
-                compilationsBuilder.append(">>> Compilation of ").append(method).append(":\n");
+                compilationsBuilder.append(">>> Compilation of ").append(method).append(":").append(System.lineSeparator());
                 IRMethod irMethod = compilations.get(method.getName());
                 String output;
                 if (irMethod.usesIdeal() && irMethod.usesOptoAssembly()) {
@@ -464,16 +465,22 @@ class IRMatcher {
                 } else {
                     output = "<empty>";
                 }
-                compilationsBuilder.append(output).append("\n\n");
+                compilationsBuilder.append(output).append(System.lineSeparator()).append(System.lineSeparator());
                 List<String> list = entry.getValue();
-                failuresBuilder.append("- Method \"").append(method).append("\":\n");
+                failuresBuilder.append("- Method \"").append(method).append("\":").append(System.lineSeparator());
                 failures += list.size();
-                list.forEach(s -> failuresBuilder.append("  * ").append(s.replace("\n", "\n    ").trim()).append("\n"));
-                failuresBuilder.append("\n");
+                list.forEach(s -> failuresBuilder.append("  * ")
+                                                 .append(s.replace(System.lineSeparator(),
+                                                                   System.lineSeparator() + "    ").trim())
+                                                 .append(System.lineSeparator()));
+                failuresBuilder.append(System.lineSeparator());
             }
-            failuresBuilder.insert(0, ("\nOne or more @IR rules failed:\n\n" + "Failed IR Rules (" + failures + ")\n")
-                              + "-----------------" + "-".repeat(String.valueOf(failures).length()) + "\n");
-            failuresBuilder.append(">>> Check stdout for compilation output of the failed methods\n\n");
+            failuresBuilder.insert(0, (System.lineSeparator() + "One or more @IR rules failed:" + System.lineSeparator()
+                                       + System.lineSeparator() + "Failed IR Rules (" + failures + ")"
+                                       + System.lineSeparator()) + "-----------------"
+                                       + "-".repeat(String.valueOf(failures).length()) + System.lineSeparator());
+            failuresBuilder.append(">>> Check stdout for compilation output of the failed methods")
+                           .append(System.lineSeparator()).append(System.lineSeparator());
             throw new IRViolationException(failuresBuilder.toString(), compilationsBuilder.toString());
         }
     }

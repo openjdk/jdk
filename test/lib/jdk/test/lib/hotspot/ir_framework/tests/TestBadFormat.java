@@ -74,10 +74,12 @@ public class TestBadFormat {
             }
             String msg = e.getMessage();
             Violations violations = getViolations(clazz, helpers);
-            violations.getFailedMethods().forEach(f -> Asserts.assertTrue(msg.contains(f), "Could not find " + f + " in violations\n" + msg));
+            violations.getFailedMethods().forEach(
+                    f -> Asserts.assertTrue(msg.contains(f),
+                                            "Could not find " + f + " in violations" + System.lineSeparator() + msg));
             Pattern pattern = Pattern.compile("Violations \\((\\d+)\\)");
             Matcher matcher = pattern.matcher(msg);
-            Asserts.assertTrue(matcher.find(), "Could not find violations in\n" + msg);
+            Asserts.assertTrue(matcher.find(), "Could not find violations in" + System.lineSeparator() + msg);
             int violationCount = Integer.parseInt(matcher.group(1));
             Asserts.assertEQ(violationCount, violations.getViolationCount(), msg);
             return;

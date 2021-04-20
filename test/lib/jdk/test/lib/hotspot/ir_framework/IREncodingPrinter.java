@@ -49,8 +49,8 @@ class IREncodingPrinter {
     private int ruleIndex;
 
     public IREncodingPrinter() {
-        output.append(START).append("\n");
-        output.append("<method>,{comma separated applied @IR rule ids}\n");
+        output.append(START).append(System.lineSeparator());
+        output.append("<method>,{comma separated applied @IR rule ids}").append(System.lineSeparator());
     }
 
     /**
@@ -85,7 +85,7 @@ class IREncodingPrinter {
                     output.append(",").append(validRules.get(i));
                 }
             }
-            output.append("\n");
+            output.append(System.lineSeparator());
         }
     }
 

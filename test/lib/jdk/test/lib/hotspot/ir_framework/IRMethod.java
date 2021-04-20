@@ -67,7 +67,7 @@ class IRMethod {
      */
     public void setIdealOutput(String idealOutput) {
         outputBuilder.setLength(0);
-        this.idealOutput = "PrintIdeal:\n" + idealOutput;
+        this.idealOutput = "PrintIdeal:" + System.lineSeparator() + idealOutput;
         outputBuilder.append(this.idealOutput);
     }
 
@@ -75,8 +75,8 @@ class IRMethod {
      * The Opto Assembly output comes after the Ideal output. Simply append to 'output'.
      */
     public void setOptoAssemblyOutput(String optoAssemblyOutput) {
-        this.optoAssemblyOutput = "PrintOptoAssembly:\n" + optoAssemblyOutput;
-        outputBuilder.append("\n\n").append(this.optoAssemblyOutput);
+        this.optoAssemblyOutput = "PrintOptoAssembly:" + System.lineSeparator() + optoAssemblyOutput;
+        outputBuilder.append(System.lineSeparator()).append(System.lineSeparator()).append(this.optoAssemblyOutput);
         output = outputBuilder.toString();
     }
 

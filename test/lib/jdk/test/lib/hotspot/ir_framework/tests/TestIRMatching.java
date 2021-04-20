@@ -309,7 +309,8 @@ public class TestIRMatching {
                 builder.append(j);
             }
         }
-        Asserts.assertTrue(output.contains(builder.toString()), "Could not find encoding: \"" + builder.toString() + "\n");
+        Asserts.assertTrue(output.contains(builder.toString()), "Could not find encoding: \"" + builder.toString()
+                                                                + System.lineSeparator());
     }
 }
 
@@ -1421,7 +1422,7 @@ class GoodRuleConstraint extends Constraint {
 
     @Override
     protected void checkIRRule(String irRule) {
-        Asserts.fail(errorPrefix() + " should not fail:\n" + irRule);
+        Asserts.fail(errorPrefix() + " should not fail:" + System.lineSeparator() + irRule);
     }
 }
 
@@ -1438,7 +1439,7 @@ class GoodFailOnConstraint extends GoodRuleConstraint {
 
     @Override
     protected void checkIRRule(String irRule) {
-        Asserts.assertFalse(irRule.contains("- failOn"), errorPrefix() + " should not have failed:\n" + irRule);
+        Asserts.assertFalse(irRule.contains("- failOn"), errorPrefix() + " should not have failed:" + System.lineSeparator() + irRule);
     }
 }
 
@@ -1455,7 +1456,8 @@ class GoodCountsConstraint extends GoodRuleConstraint {
 
     @Override
     protected void checkIRRule(String irRule) {
-        Asserts.assertFalse(irRule.contains("- counts"), errorPrefix() + " should not have failed with counts:\n" + irRule);
+        Asserts.assertFalse(irRule.contains("- counts"), errorPrefix() + " should not have failed with counts:"
+                                                         + System.lineSeparator() + irRule);
     }
 }
 
