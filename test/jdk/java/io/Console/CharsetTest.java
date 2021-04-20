@@ -22,13 +22,17 @@
  */
 
 import java.io.Console;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
  * @bug 8264208
- * @summary Tests Console.charset() method
+ * @summary Tests Console.charset() method. "expect" command in Windows/Cygwin
+ *          does not work as expected. Ignoring tests on Windows.
  * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
  * @run main CharsetTest en_US.ISO8859-1 ISO-8859-1
@@ -42,8 +46,16 @@ public class CharsetTest {
             // no arg means child java process being tested.
             Console con = System.console();
             System.out.println(con.charset());
+            return;
         } else {
-            // invoking `expect` command
+            // check "expect" command availability
+            var expect = Paths.get("/usr/bin/expect");
+            if (!Files.exists(expect) || !Files.isExecutable(expect)) {
+                System.out.println("'expect' command not found. Test ignored.");
+                return;
+            }
+
+            // invoking "expect" command
             var testSrc = System.getProperty("test.src", ".");
             var testClasses = System.getProperty("test.classes", ".");
             var jdkDir = System.getProperty("test.jdk");
@@ -58,7 +70,7 @@ public class CharsetTest {
             output.reportDiagnosticSummary();
             var eval = output.getExitValue();
             if (eval != 0) {
-                throw new RuntimeException("Exitval: " + eval);
+                throw new RuntimeException("Test failed. Exit value from 'expect' command: " + eval);
             }
         }
     }
