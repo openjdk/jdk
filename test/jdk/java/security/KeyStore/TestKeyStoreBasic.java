@@ -163,7 +163,7 @@ public class TestKeyStoreBasic {
         // create an empty key store
         ks.load(null, null);
 
-        // unit test - test with null password 
+        // unit test - test with null password
         try {
             ks.setKeyEntry(ALIAS_HEAD, privateKey, null,
                 new Certificate[] { cert });
