@@ -962,7 +962,8 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code --spec-list-file}.
-     * The base URI for relative URIs in {@code @spec} tags.
+     * The file containing URLs and titles for external specifications
+     * mentioned in {@code @spec} tags.
      */
     public Path specListFile() {
         return specListFile;
