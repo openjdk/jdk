@@ -117,14 +117,13 @@ class ClassPathZipEntry: public ClassPathEntry {
 // For java image files
 class ClassPathImageEntry: public ClassPathEntry {
 private:
-  JImageFile* _jimage;
   const char* _name;
   DEBUG_ONLY(static ClassPathImageEntry* _singleton;)
 public:
   bool is_modules_image() const;
-  bool is_open() const { return _jimage != NULL; }
   const char* name() const { return _name == NULL ? "" : _name; }
-  JImageFile* jimage() const { return _jimage; }
+  JImageFile* jimage() const;
+  void set_jimage(JImageFile* jimage);
   void close_jimage();
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   virtual ~ClassPathImageEntry();
