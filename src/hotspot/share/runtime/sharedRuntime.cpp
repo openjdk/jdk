@@ -2601,6 +2601,9 @@ class AdapterHandlerTableIterator : public StackObj {
 // Implementation of AdapterHandlerLibrary
 AdapterHandlerTable* AdapterHandlerLibrary::_adapters = NULL;
 AdapterHandlerEntry* AdapterHandlerLibrary::_abstract_method_handler = NULL;
+
+BasicType AdapterHandlerLibrary::_sig_bt[255];
+VMRegPair AdapterHandlerLibrary::_regs[255];
 const int AdapterHandlerLibrary_size = 16*K;
 BufferBlob* AdapterHandlerLibrary::_buffer = NULL;
 
@@ -2662,8 +2665,10 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     // Fill in the signature array, for the calling-convention call.
     int total_args_passed = method->size_of_parameters(); // All args on stack
 
-    BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
-    VMRegPair* regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
+    assert(total_args_passed <= 255, "size of parameters too large");
+    BasicType* sig_bt = _sig_bt;
+    VMRegPair*   regs = _regs;
+
     int i = 0;
     if (!method->is_static())  // Pass in receiver first
       sig_bt[i++] = T_OBJECT;
@@ -2885,8 +2890,9 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       // Fill in the signature array, for the calling-convention call.
       const int total_args_passed = method->size_of_parameters();
 
-      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
-      VMRegPair*   regs = NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
+      assert(total_args_passed <= 255, "size of parameters too large");
+      BasicType* sig_bt = _sig_bt;
+      VMRegPair*   regs = _regs;
       int i=0;
       if (!method->is_static())  // Pass in receiver first
         sig_bt[i++] = T_OBJECT;
