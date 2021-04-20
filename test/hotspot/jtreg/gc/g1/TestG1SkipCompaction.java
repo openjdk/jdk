@@ -48,7 +48,7 @@ public class TestG1SkipCompaction {
             "-XX:MarkSweepDeadRatio=3",
             "-Xmx8m",
             "-Xms8M",
-            "-Xlog:gc+phases=debug",
+            "-Xlog:gc+phases=trace",
             "-XX:G1HeapRegionSize=1m",
             GCTest.class.getName()
             };
