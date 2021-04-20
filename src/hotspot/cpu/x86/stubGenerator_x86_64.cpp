@@ -7011,7 +7011,8 @@ address generate_avx_ghash_processBlocks() {
           StubRoutines::_vector_pow_float512    = (address)os::dll_lookup(libsvml, "__svml_powf16_ha_z0");
           StubRoutines::_vector_pow_double512   = (address)os::dll_lookup(libsvml, "__svml_pow8_ha_z0");
         }
-      } else if (UseAVX > 1) {
+      } 
+      if (UseAVX > 1) {
         StubRoutines::_vector_exp_float64     = (address)os::dll_lookup(libsvml, "__svml_expf4_ha_l9");
         StubRoutines::_vector_exp_float128    = (address)os::dll_lookup(libsvml, "__svml_expf4_ha_l9");
         StubRoutines::_vector_exp_float256    = (address)os::dll_lookup(libsvml, "__svml_expf8_ha_l9");
