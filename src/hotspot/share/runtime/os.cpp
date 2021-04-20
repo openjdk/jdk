@@ -853,7 +853,7 @@ int os::random() {
   while (true) {
     unsigned int seed = _rand_seed;
     unsigned int rand = next_random(seed);
-    if (Atomic::cmpxchg(&_rand_seed, seed, rand) == seed) {
+    if (Atomic::cmpxchg(&_rand_seed, seed, rand, memory_order_relaxed) == seed) {
       return static_cast<int>(rand);
     }
   }

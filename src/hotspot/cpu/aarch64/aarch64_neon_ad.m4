@@ -1036,6 +1036,32 @@ VECTOR_NOT(2, I, D, 8,  8B)
 VECTOR_NOT(4, I, X, 16, 16B)
 VECTOR_NOT(2, L, X, 16, 16B)
 undefine(MATCH_RULE)
+// ------------------------------ Vector and_not -------------------------------
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (AndV src1 (XorV src2 (ReplicateB m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateS m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateI m1))));',
+`match(Set dst (AndV src1 (XorV src2 (ReplicateL m1))));')')dnl
+dnl
+define(`VECTOR_AND_NOT', `
+instruct vand_not$1$2`'(vec$3 dst, vec$3 src1, vec$3 src2, imm$2_M1 m1)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == $4);
+  MATCH_RULE($2)
+  ins_cost(INSN_COST);
+  format %{ "bic  $dst, T$5, $src1, $src2\t# vector ($5)" %}
+  ins_encode %{
+    __ bic(as_FloatRegister($dst$$reg), __ T$5,
+           as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}')dnl
+dnl            $1 $2 $3 $4  $5
+VECTOR_AND_NOT(2, I, D, 8,  8B)
+VECTOR_AND_NOT(4, I, X, 16, 16B)
+VECTOR_AND_NOT(2, L, X, 16, 16B)
+undefine(MATCH_RULE)
 dnl
 // ------------------------------ Vector max/min -------------------------------
 dnl
@@ -1090,7 +1116,7 @@ instruct v$1`'2L`'(vecX dst, vecX src1, vecX src2)
   %}
   ins_pipe(vdop128);
 %}')dnl
-dnl                $1   $2   $3    $4
+dnl                 $1   $2   $3    $4
 VECTOR_MAX_MIN_LONG(max, Max, src1, src2)
 VECTOR_MAX_MIN_LONG(min, Min, src2, src1)
 dnl
@@ -1231,6 +1257,27 @@ instruct storemask2L(vecD dst, vecX src, immI_8 size)
   %}
   ins_pipe(pipe_slow);
 %}
+
+// vector mask cast
+dnl
+define(`VECTOR_MASK_CAST', `
+instruct vmaskcast$1`'(vec$1 dst)
+%{
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == $2 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == $2 &&
+            n->bottom_type()->is_vect()->length() == n->in(1)->bottom_type()->is_vect()->length());
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vmaskcast $dst\t# empty" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(pipe_class_empty);
+%}')dnl
+dnl              $1 $2
+VECTOR_MASK_CAST(D, 8)
+VECTOR_MASK_CAST(X, 16)
+dnl
 
 //-------------------------------- LOAD_IOTA_INDICES----------------------------------
 dnl
@@ -1871,7 +1918,7 @@ instruct vsqrt$2$3`'(vec$4 dst, vec$4 src)
   %}
   ins_pipe(v`'ifelse($2$3, 2F, unop, sqrt)_fp`'ifelse($4, D, 64, 128));
 %}')dnl
-dnl  $1      $2  $3 $4 $5
+dnl   $1     $2  $3 $4 $5
 VSQRT(fsqrt, 2,  F, D, S)
 VSQRT(fsqrt, 4,  F, X, S)
 VSQRT(fsqrt, 2,  D, X, D)
@@ -1912,7 +1959,7 @@ instruct v$3$5$6`'(vec$7 dst, vec$7 src1, vec$7 src2)
 %}')dnl
 
 // --------------------------------- AND --------------------------------------
-dnl     $1    $2    $3   $4   $5  $6 $7
+dnl      $1   $2    $3   $4   $5  $6 $7
 VLOGICAL(and, andr, and, And, 8,  B, D)
 VLOGICAL(and, andr, and, And, 16, B, X)
 

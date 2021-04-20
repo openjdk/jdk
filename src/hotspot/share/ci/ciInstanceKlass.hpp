@@ -271,6 +271,7 @@ public:
   BasicType box_klass_type() const;
   bool is_box_klass() const;
   bool is_boxed_value_offset(int offset) const;
+  bool is_box_cache_valid() const;
 
   // Is this klass in the given package?
   bool is_in_package(const char* packagename) {

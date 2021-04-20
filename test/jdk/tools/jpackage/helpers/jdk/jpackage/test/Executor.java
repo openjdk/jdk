@@ -89,6 +89,13 @@ public final class Executor extends CommandArguments<Executor> {
         return this;
     }
 
+    public Executor setWindowsTmpDir(String tmp) {
+        TKit.assertTrue(TKit.isWindows(),
+                "setWindowsTmpDir is only valid on Windows platform");
+        winTmpDir = tmp;
+        return this;
+    }
+
     /**
      * Configures this instance to save full output that command will produce.
      * This function is mutual exclusive with
@@ -279,6 +286,9 @@ public final class Executor extends CommandArguments<Executor> {
         command.add(executablePath().toString());
         command.addAll(args);
         ProcessBuilder builder = new ProcessBuilder(command);
+        if (winTmpDir != null) {
+            builder.environment().put("TMP", winTmpDir);
+        }
         StringBuilder sb = new StringBuilder(getPrintableCommandLine());
         if (withSavedOutput()) {
             builder.redirectErrorStream(true);
@@ -426,6 +436,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
     private boolean removePath;
+    private String winTmpDir = null;
 
     private static enum SaveOutputType {
         NONE, FULL, FIRST_LINE, DUMP

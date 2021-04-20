@@ -71,6 +71,7 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.hpp"
+#include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
@@ -1877,6 +1878,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(VectorInsertNode, VectorNode)                           \
   declare_c2_type(VectorUnboxNode, VectorNode)                            \
   declare_c2_type(VectorReinterpretNode, VectorNode)                      \
+  declare_c2_type(VectorMaskCastNode, VectorNode)                         \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
   declare_c2_type(VectorTestNode, Node)                                   \

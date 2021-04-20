@@ -1782,20 +1782,6 @@ int MachCallNativeNode::ret_addr_offset() {
   }
 }
 
-// Indicate if the safepoint node needs the polling page as an input
-
-// the shared code plants the oop data at the start of the generated
-// code for the safepoint node and that needs ot be at the load
-// instruction itself. so we cannot plant a mov of the safepoint poll
-// address followed by a load. setting this to true means the mov is
-// scheduled as a prior instruction. that's better for scheduling
-// anyway.
-
-bool SafePointNode::needs_polling_address_input()
-{
-  return true;
-}
-
 //=============================================================================
 
 #ifndef PRODUCT

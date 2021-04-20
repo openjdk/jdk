@@ -114,6 +114,8 @@ void PhaseChaitin::insert_proj( Block *b, uint i, Node *spill, uint maxlrg ) {
   // Do not insert between a call and his Catch
   if( b->get_node(i)->is_Catch() ) {
     // Put the instruction at the top of the fall-thru block.
+    // This assumes that the instruction is not used in the other exception
+    // blocks. Global code motion is responsible for maintaining this invariant.
     // Find the fall-thru projection
     while( 1 ) {
       const CatchProjNode *cp = b->get_node(++i)->as_CatchProj();

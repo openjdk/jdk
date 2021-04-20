@@ -671,12 +671,6 @@ int CallLeafNoFPDirectNode::compute_padding(int current_offset) const {
   return (12 - current_offset) & 2;
 }
 
-// Indicate if the safepoint node needs the polling page as an input.
-// Since z/Architecture does not have absolute addressing, it does.
-bool SafePointNode::needs_polling_address_input() {
-  return true;
-}
-
 void emit_nop(CodeBuffer &cbuf) {
   C2_MacroAssembler _masm(&cbuf);
   __ z_nop();

@@ -1232,6 +1232,13 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
         if (is_vector_mask) {
+          if (in_vt->length_in_bytes() == out_vt->length_in_bytes() &&
+              Matcher::match_rule_supported_vector(Op_VectorMaskCast, out_vt->length(), out_vt->element_basic_type())) {
+            // Apply "VectorUnbox (VectorBox vmask) ==> VectorMaskCast (vmask)"
+            // directly. This could avoid the transformation ordering issue from
+            // "VectorStoreMask (VectorLoadMask vmask) => vmask".
+            return new VectorMaskCastNode(value, out_vt);
+          }
           // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
           value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
           return new VectorLoadMaskNode(value, out_vt);

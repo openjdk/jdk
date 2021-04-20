@@ -54,8 +54,7 @@ public class RMIHelper {
             }
         }
 
-        tmp = System.getProperty("sun.jvm.hotspot.rmi.serverNamePrefix");
-        serverNamePrefix = (tmp != null)? serverNamePrefix : "SARemoteDebugger";
+        serverNamePrefix = System.getProperty("sun.jvm.hotspot.rmi.serverNamePrefix", "SARemoteDebugger");
     }
 
     public static void rebind(String uniqueID, Remote object) throws DebuggerException {

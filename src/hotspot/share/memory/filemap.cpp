@@ -215,6 +215,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment)
     _narrow_oop_mode = CompressedOops::mode();
     _narrow_oop_base = CompressedOops::base();
     _narrow_oop_shift = CompressedOops::shift();
+    _heap_begin = CompressedOops::begin();
     _heap_end = CompressedOops::end();
   }
   _compressed_oops = UseCompressedOops;
@@ -1811,6 +1812,8 @@ void FileMapInfo::map_heap_regions_impl() {
                 p2i(narrow_klass_base()), narrow_klass_shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
+  log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                p2i(header()->heap_begin()), p2i(header()->heap_end()));
 
   log_info(cds)("The current max heap size = " SIZE_FORMAT "M, HeapRegion::GrainBytes = " SIZE_FORMAT,
                 MaxHeapSize/M, HeapRegion::GrainBytes);
@@ -1818,6 +1821,8 @@ void FileMapInfo::map_heap_regions_impl() {
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
+  log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
 
   if (narrow_klass_base() != CompressedKlassPointers::base() ||
       narrow_klass_shift() != CompressedKlassPointers::shift()) {
@@ -1828,14 +1833,17 @@ void FileMapInfo::map_heap_regions_impl() {
   if (narrow_oop_mode() != CompressedOops::mode() ||
       narrow_oop_base() != CompressedOops::base() ||
       narrow_oop_shift() != CompressedOops::shift()) {
-    log_info(cds)("CDS heap data need to be relocated because the archive was created with an incompatible oop encoding mode.");
+    log_info(cds)("CDS heap data needs to be relocated because the archive was created with an incompatible oop encoding mode.");
     _heap_pointers_need_patching = true;
   } else {
     MemRegion range = get_heap_regions_range_with_current_oop_encoding_mode();
     if (!CompressedOops::is_in(range)) {
-      log_info(cds)("CDS heap data need to be relocated because");
+      log_info(cds)("CDS heap data needs to be relocated because");
       log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
       log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT, p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
+      _heap_pointers_need_patching = true;
+    } else if (header()->heap_end() != CompressedOops::end()) {
+      log_info(cds)("CDS heap data needs to be relocated to the end of the runtime heap to reduce fragmentation");
       _heap_pointers_need_patching = true;
     }
   }
@@ -1852,7 +1860,7 @@ void FileMapInfo::map_heap_regions_impl() {
     // that they are now near the top of the runtime time. This can be done by
     // the simple math of adding the delta as shown above.
     address dumptime_heap_end = header()->heap_end();
-    address runtime_heap_end = (address)CompressedOops::end();
+    address runtime_heap_end = CompressedOops::end();
     delta = runtime_heap_end - dumptime_heap_end;
   }
 
@@ -1868,7 +1876,7 @@ void FileMapInfo::map_heap_regions_impl() {
     // open regions.
     size_t align = size_t(relocated_closed_heap_region_bottom) % HeapRegion::GrainBytes;
     delta -= align;
-    log_info(cds)("CDS heap data need to be relocated lower by a further " SIZE_FORMAT
+    log_info(cds)("CDS heap data needs to be relocated lower by a further " SIZE_FORMAT
                   " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes",
                   align, delta);
     HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
@@ -1996,6 +2004,7 @@ void FileMapInfo::patch_archived_heap_embedded_pointers() {
     return;
   }
 
+  log_info(cds)("patching heap embedded pointers");
   patch_archived_heap_embedded_pointers(closed_archive_heap_ranges,
                                         num_closed_archive_heap_ranges,
                                         MetaspaceShared::first_closed_archive_heap_region);
