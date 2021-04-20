@@ -463,8 +463,6 @@ bool HandshakeState::process_by_self() {
     // Handshakes cannot safely safepoint.
     // The exception to this rule is the asynchronous suspension handshake.
     // It by-passes the NSV by manually doing the transition.
-    // Since we can have safepoints while suspended we need to release the tty locker if it is held.
-    ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
     NoSafepointVerifier nsv;
     return process_self_inner();
   }
