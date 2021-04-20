@@ -53,7 +53,7 @@ protected:
   class G1CalculatePointersClosure : public HeapRegionClosure {
   private:
     template<bool is_humongous>
-    void free_region(HeapRegion* hr);
+    void free_pinned_region(HeapRegion* hr);
   protected:
     G1CollectedHeap* _g1h;
     G1FullCollector* _collector;

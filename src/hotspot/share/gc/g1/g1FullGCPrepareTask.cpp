@@ -40,7 +40,7 @@
 #include "utilities/ticks.hpp"
 
 template<bool is_humongous>
-void G1FullGCPrepareTask::G1CalculatePointersClosure::free_region(HeapRegion* hr) {
+void G1FullGCPrepareTask::G1CalculatePointersClosure::free_pinned_region(HeapRegion* hr) {
   _regions_freed = true;
   if (is_humongous) {
     _g1h->free_humongous_region(hr, nullptr);
@@ -63,12 +63,12 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
     if (hr->is_humongous()) {
       oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
       if (!_bitmap->is_marked(obj)) {
-        free_region<true>(hr);
+        free_pinned_region<true>(hr);
       }
     } else if (hr->is_open_archive()) {
       bool is_empty = _collector->live_words(hr->hrm_index()) == 0;
       if (is_empty) {
-        free_region<false>(hr);
+        free_pinned_region<false>(hr);
       }
     } else if (hr->is_closed_archive()) {
       // nothing to do with closed archive region
