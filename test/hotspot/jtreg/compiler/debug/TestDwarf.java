@@ -101,7 +101,8 @@ public class TestDwarf {
         runAndCheck(new Flags("-Xcomp", "-XX:CICrashAt=1", "--version"));
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "unsafeAccess"));
         runAndCheck(new Flags("-Xmx10m", "-XX:+CrashOnOutOfMemoryError", TestDwarf.class.getCanonicalName(), "outOfMemory"));
-        runAndCheck(new Flags("-XX:AbortVMOnException=java.lang.RuntimeException", TestDwarf.class.getCanonicalName(), "abortVMOnException"));
+        // Use -XX:-TieredCompilation as C1 is currently not aborting the VM (JDK-8264899).
+        runAndCheck(new Flags("-XX:-TieredCompilation", "-XX:AbortVMOnException=compiler.debug.MyException", TestDwarf.class.getCanonicalName(), "abortVMOnException"));
         runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
         runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
         if (Platform.isX64() || Platform.isX86()) {
@@ -204,13 +205,15 @@ public class TestDwarf {
     // Crash with Internal Error: Saw java.lang.RuntimeException, aborting.
     // Crash happens due to an exception raised in combination with -XX:AbortVMOnException.
     private static void crashAbortVmOnException() {
-        throw new RuntimeException();
+        throw new MyException();
     }
 
     private static native void crashNativeDivByZero();
     private static native void crashNativeDereferenceNull();
     private static native void crashNativeMultipleMethods(int x);
 }
+
+class MyException extends RuntimeException { }
 
 class Flags {
     private final List<String> listOfOptions = new ArrayList<>();

@@ -366,15 +366,18 @@ bool ElfFile::load_dwarf_file() {
     return true;
   }
 
-  char* dwarf_path = ::getenv("JVM_DWARF_PATH");
-  if (dwarf_path != nullptr) {
-    // Look in environmental variable JVM_DWARF_PATH specified by user.
-    strcat(dwarf_path, "/");
-    strcat(dwarf_path, debug_filename);
-    if (open_valid_debuginfo_file(dwarf_path, crc)) {
-      return true;
-    }
+#ifndef PRODUCT
+  // For debug builds, additionally look in environmental variable _JVM_DWARF_PATH specified by user.
+  if (load_dwarf_file_from_env("/lib/server/", debug_filename, crc)) {
+    return true;
   }
+  if (load_dwarf_file_from_env("/lib/", debug_filename, crc)) {
+    return true;
+  }
+  if (load_dwarf_file_from_env("/bin/", debug_filename, crc)) {
+    return true;
+  }
+#endif
 
   // Look in a subdirectory named ".debug".
   strcpy(last_slash + 1, ".debug/");
@@ -394,6 +397,20 @@ bool ElfFile::load_dwarf_file() {
 
   return false;
 }
+
+#ifndef PRODUCT
+bool ElfFile::load_dwarf_file_from_env(const char* folder, const char* debug_filename, const int crc) {
+  char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
+  if (dwarf_path != nullptr) {
+    strcat(dwarf_path, folder);
+    strcat(dwarf_path, debug_filename);
+    if (open_valid_debuginfo_file(dwarf_path, crc)) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
 
 char* ElfFile::get_debug_filename() const {
   Elf_Shdr shdr;
