@@ -401,6 +401,7 @@ bool ElfFile::load_dwarf_file() {
 #ifndef PRODUCT
 bool ElfFile::load_dwarf_file_from_env(const char* folder, const char* debug_filename, const int crc) {
   char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
+  log_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
   if (dwarf_path != nullptr) {
     strcat(dwarf_path, folder);
     strcat(dwarf_path, debug_filename);
