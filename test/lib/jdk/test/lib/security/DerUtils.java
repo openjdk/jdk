@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,18 +96,17 @@ public class DerUtils {
      * Ensures that the inner DerValue is the expected ObjectIdentifier.
      */
     public static void checkAlg(byte[] der, String location,
-            Object expected) throws Exception {
-        ObjectIdentifier oid;
-        if (expected instanceof ObjectIdentifier) {
-            oid = (ObjectIdentifier)expected;
-        } else if (expected instanceof KnownOIDs) {
-            oid = ObjectIdentifier.of((KnownOIDs) expected);
-        } else if (expected instanceof String) {
-            oid = ObjectIdentifier.of(KnownOIDs.findMatch((String)expected));
-        } else {
-            throw new IllegalArgumentException(expected.toString());
-        }
-        Asserts.assertEQ(innerDerValue(der, location).getOID(), oid);
+            ObjectIdentifier expected) throws Exception {
+        Asserts.assertEQ(innerDerValue(der, location).getOID(), expected);
+    }
+
+    /**
+     * Ensures that the inner DerValue is the expected ObjectIdentifier.
+     */
+    public static void checkAlg(byte[] der, String location,
+            KnownOIDs expected) throws Exception {
+        Asserts.assertEQ(innerDerValue(der, location).getOID(),
+                ObjectIdentifier.of(expected));
     }
 
     /**

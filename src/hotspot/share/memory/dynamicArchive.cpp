@@ -27,6 +27,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -38,6 +39,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vmThread.hpp"
@@ -329,6 +331,35 @@ public:
   }
 };
 
+bool DynamicArchive::_has_been_dumped_once = false;
+
+void DynamicArchive::dump(const char* archive_name, TRAPS) {
+  assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp?");
+  assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp?");
+  // During dynamic archive dumping, some of the data structures are overwritten so
+  // we cannot dump the dynamic archive again. TODO: this should be fixed.
+  if (has_been_dumped_once()) {
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+        "Dynamic dump has been done, and should only be done once");
+  } else {
+    // prevent multiple dumps.
+    set_has_been_dumped_once();
+  }
+  ArchiveClassesAtExit = archive_name;
+  if (Arguments::init_shared_archive_paths()) {
+    dump();
+  } else {
+    ArchiveClassesAtExit = nullptr;
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+              "Could not setup SharedDynamicArchivePath");
+  }
+  // prevent do dynamic dump at exit.
+  ArchiveClassesAtExit = nullptr;
+  if (!Arguments::init_shared_archive_paths()) {
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+             "Could not restore SharedDynamicArchivePath");
+  }
+}
 
 void DynamicArchive::dump() {
   if (Arguments::GetSharedDynamicArchivePath() == NULL) {

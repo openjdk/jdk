@@ -31,6 +31,7 @@
 #include "oops/oop.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/registerMap.hpp"
 #include "runtime/stackValue.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "utilities/growableArray.hpp"
@@ -50,6 +51,8 @@
 //     - entryVFrame        ; special frame created when calling Java from C
 
 // - BasicLock
+
+class StackFrameStream;
 
 class vframe: public ResourceObj {
  protected:

@@ -108,13 +108,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       OS_LDFLAGS_JVM_ONLY="-Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
       OS_LDFLAGS="-mmacosx-version-min=$MACOSX_VERSION_MIN"
     fi
-    if test "x$OPENJDK_TARGET_OS" = xlinux; then
-      # Hotspot needs to link librt to get the clock_* functions.
-      # But once our supported minimum build and runtime platform
-      # has glibc 2.17, this can be removed as the functions are
-      # in libc.
-      OS_LDFLAGS_JVM_ONLY="-lrt"
-    fi
   fi
 
   # Setup debug level-dependent LDFLAGS

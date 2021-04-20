@@ -56,7 +56,7 @@ public:
   virtual JVMFlag::Error check_constraint(const JVMFlag* flag, void * func, bool verbose) const  { return JVMFlag::SUCCESS; }
 };
 
-template <typename T, int type_enum, typename EVENT>
+template <typename T, typename EVENT>
 class TypedFlagAccessImpl : public FlagAccessImpl {
 
 public:
@@ -70,9 +70,9 @@ public:
       }
     }
 
-    T old_value = flag->read<T, type_enum>();
+    T old_value = flag->read<T>();
     trace_flag_changed<T, EVENT>(flag, old_value, value, origin);
-    flag->write<T, type_enum>(value);
+    flag->write<T>(value);
     *((T*)value_addr) = old_value;
     flag->set_origin(origin);
 
@@ -80,17 +80,17 @@ public:
   }
 
   JVMFlag::Error check_constraint(const JVMFlag* flag, void * func, bool verbose) const  {
-    return typed_check_constraint(func, flag->read<T, type_enum>(), verbose);
+    return typed_check_constraint(func, flag->read<T>(), verbose);
   }
 
   virtual JVMFlag::Error typed_check_constraint(void * func, T value, bool verbose) const = 0;
 };
 
-class FlagAccessImpl_bool : public TypedFlagAccessImpl<JVM_FLAG_TYPE(bool), EventBooleanFlagChanged> {
+class FlagAccessImpl_bool : public TypedFlagAccessImpl<bool, EventBooleanFlagChanged> {
 public:
   JVMFlag::Error set_impl(JVMFlag* flag, void* value_addr, JVMFlagOrigin origin) const {
     bool verbose = JVMFlagLimit::verbose_checks_needed();
-    return TypedFlagAccessImpl<JVM_FLAG_TYPE(bool), EventBooleanFlagChanged>
+    return TypedFlagAccessImpl<bool, EventBooleanFlagChanged>
                ::check_constraint_and_set(flag, value_addr, origin, verbose);
   }
 
@@ -99,8 +99,8 @@ public:
   }
 };
 
-template <typename T, int type_enum, typename EVENT>
-class RangedFlagAccessImpl : public TypedFlagAccessImpl<T, type_enum, EVENT> {
+template <typename T, typename EVENT>
+class RangedFlagAccessImpl : public TypedFlagAccessImpl<T, EVENT> {
 public:
   virtual JVMFlag::Error set_impl(JVMFlag* flag, void* value_addr, JVMFlagOrigin origin) const {
     T value = *((T*)value_addr);
@@ -114,13 +114,13 @@ public:
       }
     }
 
-    return TypedFlagAccessImpl<T, type_enum, EVENT>::check_constraint_and_set(flag, value_addr, origin, verbose);
+    return TypedFlagAccessImpl<T, EVENT>::check_constraint_and_set(flag, value_addr, origin, verbose);
   }
 
   virtual JVMFlag::Error check_range(const JVMFlag* flag, bool verbose) const {
     const JVMTypedFlagLimit<T>* range = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_range(flag);
     if (range != NULL) {
-      T value = flag->read<T, type_enum>();
+      T value = flag->read<T>();
       if ((value < range->min()) || (value > range->max())) {
         range_error(flag->name(), value, range->min(), range->max(), verbose);
         return JVMFlag::OUT_OF_BOUNDS;
@@ -138,7 +138,7 @@ public:
   virtual void print_range_impl(outputStream* st, T min, T max) const = 0;
 };
 
-class FlagAccessImpl_int : public RangedFlagAccessImpl<JVM_FLAG_TYPE(int), EventIntFlagChanged> {
+class FlagAccessImpl_int : public RangedFlagAccessImpl<int, EventIntFlagChanged> {
 public:
   void range_error(const char* name, int value, int min, int max, bool verbose) const {
     JVMFlag::printError(verbose,
@@ -157,7 +157,7 @@ public:
   }
 };
 
-class FlagAccessImpl_uint : public RangedFlagAccessImpl<JVM_FLAG_TYPE(uint), EventUnsignedIntFlagChanged> {
+class FlagAccessImpl_uint : public RangedFlagAccessImpl<uint, EventUnsignedIntFlagChanged> {
 public:
   void range_error(const char* name, uint value, uint min, uint max, bool verbose) const {
     JVMFlag::printError(verbose,
@@ -176,7 +176,7 @@ public:
   }
 };
 
-class FlagAccessImpl_intx : public RangedFlagAccessImpl<JVM_FLAG_TYPE(intx), EventLongFlagChanged> {
+class FlagAccessImpl_intx : public RangedFlagAccessImpl<intx, EventLongFlagChanged> {
 public:
   void range_error(const char* name, intx value, intx min, intx max, bool verbose) const {
     JVMFlag::printError(verbose,
@@ -195,7 +195,7 @@ public:
   }
 };
 
-class FlagAccessImpl_uintx : public RangedFlagAccessImpl<JVM_FLAG_TYPE(uintx), EventUnsignedLongFlagChanged> {
+class FlagAccessImpl_uintx : public RangedFlagAccessImpl<uintx, EventUnsignedLongFlagChanged> {
 public:
   void range_error(const char* name, uintx value, uintx min, uintx max, bool verbose) const {
     JVMFlag::printError(verbose,
@@ -214,7 +214,7 @@ public:
   }
 };
 
-class FlagAccessImpl_uint64_t : public RangedFlagAccessImpl<JVM_FLAG_TYPE(uint64_t), EventUnsignedLongFlagChanged> {
+class FlagAccessImpl_uint64_t : public RangedFlagAccessImpl<uint64_t, EventUnsignedLongFlagChanged> {
 public:
   void range_error(const char* name, uint64_t value, uint64_t min, uint64_t max, bool verbose) const {
     JVMFlag::printError(verbose,
@@ -233,7 +233,7 @@ public:
   }
 };
 
-class FlagAccessImpl_size_t : public RangedFlagAccessImpl<JVM_FLAG_TYPE(size_t), EventUnsignedLongFlagChanged> {
+class FlagAccessImpl_size_t : public RangedFlagAccessImpl<size_t, EventUnsignedLongFlagChanged> {
 public:
   void range_error(const char* name, size_t value, size_t min, size_t max, bool verbose) const {
     JVMFlag::printError(verbose,
@@ -252,7 +252,7 @@ public:
   }
 };
 
-class FlagAccessImpl_double : public RangedFlagAccessImpl<JVM_FLAG_TYPE(double), EventDoubleFlagChanged> {
+class FlagAccessImpl_double : public RangedFlagAccessImpl<double, EventDoubleFlagChanged> {
 public:
   void range_error(const char* name, double value, double min, double max, bool verbose) const {
     JVMFlag::printError(verbose,
@@ -292,22 +292,15 @@ inline const FlagAccessImpl* JVMFlagAccess::access_impl(const JVMFlag* flag) {
   return flag_accesss[type];
 }
 
-// This is called by JVMFlagAccess::*AtPut() and JVMFlagAccess::set<...>(JVMFlag* flag, ...)
-JVMFlag::Error JVMFlagAccess::set_impl(JVMFlag* flag, int type_enum, void* value, JVMFlagOrigin origin) {
-  if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
-    return ccstrAtPut(flag, (ccstr*)value, origin);
+JVMFlag::Error JVMFlagAccess::set_impl(JVMFlag* flag, void* value, JVMFlagOrigin origin) {
+  if (flag->is_ccstr()) {
+    return set_ccstr(flag, (ccstr*)value, origin);
+  } else {
+    return access_impl(flag)->set(flag, value, origin);
   }
-
-  if (flag == NULL) {
-    return JVMFlag::INVALID_FLAG;
-  }
-  if (flag->type() != type_enum) {
-    return JVMFlag::WRONG_FORMAT;
-  }
-  return access_impl(flag)->set(flag, value, origin);
 }
 
-JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin) {
+JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin) {
   if (flag == NULL) return JVMFlag::INVALID_FLAG;
   if (!flag->is_ccstr()) return JVMFlag::WRONG_FORMAT;
   ccstr old_value = flag->get_ccstr();
@@ -331,14 +324,14 @@ JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlagOri
 }
 
 // This is called by the FLAG_SET_XXX macros.
-JVMFlag::Error JVMFlagAccess::set_impl(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin) {
+JVMFlag::Error JVMFlagAccess::set_or_assert(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlagOrigin origin) {
   JVMFlag* flag = JVMFlag::flag_from_enum(flag_enum);
   if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
     assert(flag->is_ccstr(), "must be");
-    return ccstrAtPut(flag, (ccstr*)value, origin);
+    return set_ccstr(flag, (ccstr*)value, origin);
   } else {
     assert(flag->type() == type_enum, "wrong flag type");
-    return set_impl(flag, type_enum, value, origin);
+    return set_impl(flag, value, origin);
   }
 }
 

@@ -107,8 +107,24 @@ public:
 
   // Allocates and returns a new entry.  Returns NULL if memory allocation
   // failed.  Locks _allocation_mutex.
-  // postcondition: *result == NULL.
+  // postcondition: result == NULL or *result == NULL.
   oop* allocate();
+
+  // Maximum number of entries that can be obtained by one call to
+  // allocate(oop**, size_t).
+  static const size_t bulk_allocate_limit = BitsPerWord;
+
+  // Allocates multiple entries, returning them in the ptrs buffer. Possibly
+  // faster than making repeated calls to allocate(). Always make maximal
+  // requests for best efficiency. Returns the number of entries allocated,
+  // which may be less than requested. A result of zero indicates failure to
+  // allocate any entries.
+  // Locks _allocation_mutex.
+  // precondition: size > 0.
+  // postcondition: result <= min(size, bulk_allocate_limit).
+  // postcondition: ptrs[i] is an allocated entry for i in [0, result).
+  // postcondition: *ptrs[i] == NULL for i in [0, result).
+  size_t allocate(oop** ptrs, size_t size);
 
   // Deallocates ptr.  No locking.
   // precondition: ptr is a valid allocated entry.
@@ -268,6 +284,7 @@ private:
 
   bool try_add_block();
   Block* block_for_allocation();
+  void  log_block_transition(Block* block, const char* new_state) const;
 
   Block* find_block_or_null(const oop* ptr) const;
   void delete_empty_block(const Block& block);

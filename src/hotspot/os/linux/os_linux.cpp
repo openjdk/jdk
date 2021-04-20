@@ -1270,9 +1270,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
-
   return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }
 
@@ -3965,6 +3963,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    size_t alignment,
                                                    char* req_addr,
                                                    bool exec) {
+<<<<<<< HEAD
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
   size_t large_page_size = os::page_size_for_region_aligned(bytes, 1);
@@ -3980,6 +3979,14 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
   assert(is_power_of_2(large_page_size), "Must be");
   assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
+=======
+  assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
+  assert(is_aligned(req_addr, alignment), "Must be");
+  assert(is_aligned(req_addr, os::large_page_size()), "Must be");
+  assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
+  assert(is_power_of_2(os::large_page_size()), "Must be");
+  assert(bytes >= os::large_page_size(), "Shouldn't allocate large pages for small sizes");
+>>>>>>> master
 
   // We only end up here when at least 1 large page can be used.
   // If the size is not a multiple of the large page size, we
