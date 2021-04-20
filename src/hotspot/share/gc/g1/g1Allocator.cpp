@@ -458,9 +458,8 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
   // chunk if we don't yet cross the boundary, but the remainder would be too
   // small to fill.
   HeapWord* new_top = old_top + word_size;
-  size_t remainder = pointer_delta(_max, new_top);
   if ((new_top > _max) ||
-      ((new_top < _max) && (remainder < CollectedHeap::min_fill_size()))) {
+      ((new_top < _max) && (pointer_delta(_max, new_top) < CollectedHeap::min_fill_size()))) {
     if (old_top != _max) {
       size_t fill_size = pointer_delta(_max, old_top);
       CollectedHeap::fill_with_object(old_top, fill_size);
