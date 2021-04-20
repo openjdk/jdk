@@ -77,7 +77,7 @@ import jdk.test.lib.hotspot.ir_framework.*;
 public class CustomRunTestExample {
 
     public static void main(String[] args) {
-        TestFramework.run(); // equivalent to TestFramework.run(TestSimpleTest.class)
+        TestFramework.run(); // equivalent to TestFramework.run(CustomRunTestExample.class)
     }
 
     @Test

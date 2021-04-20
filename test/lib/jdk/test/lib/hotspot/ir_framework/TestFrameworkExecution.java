@@ -164,8 +164,7 @@ public class TestFrameworkExecution {
         try {
             c = Class.forName(className);
         } catch (Exception e) {
-            TestRun.fail("Could not find " + classType + " class", e);
-            return null;
+            throw new TestRunException("Could not find " + classType + " class", e);
         }
         return c;
     }
@@ -430,7 +429,7 @@ public class TestFrameworkExecution {
         Run runAnno = getAnnotation(ex, Run.class);
         Check checkAnno = getAnnotation(ex, Check.class);
         TestFormat.check((testAnno == null && runAnno == null && checkAnno == null) || Stream.of(forceCompileAnno, dontCompileAnno, forceInlineAnno, dontInlineAnno).noneMatch(Objects::nonNull),
-                         "Cannot use explicit compile command annotations (@ForceInline, @DontInline," +
+                         "Cannot use explicit compile command annotations (@ForceInline, @DontInline, " +
                          "@ForceCompile or @DontCompile) together with @Test, @Check or @Run: " + ex + ". Use compLevel in @Test for fine tuning.");
         if (Stream.of(forceInlineAnno, dontCompileAnno, dontInlineAnno).filter(Objects::nonNull).count() > 1) {
             // Failure
@@ -790,7 +789,7 @@ public class TestFrameworkExecution {
         } while (elapsed < 5000);
         StringBuilder builder = new StringBuilder();
         forceCompileMap.forEach((key, value) -> builder.append("- ").append(key).append(" at CompLevel.").append(value).append("\n"));
-        TestRun.fail("Could not force compile the following @ForceCompile methods:\n" + builder.toString());
+        throw new TestRunException("Could not force compile the following @ForceCompile methods:\n" + builder.toString());
     }
 
     /**
@@ -814,7 +813,7 @@ public class TestFrameworkExecution {
 
         if (SHUFFLE_TESTS) {
             // Execute tests in random order (execution sequence affects profiling). This is done by default.
-            Collections.shuffle(testList);
+            Collections.shuffle(testList, Utils.getRandomInstance());
         }
         StringBuilder builder = new StringBuilder();
         int failures = 0;
@@ -973,7 +972,7 @@ public class TestFrameworkExecution {
                 case ANY -> {
                     return TriState.Yes;
                 }
-                default -> TestRun.fail("compiledAtLevel() should not be called with " + level);
+                default -> throw new TestRunException("compiledAtLevel() should not be called with " + level);
             }
         }
         if (!USE_COMPILER || XCOMP || TEST_C1 ||
@@ -1147,7 +1146,8 @@ abstract class AbstractTest {
                 return;
             }
         } while (elapsed < WAIT_FOR_COMPILATION_TIMEOUT);
-        TestRun.fail(testMethod + " not compiled after waiting for " + WAIT_FOR_COMPILATION_TIMEOUT/1000 + " s");
+        throw new TestRunException(testMethod + " not compiled after waiting for "
+                                   + WAIT_FOR_COMPILATION_TIMEOUT/1000 + " s");
     }
 
     /**
@@ -1412,7 +1412,8 @@ class CustomRunTest extends AbstractTest {
         try {
             executor.awaitTermination(timeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            TestRun.fail("Some compilations did not complete after " + timeout + "ms for @Run method " + runMethod);
+            throw new TestRunException("Some compilations did not complete after " + timeout
+                                       + "ms for @Run method " + runMethod);
         }
     }
 
@@ -1439,11 +1440,11 @@ class CustomRunTest extends AbstractTest {
             String message = "Compilation level should be " + test.getCompLevel().name() + " (requested) but was "
                              + level.name() + " for " + test.getTestMethod() + ".";
             switch (mode) {
-                case STANDALONE -> TestFramework.fail("Should not be called for STANDALONE method " + runMethod);
+                case STANDALONE -> throw new TestFrameworkException("Should not be called for STANDALONE method " + runMethod);
                 case NORMAL -> message = message + "\nCheck your @Run method " + runMethod + " to ensure that "
                                          + test.getTestMethod() + " is called at least once in each iteration.";
             }
-            TestRun.fail(message);
+            throw new TestRunException(message);
         }
     }
 }

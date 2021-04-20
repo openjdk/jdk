@@ -40,17 +40,17 @@ There are three kinds of tests depending on how much control is needed over the 
 #### Base Tests
 The simplest form of testing provides a single `@Test` annotated method which the framework will invoke as part of the testing. The test method has no or well-defined arguments that the framework can automatically provide. 
 
-More information on base tasts with a precise definition can be found in the [Javadocs](./doc/jdk/test/lib/hotspot/ir_framework/Test.html). Concrete examples on how to specify a base test can be found in [BaseTestsExample](./examples/BaseTestExample.java).
+More information on base tests with a precise definition can be found in the [Javadocs](./doc/jdk/test/lib/hotspot/ir_framework/Test.html). Concrete examples on how to specify a base test can be found in [BaseTestsExample](./examples/BaseTestExample.java).
 
 #### Checked Tests
 The base tests do not provide any way of verification by user code. A checked test enabled that by allowing the user to define an additional `@Check` annotated method which is invoked directly after the `@Test` annotated method. This allows the user to perform various checks about the test method including return value verification.
 
-More information on checked tasts with a precise definition can be found in the [Javadocs](./doc/jdk/test/lib/hotspot/ir_framework/Check.html). Concrete examples on how to specify a checked test can be found in [CheckedTestsExample](./examples/CheckedTestExample.java).
+More information on checked tests with a precise definition can be found in the [Javadocs](./doc/jdk/test/lib/hotspot/ir_framework/Check.html). Concrete examples on how to specify a checked test can be found in [CheckedTestsExample](./examples/CheckedTestExample.java).
 
 #### Custom Run Tests
 Neither the base nor the checked tests provide any control over how a `@Test` annotated method is invoked in terms of customized argument values and/or conditions for the invocation itself. A custom run test gives full control over the invocation of the `@Test` annotated method to the user. The framework calls a dedicated `@Run` annotated method from which the user can invoke the `@Test` method according to his/her needs.
 
-More information on checked tasts with a precise definition can be found in the [Javadocs](./doc/jdk/test/lib/hotspot/ir_framework/Run.html). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](./examples/CustomRunTestExample.java).
+More information on checked tests with a precise definition can be found in the [Javadocs](./doc/jdk/test/lib/hotspot/ir_framework/Run.html). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](./examples/CustomRunTestExample.java).
 
 ### 2.2 IR Verification
 The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_. For simplicity, we will refer to the "IR" or "IR matching" when actually meaning the combined output of _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_ for a C2 compilation.
@@ -71,7 +71,7 @@ An `@IR` annotation allows additional preconditions/restrictions on the currentl
 More information about IR matching can be found in the [Javadocs](./doc/jdk/test/lib/hotspot/ir_framework/IR.html). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](./examples/IRExample.java) and [TestIRMatching](./tests/TestIRMatching.java) (an internal framework test).
 
 ### 2.3 Test VM Flags and Scenarios
-The recommended way to use the framework is by using defining single `@run driver` statement in the JTreg header which, however, does not allow the specification of additional test VM flags. Instead, the user has the possibility to provide VM flags by calling `TestFramework.runWithFlags()` or by creating a `TestFramework` builder object on which `addFlags()` can be called.
+The recommended way to use the framework is by defining a single `@run driver` statement in the JTreg header which, however, does not allow the specification of additional test VM flags. Instead, the user has the possibility to provide VM flags by calling `TestFramework.runWithFlags()` or by creating a `TestFramework` builder object on which `addFlags()` can be called.
 
 If a user wants to provide multiple flag combinations for a single test, he or she has the option to provide different scenarios. A scenario based flag will always have precedence over other user defined flags. More information about scenarios can be found in the [Javadocs](./doc/jdk/test/lib/hotspot/ir_framework/Scenario.html).
 
@@ -91,7 +91,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed.
 - `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution.
 - `-DScenarios=1,2`: Provide a list of scenario indexes to specify which scenarios that should be executed.
-- `-DWarmup=200`: Provide a new default value of the number of warm-up iterations. This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
+- `-DWarmup=200`: Provide a new default value of the number of warm-up iterations (framework default is 2000). This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
 - `-DVerbose=true`: Enable more fain-grained logging (slows the execution down).
 - `-DReproduce=true`: Flag to use when directly running a test VM to bypass dependencies to the driver VM state (for example, when reproducing an issue).
 - `-DPrintTimes=true`: Print the execution time measurements of each executed test.
@@ -109,11 +109,11 @@ This section gives an overview of how the framework is executing a JTreg test th
 The framework will spawn a new "test VM" to execute the user defined tests. The test VM collects all tests of the test class specified by the user code in `main()` and ensures that there is no violation of the required format by the framework. In a next step, the framework does the following for each test in general:
 1. Warm the test up for a predefined number of times (default 2000). This can also be adapted for all tests by using `testFrameworkobject.setDefaultWarmup(100)` or for individual tests with an additional [@Warmup](./doc/jdk/test/lib/hotspot/ir_framework/Warmup.html) annotation. 
 2. After the warm-up is finished, the framework compiles the associated `@Test` annotated method at the specified compilation level (default: C2).
-3. After the compilation, the test is invokes one more time.
+3. After the compilation, the test is invoked one more time.
 
 Once the test VM terminates, IR verification (if possible) is performed on the output of the test VM. If any test throws an exception during its execution or if IR matching fails, the failures are collected and reported in a pretty format. Check the standard error and output for more information and how to reproduce these failures.
 
-Some of the steps above can be different due to the kind of the test or due to using non-default annotation properties. These details and differences are discribed in the Javadocs for the three tests (see section 2.1 Different Tests).
+Some of the steps above can be different due to the kind of the test or due to using non-default annotation properties. These details and differences are described in the Javadocs for the three tests (see section 2.1 Different Tests).
 
 More information about the internals and the workflow of the framework can be found at [TestFramework](./doc/jdk/test/lib/hotspot/ir_framework/TestFramework.html).  
  

@@ -142,7 +142,7 @@ class FailingExamples {
     @IR(failOn = IRNode.STORE)
     @IR(failOn = {IRNode.STORE, IRNode.LOOP}) // LOOP regex not found but STORE regex, letting the rule fail
     @IR(failOn = {IRNode.LOOP, IRNode.STORE}) // Order does not matter
-    @IR(failOn = {IRNode.STORE, IRNode.LOAD}) // LOOP and STORE regex, letting the rule fail
+    @IR(failOn = {IRNode.STORE, IRNode.LOAD}) // STORE and LOAD regex found, letting the rule fail
     @IR(failOn = {"LoadI"}) // LoadI can be found in PrintIdeal letting the rule fail
     // Store to iFld, store, and store to class IRExample, all 3 regexes found letting the rule fail
     @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld", IRNode.STORE, IRNode.STORE_OF_CLASS, "IRExample"})

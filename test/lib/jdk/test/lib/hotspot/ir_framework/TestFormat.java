@@ -34,14 +34,13 @@ class TestFormat {
 
     public static void check(boolean test, String failureMessage) {
         if (!test) {
-            FAILURES.add(failureMessage);
-            throw new TestFormatException(failureMessage);
+            fail(failureMessage);
         }
     }
 
     public static void checkNoThrow(boolean test, String failureMessage) {
         if (!test) {
-            FAILURES.add(failureMessage);
+            failNoThrow(failureMessage);
         }
     }
 

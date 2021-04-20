@@ -1500,10 +1500,10 @@ abstract class RegexConstraint extends Constraint {
     private static Pattern initIRPattern(String category, int ruleIdx) {
         if (category.equals("failOn")) {
             return Pattern.compile("rule " + ruleIdx + ":.*\\R.*- failOn: Graph contains forbidden nodes.*\\R" +
-                                   ".*Regex \\d+\\).*\\R.*Matched forbidden node.*");
+                                   ".*Regex \\d+:.*\\R.*Matched forbidden node.*");
         } else {
             return Pattern.compile("rule " + ruleIdx + ":.*\\R.*- counts: Graph contains wrong number of nodes:\\R" +
-                                   ".*Regex \\d+\\).*\\R.*Expected.*");
+                                   ".*Regex \\d+:.*\\R.*Expected.*");
         }
     }
 
@@ -1523,7 +1523,7 @@ abstract class RegexConstraint extends Constraint {
         Pattern pattern;
         Matcher matcher;
         for (int regexIndex : this.regexIndexes) {
-            pattern = Pattern.compile("Regex " + regexIndex + "\\).*");
+            pattern = Pattern.compile("Regex " + regexIndex + ":.*");
             matcher = pattern.matcher(categoryString);
             if (isGood) {
                 Asserts.assertFalse(matcher.find(), errorPrefix() + " failed with Regex " + regexIndex);

@@ -69,7 +69,7 @@ import jdk.test.lib.hotspot.ir_framework.*;
 public class CheckedTestExample {
 
     public static void main(String[] args) {
-        TestFramework.run(); // equivalent to TestFramework.run(TestSimpleTest.class)
+        TestFramework.run(); // equivalent to TestFramework.run(CheckedTestExample.class)
     }
 
     @Test

@@ -29,10 +29,10 @@ import java.lang.reflect.Method;
  * Helper class to store information about a method that needs to be IR matched.
  */
 class IRMethod {
-    final private Method method;
-    final private int[] ruleIds;
-    final private IR[] irAnnos;
-    final private StringBuilder outputBuilder;
+    private final Method method;
+    private final int[] ruleIds;
+    private final IR[] irAnnos;
+    private final StringBuilder outputBuilder;
     private String output;
     private String idealOutput;
     private String optoAssemblyOutput;
@@ -65,7 +65,7 @@ class IRMethod {
      * The Ideal output comes always before the Opto Assembly output. We might parse multiple C2 compilations of this method.
      * Only keep the very last one by overriding 'output'.
      */
-    public void appendIdealOutput(String idealOutput) {
+    public void setIdealOutput(String idealOutput) {
         outputBuilder.setLength(0);
         this.idealOutput = "PrintIdeal:\n" + idealOutput;
         outputBuilder.append(this.idealOutput);
@@ -74,7 +74,7 @@ class IRMethod {
     /**
      * The Opto Assembly output comes after the Ideal output. Simply append to 'output'.
      */
-    public void appendOptoAssemblyOutput(String optoAssemblyOutput) {
+    public void setOptoAssemblyOutput(String optoAssemblyOutput) {
         this.optoAssemblyOutput = "PrintOptoAssembly:\n" + optoAssemblyOutput;
         outputBuilder.append("\n\n").append(this.optoAssemblyOutput);
         output = outputBuilder.toString();

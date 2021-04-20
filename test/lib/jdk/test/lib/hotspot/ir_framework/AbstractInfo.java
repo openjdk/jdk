@@ -43,22 +43,10 @@ abstract public class AbstractInfo {
     private static final Random random = Utils.getRandomInstance();
 
     protected final Class<?> testClass;
-    private boolean toggleBool = false;
     private boolean onWarmUp = true;
 
     AbstractInfo(Class<?> testClass) {
         this.testClass = testClass;
-    }
-
-    /**
-     * Returns a different boolean each time this method is invoked (switching between {@code false} and {@code true}).
-     * The first invocation returns {@code false}.
-     *
-     * @return an inverted boolean of the result of the last invocation of this method.
-     */
-    public boolean toggleBoolean() {
-        toggleBool = !toggleBool;
-        return toggleBool;
     }
 
     /**

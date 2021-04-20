@@ -56,8 +56,8 @@ public class Scenario {
             try {
                 Arrays.stream(SCENARIOS.split("\\s*,\\s*")).map(Integer::parseInt).forEachOrdered(enabledScenarios::add);
             } catch (NumberFormatException e) {
-                TestRun.fail("Provided a scenario index in the -DScenario comma-separated list which is not " +
-                             "a number: " + SCENARIOS);
+                throw new TestRunException("Provided a scenario index in the -DScenario comma-separated list which is not "
+                                           + "a number: " + SCENARIOS);
             }
         }
 

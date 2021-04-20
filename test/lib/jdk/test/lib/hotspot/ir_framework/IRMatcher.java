@@ -102,7 +102,7 @@ class IRMatcher {
             String line = lines[i].trim();
             String[] splitComma = line.split(",");
             if (splitComma.length < 2) {
-                TestFramework.fail("Invalid IR match rule encoding. No comma found: " + splitComma[0]);
+                throw new TestFrameworkException("Invalid IR match rule encoding. No comma found: " + splitComma[0]);
             }
             String testName = splitComma[0];
             int[] irRulesIdx = new int[splitComma.length - 1];
@@ -110,7 +110,7 @@ class IRMatcher {
                 try {
                     irRulesIdx[j - 1] = Integer.parseInt(splitComma[j]);
                 } catch (NumberFormatException e) {
-                    TestFramework.fail("Invalid IR match rule encoding. No number found: " + splitComma[j]);
+                    throw new TestFrameworkException("Invalid IR match rule encoding. No number found: " + splitComma[j]);
                 }
             }
             irRulesMap.put(testName, irRulesIdx);
@@ -124,7 +124,7 @@ class IRMatcher {
      */
     private void parseHotspotPidFile() {
         Map<Integer, String> compileIdMap = new HashMap<>();
-        try (BufferedReader br = Files.newBufferedReader(Paths.get("", hotspotPidFileName))) {
+        try (BufferedReader br = Files.newBufferedReader(Paths.get(hotspotPidFileName))) {
             String line;
             StringBuilder builder = new StringBuilder();
             boolean append = false;
@@ -158,7 +158,7 @@ class IRMatcher {
                 }
             }
         } catch (IOException e) {
-            TestFramework.fail("Error while reading " + hotspotPidFileName, e);
+            throw new TestFrameworkException("Error while reading " + hotspotPidFileName, e);
         }
     }
 
@@ -170,10 +170,10 @@ class IRMatcher {
         IRMethod irMethod = compilations.get(currentMethod);
         if (line.startsWith("</i")) {
             // PrintIdeal
-            irMethod.appendIdealOutput(builder.toString());
+            irMethod.setIdealOutput(builder.toString());
         } else {
             // PrintOptoAssembly
-            irMethod.appendOptoAssemblyOutput(builder.toString());
+            irMethod.setOptoAssemblyOutput(builder.toString());
         }
         builder.setLength(0);
     }
@@ -190,21 +190,21 @@ class IRMatcher {
      */
     private static void appendLine(StringBuilder builder, String line) {
         if (line.contains("&")) {
-            line = line.replace("&amp;", "&");
             line = line.replace("&lt;", "<");
             line = line.replace("&gt;", ">");
             line = line.replace("&quot;", "\"");
             line = line.replace("&apos;", "'");
+            line = line.replace("&amp;", "&");
         }
         builder.append(line).append("\n");
     }
 
     private static int getCompileId(Matcher matcher) {
-        int compileId = -1;
+        int compileId;
         try {
             compileId = Integer.parseInt(matcher.group(1));
         } catch (NumberFormatException e) {
-            TestRun.fail("Could not parse compile id", e);
+            throw new TestRunException("Could not parse compile id", e);
         }
         return compileId;
     }
@@ -353,7 +353,7 @@ class IRMatcher {
             long matchCount = matcher.results().count();
             if (matchCount > 0) {
                 matcher.reset();
-                failMsg.append("    Regex ").append(nodeId).append(") ").append(nodeRegex).append("\n");
+                failMsg.append("    Regex ").append(nodeId).append(": ").append(nodeRegex).append("\n");
                 failMsg.append("    Matched forbidden node").append(matchCount > 1 ? "s (" + matchCount + ")" : "").append(":\n");
                 matcher.results().forEach(r -> failMsg.append("      ").append(r.group()).append("\n"));
             }
@@ -415,7 +415,7 @@ class IRMatcher {
      * to the user.
      */
     private void addCountsFail(StringBuilder failMsg, String node, Pattern pattern, long expectedCount, long actualCount, int countsId) {
-        failMsg.append("    Regex ").append(countsId).append(") ").append(node).append("\n");
+        failMsg.append("    Regex ").append(countsId).append(": ").append(node).append("\n");
         failMsg.append("    Expected ").append(expectedCount).append(" but found ").append(actualCount);
 
         if (actualCount > 0) {

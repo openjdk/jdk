@@ -62,7 +62,7 @@ public class BaseTestExample {
     int iFld;
 
     public static void main(String[] args) {
-        TestFramework.run(); // equivalent to TestFramework.run(TestSimpleTest.class)
+        TestFramework.run(); // equivalent to TestFramework.run(BaseTestExample.class)
     }
 
     // Test without arguments.

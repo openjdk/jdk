@@ -57,7 +57,7 @@ class TestFrameworkSocket implements AutoCloseable {
         try {
             serverSocket = new ServerSocket(0);
         } catch (IOException e) {
-            TestFramework.fail("Failed to create TestFramework server socket", e);
+            throw new TestFrameworkException("Failed to create TestFramework server socket", e);
         }
         int port = serverSocket.getLocalPort();
         if (TestFramework.VERBOSE) {
@@ -99,8 +99,7 @@ class TestFrameworkSocket implements AutoCloseable {
                 }
                 return builder.toString();
             } catch (IOException e) {
-                TestFramework.fail("Server socket error", e);
-                return null;
+                throw new TestFrameworkException("Server socket error", e);
             }
         });
     }
@@ -110,7 +109,7 @@ class TestFrameworkSocket implements AutoCloseable {
         try {
             serverSocket.close();
         } catch (IOException e) {
-            TestFramework.fail("Could not close socket", e);
+            throw new TestFrameworkException("Could not close socket", e);
         }
     }
 
@@ -152,7 +151,7 @@ class TestFrameworkSocket implements AutoCloseable {
                               => Append the flag -DReproduce=true and try again!
                              ###########################################################
                              """;
-            TestRun.fail(failMsg, e);
+            throw new TestRunException(failMsg, e);
         }
         if (TestFramework.VERBOSE) {
             System.out.println("Written " + type + " to socket:");
@@ -183,8 +182,7 @@ class TestFrameworkSocket implements AutoCloseable {
             return socketTask.get();
 
         } catch (Exception e) {
-            TestFramework.fail("Could not read from socket task", e);
-            return null;
+            throw new TestFrameworkException("Could not read from socket task", e);
         }
     }
 
@@ -215,8 +213,7 @@ class TestFrameworkSocket implements AutoCloseable {
             return output;
 
         } catch (Exception e) {
-            TestFramework.fail("Could not read from socket task", e);
-            return null;
+            throw new TestFrameworkException("Could not read from socket task", e);
         }
     }
 }

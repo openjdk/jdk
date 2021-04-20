@@ -146,6 +146,7 @@ public class TestFramework {
     private boolean VERIFY_IR = Boolean.parseBoolean(System.getProperty("VerifyIR", "true"));
     private boolean shouldVerifyIR; // Should we perform IR matching?
     private static String lastTestVMOutput;
+    private static boolean toggleBool;
 
     private final Class<?> testClass;
     private Set<Class<?>> helperClasses = null;
@@ -348,9 +349,9 @@ public class TestFramework {
      * while testing {@code testClass} (also see description of {@link TestFramework}).
      *
      * <p>
-     * If a class is used by the test class that does not specify any compile command annotations, you do not need
-     * to include it with this method. If no helper class specifies any compile commands, you do not need to call
-     * this method at all.
+     * Duplicates in {@code helperClasses} are ignored. If a class is used by the test class that does not specify any
+     * compile command annotations, you do not need to include it with this method. If no helper class specifies any
+     * compile commands, you do not need to call this method at all.
      *
      * <p>
      * The testing can be started by invoking {@link #start()}.
@@ -367,11 +368,7 @@ public class TestFramework {
             this.helperClasses = new HashSet<>();
         }
 
-        for (var helperClass : helperClasses) {
-            TestRun.check(!this.helperClasses.contains(helperClass),
-                          "Cannot add the same class twice: " + helperClass);
-            this.helperClasses.add(helperClass);
-        }
+        this.helperClasses.addAll(Arrays.asList(helperClasses));
         return this;
     }
 
@@ -595,6 +592,19 @@ public class TestFramework {
         TestFrameworkExecution.assertDeoptimizedByC2(m);
     }
 
+    /**
+     * Returns a different boolean each time this method is invoked (switching between {@code false} and {@code true}).
+     * The very first invocation returns {@code false}. Note that this method could be used by different tests and
+     * thus the first invocation for a test could be {@code true} or {@code false} depending on how many times
+     * other tests have already invoked this method.
+     *
+     * @return an inverted boolean of the result of the last invocation of this method.
+     */
+    public static boolean toggleBoolean() {
+        toggleBool = !toggleBool;
+        return toggleBool;
+    }
+
     /*
      * End of public interface methods
      */
@@ -694,7 +704,7 @@ public class TestFramework {
             // Provide a hint to the user how to get additional output/debugging information.
             System.err.println(RERUN_HINT);
         }
-        TestRun.fail(failedScenarios + ". Please check stderr for more information.");
+        throw new TestRunException(failedScenarios + ". Please check stderr for more information.");
     }
 
     private static String getScenarioTitleAndFlags(Scenario scenario) {
@@ -827,8 +837,7 @@ public class TestFramework {
             // Java options in prepareTestVMFlags().
             oa = ProcessTools.executeProcess(process);
         } catch (Exception e) {
-            fail("Error while executing Test VM", e);
-            return;
+            throw new TestFrameworkException("Error while executing Test VM", e);
         }
         JVMOutput output = new JVMOutput(oa, scenario, process);
         lastTestVMOutput = oa.getOutput();
@@ -954,16 +963,8 @@ public class TestFramework {
 
     static void check(boolean test, String failureMessage) {
         if (!test) {
-            fail(failureMessage);
+            throw new TestFrameworkException(failureMessage);
         }
-    }
-
-    static void fail(String failureMessage) {
-        throw new TestFrameworkException("Internal Test Framework exception - please file a bug:\n" + failureMessage);
-    }
-
-    static void fail(String failureMessage, Throwable e) {
-        throw new TestFrameworkException("Internal Test Framework exception - please file a bug:\n" + failureMessage, e);
     }
 }
 

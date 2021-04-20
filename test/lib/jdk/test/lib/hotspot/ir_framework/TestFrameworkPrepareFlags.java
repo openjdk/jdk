@@ -40,8 +40,7 @@ class TestFrameworkPrepareFlags {
         try {
             WHITE_BOX = WhiteBox.getWhiteBox();
         } catch (UnsatisfiedLinkError e) {
-            TestFramework.fail("Could not load WhiteBox", e);
-            throw e; // Not reached
+            throw new TestFrameworkException("Could not load WhiteBox", e);
         }
     }
 
