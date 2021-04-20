@@ -35,7 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class JcmdAsserts {
 
-    private static final String NEW_LINE = System.getProperty("line.separator");
+    private static final String NEW_LINE = "\n";
 
     public static void assertJfrNotUsed(OutputAnalyzer output) {
         output.shouldMatch("Flight Recorder has not been used");

@@ -87,8 +87,17 @@ endif
 # Define external dependencies
 
 # Latest that could be made to work.
-GCC_VER := 10.2.0
-ifeq ($(GCC_VER), 10.2.0)
+GCC_VER := 10.3.0
+ifeq ($(GCC_VER), 10.3.0)
+  gcc_ver := gcc-10.3.0
+  binutils_ver := binutils-2.36.1
+  ccache_ver := ccache-3.7.11
+  mpfr_ver := mpfr-4.1.0
+  gmp_ver := gmp-6.2.0
+  mpc_ver := mpc-1.1.0
+  gdb_ver := gdb-10.1
+  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
+else ifeq ($(GCC_VER), 10.2.0)
   gcc_ver := gcc-10.2.0
   binutils_ver := binutils-2.35
   ccache_ver := ccache-3.7.11
@@ -245,12 +254,8 @@ $(foreach p,GCC BINUTILS CCACHE MPFR GMP MPC GDB,$(eval $(call Download,$(p))))
 
 RPM_ARCHS := $(ARCH) noarch
 ifeq ($(ARCH),x86_64)
-  ifeq ($(BUILD),$(HOST))
-    ifeq ($(TARGET),$(HOST))
-      # When building the native compiler for x86_64, enable mixed mode.
-      RPM_ARCHS += i386 i686
-    endif
-  endif
+  # Enable mixed mode.
+  RPM_ARCHS += i386 i686
 else ifeq ($(ARCH),i686)
   RPM_ARCHS += i386
 else ifeq ($(ARCH), armhfp)

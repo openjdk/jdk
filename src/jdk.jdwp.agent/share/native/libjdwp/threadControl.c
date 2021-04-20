@@ -179,8 +179,8 @@ setThreadLocalStorage(jthread thread, ThreadNode *node)
 
     error = JVMTI_FUNC_PTR(gdata->jvmti,SetThreadLocalStorage)
             (gdata->jvmti, thread, (void*)node);
-    if ( error == JVMTI_ERROR_THREAD_NOT_ALIVE ) {
-        /* Just return, thread hasn't started yet */
+    if ( error == JVMTI_ERROR_THREAD_NOT_ALIVE && node == NULL) {
+        /* Just return. This can happen when clearing the TLS. */
         return;
     } else if ( error != JVMTI_ERROR_NONE ) {
         /* The jthread object must be valid, so this must be a fatal error */
@@ -244,25 +244,17 @@ findThread(ThreadList *list, jthread thread)
     /* Get thread local storage for quick thread -> node access */
     node = getThreadLocalStorage(thread);
 
-    /* In some rare cases we might get NULL, so we check the list manually for
-     *   any threads that we could match.
-     */
     if ( node == NULL ) {
-        JNIEnv *env;
-
-        env = getEnv();
-        if ( list != NULL ) {
-            node = nonTlsSearch(env, list, thread);
-        } else {
-            node = nonTlsSearch(env, &runningThreads, thread);
-            if ( node == NULL ) {
-                node = nonTlsSearch(env, &otherThreads, thread);
-            }
+        /*
+         * If the thread was not yet started when the ThreadNode was created, then it
+         * got added to the otherThreads list and its thread local storage was not set.
+         * Search for it in the otherThreads list.
+         */
+        if ( list == NULL || list == &otherThreads ) {
+            node = nonTlsSearch(getEnv(), &otherThreads, thread);
         }
-        if ( node != NULL ) {
-            /* Here we make another attempt to set TLS, it's ok if this fails */
-            setThreadLocalStorage(thread, (void*)node);
-        }
+        /* A thread with no TLS should never be in the runningThreads list. */
+        JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
     }
 
     /* If a list is supplied, only return ones in this list */
@@ -380,10 +372,14 @@ insertThread(JNIEnv *env, ThreadList *list, jthread thread)
 #endif
 
         /* Set thread local storage for quick thread -> node access.
-         *   Some threads may not be in a state that allows setting of TLS,
-         *   which is ok, see findThread, it deals with threads without TLS set.
+         *   Threads that are not yet started do not allow setting of TLS. These
+         *   threads go on the otherThreads list and have their TLS set
+         *   when moved to the runningThreads list. findThread() knows to look
+         *   on otherThreads when the TLS lookup fails.
          */
-        setThreadLocalStorage(node->thread, (void*)node);
+        if (list != &otherThreads) {
+            setThreadLocalStorage(node->thread, (void*)node);
+        }
     }
 
     return node;
@@ -2111,6 +2107,8 @@ threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject cu
     node = findThread(&otherThreads, thread);
     if (node != NULL) {
         moveNode(&otherThreads, &runningThreads, node);
+        /* Now that we know the thread has started, we can set its TLS.*/
+        setThreadLocalStorage(thread, (void*)node);
     } else {
         /*
          * Get a thread node for the reporting thread. For thread start

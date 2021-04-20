@@ -640,45 +640,25 @@ kernel void stencil2tex(const device uchar *imageBuffer [[buffer(0)]],
 
 // work item deals with 4 byte pixel
 // assuming that data is aligned
-kernel void rgb_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
-                        device uchar *outputBuffer [[buffer(1)]],
-                        uint gid [[thread_position_in_grid]])
+kernel void swizzle_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
+                            device uchar *outputBuffer [[buffer(1)]],
+                            constant SwizzleUniforms& uniforms [[buffer(2)]],
+                            constant uint& size [[buffer(3)]],
+                            uint gid [[thread_position_in_grid]])
 {
-    outputBuffer[4 * gid]     = imageBuffer[4 * gid];     // r
-    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + 1]; // g
-    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid + 2]; // b
-    outputBuffer[4 * gid + 3] = 255;                      // a
-}
+    if (gid > size) {
+        return;
+    }
 
-kernel void bgr_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
-                        device uchar *outputBuffer [[buffer(1)]],
-                        uint gid [[thread_position_in_grid]])
-{
-    outputBuffer[4 * gid]     = imageBuffer[4 * gid + 2]; // r
-    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + 1]; // g
-    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid];     // b
-    outputBuffer[4 * gid + 3] = 255;                      // a
-}
+    outputBuffer[4 * gid]     = imageBuffer[4 * gid + uniforms.swizzle[0]]; // r
+    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + uniforms.swizzle[1]]; // g
+    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid + uniforms.swizzle[2]]; // b
 
-kernel void xrgb_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
-                         device uchar *outputBuffer [[buffer(1)]],
-                         uint gid [[thread_position_in_grid]])
-{
-    outputBuffer[4 * gid]     = imageBuffer[4 * gid + 1]; // r
-    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + 2]; // g
-    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid + 3]; // b
-    outputBuffer[4 * gid + 3] = imageBuffer[4 * gid];     // a
-}
-
-
-kernel void xbgr_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
-                         device uchar *outputBuffer [[buffer(1)]],
-                         uint gid [[thread_position_in_grid]])
-{
-    outputBuffer[4 * gid]     = imageBuffer[4 * gid + 3]; // r
-    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + 2]; // g
-    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid + 1]; // b
-    outputBuffer[4 * gid + 3] = imageBuffer[4 * gid];     // a
+    if (uniforms.hasAlpha) {
+        outputBuffer[4 * gid + 3] = imageBuffer[4 * gid + uniforms.swizzle[3]];
+    } else {
+        outputBuffer[4 * gid + 3] = 255;
+    }
 }
 
 // ----------------------------------------------------------------------------

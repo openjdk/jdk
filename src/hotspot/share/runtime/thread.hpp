@@ -1812,7 +1812,7 @@ class Threads: AllStatic {
   static void create_vm_init_libraries();
   static void create_vm_init_agents();
   static void shutdown_vm_agents();
-  static bool destroy_vm();
+  static void destroy_vm();
   // Supported VM versions via JNI
   // Includes JNI_VERSION_1_1
   static jboolean is_supported_jni_version_including_1_1(jint version);
