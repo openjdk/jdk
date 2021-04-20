@@ -169,17 +169,17 @@ public class HtmlDoclet extends AbstractDoclet {
 
     @Override // defined by AbstractDoclet
     public void generateClassFiles(ClassTree classTree) throws DocletException {
-        List<String> summaries = configuration.getOptions().summaryForRelease();
+        List<String> since = configuration.getOptions().since();
         if (!(configuration.getOptions().noDeprecated()
                 || configuration.getOptions().noDeprecatedList())) {
-            DeprecatedAPIListBuilder deprecatedBuilder = new DeprecatedAPIListBuilder(configuration, summaries);
+            DeprecatedAPIListBuilder deprecatedBuilder = new DeprecatedAPIListBuilder(configuration, since);
             if (!deprecatedBuilder.isEmpty()) {
                 configuration.deprecatedAPIListBuilder = deprecatedBuilder;
                 configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
             }
         }
-        if (!summaries.isEmpty()) {
-            NewAPIBuilder newAPIBuilder = new NewAPIBuilder(configuration, summaries);
+        if (!since.isEmpty()) {
+            NewAPIBuilder newAPIBuilder = new NewAPIBuilder(configuration, since);
             if (!newAPIBuilder.isEmpty()) {
                 configuration.newAPIPageBuilder = newAPIBuilder;
                 configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.NEW);

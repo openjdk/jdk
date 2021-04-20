@@ -32,6 +32,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -176,10 +177,10 @@ public abstract class BaseOptions {
     private boolean linkSource = false;
 
     /**
-     * Argument for command line option {@code --summary-for-release}.
+     * Argument for command line option {@code -since}.
      */
     // A list containing release names
-    private final List<String> summaryForRelease = new ArrayList<>();
+    private final List<String> since = new ArrayList<>();
 
     /**
      * Argument for command-line option {@code -nocomment}.
@@ -398,10 +399,10 @@ public abstract class BaseOptions {
                     }
                 },
 
-                new Option(resources, "--summary-for-release", 1) {
+                new Option(resources, "-since", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        summaryForRelease.addAll(Arrays.asList(args.get(0).split("\\s*,\\s*")));
+                        since.add(args.get(0));
                         return true;
                     }
                 },
@@ -814,10 +815,10 @@ public abstract class BaseOptions {
     }
 
     /**
-     * Arguments for command line option {@code --summary-for-release}.
+     * Arguments for command line option {@code -since}.
      */
-    public List<String> summaryForRelease() {
-        return summaryForRelease;
+    public List<String> since() {
+        return Collections.unmodifiableList(since);
     }
 
     /**

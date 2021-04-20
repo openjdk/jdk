@@ -333,7 +333,7 @@ define SetupApiDocsGenerationBody
   $1_OPTIONS += -overview $$($1_OVERVIEW)
 
   # Add summary pages for new/deprecated APIs in recent releases
-  $1_OPTIONS += --summary-for-release 12,13,14,15,16,17
+  $1_OPTIONS += -since 17 -since 16 -since 15 -since 14 -since 13 -since 12
 
   $$(foreach g, $$($1_GROUPS), \
     $$(eval $1_OPTIONS += -group "$$($$g_GROUP_NAME)" "$$($$g_GROUP_MODULES)") \
