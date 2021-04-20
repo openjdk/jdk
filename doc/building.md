@@ -454,6 +454,7 @@ rather than bundling the JDK's own copy.
   * To install on an rpm-based Linux, try running `sudo yum install
     freetype-devel`.
   * To install on Alpine Linux, try running `sudo apk add freetype-dev`.
+  * To install on macOS, try running `brew install freetype`.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
