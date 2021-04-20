@@ -125,12 +125,12 @@ public class CommandLinePositiveTest {
     @Test
     public void testHelp() throws Exception {
         var usageText =
-                "Usage: java -m jdk.httpserver [-b bind address] [-d directory] [-o none|default|verbose] [-p port]";
+                "Usage: java -m jdk.httpserver [-b bind address] [-d directory] [-o none|info|verbose] [-p port]";
         var optionsText = """
                 Options:
                 bind address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
                 directory       - Directory to serve. Default: current directory.
-                output          - Output format. none|default|verbose. Default: default.
+                output          - Output format. none|info|verbose. Default: info.
                 port            - Port to listen on. Default: 8000.
                 To stop the server, press Crtl + C.""";
 

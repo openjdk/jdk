@@ -61,7 +61,7 @@ import sun.net.httpserver.OutputFilter;
  *
  * <p> Example of a simple file server:
  * <pre>    {@code var addr = new InetSocketAddress(8080);
- *    var server = SimpleFileServer.createFileServer(addr, Path.of("/some/path"), OutputLevel.DEFAULT);
+ *    var server = SimpleFileServer.createFileServer(addr, Path.of("/some/path"), OutputLevel.INFO);
  *    server.start();}</pre>
  *
  * <h2>File handler</h2>
@@ -112,7 +112,7 @@ import sun.net.httpserver.OutputFilter;
  * <p> The simple HTTP file server is provided via the main entry point of the
  * {@code jdk.httpserver} module, which can be used on the command line as such:
  *
- * <pre>    {@code java -m jdk.httpserver [-b bind address] [-d directory] [-h to show help message] [-o none|default|verbose] [-p port]}</pre>
+ * <pre>    {@code java -m jdk.httpserver [-b bind address] [-d directory] [-h to show help message] [-o none|info|verbose] [-p port]}</pre>
  *
  * @since 17
  */
@@ -128,15 +128,11 @@ public final class SimpleFileServer {
      * processing exchanges.
      */
     public enum OutputLevel {
-        /**
-         * Used to specify no log message output level.
-         */
-        NONE,
 
         /**
-         * Used to specify the default log message output level.
+         * Used to specify the informative log message output level.
          *
-         * <p> The default log message format is based on the
+         * <p> The log message format is based on the
          * <a href='https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format'>Common Logfile Format</a>,
          * that includes the following information about an {@code HttpExchange}:
          *
@@ -149,13 +145,13 @@ public final class SimpleFileServer {
          * are not captured in the implementation, so are always represented as
          * {@code '-'}.
          */
-        DEFAULT,
+        INFO,
 
         /**
          * Used to specify the verbose log message output level.
          *
          * <p> Additional to the information provided by the
-         * {@linkplain OutputLevel#DEFAULT default} level, the verbose level
+         * {@linkplain OutputLevel#INFO info} level, the verbose level
          * includes the request and response headers of the {@code HttpExchange}
          * and the absolute path of the resource served up.
          */
@@ -172,9 +168,8 @@ public final class SimpleFileServer {
      * {@link #createFileHandler(Path) createFileHandler(root)}.
      *
      * <p> An output level can be given to print log messages relating to the
-     * exchanges handled by the server. The log messages, if any, are printed to
-     * {@code System.out}. If {@link OutputLevel#NONE OutputLevel.NONE} is
-     * given, no log messages are printed.
+     * exchanges handled by the server. The log messages are printed to
+     * {@code System.out}.
      *
      * @param addr        the address to listen on
      * @param root        the root of the directory to be served, must be an absolute path
@@ -193,10 +188,36 @@ public final class SimpleFileServer {
         Objects.requireNonNull(outputLevel);
         try {
             var handler = FileServerHandler.create(root, MIME_TABLE);
-            if (outputLevel.equals(OutputLevel.NONE))
-                return HttpServer.create(addr, 0, "/", handler);
-            else
-                return HttpServer.create(addr, 0, "/", handler, OutputFilter.create(System.out, outputLevel));
+            return HttpServer.create(addr, 0, "/", handler, OutputFilter.create(System.out, outputLevel));
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
+
+    /**
+     * Creates a <i>file server</i> the serves files from a given path on the
+     * file-system.
+     *
+     * <p> The server is configured with an initial handler that maps the
+     * URI path "/" to a <i>file handler</i>. The initial handler is a <i>file
+     * handler</i> created as if by an invocation of
+     * {@link #createFileHandler(Path) createFileHandler(root)}.
+     *
+     * @param addr        the address to listen on
+     * @param root        the root of the directory to be served, must be an absolute path
+     * @return an HttpServer
+     * @throws IllegalArgumentException if root is not absolute, not a directory,
+     *         does not exist, or is not readable
+     * @throws UncheckedIOException if an I/O error occurs
+     * @throws NullPointerException if any argument is null
+     */
+    public static HttpServer createFileServer(InetSocketAddress addr,
+                                              Path root) {
+        Objects.requireNonNull(addr);
+        Objects.requireNonNull(root);
+        try {
+            var handler = FileServerHandler.create(root, MIME_TABLE);
+            return HttpServer.create(addr, 0, "/", handler);
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
@@ -242,15 +263,10 @@ public final class SimpleFileServer {
      * HttpExchange exchanges}. The log messages are printed to the given
      * {@code OutputStream}.
      *
-     * @apiNote To not output any log messages it is recommended to not use a
-     * filter.
-     *
      * @param out         the stream to print to
      * @param outputLevel the output level
      * @return a Filter
-     * @throws IllegalArgumentException if {@link OutputLevel#NONE OutputLevel.NONE}
-     *                                  is given
-     * @throws NullPointerException     if any argument is null
+     * @throws NullPointerException if any argument is null
      */
     // TODO: since we're using an output stream, we should clarity the charset
     //       used or accept a PrintStream

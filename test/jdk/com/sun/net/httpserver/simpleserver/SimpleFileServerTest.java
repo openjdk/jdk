@@ -76,7 +76,7 @@ public class SimpleFileServerTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -109,7 +109,7 @@ public class SimpleFileServerTest {
         var root = Files.createDirectory(CWD.resolve("testDirectoryGET"));
         var file = Files.writeString(root.resolve("yFile.txt"), "some text", CREATE);
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -130,7 +130,7 @@ public class SimpleFileServerTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -163,7 +163,7 @@ public class SimpleFileServerTest {
         var root = Files.createDirectory(CWD.resolve("testDirectoryHEAD"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -183,7 +183,7 @@ public class SimpleFileServerTest {
     public void testNotFound() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testNotFound"));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -201,7 +201,7 @@ public class SimpleFileServerTest {
     public void testNull() {
         final var addr = InetSocketAddress.createUnresolved("foo", 8080);
         final var path = Path.of("/tmp");
-        final var levl = OutputLevel.DEFAULT;
+        final var levl = OutputLevel.INFO;
         assertThrows(NPE, () -> SimpleFileServer.createFileServer(null, null, null));
         assertThrows(NPE, () -> SimpleFileServer.createFileServer(null, null, levl));
         assertThrows(NPE, () -> SimpleFileServer.createFileServer(null, path, null));
@@ -219,14 +219,14 @@ public class SimpleFileServerTest {
 
     @Test
     public void testInitialSlashContext() {
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, CWD, OutputLevel.DEFAULT);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, CWD, OutputLevel.INFO);
         ss.removeContext("/"); // throws if no context.
         ss.stop(0);
     }
 
     @Test
     public void testBound() {
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, CWD, OutputLevel.DEFAULT);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, CWD, OutputLevel.INFO);
         var boundAddr = ss.getAddress();
         ss.stop(0);
         assertTrue(boundAddr.getAddress() != null);
@@ -241,19 +241,19 @@ public class SimpleFileServerTest {
             assert Files.isDirectory(p);
             assert Files.exists(p);
             assert !p.isAbsolute();
-            var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.DEFAULT));
+            var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
             assertTrue(iae.getMessage().contains("is not absolute"));
         }
         {   // not a directory
             Path p = Files.createFile(CWD.resolve("aFile"));
             assert !Files.isDirectory(p);
-            var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.DEFAULT));
+            var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
             assertTrue(iae.getMessage().contains("not a directory"));
         }
         {   // does not exist
             Path p = CWD.resolve("doesNotExist");
             assert !Files.exists(p);
-            var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.DEFAULT));
+            var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
             assertTrue(iae.getMessage().contains("does not exist"));
         }
         {   // not readable
@@ -261,7 +261,7 @@ public class SimpleFileServerTest {
             p.toFile().setReadable(false);
             assert !Files.isReadable(p);
             try {
-                var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.DEFAULT));
+                var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
                 assertTrue(iae.getMessage().contains("not readable"));
             } finally {
                 p.toFile().setReadable(true);
@@ -273,7 +273,7 @@ public class SimpleFileServerTest {
     public void testXss() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testXss"));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();

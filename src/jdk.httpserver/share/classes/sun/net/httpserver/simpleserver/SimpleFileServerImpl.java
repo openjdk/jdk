@@ -55,7 +55,7 @@ import java.util.concurrent.Executors;
  * <li>address: wildcard address (all interfaces)</li>
  * <li>port: 8000</li>
  * <li>directory: current working directory</li>
- * <li>outputLevel: default</li></ul>
+ * <li>outputLevel: info</li></ul>
  * <p>
  * The implementation is provided via the main entry point of the jdk.httpserver
  * module.
@@ -64,7 +64,7 @@ final class SimpleFileServerImpl {
     private static final InetAddress ADDR = null;
     private static final int PORT = 8000;
     private static final Path ROOT = Path.of("").toAbsolutePath();
-    private static final OutputLevel OUTPUT_LEVEL = OutputLevel.DEFAULT;
+    private static final OutputLevel OUTPUT_LEVEL = OutputLevel.INFO;
     private static PrintWriter out;
 
     /**
@@ -101,8 +101,8 @@ final class SimpleFileServerImpl {
                     }
                     case "-b" -> addr = InetAddress.getByName(optionArg = options.next());
                     case "-d" -> root = Path.of(optionArg = options.next());
-                    case "-o" -> outputLevel = Enum.valueOf(OutputLevel.class,
-                            (optionArg = options.next()).toUpperCase(Locale.ROOT));
+                    case "-o" -> outputLevel = (optionArg = options.next()).equals("none") ? null
+                                : Enum.valueOf(OutputLevel.class, optionArg.toUpperCase(Locale.ROOT));
                     case "-p" -> port = Integer.parseInt(optionArg = options.next());
                     default -> throw new AssertionError();
                 }
@@ -125,7 +125,8 @@ final class SimpleFileServerImpl {
         // configure and start server
         try {
             var socketAddr = new InetSocketAddress(addr, port);
-            var server = SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
+            var server = outputLevel == null ? SimpleFileServer.createFileServer(socketAddr, root)
+                    : SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
             printStartMessage(root, server.getAddress().getAddress(), server.getAddress().getPort());

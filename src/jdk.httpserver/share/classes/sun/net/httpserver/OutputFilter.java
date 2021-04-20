@@ -37,7 +37,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * A Filter that outputs log messages about an HttpExchange.
  *
- * <p> If the outputLevel is DEFAULT, the format is based on the
+ * <p> If the outputLevel is INFO, the format is based on the
  * <a href='https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format'>Common Logfile Format</a>.
  * In this case the output includes the following information about an exchange:
  * 
@@ -66,9 +66,6 @@ public final class OutputFilter extends Filter {
     }
 
     public static OutputFilter create(OutputStream os, OutputLevel outputLevel) {
-        if (outputLevel.equals(OutputLevel.NONE)) {
-            throw new IllegalArgumentException("Not a valid outputLevel: " + outputLevel);
-        }
         return new OutputFilter(os, outputLevel);
     }
 
