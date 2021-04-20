@@ -302,6 +302,8 @@ bool ciMethod::has_balanced_monitors() {
     ResourceMark rm(THREAD);
     GeneratePairingInfo gpi(method);
     if (!gpi.compute_map(THREAD)) {
+      // Failure is only possible for a resource-area OOM, or malformed bytecode
+      // with verification disabled.
       assert(false, "Unexpected exception from compute_map");
     }
     if (!gpi.monitor_safe()) {
