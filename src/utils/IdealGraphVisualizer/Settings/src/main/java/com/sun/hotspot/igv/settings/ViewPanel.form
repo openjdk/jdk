@@ -135,7 +135,7 @@
             <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="ff" green="ff" red="ff" type="rgb"/>
             </Property>
-            <Property name="toolTipText" type="java.lang.String" value="Single-line format string for nodes in edge tooltips, slot tooltips , and node search bar. Properties are specified with brackets  (example: &quot;[idx]&quot;)."/>
+            <Property name="toolTipText" type="java.lang.String" value="Single-line format string for nodes in edge tooltips, slot tooltips, and node search bar. Properties are specified with brackets  (example: &quot;[idx]&quot;)."/>
           </Properties>
           <AuxValues>
             <AuxValue name="JavaCodeGenerator_SerializeTo" type="java.lang.String" value="ViewPanel_nodeShortTextField"/>

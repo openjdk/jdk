@@ -69,7 +69,7 @@ final class ViewPanel extends javax.swing.JPanel {
         org.openide.awt.Mnemonics.setLocalizedText(jLabel4, "Short Node Text");
 
         nodeShortTextField.setBackground(new java.awt.Color(255, 255, 255));
-        nodeShortTextField.setToolTipText("Single-line format string for nodes in edge tooltips, slot tooltips , and node search bar. Properties are specified with brackets  (example: \"[idx]\").");
+        nodeShortTextField.setToolTipText("Single-line format string for nodes in edge tooltips, slot tooltips, and node search bar. Properties are specified with brackets  (example: \"[idx]\").");
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
