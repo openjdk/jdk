@@ -292,6 +292,8 @@ public interface DocTreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
+     *
+     * @since 17
      */
     R visitSpec(SpecTree node, P p);
 
