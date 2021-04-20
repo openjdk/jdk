@@ -47,8 +47,6 @@ import sun.jvm.hotspot.ci.ciEnv;
 import sun.jvm.hotspot.code.CodeBlob;
 import sun.jvm.hotspot.code.CodeCacheVisitor;
 import sun.jvm.hotspot.code.NMethod;
-import sun.jvm.hotspot.debugger.cdbg.CDebugger;
-import sun.jvm.hotspot.debugger.cdbg.LoadObject;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
