@@ -139,8 +139,8 @@ void G1ConcurrentMarkThread::run_service() {
     assert(in_progress(), "must be");
 
     GCIdMark gc_id_mark;
-    FormatBuffer<128> _format("Concurrent %s Cycle", _state == FullMark ? "Mark" : "Undo");
-    GCTraceConcTime(Info, gc) tt(_format);
+    FormatBuffer<128> title("Concurrent %s Cycle", _state == FullMark ? "Mark" : "Undo");
+    GCTraceConcTime(Info, gc) tt(title);
 
     concurrent_cycle_start();
 
