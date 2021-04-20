@@ -70,9 +70,13 @@ ifeq ($(call isTargetOs, windows), true)
     $(call LogDebug, Setting _NT_SYMBOL_PATH to $(_NT_SYMBOL_PATH))
   endif
 else ifneq ($(DEBUG_LEVEL), release)
+  $(warning CH: 1)
   ifeq ($(call isTargetOs, linux), true)
+    $(warning CH: 2)
     ifndef _JVM_DWARF_PATH
+      $(warning CH: 3)
       export _JVM_DWARF_PATH := $(SYMBOLS_IMAGE_DIR)
+      $(warning CH: $(_JVM_DWARF_PATH))
       $(call LogDebug, Setting _JVM_DWARF_PATH to $(_JVM_DWARF_PATH))
     endif
   endif
@@ -787,9 +791,10 @@ define SetupRunJtregTestBody
   ifeq ($$(call isTargetOs, windows), true)
     $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
   else ifeq ($$(call isTargetOs, linux), true)
+      $(warning CH: E: $(_JVM_DWARF_PATH))
       $1_JTREG_BASIC_OPTIONS += -e:_JVM_DWARF_PATH
   endif
-    
+
   $1_JTREG_BASIC_OPTIONS += \
       $$(addprefix -javaoption:, $$(JTREG_JAVA_OPTIONS)) \
       $$(addprefix -vmoption:, $$(JTREG_VM_OPTIONS)) \
