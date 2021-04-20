@@ -61,9 +61,8 @@ public class TestG1SkipCompaction {
         Matcher m = r.matcher(output.getStdout());
 
         if (!m.find()) {
-            throw new RuntimeException("Could not find any no moving region output");
+            throw new RuntimeException("Could not find any not compacted regions in the logs");
         }
-
     }
 
     public static void main(String[] args) throws Exception {
