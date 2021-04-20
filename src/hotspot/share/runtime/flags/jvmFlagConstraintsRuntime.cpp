@@ -133,18 +133,6 @@ JVMFlag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose) {
   }
 }
 
-JVMFlag::Error LogAsyncIntervalConstraintFunc(intx value, bool verbose) {
-    if ((value % PeriodicTask::interval_gran) != 0) {
-    JVMFlag::printError(verbose,
-                        "LogAsyncInterval (" INTX_FORMAT ") must be "
-                        "evenly divisible by PeriodicTask::interval_gran (%d)\n",
-                        value, PeriodicTask::interval_gran);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
-  }
-}
-
 JVMFlag::Error VMPageSizeConstraintFunc(uintx value, bool verbose) {
   uintx min = (uintx)os::vm_page_size();
   if (value < min) {

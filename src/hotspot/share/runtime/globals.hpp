@@ -2030,11 +2030,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, AsyncLogging, false,                                        \
           "Enble asynchronous mode for all file-based log outputs")         \
                                                                             \
-  product(intx, LogAsyncInterval, 300,                                      \
-          "Milliseconds between asynchronous log flushing")                 \
-          range(PeriodicTask::min_interval, max_jint)                       \
-          constraint(LogAsyncIntervalConstraintFunc, AtParse)               \
-                                                                            \
   product(size_t, AsyncLogBufferSize, 2*K,                                  \
           "Entries of the buffer for Async logs")                           \
           range(100, 100*K)                                                 \

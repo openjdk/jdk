@@ -128,13 +128,9 @@ class LogAsyncFlusher : public NonJavaThread {
   static LogAsyncFlusher* _instance;
 
   volatile bool _should_terminate;
-  // The semantics of _lock is like JVM monitor.
-  // This thread sleeps and only wakes up by the monitor if any of events happen.
-  //   1. buffer is half-full
-  //   2. buffer is full
-  //   3. timeout defined by LogAsyncInterval
-  //
-  // It also roles as a lock to consolidate buffer's MT-safety.
+  // The semantics of _lock is more like a Java monitor.
+  // AssyncLog thread sleeps on _lock until the occupancy of the buffer is over 3/4, or timeout
+  // It also acts as a mutex to consolidate buffer's MT-safety.
   Monitor _lock;
   AsyncLogMap _stats; // statistics of dropping messages.
   AsyncLogBuffer _buffer;

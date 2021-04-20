@@ -211,11 +211,15 @@ TEST_VM_F(AsyncLogTest, droppingMessage) {
   const size_t sz = 100;
   LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
   ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
+  // shrink async buffer.
   AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz);
+  LogMessage(logging) lm;
 
-  for (size_t i=0; i < sz * 1000; ++i) {
-    log_debug(logging)("a lot of log...");
+  // write 100x more messages than its capacity in burst
+  for (size_t i = 0; i < sz * 100; ++i) {
+    lm.debug("a lot of log...");
   }
+  lm.flush();
   flusher->flush();
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped..."));
 }

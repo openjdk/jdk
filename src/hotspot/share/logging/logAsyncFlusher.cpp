@@ -63,8 +63,9 @@ void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
   assert(_buffer.size() < AsyncLogBufferSize, "_buffer is over-sized.");
   _buffer.push_back(msg);
 
+  // notify async log thread if occupancy is over 3/4
   size_t sz = _buffer.size();
-  if (sz == (AsyncLogBufferSize >> 1) || sz == AsyncLogBufferSize) {
+  if (sz > (AsyncLogBufferSize >> 2) * 3 ) {
     _lock.notify();
   }
 }
@@ -136,7 +137,7 @@ void LogAsyncFlusher::run() {
   while (!_should_terminate) {
     {
       MonitorLocker m(&_lock, Mutex::_no_safepoint_check_flag);
-      m.wait(LogAsyncInterval);
+      m.wait(500 /* ms, timeout*/);
     }
     flush();
   }

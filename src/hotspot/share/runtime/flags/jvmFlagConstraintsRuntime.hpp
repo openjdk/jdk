@@ -41,7 +41,6 @@
   f(intx,   BiasedLockingBulkRevokeThresholdFunc)     \
   f(intx,   BiasedLockingDecayTimeFunc)               \
   f(intx,   PerfDataSamplingIntervalFunc)             \
-  f(intx,   LogAsyncIntervalConstraintFunc)           \
   f(uintx,  VMPageSizeConstraintFunc)                 \
   f(size_t, NUMAInterleaveGranularityConstraintFunc)
 
