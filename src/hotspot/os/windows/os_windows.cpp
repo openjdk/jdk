@@ -519,16 +519,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 static unsigned __stdcall thread_native_entry(Thread* thread) {
 
   thread->record_stack_base_and_size();
-
-  // Try to randomize the cache line index of hot stack frames.
-  // This helps when threads of the same stack traces evict each other's
-  // cache lines. The threads can be either from the same JVM instance, or
-  // from different JVM instances. The benefit is especially true for
-  // processors with hyperthreading technology.
-  static int counter = 0;
-  int pid = os::current_process_id();
-  _alloca(((pid ^ counter++) & 7) * 128);
-
   thread->initialize_thread_current();
 
   OSThread* osthr = thread->osthread();

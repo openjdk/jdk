@@ -419,8 +419,10 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
-            configure_args: concat(common.configure_args_64bit,
+            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc"],
+            configure_args: concat(
+                (input.build_cpu == "x64" ? common.configure_args_64bit
+                 : "--openjdk-target=x86_64-linux-gnu"),
                 "--with-zlib=system", "--disable-dtrace",
                 (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
                     "--build=x86_64-unknown-linux-gnu" ] : [])),
@@ -1044,10 +1046,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc10.2.0-OL6.4+1.0",
+        linux_x64: "gcc10.3.0-OL6.4+1.0",
         macosx: "Xcode12.4+1.0",
-        windows_x64: "VS2019-16.7.2+1.1",
-        linux_aarch64: "gcc10.2.0-OL7.6+1.0",
+        windows_x64: "VS2019-16.9.3+1.0",
+        linux_aarch64: "gcc10.3.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0"
@@ -1122,7 +1124,10 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "devkit-" + input.build_platform,
-            revision: devkit_platform_revisions[input.build_platform]
+            revision: devkit_platform_revisions[input.build_platform],
+            // Only set --with-build-devkit when cross compiling.
+            configure_args: (input.build_cpu == input.target_cpu ? false
+                : "--with-build-devkit=" + input.get("build_devkit", "home_path"))
         },
 
         lldb: {
