@@ -287,6 +287,9 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
                 entry.date = new Date();
 
                 // Protect the encoding of the key
+                if (password == null) {
+                    throw new KeyStoreException("password can't be null");
+                }
                 passwordBytes = convertToBytes(password);
                 keyProtector = new KeyProtector(passwordBytes);
                 entry.protectedPrivKey = keyProtector.protect(key);
