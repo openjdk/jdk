@@ -69,6 +69,13 @@ ifeq ($(call isTargetOs, windows), true)
         $(subst $(DQUOTE),, $(SYMBOL_PATH))))
     $(call LogDebug, Setting _NT_SYMBOL_PATH to $(_NT_SYMBOL_PATH))
   endif
+else ifneq ($(DEBUG_LEVEL), release)
+  ifeq ($(call isTargetOs, linux), true)
+    ifndef _JVM_DWARF_PATH
+      export _JVM_DWARF_PATH := $(SYMBOLS_IMAGE_DIR)
+      $(call LogDebug, Setting _JVM_DWARF_PATH to $(_JVM_DWARF_PATH))
+    endif
+  endif
 endif
 
 ################################################################################
@@ -779,8 +786,10 @@ define SetupRunJtregTestBody
   # symbol lookup in hserr files
   ifeq ($$(call isTargetOs, windows), true)
     $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
+  else ifeq ($$(call isTargetOs, linux), true)
+      $1_JTREG_BASIC_OPTIONS += -e:_JVM_DWARF_PATH
   endif
-
+    
   $1_JTREG_BASIC_OPTIONS += \
       $$(addprefix -javaoption:, $$(JTREG_JAVA_OPTIONS)) \
       $$(addprefix -vmoption:, $$(JTREG_VM_OPTIONS)) \

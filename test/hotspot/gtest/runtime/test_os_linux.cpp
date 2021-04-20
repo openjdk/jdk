@@ -433,6 +433,7 @@ TEST(os_linux, addr_to_function_valid) {
   ASSERT_TRUE(offset >= 0);
 }
 
+#ifndef PRODUCT
 // Test valid address of method JNI_CreateJavaVM in jni.cpp. We should get "jni.cpp" in the buffer and a valid line number.
 TEST(os_linux, decoder_get_source_info_valid) {
   char buf[128] = "";
@@ -449,7 +450,7 @@ TEST(os_linux, decoder_get_source_info_valid_truncated) {
   char buf[128] = "";
   int line = -1;
   memset(buf, 'X', sizeof(buf));
-  address valid_function_pointer = (address) JNI_CreateJavaVM;
+  address valid_function_pointer = (address)JNI_CreateJavaVM;
   ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, 7, &line));
   ASSERT_TRUE(buf[7 - 1] == '\0');
   ASSERT_TRUE(buf[7] == 'X');
@@ -473,4 +474,5 @@ TEST(os_linux, decoder_get_source_info_invalid) {
     ASSERT_TRUE(line == -1);
   }
 }
-#endif
+#endif // NOT PRODUCT
+#endif // LINUX
