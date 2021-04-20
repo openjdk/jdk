@@ -205,12 +205,15 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1RedirtyCardsLocalQueueSet _rdc_local_qset;
   UpdateLogBuffersDeferred _log_buffer_cl;
 
+  uint volatile* _num_failed_regions;
+
 public:
-  RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs, uint worker_id) :
+  RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs, uint worker_id, uint volatile* num_failed_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
     _rdc_local_qset(rdcqs),
-    _log_buffer_cl(&_rdc_local_qset) {
+    _log_buffer_cl(&_rdc_local_qset),
+    _num_failed_regions(num_failed_regions) {
   }
 
   ~RemoveSelfForwardPtrHRClosure() {
@@ -252,6 +255,8 @@ public:
       hr->rem_set()->clear_locked(true);
 
       hr->note_self_forwarding_removal_end(live_bytes);
+
+      Atomic::inc(_num_failed_regions, memory_order_relaxed);
     }
     return false;
   }
@@ -261,10 +266,11 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQue
   AbstractGangTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _rdcqs(rdcqs),
-  _hrclaimer(_g1h->workers()->active_workers()) { }
+  _hrclaimer(_g1h->workers()->active_workers()),
+  _num_failed_regions(0) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id, &_num_failed_regions);
 
   // We need to check all collection set regions whether they need self forward
   // removals, not only the last collection set increment. The reason is that
@@ -272,4 +278,8 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   // otherwise unreachable object at the very end of the collection. That object
   // might cause an evacuation failure in any region in the collection set.
   _g1h->collection_set_par_iterate_all(&rsfp_cl, &_hrclaimer, worker_id);
+}
+
+uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {
+  return Atomic::load(&_num_failed_regions);
 }

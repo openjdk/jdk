@@ -3087,9 +3087,16 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 }
 
 void G1CollectedHeap::remove_self_forwarding_pointers(G1RedirtyCardsQueueSet* rdcqs) {
-  G1ParRemoveSelfForwardPtrsTask rsfp_task(rdcqs);
   uint num_workers = MIN2(workers()->active_workers(), num_regions_failed_evacuation());
-  workers()->run_task(&rsfp_task, num_workers);
+
+  G1ParRemoveSelfForwardPtrsTask cl(rdcqs);
+  log_debug(gc, ergo)("Running %s using %u workers for %u failed regions",
+                      cl.name(), num_workers, num_regions_failed_evacuation());
+  workers()->run_task(&cl, num_workers);
+
+  assert(cl.num_failed_regions() == num_regions_failed_evacuation(),
+         "Removed regions %u inconsistent with expected %u",
+         cl.num_failed_regions(), num_regions_failed_evacuation());
 }
 
 void G1CollectedHeap::restore_after_evac_failure(G1RedirtyCardsQueueSet* rdcqs) {
