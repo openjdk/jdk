@@ -73,7 +73,7 @@ TEST_VM(MetaspaceUtils, committed_compressed_class_pointers) {
   EXPECT_LE(committed_class, committed);
 }
 
-TEST_VM(MetaspaceUtils, none_compressed_class_pointers) {
+TEST_VM(MetaspaceUtils, non_compressed_class_pointers) {
   if (UseCompressedClassPointers) {
     return;
   }
