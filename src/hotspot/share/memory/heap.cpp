@@ -227,7 +227,8 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   const size_t committed_segments_size = align_to_page_size(_number_of_committed_segments);
 
   // reserve space for _segmap
-  if (!_segmap.initialize(reserved_segments_size, committed_segments_size)) {
+  ReservedSpace seg_rs(reserved_segments_size);
+  if (!_segmap.initialize(seg_rs, committed_segments_size)) {
     return false;
   }
 

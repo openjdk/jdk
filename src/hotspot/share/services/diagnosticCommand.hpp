@@ -399,6 +399,32 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+#if INCLUDE_CDS
+class DumpSharedArchiveDCmd: public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _suboption;   // option of VM.cds
+  DCmdArgument<char*> _filename;    // file name, optional
+public:
+  DumpSharedArchiveDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.cds";
+  }
+  static const char* description() {
+    return "Dump a static or dynamic shared archive including all shareable classes";
+  }
+  static const char* impact() {
+    return "Medium: Pause time depends on number of loaded classes";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+#endif // INCLUDE_CDS
+
 // See also: thread_dump in attachListener.cpp
 class ThreadDumpDCmd : public DCmdWithParser {
 protected:

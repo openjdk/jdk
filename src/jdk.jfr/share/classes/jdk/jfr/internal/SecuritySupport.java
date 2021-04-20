@@ -469,7 +469,7 @@ public final class SecuritySupport {
         return doPrivilegedWithReturn(() -> new Thread(runnable, threadName), new Permission[0]);
     }
 
-    static void setDaemonThread(Thread t, boolean daemon) {
+    public static void setDaemonThread(Thread t, boolean daemon) {
       doPrivileged(()-> t.setDaemon(daemon), new RuntimePermission("modifyThread"));
     }
 

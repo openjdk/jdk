@@ -420,6 +420,10 @@ class Dependencies: public ResourceObj {
   static Klass*  find_unique_concrete_subtype(InstanceKlass* ctxk);
   static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m);
 
+#ifdef ASSERT
+  static bool verify_method_context(InstanceKlass* ctxk, Method* m);
+#endif // ASSERT
+
   // Create the encoding which will be stored in an nmethod.
   void encode_content_bytes();
 
@@ -610,7 +614,7 @@ class Dependencies: public ResourceObj {
   };
   friend class Dependencies::DepStream;
 
-  static void print_statistics() PRODUCT_RETURN;
+  static void print_statistics();
 };
 
 
@@ -719,13 +723,13 @@ class DepChange : public StackObj {
 class KlassDepChange : public DepChange {
  private:
   // each change set is rooted in exactly one new type (at present):
-  Klass* _new_type;
+  InstanceKlass* _new_type;
 
   void initialize();
 
  public:
   // notes the new type, marks it and all its super-types
-  KlassDepChange(Klass* new_type)
+  KlassDepChange(InstanceKlass* new_type)
     : _new_type(new_type)
   {
     initialize();
@@ -741,7 +745,7 @@ class KlassDepChange : public DepChange {
     nm->mark_for_deoptimization(/*inc_recompile_counts=*/true);
   }
 
-  Klass* new_type() { return _new_type; }
+  InstanceKlass* new_type() { return _new_type; }
 
   // involves_context(k) is true if k is new_type or any of the super types
   bool involves_context(Klass* k);
