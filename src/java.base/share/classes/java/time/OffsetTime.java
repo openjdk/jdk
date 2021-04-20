@@ -1178,9 +1178,9 @@ public final class OffsetTime
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         OffsetTime end = OffsetTime.from(endExclusive);
-        if (unit instanceof ChronoUnit u) {
+        if (unit instanceof ChronoUnit chronoUnit) {
             long nanosUntil = end.toEpochNano() - toEpochNano();  // no overflow
-            switch (u) {
+            switch (chronoUnit) {
                 case NANOS: return nanosUntil;
                 case MICROS: return nanosUntil / 1000;
                 case MILLIS: return nanosUntil / 1000_000;

@@ -1421,17 +1421,17 @@ public final class Duration
      * <p>
      * The comparison is based on the total length of the durations.
      *
-     * @param otherDuration the other duration, null returns false
+     * @param other the other duration, null returns false
      * @return true if the other duration is equal to this one
      */
     @Override
-    public boolean equals(Object otherDuration) {
-        if (this == otherDuration) {
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
         }
-        return (otherDuration instanceof Duration other)
-                && this.seconds == other.seconds
-                && this.nanos == other.nanos;
+        return (other instanceof Duration otherDuration)
+                && this.seconds == otherDuration.seconds
+                && this.nanos == otherDuration.nanos;
     }
 
     /**

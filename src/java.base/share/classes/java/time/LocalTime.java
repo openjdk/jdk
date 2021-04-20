@@ -1066,8 +1066,8 @@ public final class LocalTime
      */
     @Override
     public LocalTime plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit u) {
-            switch (u) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case NANOS: return plusNanos(amountToAdd);
                 case MICROS: return plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
                 case MILLIS: return plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000_000);
@@ -1407,9 +1407,9 @@ public final class LocalTime
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         LocalTime end = LocalTime.from(endExclusive);
-        if (unit instanceof ChronoUnit u) {
+        if (unit instanceof ChronoUnit chronoUnit) {
             long nanosUntil = end.toNanoOfDay() - toNanoOfDay();  // no overflow
-            switch (u) {
+            switch (chronoUnit) {
                 case NANOS: return nanosUntil;
                 case MICROS: return nanosUntil / 1000;
                 case MILLIS: return nanosUntil / 1000_000;

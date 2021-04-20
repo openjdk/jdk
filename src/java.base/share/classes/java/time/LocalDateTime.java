@@ -1683,7 +1683,7 @@ public final class LocalDateTime
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         LocalDateTime end = LocalDateTime.from(endExclusive);
-        if (unit instanceof ChronoUnit u) {
+        if (unit instanceof ChronoUnit chronoUnit) {
             if (unit.isTimeBased()) {
                 long amount = date.daysUntil(end.date);
                 if (amount == 0) {
@@ -1697,7 +1697,7 @@ public final class LocalDateTime
                     amount++;  // safe
                     timePart -= NANOS_PER_DAY;  // safe
                 }
-                switch (u) {
+                switch (chronoUnit) {
                     case NANOS:
                         amount = Math.multiplyExact(amount, NANOS_PER_DAY);
                         break;
