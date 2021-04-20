@@ -994,7 +994,7 @@ class JVMOutput {
 
     public String getCommandLine() {
         return "Command Line:" + System.lineSeparator() + String.join(" ", process.command())
-               + System.lineSeparator() + System.lineSeparator();
+               + System.lineSeparator();
     }
 
     public int getExitCode() {
@@ -1035,10 +1035,10 @@ class JVMOutput {
             // IR exception
             return getCommandLine() + rerunHint;
         } else {
-            return "TestFramework test VM exited with code " + exitCode + System.lineSeparator()
-                   + stdOut + System.lineSeparator() + getCommandLine() + System.lineSeparator()
-                   + System.lineSeparator() + "Error Output" + System.lineSeparator() + "------------"
-                   + System.lineSeparator() + stdErr + System.lineSeparator() + System.lineSeparator() + rerunHint;
+            return "TestFramework test VM exited with code " + exitCode + System.lineSeparator() + stdOut
+                   + System.lineSeparator() + getCommandLine() + System.lineSeparator() + System.lineSeparator()
+                   + "Error Output" + System.lineSeparator() + "------------" + System.lineSeparator() + stdErr
+                   + System.lineSeparator() + System.lineSeparator() + rerunHint;
         }
     }
 }
