@@ -629,11 +629,11 @@ void HandshakeState::do_self_suspend() {
 // escaping the suspend request.
 class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
  public:
-  ThreadSelfSuspensionHandshake() : AsyncHandshakeClosure("ThreadSuspension") {}
+  ThreadSelfSuspensionHandshake() : AsyncHandshakeClosure("ThreadSelfSuspensionHandshake") {}
   void do_thread(Thread* thr) {
-    JavaThread* thread_current = thr->as_Java_thread();
-    assert(thread_current == Thread::current(), "Must be self executed.");
-    thread_current->handshake_state()->do_self_suspend();
+    JavaThread* current = thr->as_Java_thread();
+    assert(current == Thread::current(), "Must be self executed.");
+    current->handshake_state()->do_self_suspend();
   }
 };
 
