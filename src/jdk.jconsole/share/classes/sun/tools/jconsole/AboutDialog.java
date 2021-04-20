@@ -194,11 +194,11 @@ public class AboutDialog extends InternalDialog {
             Highlighter hilite = helpLink.getHighlighter();
             Document doc = helpLink.getDocument();
             String text = doc.getText(0, doc.getLength());
-	    int pos = text.indexOf(urlStr, 0);
+            int pos = text.indexOf(urlStr, 0);
             hilite.addHighlight(pos, pos + urlStr.length(), new HighlightPainter());
         } catch (BadLocationException e) {
             // ignore
-	}
+        }
     }
 
     public void removeHighlights() {
