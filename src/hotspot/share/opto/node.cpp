@@ -303,6 +303,7 @@ static void init_node_notes(Compile* C, int idx, Node_Notes* nn) {
 inline int Node::Init(int req) {
   Compile* C = Compile::current();
   int idx = C->next_unique();
+  NOT_PRODUCT(_igv_idx = C->next_igv_idx());
 
   // Allocate memory for the necessary number of edges.
   if (req > 0) {
@@ -531,6 +532,7 @@ Node *Node::clone() const {
   bs->register_potential_barrier_node(n);
 
   n->set_idx(C->next_unique()); // Get new unique index as well
+  NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
   debug_only( n->verify_construction() );
   NOT_PRODUCT(nodes_created++);
   // Do not patch over the debug_idx of a clone, because it makes it
