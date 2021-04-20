@@ -409,12 +409,17 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     private Content specTagToContent(Element holder, SpecTree specTree) {
-        Content label = htmlWriter.commentTagsToContent(specTree, holder, specTree.getLabel(), isFirstSentence);
+        String specTreeURI = specTree.getURI().getBody();
+        List<? extends DocTree> specTreeLabel = specTree.getLabel();
+        Content label = htmlWriter.commentTagsToContent(specTree, holder, specTreeLabel, isFirstSentence);
+        return getExternalSpecContent(holder, specTree, specTreeURI, textOf(specTreeLabel), label);
+    }
+
+    Content getExternalSpecContent(Element holder, DocTree docTree, String uri, String searchText, Content label) {
         URI specURI;
-        String searchText = null;
         try {
             // Use the canonical title of the spec if one is available
-            specURI = new URI(specTree.getURI().getBody());
+            specURI = new URI(uri);
             ExternalSpecs extSpecs = configuration.externalSpecs;
             if (extSpecs != null) {
                 ExternalSpecs.Entry e = extSpecs.getEntry(specURI);
@@ -424,20 +429,16 @@ public class TagletWriterImpl extends TagletWriter {
             }
         } catch (URISyntaxException e) {
             CommentHelper ch = utils.getCommentHelper(holder);
-            DocTreePath dtp = ch.getDocTreePath(specTree);
+            DocTreePath dtp = ch.getDocTreePath(docTree);
             htmlWriter.messages.error(dtp, "doclet.Invalid_URI", e.getMessage());
             specURI = null;
-        }
-
-        if (searchText == null) {
-            searchText = textOf(specTree.getLabel());
         }
 
         Content labelWithAnchor = createAnchorAndSearchIndex(holder,
                 searchText,
                 label,
                 resources.getText("doclet.External_Specification"),
-                specTree);
+                docTree);
 
         if (specURI == null) {
             return labelWithAnchor;
@@ -454,6 +455,7 @@ public class TagletWriterImpl extends TagletWriter {
 
             return HtmlTree.A(specURI, labelWithAnchor);
         }
+
     }
 
     @Override
@@ -540,6 +542,10 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     protected TypeElement getCurrentPageElement() {
         return htmlWriter.getCurrentPageElement();
+    }
+
+    public HtmlDocletWriter getHtmlWriter() {
+        return htmlWriter;
     }
 
     private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, DocTree tree) {
