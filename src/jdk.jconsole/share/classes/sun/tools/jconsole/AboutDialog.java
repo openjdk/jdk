@@ -159,7 +159,7 @@ public class AboutDialog extends InternalDialog {
         });
         infoAndLogoPanel.add(helpLink, NORTH);
 
-	ImageIcon brandLogoIcon = new ImageIcon(getClass().getResource("resources/brandlogo.png"));
+        ImageIcon brandLogoIcon = new ImageIcon(getClass().getResource("resources/brandlogo.png"));
         JLabel brandLogo = new JLabel(brandLogoIcon, JLabel.LEADING);
 
         JButton closeButton = new JButton(closeAction);
