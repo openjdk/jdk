@@ -588,7 +588,7 @@ class ReferenceProcessorAtomicMutator: StackObj {
 
 enum class RefProcThreadModel { Multi, Single };
 
-class RefProcTask {
+class RefProcTask : StackObj {
 protected:
   ReferenceProcessor& _ref_processor;
   ReferenceProcessorPhaseTimes* _phase_times;
