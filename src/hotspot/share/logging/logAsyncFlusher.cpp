@@ -74,6 +74,9 @@ void LogAsyncFlusher::enqueue(LogFileOutput& output, const LogDecorations& decor
   AsyncLogMessage m(output, decorations, msg);
 
   { // critical area
+    // The rank of _lock is same as _tty_lock on purpuse.
+    // if logging thread is holding _tty_lock now, temporarily yield to _lock.
+    ttyUnlocker ttyul;
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     enqueue_impl(m);
   }
@@ -82,6 +85,7 @@ void LogAsyncFlusher::enqueue(LogFileOutput& output, const LogDecorations& decor
 // LogMessageBuffer consists of a multiple-part/multiple-line messsage.
 // the mutex here gurantees its interity.
 void LogAsyncFlusher::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+  ttyUnlocker ttyul;
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
@@ -115,6 +119,9 @@ bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uintx* counter) {
   return true;
 }
 
+// Caveat: current thread must not hold _tty_lock.
+// Cannot install ttyUnlocker here because flush() may be invoked before defaultStream
+// initialization.
 void LogAsyncFlusher::flush() {
   LinkedListImpl<AsyncLogMessage, ResourceObj::C_HEAP, mtLogging> logs;
 
