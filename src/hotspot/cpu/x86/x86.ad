@@ -5786,8 +5786,8 @@ instruct signumF_reg(regF dst, regF zero, regF one, rFlagsReg cr) %{
     Label exit;
 
     __ ucomiss($dst$$XMMRegister, $zero$$XMMRegister);
-    __ jcc(Assembler::parity, exit);
     __ jcc(Assembler::equal, exit);
+    __ jcc(Assembler::parity, exit);
     __ movflt($dst$$XMMRegister, $one$$XMMRegister);
     __ jcc(Assembler::above, exit);
     __ xorps($dst$$XMMRegister, ExternalAddress(float_signflip()));
@@ -5805,8 +5805,8 @@ instruct signumD_reg(regD dst, regD zero, regD one, rFlagsReg cr) %{
     Label exit;
 
     __ ucomisd($dst$$XMMRegister, $zero$$XMMRegister);
-    __ jcc(Assembler::parity, exit);
     __ jcc(Assembler::equal, exit);
+    __ jcc(Assembler::parity, exit);
     __ movdbl($dst$$XMMRegister, $one$$XMMRegister);
     __ jcc(Assembler::above, exit);
     __ xorpd($dst$$XMMRegister, ExternalAddress(double_signflip()));
