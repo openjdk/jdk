@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         REVERSE {
             @Override
             public int compare(Path f1, Path f2) {
-                return -f1.getFileName().compareTo(f2.getFileName());
+                return f2.getFileName().compareTo(f1.getFileName());
             }
         }
     }
@@ -741,13 +741,13 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     @Override @DefinedBy(Api.COMPILER)
     public ClassLoader getClassLoader(Location location) {
         checkNotModuleOrientedLocation(location);
-        Collection<? extends Path> searchPath = getLocationAsPaths(location);
-        if (searchPath == null)
+        Iterable<? extends File> path = getLocation(location);
+        if (path == null)
             return null;
         ListBuffer<URL> lb = new ListBuffer<>();
-        for (Path p : searchPath) {
+        for (File f: path) {
             try {
-                lb.append(p.toUri().toURL());
+                lb.append(f.toURI().toURL());
             } catch (MalformedURLException e) {
                 throw new AssertionError(e);
             }
@@ -1106,7 +1106,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
           PathAndContainer that = (PathAndContainer) o;
           return path.equals(that.path)
               && container.equals(that.container)
-              && index == this.index;
+              && index == that.index;
         }
 
         @Override

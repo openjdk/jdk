@@ -69,12 +69,6 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
       return false;
     }
 
-    if (MetaspaceShared::is_in_trampoline_frame(ret_frame.pc())) {
-      // In the middle of a trampoline call. Bail out for safety.
-      // This happens rarely so shouldn't affect profiling.
-      return false;
-    }
-
     if (!ret_frame.safe_for_sender(jt)) {
 #if COMPILER2_OR_JVMCI
       // C2 and JVMCI use ebp as a general register see if NULL fp helps

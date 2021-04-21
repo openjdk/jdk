@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -59,7 +59,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
     _rdc_local_qset(rdcqs),
-    _rdcq(&_rdc_local_qset),
     _ct(g1h->card_table()),
     _closures(NULL),
     _plab_allocator(NULL),
@@ -78,7 +77,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _partial_objarray_chunk_size(ParGCArrayScanChunk),
     _partial_array_stepper(n_workers),
     _string_klass_or_null(G1StringDedup::is_enabled()
-                          ? SystemDictionary::String_klass()
+                          ? vmClasses::String_klass()
                           : nullptr),
     _num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
@@ -86,7 +85,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 {
   // Verify klass comparison with _string_klass_or_null is sufficient
   // to determine whether dedup is enabled and the object is a String.
-  assert(SystemDictionary::String_klass()->is_final(), "precondition");
+  assert(vmClasses::String_klass()->is_final(), "precondition");
 
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -114,7 +113,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 }
 
 size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
-  _rdcq.flush();
   _rdc_local_qset.flush();
   flush_numa_stats();
   // Update allocation statistics.
@@ -205,7 +203,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
 
   markWord m = obj->mark();
   if (m.is_marked()) {
-    obj = (oop) m.decode_pointer();
+    obj = cast_to_oop(m.decode_pointer());
   } else {
     obj = do_copy_to_survivor_space(region_attr, obj, m);
   }
@@ -475,7 +473,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   // We're going to allocate linearly, so might as well prefetch ahead.
   Prefetch::write(obj_ptr, PrefetchCopyIntervalInBytes);
 
-  const oop obj = oop(obj_ptr);
+  const oop obj = cast_to_oop(obj_ptr);
   const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);

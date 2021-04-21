@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/signature.hpp"
 
 class OopMapCacheEntry: private InterpreterOopMap {
@@ -242,6 +243,8 @@ class MaskFillerForNative: public NativeSignatureIterator {
   }
 
  public:
+  void pass_byte()                               { /* ignore */ }
+  void pass_short()                              { /* ignore */ }
   void pass_int()                                { /* ignore */ }
   void pass_long()                               { /* ignore */ }
   void pass_float()                              { /* ignore */ }

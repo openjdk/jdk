@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/relocator.hpp"
@@ -906,12 +907,18 @@ void GenerateOopMap::monitor_push(CellTypeState cts) {
 // Interpretation handling methods
 //
 
-void GenerateOopMap::do_interpretation()
+void GenerateOopMap::do_interpretation(Thread* thread)
 {
-  // "i" is just for debugging, so we can detect cases where this loop is
-  // iterated more than once.
   int i = 0;
   do {
+    if (i != 0 && thread->is_Java_thread()) {
+      JavaThread* jt = thread->as_Java_thread();
+      if (jt->thread_state() == _thread_in_vm) {
+        // Since this JavaThread has looped at least once and is _thread_in_vm,
+        // we honor any pending blocking request.
+        ThreadBlockInVM tbivm(jt);
+      }
+    }
 #ifndef PRODUCT
     if (TraceNewOopMapGeneration) {
       tty->print("\n\nIteration #%d of do_interpretation loop, method:\n", i);
@@ -2129,7 +2136,7 @@ void GenerateOopMap::compute_map(TRAPS) {
 
   // Step 3: Calculate stack maps
   if (!_got_error)
-    do_interpretation();
+    do_interpretation(THREAD);
 
   // Step 4:Return results
   if (!_got_error && report_results())
@@ -2263,33 +2270,10 @@ void GenerateOopMap::rewrite_refval_conflicts()
      return;
 
   // Check if rewrites are allowed in this parse.
-  if (!allow_rewrites() && !IgnoreRewrites) {
+  if (!allow_rewrites()) {
     fatal("Rewriting method not allowed at this stage");
   }
 
-
-  // This following flag is to tempoary supress rewrites. The locals that might conflict will
-  // all be set to contain values. This is UNSAFE - however, until the rewriting has been completely
-  // tested it is nice to have.
-  if (IgnoreRewrites) {
-    if (Verbose) {
-       tty->print("rewrites suppressed for local no. ");
-       for (int l = 0; l < _max_locals; l++) {
-         if (_new_var_map[l] != l) {
-           tty->print("%d ", l);
-           vars()[l] = CellTypeState::value;
-         }
-       }
-       tty->cr();
-    }
-
-    // That was that...
-    _new_var_map = NULL;
-    _nof_refval_conflicts = 0;
-    _conflict = false;
-
-    return;
-  }
 
   // Tracing flag
   _did_rewriting = true;

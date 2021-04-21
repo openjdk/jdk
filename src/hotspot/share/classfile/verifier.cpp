@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -133,17 +134,17 @@ void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verif
 }
 
 // Prints the end-verification message to the appropriate output.
-void Verifier::log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, TRAPS) {
-  if (HAS_PENDING_EXCEPTION) {
+void Verifier::log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, oop pending_exception) {
+  if (pending_exception != NULL) {
     st->print("Verification for %s has", klassName);
-    oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+    oop message = java_lang_Throwable::message(pending_exception);
     if (message != NULL) {
       char* ex_msg = java_lang_String::as_utf8_string(message);
       st->print_cr(" exception pending '%s %s'",
-                 PENDING_EXCEPTION->klass()->external_name(), ex_msg);
+                   pending_exception->klass()->external_name(), ex_msg);
     } else {
       st->print_cr(" exception pending %s ",
-                 PENDING_EXCEPTION->klass()->external_name());
+                   pending_exception->klass()->external_name());
     }
   } else if (exception_name != NULL) {
     st->print_cr("Verification for %s failed", klassName);
@@ -192,7 +193,8 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
 
   log_info(class, init)("Start class verification for: %s", klass->external_name());
   if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
-    ClassVerifier split_verifier(klass, THREAD);
+    ClassVerifier split_verifier(jt, klass);
+    // We don't use CHECK here, or on inference_verify below, so that we can log any exception.
     split_verifier.verify_class(THREAD);
     exception_name = split_verifier.result();
 
@@ -227,12 +229,12 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   LogTarget(Info, class, init) lt1;
   if (lt1.is_enabled()) {
     LogStream ls(lt1);
-    log_end_verification(&ls, klass->external_name(), exception_name, THREAD);
+    log_end_verification(&ls, klass->external_name(), exception_name, PENDING_EXCEPTION);
   }
   LogTarget(Info, verification) lt2;
   if (lt2.is_enabled()) {
     LogStream ls(lt2);
-    log_end_verification(&ls, klass->external_name(), exception_name, THREAD);
+    log_end_verification(&ls, klass->external_name(), exception_name, PENDING_EXCEPTION);
   }
 
   if (HAS_PENDING_EXCEPTION) {
@@ -266,7 +268,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
 
 bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
   Symbol* name = klass->name();
-  Klass* refl_magic_klass = SystemDictionary::reflect_MagicAccessorImpl_klass();
+  Klass* refl_magic_klass = vmClasses::reflect_MagicAccessorImpl_klass();
 
   bool is_reflect = refl_magic_klass != NULL && klass->is_subtype_of(refl_magic_klass);
 
@@ -588,9 +590,8 @@ void ErrorContext::stackmap_details(outputStream* ss, const Method* method) cons
 
 // Methods in ClassVerifier
 
-ClassVerifier::ClassVerifier(
-    InstanceKlass* klass, TRAPS)
-    : _thread(THREAD), _previous_symbol(NULL), _symbols(NULL), _exception_type(NULL),
+ClassVerifier::ClassVerifier(JavaThread* current, InstanceKlass* klass)
+    : _thread(current), _previous_symbol(NULL), _symbols(NULL), _exception_type(NULL),
       _message(NULL), _method_signatures_table(NULL), _klass(klass) {
   _this_type = VerificationType::reference_type(klass->name());
 }
@@ -614,6 +615,7 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
                          create_temporary_symbol(sig, (int)strlen(sig)));
   return TypeOrigin::implicit(vt);
 }
+
 
 void ClassVerifier::verify_class(TRAPS) {
   log_info(verification)("Verifying class %s with new format", _klass->external_name());
@@ -652,8 +654,7 @@ void ClassVerifier::verify_class(TRAPS) {
 // Translate the signature entries into verification types and save them in
 // the growable array.  Also, save the count of arguments.
 void ClassVerifier::translate_signature(Symbol* const method_sig,
-                                        sig_as_verification_types* sig_verif_types,
-                                        TRAPS) {
+                                        sig_as_verification_types* sig_verif_types) {
   SignatureStream sig_stream(method_sig);
   VerificationType sig_type[2];
   int sig_i = 0;
@@ -687,11 +688,11 @@ void ClassVerifier::translate_signature(Symbol* const method_sig,
 }
 
 void ClassVerifier::create_method_sig_entry(sig_as_verification_types* sig_verif_types,
-                                            int sig_index, TRAPS) {
+                                            int sig_index) {
   // Translate the signature into verification types.
   ConstantPool* cp = _klass->constants();
   Symbol* const method_sig = cp->symbol_at(sig_index);
-  translate_signature(method_sig, sig_verif_types, CHECK_VERIFY(this));
+  translate_signature(method_sig, sig_verif_types);
 
   // Add the list of this signature's verification types to the table.
   bool is_unique = method_signatures_table()->put(sig_index, sig_verif_types);
@@ -717,8 +718,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   // Initial stack map frame: offset is 0, stack is initially empty.
   StackMapFrame current_frame(max_locals, max_stack, this);
   // Set initial locals
-  VerificationType return_type = current_frame.set_locals_from_arg(
-    m, current_type(), CHECK_VERIFY(this));
+  VerificationType return_type = current_frame.set_locals_from_arg( m, current_type());
 
   int32_t stackmap_index = 0; // index to the stackmap array
 
@@ -1048,8 +1048,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
             current_frame.push_stack(
               VerificationType::null_type(), CHECK_VERIFY(this));
           } else {
-            VerificationType component =
-              atype.get_component(this, CHECK_VERIFY(this));
+            VerificationType component = atype.get_component(this);
             current_frame.push_stack(component, CHECK_VERIFY(this));
           }
           no_control_flow = false; break;
@@ -2826,7 +2825,7 @@ void ClassVerifier::verify_invoke_instructions(
     // Not found, add the entry to the table.
     GrowableArray<VerificationType>* verif_types = new GrowableArray<VerificationType>(10);
     mth_sig_verif_types = new sig_as_verification_types(verif_types);
-    create_method_sig_entry(mth_sig_verif_types, sig_index, CHECK_VERIFY(this));
+    create_method_sig_entry(mth_sig_verif_types, sig_index);
   }
 
   // Get the number of arguments for this signature.
@@ -3148,7 +3147,7 @@ void ClassVerifier::verify_return_value(
   if (return_type == VerificationType::bogus_type()) {
     verify_error(ErrorContext::bad_type(bci,
         current_frame->stack_top_ctx(), TypeOrigin::signature(return_type)),
-        "Method expects a return value");
+        "Method does not expect a return value");
     return;
   }
   bool match = return_type.is_assignable_from(type, this, false, CHECK_VERIFY(this));

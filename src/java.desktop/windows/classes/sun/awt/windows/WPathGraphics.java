@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,8 @@ final class WPathGraphics extends PathGraphics {
 
     private static final float MIN_DEVICE_LINEWIDTH = 1.2f;
     private static final float MAX_THINLINE_INCHES = 0.014f;
+
+    private static final float precisionScale = 1000.0f;
 
     /* Note that preferGDITextLayout implies useGDITextLayout.
      * "prefer" is used to override cases where would otherwise
@@ -1719,6 +1721,11 @@ final class WPathGraphics extends PathGraphics {
         }
     }
 
+    private void precisionScaleUp(float[] values, int size) {
+        for (int i = 0; i < size; i++) {
+            values[i] = values[i] * precisionScale;
+        }
+    }
 
     /**
      * Given a Java2D {@code PathIterator} instance,
@@ -1743,6 +1750,7 @@ final class WPathGraphics extends PathGraphics {
         }
         wPrinterJob.setPolyFillMode(polyFillRule);
 
+        wPrinterJob.scaleTransform(1.0f / precisionScale);
         wPrinterJob.beginPath();
 
         while (pathIter.isDone() == false) {
@@ -1750,18 +1758,21 @@ final class WPathGraphics extends PathGraphics {
 
             switch (segmentType) {
              case PathIterator.SEG_MOVETO:
+                precisionScaleUp(segment, 2);
                 wPrinterJob.moveTo(segment[0], segment[1]);
                 break;
 
              case PathIterator.SEG_LINETO:
+                precisionScaleUp(segment, 2);
                 wPrinterJob.lineTo(segment[0], segment[1]);
                 break;
 
             /* Convert the quad path to a bezier.
              */
              case PathIterator.SEG_QUADTO:
-                float lastX = wPrinterJob.getPenX();
-                float lastY = wPrinterJob.getPenY();
+                precisionScaleUp(segment, 4);
+                int lastX = wPrinterJob.getPenX();
+                int lastY = wPrinterJob.getPenY();
                 float c1x = lastX + (segment[0] - lastX) * 2 / 3;
                 float c1y = lastY + (segment[1] - lastY) * 2 / 3;
                 float c2x = segment[2] - (segment[2] - segment[0]) * 2/ 3;
@@ -1772,6 +1783,7 @@ final class WPathGraphics extends PathGraphics {
                 break;
 
              case PathIterator.SEG_CUBICTO:
+                precisionScaleUp(segment, 6);
                 wPrinterJob.polyBezierTo(segment[0], segment[1],
                                          segment[2], segment[3],
                                          segment[4], segment[5]);
@@ -1787,6 +1799,7 @@ final class WPathGraphics extends PathGraphics {
         }
 
         wPrinterJob.endPath();
+        wPrinterJob.restoreTransform();
 
     }
 

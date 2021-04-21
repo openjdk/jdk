@@ -26,10 +26,7 @@
 #import "CDataTransferer.h"
 #include "sun_lwawt_macosx_CDataTransferer.h"
 
-#import "jni_util.h"
-
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
+#import "JNIUtilities.h"
 
 // ***** NOTE ***** This dictionary corresponds to the static array predefinedClipboardNames
 // in CDataTransferer.java.
@@ -109,9 +106,9 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDataTransferer_registerFormatWith
 (JNIEnv *env, jobject jthis, jstring newformat)
 {
     jlong returnValue = -1;
-JNF_COCOA_ENTER(env);
-    returnValue = registerFormatWithPasteboard(JNFJavaToNSString(env, newformat));
-JNF_COCOA_EXIT(env);
+JNI_COCOA_ENTER(env);
+    returnValue = registerFormatWithPasteboard(JavaStringToNSString(env, newformat));
+JNI_COCOA_EXIT(env);
     return returnValue;
 }
 
@@ -124,9 +121,9 @@ JNIEXPORT jstring JNICALL Java_sun_lwawt_macosx_CDataTransferer_formatForIndex
   (JNIEnv *env, jobject jthis, jlong index)
 {
     jstring returnValue = NULL;
-JNF_COCOA_ENTER(env);
-    returnValue = JNFNSToJavaString(env, formatForIndex(index));
-JNF_COCOA_EXIT(env);
+JNI_COCOA_ENTER(env);
+    returnValue = NSStringToJavaString(env, formatForIndex(index));
+JNI_COCOA_EXIT(env);
     return returnValue;
 }
 
@@ -138,7 +135,7 @@ static jobjectArray CreateJavaFilenameArray(JNIEnv *env, NSArray *filenameArray)
     // Get the java.lang.String class object:
     jclass stringClazz = (*env)->FindClass(env, "java/lang/String");
     CHECK_NULL_RETURN(stringClazz, nil);
-    jobject jfilenameArray = (*env)->NewObjectArray(env, filenameCount, stringClazz, NULL); // AWT_THREADING Safe (known object)
+    jobject jfilenameArray = (*env)->NewObjectArray(env, filenameCount, stringClazz, NULL);
     if ((*env)->ExceptionOccurred(env)) {
         (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);
@@ -200,7 +197,7 @@ Java_sun_lwawt_macosx_CDataTransferer_nativeDragQueryFile
 
     jobjectArray jreturnArray = NULL;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // Get byte array elements:
     jboolean isCopy;
     jbyte* jbytes = (*env)->GetByteArrayElements(env, jbytearray, &isCopy);
@@ -250,6 +247,6 @@ JNF_COCOA_ENTER(env);
 
     // We're done with the jbytes (backing the plist/plistArray):
     (*env)->ReleaseByteArrayElements(env, jbytearray, jbytes, JNI_ABORT);
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return jreturnArray;
 }

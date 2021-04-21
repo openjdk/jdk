@@ -73,16 +73,12 @@ class JNITypes : AllStatic {
   }
 
   // Oops are stored in native format in one JavaCallArgument slot at *to.
-  static inline void put_obj(oop  from, intptr_t *to) {
-    *(oop*) to = from;
+  static inline void put_obj(const Handle& from_handle, intptr_t *to, int& pos) {
+    *(to + pos++) = (intptr_t)from_handle.raw_value();
   }
 
-  static inline void put_obj(oop  from, intptr_t *to, int& pos) {
-    *(oop*) (to + pos++) = from;
-  }
-
-  static inline void put_obj(oop *from, intptr_t *to, int& pos) {
-    *(oop*) (to + pos++) = *from;
+  static inline void put_obj(jobject from_handle, intptr_t *to, int& pos) {
+    *(to + pos++) =  (intptr_t)from_handle;
   }
 
   // Floats are stored in native format in one JavaCallArgument slot at *to.

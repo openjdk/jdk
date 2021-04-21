@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,12 +84,12 @@ void Mutex::lock_contended(Thread* self) {
     // Is it a JavaThread participating in the safepoint protocol.
     if (is_active_Java_thread) {
       assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
-      { ThreadBlockInVMWithDeadlockCheck tbivmdc(self->as_Java_thread(), &in_flight_mutex);
-        in_flight_mutex = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
+      { ThreadBlockInVM tbivmdc(self->as_Java_thread(), &in_flight_mutex);
+        in_flight_mutex = this;  // save for ~ThreadBlockInVM
         _lock.lock();
       }
       if (in_flight_mutex != NULL) {
-        // Not unlocked by ~ThreadBlockInVMWithDeadlockCheck
+        // Not unlocked by ~ThreadBlockInVM
         break;
       }
     } else {
@@ -236,7 +236,7 @@ bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
   Mutex* in_flight_mutex = NULL;
 
   {
-    ThreadBlockInVMWithDeadlockCheck tbivmdc(self, &in_flight_mutex);
+    ThreadBlockInVM tbivmdc(self, &in_flight_mutex);
     OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
     if (as_suspend_equivalent) {
       self->set_suspend_equivalent();
@@ -245,7 +245,7 @@ bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
     }
 
     wait_status = _lock.wait(timeout);
-    in_flight_mutex = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
+    in_flight_mutex = this;  // save for ~ThreadBlockInVM
 
     // were we externally suspended while we were waiting?
     if (as_suspend_equivalent && self->handle_special_suspend_equivalent_condition()) {
@@ -260,7 +260,7 @@ bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
   }
 
   if (in_flight_mutex != NULL) {
-    // Not unlocked by ~ThreadBlockInVMWithDeadlockCheck
+    // Not unlocked by ~ThreadBlockInVM
     assert_owner(NULL);
     // Conceptually reestablish ownership of the lock.
     set_owner(self);
@@ -281,14 +281,9 @@ bool is_sometimes_ok(const char* name) {
 }
 
 Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
-             SafepointCheckRequired safepoint_check_required) : _owner(NULL) {
+             SafepointCheckRequired safepoint_check_required) : _owner(NULL), _name(name) {
   assert(os::mutex_init_done(), "Too early!");
-  if (name == NULL) {
-    strcpy(_name, "UNKNOWN");
-  } else {
-    strncpy(_name, name, MUTEX_NAME_LEN - 1);
-    _name[MUTEX_NAME_LEN - 1] = '\0';
-  }
+  assert(name != NULL, "Mutex requires a name");
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = Rank;
@@ -417,7 +412,12 @@ void Mutex::check_rank(Thread* thread) {
     // to acquire, then deadlock prevention rules require that the rank
     // of m2 be less than the rank of m1. This prevents circular waits.
     if (least != NULL && least->rank() <= this->rank()) {
-      thread->print_owned_locks();
+      if (least->rank() > Mutex::tty) {
+        // Printing owned locks acquires tty lock. If the least rank was below or equal
+        // tty, then deadlock detection code would circle back here, until we run
+        // out of stack and crash hard. Print locks only when it is safe.
+        thread->print_owned_locks();
+      }
       assert(false, "Attempting to acquire lock %s/%d out of order with lock %s/%d -- "
              "possible deadlock", this->name(), this->rank(), least->name(), least->rank());
     }

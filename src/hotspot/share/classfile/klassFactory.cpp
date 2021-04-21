@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
 #include "memory/filemap.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -98,7 +97,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       }
 
       if (class_loader.is_null()) {
-        new_ik->set_classpath_index(path_index, THREAD);
+        new_ik->set_classpath_index(path_index);
       }
 
       return new_ik;
@@ -206,10 +205,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
   InstanceKlass* result = parser.create_instance_klass(old_stream != stream, *cl_inst_info, CHECK_NULL);
-
-  if (result == NULL) {
-    return NULL;
-  }
+  assert(result != NULL, "result cannot be null with no pending exception");
 
   if (cached_class_file != NULL) {
     // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
@@ -220,7 +216,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
 #if INCLUDE_CDS
   if (Arguments::is_dumping_archive()) {
-    ClassLoader::record_result(result, stream, THREAD);
+    ClassLoader::record_result(THREAD, result, stream);
   }
 #endif // INCLUDE_CDS
 

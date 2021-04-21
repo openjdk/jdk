@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map.Entry;
@@ -422,6 +423,7 @@ public class VetoableChangeSupport implements Serializable {
      * At serialization time we skip non-serializable listeners and
      * only serialize the serializable listeners.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Hashtable<String, VetoableChangeSupport> children = null;
         VetoableChangeListener[] listeners = null;
@@ -464,6 +466,7 @@ public class VetoableChangeSupport implements Serializable {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
         this.map = new VetoableChangeListenerMap();
 
@@ -501,6 +504,7 @@ public class VetoableChangeSupport implements Serializable {
      * @serialField vetoableChangeSupportSerializedDataVersion int
      *              The version
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
             new ObjectStreamField("children", Hashtable.class),
             new ObjectStreamField("source", Object.class),
@@ -508,9 +512,10 @@ public class VetoableChangeSupport implements Serializable {
     };
 
     /**
-     * Serialization version ID, so we're compatible with JDK 1.1
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
-    static final long serialVersionUID = -5090210921595982017L;
+    @Serial
+    private static final long serialVersionUID = -5090210921595982017L;
 
     /**
      * This is a {@link ChangeListenerMap ChangeListenerMap} implementation

@@ -340,7 +340,7 @@ void BlockOffsetArray::verify() const {
     HeapWord* start = block_start(p);
     // First check if the start is an allocated block and only
     // then if it is a valid object.
-    oop o = oop(start);
+    oop o = cast_to_oop(start);
     assert(!Universe::is_fully_initialized() ||
            _sp->is_free_block(start) ||
            oopDesc::is_oop_or_null(o), "Bad object was found");

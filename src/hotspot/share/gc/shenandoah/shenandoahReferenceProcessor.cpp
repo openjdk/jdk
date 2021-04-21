@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -200,7 +200,8 @@ ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
   _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
   _pending_list(NULL),
   _pending_list_tail(&_pending_list),
-  _iterate_discovered_list_id(0U) {
+  _iterate_discovered_list_id(0U),
+  _stats() {
   for (size_t i = 0; i < max_workers; i++) {
     _ref_proc_thread_locals[i].reset();
   }
@@ -473,26 +474,37 @@ void ShenandoahReferenceProcessor::work() {
 
 class ShenandoahReferenceProcessorTask : public AbstractGangTask {
 private:
+  bool const                          _concurrent;
+  ShenandoahPhaseTimings::Phase const _phase;
   ShenandoahReferenceProcessor* const _reference_processor;
 
 public:
-  ShenandoahReferenceProcessorTask(ShenandoahReferenceProcessor* reference_processor) :
+  ShenandoahReferenceProcessorTask(ShenandoahPhaseTimings::Phase phase, bool concurrent, ShenandoahReferenceProcessor* reference_processor) :
     AbstractGangTask("ShenandoahReferenceProcessorTask"),
+    _concurrent(concurrent),
+    _phase(phase),
     _reference_processor(reference_processor) {
   }
 
   virtual void work(uint worker_id) {
-    ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    _reference_processor->work();
+    if (_concurrent) {
+      ShenandoahConcurrentWorkerSession worker_session(worker_id);
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id);
+      _reference_processor->work();
+    } else {
+      ShenandoahParallelWorkerSession worker_session(worker_id);
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id);
+      _reference_processor->work();
+    }
   }
 };
 
-void ShenandoahReferenceProcessor::process_references(WorkGang* workers, bool concurrent) {
+void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkGang* workers, bool concurrent) {
 
   Atomic::release_store_fence(&_iterate_discovered_list_id, 0U);
 
   // Process discovered lists
-  ShenandoahReferenceProcessorTask task(this);
+  ShenandoahReferenceProcessorTask task(phase, concurrent, this);
   workers->run_task(&task);
 
   // Update SoftReference clock
@@ -584,6 +596,12 @@ void ShenandoahReferenceProcessor::collect_statistics() {
       enqueued[type] += _ref_proc_thread_locals[i].enqueued((ReferenceType)type);
     }
   }
+
+  _stats = ReferenceProcessorStats(discovered[REF_SOFT],
+                                   discovered[REF_WEAK],
+                                   discovered[REF_FINAL],
+                                   discovered[REF_PHANTOM]);
+
   log_info(gc,ref)("Encountered references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
                    encountered[REF_SOFT], encountered[REF_WEAK], encountered[REF_FINAL], encountered[REF_PHANTOM]);
   log_info(gc,ref)("Discovered  references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
@@ -591,3 +609,4 @@ void ShenandoahReferenceProcessor::collect_statistics() {
   log_info(gc,ref)("Enqueued    references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
                    enqueued[REF_SOFT], enqueued[REF_WEAK], enqueued[REF_FINAL], enqueued[REF_PHANTOM]);
 }
+

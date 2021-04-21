@@ -33,8 +33,6 @@ import java.util.List;
 import jdk.jfr.EventType;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.internal.consumer.Parser;
-import jdk.jfr.internal.consumer.RecordingInput;
 
 /**
  * Parses an event and returns a {@link RecordedEvent}.
@@ -110,6 +108,7 @@ final class EventParser extends Parser {
         return enabled;
     }
 
+    @Override
     public RecordedEvent parse(RecordingInput input) throws IOException {
         if (!enabled) {
             return null;

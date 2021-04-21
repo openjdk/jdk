@@ -82,8 +82,6 @@ private:
     return map() + to_words_align_down(bit);
   }
 
-  static inline const bm_word_t load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order);
-
   bool at(idx_t index) const {
     verify_index(index);
     return (*word_addr(index) & bit_mask(index)) != 0;

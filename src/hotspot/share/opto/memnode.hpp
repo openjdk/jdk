@@ -849,6 +849,7 @@ public:
   virtual const Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const;
   virtual const class TypePtr *adr_type() const { return _adr_type; }  // returns bottom_type of address
+  virtual const Type* Value(PhaseGVN* phase) const;
 
   bool result_not_used() const;
   MemBarNode* trailing_membar() const;
@@ -863,6 +864,7 @@ public:
     ExpectedIn = MemNode::ValueIn+1 // One more input than MemNode
   };
   LoadStoreConditionalNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------StorePConditionalNode---------------------------
@@ -1333,26 +1335,6 @@ public:
   OnSpinWaitNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
-};
-
-//------------------------------BlackholeNode----------------------------
-// Blackhole all arguments. This node would survive through the compiler
-// the effects on its arguments, and would be finally matched to nothing.
-class BlackholeNode : public MemBarNode {
-public:
-  BlackholeNode(Compile* C, int alias_idx, Node* precedent)
-    : MemBarNode(C, alias_idx, precedent) {}
-  virtual int   Opcode() const;
-  virtual uint ideal_reg() const { return 0; } // not matched in the AD file
-  const RegMask &in_RegMask(uint idx) const {
-    // Fake the incoming arguments mask for blackholes: accept all registers
-    // and all stack slots. This would avoid moving the arguments for the
-    // call that never happens.
-    return RegMask::All;
-  }
-#ifndef PRODUCT
-  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
-#endif
 };
 
 // Isolation of object setup after an AllocateNode and before next safepoint.

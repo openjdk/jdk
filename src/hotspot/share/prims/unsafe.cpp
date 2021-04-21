@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.inline.hpp"
@@ -51,6 +52,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
@@ -405,6 +407,7 @@ UNSAFE_ENTRY(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcOb
   {
     GuardUnsafeAccess guard(thread);
     if (StubRoutines::unsafe_arraycopy() != NULL) {
+      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
       StubRoutines::UnsafeArrayCopy_stub()(src, dst, sz);
     } else {
       Copy::conjoint_memory_atomic(src, dst, sz);
@@ -456,12 +459,14 @@ UNSAFE_LEAF (void, Unsafe_WriteBack0(JNIEnv *env, jobject unsafe, jlong line)) {
   }
 #endif
 
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
   assert(StubRoutines::data_cache_writeback() != NULL, "sanity");
   (StubRoutines::DataCacheWriteback_stub())(addr_from_java(line));
 } UNSAFE_END
 
 static void doWriteBackSync0(bool is_pre)
 {
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
   assert(StubRoutines::data_cache_writeback_sync() != NULL, "sanity");
   (StubRoutines::DataCacheWritebackSync_stub())(is_pre);
 }
@@ -860,16 +865,12 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
                         false,    // is_strong_hidden
                         true);    // can_access_vm_annotations
 
-  Klass* anonk = SystemDictionary::parse_stream(no_class_name,
-                                                host_loader,
-                                                &st,
-                                                cl_info,
-                                                CHECK_NULL);
-  if (anonk == NULL) {
-    return NULL;
-  }
-
-  return InstanceKlass::cast(anonk);
+  InstanceKlass* anonk = SystemDictionary::resolve_from_stream(&st, no_class_name,
+                                                               host_loader,
+                                                               cl_info,
+                                                               CHECK_NULL);
+  assert(anonk != NULL, "no klass created");
+  return anonk;
 }
 
 UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass0(JNIEnv *env, jobject unsafe, jclass host_class, jbyteArray data, jobjectArray cp_patches_jh)) {
@@ -1001,8 +1002,6 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) {
-  Parker* p = NULL;
-
   if (jthread != NULL) {
     ThreadsListHandle tlh;
     JavaThread* thr = NULL;
@@ -1012,18 +1011,13 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) 
       // This is a valid oop.
       if (thr != NULL) {
         // The JavaThread is alive.
-        p = thr->parker();
+        Parker* p = thr->parker();
+        HOTSPOT_THREAD_UNPARK((uintptr_t) p);
+        p->unpark();
       }
     }
   } // ThreadsListHandle is destroyed here.
 
-  // 'p' points to type-stable-memory if non-NULL. If the target
-  // thread terminates before we get here the new user of this
-  // Parker will get a 'spurious' unpark - which is perfectly valid.
-  if (p != NULL) {
-    HOTSPOT_THREAD_UNPARK((uintptr_t) p);
-    p->unpark();
-  }
 } UNSAFE_END
 
 UNSAFE_ENTRY(jint, Unsafe_GetLoadAverage0(JNIEnv *env, jobject unsafe, jdoubleArray loadavg, jint nelem)) {

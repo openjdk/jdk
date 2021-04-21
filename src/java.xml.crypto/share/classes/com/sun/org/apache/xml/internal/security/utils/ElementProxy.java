@@ -55,7 +55,7 @@ public abstract class ElementProxy {
     private Document wrappedDoc;
 
     /** Field prefixMappings */
-    private static Map<String, String> prefixMappings = new ConcurrentHashMap<String, String>();
+    private static Map<String, String> prefixMappings = new ConcurrentHashMap<>();
 
     /**
      * Constructor ElementProxy
@@ -210,7 +210,7 @@ public abstract class ElementProxy {
     }
 
     protected Text createText(String text) {
-        return this.wrappedDoc.createTextNode(text);
+        return getDocument().createTextNode(text);
     }
 
     /**
@@ -249,7 +249,7 @@ public abstract class ElementProxy {
 
         if(!expectedNamespaceUri.equals(actualNamespaceUri)
             && !expectedLocalName.equals(actualLocalName)) {
-            Object exArgs[] = { actualNamespaceUri + ":" + actualLocalName,
+            Object[] exArgs = { actualNamespaceUri + ":" + actualLocalName,
                                 expectedNamespaceUri + ":" + expectedLocalName};
             throw new XMLSecurityException("xml.WrongElement", exArgs);
         }
@@ -290,15 +290,7 @@ public abstract class ElementProxy {
      */
     public void addBase64Element(byte[] bytes, String localname) {
         if (bytes != null) {
-            Element el = XMLUtils.createElementInSignatureSpace(getDocument(), localname);
-            Text text = getDocument().createTextNode(XMLUtils.encodeToString(bytes));
-
-            el.appendChild(text);
-
-            appendSelf(el);
-            if (!XMLUtils.ignoreLineBreaks()) {
-                appendSelf(createText("\n"));
-            }
+            addTextElement(XMLUtils.encodeToString(bytes), localname);
         }
     }
 
@@ -459,7 +451,7 @@ public abstract class ElementProxy {
 
         if (a != null) {
             if (!a.getNodeValue().equals(uri)) {
-                Object exArgs[] = { ns, getElement().getAttributeNS(null, ns) };
+                Object[] exArgs = { ns, getElement().getAttributeNS(null, ns) };
 
                 throw new XMLSecurityException("namespacePrefixAlreadyUsedByOtherURI", exArgs);
             }
@@ -489,7 +481,7 @@ public abstract class ElementProxy {
         if (prefixMappings.containsValue(prefix)) {
             String storedPrefix = prefixMappings.get(namespace);
             if (!storedPrefix.equals(prefix)) {
-                Object exArgs[] = { prefix, namespace, storedPrefix };
+                Object[] exArgs = { prefix, namespace, storedPrefix };
 
                 throw new XMLSecurityException("prefix.AlreadyAssigned", exArgs);
             }

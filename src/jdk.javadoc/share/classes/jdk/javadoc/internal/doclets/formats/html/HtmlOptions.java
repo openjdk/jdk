@@ -32,12 +32,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.sun.tools.doclint.DocLint;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclint.DocLint;
 
 /**
  * Storage for all options supported by the
@@ -405,7 +405,7 @@ public class HtmlOptions extends BaseOptions {
                             messages.error("doclet.Option_doclint_no_qualifiers");
                             return false;
                         }
-                        if (!DocLint.newDocLint().isValidOption(dopt)) {
+                        if (!(new DocLint()).isValidOption(dopt)) {
                             messages.error("doclet.Option_doclint_invalid_arg");
                             return false;
                         }
@@ -418,7 +418,7 @@ public class HtmlOptions extends BaseOptions {
                     @Override
                     public boolean process(String opt,  List<String> args) {
                         String dopt = opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE);
-                        if (!DocLint.newDocLint().isValidOption(dopt)) {
+                        if (!(new DocLint()).isValidOption(dopt)) {
                             messages.error("doclet.Option_doclint_package_invalid_arg");
                             return false;
                         }

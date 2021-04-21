@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch $vectorteststype$
+ * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation $vectorteststype$
  */
 
 #warn This file is preprocessed before being compiled
@@ -97,7 +97,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$ apply($type$ a);
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] r, FUnOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, FUnOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -112,7 +112,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$[] apply($type$ a);
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] r, FUnArrayOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, FUnArrayOp f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -122,13 +122,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a[i]);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(ref, res, "(ref: " + Arrays.toString(ref)
+            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i);
         }
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] r, boolean[] mask, FUnOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, boolean[] mask, FUnOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -147,17 +147,17 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$ apply($type$[] a);
     }
 
-    static void assertReductionArraysEquals($type$[] a, $type$[] b, $type$ c,
+    static void assertReductionArraysEquals($type$[] r, $type$ rc, $type$[] a,
                                             FReductionOp f, FReductionAllOp fa) {
         int i = 0;
         try {
-            Assert.assertEquals(c, fa.apply(a));
+            Assert.assertEquals(rc, fa.apply(a));
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(b[i], f.apply(a, i));
+                Assert.assertEquals(r[i], f.apply(a, i));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(c, fa.apply(a), "Final result is incorrect!");
-            Assert.assertEquals(b[i], f.apply(a, i), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
         }
     }
 
@@ -169,17 +169,17 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$ apply($type$[] a, boolean[] mask);
     }
 
-    static void assertReductionArraysEqualsMasked($type$[] a, $type$[] b, $type$ c, boolean[] mask,
+    static void assertReductionArraysEqualsMasked($type$[] r, $type$ rc, $type$[] a, boolean[] mask,
                                             FReductionMaskedOp f, FReductionAllMaskedOp fa) {
         int i = 0;
         try {
-            Assert.assertEquals(c, fa.apply(a, mask));
+            Assert.assertEquals(rc, fa.apply(a, mask));
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(b[i], f.apply(a, i, mask));
+                Assert.assertEquals(r[i], f.apply(a, i, mask));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(c, fa.apply(a, mask), "Final result is incorrect!");
-            Assert.assertEquals(b[i], f.apply(a, i, mask), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
         }
     }
 
@@ -192,17 +192,17 @@ public class $vectorteststype$ extends AbstractVectorTest {
         long apply($type$[] a);
     }
 
-    static void assertReductionLongArraysEquals($type$[] a, long[] b, long c,
+    static void assertReductionLongArraysEquals(long[] r, long rc, $type$[] a,
                                             FReductionOpLong f, FReductionAllOpLong fa) {
         int i = 0;
         try {
-            Assert.assertEquals(c, fa.apply(a));
+            Assert.assertEquals(rc, fa.apply(a));
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(b[i], f.apply(a, i));
+                Assert.assertEquals(r[i], f.apply(a, i));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(c, fa.apply(a), "Final result is incorrect!");
-            Assert.assertEquals(b[i], f.apply(a, i), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
         }
     }
 
@@ -214,17 +214,17 @@ public class $vectorteststype$ extends AbstractVectorTest {
         long apply($type$[] a, boolean[] mask);
     }
 
-    static void assertReductionLongArraysEqualsMasked($type$[] a, long[] b, long c, boolean[] mask,
+    static void assertReductionLongArraysEqualsMasked(long[] r, long rc, $type$[] a, boolean[] mask,
                                             FReductionMaskedOpLong f, FReductionAllMaskedOpLong fa) {
         int i = 0;
         try {
-            Assert.assertEquals(c, fa.apply(a, mask));
+            Assert.assertEquals(rc, fa.apply(a, mask));
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(b[i], f.apply(a, i, mask));
+                Assert.assertEquals(r[i], f.apply(a, i, mask));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(c, fa.apply(a, mask), "Final result is incorrect!");
-            Assert.assertEquals(b[i], f.apply(a, i, mask), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
         }
     }
 #end[!Long]
@@ -233,37 +233,37 @@ public class $vectorteststype$ extends AbstractVectorTest {
         boolean apply(boolean[] a, int idx);
     }
 
-    static void assertReductionBoolArraysEquals(boolean[] a, boolean[] b, FBoolReductionOp f) {
+    static void assertReductionBoolArraysEquals(boolean[] r, boolean[] a, FBoolReductionOp f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(b[i], f.apply(a, i));
+                Assert.assertEquals(r[i], f.apply(a, i));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(b[i], f.apply(a, i), "at index #" + i);
+            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
         }
     }
 
-    static void assertInsertArraysEquals($type$[] a, $type$[] b, $type$ element, int index) {
+    static void assertInsertArraysEquals($type$[] r, $type$[] a, $type$ element, int index) {
         int i = 0;
         try {
             for (; i < a.length; i += 1) {
                 if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(b[i], element);
+                    Assert.assertEquals(r[i], element);
                 } else {
-                    Assert.assertEquals(b[i], a[i]);
+                    Assert.assertEquals(r[i], a[i]);
                 }
             }
         } catch (AssertionError e) {
             if (i%SPECIES.length() == index) {
-                Assert.assertEquals(b[i], element, "at index #" + i);
+                Assert.assertEquals(r[i], element, "at index #" + i);
             } else {
-                Assert.assertEquals(b[i], a[i], "at index #" + i);
+                Assert.assertEquals(r[i], a[i], "at index #" + i);
             }
         }
     }
 
-    static void assertRearrangeArraysEquals($type$[] a, $type$[] r, int[] order, int vector_len) {
+    static void assertRearrangeArraysEquals($type$[] r, $type$[] a, int[] order, int vector_len) {
         int i = 0, j = 0;
         try {
             for (; i < a.length; i += vector_len) {
@@ -277,7 +277,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertSelectFromArraysEquals($type$[] a, $type$[] r, $type$[] order, int vector_len) {
+    static void assertSelectFromArraysEquals($type$[] r, $type$[] a, $type$[] order, int vector_len) {
         int i = 0, j = 0;
         try {
             for (; i < a.length; i += vector_len) {
@@ -291,7 +291,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertRearrangeArraysEquals($type$[] a, $type$[] r, int[] order, boolean[] mask, int vector_len) {
+    static void assertRearrangeArraysEquals($type$[] r, $type$[] a, int[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
         try {
             for (; i < a.length; i += vector_len) {
@@ -311,7 +311,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertSelectFromArraysEquals($type$[] a, $type$[] r, $type$[] order, boolean[] mask, int vector_len) {
+    static void assertSelectFromArraysEquals($type$[] r, $type$[] a, $type$[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
         try {
             for (; i < a.length; i += vector_len) {
@@ -331,7 +331,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertBroadcastArraysEquals($type$[]a, $type$[]r) {
+    static void assertBroadcastArraysEquals($type$[] r, $type$[] a) {
         int i = 0;
         for (; i < a.length; i += SPECIES.length()) {
             int idx = i;
@@ -360,7 +360,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] r, FBinOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, FBinOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -371,7 +371,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] r, FBinOp f) {
+    static void assertBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, FBinOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -383,7 +383,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertBroadcastLongArraysEquals($type$[] a, $type$[] b, $type$[] r, FBinOp f) {
+    static void assertBroadcastLongArraysEquals($type$[] r, $type$[] a, $type$[] b, FBinOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -395,11 +395,11 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinOp f) {
-        assertArraysEquals(a, b, r, mask, FBinMaskOp.lift(f));
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, boolean[] mask, FBinOp f) {
+        assertArraysEquals(r, a, b, mask, FBinMaskOp.lift(f));
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinMaskOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, boolean[] mask, FBinMaskOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -410,11 +410,11 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinOp f) {
-        assertBroadcastArraysEquals(a, b, r, mask, FBinMaskOp.lift(f));
+    static void assertBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, boolean[] mask, FBinOp f) {
+        assertBroadcastArraysEquals(r, a, b, mask, FBinMaskOp.lift(f));
     }
 
-    static void assertBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinMaskOp f) {
+    static void assertBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, boolean[] mask, FBinMaskOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -428,11 +428,11 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertBroadcastLongArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinOp f) {
-        assertBroadcastLongArraysEquals(a, b, r, mask, FBinMaskOp.lift(f));
+    static void assertBroadcastLongArraysEquals($type$[] r, $type$[] a, $type$[] b, boolean[] mask, FBinOp f) {
+        assertBroadcastLongArraysEquals(r, a, b, mask, FBinMaskOp.lift(f));
     }
 
-    static void assertBroadcastLongArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinMaskOp f) {
+    static void assertBroadcastLongArraysEquals($type$[] r, $type$[] a, $type$[] b, boolean[] mask, FBinMaskOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -446,7 +446,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertShiftArraysEquals($type$[] a, $type$[] b, $type$[] r, FBinOp f) {
+    static void assertShiftArraysEquals($type$[] r, $type$[] a, $type$[] b, FBinOp f) {
         int i = 0;
         int j = 0;
         try {
@@ -460,11 +460,11 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertShiftArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinOp f) {
-        assertShiftArraysEquals(a, b, r, mask, FBinMaskOp.lift(f));
+    static void assertShiftArraysEquals($type$[] r, $type$[] a, $type$[] b, boolean[] mask, FBinOp f) {
+        assertShiftArraysEquals(r, a, b, mask, FBinMaskOp.lift(f));
     }
 
-    static void assertShiftArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinMaskOp f) {
+    static void assertShiftArraysEquals($type$[] r, $type$[] a, $type$[] b, boolean[] mask, FBinMaskOp f) {
         int i = 0;
         int j = 0;
         try {
@@ -490,7 +490,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, FTernOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, FTernOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -501,11 +501,11 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, boolean[] mask, FTernOp f) {
-        assertArraysEquals(a, b, c, r, mask, FTernMaskOp.lift(f));
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, boolean[] mask, FTernOp f) {
+        assertArraysEquals(r, a, b, c, mask, FTernMaskOp.lift(f));
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, boolean[] mask, FTernMaskOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, boolean[] mask, FTernMaskOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -517,7 +517,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, FTernOp f) {
+    static void assertBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, FTernOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -530,7 +530,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertAltBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, FTernOp f) {
+    static void assertAltBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, FTernOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -543,12 +543,12 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, boolean[] mask,
+    static void assertBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, boolean[] mask,
                                             FTernOp f) {
-        assertBroadcastArraysEquals(a, b, c, r, mask, FTernMaskOp.lift(f));
+        assertBroadcastArraysEquals(r, a, b, c, mask, FTernMaskOp.lift(f));
     }
 
-    static void assertBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, boolean[] mask,
+    static void assertBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, boolean[] mask,
                                             FTernMaskOp f) {
         int i = 0;
         try {
@@ -564,12 +564,12 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertAltBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, boolean[] mask,
+    static void assertAltBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, boolean[] mask,
                                             FTernOp f) {
-        assertAltBroadcastArraysEquals(a, b, c, r, mask, FTernMaskOp.lift(f));
+        assertAltBroadcastArraysEquals(r, a, b, c, mask, FTernMaskOp.lift(f));
     }
 
-    static void assertAltBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, boolean[] mask,
+    static void assertAltBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, boolean[] mask,
                                             FTernMaskOp f) {
         int i = 0;
         try {
@@ -585,7 +585,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertDoubleBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, FTernOp f) {
+    static void assertDoubleBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, FTernOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -600,12 +600,12 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertDoubleBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, boolean[] mask,
+    static void assertDoubleBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, boolean[] mask,
                                                   FTernOp f) {
-        assertDoubleBroadcastArraysEquals(a, b, c, r, mask, FTernMaskOp.lift(f));
+        assertDoubleBroadcastArraysEquals(r, a, b, c, mask, FTernMaskOp.lift(f));
     }
 
-    static void assertDoubleBroadcastArraysEquals($type$[] a, $type$[] b, $type$[] c, $type$[] r, boolean[] mask,
+    static void assertDoubleBroadcastArraysEquals($type$[] r, $type$[] a, $type$[] b, $type$[] c, boolean[] mask,
                                                   FTernMaskOp f) {
         int i = 0;
         try {
@@ -645,7 +645,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         return true;
     }
 
-    static void assertArraysEqualsWithinOneUlp($type$[] a, $type$[] r, FUnOp mathf, FUnOp strictmathf) {
+    static void assertArraysEqualsWithinOneUlp($type$[] r, $type$[] a, FUnOp mathf, FUnOp strictmathf) {
         int i = 0;
         try {
             // Check that result is within 1 ulp of strict math or equivalent to math implementation.
@@ -659,7 +659,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertArraysEqualsWithinOneUlp($type$[] a, $type$[] b, $type$[] r, FBinOp mathf, FBinOp strictmathf) {
+    static void assertArraysEqualsWithinOneUlp($type$[] r, $type$[] a, $type$[] b, FBinOp mathf, FBinOp strictmathf) {
         int i = 0;
         try {
             // Check that result is within 1 ulp of strict math or equivalent to math implementation.
@@ -673,7 +673,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertBroadcastArraysEqualsWithinOneUlp($type$[] a, $type$[] b, $type$[] r,
+    static void assertBroadcastArraysEqualsWithinOneUlp($type$[] r, $type$[] a, $type$[] b,
                                                         FBinOp mathf, FBinOp strictmathf) {
         int i = 0;
         try {
@@ -704,7 +704,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$ apply($type$[] a, int b);
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] r, FBinArrayOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, FBinArrayOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
@@ -719,7 +719,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$[] apply($type$[] a, int ix, int[] b, int iy);
     }
 
-    static void assertArraysEquals($type$[] a, int[] b, $type$[] r, FGatherScatterOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, int[] b, FGatherScatterOp f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -746,7 +746,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$[] apply($type$[] r, $type$[] a, int ix, boolean[] mask, int[] b, int iy);
     }
 
-    static void assertArraysEquals($type$[] a, int[] b, $type$[] r, boolean[] mask, FGatherMaskedOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, int[] b, boolean[] mask, FGatherMaskedOp f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -756,7 +756,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, i, mask, b, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(ref, res,
+            Assert.assertEquals(res, ref,
               "(ref: " + Arrays.toString(ref) + ", res: " + Arrays.toString(res) + ", a: "
               + Arrays.toString(Arrays.copyOfRange(a, i, i+SPECIES.length()))
               + ", b: "
@@ -767,7 +767,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertArraysEquals($type$[] a, int[] b, $type$[] r, boolean[] mask, FScatterMaskedOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, int[] b, boolean[] mask, FScatterMaskedOp f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -777,7 +777,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         } catch (AssertionError e) {
             $type$[] ref = f.apply(r, a, i, mask, b, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(ref, res,
+            Assert.assertEquals(res, ref,
               "(ref: " + Arrays.toString(ref) + ", res: " + Arrays.toString(res) + ", a: "
               + Arrays.toString(Arrays.copyOfRange(a, i, i+SPECIES.length()))
               + ", b: "
@@ -794,7 +794,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$[] apply($type$[] a, int origin, int idx);
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] r, int origin, FLaneOp f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, int origin, FLaneOp f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -804,7 +804,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, origin, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(ref, res, "(ref: " + Arrays.toString(ref)
+            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i);
         }
@@ -814,7 +814,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$[] apply($type$[] a, $type$[] b, int origin, int idx);
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] r, int origin, FLaneBop f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, int origin, FLaneBop f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -824,7 +824,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, b, origin, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(ref, res, "(ref: " + Arrays.toString(ref)
+            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i
               + ", at origin #" + origin);
@@ -835,7 +835,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$[] apply($type$[] a, $type$[] b, int origin, boolean[] mask, int idx);
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] r, int origin, boolean[] mask, FLaneMaskedBop f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, int origin, boolean[] mask, FLaneMaskedBop f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -845,7 +845,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, b, origin, mask, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(ref, res, "(ref: " + Arrays.toString(ref)
+            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i
               + ", at origin #" + origin);
@@ -856,7 +856,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$[] apply($type$[] a, $type$[] b, int origin, int part, int idx);
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] r, int origin, int part, FLanePartBop f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, int origin, int part, FLanePartBop f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -866,7 +866,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, b, origin, part, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(ref, res, "(ref: " + Arrays.toString(ref)
+            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i
               + ", at origin #" + origin
@@ -878,7 +878,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $type$[] apply($type$[] a, $type$[] b, int origin, int part, boolean[] mask, int idx);
     }
 
-    static void assertArraysEquals($type$[] a, $type$[] b, $type$[] r, int origin, int part, boolean[] mask, FLanePartMaskedBop f) {
+    static void assertArraysEquals($type$[] r, $type$[] a, $type$[] b, int origin, int part, boolean[] mask, FLanePartMaskedBop f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -888,7 +888,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, b, origin, part, mask, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(ref, res, "(ref: " + Arrays.toString(ref)
+            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i
               + ", at origin #" + origin
@@ -934,7 +934,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #end[!byteOrShort]
 #end[!Int]
 
-    static void assertArraysEquals($type$[] a, int[] r, int offs) {
+    static void assertArraysEquals(int[] r, $type$[] a, int offs) {
         int i = 0;
         try {
             for (; i < r.length; i++) {
@@ -984,7 +984,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #end[!Long]
 
 #if[byte]
-    static void assertArraysEquals($type$[] a, $type$[] r, int offs) {
+    static void assertArraysEquals($type$[] r, $type$[] a, int offs) {
         int i = 0;
         try {
             for (; i < r.length; i++) {
@@ -996,7 +996,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 #end[byte]
 
-    static void assertArraysEquals($type$[] a, long[] r, int offs) {
+    static void assertArraysEquals(long[] r, $type$[] a, int offs) {
         int i = 0;
         try {
             for (; i < r.length; i++) {
@@ -1008,7 +1008,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 
 #if[!Double]
-    static void assertArraysEquals($type$[] a, double[] r, int offs) {
+    static void assertArraysEquals(double[] r, $type$[] a, int offs) {
         int i = 0;
         try {
             for (; i < r.length; i++) {

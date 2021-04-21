@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,9 @@ public class ReferencesGC extends ThreadedGCTest {
     public static void parseArgs(String[] args) {
         for (int i = 0; i < args.length; i++) {
             if (args[i].compareTo("-range") == 0) {
-                RANGE = new Integer(args[++i]).intValue();
+                RANGE = Integer.valueOf(args[++i]).intValue();
             } else if (args[i].compareTo("-ratio") == 0) {
-                RATIO = new Float(args[++i]).floatValue();
+                RATIO = Float.valueOf(args[++i]).floatValue();
             }
         }
         REMOVE = (int) (RANGE * RATIO);

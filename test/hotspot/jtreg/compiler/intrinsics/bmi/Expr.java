@@ -61,6 +61,10 @@ public abstract class Expr {
         return false;
     }
 
+    public boolean isIntToLongExprSupported() {
+        return false;
+    }
+
     public boolean isMemExprSupported() {
         return false;
     }
@@ -113,6 +117,10 @@ public abstract class Expr {
         throw new UnsupportedOperationException();
     }
 
+    public long intToLongExpr(int reg) {
+        throw new UnsupportedOperationException();
+    }
+
     public static class BMIExpr extends Expr {
 
         public boolean isMemExprSupported() {
@@ -157,6 +165,13 @@ public abstract class Expr {
             return true;
         }
     }
+
+    public static class BMIUnaryIntToLongExpr extends BMIUnaryExpr {
+        public boolean isIntToLongExprSupported() {
+            return true;
+        }
+    }
+
 
     public static class BitCountingExpr extends Expr {
         public boolean isUnaryArgumentSupported() {
