@@ -189,6 +189,17 @@ public final class JVM {
     public static native void log(int tagSetId, int level, String message);
 
     /**
+     * Log an event to jfr+event or jfr+event+system.
+     * <p>
+     * Caller should ensure that message is not null or too large to handle.
+     *
+     * @param level log level
+     * @param lines lines to log
+     * @param system if lines should be written to jfr+event+system
+     */
+    public static native void logEvent(int level, String[] lines, boolean system);
+
+    /**
      * Subscribe to LogLevel updates for LogTag
      *
      * @param lt the log tag to subscribe

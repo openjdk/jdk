@@ -50,7 +50,7 @@ import sun.security.util.DerValue;
 public class PKCS8Test {
 
     static final String FORMAT = "PKCS#8";
-    static final String EXPECTED_ALG_ID_CHRS = "DSA\n" +
+    static final String EXPECTED_ALG_ID_CHRS = "DSA, \n" +
             "\tp:     02\n\tq:     03\n\tg:     04\n";
     static final String ALGORITHM = "DSA";
 
@@ -79,10 +79,10 @@ public class PKCS8Test {
         PKCS8Key decodedKey = (PKCS8Key)PKCS8Key.parseKey(
                 new DerValue(encodedKey));
 
-        Assert.assertEquals(ALGORITHM, decodedKey.getAlgorithm());
-        Assert.assertEquals(FORMAT, decodedKey.getFormat());
-        Assert.assertEquals(EXPECTED_ALG_ID_CHRS,
-                decodedKey.getAlgorithmId().toString());
+        Assert.assertEquals(decodedKey.getAlgorithm(), ALGORITHM);
+        Assert.assertEquals(decodedKey.getFormat(), FORMAT);
+        Assert.assertEquals(decodedKey.getAlgorithmId().toString(),
+                EXPECTED_ALG_ID_CHRS);
 
         byte[] encodedOutput = decodedKey.getEncoded();
         Assert.assertTrue(Arrays.equals(encodedOutput, EXPECTED),

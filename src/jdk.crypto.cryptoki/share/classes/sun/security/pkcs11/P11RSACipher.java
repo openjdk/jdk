@@ -50,24 +50,24 @@ import sun.security.util.KeyUtil;
 final class P11RSACipher extends CipherSpi {
 
     // minimum length of PKCS#1 v1.5 padding
-    private final static int PKCS1_MIN_PADDING_LENGTH = 11;
+    private static final int PKCS1_MIN_PADDING_LENGTH = 11;
 
     // constant byte[] of length 0
-    private final static byte[] B0 = new byte[0];
+    private static final byte[] B0 = new byte[0];
 
     // mode constant for public key encryption
-    private final static int MODE_ENCRYPT = 1;
+    private static final int MODE_ENCRYPT = 1;
     // mode constant for private key decryption
-    private final static int MODE_DECRYPT = 2;
+    private static final int MODE_DECRYPT = 2;
     // mode constant for private key encryption (signing)
-    private final static int MODE_SIGN    = 3;
+    private static final int MODE_SIGN    = 3;
     // mode constant for public key decryption (verifying)
-    private final static int MODE_VERIFY  = 4;
+    private static final int MODE_VERIFY  = 4;
 
     // padding type constant for NoPadding
-    private final static int PAD_NONE = 1;
+    private static final int PAD_NONE = 1;
     // padding type constant for PKCS1Padding
-    private final static int PAD_PKCS1 = 2;
+    private static final int PAD_PKCS1 = 2;
 
     // token instance
     private final Token token;

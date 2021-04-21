@@ -104,18 +104,15 @@ public:
     while (_sub_tasks.try_claim_task(/* reference */ task_id)) {
       _preserved_marks_set->get(task_id)->restore_and_increment(_total_size_addr);
     }
-    _sub_tasks.all_tasks_completed();
   }
 
-  ParRestoreTask(uint worker_num,
-                 PreservedMarksSet* preserved_marks_set,
+  ParRestoreTask(PreservedMarksSet* preserved_marks_set,
                  volatile size_t* total_size_addr)
       : AbstractGangTask("Parallel Preserved Mark Restoration"),
         _preserved_marks_set(preserved_marks_set),
+        _sub_tasks(preserved_marks_set->num()),
         _total_size_addr(total_size_addr) {
-    _sub_tasks.set_n_threads(worker_num);
-    _sub_tasks.set_n_tasks(preserved_marks_set->num());
-  }
+    }
 };
 
 void PreservedMarksSet::restore(WorkGang* workers) {
@@ -127,7 +124,7 @@ void PreservedMarksSet::restore(WorkGang* workers) {
   for (uint i = 0; i < _num; i += 1) {
     total_size_before += get(i)->size();
   }
-#endif // def ASSERT
+#endif // ASSERT
 
   if (workers == NULL) {
     for (uint i = 0; i < num(); i += 1) {
@@ -135,7 +132,7 @@ void PreservedMarksSet::restore(WorkGang* workers) {
       get(i)->restore();
     }
   } else {
-    ParRestoreTask task(workers->active_workers(), this, &total_size);
+    ParRestoreTask task(this, &total_size);
     workers->run_task(&task);
   }
 

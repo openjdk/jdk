@@ -60,7 +60,7 @@ public final class Krb5MechFactory implements MechanismFactory {
                         GSSName.NT_EXPORT_NAME,
                         NT_GSS_KRB5_PRINCIPAL};
 
-    final private GSSCaller caller;
+    private final GSSCaller caller;
 
     private static Krb5CredElement getCredFromSubject(GSSNameSpi name,
                                                       boolean initiate)

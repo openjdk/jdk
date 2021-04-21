@@ -436,12 +436,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Milliseconds to delay per retry (* current_retry_count)")        \
           range(0, max_intx)                                                \
                                                                             \
-  product(bool, AssertOnSuspendWaitFailure, false,                          \
-          "Assert/Guarantee on external suspend wait failure")              \
-                                                                            \
-  product(bool, TraceSuspendWaitFailures, false,                            \
-          "Trace external suspend wait failures")                           \
-                                                                            \
   product(bool, MaxFDLimit, true,                                           \
           "Bump the number of file descriptors to maximum (Unix only)")     \
                                                                             \
@@ -1888,6 +1882,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, DynamicDumpSharedSpaces, false,                             \
           "Dynamic archive")                                                \
+                                                                            \
+  product(bool, RecordDynamicDumpInfo, false,                               \
+          "Record class info for jcmd VM.cds dynamic_dump")                 \
                                                                             \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \

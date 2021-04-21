@@ -3653,11 +3653,11 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
-    return Arguments::is_dumping_archive();
+  return Arguments::is_dumping_archive();
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
-    return UseSharedSpaces;
+  return UseSharedSpaces;
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
@@ -3700,6 +3700,24 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     ClassListWriter w;
     w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
   }
+#endif // INCLUDE_CDS
+JVM_END
+
+JVM_ENTRY(void, JVM_DumpClassListToFile(JNIEnv *env, jstring listFileName))
+#if INCLUDE_CDS
+  ResourceMark rm(THREAD);
+  Handle file_handle(THREAD, JNIHandles::resolve_non_null(listFileName));
+  char* file_name  = java_lang_String::as_utf8_string(file_handle());
+  MetaspaceShared::dump_loaded_classes(file_name, THREAD);
+#endif // INCLUDE_CDS
+JVM_END
+
+JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
+#if INCLUDE_CDS
+  ResourceMark rm(THREAD);
+  Handle file_handle(THREAD, JNIHandles::resolve_non_null(archiveName));
+  char* archive_name  = java_lang_String::as_utf8_string(file_handle());
+  DynamicArchive::dump(archive_name, THREAD);
 #endif // INCLUDE_CDS
 JVM_END
 

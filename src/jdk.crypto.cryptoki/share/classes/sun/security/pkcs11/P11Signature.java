@@ -143,20 +143,20 @@ final class P11Signature extends SignatureSpi {
     private boolean p1363Format = false;
 
     // constant for signing mode
-    private final static int M_SIGN   = 1;
+    private static final int M_SIGN   = 1;
     // constant for verification mode
-    private final static int M_VERIFY = 2;
+    private static final int M_VERIFY = 2;
 
     // constant for type digesting, we do the hashing ourselves
-    private final static int T_DIGEST = 1;
+    private static final int T_DIGEST = 1;
     // constant for type update, token does everything
-    private final static int T_UPDATE = 2;
+    private static final int T_UPDATE = 2;
     // constant for type raw, used with RawDSA and NONEwithECDSA only
-    private final static int T_RAW    = 3;
+    private static final int T_RAW    = 3;
 
     // PKCS#11 spec for CKM_ECDSA states that the length should not be longer
     // than 1024 bits", but this is a little arbitrary
-    private final static int RAW_ECDSA_MAX = 128;
+    private static final int RAW_ECDSA_MAX = 128;
 
 
     P11Signature(Token token, String algorithm, long mechanism)

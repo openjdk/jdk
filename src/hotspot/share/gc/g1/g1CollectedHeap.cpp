@@ -28,6 +28,7 @@
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
@@ -4346,14 +4347,13 @@ void G1CollectedHeap::free_collection_set(G1CollectionSet* collection_set, G1Eva
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {
-  HeapRegionSet* _proxy_set;
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
 public:
 
   G1FreeHumongousRegionClosure() :
-    _proxy_set(NULL), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
+    _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
