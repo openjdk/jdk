@@ -43,23 +43,19 @@ public:
   // runnableArg - what to run
   // doneArg - a semaphore to notify when the thread is done running
   // testDurationArg - how long to run (in milliseconds)
-  // maxIterationsArg - max iterations to do
-  UnitTestThread(TestRunnable* const runnableArg, Semaphore* doneArg, const long testDurationArg, const int maxIterationsArgs) :
-    JavaTestThread(doneArg), runnable(runnableArg), testDuration(testDurationArg), maxIterations(maxIterationsArgs) {}
+  UnitTestThread(TestRunnable* const runnableArg, Semaphore* doneArg, const long testDurationArg) :
+    JavaTestThread(doneArg), runnable(runnableArg), testDuration(testDurationArg) {}
 
   // from JavaTestThread
   void main_run() {
-    int iters = 0;
     long stopTime = os::javaTimeMillis() + testDuration;
-    while (os::javaTimeMillis() < stopTime && iters < maxIterations) {
+    while (os::javaTimeMillis() < stopTime) {
       runnable->runUnitTest();
-      iters++;
     }
   }
 private:
   TestRunnable* const runnable;
   const long testDuration;
-  const int maxIterations;
 };
 
 // Helper class for running a given unit test concurrently in multiple threads.
@@ -68,12 +64,10 @@ public:
   // runnableArg - what to run
   // nrOfThreadsArg - how many threads to use concurrently
   // testDurationMillisArg - duration for each test run
-  // maxIterationsArg - max iterations to do in each thread
-  ConcurrentTestRunner(TestRunnable* const runnableArg, int nrOfThreadsArg, long testDurationMillisArg, int maxIterationsArg) :
+  ConcurrentTestRunner(TestRunnable* const runnableArg, int nrOfThreadsArg, long testDurationMillisArg) :
     unitTestRunnable(runnableArg),
     nrOfThreads(nrOfThreadsArg),
-    testDurationMillis(testDurationMillisArg),
-    maxIterations(maxIterationsArg) {}
+    testDurationMillis(testDurationMillisArg) {}
 
   void run() {
     Semaphore done(0);
@@ -81,7 +75,7 @@ public:
     UnitTestThread** t = NEW_C_HEAP_ARRAY(UnitTestThread*, nrOfThreads, mtInternal);
 
     for (int i = 0; i < nrOfThreads; i++) {
-      t[i] = new UnitTestThread(unitTestRunnable, &done, testDurationMillis, maxIterations);
+      t[i] = new UnitTestThread(unitTestRunnable, &done, testDurationMillis);
     }
 
     for (int i = 0; i < nrOfThreads; i++) {
@@ -99,7 +93,6 @@ private:
   TestRunnable* const unitTestRunnable;
   const int nrOfThreads;
   const long testDurationMillis;
-  const int maxIterations;
 };
 
 #endif // GTEST_CONCURRENT_TEST_RUNNER_INLINE_HPP

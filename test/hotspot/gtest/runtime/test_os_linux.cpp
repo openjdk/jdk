@@ -415,11 +415,8 @@ public:
 };
 
 TEST_VM(os_linux, reserve_memory_special_concurrent) {
-  // Enabled large pages can produce lots of warning messages, cap the iteration count.
-  int maxIterations = UseLargePages ? 300 : INT_MAX;
-
   ReserveMemorySpecialRunnable runnable;
-  ConcurrentTestRunner testRunner(&runnable, 30, 15000, maxIterations);
+  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
   testRunner.run();
 }
 
