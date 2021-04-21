@@ -43,7 +43,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
-import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -51,6 +50,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.ArrayDecoder;
@@ -3218,14 +3219,58 @@ public final class String
      * @since 1.8
      */
     public static String join(CharSequence delimiter, CharSequence... elements) {
-        Objects.requireNonNull(delimiter);
-        Objects.requireNonNull(elements);
-        // Number of elements not likely worth Arrays.stream overhead.
-        StringJoiner joiner = new StringJoiner(delimiter);
-        for (CharSequence cs: elements) {
-            joiner.add(cs);
+        var delim = delimiter.toString();
+        var elems = new String[elements.length];
+        for (int i = 0; i < elements.length; i++) {
+            elems[i] = String.valueOf(elements[i]);
         }
-        return joiner.toString();
+        return join("", "", delim, elems, elems.length);
+    }
+
+    /**
+     * Designated join routine.
+     *
+     * @param prefix the non-null prefix
+     * @param suffix the non-null suffix
+     * @param delimiter the non-null delimiter
+     * @param elements the non-null array of non-null elements
+     * @param size the number of elements in the array (<= elements.length)
+     * @return the joined string
+     */
+    @ForceInline
+    static String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
+        int icoder = prefix.coder() | suffix.coder() | delimiter.coder();
+        long len = (long) prefix.length() + suffix.length() + (long) Math.max(0, size - 1) * delimiter.length();
+        // assert len > 0L; // max: (long) Integer.MAX_VALUE << 32
+        // following loop wil add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
+        // so len can overflow at most once
+        for (int i = 0; i < size; i++) {
+            var el = elements[i];
+            len += el.length();
+            icoder |= el.coder();
+        }
+        byte coder = (byte) icoder;
+        // long len overflow check, char -> byte length, int len overflow check
+        if (len < 0L || (len <<= coder) != (int) len) {
+            throw new OutOfMemoryError("Requested string length exceeds VM limit");
+        }
+        byte[] value = StringConcatHelper.newArray(len);
+
+        int off = 0;
+        prefix.getBytes(value, off, coder); off += prefix.length();
+        if (size > 0) {
+            var el = elements[0];
+            el.getBytes(value, off, coder); off += el.length();
+            for (int i = 1; i < size; i++) {
+                delimiter.getBytes(value, off, coder); off += delimiter.length();
+                el = elements[i];
+                el.getBytes(value, off, coder); off += el.length();
+            }
+        }
+        suffix.getBytes(value, off, coder);
+        // assert off + suffix.length() == value.length >> coder;
+
+        return new String(value, coder);
     }
 
     /**
@@ -3266,11 +3311,16 @@ public final class String
             Iterable<? extends CharSequence> elements) {
         Objects.requireNonNull(delimiter);
         Objects.requireNonNull(elements);
-        StringJoiner joiner = new StringJoiner(delimiter);
+        var delim = delimiter.toString();
+        var elems = new String[8];
+        int size = 0;
         for (CharSequence cs: elements) {
-            joiner.add(cs);
+            if (size >= elems.length) {
+                elems = Arrays.copyOf(elems, elems.length << 1);
+            }
+            elems[size++] = String.valueOf(cs);
         }
-        return joiner.toString();
+        return join("", "", delim, elems, size);
     }
 
     /**

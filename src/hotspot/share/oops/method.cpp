@@ -1404,7 +1404,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   assert(MethodHandles::is_signature_polymorphic_name(m->name()), "");
   assert(m->signature() == signature, "");
   m->compute_from_signature(signature);
-  m->init_intrinsic_id();
+  m->init_intrinsic_id(klass_id_for_intrinsics(m->method_holder()));
   assert(m->is_method_handle_intrinsic(), "");
 #ifdef ASSERT
   if (!MethodHandles::is_signature_polymorphic(m->intrinsic_id()))  m->print();
@@ -1558,17 +1558,22 @@ vmSymbolID Method::klass_id_for_intrinsics(const Klass* holder) {
 
   // see if the klass name is well-known:
   Symbol* klass_name = ik->name();
-  return vmSymbols::find_sid(klass_name);
+  vmSymbolID id = vmSymbols::find_sid(klass_name);
+  if (id != vmSymbolID::NO_SID && vmIntrinsics::class_has_intrinsics(id)) {
+    return id;
+  } else {
+    return vmSymbolID::NO_SID;
+  }
 }
 
-void Method::init_intrinsic_id() {
+void Method::init_intrinsic_id(vmSymbolID klass_id) {
   assert(_intrinsic_id == static_cast<int>(vmIntrinsics::_none), "do this just once");
   const uintptr_t max_id_uint = right_n_bits((int)(sizeof(_intrinsic_id) * BitsPerByte));
   assert((uintptr_t)vmIntrinsics::ID_LIMIT <= max_id_uint, "else fix size");
   assert(intrinsic_id_size_in_bytes() == sizeof(_intrinsic_id), "");
 
   // the klass name is well-known:
-  vmSymbolID klass_id = klass_id_for_intrinsics(method_holder());
+  assert(klass_id == klass_id_for_intrinsics(method_holder()), "must be");
   assert(klass_id != vmSymbolID::NO_SID, "caller responsibility");
 
   // ditto for method and signature:

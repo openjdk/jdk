@@ -436,12 +436,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Milliseconds to delay per retry (* current_retry_count)")        \
           range(0, max_intx)                                                \
                                                                             \
-  product(bool, AssertOnSuspendWaitFailure, false,                          \
-          "Assert/Guarantee on external suspend wait failure")              \
-                                                                            \
-  product(bool, TraceSuspendWaitFailures, false,                            \
-          "Trace external suspend wait failures")                           \
-                                                                            \
   product(bool, MaxFDLimit, true,                                           \
           "Bump the number of file descriptors to maximum (Unix only)")     \
                                                                             \
