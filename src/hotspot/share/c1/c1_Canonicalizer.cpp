@@ -548,6 +548,19 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     }
     break;
   }
+  case vmIntrinsics::_getModifiers           : {
+    assert(x->number_of_arguments() == 1, "wrong type");
+
+    // Optimize for Foo.class.getModifier()
+    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
+    if (c != NULL && !c->value()->is_null_object()) {
+      ciType* t = c->value()->java_mirror_type();
+      if (t->is_klass()) {
+        set_constant(t->as_klass()->modifier_flags());
+      }
+    }
+    break;
+  }
   default:
     break;
   }
