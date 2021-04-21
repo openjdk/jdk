@@ -103,7 +103,7 @@ class TaskFactory {
     private final MemoryFileManager fileManager;
     private final JShell state;
     private String classpath = System.getProperty("java.class.path");
-    private final static Version INITIAL_SUPPORTED_VER = Version.parse("9");
+    private static final Version INITIAL_SUPPORTED_VER = Version.parse("9");
 
     TaskFactory(JShell state) {
         this.state = state;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,8 +152,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
 
     @Override
     public VectorMask<E> andNot(VectorMask<E> m) {
-        // FIXME: Generate good code here.
-        return bOp(m, (i, a, b) -> a && !b);
+        return and(m.not());
     }
 
     /*package-private*/

@@ -83,12 +83,12 @@ public class Pretty extends JCTree.Visitor {
      * A string sequence to be used when Pretty output should be constrained
      * to fit into a given size
      */
-    private final static String trimSequence = "[...]";
+    private static final String trimSequence = "[...]";
 
     /**
      * Max number of chars to be generated when output should fit into a single line
      */
-    private final static int PREFERRED_LENGTH = 20;
+    private static final int PREFERRED_LENGTH = 20;
 
     /** Align code to be indented to left margin.
      */

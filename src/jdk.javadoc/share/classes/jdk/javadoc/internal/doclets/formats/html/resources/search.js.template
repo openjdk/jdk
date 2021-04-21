@@ -258,7 +258,7 @@ function doSearch(request, response) {
     function searchIndex(indexArray, category, nameFunc) {
         var primaryResults = searchIndexWithMatcher(indexArray, camelCaseMatcher, category, nameFunc);
         result = result.concat(primaryResults);
-        if (primaryResults.length <= MIN_RESULTS && camelCaseMatcher.flags.indexOf("i") === -1) {
+        if (primaryResults.length <= MIN_RESULTS && !camelCaseMatcher.ignoreCase) {
             var secondaryResults = searchIndexWithMatcher(indexArray, fallbackMatcher, category, nameFunc);
             result = result.concat(secondaryResults.filter(function (item) {
                 return primaryResults.indexOf(item) === -1;

@@ -153,6 +153,7 @@ jint ShenandoahHeap::initialize() {
   Universe::check_alignment(init_byte_size, reg_size_bytes, "Shenandoah heap");
 
   _num_regions = ShenandoahHeapRegion::region_count();
+  assert(_num_regions == (max_byte_size / reg_size_bytes), "Must match");
 
   // Now we know the number of regions, initialize the heuristics.
   initialize_heuristics();
@@ -1550,6 +1551,17 @@ public:
 
   bool is_thread_safe() { return true; }
 };
+
+class ShenandoahRendezvousClosure : public HandshakeClosure {
+public:
+  inline ShenandoahRendezvousClosure() : HandshakeClosure("ShenandoahRendezvous") {}
+  inline void do_thread(Thread* thread) {}
+};
+
+void ShenandoahHeap::rendezvous_threads() {
+  ShenandoahRendezvousClosure cl;
+  Handshake::execute(&cl);
+}
 
 void ShenandoahHeap::recycle_trash() {
   free_set()->recycle_trash();

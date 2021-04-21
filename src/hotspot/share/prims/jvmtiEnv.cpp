@@ -223,12 +223,8 @@ JvmtiEnv::GetNamedModule(jobject class_loader, const char* package_name, jobject
   if (h_loader.not_null() && !java_lang_ClassLoader::is_subclass(h_loader->klass())) {
     return JVMTI_ERROR_ILLEGAL_ARGUMENT;
   }
-  jobject module = Modules::get_named_module(h_loader, package_name, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    CLEAR_PENDING_EXCEPTION;
-    return JVMTI_ERROR_INTERNAL; // unexpected exception
-  }
-  *module_ptr = module;
+  oop module = Modules::get_named_module(h_loader, package_name);
+  *module_ptr = module != NULL ? JNIHandles::make_local(THREAD, module) : NULL;
   return JVMTI_ERROR_NONE;
 } /* end GetNamedModule */
 

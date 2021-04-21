@@ -865,11 +865,10 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
                         false,    // is_strong_hidden
                         true);    // can_access_vm_annotations
 
-  InstanceKlass* anonk = SystemDictionary::parse_stream(no_class_name,
-                                                        host_loader,
-                                                        &st,
-                                                        cl_info,
-                                                        CHECK_NULL);
+  InstanceKlass* anonk = SystemDictionary::resolve_from_stream(&st, no_class_name,
+                                                               host_loader,
+                                                               cl_info,
+                                                               CHECK_NULL);
   assert(anonk != NULL, "no klass created");
   return anonk;
 }

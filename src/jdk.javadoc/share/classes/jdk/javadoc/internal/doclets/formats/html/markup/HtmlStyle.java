@@ -48,7 +48,7 @@ import java.util.regex.Pattern;
  * or {@link javax.lang.model.element.Element "language model elements"}.
  * The usage is made explicit when it is not clear from the surrounding context.
  *
- * @see <a href="https://html.spec.whatwg.org/#classes>WhatWG: {@code class} attribute</a>
+ * @see <a href="https://html.spec.whatwg.org/#classes">WhatWG: {@code class} attribute</a>
  */
 public enum HtmlStyle {
     block,

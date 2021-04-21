@@ -316,6 +316,7 @@ public:
   static void serialize_vm_classes(class SerializeClosure* soc);
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
+  static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
   static bool empty_dumptime_table() NOT_CDS_RETURN_(true);
   static void start_dumping() NOT_CDS_RETURN;

@@ -36,6 +36,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"

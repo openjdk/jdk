@@ -40,6 +40,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "services/management.hpp"
 #include "utilities/enumIterator.hpp"
