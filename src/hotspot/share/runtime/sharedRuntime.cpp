@@ -2961,7 +2961,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
   // This method is returning a data structure allocating as a
   // ResourceObject, so do not put any ResourceMarks in here.
 
-  BasicType sig_bt[256];
+  BasicType *sig_bt = NEW_RESOURCE_ARRAY(BasicType, 256);
   VMRegPair *regs = NEW_RESOURCE_ARRAY(VMRegPair, 256);
   int cnt = 0;
   if (has_receiver) {
