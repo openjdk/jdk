@@ -269,8 +269,13 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
       mark_ref<STRING_DEDUP>(q, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
     } else if (old != nullptr) {
+      // Young mark, bootstrapping old.
       mark_ref<STRING_DEDUP>(old, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
+    } else if (GENERATION == OLD) {
+      // Old mark, found a young pointer.
+      assert(ShenandoahHeap::heap()->is_in_young(obj), "Expected young object.");
+      ShenandoahHeap::heap()->mark_card_as_dirty((HeapWord*)p);
     }
   }
 }

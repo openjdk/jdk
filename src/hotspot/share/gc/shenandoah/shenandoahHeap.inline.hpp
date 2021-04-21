@@ -40,6 +40,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -578,5 +579,12 @@ inline void ShenandoahHeap::clear_cards_for(ShenandoahHeapRegion* region) {
     _card_scan->mark_range_as_empty(region->bottom(), (uint32_t) (region->end() - region->bottom()));
   }
 }
+
+inline void ShenandoahHeap::mark_card_as_dirty(HeapWord* location) {
+  if (mode()->is_generational()) {
+    _card_scan->mark_card_as_dirty(location);
+  }
+}
+
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
