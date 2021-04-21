@@ -130,7 +130,7 @@ public class ToolProviderPositiveTest {
 
     @Test
     public void testHelp() throws Exception {
-        var usageText = "Usage: java -m jdk.httpserver [-b bind address] [-d directory] [-o none|info|verbose] [-p port]";
+        var usageText = "Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory] [-o none|info|verbose]";
         var optionsText = """
                 Options:
                 bind address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
