@@ -228,8 +228,8 @@ public class JMap {
             } else if (subopt.startsWith("gz=")) {
                compress_level = subopt.substring("gz=".length());
                if (compress_level.length() == 0) {
-                    System.err.println("Fail: no number provided in option: '" + subopt + "'");
-                    usage(1);
+                   System.err.println("Fail: no number provided in option: '" + subopt + "'");
+                   usage(1);
                }
             } else {
                 System.err.println("Fail: invalid option: '" + subopt + "'");
