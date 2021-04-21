@@ -367,6 +367,11 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
+    /**
+     * Join strings
+     */
+    String join(String prefix, String suffix, String delimiter, String[] elements, int size);
+
     /*
      * Get the class data associated with the given class.
      * @param c the class

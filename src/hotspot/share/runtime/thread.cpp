@@ -99,6 +99,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/task.hpp"
@@ -3698,7 +3699,7 @@ void JavaThread::invoke_shutdown_hooks() {
 //   + Delete this thread
 //   + Return to caller
 
-bool Threads::destroy_vm() {
+void Threads::destroy_vm() {
   JavaThread* thread = JavaThread::current();
 
 #ifdef ASSERT
@@ -3791,8 +3792,6 @@ bool Threads::destroy_vm() {
 #endif
 
   LogConfiguration::finalize();
-
-  return true;
 }
 
 

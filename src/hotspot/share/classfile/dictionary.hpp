@@ -128,7 +128,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   // Tells whether a protection is in the approved set.
   bool contains_protection_domain(oop protection_domain) const;
   // Adds a protection domain to the approved set.
-  void add_protection_domain(Dictionary* dict, Handle protection_domain);
+  void add_protection_domain(ClassLoaderData* loader_data, Handle protection_domain);
 
   InstanceKlass* instance_klass() const { return literal(); }
   InstanceKlass** klass_addr() { return (InstanceKlass**)literal_addr(); }

@@ -95,4 +95,13 @@ public enum LogTag {
     LogTag(int tagId) {
         id = tagId;
     }
-}
+
+    public LogLevel level() {
+        for (LogLevel l : LogLevel.values()) {
+            if (l.level == tagSetLevel) {
+                return l;
+            }
+        }
+        return LogLevel.WARN; // default
+    }
+ }
