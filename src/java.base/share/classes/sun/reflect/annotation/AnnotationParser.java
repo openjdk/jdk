@@ -358,10 +358,14 @@ public class AnnotationParser {
               result = parseConst(tag, buf, constPool);
         }
 
-        if (!(result instanceof ExceptionProxy) &&
-            !memberType.isInstance(result))
+        if (result == null) {
+            result = new AnnotationTypeMismatchExceptionProxy(
+                memberType.getClass().getName());
+        } else if (!(result instanceof ExceptionProxy) &&
+            !memberType.isInstance(result)) {
             result = new AnnotationTypeMismatchExceptionProxy(
                 result.getClass() + "[" + result + "]");
+        }
         return result;
     }
 
@@ -469,8 +473,10 @@ public class AnnotationParser {
         String typeName  = constPool.getUTF8At(typeNameIndex);
         int constNameIndex = buf.getShort() & 0xFFFF;
         String constName = constPool.getUTF8At(constNameIndex);
-
-        if (!typeName.endsWith(";")) {
+        if (!enumType.isEnum()) {
+            return new AnnotationTypeMismatchExceptionProxy(
+                typeName + "." + constName);
+        } else if (!typeName.endsWith(";")) {
             // support now-obsolete early jsr175-format class files.
             if (!enumType.getName().equals(typeName))
             return new AnnotationTypeMismatchExceptionProxy(

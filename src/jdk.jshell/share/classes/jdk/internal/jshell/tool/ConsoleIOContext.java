@@ -364,11 +364,49 @@ class ConsoleIOContext extends IOContext {
                                              .distinct()
                                              .count() == 2;
                 boolean tooManyItems = suggestions.size() > /*in.getAutoprintThreshold()*/AUTOPRINT_THRESHOLD;
-                CompletionTask ordinaryCompletion =
-                        new OrdinaryCompletionTask(suggestions,
-                                                   anchor[0],
-                                                   !command && !doc.isEmpty(),
-                                                   hasBoth);
+                CompletionTask ordinaryCompletion;
+                List<? extends CharSequence> ordinaryCompletionToShow;
+
+                if (hasBoth) {
+                    ordinaryCompletionToShow =
+                        suggestions.stream()
+                                   .filter(Suggestion::matchesType)
+                                   .map(Suggestion::continuation)
+                                   .distinct()
+                                   .toList();
+                } else {
+                    ordinaryCompletionToShow =
+                        suggestions.stream()
+                                   .map(Suggestion::continuation)
+                                   .distinct()
+                                   .toList();
+                }
+
+                if (ordinaryCompletionToShow.isEmpty()) {
+                    ordinaryCompletion = new ContinueCompletionTask();
+                } else {
+                    Optional<String> prefixOpt =
+                            suggestions.stream()
+                                       .map(Suggestion::continuation)
+                                       .reduce(ConsoleIOContext::commonPrefix);
+
+                    String prefix =
+                            prefixOpt.orElse("").substring(cursor - anchor[0]);
+
+                    if (!prefix.isEmpty() && !command) {
+                        //the completion will fill in the prefix, which will invalidate
+                        //the documentation, avoid adding documentation tasks into the
+                        //todo list:
+                        doc = List.of();
+                    }
+
+                    ordinaryCompletion =
+                            new OrdinaryCompletionTask(ordinaryCompletionToShow,
+                                                       prefix,
+                                                       !command && !doc.isEmpty(),
+                                                       hasBoth);
+                }
+
                 CompletionTask allCompletion = new AllSuggestionsCompletionTask(suggestions, anchor[0]);
 
                 todo = new ArrayList<>();
@@ -567,17 +605,17 @@ class ConsoleIOContext extends IOContext {
     }
 
     private final class OrdinaryCompletionTask implements CompletionTask {
-        private final List<Suggestion> suggestions;
-        private final int anchor;
+        private final List<? extends CharSequence> toShow;
+        private final String prefix;
         private final boolean cont;
         private final boolean showSmart;
 
-        public OrdinaryCompletionTask(List<Suggestion> suggestions,
-                                      int anchor,
+        public OrdinaryCompletionTask(List<? extends CharSequence> toShow,
+                                      String prefix,
                                       boolean cont,
                                       boolean showSmart) {
-            this.suggestions = suggestions;
-            this.anchor = anchor;
+            this.toShow = toShow;
+            this.prefix = prefix;
             this.cont = cont;
             this.showSmart = showSmart;
         }
@@ -589,34 +627,7 @@ class ConsoleIOContext extends IOContext {
 
         @Override
         public Result perform(String text, int cursor) throws IOException {
-            List<? extends CharSequence> toShow;
-
-            if (showSmart) {
-                toShow =
-                    suggestions.stream()
-                               .filter(Suggestion::matchesType)
-                               .map(Suggestion::continuation)
-                               .distinct()
-                               .toList();
-            } else {
-                toShow =
-                    suggestions.stream()
-                               .map(Suggestion::continuation)
-                               .distinct()
-                               .toList();
-            }
-
-            if (toShow.isEmpty()) {
-                return Result.CONTINUE;
-            }
-
-            Optional<String> prefix =
-                    suggestions.stream()
-                               .map(Suggestion::continuation)
-                               .reduce(ConsoleIOContext::commonPrefix);
-
-            String prefixStr = prefix.orElse("").substring(cursor - anchor);
-            in.putString(prefixStr);
+            in.putString(prefix);
 
             boolean showItems = toShow.size() > 1 || showSmart;
 
@@ -625,7 +636,7 @@ class ConsoleIOContext extends IOContext {
                 printColumns(toShow);
             }
 
-            if (!prefixStr.isEmpty())
+            if (!prefix.isEmpty())
                 return showItems ? Result.FINISH : Result.SKIP_NOREPAINT;
 
             return cont ? Result.CONTINUE : Result.FINISH;
@@ -796,6 +807,19 @@ class ConsoleIOContext extends IOContext {
             return doPrintFullDocumentation(todo, doc, false);
         }
 
+    }
+
+    private static class ContinueCompletionTask implements ConsoleIOContext.CompletionTask {
+
+        @Override
+        public String description() {
+            throw new UnsupportedOperationException("Should not get here.");
+        }
+
+        @Override
+        public CompletionTask.Result perform(String text, int cursor) throws IOException {
+            return CompletionTask.Result.CONTINUE;
+        }
     }
 
     @Override

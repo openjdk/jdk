@@ -5260,7 +5260,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
   if (klass_id != vmSymbolID::NO_SID) {
     for (int j = 0; j < methods->length(); ++j) {
       Method* method = methods->at(j);
-      method->init_intrinsic_id();
+      method->init_intrinsic_id(klass_id);
 
       if (CheckIntrinsics) {
         // Check if an intrinsic is defined for method 'method',

@@ -222,4 +222,10 @@ public class ParserTest {
         testBoth(new GraphDocument(), "<graphDocument></graphDocument>");
     }
 
+    @Test
+    public void testParseIncompleteXML() {
+        // Exception should be swallowed, see catch clause in GraphParser.parse.
+        testBoth(new GraphDocument(), "<graphDocument>");
+    }
+
 }

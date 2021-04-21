@@ -565,6 +565,11 @@ static bool has_non_debug_usages(Node* n) {
   return false;
 }
 
+static bool is_box_cache_valid(CallNode* call) {
+  ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
+  return klass->is_box_cache_valid();
+}
+
 // delay box in runtime, treat box as a scalarized object
 static void scalarize_debug_usages(CallNode* call, Node* resproj) {
   GraphKit kit(call->jvms());
@@ -660,7 +665,7 @@ void CallGenerator::do_late_inline_helper() {
     if (is_boxing_late_inline() && callprojs.resproj != nullptr) {
         // replace box node to scalar node only in case it is directly referenced by debug info
         assert(call->as_CallStaticJava()->is_boxing_method(), "sanity");
-        if (!has_non_debug_usages(callprojs.resproj)) {
+        if (!has_non_debug_usages(callprojs.resproj) && is_box_cache_valid(call)) {
           scalarize_debug_usages(call, callprojs.resproj);
         }
     }

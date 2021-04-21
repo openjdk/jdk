@@ -23,7 +23,7 @@
 				ka kab kam kde kea kgp khq ki kk kkj kl kln km kn ko kok ks ksb ksf ksh ku kw ky
 				lag lb lg lij lkt ln lo lrc lt lu luo luy lv
 				mai mas mer mfe mg mgh mgo mi mk ml mn mni mr ms mt mua my mzn
-				naq nb nd nds ne nl nmg nn nnh nus nv nyn
+				naq nb nd nds ne nl nmg nn nnh no nus nv nyn
 				om or os
 				pa pcm pl prg ps pt
 				qu
@@ -121,7 +121,7 @@
 			<variable id='$internet' type='regex'>[A-Z]+|XN--[A-Z0-9]+([-][A-Z0-9]+)*</variable>
 			<variable id='$coverageSpecial' type='choice'>* Cldr:modern</variable>
 			<variable id='$collationPrivate' type='choice'>digits-after private-unihan private-kana private-pinyin</variable>
-			<variable id='$languageDeprecated' type='choice'>no sh tw tl fat in mo ji iw jw</variable>
+			<variable id='$languageDeprecated' type='choice'>sh tw tl fat in mo ji iw jw</variable>
 			<variable id='$localeOrDeprecated'>$locale|$languageDeprecated</variable>
 			<variable id='$name' type='regex'>[a-zA-Z]+([-_][a-zA-Z]+)*[.]?|\d+|\([A-Z][a-z]+\)</variable>
 			<variable id='$defaultCurrencyInfo' type='choice'>DEFAULT</variable>
