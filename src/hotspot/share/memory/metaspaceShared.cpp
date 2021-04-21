@@ -905,12 +905,16 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     char* cds_end =  dynamic_mapped ? dynamic_mapinfo->mapped_end() : static_mapinfo->mapped_end();
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
+    _requested_base_address = static_mapinfo->requested_base_address();
+    if (DynamicDumpSharedSpaces) {
+      // Read stored LF format lines stored in static archive
+      static_mapinfo->read_lambdaform_invokers();
+    }
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
     } else {
       FileMapInfo::set_shared_path_table(static_mapinfo);
     }
-    _requested_base_address = static_mapinfo->requested_base_address();
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
     UseSharedSpaces = false;

@@ -26,21 +26,26 @@
 #define SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
 #include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/growableArray.hpp"
 
-template <class T>
-class GrowableArray;
 class ClassFileStream;
 
 class LambdaFormInvokers : public AllStatic {
  private:
-  static GrowableArray<char*>* _lambdaform_lines;
+  static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
   static void reload_class(char* name, ClassFileStream& st, TRAPS);
- public:
 
+ public:
   static void append(char* line);
+  static void append_filtered(char* line);
   static void regenerate_holder_classes(TRAPS);
-  static GrowableArray<char*>* lambdaform_lines() {
+  static GrowableArrayCHeap<char*, mtClassShared>* lambdaform_lines() {
     return _lambdaform_lines;
+  }
+  static size_t total_bytes();
+  static bool should_regenerate_holder_classes() {
+    assert(DynamicDumpSharedSpaces, "Dynamic dump only");
+    return _lambdaform_lines != nullptr && _lambdaform_lines->length() > 0;
   }
 };
 #endif // SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP

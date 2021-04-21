@@ -236,6 +236,9 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   bool   _use_full_module_graph;        // Can we use the full archived module graph?
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
   narrowOop _heap_obj_roots;            // An objArray that stores all the roots of archived heap objects
+  size_t _lambdaform_invokers_offset;   // lambdaform_invoker lines offset.
+  size_t _size_lambdaform_invokers;     // total size of lambdainvoker lines, string saved as char*, ends with '\0'.
+
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
@@ -280,6 +283,8 @@ public:
   jshort app_class_paths_start_index()     const { return _app_class_paths_start_index; }
   jshort num_module_paths()                const { return _num_module_paths; }
   narrowOop heap_obj_roots()               const { return _heap_obj_roots; }
+  size_t lambdaform_invokers_offset()      const { return _lambdaform_invokers_offset; }
+  size_t size_lambdaform_invokers()        const { return _size_lambdaform_invokers; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
@@ -290,6 +295,8 @@ public:
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
+  void set_lambdaform_invokers_offset(size_t offset) { _lambdaform_invokers_offset = offset; }
+  void set_size_lambdaform_invokers(size_t size)     { _size_lambdaform_invokers = size; }
 
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
@@ -344,7 +351,6 @@ private:
   static SharedPathTable       _shared_path_table;
   static SharedPathTable       _saved_shared_path_table;
   static bool                  _validating_shared_path_table;
-
   // FileMapHeader describes the shared space data in the file to be
   // mapped.  This structure gets written to a file.  It is not a class, so
   // that the compilers don't add any compiler-private data to it.
@@ -449,6 +455,7 @@ public:
   bool  open_for_read();
   void  open_for_write(const char* path = NULL);
   void  write_header();
+  void  write_lambdaform_invokers();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
   char* write_bitmap_region(const CHeapBitMap* ptrmap,
@@ -461,6 +468,7 @@ public:
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
+  void  read_lambdaform_invokers();
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
   void  unmap_regions(int regions[], int num_regions);
   void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
@@ -544,6 +552,23 @@ public:
 
   FileMapRegion* space_at(int i) const {
     return header()->space_at(i);
+  }
+
+  size_t lambdaform_invokers_offset() const {
+    return header()->lambdaform_invokers_offset();
+  }
+
+  // Set current file offset. Must be assigned before write header.
+  void set_lambdaform_invokers_offset() {
+    align_file_position();
+    header()->set_lambdaform_invokers_offset(_file_offset);
+  }
+
+  size_t size_lambdaform_invokers() const {
+    return header()->size_lambdaform_invokers();
+  }
+  void set_size_lambdaform_invokers(size_t size) {
+    header()->set_size_lambdaform_invokers(size);
   }
 
   void print(outputStream* st) {

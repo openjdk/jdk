@@ -33,6 +33,7 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
@@ -3684,7 +3685,7 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
 #if INCLUDE_CDS
-  return ClassListWriter::is_enabled();
+  return ClassListWriter::is_enabled() || DynamicDumpSharedSpaces;
 #else
   return false;
 #endif // INCLUDE_CDS
@@ -3692,13 +3693,17 @@ JVM_END
 
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
 #if INCLUDE_CDS
-  assert(ClassListWriter::is_enabled(), "Should be set and open");
+  assert(ClassListWriter::is_enabled() || DynamicDumpSharedSpaces,  "Should be set and open or do dynamic dump");
   if (line != NULL) {
     ResourceMark rm(THREAD);
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
-    ClassListWriter w;
-    w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
+    if (DynamicDumpSharedSpaces) {
+      LambdaFormInvokers::append_filtered(os::strdup((const char*)c_line, mtInternal));
+    } else {
+      ClassListWriter w;
+      w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
+    }
   }
 #endif // INCLUDE_CDS
 JVM_END

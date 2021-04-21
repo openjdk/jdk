@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataShared.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -259,6 +260,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   log_info(cds)("    instance classes   = %5d", _num_instance_klasses);
   log_info(cds)("    obj array classes  = %5d", _num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", _num_type_array_klasses);
+  log_info(cds)("    symbols = %5d", _symbols->length());
 
   if (DumpSharedSpaces) {
     // To ensure deterministic contents in the static archive, we need to ensure that
@@ -1094,6 +1096,11 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
   if (mapinfo->header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
     mapinfo->set_header_base_archive_name_size(strlen(Arguments::GetSharedArchivePath()) + 1);
     mapinfo->set_header_base_archive_is_default(FLAG_IS_DEFAULT(SharedArchiveFile));
+  }
+  if (mapinfo->is_static()) {
+    mapinfo->set_lambdaform_invokers_offset();
+    mapinfo->set_size_lambdaform_invokers(LambdaFormInvokers::total_bytes());
+    mapinfo->write_lambdaform_invokers();
   }
   mapinfo->set_header_crc(mapinfo->compute_header_crc());
   // After this point, we should not write any data into mapinfo->header() since this

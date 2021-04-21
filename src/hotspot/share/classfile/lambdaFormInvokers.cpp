@@ -46,14 +46,29 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 
-GrowableArray<char*>* LambdaFormInvokers::_lambdaform_lines = NULL;
+GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = NULL;
+#define NUM_FILTER 4
+static const char* filter[NUM_FILTER] = {"java.lang.invoke.Invokers$Holder",
+                                         "java.lang.invoke.DirectMethodHandle$Holder",
+                                         "java.lang.invoke.DelegatingMethodHandle$Holder",
+                                         "java.lang.invoke.LambdaForm$Holder"};
 
 void LambdaFormInvokers::append(char* line) {
   if (_lambdaform_lines == NULL) {
-    _lambdaform_lines = new GrowableArray<char*>(100);
+    _lambdaform_lines = new GrowableArrayCHeap<char*, mtClassShared>(150);
   }
   _lambdaform_lines->append(line);
 }
+
+void LambdaFormInvokers::append_filtered(char* line) {
+  for (int k = 0; k < NUM_FILTER; k++) {
+    if (strstr(line, filter[k]) != nullptr) {
+        append(line);
+        break;
+    }
+  }
+}
+#undef NUM_FILTER
 
 void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   assert(_lambdaform_lines != NULL, "Bad List");
@@ -63,6 +78,8 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
   guarantee(cds_klass != NULL, "jdk/internal/misc/CDS must exist!");
 
+  log_info(cds)("Total lambdaform lines %d  and total bytes " SIZE_FORMAT, _lambdaform_lines->length(), total_bytes());
+  HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
   objArrayHandle list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
   for (int i = 0; i < len; i++) {
@@ -147,5 +164,19 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
 
   // exclude the existing class from dump
   SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass));
+  SystemDictionaryShared::init_dumptime_info(result);
   log_info(cds, lambda)("Replaced class %s, old: %p  new: %p", name, klass, result);
+}
+
+size_t LambdaFormInvokers::total_bytes() {
+  if (_lambdaform_lines != nullptr) {
+    size_t total = 0;
+    for (int i = 0; i < _lambdaform_lines->length(); i ++) {
+      char* str = _lambdaform_lines->at(i);
+      total += strlen(str) + 1; // including ending '\0'
+    }
+    return total;
+  } else {
+    return 0;
+  }
 }
