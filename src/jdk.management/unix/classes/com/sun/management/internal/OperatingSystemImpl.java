@@ -136,12 +136,11 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         if (containerMetrics != null) {
             long quota = containerMetrics.getCpuQuota();
             if (quota > 0) {
-                long periodLength = containerMetrics.getCpuPeriod();
                 long numPeriods = containerMetrics.getCpuNumPeriods();
                 long usageNanos = containerMetrics.getCpuUsage();
-                if (periodLength > 0 && numPeriods > 0 && usageNanos > 0) {
-                    long elapsedNanos = TimeUnit.MICROSECONDS.toNanos(periodLength * numPeriods);
-                    double systemLoad = (double) usageNanos / elapsedNanos;
+                if (numPeriods > 0 && usageNanos > 0) {
+                    long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
+                    double systemLoad = (double) usageNanos / quotaNanos;
                     // Ensure the return value is in the range 0.0 -> 1.0
                     systemLoad = Math.max(0.0, systemLoad);
                     systemLoad = Math.min(1.0, systemLoad);
