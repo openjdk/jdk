@@ -348,6 +348,13 @@ JImageFile* ClassPathImageEntry::jimage() const {
   return JImage_File;
 }
 
+JImageFile* ClassPathImageEntry::jimage_non_null() const {
+  assert(ClassLoader::has_jrt_entry(), "must be");
+  assert(jimage() != NULL, "should have been opened by ClassLoader::lookup_vm_options "
+                           "and remained throughout normal JVM lifetime");
+  return jimage();
+}
+
 void ClassPathImageEntry::set_jimage(JImageFile* jimage) {
   JImage_File = jimage;
 }
@@ -369,14 +376,6 @@ ClassPathImageEntry::ClassPathImageEntry(JImageFile* jimage, const char* name) :
   _name = copy_path(name);
 }
 
-ClassPathImageEntry::~ClassPathImageEntry() {
-  assert(_singleton == this, "must be");
-  DEBUG_ONLY(_singleton = NULL);
-
-  FREE_C_HEAP_ARRAY(const char, _name);
-  close_jimage();
-}
-
 ClassFileStream* ClassPathImageEntry::open_stream(Thread* current, const char* name) {
   return open_stream_for_loader(current, name, ClassLoaderData::the_null_class_loader_data());
 }
@@ -390,7 +389,7 @@ ClassFileStream* ClassPathImageEntry::open_stream(Thread* current, const char* n
 //
 ClassFileStream* ClassPathImageEntry::open_stream_for_loader(Thread* current, const char* name, ClassLoaderData* loader_data) {
   jlong size;
-  JImageLocationRef location = (*JImageFindResource)(jimage(), "", get_jimage_version_string(), name, &size);
+  JImageLocationRef location = (*JImageFindResource)(jimage_non_null(), "", get_jimage_version_string(), name, &size);
 
   if (location == 0) {
     TempNewSymbol class_name = SymbolTable::new_symbol(name);
@@ -398,7 +397,7 @@ ClassFileStream* ClassPathImageEntry::open_stream_for_loader(Thread* current, co
 
     if (pkg_name != NULL) {
       if (!Universe::is_module_initialized()) {
-        location = (*JImageFindResource)(jimage(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
+        location = (*JImageFindResource)(jimage_non_null(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
       } else {
         PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
         if (package_entry != NULL) {
@@ -409,7 +408,7 @@ ClassFileStream* ClassPathImageEntry::open_stream_for_loader(Thread* current, co
           assert(module->is_named(), "Boot classLoader package is in unnamed module");
           const char* module_name = module->name()->as_C_string();
           if (module_name != NULL) {
-            location = (*JImageFindResource)(jimage(), module_name, get_jimage_version_string(), name, &size);
+            location = (*JImageFindResource)(jimage_non_null(), module_name, get_jimage_version_string(), name, &size);
           }
         }
       }
@@ -420,7 +419,7 @@ ClassFileStream* ClassPathImageEntry::open_stream_for_loader(Thread* current, co
       ClassLoader::perf_sys_classfile_bytes_read()->inc(size);
     }
     char* data = NEW_RESOURCE_ARRAY(char, size);
-    (*JImageGetResource)(jimage(), location, data, size);
+    (*JImageGetResource)(jimage_non_null(), location, data, size);
     // Resource allocated
     assert(this == (ClassPathImageEntry*)ClassLoader::get_jrt_entry(), "must be");
     return new ClassFileStream((u1*)data,

@@ -123,10 +123,11 @@ public:
   bool is_modules_image() const;
   const char* name() const { return _name == NULL ? "" : _name; }
   JImageFile* jimage() const;
+  JImageFile* jimage_non_null() const;
   void set_jimage(JImageFile* jimage);
   void close_jimage();
   ClassPathImageEntry(JImageFile* jimage, const char* name);
-  virtual ~ClassPathImageEntry();
+  virtual ~ClassPathImageEntry() { ShouldNotReachHere(); }
   ClassFileStream* open_stream(Thread* current, const char* name);
   ClassFileStream* open_stream_for_loader(Thread* current, const char* name, ClassLoaderData* loader_data);
 };
