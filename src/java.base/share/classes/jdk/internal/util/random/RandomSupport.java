@@ -29,7 +29,6 @@ import java.lang.annotation.*;
 import java.math.BigInteger;
 import java.util.Objects;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
@@ -954,7 +953,7 @@ public class RandomSupport {
      */
     public static class RandomIntsSpliterator extends RandomSupport.RandomSpliterator
             implements Spliterator.OfInt {
-        final AbstractSpliteratorGenerator generatingGenerator;
+        final RandomGenerator generatingGenerator;
         final int origin;
         final int bound;
 
@@ -967,7 +966,7 @@ public class RandomSupport {
          * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
          * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
          */
-        public RandomIntsSpliterator(AbstractSpliteratorGenerator generatingGenerator,
+        public RandomIntsSpliterator(RandomGenerator generatingGenerator,
                                      long index, long fence, int origin, int bound) {
             super(index, fence);
             this.generatingGenerator = generatingGenerator;
@@ -1012,7 +1011,7 @@ public class RandomSupport {
      */
     public static class RandomLongsSpliterator extends RandomSupport.RandomSpliterator
             implements Spliterator.OfLong {
-        final AbstractSpliteratorGenerator generatingGenerator;
+        final RandomGenerator generatingGenerator;
         final long origin;
         final long bound;
 
@@ -1025,7 +1024,7 @@ public class RandomSupport {
          * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
          * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
          */
-        public RandomLongsSpliterator(AbstractSpliteratorGenerator generatingGenerator,
+        public RandomLongsSpliterator(RandomGenerator generatingGenerator,
                                       long index, long fence, long origin, long bound) {
             super(index, fence);
             this.generatingGenerator = generatingGenerator;
@@ -1070,7 +1069,7 @@ public class RandomSupport {
      */
     public static class RandomDoublesSpliterator extends RandomSupport.RandomSpliterator
             implements Spliterator.OfDouble {
-        final AbstractSpliteratorGenerator generatingGenerator;
+        final RandomGenerator generatingGenerator;
         final double origin;
         final double bound;
 
@@ -1083,7 +1082,7 @@ public class RandomSupport {
          * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
          * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
          */
-        public RandomDoublesSpliterator(AbstractSpliteratorGenerator generatingGenerator,
+        public RandomDoublesSpliterator(RandomGenerator generatingGenerator,
                                         long index, long fence, double origin, double bound) {
             super(index, fence);
             this.generatingGenerator = generatingGenerator;
@@ -1430,54 +1429,10 @@ public class RandomSupport {
          */
 
         /**
-         * Explicit constructor.
+         * No instances.
          */
-        protected AbstractSpliteratorGenerator() {
+        private AbstractSpliteratorGenerator() {
         }
-
-        // Bug 8265221
-        // To prevent leaking private interfaces.
-        //
-        private static final class ThreadLocalRandomProxy extends Random {
-            @java.io.Serial
-            static final long serialVersionUID = 0L;
-
-            static final AbstractSpliteratorGenerator PROXY = new ThreadLocalRandomProxy();
-
-            public int nextInt() {
-                return ThreadLocalRandom.current().nextInt();
-            }
-
-            public long nextLong() {
-                return ThreadLocalRandom.current().nextLong();
-            }
-        }
-
-        private Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-            if (this instanceof ThreadLocalRandom) {
-                return new RandomIntsSpliterator(ThreadLocalRandomProxy.PROXY, index, fence, origin, bound);
-            } else {
-                return new RandomIntsSpliterator(this, index, fence, origin, bound);
-            }
-        }
-
-        private Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-            if (this instanceof ThreadLocalRandom) {
-                return new RandomLongsSpliterator(ThreadLocalRandomProxy.PROXY, index, fence, origin, bound);
-            } else {
-                return new RandomLongsSpliterator(this, index, fence, origin, bound);
-            }
-        }
-
-        private Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-            if (this instanceof ThreadLocalRandom) {
-                return new RandomDoublesSpliterator(ThreadLocalRandomProxy.PROXY, index, fence, origin, bound);
-            } else {
-                return new RandomDoublesSpliterator(this, index, fence, origin, bound);
-            }
-        }
-
-        /* ---------------- public methods ---------------- */
 
         // stream methods, coded in a way intended to better isolate for
         // maintenance purposes the small differences across forms.
@@ -1494,79 +1449,116 @@ public class RandomSupport {
             return StreamSupport.doubleStream(srng, false);
         }
 
-        @Override
+        /* ---------------- public static methods ---------------- */
+
+       public static IntStream ints(RandomGenerator gen, long streamSize) {
+            RandomSupport.checkStreamSize(streamSize);
+            return intStream(new RandomIntsSpliterator(gen, 0L, streamSize, Integer.MAX_VALUE, 0));
+        }
+
+        public static IntStream ints(RandomGenerator gen) {
+            return intStream(new RandomIntsSpliterator(gen, 0L, Long.MAX_VALUE, Integer.MAX_VALUE, 0));
+        }
+
+        public static IntStream ints(RandomGenerator gen, long streamSize, int randomNumberOrigin, int randomNumberBound) {
+            RandomSupport.checkStreamSize(streamSize);
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return intStream(new RandomIntsSpliterator(gen, 0L, streamSize, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static IntStream ints(RandomGenerator gen, int randomNumberOrigin, int randomNumberBound) {
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return intStream(new RandomIntsSpliterator(gen, 0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static LongStream longs(RandomGenerator gen, long streamSize) {
+            RandomSupport.checkStreamSize(streamSize);
+            return longStream(new RandomLongsSpliterator(gen, 0L, streamSize, Long.MAX_VALUE, 0L));
+        }
+
+        public static LongStream longs(RandomGenerator gen) {
+            return longStream(new RandomLongsSpliterator(gen, 0L, Long.MAX_VALUE, Long.MAX_VALUE, 0L));
+        }
+
+        public static LongStream longs(RandomGenerator gen, long streamSize, long randomNumberOrigin, long randomNumberBound) {
+            RandomSupport.checkStreamSize(streamSize);
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return longStream(new RandomLongsSpliterator(gen, 0L, streamSize, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static LongStream longs(RandomGenerator gen, long randomNumberOrigin, long randomNumberBound) {
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return longStream(new RandomLongsSpliterator(gen, 0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static DoubleStream doubles(RandomGenerator gen, long streamSize) {
+            RandomSupport.checkStreamSize(streamSize);
+            return doubleStream(new RandomDoublesSpliterator(gen, 0L, streamSize, Double.MAX_VALUE, 0.0));
+        }
+
+        public static DoubleStream doubles(RandomGenerator gen) {
+            return doubleStream(new RandomDoublesSpliterator(gen, 0L, Long.MAX_VALUE, Double.MAX_VALUE, 0.0));
+        }
+
+        public static DoubleStream doubles(RandomGenerator gen, long streamSize, double randomNumberOrigin, double randomNumberBound) {
+            RandomSupport.checkStreamSize(streamSize);
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return doubleStream(new RandomDoublesSpliterator(gen, 0L, streamSize, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static DoubleStream doubles(RandomGenerator gen, double randomNumberOrigin, double randomNumberBound) {
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return doubleStream(new RandomDoublesSpliterator(gen, 0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+        }
+
+        /* ---------------- public instance methods ---------------- */
+
         public IntStream ints(long streamSize) {
-            RandomSupport.checkStreamSize(streamSize);
-            return intStream(makeIntsSpliterator(0L, streamSize, Integer.MAX_VALUE, 0));
+            return ints(this, streamSize);
         }
 
-        @Override
         public IntStream ints() {
-            return intStream(makeIntsSpliterator(0L, Long.MAX_VALUE, Integer.MAX_VALUE, 0));
+            return ints(this);
         }
 
-        @Override
         public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
-            RandomSupport.checkStreamSize(streamSize);
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return intStream(makeIntsSpliterator(0L, streamSize, randomNumberOrigin, randomNumberBound));
+            return ints(this, streamSize, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return intStream(makeIntsSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+            return ints(this, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public LongStream longs(long streamSize) {
-            RandomSupport.checkStreamSize(streamSize);
-            return longStream(makeLongsSpliterator(0L, streamSize, Long.MAX_VALUE, 0L));
+            return longs(this, streamSize);
         }
 
-        @Override
         public LongStream longs() {
-            return longStream(makeLongsSpliterator(0L, Long.MAX_VALUE, Long.MAX_VALUE, 0L));
+            return longs(this);
         }
 
-        @Override
-        public LongStream longs(long streamSize, long randomNumberOrigin,
-                                long randomNumberBound) {
-            RandomSupport.checkStreamSize(streamSize);
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return longStream(makeLongsSpliterator(0L, streamSize, randomNumberOrigin, randomNumberBound));
+        public LongStream longs(long streamSize, long randomNumberOrigin,long randomNumberBound) {
+            return longs(this, streamSize, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return StreamSupport.longStream
-                    (makeLongsSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound),
-                            false);
+            return longs(this, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public DoubleStream doubles(long streamSize) {
-            RandomSupport.checkStreamSize(streamSize);
-            return doubleStream(makeDoublesSpliterator(0L, streamSize, Double.MAX_VALUE, 0.0));
+            return doubles(this, streamSize);
         }
 
-        @Override
         public DoubleStream doubles() {
-            return doubleStream(makeDoublesSpliterator(0L, Long.MAX_VALUE, Double.MAX_VALUE, 0.0));
+            return doubles(this);
         }
 
-        @Override
         public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
-            RandomSupport.checkStreamSize(streamSize);
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return doubleStream(makeDoublesSpliterator(0L, streamSize, randomNumberOrigin, randomNumberBound));
+            return doubles(this, streamSize, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return doubleStream(makeDoublesSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+            return doubles(this, randomNumberOrigin, randomNumberBound);
         }
 
     }
