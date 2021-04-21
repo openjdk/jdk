@@ -25,8 +25,9 @@
 #ifndef SHARE_MEMORY_FILEMAP_HPP
 #define SHARE_MEMORY_FILEMAP_HPP
 
+#include "cds/metaspaceShared.hpp"
 #include "include/cds.h"
-#include "memory/metaspaceShared.hpp"
+#include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/align.hpp"
 

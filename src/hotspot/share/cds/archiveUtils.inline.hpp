@@ -25,7 +25,7 @@
 #ifndef SHARE_MEMORY_ARCHIVEUTILS_INLINE_HPP
 #define SHARE_MEMORY_ARCHIVEUTILS_INLINE_HPP
 
-#include "memory/archiveUtils.hpp"
+#include "cds/archiveUtils.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 inline bool SharedDataRelocator::do_bit(size_t offset) {

@@ -25,9 +25,9 @@
 #ifndef SHARE_MEMORY_HEAPSHARED_INLINE_HPP
 #define SHARE_MEMORY_HEAPSHARED_INLINE_HPP
 
+#include "cds/heapShared.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "memory/heapShared.hpp"
 #include "utilities/align.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP

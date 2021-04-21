@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/generationSpec.hpp"
-#include "memory/filemap.hpp"
 #include "runtime/java.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_SERIALGC

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -35,7 +36,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.hpp"

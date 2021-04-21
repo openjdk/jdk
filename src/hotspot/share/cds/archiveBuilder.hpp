@@ -25,8 +25,8 @@
 #ifndef SHARE_MEMORY_ARCHIVEBUILDER_HPP
 #define SHARE_MEMORY_ARCHIVEBUILDER_HPP
 
-#include "memory/archiveUtils.hpp"
-#include "memory/dumpAllocStats.hpp"
+#include "cds/archiveUtils.hpp"
+#include "cds/dumpAllocStats.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"

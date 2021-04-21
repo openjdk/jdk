@@ -27,9 +27,9 @@
 
 #if INCLUDE_CDS
 
+#include "cds/filemap.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "memory/allocation.hpp"
-#include "memory/filemap.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"

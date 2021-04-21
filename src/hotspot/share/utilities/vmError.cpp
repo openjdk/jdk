@@ -32,7 +32,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "memory/universe.hpp"

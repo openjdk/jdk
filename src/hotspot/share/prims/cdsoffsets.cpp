@@ -26,8 +26,8 @@
 #include "utilities/macros.hpp"
 #if INCLUDE_CDS
 #include "runtime/os.hpp"
-#include "memory/dynamicArchive.hpp"
-#include "memory/filemap.hpp"
+#include "cds/dynamicArchive.hpp"
+#include "cds/filemap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "prims/cdsoffsets.hpp"
