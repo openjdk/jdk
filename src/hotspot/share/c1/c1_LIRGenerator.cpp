@@ -3047,6 +3047,9 @@ void LIRGenerator::do_IfOp(IfOp* x) {
 
 #ifdef JFR_HAVE_INTRINSICS
 void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
+#if !(defined AARCH64 || defined X86)
+  // TODO: arm, ppc, s390
+#else
   LIRItem arg(x->argument_at(0), this);
 
   arg.load_item();
@@ -3168,6 +3171,7 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
   __ branch_destination(L_end->label());
 
   __ move(result, rlock_result(x));
+#endif
 }
 
 void LIRGenerator::do_getEventWriter(Intrinsic* x) {
