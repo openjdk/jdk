@@ -38,7 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -101,7 +101,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     public Content getSerializableFields(String heading, Content serializableFieldsTree) {
         HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail);
         if (serializableFieldsTree.isValid()) {
-            Content headingContent = new StringContent(heading);
+            Content headingContent = Text.of(heading);
             Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
             section.add(serialHeading);
             section.add(serializableFieldsTree);
@@ -112,7 +112,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public void addMemberHeader(TypeElement fieldType, String fieldTypeStr,
             String fieldDimensions, String fieldName, Content contentTree) {
-        Content nameContent = new StringContent(fieldName);
+        Content nameContent = Text.of(fieldName);
         Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
         contentTree.add(heading);
         Content pre = new HtmlTree(TagName.PRE);
@@ -130,7 +130,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
 
     @Override
     public void addMemberHeader(TypeMirror fieldType, String fieldName, Content contentTree) {
-        Content nameContent = new StringContent(fieldName);
+        Content nameContent = Text.of(fieldName);
         Content heading = HtmlTree.HEADING(TagName.H5, nameContent);
         contentTree.add(heading);
         Content pre = new HtmlTree(TagName.PRE);

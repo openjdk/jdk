@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ public class BasicJMapTest {
         testDumpLive();
         testDumpAll();
         testDumpCompressed();
+        testDumpIllegalCompressedArgs();
     }
 
     private static void testHisto() throws Exception {
@@ -230,7 +231,23 @@ public class BasicJMapTest {
         dump(true, false, true);
     }
 
+    private static void testDumpIllegalCompressedArgs() throws Exception{
+        dump(true, false, true, "0", 1, "Compression level out of range");
+        dump(true, false, true, "100", 1, "Compression level out of range");
+        dump(true, false, true, "abc", 1, "Invalid compress level");
+        dump(true, false, true, "", 1, "Fail: no number provided in option:");
+    }
+
     private static void dump(boolean live, boolean explicitAll, boolean compressed) throws Exception {
+        dump(live, explicitAll, compressed, "1", 0, "Heap dump file created");
+    }
+
+    private static void dump(boolean live,
+                             boolean explicitAll,
+                             boolean compressed,
+                             String compressLevel,
+                             int expExitValue,
+                             String expOutput) throws Exception {
         String liveArg = "";
         String fileArg = "";
         String compressArg = "";
@@ -248,7 +265,7 @@ public class BasicJMapTest {
 
         String filePath = "jmap.dump" + System.currentTimeMillis() + ".hprof";
         if (compressed) {
-            compressArg = "gz=1,";
+            compressArg = "gz=" + compressLevel;
             filePath = filePath + ".gz";
         }
 
@@ -256,14 +273,16 @@ public class BasicJMapTest {
         if (file.exists()) {
             file.delete();
         }
-        fileArg = "file=" + file.getName();
+        fileArg = "file=" + file.getName() + ",";
 
         OutputAnalyzer output;
-        allArgs = allArgs + liveArg + compressArg + "format=b," + fileArg;
+        allArgs = allArgs + liveArg + "format=b," + fileArg + compressArg;
         output = jmap(allArgs);
-        output.shouldHaveExitValue(0);
-        output.shouldContain("Heap dump file created");
-        verifyDumpFile(file);
+        output.shouldHaveExitValue(expExitValue);
+        output.shouldContain(expOutput);
+        if (expExitValue == 0) {
+            verifyDumpFile(file);
+        }
         file.delete();
     }
 

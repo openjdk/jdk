@@ -204,7 +204,7 @@ public final class ImageReader implements AutoCloseable {
         return reader.getResourceStream(loc);
     }
 
-    private final static class SharedImageReader extends BasicImageReader {
+    private static final class SharedImageReader extends BasicImageReader {
         static final int SIZE_OF_OFFSET = Integer.BYTES;
 
         static final Map<Path, SharedImageReader> OPEN_FILES = new HashMap<>();

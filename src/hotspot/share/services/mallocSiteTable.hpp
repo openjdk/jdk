@@ -57,12 +57,13 @@ class MallocSite : public AllocationSite {
 class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  private:
   MallocSite                         _malloc_site;
+  const unsigned int                 _hash;
   MallocSiteHashtableEntry* volatile _next;
 
  public:
 
   MallocSiteHashtableEntry(NativeCallStack stack, MEMFLAGS flags):
-    _malloc_site(stack, flags), _next(NULL) {
+    _malloc_site(stack, flags), _hash(stack.calculate_hash()), _next(NULL) {
     assert(flags != mtNone, "Expect a real memory type");
   }
 
@@ -74,6 +75,8 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
   // Return true if the entry is inserted successfully.
   // The operation can be failed due to contention from other thread.
   bool atomic_insert(MallocSiteHashtableEntry* entry);
+
+  unsigned int hash() const { return _hash; }
 
   inline const MallocSite* peek() const { return &_malloc_site; }
   inline MallocSite* data()             { return &_malloc_site; }

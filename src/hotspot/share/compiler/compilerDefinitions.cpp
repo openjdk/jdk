@@ -191,9 +191,6 @@ void set_client_emulation_mode_flags() {
   if (FLAG_IS_DEFAULT(CodeCacheExpansionSize)) {
     FLAG_SET_ERGO(CodeCacheExpansionSize, 32*K);
   }
-  if (FLAG_IS_DEFAULT(MetaspaceSize)) {
-    FLAG_SET_ERGO(MetaspaceSize, MIN2(12*M, MaxMetaspaceSize));
-  }
   if (FLAG_IS_DEFAULT(MaxRAM)) {
     // Do not use FLAG_SET_ERGO to update MaxRAM, as this will impact
     // heap setting done based on available phys_mem (see Arguments::set_heap_size).
@@ -213,6 +210,9 @@ bool CompilerConfig::is_compilation_mode_selected() {
                     || !FLAG_IS_DEFAULT(UseJVMCICompiler));
 }
 
+bool CompilerConfig::is_interpreter_only() {
+  return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
+}
 
 static bool check_legacy_flags() {
   JVMFlag* compile_threshold_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(CompileThreshold));
@@ -308,12 +308,19 @@ void CompilerConfig::set_compilation_policy_flags() {
         8 * CodeCache::page_size() <= ReservedCodeCacheSize) {
       FLAG_SET_ERGO(SegmentedCodeCache, true);
     }
+    if (Arguments::is_compiler_only()) { // -Xcomp
+      // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
+      // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
+      // compile a level 4 (C2) and then continue executing it.
+      if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
+        FLAG_SET_CMDLINE(Tier3InvokeNotifyFreqLog, 0);
+      }
+      if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
+        FLAG_SET_CMDLINE(Tier4InvocationThreshold, 0);
+      }
+    }
   }
 
-  if (!UseInterpreter) { // -Xcomp
-    Tier3InvokeNotifyFreqLog = 0;
-    Tier4InvocationThreshold = 0;
-  }
 
   if (CompileThresholdScaling < 0) {
     vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
@@ -444,11 +451,18 @@ void CompilerConfig::set_jvmci_specific_flags() {
       if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
         FLAG_SET_DEFAULT(InitialCodeCacheSize, MAX2(16*M, InitialCodeCacheSize));
       }
-      if (FLAG_IS_DEFAULT(MetaspaceSize)) {
-        FLAG_SET_DEFAULT(MetaspaceSize, MIN2(MAX2(12*M, MetaspaceSize), MaxMetaspaceSize));
-      }
       if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
         FLAG_SET_DEFAULT(NewSizeThreadIncrease, MAX2(4*K, NewSizeThreadIncrease));
+      }
+      if (FLAG_IS_DEFAULT(Tier3DelayOn)) {
+        // This effectively prevents the compile broker scheduling tier 2
+        // (i.e., limited C1 profiling) compilations instead of tier 3
+        // (i.e., full C1 profiling) compilations when the tier 4 queue
+        // backs up (which is quite likely when using a non-AOT compiled JVMCI
+        // compiler). The observation based on jargraal is that the downside
+        // of skipping full profiling is much worse for performance than the
+        // queue backing up.
+        FLAG_SET_DEFAULT(Tier3DelayOn, 100000);
       }
     } // !UseJVMCINativeLibrary
   } // UseJVMCICompiler

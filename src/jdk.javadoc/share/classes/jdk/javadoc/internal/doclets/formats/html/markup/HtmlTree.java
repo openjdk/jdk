@@ -86,8 +86,9 @@ public class HtmlTree extends Content {
 
     /**
      * A sentinel value to explicitly indicate empty content.
+     * The '==' identity of this object is significant.
      */
-    public static final Content EMPTY = new StringContent("");
+    public static final Content EMPTY = Text.of("");
 
     /**
      * Creates an {@code HTMLTree} object representing an HTML element
@@ -198,14 +199,14 @@ public class HtmlTree extends Content {
     public HtmlTree add(CharSequence stringContent) {
         if (!content.isEmpty()) {
             Content lastContent = content.get(content.size() - 1);
-            if (lastContent instanceof StringContent)
+            if (lastContent instanceof TextBuilder)
                 lastContent.add(stringContent);
             else {
-                add(new StringContent(stringContent));
+                add(new TextBuilder(stringContent));
             }
         }
         else {
-            add(new StringContent(stringContent));
+            add(new TextBuilder(stringContent));
         }
         return this;
     }
@@ -527,10 +528,10 @@ public class HtmlTree extends Content {
      * @param value the initial value
      * @return the element
      */
-    public static HtmlTree INPUT(String type, String id, String value) {
+    public static HtmlTree INPUT(String type, HtmlId id, String value) {
         return new HtmlTree(TagName.INPUT)
                 .put(HtmlAttr.TYPE, type)
-                .put(HtmlAttr.ID, id)
+                .setId(id)
                 .put(HtmlAttr.VALUE, value)
                 .put(HtmlAttr.DISABLED, "disabled");
     }

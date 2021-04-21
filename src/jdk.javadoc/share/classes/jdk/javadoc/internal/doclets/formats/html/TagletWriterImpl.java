@@ -53,7 +53,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
@@ -190,8 +190,7 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     protected Content codeTagOutput(Element element, DocTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
-        StringContent content = new StringContent(utils.normalizeNewlines(ch.getText(tag)));
-        Content result = HtmlTree.CODE(content);
+        Content result = HtmlTree.CODE(Text.of(utils.normalizeNewlines(ch.getText(tag))));
         return result;
     }
 
@@ -224,7 +223,7 @@ public class TagletWriterImpl extends TagletWriter {
             path = ".";
         else
             path = htmlWriter.pathToRoot.getPath();
-        return new StringContent(path);
+        return Text.of(path);
     }
 
     @Override
@@ -267,7 +266,7 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     protected Content literalTagOutput(Element element, LiteralTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
-        Content result = new StringContent(utils.normalizeNewlines(ch.getText(tag)));
+        Content result = Text.of(utils.normalizeNewlines(ch.getText(tag)));
         return result;
     }
 
@@ -291,7 +290,7 @@ public class TagletWriterImpl extends TagletWriter {
         // define id attributes for state components so that generated descriptions may refer to them
         boolean defineID = (element.getKind() == ElementKind.RECORD)
                 && !paramTag.isTypeParameter();
-        Content nameTree = new StringContent(paramName);
+        Content nameTree = Text.of(paramName);
         body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameTree) : nameTree));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(paramTag);
@@ -327,7 +326,7 @@ public class TagletWriterImpl extends TagletWriter {
                     utils.getSimpleName(holder);
             DocLink link = constantsPath.fragment(whichConstant);
             body.add(htmlWriter.links.createLink(link,
-                    new StringContent(resources.getText("doclet.Constants_Summary"))));
+                    Text.of(resources.getText("doclet.Constants_Summary"))));
         }
         if (utils.isClass(holder) && utils.isSerializable((TypeElement)holder)) {
             //Automatically add link to serialized form page for serializable classes.
@@ -337,7 +336,7 @@ public class TagletWriterImpl extends TagletWriter {
                 DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
                 DocLink link = serialPath.fragment(utils.getFullyQualifiedName(holder));
                 body.add(htmlWriter.links.createLink(link,
-                        new StringContent(resources.getText("doclet.Serialized_Form"))));
+                        Text.of(resources.getText("doclet.Serialized_Form"))));
             }
         }
         if (body.isEmpty())
@@ -426,7 +425,7 @@ public class TagletWriterImpl extends TagletWriter {
     public Content valueTagOutput(VariableElement field, String constantVal, boolean includeLink) {
         return includeLink
                 ? htmlWriter.getDocLink(HtmlLinkInfo.Kind.VALUE_TAG, field, constantVal)
-                : new StringContent(constantVal);
+                : Text.of(constantVal);
     }
 
     @Override
@@ -463,10 +462,10 @@ public class TagletWriterImpl extends TagletWriter {
     private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, DocTree tree) {
         Content result = null;
         if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)) {
-            result = new StringContent(tagText);
+            result = Text.of(tagText);
         } else {
             HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);
-            result = HtmlTree.SPAN(id, HtmlStyle.searchTagResult, new StringContent(tagText));
+            result = HtmlTree.SPAN(id, HtmlStyle.searchTagResult, Text.of(tagText));
             if (options.createIndex() && !tagText.isEmpty()) {
                 String holder = new SimpleElementVisitor14<String, Void>() {
 

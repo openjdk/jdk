@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8153732 8212202 8221263 8221412 8222108
+ * @bug 8153732 8212202 8221263 8221412 8222108 8263311
  * @requires (os.family == "Windows")
  * @summary Windows remote printer changes do not reflect in lookupPrintServices()
- * @run main/manual/othervm -Dsun.java2d.print.minRefreshTime=120 RemotePrinterStatusRefresh
+ * @run main/manual RemotePrinterStatusRefresh
  */
 
 import java.awt.BorderLayout;
@@ -63,12 +63,7 @@ import static javax.swing.BorderFactory.createTitledBorder;
 
 public class RemotePrinterStatusRefresh extends WindowAdapter {
 
-    private static final long DEFAULT_REFRESH_TIME = 240L;
-    private static final long MINIMAL_REFRESH_TIME = 120L;
-
-    private static final long refreshTime = getRefreshTime();
-
-    private static final long TIMEOUT = refreshTime * 4 + 60;
+    private static final long TIMEOUT = 15L * 60;
 
 
     private static final CountDownLatch latch = new CountDownLatch(1);
@@ -86,7 +81,6 @@ public class RemotePrinterStatusRefresh extends WindowAdapter {
     private final ServiceItemListModel beforeList;
     private final ServiceItemListModel afterList;
 
-    private JTextField nextRefresh;
     private JTextField timeLeft;
 
     private final Timer timer;
@@ -184,22 +178,18 @@ public class RemotePrinterStatusRefresh extends WindowAdapter {
                     +          "configured printers.\n"
                     + "Step 1: Add or Remove a network printer using "
                     +          "Windows Control Panel.\n"
-                    + "Step 2: Wait for 2\u20134 minutes after adding or removing.\n"
-                    + "             \"Next printer refresh in\" gives you a "
-                    +          "rough estimation on when update will happen.\n"
-                    + "Step 3: Click Refresh."
+                    + "Step 2: Click Refresh."
                     +          "\"After\" list is populated with updated list "
                     +          "of printers.\n"
-                    + "Step 4: Compare the list of printers in \"Before\" and "
+                    + "Step 3: Compare the list of printers in \"Before\" and "
                     +          "\"After\" lists.\n"
                     + "              Added printers are highlighted with "
                     +               "green color, removed ones \u2014 with "
                     +               "red color.\n"
-                    + "Step 5: Click Pass if the list of printers is correctly "
+                    + "Step 4: Click Pass if the list of printers is correctly "
                     +          "updated.\n"
-                    + "Step 6: If the list is not updated, wait for another "
-                    +          "2\u20134 minutes, and then click Refresh again.\n"
-                    + "Step 7: If the list does not update, click Fail.\n"
+                    + "Step 5: If the list is not updated, click Refresh again.\n"
+                    + "Step 6: If the list does not update, click Fail.\n"
                     + "\n"
                     + "You have to click Refresh to enable Pass and Fail buttons. "
                     + "If no button is pressed,\n"
@@ -213,18 +203,6 @@ public class RemotePrinterStatusRefresh extends WindowAdapter {
         if (!test.testResult) {
             throw new RuntimeException("Test failed"
                 + (test.testTimedOut ? " because of time out" : ""));
-        }
-    }
-
-    private static long getRefreshTime() {
-        String refreshTime =
-                System.getProperty("sun.java2d.print.minRefreshTime",
-                                   Long.toString(DEFAULT_REFRESH_TIME));
-        try {
-            long value = Long.parseLong(refreshTime);
-            return value < MINIMAL_REFRESH_TIME ? MINIMAL_REFRESH_TIME : value;
-        } catch (NumberFormatException e) {
-            return DEFAULT_REFRESH_TIME;
         }
     }
 
@@ -278,31 +256,6 @@ public class RemotePrinterStatusRefresh extends WindowAdapter {
         javaVersion.setEditable(false);
         javaLabel.setLabelFor(javaVersion);
 
-        JLabel refreshTimeLabel = new JLabel("Refresh interval:");
-        long minutes = refreshTime / 60;
-        long seconds = refreshTime % 60;
-        String interval = String.format("%1$d seconds%2$s",
-                refreshTime,
-                minutes > 0
-                    ? String.format(" (%1$d %2$s%3$s)",
-                        minutes,
-                        minutes > 1 ? "minutes" : "minute",
-                        seconds > 0
-                            ? String.format(" %1$d %2$s",
-                                seconds,
-                                seconds > 1 ? "seconds" : "second")
-                            : "")
-                    : ""
-        );
-        JTextField refreshInterval = new JTextField(interval);
-        refreshInterval.setEditable(false);
-        refreshTimeLabel.setLabelFor(refreshInterval);
-
-        JLabel nextRefreshLabel = new JLabel("Next printer refresh in:");
-        nextRefresh = new JTextField();
-        nextRefresh.setEditable(false);
-        nextRefreshLabel.setLabelFor(nextRefresh);
-
         JLabel timeoutLabel = new JLabel("Time left:");
         timeLeft = new JTextField();
         timeLeft.setEditable(false);
@@ -317,14 +270,10 @@ public class RemotePrinterStatusRefresh extends WindowAdapter {
             layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addComponent(javaLabel)
-                    .addComponent(refreshTimeLabel)
-                    .addComponent(nextRefreshLabel)
                     .addComponent(timeoutLabel)
                 )
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, true)
                     .addComponent(javaVersion)
-                    .addComponent(refreshInterval)
-                    .addComponent(nextRefresh)
                     .addComponent(timeLeft)
                 )
         );
@@ -334,12 +283,6 @@ public class RemotePrinterStatusRefresh extends WindowAdapter {
                     .addComponent(javaLabel)
                     .addComponent(javaVersion)
                 )
-                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(refreshTimeLabel)
-                    .addComponent(refreshInterval))
-                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(nextRefreshLabel)
-                    .addComponent(nextRefresh))
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(timeoutLabel)
                     .addComponent(timeLeft))
@@ -493,7 +436,6 @@ public class RemotePrinterStatusRefresh extends WindowAdapter {
             disposeUI();
         }
         timeLeft.setText(formatTime(left));
-        nextRefresh.setText(formatTime(refreshTime - (elapsed % refreshTime)));
     }
 
     private static String formatTime(final long seconds) {

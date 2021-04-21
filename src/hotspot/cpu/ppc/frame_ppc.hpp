@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,5 +417,8 @@
   };
 
   static jint interpreter_frame_expression_stack_direction() { return -1; }
+
+  // returns the sending frame, without applying any barriers
+  frame sender_raw(RegisterMap* map) const;
 
 #endif // CPU_PPC_FRAME_PPC_HPP

@@ -264,7 +264,7 @@ public final class Integer extends Number
      * <blockquote>
      *  {@code Integer.toHexString(n).toUpperCase()}
      * </blockquote>
-     * <p>
+     *
      * @apiNote
      * The {@link java.util.HexFormat} class provides formatting and parsing
      * of byte arrays and primitives to return a string or adding to an {@link Appendable}.

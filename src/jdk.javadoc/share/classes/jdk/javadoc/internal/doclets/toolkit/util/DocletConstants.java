@@ -47,11 +47,6 @@ public class DocletConstants {
     public static final String NL = System.getProperty("line.separator");
 
     /**
-     * The default package name.
-     */
-    public static final String DEFAULT_PACKAGE_NAME = "<Unnamed>";
-
-    /**
      * The default module or a package name.
      */
     public static final String DEFAULT_ELEMENT_NAME = "<Unnamed>";
@@ -61,8 +56,4 @@ public class DocletConstants {
      */
     public static final String MODULE_PREFIX = "module:";
 
-    /**
-     * The default package file name.
-     */
-    public static final String DEFAULT_PACKAGE_FILE_NAME = "default";
 }

@@ -35,11 +35,12 @@ class ShenandoahFullGC;
 //
 // VM_ShenandoahOperation
 //   - VM_ShenandoahInitMark: initiate concurrent marking
+//   - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
+//   - VM_ShenandoahInitUpdateRefs: initiate update references
+//   - VM_ShenandoahFinalUpdateRefs: finish up update references
 //   - VM_ShenandoahReferenceOperation:
-//       - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
-//       - VM_ShenandoahInitUpdateRefs: initiate update references
-//       - VM_ShenandoahFinalUpdateRefs: finish up update references
 //       - VM_ShenandoahFullGC: do full GC
+//       - VM_ShenandoahDegeneratedGC: do STW degenerated GC
 
 class VM_ShenandoahOperation : public VM_Operation {
 protected:
@@ -126,6 +127,17 @@ public:
     _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalUpdateRefs; }
   const char* name()             const { return "Shenandoah Final Update References"; }
+  virtual void doit();
+};
+
+class VM_ShenandoahFinalRoots: public VM_ShenandoahOperation {
+  ShenandoahConcurrentGC* const _gc;
+public:
+  VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc) :
+    VM_ShenandoahOperation(),
+    _gc(gc) {};
+  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalRoots; }
+  const char* name()             const { return "Shenandoah Final Roots"; }
   virtual void doit();
 };
 

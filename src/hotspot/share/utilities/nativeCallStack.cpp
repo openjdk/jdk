@@ -30,22 +30,13 @@
 
 const NativeCallStack NativeCallStack::_empty_stack; // Uses default ctor
 
-static unsigned int calculate_hash(address stack[NMT_TrackingStackDepth]) {
-  uintptr_t hash = 0;
-  for (int i = 0; i < NMT_TrackingStackDepth; i++) {
-    hash += (uintptr_t)stack[i];
-  }
-  return hash;
-}
-
-NativeCallStack::NativeCallStack(int toSkip) :
-  _hash_value(0) {
+NativeCallStack::NativeCallStack(int toSkip) {
 
   // We need to skip the NativeCallStack::NativeCallStack frame if a tail call is NOT used
   // to call os::get_native_stack. A tail call is used if _NMT_NOINLINE_ is not defined
   // (which means this is not a slowdebug build), and we are on 64-bit (except Windows).
   // This is not necessarily a rule, but what has been obvserved to date.
-#if (defined(_NMT_NOINLINE_) || defined(_WINDOWS) || !defined(_LP64) || defined(PPC64))
+#if (defined(_NMT_NOINLINE_) || defined(_WINDOWS) || !defined(_LP64) || defined(PPC64) || (defined(BSD) && defined (__aarch64__)))
   // Not a tail call.
   toSkip++;
 #if (defined(_NMT_NOINLINE_) && defined(BSD) && defined(_LP64))
@@ -55,7 +46,6 @@ NativeCallStack::NativeCallStack(int toSkip) :
 #endif // Special-case for BSD.
 #endif // Not a tail call.
   os::get_native_stack(_stack, NMT_TrackingStackDepth, toSkip);
-  _hash_value = calculate_hash(_stack);
 }
 
 NativeCallStack::NativeCallStack(address* pc, int frameCount) {
@@ -68,7 +58,6 @@ NativeCallStack::NativeCallStack(address* pc, int frameCount) {
   for (; index < NMT_TrackingStackDepth; index ++) {
     _stack[index] = NULL;
   }
-  _hash_value = calculate_hash(_stack);
 }
 
 // number of stack frames captured

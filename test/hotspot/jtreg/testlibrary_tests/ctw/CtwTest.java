@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,9 +96,11 @@ public abstract class CtwTest {
         String[] cmd = Arrays.copyOf(CTW_COMMAND, CTW_COMMAND.length + args.length - 1);
         System.arraycopy(args, 1, cmd, CTW_COMMAND.length, args.length - 1);
         if (Platform.isWindows()) {
-            // '*' has to be escaped on windows
+            // arguments with '*' has to be quoted on windows
             for (int i = 0; i < cmd.length; ++i) {
-                cmd[i] = cmd[i].replace("*", "\"*\"");
+                if (cmd[i].charAt(0) != '"' && cmd[i].indexOf('*') >= 0) {
+                    cmd[i] = '"' + cmd[i] + '"';
+                }
             }
         }
         ProcessBuilder pb = ProcessTools.createTestJvm(cmd);

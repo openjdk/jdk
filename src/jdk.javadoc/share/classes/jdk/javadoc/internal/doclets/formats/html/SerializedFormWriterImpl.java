@@ -34,7 +34,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -72,7 +72,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     @Override
     public Content getHeader(String header) {
         HtmlTree bodyTree = getBody(getWindowTitle(header));
-        Content h1Content = new StringContent(header);
+        Content h1Content = Text.of(header);
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, h1Content);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
@@ -152,7 +152,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         Content classLink = (isVisibleClass(typeElement))
                 ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, typeElement)
                         .label(configuration.getClassName(typeElement)))
-                : new StringContent(utils.getFullyQualifiedName(typeElement));
+                : Text.of(utils.getFullyQualifiedName(typeElement));
         Content section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
                 .setId(htmlIds.forClass(typeElement));
         Content superClassLink = typeElement.getSuperclass() != null
@@ -194,9 +194,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
                                  String serialUID,
                                  Content serialUidTree)
     {
-        Content headerContent = new StringContent(header);
+        Content headerContent = Text.of(header);
         serialUidTree.add(HtmlTree.DT(headerContent));
-        Content serialContent = new StringContent(serialUID);
+        Content serialContent = Text.of(serialUID);
         serialUidTree.add(HtmlTree.DD(serialContent));
     }
 

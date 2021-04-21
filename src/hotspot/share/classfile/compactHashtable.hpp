@@ -27,6 +27,7 @@
 
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 
 

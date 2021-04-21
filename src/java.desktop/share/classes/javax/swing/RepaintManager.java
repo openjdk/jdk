@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,7 +420,7 @@ public class RepaintManager
      *
      * @see JComponent#repaint
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     private void addDirtyRegion0(Container c, int x, int y, int w, int h) {
         /* Special cases we don't have to bother with.
          */
@@ -538,12 +538,13 @@ public class RepaintManager
      * <a href="../../java/applet/package-summary.html"> java.applet package
      * documentation</a> for further information.
      */
-    @Deprecated(since = "9")
+    @Deprecated(since = "9", forRemoval = true)
+    @SuppressWarnings("removal")
     public void addDirtyRegion(Applet applet, int x, int y, int w, int h) {
         addDirtyRegion0(applet, x, y, w, h);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     void scheduleHeavyWeightPaints() {
         Map<Container,Rectangle> hws;
 

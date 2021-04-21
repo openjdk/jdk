@@ -44,7 +44,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
@@ -287,7 +287,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         for (PackageElement pkg : pkgToPackageAnnotations) {
             Content summary = new ContentBuilder();
             addSummaryComment(pkg, summary);
-            table.addRow(getPackageLink(pkg), summary);
+            table.addRow(getPackageLink(pkg, getLocalizedPackageName(pkg)), summary);
         }
         contentTree.add(table);
     }
@@ -306,7 +306,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             Content link = contents.getContent("doclet.ClassUse_Uses.of.0.in.1",
                     getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.CLASS_USE_HEADER,
                             typeElement)),
-                    getPackageLink(pkg, utils.getPackageName(pkg)));
+                    getPackageLink(pkg, getLocalizedPackageName(pkg)));
             Content heading = HtmlTree.HEADING(Headings.TypeUse.SUMMARY_HEADING, link);
             htmlTree.add(heading);
             addClassUse(pkg, htmlTree);
@@ -324,7 +324,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageElement pkg, Table table) {
         Content pkgLink =
-                links.createLink(htmlIds.forPackage(pkg), new StringContent(utils.getPackageName(pkg)));
+                links.createLink(htmlIds.forPackage(pkg), getLocalizedPackageName(pkg));
         Content summary = new ContentBuilder();
         addSummaryComment(pkg, summary);
         table.addRow(pkgLink, summary);
@@ -339,7 +339,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void addClassUse(PackageElement pkg, Content contentTree) {
         Content classLink = getLink(new HtmlLinkInfo(configuration,
             HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement));
-        Content pkgLink = getPackageLink(pkg, utils.getPackageName(pkg));
+        Content pkgLink = getPackageLink(pkg, getLocalizedPackageName(pkg));
         classSubWriter.addUseInfo(pkgToClassAnnotations.get(pkg),
                 contents.getContent("doclet.ClassUse_Annotation", classLink,
                 pkgLink), contentTree);

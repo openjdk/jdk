@@ -31,27 +31,27 @@ import java.io.UnsupportedEncodingException;
 
 class PerfDataEntry {
     private class EntryFieldOffset {
-        private final static int SIZEOF_BYTE = 1;
-        private final static int SIZEOF_INT  = 4;
-        private final static int SIZEOF_LONG = 8;
+        private static final int SIZEOF_BYTE = 1;
+        private static final int SIZEOF_INT  = 4;
+        private static final int SIZEOF_LONG = 8;
 
-        private final static int ENTRY_LENGTH_SIZE    = SIZEOF_INT;
-        private final static int NAME_OFFSET_SIZE     = SIZEOF_INT;
-        private final static int VECTOR_LENGTH_SIZE   = SIZEOF_INT;
-        private final static int DATA_TYPE_SIZE       = SIZEOF_BYTE;
-        private final static int FLAGS_SIZE           = SIZEOF_BYTE;
-        private final static int DATA_UNIT_SIZE       = SIZEOF_BYTE;
-        private final static int DATA_VAR_SIZE        = SIZEOF_BYTE;
-        private final static int DATA_OFFSET_SIZE     = SIZEOF_INT;
+        private static final int ENTRY_LENGTH_SIZE    = SIZEOF_INT;
+        private static final int NAME_OFFSET_SIZE     = SIZEOF_INT;
+        private static final int VECTOR_LENGTH_SIZE   = SIZEOF_INT;
+        private static final int DATA_TYPE_SIZE       = SIZEOF_BYTE;
+        private static final int FLAGS_SIZE           = SIZEOF_BYTE;
+        private static final int DATA_UNIT_SIZE       = SIZEOF_BYTE;
+        private static final int DATA_VAR_SIZE        = SIZEOF_BYTE;
+        private static final int DATA_OFFSET_SIZE     = SIZEOF_INT;
 
-        final static int ENTRY_LENGTH  = 0;
-        final static int NAME_OFFSET   = ENTRY_LENGTH + ENTRY_LENGTH_SIZE;
-        final static int VECTOR_LENGTH = NAME_OFFSET + NAME_OFFSET_SIZE;;
-        final static int DATA_TYPE     = VECTOR_LENGTH + VECTOR_LENGTH_SIZE;
-        final static int FLAGS         = DATA_TYPE + DATA_TYPE_SIZE;
-        final static int DATA_UNIT     = FLAGS + FLAGS_SIZE;
-        final static int DATA_VAR      = DATA_UNIT + DATA_UNIT_SIZE;
-        final static int DATA_OFFSET   = DATA_VAR + DATA_VAR_SIZE;
+        static final int ENTRY_LENGTH  = 0;
+        static final int NAME_OFFSET   = ENTRY_LENGTH + ENTRY_LENGTH_SIZE;
+        static final int VECTOR_LENGTH = NAME_OFFSET + NAME_OFFSET_SIZE;;
+        static final int DATA_TYPE     = VECTOR_LENGTH + VECTOR_LENGTH_SIZE;
+        static final int FLAGS         = DATA_TYPE + DATA_TYPE_SIZE;
+        static final int DATA_UNIT     = FLAGS + FLAGS_SIZE;
+        static final int DATA_VAR      = DATA_UNIT + DATA_UNIT_SIZE;
+        static final int DATA_OFFSET   = DATA_VAR + DATA_VAR_SIZE;
     }
 
     private String       name;

@@ -855,6 +855,6 @@ public class RMIConnectorServer extends JMXConnectorServer {
     private static final int STOPPED = 2;
 
     private int state = CREATED;
-    private final static Set<RMIConnectorServer> openedServers =
+    private static final Set<RMIConnectorServer> openedServers =
             new HashSet<RMIConnectorServer>();
 }

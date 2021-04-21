@@ -39,6 +39,7 @@ public abstract class BaseInteropTest<U extends UseCase> {
 
     protected final Product serverProduct;
     protected final Product clientProduct;
+    private static final int MAX_SERVER_RETRIES = 3;
 
     public BaseInteropTest(Product serverProduct, Product clientProduct) {
         this.serverProduct = serverProduct;
@@ -169,8 +170,7 @@ public abstract class BaseInteropTest<U extends UseCase> {
         ExecutorService executor = Executors.newFixedThreadPool(1);
         AbstractServer server = null;
         try {
-            server = createServer(testCase.serverCase);
-            executor.submit(new ServerTask(server));
+            server = startAndGetServer(testCase.serverCase, executor);
             int port = server.getPort();
             System.out.println("Server is listening " + port);
             serverStatus = Status.PASS;
@@ -226,6 +226,33 @@ public abstract class BaseInteropTest<U extends UseCase> {
     }
 
     /*
+     * Return a server once it is properly started to avoid client connection issues.
+     * Retry operation if needed, server may fail to bind a port
+     */
+    protected AbstractServer startAndGetServer(U useCase, ExecutorService executor)
+            throws Exception {
+        int maxRetries = getServerMaxRetries();
+        boolean serverAlive;
+        AbstractServer server;
+
+        do {
+            server = createServer(useCase, executor);
+            serverAlive = Utilities.waitFor(Server::isAlive, server);
+            if (!serverAlive) {
+                server.signalStop();
+            }
+
+            maxRetries--;
+        } while (!serverAlive && maxRetries > 0);
+
+        if (!serverAlive) {
+            throw new RuntimeException("Server failed to start");
+        }
+
+        return server;
+    }
+
+    /*
      * Handles server side exception, and determines the status.
      */
     protected Status handleServerException(Exception exception) {
@@ -251,8 +278,10 @@ public abstract class BaseInteropTest<U extends UseCase> {
     /*
      * Creates server.
      */
-    protected AbstractServer createServer(U useCase) throws Exception {
-        return createServerBuilder(useCase).build();
+    protected AbstractServer createServer(U useCase, ExecutorService executor) throws Exception {
+        AbstractServer server = createServerBuilder(useCase).build();
+        executor.submit(new ServerTask(server));
+        return server;
     }
 
     protected AbstractServer.Builder createServerBuilder(U useCase)
@@ -277,6 +306,13 @@ public abstract class BaseInteropTest<U extends UseCase> {
                 .setProtocols(useCase.getProtocols())
                 .setCipherSuites(useCase.getCipherSuites())
                 .setCertTuple(useCase.getCertTuple());
+    }
+
+    /*
+     * Returns the maximum number of attempts to start a server.
+     */
+    protected int getServerMaxRetries() {
+        return MAX_SERVER_RETRIES;
     }
 
     /*

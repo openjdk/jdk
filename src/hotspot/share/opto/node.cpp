@@ -868,14 +868,19 @@ int Node::find_edge(Node* n) {
 }
 
 //----------------------------replace_edge-------------------------------------
-int Node::replace_edge(Node* old, Node* neww) {
+int Node::replace_edge(Node* old, Node* neww, PhaseGVN* gvn) {
   if (old == neww)  return 0;  // nothing to do
   uint nrep = 0;
   for (uint i = 0; i < len(); i++) {
     if (in(i) == old) {
       if (i < req()) {
-        set_req(i, neww);
+        if (gvn != NULL) {
+          set_req_X(i, neww, gvn);
+        } else {
+          set_req(i, neww);
+        }
       } else {
+        assert(gvn == NULL || gvn->is_IterGVN() == NULL, "no support for igvn here");
         assert(find_prec_edge(neww) == -1, "spec violation: duplicated prec edge (node %d -> %d)", _idx, neww->_idx);
         set_prec(i, neww);
       }
@@ -888,12 +893,12 @@ int Node::replace_edge(Node* old, Node* neww) {
 /**
  * Replace input edges in the range pointing to 'old' node.
  */
-int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end) {
+int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end, PhaseGVN* gvn) {
   if (old == neww)  return 0;  // nothing to do
   uint nrep = 0;
   for (int i = start; i < end; i++) {
     if (in(i) == old) {
-      set_req(i, neww);
+      set_req_X(i, neww, gvn);
       nrep++;
     }
   }

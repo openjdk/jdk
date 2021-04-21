@@ -38,7 +38,7 @@ class G1CollectedHeap;
 
 class G1FullGCAdjustTask : public G1FullGCTask {
   G1RootProcessor          _root_processor;
-  volatile uint            _references_done; // Atomic counter / bool
+  volatile bool            _references_done;
   WeakProcessor::Task      _weak_proc_task;
   HeapRegionClaimer        _hrclaimer;
   G1AdjustClosure          _adjust;

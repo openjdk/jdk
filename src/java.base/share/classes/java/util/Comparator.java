@@ -131,14 +131,14 @@ public interface Comparator<T> {
      *
      * Finally, the implementor must ensure that {@code compare(x,
      * y)==0} implies that {@code signum(compare(x,
-     * z))==signum(compare(y, z))} for all {@code z}.<p>
+     * z))==signum(compare(y, z))} for all {@code z}.
      *
      * @apiNote
      * It is generally the case, but <i>not</i> strictly required that
      * {@code (compare(x, y)==0) == (x.equals(y))}.  Generally speaking,
      * any comparator that violates this condition should clearly indicate
      * this fact.  The recommended language is "Note: this comparator
-     * imposes orderings that are inconsistent with equals."<p>
+     * imposes orderings that are inconsistent with equals."
      *
      * @param o1 the first object to be compared.
      * @param o2 the second object to be compared.

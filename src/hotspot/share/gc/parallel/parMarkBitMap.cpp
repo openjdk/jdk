@@ -146,14 +146,14 @@ ParMarkBitMap::live_words_in_range_use_cache(ParCompactionManager* cm, HeapWord*
     // The cached value is for an object that is to the left (lower address) of the current
     // end_obj. Calculate back from that cached value.
     if (pointer_delta(end_obj, beg_addr) > pointer_delta(last_obj, end_obj)) {
-      last_ret = last_ret - live_words_in_range_helper(end_obj, (oop)last_obj);
+      last_ret = last_ret - live_words_in_range_helper(end_obj, cast_to_oop(last_obj));
     } else {
       last_ret = live_words_in_range_helper(beg_addr, end_oop);
     }
     last_obj = end_obj;
   }
 
-  update_live_words_in_range_cache(cm, last_beg, (oop)last_obj, last_ret);
+  update_live_words_in_range_cache(cm, last_beg, cast_to_oop(last_obj), last_ret);
   return last_ret;
 }
 

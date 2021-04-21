@@ -92,6 +92,61 @@ ClassListParser::~ClassListParser() {
   _instance = NULL;
 }
 
+int ClassListParser::parse(TRAPS) {
+  int class_count = 0;
+
+  while (parse_one_line()) {
+    if (lambda_form_line()) {
+      // The current line is "@lambda-form-invoker ...". It has been recorded in LambdaFormInvokers,
+      // and will be processed later.
+      continue;
+    }
+
+    TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
+    if (_indy_items->length() > 0) {
+      // The current line is "@lambda-proxy class_name". Load the proxy class.
+      resolve_indy(THREAD, class_name_symbol);
+      class_count++;
+      continue;
+    }
+
+    Klass* klass = load_current_class(class_name_symbol, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
+        // If we have run out of memory, don't try to load the rest of the classes in
+        // the classlist. Throw an exception, which will terminate the dumping process.
+        return 0; // THROW
+      }
+
+      // We might have an invalid class name or an bad class. Warn about it
+      // and keep going to the next line.
+      CLEAR_PENDING_EXCEPTION;
+      log_warning(cds)("Preload Warning: Cannot find %s", _class_name);
+      continue;
+    }
+
+    assert(klass != NULL, "sanity");
+    if (log_is_enabled(Trace, cds)) {
+      ResourceMark rm(THREAD);
+      log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
+    }
+
+    if (klass->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(klass);
+
+      // Link the class to cause the bytecodes to be rewritten and the
+      // cpcache to be created. The linking is done as soon as classes
+      // are loaded in order that the related data structures (klass and
+      // cpCache) are located together.
+      MetaspaceShared::try_link_class(THREAD, ik);
+    }
+
+    class_count++;
+  }
+
+  return class_count;
+}
+
 bool ClassListParser::parse_one_line() {
   for (;;) {
     if (fgets(_line, sizeof(_line), _file) == NULL) {
@@ -398,29 +453,26 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   if (strncmp(_class_name, "java/", 5) == 0) {
     log_info(cds)("Prohibited package for non-bootstrap classes: %s.class from %s",
           _class_name, _source);
-    return NULL;
+    THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
   InstanceKlass* k = ClassLoaderExt::load_class(class_name, _source, CHECK_NULL);
-
-  if (k != NULL) {
-    if (k->local_interfaces()->length() != _interfaces->length()) {
-      print_specified_interfaces();
-      print_actual_interfaces(k);
-      error("The number of interfaces (%d) specified in class list does not match the class file (%d)",
-            _interfaces->length(), k->local_interfaces()->length());
-    }
-
-    bool added = SystemDictionaryShared::add_unregistered_class(k, CHECK_NULL);
-    if (!added) {
-      // We allow only a single unregistered class for each unique name.
-      error("Duplicated class %s", _class_name);
-    }
-
-    // This tells JVM_FindLoadedClass to not find this class.
-    k->set_shared_classpath_index(UNREGISTERED_INDEX);
-    k->clear_shared_class_loader_type();
+  if (k->local_interfaces()->length() != _interfaces->length()) {
+    print_specified_interfaces();
+    print_actual_interfaces(k);
+    error("The number of interfaces (%d) specified in class list does not match the class file (%d)",
+          _interfaces->length(), k->local_interfaces()->length());
   }
+
+  bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
+  if (!added) {
+    // We allow only a single unregistered class for each unique name.
+    error("Duplicated class %s", _class_name);
+  }
+
+  // This tells JVM_FindLoadedClass to not find this class.
+  k->set_shared_classpath_index(UNREGISTERED_INDEX);
+  k->clear_shared_class_loader_type();
 
   return k;
 }
@@ -442,10 +494,8 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
       } else if (tag == JVM_CONSTANT_MethodHandle) {
         cii->add_ref_kind(pool->method_handle_ref_kind_at(arg));
         int callee_index = pool->method_handle_klass_index_at(arg);
-        Klass* callee = pool->klass_at(callee_index, THREAD);
-        if (callee != NULL) {
-          cii->add_item(callee->name()->as_C_string());
-        }
+        Klass* callee = pool->klass_at(callee_index, CHECK);
+        cii->add_item(callee->name()->as_C_string());
         cii->add_item(pool->method_handle_name_ref_at(arg)->as_C_string());
         cii->add_item(pool->method_handle_signature_ref_at(arg)->as_C_string());
       } else {
@@ -458,7 +508,7 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
 bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS) {
   ResourceMark rm(THREAD);
   CDSIndyInfo cii;
-  populate_cds_indy_info(pool, cp_index, &cii, THREAD);
+  populate_cds_indy_info(pool, cp_index, &cii, CHECK_0);
   GrowableArray<const char*>* items = cii.items();
   int indy_info_offset = 1;
   if (_indy_items->length() - indy_info_offset != items->length()) {
@@ -471,10 +521,13 @@ bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_inde
   }
   return true;
 }
-void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
+
+void ClassListParser::resolve_indy(Thread* current, Symbol* class_name_symbol) {
+  ExceptionMark em(current);
+  Thread* THREAD = current; // For exception macros.
   ClassListParser::resolve_indy_impl(class_name_symbol, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     char* ex_msg = (char*)"";
     oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
     if (message != NULL) {
@@ -491,14 +544,14 @@ void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
 void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   Handle protection_domain;
-  Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, CHECK); // FIXME should really be just a lookup
-  if (klass != NULL && klass->is_instance_klass()) {
+  Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, CHECK);
+  if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    if (SystemDictionaryShared::has_class_failed_verification(ik)) {
-      // don't attempt to resolve indy on classes that has previously failed verification
+    MetaspaceShared::try_link_class(THREAD, ik);
+    if (!ik->is_linked()) {
+      // Verification of ik has failed
       return;
     }
-    MetaspaceShared::try_link_class(ik, CHECK);
 
     ConstantPool* cp = ik->constants();
     ConstantPoolCache* cpcache = cp->cache();
@@ -538,15 +591,8 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
   }
 }
 
-Klass* ClassListParser::load_current_class(TRAPS) {
-  TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
-
-  if (_indy_items->length() > 0) {
-    resolve_indy(class_name_symbol, CHECK_NULL);
-    return NULL;
-  }
-
-  Klass* klass = NULL;
+Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
+  Klass* klass;
   if (!is_loading_from_source()) {
     // Load classes for the boot/platform/app loaders only.
     if (is_super_specified()) {
@@ -556,67 +602,43 @@ Klass* ClassListParser::load_current_class(TRAPS) {
       error("If source location is not specified, interface(s) must not be specified");
     }
 
-    bool non_array = !Signature::is_array(class_name_symbol);
-
-    JavaValue result(T_OBJECT);
-    if (non_array) {
-      // At this point, we are executing in the context of the boot loader. We
-      // cannot call Class.forName because that is context dependent and
-      // would load only classes for the boot loader.
-      //
-      // Instead, let's call java_system_loader().loadClass() directly, which will
-      // delegate to the correct loader (boot, platform or app) depending on
-      // the class name.
-
-      Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_NULL);
-      // ClassLoader.loadClass() wants external class name format, i.e., convert '/' chars to '.'
-      Handle ext_class_name = java_lang_String::externalize_classname(s, CHECK_NULL);
-      Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-
-      JavaCalls::call_virtual(&result,
-                              loader, //SystemDictionary::java_system_loader(),
-                              vmClasses::ClassLoader_klass(),
-                              vmSymbols::loadClass_name(),
-                              vmSymbols::string_class_signature(),
-                              ext_class_name,
-                              THREAD); // <-- failure is handled below
-    } else {
+    if (Signature::is_array(class_name_symbol)) {
       // array classes are not supported in class list.
       THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
     }
-    assert(result.get_type() == T_OBJECT, "just checking");
-    oop obj = (oop) result.get_jobject();
-    if (!HAS_PENDING_EXCEPTION && (obj != NULL)) {
-      klass = java_lang_Class::as_Klass(obj);
-    } else { // load classes in bootclasspath/a
-      if (HAS_PENDING_EXCEPTION) {
-        ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
-        CLEAR_PENDING_EXCEPTION;
-      }
 
-      if (non_array) {
-        Klass* k = SystemDictionary::resolve_or_null(class_name_symbol, CHECK_NULL);
-        if (k != NULL) {
-          klass = k;
-        } else {
-          if (!HAS_PENDING_EXCEPTION) {
-            THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
-          } else {
-            ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
-          }
-        }
-      }
-    }
+    JavaValue result(T_OBJECT);
+    // Call java_system_loader().loadClass() directly, which will
+    // delegate to the correct loader (boot, platform or app) depending on
+    // the package name.
+
+    Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_NULL);
+    // ClassLoader.loadClass() wants external class name format, i.e., convert '/' chars to '.'
+    Handle ext_class_name = java_lang_String::externalize_classname(s, CHECK_NULL);
+    Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
+
+    JavaCalls::call_virtual(&result,
+                            loader, //SystemDictionary::java_system_loader(),
+                            vmClasses::ClassLoader_klass(),
+                            vmSymbols::loadClass_name(),
+                            vmSymbols::string_class_signature(),
+                            ext_class_name,
+                            CHECK_NULL);
+
+    assert(result.get_type() == T_OBJECT, "just checking");
+    oop obj = result.get_oop();
+    assert(obj != NULL, "jdk.internal.loader.BuiltinClassLoader::loadClass never returns null");
+    klass = java_lang_Class::as_Klass(obj);
   } else {
     // If "source:" tag is specified, all super class and super interfaces must be specified in the
     // class list file.
     klass = load_class_from_source(class_name_symbol, CHECK_NULL);
-    if (HAS_PENDING_EXCEPTION) {
-      ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
-    }
   }
 
-  if (klass != NULL && klass->is_instance_klass() && is_id_specified()) {
+  assert(klass != NULL, "exception should have been thrown");
+  assert(klass->is_instance_klass(), "array classes should have been filtered out");
+
+  if (is_id_specified()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     int id = this->id();
     SystemDictionaryShared::update_shared_entry(ik, id);

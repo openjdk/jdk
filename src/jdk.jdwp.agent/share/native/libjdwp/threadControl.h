@@ -40,8 +40,7 @@ void threadControl_onDisconnect(void);
 
 jvmtiError threadControl_popFrames(jthread thread, FrameNumber fnum);
 
-struct bag *threadControl_onEventHandlerEntry(jbyte sessionID,
-                  EventIndex ei, jthread thread, jobject currentException);
+struct bag *threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject currentException);
 void threadControl_onEventHandlerExit(EventIndex ei, jthread thread, struct bag *);
 
 

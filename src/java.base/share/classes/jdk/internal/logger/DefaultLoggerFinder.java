@@ -134,8 +134,8 @@ public class DefaultLoggerFinder extends LoggerFinder {
             return w;
         }
 
-        final static SharedLoggers system = new SharedLoggers();
-        final static SharedLoggers application = new SharedLoggers();
+        static final SharedLoggers system = new SharedLoggers();
+        static final SharedLoggers application = new SharedLoggers();
     }
 
     public static boolean isSystem(Module m) {

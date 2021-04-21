@@ -249,58 +249,58 @@ public interface XAResource {
     /**
      * Ends a recovery scan.
      */
-    public final static int TMENDRSCAN =   0x00800000;
+    public static final int TMENDRSCAN =   0x00800000;
 
     /**
      * Disassociates the caller and marks the transaction branch
      * rollback-only.
      */
-    public final static int TMFAIL =       0x20000000;
+    public static final int TMFAIL =       0x20000000;
 
     /**
      * Caller is joining existing transaction branch.
      */
-    public final static int TMJOIN =       0x00200000;
+    public static final int TMJOIN =       0x00200000;
 
     /**
      * Use TMNOFLAGS to indicate no flags value is selected.
      */
-    public final static int TMNOFLAGS =     0x00000000;
+    public static final int TMNOFLAGS =     0x00000000;
 
     /**
      * Caller is using one-phase optimization.
      */
-    public final static int TMONEPHASE =   0x40000000;
+    public static final int TMONEPHASE =   0x40000000;
 
     /**
      * Caller is resuming association with a suspended
      * transaction branch.
      */
-    public final static int TMRESUME =     0x08000000;
+    public static final int TMRESUME =     0x08000000;
 
     /**
       * Starts a recovery scan.
       */
-    public final static int TMSTARTRSCAN = 0x01000000;
+    public static final int TMSTARTRSCAN = 0x01000000;
 
     /**
      * Disassociates caller from a transaction branch.
      */
-    public final static int TMSUCCESS =    0x04000000;
+    public static final int TMSUCCESS =    0x04000000;
 
     /**
      * Caller is suspending (not ending) its association with
      * a transaction branch.
      */
-    public final static int TMSUSPEND =    0x02000000;
+    public static final int TMSUSPEND =    0x02000000;
 
     /**
      * The transaction branch has been read-only and has been committed.
      */
-    public final static int XA_RDONLY = 0x00000003;
+    public static final int XA_RDONLY = 0x00000003;
 
     /**
      * The transaction work has been prepared normally.
      */
-    public final static int XA_OK = 0;
+    public static final int XA_OK = 0;
 }

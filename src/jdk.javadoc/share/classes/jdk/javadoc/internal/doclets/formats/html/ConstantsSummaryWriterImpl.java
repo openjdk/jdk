@@ -41,7 +41,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -111,8 +111,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
                     contents.defaultPackageLabel, "");
         } else {
             String parsedPackageName = utils.parsePackageName(pkg);
-            Content packageNameContent = getPackageLabel(parsedPackageName);
-            packageNameContent.add(".*");
+            Content packageNameContent = Text.of(parsedPackageName + ".*");
             link = links.createLink(DocLink.fragment(parsedPackageName),
                     packageNameContent, "");
             PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(pkg);
@@ -156,7 +155,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
             anchorName = htmlIds.forPackage(pkg);
             pkgNameContent = getPackageLabel(parsedPackageName);
         }
-        Content headingContent = new StringContent(".*");
+        Content headingContent = Text.of(".*");
         Content heading = HtmlTree.HEADING_TITLE(Headings.ConstantsSummary.PACKAGE_HEADING,
                 pkgNameContent);
         heading.add(headingContent);
@@ -186,7 +185,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content classlink = (utils.isPublic(typeElement) || utils.isProtected(typeElement)) ?
             getLink(new HtmlLinkInfo(configuration,
                     HtmlLinkInfo.Kind.CONSTANT_SUMMARY, typeElement)) :
-            new StringContent(utils.getFullyQualifiedName(typeElement));
+            Text.of(utils.getFullyQualifiedName(typeElement));
 
         PackageElement enclosingPackage  = utils.containingPackage(typeElement);
         Content caption = new ContentBuilder();
@@ -218,9 +217,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content code = new HtmlTree(TagName.CODE)
                 .setId(htmlIds.forMember(currentTypeElement, member));
         for (Modifier mod : member.getModifiers()) {
-            Content modifier = new StringContent(mod.toString());
-            code.add(modifier);
-            code.add(Entity.NO_BREAK_SPACE);
+            code.add(Text.of(mod.toString()))
+                    .add(Entity.NO_BREAK_SPACE);
         }
         Content type = getLink(new HtmlLinkInfo(configuration,
                 HtmlLinkInfo.Kind.CONSTANT_SUMMARY, member.asType()));
@@ -249,8 +247,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      */
     private Content getValue(VariableElement member) {
         String value = utils.constantValueExpression(member);
-        Content valueContent = new StringContent(value);
-        return HtmlTree.CODE(valueContent);
+        return HtmlTree.CODE(Text.of(value));
     }
 
     @Override

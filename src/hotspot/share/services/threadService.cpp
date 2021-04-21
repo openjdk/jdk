@@ -105,7 +105,8 @@ void ThreadService::init() {
   _thread_allocated_memory_enabled = true; // Always on, so enable it
 
   // Initialize OopStorage for thread stack sampling walking
-  _thread_service_storage = OopStorageSet::create_strong("ThreadService OopStorage");
+  _thread_service_storage = OopStorageSet::create_strong("ThreadService OopStorage",
+                                                         mtServiceability);
 }
 
 void ThreadService::reset_peak_thread_count() {
