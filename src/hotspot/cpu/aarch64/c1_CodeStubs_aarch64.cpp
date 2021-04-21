@@ -368,7 +368,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ b(_continuation);
 }
 
-void JfrKlassEnqueueStub::emit_code(LIR_Assembler* ce) {
+void TraceIdLoadBarrierStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
   __ push(RegSet::range(r0, r29), sp);         // integer registers except lr & sp

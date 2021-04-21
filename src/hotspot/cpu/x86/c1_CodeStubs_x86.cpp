@@ -549,7 +549,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ jmp(_continuation);
 }
 
-void JfrKlassEnqueueStub::emit_code(LIR_Assembler* ce) {
+void TraceIdLoadBarrierStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
   __ save_live_registers_no_oop_map(true);

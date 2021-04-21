@@ -561,21 +561,24 @@ class ArrayCopyStub: public CodeStub {
 #endif // PRODUCT
 };
 
-class JfrKlassEnqueueStub: public CodeStub {
+#ifdef JFR_HAVE_INTRINSICS
+class TraceIdLoadBarrierStub: public CodeStub {
  private:
   CodeEmitInfo* _info;
 
  public:
-  JfrKlassEnqueueStub(CodeEmitInfo* info) : _info(info) {}
-  virtual void emit_code(LIR_Assembler* e);
+  TraceIdLoadBarrierStub(CodeEmitInfo* info) : _info(info) {}
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual void visit(LIR_OpVisitState* visitor) {
     visitor->do_slow_case(_info);
   }
 
+  virtual void emit_code(LIR_Assembler* e);
+
 #ifndef PRODUCT
-  virtual void print_name(outputStream* out) const { out->print("JfrKlassEnqueueStub"); }
+  virtual void print_name(outputStream* out) const { out->print("TraceIdLoadBarrierStub"); }
 #endif // PRODUCT
 };
+#endif
 
 #endif // SHARE_C1_C1_CODESTUBS_HPP

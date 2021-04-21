@@ -3150,8 +3150,7 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
   }
 
   CodeEmitInfo *info = state_for(x, x->state());
-  CodeStub* stub = new JfrKlassEnqueueStub(info);
-
+  CodeStub* stub = new TraceIdLoadBarrierStub(info);
   __ jump(stub);
   __ branch_destination(stub->continuation());
 

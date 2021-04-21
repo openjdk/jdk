@@ -116,7 +116,7 @@ class JfrTraceIdEpoch : AllStatic {
   }
 
   static address signal_address() {
-    return _tag_state.signaled_addr();
+    return _tag_state.signaled_address();
   }
 };
 

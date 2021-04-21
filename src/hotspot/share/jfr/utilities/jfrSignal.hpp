@@ -47,7 +47,7 @@ class JfrSignal {
     return false;
   }
 
-  address signaled_addr() { return (address)&_signaled; }
+  address signaled_address() { return (address)&_signaled; }
 };
 
 #endif // SHARE_JFR_UTILITIES_JFRSIGNAL_HPP
