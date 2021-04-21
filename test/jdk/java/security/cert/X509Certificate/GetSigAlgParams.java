@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.event.gc.stacktrace;
 
-/**
+/*
  * @test
- * @key jfr
- * @requires vm.hasJFR
- *
- * @requires vm.gc == "null" | vm.gc == "Parallel"
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseParallelGC -Xlog:gc* jdk.jfr.event.gc.stacktrace.TestParallelScavengeAllocationPendingStackTrace
+ * @bug 8259428
+ * @summary Verify X509Certificate.getSigAlgParams() returns new array each
+ *          time it is called
+ * @modules java.base/sun.security.tools.keytool java.base/sun.security.x509
  */
-public class TestParallelScavengeAllocationPendingStackTrace {
+
+import java.security.cert.X509Certificate;
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.x509.X500Name;
+
+public class GetSigAlgParams {
 
     public static void main(String[] args) throws Exception {
-        AllocationStackTrace.testParallelScavengeAllocEvent();
+
+        CertAndKeyGen cakg = new CertAndKeyGen("RSASSA-PSS", "RSASSA-PSS");
+        cakg.generate(1024);
+        X509Certificate c = cakg.getSelfCertificate(new X500Name("CN=Me"), 100);
+        if (c.getSigAlgParams() == c.getSigAlgParams()) {
+            throw new Exception("Encoded params are the same byte array");
+        }
     }
 }

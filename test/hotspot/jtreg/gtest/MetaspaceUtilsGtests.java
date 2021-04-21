@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-package jdk.jfr.event.gc.stacktrace;
-
-/**
- * @test
- * @key jfr
- * @requires vm.hasJFR
  *
- * @requires vm.gc == "null" | vm.gc == "Parallel"
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseParallelGC -Xlog:gc* jdk.jfr.event.gc.stacktrace.TestParallelScavengeAllocationPendingStackTrace
  */
-public class TestParallelScavengeAllocationPendingStackTrace {
 
-    public static void main(String[] args) throws Exception {
-        AllocationStackTrace.testParallelScavengeAllocEvent();
-    }
-}
+/*
+ * Note: This runs the metaspace utils related parts of gtest in configurations which
+ *  are not tested explicitly in the standard gtests.
+ *
+ */
+
+/* @test
+ * @bug 8264008
+ * @summary Run metaspace utils related gtests with compressed class pointers off
+ * @requires vm.bits == 64
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=MetaspaceUtils* -XX:-UseCompressedClassPointers
+ */
