@@ -25,7 +25,6 @@
 /*
  * @test
  * @summary Test compiler intrinsics for signum
- * @requires os.arch=="aarch64" | os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib
  *
  * @run main/othervm
