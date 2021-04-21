@@ -719,8 +719,8 @@ public final class Duration
         if (amountToAdd == 0) {
             return this;
         }
-        if (unit instanceof ChronoUnit u) {
-            switch (u) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case NANOS: return plusNanos(amountToAdd);
                 case MICROS: return plusSeconds((amountToAdd / (1000_000L * 1000)) * 1000).plusNanos((amountToAdd % (1000_000L * 1000)) * 1000);
                 case MILLIS: return plusMillis(amountToAdd);
