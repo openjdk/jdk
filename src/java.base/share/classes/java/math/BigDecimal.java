@@ -123,7 +123,7 @@ import java.util.Objects;
  * 100&times;10<sup>1</sup>.  In such cases, the new {@literal "1"} is
  * the leading digit position of the returned result.
  *
- * <p>For methods with a {@code MathContext} parameter,if the result
+ * <p>For methods with a {@code MathContext} parameter, if the result
  * is inexact but the rounding mode is {@code UNNECESSARY}, an {@code
  * ArithmeticException} will be thrown.
  *
