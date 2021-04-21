@@ -2779,11 +2779,10 @@ bool LibraryCallKit::inline_native_classID() {
 
     __ if_then(kls_trace_id_raw_and_mask, BoolTest::ne, epoch); {
 #ifdef VM_LITTLE_ENDIAN
-      const int low_offset = 0;
+      Node* kls_trace_id_low_addr = basic_plus_adr(kls_trace_id_addr, (intptr_t)0);
 #else
-      const int low_offset = 7;
+      Node* kls_trace_id_low_addr = basic_plus_adr(kls_trace_id_addr, (intptr_t)7);
 #endif
-      Node* kls_trace_id_low_addr = basic_plus_adr(kls_trace_id_addr, low_offset);
       Node* current_value = ideal.load(ideal.ctrl(), kls_trace_id_low_addr, TypeInt::BYTE, T_BYTE, Compile::AliasIdxRaw);
       Node* new_value = _gvn.transform(new OrINode(current_value, _gvn.transform(new ConvL2INode(epoch, TypeInt::BYTE))));
       Node* store_trace_id = ideal.store(ideal.ctrl(), kls_trace_id_low_addr, new_value, T_BYTE, Compile::AliasIdxRaw, MemNode::unordered);

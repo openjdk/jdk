@@ -3110,11 +3110,10 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
   __ branch(lir_cond_equal, L_end->label());
 
 #ifdef VM_LITTLE_ENDIAN
-  const int low_offset = 0;
+  LIR_Address* trace_id_low_addr = new LIR_Address(klass, in_bytes(offset), T_BYTE);
 #else
-  const int low_offset = 7;
+  LIR_Address* trace_id_low_addr = new LIR_Address(klass, in_bytes(offset) + 7, T_BYTE);
 #endif
-  LIR_Address* trace_id_low_addr = new LIR_Address(klass, in_bytes(offset) + low_offset, T_BYTE);
   LIR_Opr current_value = new_register(T_INT);
   __ move(trace_id_low_addr, current_value);
   LIR_Opr epoch_i = new_register(T_INT);

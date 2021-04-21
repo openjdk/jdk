@@ -549,6 +549,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ jmp(_continuation);
 }
 
+#ifdef JFR_HAVE_INTRINSICS
 void TraceIdLoadBarrierStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
@@ -563,5 +564,6 @@ void TraceIdLoadBarrierStub::emit_code(LIR_Assembler* ce) {
 
   __ jmp(_continuation);
 }
+#endif
 
 #undef __
