@@ -548,7 +548,8 @@ class Direct$Type$Buffer$RW$$BO$
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         try {
-            SCOPED_MEMORY_ACCESS.copyMemory(scope(), scope(), null,
+            // null is passed as destination Scope to avoid checking scope() twice
+            SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, null,
                     ix(pos), null, ix(0), (long)rem << $LG_BYTES_PER_VALUE$);
         } finally {
             Reference.reachabilityFence(this);
