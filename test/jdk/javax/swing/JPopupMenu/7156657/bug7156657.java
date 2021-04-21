@@ -44,7 +44,6 @@ import javax.swing.SwingUtilities;
    @summary Version 7 doesn't support translucent popup menus against a
             translucent window
    @library ../../regtesthelpers
-   @modules java.desktop/sun.awt
 */
 public class bug7156657 {
     private static JFrame lowerFrame;
