@@ -1821,7 +1821,7 @@ public:
                                         "TAMS " PTR_FORMAT " "
                                         "TARS " PTR_FORMAT,
                                         region_idx,
-                                        _cm->liveness(region_idx) * HeapWordSize,
+                                        _cm->live_bytes(region_idx),
                                         time.seconds() * 1000.0,
                                         marked_bytes,
                                         p2i(hr->bottom()),

@@ -229,16 +229,16 @@ void G1FullCollector::complete_collection() {
   _heap->print_heap_after_full_collection(scope()->heap_transition());
 }
 
-void G1FullCollector::update_attribute_table(HeapRegion* hr, bool force_pinned) {
+void G1FullCollector::update_attribute_table(HeapRegion* hr, bool force_not_compacted) {
   if (hr->is_free()) {
     _region_attr_table.set_invalid(hr->hrm_index());
   } else if (hr->is_closed_archive()) {
-    _region_attr_table.set_closed_archive(hr->hrm_index());
-  } else if (hr->is_pinned() || force_pinned) {
-    _region_attr_table.set_pinned(hr->hrm_index());
+    _region_attr_table.set_skip_marking(hr->hrm_index());
+  } else if (hr->is_pinned() || force_not_compacted) {
+    _region_attr_table.set_not_compacted(hr->hrm_index());
   } else {
     // Everything else is processed normally.
-    _region_attr_table.set_normal(hr->hrm_index());
+    _region_attr_table.set_compacted(hr->hrm_index());
   }
 }
 

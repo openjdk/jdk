@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -412,7 +412,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">ໂມດາວຽນ</language>
 			<language type="rof">ຣົມໂບ</language>
 			<language type="rom">ໂຣເມນີ</language>
-			<language type="root">ລູດ</language>
 			<language type="ru">ລັດເຊຍ</language>
 			<language type="rup">ອາໂຣມານຽນ</language>
 			<language type="rw">ຄິນຢາວານດາ</language>
@@ -3590,9 +3589,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>ຊານຕາ ອິດຊາເບວ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ໂຮໂນລູລູ</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ເວລາສາກົນເຊີງພິກັດ</standard>
@@ -3712,11 +3708,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>ໂບຣກເຄນ ຮິວ</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>ກູຣີ</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>ເມວເບິນ</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>ກູຣີ</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ໂຮບາດ</exemplarCity>
@@ -4749,6 +4745,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>ນອມ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ໂຮໂນລູລູ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>ຈອນສະໂຕນ</exemplarCity>
@@ -7177,7 +7176,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XOF">
 				<displayName>ຟັງເຊຟານ ອາຟຣິກາຕາເວັນຕົກ</displayName>
 				<displayName count="other">ຟັງເຊຟານ ອາຟຣິກາຕາເວັນຕົກ</displayName>
-				<symbol>CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>ແພເລດຽມ</displayName>
@@ -7440,7 +7439,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ກະຣັດ</displayName>
 				<unitPattern count="other">{0} ກະຣັດ</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>ມິລິກຣັມຕໍ່ເດຊິລິດ</displayName>
 				<unitPattern count="other">{0} mg/dL</unitPattern>
 			</unit>
@@ -7779,8 +7778,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ມິນລີກຣາມ</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µg</displayName>
-				<unitPattern count="other">{0} µg</unitPattern>
+				<displayName>μg</displayName>
+				<unitPattern count="other">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ໂຕນ</displayName>
@@ -8186,7 +8185,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ກະຣັດ</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dL</displayName>
 				<unitPattern count="other">{0} mg/dL</unitPattern>
 			</unit>
@@ -8405,8 +8404,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ມມ</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µm</displayName>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<displayName>μm</displayName>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>ນມ</displayName>
@@ -8485,8 +8484,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ມກ</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µg</displayName>
-				<unitPattern count="other">{0} µg</unitPattern>
+				<displayName>μg</displayName>
+				<unitPattern count="other">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ຕ</displayName>
