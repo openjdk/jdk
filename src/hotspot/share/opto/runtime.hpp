@@ -304,7 +304,7 @@ private:
 
   static const TypeFunc* register_finalizer_Type();
 
-  static const TypeFunc* jfr_enqueue_klass_Type();
+  static const TypeFunc* trace_id_load_barrier_Type();
 
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();

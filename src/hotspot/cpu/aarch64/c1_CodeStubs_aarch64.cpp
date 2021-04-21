@@ -380,7 +380,7 @@ void JfrKlassEnqueueStub::emit_code(LIR_Assembler* ce) {
   }
 
 
-  __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::jfr_enqueue_klass)));
+  __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::trace_id_load_barrier)));
   __ blr(rscratch1);
 
   for (int i = 0; i < 32; i += 4) {

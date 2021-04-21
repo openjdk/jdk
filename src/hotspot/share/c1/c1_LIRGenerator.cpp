@@ -3127,10 +3127,8 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
 
   BasicTypeList signature;
   signature.append(T_METADATA); // Klass*
-  signature.append(LP64_ONLY(T_LONG) NOT_LP64(T_INT)); // thread
   LIR_OprList* args = new LIR_OprList();
   args->append(klass);
-  args->append(getThreadPointer());
 
   // move the arguments into the correct location
   CallingConvention* cc = frame_map()->c_calling_convention(&signature);

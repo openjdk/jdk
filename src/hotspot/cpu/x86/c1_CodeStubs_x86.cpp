@@ -554,7 +554,7 @@ void JfrKlassEnqueueStub::emit_code(LIR_Assembler* ce) {
 
   __ save_live_registers_no_oop_map(true);
 
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::jfr_enqueue_klass)));
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::trace_id_load_barrier)));
 
   __ restore_live_registers(true);
 

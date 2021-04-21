@@ -272,8 +272,6 @@ class SharedRuntime: AllStatic {
 
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
-  static void jfr_enqueue_klass(Klass* klass, JavaThread* thread);
-
   // dtrace notifications
   static int dtrace_object_alloc(oopDesc* o, int size);
   static int dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size);
@@ -522,6 +520,10 @@ class SharedRuntime: AllStatic {
                                           int shadow_space_bytes,
                                           const GrowableArray<VMReg>& input_registers,
                                           const GrowableArray<VMReg>& output_registers);
+#endif
+
+#ifdef JFR_HAVE_INTRINSICS
+  static void trace_id_load_barrier(Klass* klass);
 #endif
 
 #ifndef PRODUCT

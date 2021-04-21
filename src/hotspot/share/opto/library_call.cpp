@@ -2791,10 +2791,10 @@ bool LibraryCallKit::inline_native_classID() {
       sync_kit(ideal);
       insert_mem_bar(Op_MemBarStoreStore, store_trace_id);
 
-      make_runtime_call(RC_LEAF|RC_NO_FP,
-                        OptoRuntime::jfr_enqueue_klass_Type(),
-                        CAST_FROM_FN_PTR(address, SharedRuntime::jfr_enqueue_klass),
-                        "JfrTraceIdLoadBarrier::enqueue",
+      make_runtime_call(RC_LEAF,
+                        OptoRuntime::trace_id_load_barrier_Type(),
+                        CAST_FROM_FN_PTR(address, SharedRuntime::trace_id_load_barrier),
+                        "SharedRuntime::trace_id_load_barrier",
                         TypePtr::BOTTOM,
                         kls);
 
