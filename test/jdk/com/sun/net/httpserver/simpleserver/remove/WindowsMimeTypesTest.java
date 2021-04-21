@@ -22,6 +22,7 @@
  */
 
 import sun.net.www.MimeTable;
+
 import java.util.Properties;
 
 /*
@@ -38,6 +39,13 @@ public class WindowsMimeTypesTest extends AbstractMimeTypesTest {
         return properties;
     }
 
+    protected Properties getExpectedOperatingSystemSpecificMimeTypes(Properties properties) throws Exception {
+        Properties content = load("expected-windows-content-types.properties");
+        for (Object key : content.keySet()) {
+            properties.put(key, content.get(key));
+        }
+        return properties;
+    }
 
 }
 
