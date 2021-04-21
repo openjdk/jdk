@@ -109,7 +109,6 @@ public class Signatures {
             return this;
         }
 
-        @SuppressWarnings("preview")
         public Content toContent() {
             Content content = new ContentBuilder();
             Content annotationInfo = classWriter.getAnnotationInfo(typeElement, true);
@@ -185,10 +184,6 @@ public class Signatures {
                     if (isFirst) {
                         content.add(DocletConstants.NL);
                         permitsSpan.add("permits");
-                        Content link =
-                                classWriter.links.createLink(classWriter.htmlIds.forPreviewSection(typeElement),
-                                                             classWriter.contents.previewMark);
-                        permitsSpan.add(HtmlTree.SUP(link));
                         permitsSpan.add(" ");
                         isFirst = false;
                     } else {
@@ -209,7 +204,6 @@ public class Signatures {
             return HtmlTree.DIV(HtmlStyle.typeSignature, content);
         }
 
-        @SuppressWarnings("preview")
         private Content getRecordComponents() {
             Content content = new ContentBuilder();
             content.add("(");

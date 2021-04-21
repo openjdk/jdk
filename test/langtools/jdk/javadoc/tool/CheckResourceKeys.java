@@ -151,8 +151,8 @@ public class CheckResourceKeys {
             // ignore these synthesized keys, tested by usageTests
             if (rk.matches("main\\.opt\\..*\\.(arg|desc)"))
                 continue;
-            // ignore this partial key
-            if (rk.startsWith("doclet.Declared_Using_Preview."))
+            // ignore preview related keys
+            if (rk.startsWith("doclet.Declared_Using_Preview"))
                 continue;
             if (codeKeys.contains(rk))
                 continue;

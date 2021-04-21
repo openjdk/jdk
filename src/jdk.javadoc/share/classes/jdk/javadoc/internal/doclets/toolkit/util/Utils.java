@@ -332,7 +332,6 @@ public class Utils {
         return !e.getAnnotationMirrors().isEmpty();
     }
 
-    @SuppressWarnings("preview")
     public boolean isAnnotationType(Element e) {
         return new SimpleElementVisitor14<Boolean, Void>() {
             @Override
@@ -448,12 +447,10 @@ public class Utils {
         return typeUtils.isSubtype(e.asType(), getExternalizableType());
     }
 
-    @SuppressWarnings("preview")
     public boolean isRecord(TypeElement e) {
         return e.getKind() == ElementKind.RECORD;
     }
 
-    @SuppressWarnings("preview")
     public boolean isCanonicalRecordConstructor(ExecutableElement ee) {
         TypeElement te = (TypeElement) ee.getEnclosingElement();
         List<? extends RecordComponentElement> stateComps = te.getRecordComponents();
@@ -488,7 +485,6 @@ public class Utils {
         return configuration.workArounds.definesSerializableFields( aclass);
     }
 
-    @SuppressWarnings("preview")
     public String modifiersToString(Element e, boolean trailingSpace) {
         SortedSet<Modifier> modifiers = new TreeSet<>(e.getModifiers());
         modifiers.remove(NATIVE);
@@ -572,7 +568,6 @@ public class Utils {
             }
 
             @Override
-            @SuppressWarnings("preview")
             public String visitTypeAsClass(TypeElement e, SortedSet<Modifier> mods) {
                 addModifiers(mods);
                 String keyword = e.getKind() == ElementKind.RECORD ? "record" : "class";
@@ -1798,7 +1793,6 @@ public class Utils {
         return getFullyQualifiedName(e, true);
     }
 
-    @SuppressWarnings("preview")
     public String getFullyQualifiedName(Element e, final boolean outer) {
         return new SimpleElementVisitor14<String, Void>() {
             @Override
@@ -1860,12 +1854,10 @@ public class Utils {
         return convertToTypeElement(getItems(e, false, ANNOTATION_TYPE));
     }
 
-    @SuppressWarnings("preview")
     public List<TypeElement> getRecords(Element e) {
         return convertToTypeElement(getItems(e, true, RECORD));
     }
 
-    @SuppressWarnings("preview")
     public List<TypeElement> getRecordsUnfiltered(Element e) {
         return convertToTypeElement(getItems(e, false, RECORD));
     }
@@ -2114,7 +2106,6 @@ public class Utils {
                 .collect(Collectors.toList());
     }
 
-    @SuppressWarnings("preview")
     List<Element> getItems(Element e, boolean filter, ElementKind select) {
         List<Element> elements = new ArrayList<>();
         return new SimpleElementVisitor14<List<Element>, Void>() {
@@ -2162,10 +2153,8 @@ public class Utils {
         return elements;
     }
 
-    @SuppressWarnings("preview")
     private SimpleElementVisitor14<Boolean, Void> shouldDocumentVisitor = null;
 
-    @SuppressWarnings("preview")
     public boolean shouldDocument(Element e) {
         if (shouldDocumentVisitor == null) {
             shouldDocumentVisitor = new SimpleElementVisitor14<Boolean, Void>() {
@@ -2218,10 +2207,8 @@ public class Utils {
         return nameCache.computeIfAbsent(e, this::getSimpleName0);
     }
 
-    @SuppressWarnings("preview")
     private SimpleElementVisitor14<String, Void> snvisitor = null;
 
-    @SuppressWarnings("preview")
     private String getSimpleName0(Element e) {
         if (snvisitor == null) {
             snvisitor = new SimpleElementVisitor14<String, Void>() {
@@ -2393,9 +2380,7 @@ public class Utils {
         return configuration.docEnv.isIncluded(e);
     }
 
-    @SuppressWarnings("preview")
     private SimpleElementVisitor14<Boolean, Void> specifiedVisitor = null;
-    @SuppressWarnings("preview")
     public boolean isSpecified(Element e) {
         if (specifiedVisitor == null) {
             specifiedVisitor = new SimpleElementVisitor14<Boolean, Void>() {
@@ -2977,44 +2962,6 @@ public class Utils {
         }
     }
 
-    /**
-     * Return the set of preview language features used to declare the given element.
-     *
-     * @param e the Element to check.
-     * @return the set of preview language features used to declare the given element
-     */
-    @SuppressWarnings("preview")
-    public Set<DeclarationPreviewLanguageFeatures> previewLanguageFeaturesUsed(Element e) {
-        Set<DeclarationPreviewLanguageFeatures> result = new HashSet<>();
-
-        if ((e.getKind().isClass() || e.getKind().isInterface()) &&
-            e.getModifiers().contains(Modifier.SEALED)) {
-            List<? extends TypeMirror> permits = ((TypeElement) e).getPermittedSubclasses();
-            boolean hasLinkablePermits = permits.stream()
-                                                .anyMatch(t -> isLinkable(asTypeElement(t)));
-            if (hasLinkablePermits) {
-                result.add(DeclarationPreviewLanguageFeatures.SEALED_PERMITS);
-            } else {
-                result.add(DeclarationPreviewLanguageFeatures.SEALED);
-            }
-        }
-
-        return result;
-    }
-
-    public enum DeclarationPreviewLanguageFeatures {
-
-        SEALED(List.of("sealed")),
-        SEALED_PERMITS(List.of("sealed", "permits"));
-        public final List<String> features;
-
-        private DeclarationPreviewLanguageFeatures(List<String> features) {
-            this.features = features;
-        }
-
-    }
-
-    @SuppressWarnings("preview")
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
         List<TypeElement> usedInDeclaration = new ArrayList<>();
         usedInDeclaration.addAll(annotations2Classes(el));
@@ -3063,9 +3010,6 @@ public class Utils {
                 } else {
                     previewAPI.add(type);
                 }
-            }
-            if (!previewLanguageFeaturesUsed(type).isEmpty()) {
-                declaredUsingPreviewFeature.add(type);
             }
         }
 
@@ -3208,8 +3152,7 @@ public class Utils {
             flags.add(ElementFlag.DEPRECATED);
         }
 
-        if (!previewLanguageFeaturesUsed(el).isEmpty() ||
-            configuration.workArounds.isPreviewAPI(el) ||
+        if (configuration.workArounds.isPreviewAPI(el) ||
             !previewAPIs.previewAPI.isEmpty() ||
             !previewAPIs.reflectivePreviewAPI.isEmpty() ||
             !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
