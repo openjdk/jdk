@@ -618,7 +618,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m) {
     HeapRegion* r = _g1h->heap_region_containing(old);
 
     if (r->set_evacuation_failed()) {
-      _g1h->region_failed_evacuation();
+      _g1h->notify_region_failed_evacuation();
       _g1h->hr_printer()->evac_failure(r);
     }
 

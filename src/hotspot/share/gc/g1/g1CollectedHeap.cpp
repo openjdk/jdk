@@ -3662,7 +3662,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   _bytes_used_during_gc = 0;
 
   _expand_heap_after_alloc_failure = true;
-  _num_regions_failed_evacuation = false;
+  Atomic::store(&_num_regions_failed_evacuation, 0u);
 
   // Disable the hot card cache.
   _hot_card_cache->reset_hot_cache_claimed_index();

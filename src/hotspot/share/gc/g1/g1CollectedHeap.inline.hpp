@@ -197,7 +197,7 @@ uint G1CollectedHeap::num_regions_failed_evacuation() const {
   return Atomic::load(&_num_regions_failed_evacuation);
 }
 
-void G1CollectedHeap::region_failed_evacuation() {
+void G1CollectedHeap::notify_region_failed_evacuation() {
   Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
 }
 
