@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/klassFactory.hpp"
-#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"

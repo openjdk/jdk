@@ -25,8 +25,8 @@
 #ifndef SHARE_MEMORY_DUMPALLOCSTATS_HPP
 #define SHARE_MEMORY_DUMPALLOCSTATS_HPP
 
+#include "cds/compactHashtable.hpp"
 #include "memory/allocation.hpp"
-#include "classfile/compactHashtable.hpp"
 
 // This is for dumping detailed statistics for the allocations
 // in the shared spaces.

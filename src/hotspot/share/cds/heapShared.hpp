@@ -25,8 +25,8 @@
 #ifndef SHARE_MEMORY_HEAPSHARED_HPP
 #define SHARE_MEMORY_HEAPSHARED_HPP
 
+#include "cds/compactHashtable.hpp"
 #include "cds/metaspaceShared.hpp"
-#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/gc_globals.hpp"

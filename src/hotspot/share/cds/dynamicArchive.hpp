@@ -25,10 +25,8 @@
 #ifndef SHARE_VM_MEMORY_DYNAMICARCHIVE_HPP
 #define SHARE_VM_MEMORY_DYNAMICARCHIVE_HPP
 
-#if INCLUDE_CDS
-
+#include "cds/compactHashtable.hpp"
 #include "cds/filemap.hpp"
-#include "classfile/compactHashtable.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
@@ -36,6 +34,8 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
+
+#if INCLUDE_CDS
 
 class DynamicArchiveHeader : public FileMapHeader {
   friend class CDSOffsets;

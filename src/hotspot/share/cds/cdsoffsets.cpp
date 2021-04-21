@@ -23,14 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_CDS
-#include "runtime/os.hpp"
+#include "cds/cdsoffsets.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
+#include "runtime/os.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "prims/cdsoffsets.hpp"
+#include "utilities/macros.hpp"
 
 CDSOffsets::CDSOffsets(const char* name, int offset, CDSOffsets* next) {
   _name = NEW_C_HEAP_ARRAY(char, strlen(name) + 1, mtInternal);
@@ -76,4 +75,3 @@ void CDSOffsets::add_end(CDSOffsets* n) {
   while(p && p->_next) { p = p->_next; }
   p->_next = n;
 }
-#endif // INCLUDE_CDS

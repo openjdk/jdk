@@ -25,6 +25,8 @@
 #ifndef SHARE_PRIMS_CDSOFFSETS_HPP
 #define SHARE_PRIMS_CDSOFFSETS_HPP
 
+#include "memory/allocation.hpp"
+
 class CDSOffsets: public CHeapObj<mtInternal> {
  private:
   char* _name;
