@@ -1649,7 +1649,7 @@ public final class Class<T> implements java.io.Serializable,
 
     private String getSimpleName0() {
         if (isArray()) {
-            return getComponentType().getSimpleName() + "[]";
+            return getComponentType().getSimpleName().concat("[]");
         }
         String simpleName = getSimpleBinaryName();
         if (simpleName == null) { // top level class
@@ -1674,7 +1674,7 @@ public final class Class<T> implements java.io.Serializable,
                     dimensions++;
                     cl = cl.getComponentType();
                 } while (cl.isArray());
-                return cl.getName() + "[]".repeat(dimensions);
+                return cl.getName().concat("[]".repeat(dimensions));
             } catch (Throwable e) { /*FALLTHRU*/ }
         }
         return getName();
@@ -1709,7 +1709,7 @@ public final class Class<T> implements java.io.Serializable,
         if (isArray()) {
             String canonicalName = getComponentType().getCanonicalName();
             if (canonicalName != null)
-                return canonicalName + "[]";
+                return canonicalName.concat("[]");
             else
                 return ReflectionData.NULL_SENTINEL;
         }
@@ -4348,7 +4348,7 @@ public final class Class<T> implements java.io.Serializable,
             return Wrapper.forPrimitiveType(this).basicTypeString();
 
         if (isArray()) {
-            return "[" + componentType.descriptorString();
+            return "[".concat(componentType.descriptorString());
         } else if (isHidden()) {
             String name = getName();
             int index = name.indexOf('/');
