@@ -121,8 +121,6 @@ ATransformerManagementTestCase
         String msg = "Added transformer " + transformer
             + " with canRetransform=" + canRetransform;
         manager.addTransformer(transformer, canRetransform);
-//        verbosePrint("Added transformer " + transformer
-//            + " with canRetransform=" + canRetransform);
         verbosePrint(msg);
     }
 

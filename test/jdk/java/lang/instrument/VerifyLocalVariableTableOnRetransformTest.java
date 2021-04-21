@@ -53,6 +53,7 @@ VerifyLocalVariableTableOnRetransformTest
     private byte[]  fTargetClassBytes;
     private boolean fTargetClassMatches;
     private String  fTargetClassName = "DummyClassWithLVT";
+    private String  classFileName = fTargetClassName + ".class";
     private boolean fTargetClassSeen;
 
     /**
@@ -63,7 +64,7 @@ VerifyLocalVariableTableOnRetransformTest
     {
         super(name);
 
-        File f = originalTargetClassFile();
+        File f = originalClassFile();
         System.out.println("Reading test class from " + f);
         try
         {
@@ -140,17 +141,15 @@ VerifyLocalVariableTableOnRetransformTest
         compareClassFileBytes(false);
     }
 
-    private File originalTargetClassFile() {
-        String resourceName = fTargetClassName + ".class";
-        return new File(System.getProperty("test.classes", "."), resourceName);
+    private File originalClassFile() {
+        return new File(System.getProperty("test.classes", "."), classFileName);
     }
 
-    private File transformClassFile() {
+    private File transformedClassFile() {
         // This file will get created in the test execution
         // directory so there is no conflict with the file
         // in the test classes directory.
-        String resourceName = fTargetClassName + ".class";
-        return new File(resourceName);
+        return new File(classFileName);
     }
 
     private static final String[] expectedDifferentStrings = {
@@ -158,7 +157,7 @@ VerifyLocalVariableTableOnRetransformTest
             "^[\\s]+SHA-256 checksum .[^\\s]+$"
     };
 
-    private boolean expectedDiffenent(String line) {
+    private boolean expectedDifferent(String line) {
         for (String s: expectedDifferentStrings) {
             Pattern p = Pattern.compile(s);
             if (p.matcher(line).find()) {
@@ -172,8 +171,8 @@ VerifyLocalVariableTableOnRetransformTest
         if (fTargetClassMatches) {
             return;
         }
-        File f1 = originalTargetClassFile();
-        File f2 = transformClassFile();
+        File f1 = originalClassFile();
+        File f2 = transformedClassFile();
         System.out.println(fTargetClassName + " did not match .class file");
         System.out.println("Disassembly difference (" + f1 + " vs " + f2 +"):");
         // compare 'javap -v' output for the class files
@@ -183,28 +182,26 @@ VerifyLocalVariableTableOnRetransformTest
         boolean orderChanged = false;
         int lineNum = 0;
         for (String line: out1) {
-            if (expectedDiffenent(line)) {
-                continue;
-            }
-            if (!out2.contains(line)) {
-                different = true;
-                System.out.println("< (" + (lineNum + 1) + ") " + line);
-            } else {
-                if (lineNum < out2.size() && out1.get(lineNum) != out2.get(lineNum)) {
-                    // out2 contains line, but at different position
-                    orderChanged = true;
+            if (!expectedDifferent(line)) {
+                if (!out2.contains(line)) {
+                    different = true;
+                    System.out.println("< (" + (lineNum + 1) + ") " + line);
+                } else {
+                    if (lineNum < out2.size() && out1.get(lineNum) != out2.get(lineNum)) {
+                        // out2 contains line, but at different position
+                        orderChanged = true;
+                    }
                 }
             }
             lineNum++;
         }
         lineNum = 0;
         for (String line: out2) {
-            if (expectedDiffenent(line)) {
-                continue;
-            }
-            if (!out1.contains(line)) {
-                different = true;
-                System.out.println("> (" + (lineNum + 1) + ") " + line);
+            if (!expectedDifferent(line)) {
+                if (!out1.contains(line)) {
+                    different = true;
+                    System.out.println("> (" + (lineNum + 1) + ") " + line);
+                }
             }
             lineNum++;
         }
@@ -235,7 +232,7 @@ VerifyLocalVariableTableOnRetransformTest
 
         private void saveMismatchedBytes(byte[] classfileBuffer) {
             try {
-                FileOutputStream fos = new FileOutputStream(transformClassFile());
+                FileOutputStream fos = new FileOutputStream(transformedClassFile());
                 fos.write(classfileBuffer);
                 fos.close();
             } catch (IOException ex) {
