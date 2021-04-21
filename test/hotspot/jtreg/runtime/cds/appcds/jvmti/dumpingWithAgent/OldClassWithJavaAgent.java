@@ -23,6 +23,7 @@
  */
 /*
  * @test
+ * @bug 8261090
  * @summary Dump old class with java agent.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds

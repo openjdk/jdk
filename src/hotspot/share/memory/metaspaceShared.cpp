@@ -580,6 +580,7 @@ public:
   ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
+// Check if a class or its super class/interface is old.
 bool MetaspaceShared::is_old_class(InstanceKlass* ik) {
   if (ik == NULL) {
     return false;

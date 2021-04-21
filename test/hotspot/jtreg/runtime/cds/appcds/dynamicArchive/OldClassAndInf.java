@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8261090
  * @summary Test archiving of old class and interface with custom loader with dynamic CDS.
  * @requires vm.cds
  * @requires vm.cds.custom.loaders

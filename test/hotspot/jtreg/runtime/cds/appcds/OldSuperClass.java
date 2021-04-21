@@ -23,6 +23,7 @@
  */
 /*
  * @test
+ * @bug 8261090
  * @summary CDS support of old classes with major version < JDK_6 (50) for static archive.
  *          Test with old super class.
  * @requires vm.cds
