@@ -51,11 +51,10 @@ public class SuspendAtExit extends Thread {
         // Tell main thread we have started.
         startSyncObj.countDown();
         try {
-            // Wait for main thread to interrupt us so we
-            // can race to exit.
+            // Wait for main thread to tell us to race to the exit.
             exitSyncObj.await();
         } catch (InterruptedException e) {
-            // ignore because we expect one
+            throw new RuntimeException("Unexpected: " + e);
         }
     }
 
@@ -87,76 +86,66 @@ public class SuspendAtExit extends Thread {
         long start_time = System.currentTimeMillis();
         while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
             count++;
-            SuspendAtExit threads[] = new SuspendAtExit[N_THREADS];
 
             int retCode;
-            for (int i = 0; i < N_THREADS; i++ ) {
-                threads[i] = new SuspendAtExit();
-                threads[i].start();
-                try {
-                    // Wait for the worker thread to get going.
-                    threads[i].startSyncObj.await();
+            SuspendAtExit thread = new SuspendAtExit();
+            thread.start();
+            try {
+                // Wait for the worker thread to get going.
+                thread.startSyncObj.await();
+                // Tell the worker thread to race to the exit and the
+                // SuspendThread() calls will come in during thread exit.
+                thread.exitSyncObj.countDown();
+                while (true) {
+                    retCode = suspendThread(thread);
 
-                    // This interrupt() call will break the worker out of
-                    // the exitSyncObj.await() call and the SuspendThread()
-                    // calls will come in during thread exit.
-                    threads[i].interrupt();
-                    while (true) {
-                        retCode = suspendThread(threads[i]);
-
-                        if (retCode == JVMTI_ERROR_THREAD_NOT_ALIVE) {
-                            // Done with SuspendThread() calls since
-                            // thread is not alive.
-                            break;
-                        } else if (retCode != 0) {
-                            throw new RuntimeException("thread #" + i +
-                                                       ": suspendThread() " +
-                                                       "retCode=" + retCode +
-                                                       ": unexpected value.");
-                        }
-
-                        if (!threads[i].isAlive()) {
-                            throw new RuntimeException("thread #" + i +
-                                                       ": is not alive " +
-                                                       "after successful " +
-                                                       "suspendThread().");
-                        }
-                        retCode = resumeThread(threads[i]);
-                        if (retCode != 0) {
-                            throw new RuntimeException("thread #" + i +
-                                                       ": resumeThread() " +
-                                                       "retCode=" + retCode +
-                                                       ": unexpected value.");
-                        }
+                    if (retCode == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                        // Done with SuspendThread() calls since
+                        // thread is not alive.
+                        break;
+                    } else if (retCode != 0) {
+                        throw new RuntimeException("thread " + thread.getName()
+                                                   + ": suspendThread() " +
+                                                   "retCode=" + retCode +
+                                                   ": unexpected value.");
                     }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Unexpected: " + e);
-                }
 
-                try {
-                    threads[i].join();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Unexpected: " + e);
+                    if (!thread.isAlive()) {
+                        throw new RuntimeException("thread " + thread.getName()
+                                                   + ": is not alive " +
+                                                   "after successful " +
+                                                   "suspendThread().");
+                    }
+                    retCode = resumeThread(thread);
+                    if (retCode != 0) {
+                        throw new RuntimeException("thread " + thread.getName()
+                                                   + ": resumeThread() " +
+                                                   "retCode=" + retCode +
+                                                   ": unexpected value.");
+                    }
                 }
-                retCode = suspendThread(threads[i]);
-                if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
-                    throw new RuntimeException("thread #" + i +
-                                               ": suspendThread() " +
-                                               "retCode=" + retCode +
-                                               ": unexpected value.");
-                }
-                retCode = resumeThread(threads[i]);
-                if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
-                    throw new RuntimeException("thread #" + i +
-                                               ": suspendThread() " +
-                                               "retCode=" + retCode +
-                                               ": unexpected value.");
-                }
-                if (threads[i].isAlive()) {
-                    throw new RuntimeException("Expected !Thread.isAlive() " +
-                                               "after thread #" + i +
-                                               " has been join()'ed");
-                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Unexpected: " + e);
+            }
+
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Unexpected: " + e);
+            }
+            retCode = suspendThread(thread);
+            if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw new RuntimeException("thread " + thread.getName() +
+                                           ": suspendThread() " +
+                                           "retCode=" + retCode +
+                                           ": unexpected value.");
+            }
+            retCode = resumeThread(thread);
+            if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw new RuntimeException("thread " + thread.getName() +
+                                           ": suspendThread() " +
+                                           "retCode=" + retCode +
+                                           ": unexpected value.");
             }
         }
 
