@@ -1139,6 +1139,8 @@ public:
   // True iff an evacuation has failed in the most-recent collection.
   inline bool evacuation_failed() const;
   inline uint num_regions_failed_evacuation() const;
+  // Notify that the garbage collection encountered an evacuation failure in a
+  // region. Should only be called once per region.
   inline void notify_region_failed_evacuation();
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
