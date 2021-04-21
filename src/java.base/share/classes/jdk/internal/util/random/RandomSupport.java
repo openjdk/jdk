@@ -51,8 +51,6 @@ import java.util.stream.StreamSupport;
  * internal package it is not intended for general use.
  *
  * @since 17
- * @hidden
- *
  */
 public class RandomSupport {
     /**
@@ -1412,7 +1410,6 @@ public class RandomSupport {
      * {@link AbstractArbitrarilyJumpableGenerator}.
      *
      * @since 17
-     * @hidden
      */
     public abstract static class AbstractSpliteratorGenerator implements RandomGenerator {
         /*
@@ -1613,7 +1610,6 @@ public class RandomSupport {
      * admits a more efficient implementation.
      *
      * @since 17
-     * @hidden
      */
     public abstract static class AbstractArbitrarilyJumpableGenerator
             extends AbstractSpliteratorGenerator implements RandomGenerator.ArbitrarilyJumpableGenerator {
@@ -2041,7 +2037,6 @@ public class RandomSupport {
      * admits a more efficient implementation.
      *
      * @since 17
-     * @hidden
      */
     public abstract static class AbstractSplittableGenerator extends AbstractSpliteratorGenerator implements SplittableGenerator {
 
@@ -2333,7 +2328,6 @@ public class RandomSupport {
      * admits a more efficient implementation.
      *
      * @since 17
-     * @hidden
      */
     public abstract static class AbstractSplittableWithBrineGenerator
             extends AbstractSplittableGenerator {
