@@ -70,6 +70,7 @@ public class SynthToolTipUI extends BasicToolTipUI
     @Override
     protected void installDefaults(JComponent c) {
         updateStyle(c);
+        LookAndFeel.installProperty(c, "opaque", Boolean.TRUE);
     }
 
     private void updateStyle(JComponent c) {

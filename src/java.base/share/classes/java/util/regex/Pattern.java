@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,7 +539,7 @@ import jdk.internal.util.ArraysSupport;
  *
  * <p> This class is in conformance with Level 1 of <a
  * href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
- * Standard #18: Unicode Regular Expression</i></a>, plus RL2.1
+ * Standard #18: Unicode Regular Expressions</i></a>, plus RL2.1
  * Canonical Equivalents and RL2.2 Extended Grapheme Clusters.
  * <p>
  * <b>Unicode escape sequences</b> such as <code>&#92;u2014</code> in Java source code
@@ -602,7 +602,7 @@ import jdk.internal.util.ArraysSupport;
  * {@code gc}) as in {@code general_category=Lu} or {@code gc=Lu}.
  * <p>
  * The supported categories are those of
- * <a href="http://www.unicode.org/unicode/standard/standard.html">
+ * <a href="http://www.unicode.org/standard/standard.html">
  * <i>The Unicode Standard</i></a> in the version specified by the
  * {@link java.lang.Character Character} class. The category names are those
  * defined in the Standard, both normative and informative.
@@ -630,8 +630,8 @@ import jdk.internal.util.ArraysSupport;
  * <p>
  * The following <b>Predefined Character classes</b> and <b>POSIX character classes</b>
  * are in conformance with the recommendation of <i>Annex C: Compatibility Properties</i>
- * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Regular Expression
- * </i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
+ * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical Standard #18:
+ * Unicode Regular Expressions</i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
  *
  * <table class="striped">
  * <caption style="display:none">predefined and posix character classes in Unicode mode</caption>
@@ -906,7 +906,7 @@ public final class Pattern
      * <i>Predefined character classes</i> and <i>POSIX character classes</i>
      * are in conformance with
      * <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
-     * Standard #18: Unicode Regular Expression</i></a>
+     * Standard #18: Unicode Regular Expressions</i></a>
      * <i>Annex C: Compatibility Properties</i>.
      * <p>
      * The UNICODE_CHARACTER_CLASS mode can also be enabled via the embedded

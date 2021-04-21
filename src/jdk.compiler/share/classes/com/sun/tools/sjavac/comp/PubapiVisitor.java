@@ -94,7 +94,7 @@ public class PubapiVisitor extends ElementScanner14<Void, Void> {
             Object constVal = e.getConstantValue();
             String constValStr = null;
             // TODO: This doesn't seem to be entirely accurate. What if I change
-            // from, say, 0 to 0L? (And the field is public final static so that
+            // from, say, 0 to 0L? (And the field is public static final so that
             // it could get inlined.)
             if (constVal != null) {
                 if (e.asType().toString().equals("char")) {

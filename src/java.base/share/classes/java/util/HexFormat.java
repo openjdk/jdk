@@ -877,7 +877,7 @@ public final class HexFormat {
      * @return {@code true} if the character is valid a hexadecimal character,
      *          otherwise {@code false}
      */
-    public boolean isHexDigit(int ch) {
+    public static boolean isHexDigit(int ch) {
         return ((ch >>> 8) == 0 && DIGITS[ch] >= 0);
     }
 
@@ -889,13 +889,12 @@ public final class HexFormat {
      * <li>{@code (ch - 'A' + 10)} for {@code 'A'} through {@code 'F'} inclusive, and
      * <li>{@code (ch - 'a' + 10)} for {@code 'a'} through {@code 'f'} inclusive.
      * </ul>
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @param ch a character or codepoint
      * @return the value {@code 0-15}
      * @throws  NumberFormatException if the codepoint is not a hexadecimal character
      */
-    public int fromHexDigit(int ch) {
+    public static int fromHexDigit(int ch) {
         int value;
         if ((ch >>> 8) == 0 && (value = DIGITS[ch]) >= 0) {
             return value;
@@ -907,7 +906,6 @@ public final class HexFormat {
      * Returns a value parsed from two hexadecimal characters in a string.
      * The characters in the range from {@code index} to {@code index + 1},
      * inclusive, must be valid hex digits according to {@link #fromHexDigit(int)}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @param string a CharSequence containing the characters
      * @param index the index of the first character of the range
@@ -917,7 +915,7 @@ public final class HexFormat {
      * @throws  IndexOutOfBoundsException if the range is out of bounds
      *          for the {@code CharSequence}
      */
-    private int fromHexDigits(CharSequence string, int index) {
+    private static int fromHexDigits(CharSequence string, int index) {
         Objects.requireNonNull(string, "string");
         int high = fromHexDigit(string.charAt(index));
         int low = fromHexDigit(string.charAt(index + 1));
@@ -929,7 +927,6 @@ public final class HexFormat {
      * The hexadecimal characters are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 32 bits and is returned as an {@code int}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @apiNote
      * {@link Integer#parseInt(String, int) Integer.parseInt(s, 16)} and
@@ -944,7 +941,7 @@ public final class HexFormat {
      * @throws  IllegalArgumentException if the string length is greater than eight (8) or
      *      if any of the characters is not a hexadecimal character
      */
-    public int fromHexDigits(CharSequence string) {
+    public static int fromHexDigits(CharSequence string) {
         Objects.requireNonNull(string, "string");
         int length = checkDigitCount(0, string.length(), 8);
         int value = 0;
@@ -961,7 +958,6 @@ public final class HexFormat {
      * are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 32 bits and is returned as an {@code int}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @apiNote
      * {@link Integer#parseInt(String, int) Integer.parseInt(s, 16)} and
@@ -980,7 +976,7 @@ public final class HexFormat {
      * @throws  IllegalArgumentException if length of the range is greater than eight (8) or
      *          if any of the characters is not a hexadecimal character
      */
-    public int fromHexDigits(CharSequence string, int fromIndex, int toIndex) {
+    public static int fromHexDigits(CharSequence string, int fromIndex, int toIndex) {
         Objects.requireNonNull(string, "string");
         Objects.checkFromToIndex(fromIndex, toIndex, string.length());
         int length = checkDigitCount(fromIndex, toIndex, 8);
@@ -996,7 +992,6 @@ public final class HexFormat {
      * The hexadecimal characters are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 64 bits and is returned as a {@code long}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @apiNote
      * {@link Long#parseLong(String, int) Long.parseLong(s, 16)} and
@@ -1011,7 +1006,7 @@ public final class HexFormat {
      * @throws  IllegalArgumentException if the string length is greater than sixteen (16) or
      *         if any of the characters is not a hexadecimal character
      */
-    public long fromHexDigitsToLong(CharSequence string) {
+    public static long fromHexDigitsToLong(CharSequence string) {
         Objects.requireNonNull(string, "string");
         int length = checkDigitCount(0, string.length(), 16);
         long value = 0L;
@@ -1028,7 +1023,6 @@ public final class HexFormat {
      * are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 64 bits and is returned as a {@code long}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @apiNote
      * {@link Long#parseLong(String, int) Long.parseLong(s, 16)} and
@@ -1047,7 +1041,7 @@ public final class HexFormat {
      * @throws  IllegalArgumentException if the length of the range is greater than sixteen (16) or
      *          if any of the characters is not a hexadecimal character
      */
-    public long fromHexDigitsToLong(CharSequence string, int fromIndex, int toIndex) {
+    public static long fromHexDigitsToLong(CharSequence string, int fromIndex, int toIndex) {
         Objects.requireNonNull(string, "string");
         Objects.checkFromToIndex(fromIndex, toIndex, string.length());
         int length = checkDigitCount(fromIndex, toIndex, 16);

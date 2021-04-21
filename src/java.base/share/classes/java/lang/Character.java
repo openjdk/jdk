@@ -9495,8 +9495,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since   1.5
      */
     public static boolean isLowerCase(int codePoint) {
-        return CharacterData.of(codePoint).isLowerCase(codePoint) ||
-               CharacterData.of(codePoint).isOtherLowercase(codePoint);
+        return CharacterData.of(codePoint).isLowerCase(codePoint);
     }
 
     /**
@@ -9561,8 +9560,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since   1.5
      */
     public static boolean isUpperCase(int codePoint) {
-        return CharacterData.of(codePoint).isUpperCase(codePoint) ||
-               CharacterData.of(codePoint).isOtherUppercase(codePoint);
+        return CharacterData.of(codePoint).isUpperCase(codePoint);
     }
 
     /**

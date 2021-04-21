@@ -916,7 +916,7 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name == "and" or name == "eor" or name == "orr"):
+        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
         else:
@@ -1401,9 +1401,12 @@ generate(NEONReduceInstruction,
           ["smaxv", "smaxv", "8B"], ["smaxv", "smaxv", "16B"],
           ["smaxv", "smaxv", "4H"], ["smaxv", "smaxv", "8H"],
           ["smaxv", "smaxv", "4S"], ["fmaxv", "fmaxv", "4S"],
-          ["sminv", "sminv", "8B"], ["sminv", "sminv", "16B"],
-          ["sminv", "sminv", "4H"], ["sminv", "sminv", "8H"],
-          ["sminv", "sminv", "4S"], ["fminv", "fminv", "4S"],
+          ["sminv", "sminv", "8B"], ["uminv", "uminv", "8B"],
+          ["sminv", "sminv", "16B"],["uminv", "uminv", "16B"],
+          ["sminv", "sminv", "4H"], ["uminv", "uminv", "4H"],
+          ["sminv", "sminv", "8H"], ["uminv", "uminv", "8H"],
+          ["sminv", "sminv", "4S"], ["uminv", "uminv", "4S"],
+          ["fminv", "fminv", "4S"],
           ["fmaxp", "fmaxp", "2S"], ["fmaxp", "fmaxp", "2D"],
           ["fminp", "fminp", "2S"], ["fminp", "fminp", "2D"],
           ])
@@ -1609,6 +1612,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["and", "ZZZ"],
                        ["eor", "ZZZ"],
                        ["orr", "ZZZ"],
+                       ["bic", "ZZZ"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],

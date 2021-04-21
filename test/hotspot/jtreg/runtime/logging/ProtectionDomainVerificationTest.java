@@ -44,7 +44,7 @@ public class ProtectionDomainVerificationTest {
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
-        .shouldContain("[protectiondomain] pd set count = #");
+        .shouldContain("[protectiondomain] adding protection domain for class");
 
         // -Xlog:protectiondomain=debug
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=debug",
@@ -53,7 +53,7 @@ public class ProtectionDomainVerificationTest {
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
-        .shouldNotContain("pd set count = #");
+        .shouldNotContain("[protectiondomain] adding protection domain for class");
 
         // -Xlog:protectiondomain=debug
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=trace",

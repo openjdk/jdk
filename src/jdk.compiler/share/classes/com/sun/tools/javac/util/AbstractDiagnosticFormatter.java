@@ -401,7 +401,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         return config;
     }
 
-    static public class SimpleConfiguration implements Configuration {
+    public static class SimpleConfiguration implements Configuration {
 
         protected Map<MultilineLimit, Integer> multilineLimits;
         protected EnumSet<DiagnosticPart> visibleParts;

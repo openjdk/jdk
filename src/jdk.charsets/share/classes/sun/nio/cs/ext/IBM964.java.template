@@ -209,11 +209,11 @@ public class IBM964
                 return decodeBufferLoop(src, dst);
         }
 
-        private final static String byteToCharTable;
-        private final static String mappingTableG1;
-        private final static String mappingTableG2a2;
-        private final static String mappingTableG2ac;
-        private final static String mappingTableG2ad;
+        private static final String byteToCharTable;
+        private static final String mappingTableG1;
+        private static final String mappingTableG2a2;
+        private static final String mappingTableG2ac;
+        private static final String mappingTableG2ad;
 
         static {
             byteToCharTable =
@@ -4815,10 +4815,10 @@ public class IBM964
                  9323,     0,   223,   223, 13478, 12876,   223,  8158,
         };
 
-        private final static String index2;
-        private final static String index2a;
-        private final static String index2b;
-        private final static String index2c;
+        private static final String index2;
+        private static final String index2a;
+        private static final String index2b;
+        private static final String index2c;
         static {
             index2 =
                 "\u0000\uA1D5\u0000\uA1D8\u0000\uA1D9\u0000\uA1DC\u0000\uA1DD" + //     0 -     4

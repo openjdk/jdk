@@ -90,7 +90,7 @@ public class ClhsdbFindPC {
 
             test = new ClhsdbLauncher();
 
-            theApp = new LingeredAppWithTrivialMain();
+            theApp = new LingeredApp();
             theApp.setForceCrash(withCore);
             if (withXcomp) {
                 LingeredApp.startApp(theApp, "-Xcomp");
@@ -134,9 +134,9 @@ public class ClhsdbFindPC {
             String jStackOutput = runTest(withCore, cmds, null);
 
             // Extract pc address from the following line:
-            //   - LingeredAppWithTrivialMain.main(java.lang.String[]) @bci=1, line=33, pc=0x00007ff18ff519f0, ...
+            //   - LingeredApp.steadyState(java.lang.Object) @bci=1, line=33, pc=0x00007ff18ff519f0, ...
             String pcAddress = null;
-            String[] parts = jStackOutput.split("LingeredAppWithTrivialMain.main");
+            String[] parts = jStackOutput.split("LingeredApp.steadyState");
             String[] tokens = parts[1].split(" ");
             for (String token : tokens) {
                 if (token.contains("pc")) {
@@ -147,7 +147,7 @@ public class ClhsdbFindPC {
                 }
             }
             if (pcAddress == null) {
-                throw new RuntimeException("Cannot find LingeredAppWithTrivialMain.main pc in output");
+                throw new RuntimeException("Cannot find LingeredApp.steadyState pc in output");
             }
 
             // Test the 'findpc' command passing in the pc obtained from jstack above
@@ -157,7 +157,7 @@ public class ClhsdbFindPC {
             expStrMap = new HashMap<>();
             if (withXcomp) {
                 expStrMap.put(cmdStr, List.of(
-                            "In code in NMethod for LingeredAppWithTrivialMain.main",
+                            "In code in NMethod for jdk/test/lib/apps/LingeredApp.steadyState",
                             "content:",
                             "oops:",
                             "frame size:"));
@@ -168,9 +168,9 @@ public class ClhsdbFindPC {
             runTest(withCore, cmds, expStrMap);
 
             // Run findpc on a Method*. We can find one in the jstack output. For example:
-            // - LingeredAppWithTrivialMain.main(java.lang.String[]) @bci=1, line=33, pc=..., Method*=0x0000008041000208 ...
+            // - LingeredApp.steadyState(java.lang.Object) @bci=1, line=33, pc=..., Method*=0x0000008041000208 ...
             // This is testing the PointerFinder support for C++ MetaData types.
-            parts = jStackOutput.split("LingeredAppWithTrivialMain.main");
+            parts = jStackOutput.split("LingeredApp.steadyState");
             parts = parts[1].split("Method\\*=");
             parts = parts[1].split(" ");
             String methodAddr = parts[0];
@@ -178,7 +178,7 @@ public class ClhsdbFindPC {
             cmds = List.of(cmdStr);
             expStrMap = new HashMap<>();
             expStrMap.put(cmdStr, List.of("Method ",
-                                          "LingeredAppWithTrivialMain.main",
+                                          "LingeredApp.steadyState",
                                           methodAddr));
             runTest(withCore, cmds, expStrMap);
 

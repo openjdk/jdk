@@ -72,52 +72,52 @@ public class CK_ATTRIBUTE {
     // *MUST NEVER* be modified, e.g. by using them in a
     // C_GetAttributeValue() call!
 
-    public final static CK_ATTRIBUTE TOKEN_FALSE =
+    public static final CK_ATTRIBUTE TOKEN_FALSE =
                                     new CK_ATTRIBUTE(CKA_TOKEN, false);
 
-    public final static CK_ATTRIBUTE SENSITIVE_FALSE =
+    public static final CK_ATTRIBUTE SENSITIVE_FALSE =
                                     new CK_ATTRIBUTE(CKA_SENSITIVE, false);
 
-    public final static CK_ATTRIBUTE EXTRACTABLE_TRUE =
+    public static final CK_ATTRIBUTE EXTRACTABLE_TRUE =
                                     new CK_ATTRIBUTE(CKA_EXTRACTABLE, true);
 
-    public final static CK_ATTRIBUTE ENCRYPT_TRUE =
+    public static final CK_ATTRIBUTE ENCRYPT_TRUE =
                                     new CK_ATTRIBUTE(CKA_ENCRYPT, true);
 
-    public final static CK_ATTRIBUTE DECRYPT_TRUE =
+    public static final CK_ATTRIBUTE DECRYPT_TRUE =
                                     new CK_ATTRIBUTE(CKA_DECRYPT, true);
 
-    public final static CK_ATTRIBUTE WRAP_TRUE =
+    public static final CK_ATTRIBUTE WRAP_TRUE =
                                     new CK_ATTRIBUTE(CKA_WRAP, true);
 
-    public final static CK_ATTRIBUTE UNWRAP_TRUE =
+    public static final CK_ATTRIBUTE UNWRAP_TRUE =
                                     new CK_ATTRIBUTE(CKA_UNWRAP, true);
 
-    public final static CK_ATTRIBUTE SIGN_TRUE =
+    public static final CK_ATTRIBUTE SIGN_TRUE =
                                     new CK_ATTRIBUTE(CKA_SIGN, true);
 
-    public final static CK_ATTRIBUTE VERIFY_TRUE =
+    public static final CK_ATTRIBUTE VERIFY_TRUE =
                                     new CK_ATTRIBUTE(CKA_VERIFY, true);
 
-    public final static CK_ATTRIBUTE SIGN_RECOVER_TRUE =
+    public static final CK_ATTRIBUTE SIGN_RECOVER_TRUE =
                                     new CK_ATTRIBUTE(CKA_SIGN_RECOVER, true);
 
-    public final static CK_ATTRIBUTE VERIFY_RECOVER_TRUE =
+    public static final CK_ATTRIBUTE VERIFY_RECOVER_TRUE =
                                     new CK_ATTRIBUTE(CKA_VERIFY_RECOVER, true);
 
-    public final static CK_ATTRIBUTE DERIVE_TRUE =
+    public static final CK_ATTRIBUTE DERIVE_TRUE =
                                     new CK_ATTRIBUTE(CKA_DERIVE, true);
 
-    public final static CK_ATTRIBUTE ENCRYPT_NULL =
+    public static final CK_ATTRIBUTE ENCRYPT_NULL =
                                     new CK_ATTRIBUTE(CKA_ENCRYPT);
 
-    public final static CK_ATTRIBUTE DECRYPT_NULL =
+    public static final CK_ATTRIBUTE DECRYPT_NULL =
                                     new CK_ATTRIBUTE(CKA_DECRYPT);
 
-    public final static CK_ATTRIBUTE WRAP_NULL =
+    public static final CK_ATTRIBUTE WRAP_NULL =
                                     new CK_ATTRIBUTE(CKA_WRAP);
 
-    public final static CK_ATTRIBUTE UNWRAP_NULL =
+    public static final CK_ATTRIBUTE UNWRAP_NULL =
                                     new CK_ATTRIBUTE(CKA_UNWRAP);
 
     public CK_ATTRIBUTE() {

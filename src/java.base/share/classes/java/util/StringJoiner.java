@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,12 +148,6 @@ public final class StringJoiner {
         return this;
     }
 
-    private static int getChars(String s, char[] chars, int start) {
-        int len = s.length();
-        s.getChars(0, len, chars, start);
-        return len;
-    }
-
     /**
      * Returns the current value, consisting of the {@code prefix}, the values
      * added so far separated by the {@code delimiter}, and the {@code suffix},
@@ -170,22 +164,21 @@ public final class StringJoiner {
         }
         final int size = this.size;
         final int addLen = prefix.length() + suffix.length();
-        if (addLen == 0) {
-            compactElts();
-            return size == 0 ? "" : elts[0];
+        if (size == 0) {
+            if (addLen == 0) {
+                return "";
+            }
+            return prefix + suffix;
         }
         final String delimiter = this.delimiter;
-        final char[] chars = new char[len + addLen];
-        int k = getChars(prefix, chars, 0);
+        StringBuilder sb = new StringBuilder(len + addLen).append(prefix);
         if (size > 0) {
-            k += getChars(elts[0], chars, k);
+            sb.append(elts[0]);
             for (int i = 1; i < size; i++) {
-                k += getChars(delimiter, chars, k);
-                k += getChars(elts[i], chars, k);
+                sb.append(delimiter).append(elts[i]);
             }
         }
-        k += getChars(suffix, chars, k);
-        return new String(chars);
+        return sb.append(suffix).toString();
     }
 
     /**
@@ -249,15 +242,14 @@ public final class StringJoiner {
 
     private void compactElts() {
         if (size > 1) {
-            final char[] chars = new char[len];
-            int i = 1, k = getChars(elts[0], chars, 0);
+            StringBuilder sb = new StringBuilder(len).append(elts[0]);
+            int i = 1;
             do {
-                k += getChars(delimiter, chars, k);
-                k += getChars(elts[i], chars, k);
+                sb.append(delimiter).append(elts[i]);
                 elts[i] = null;
             } while (++i < size);
             size = 1;
-            elts[0] = new String(chars);
+            elts[0] = sb.toString();
         }
     }
 

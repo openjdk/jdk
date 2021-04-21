@@ -25,8 +25,10 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
+import java.util.List;
 import java.util.SortedSet;
 
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -62,6 +64,14 @@ public interface PackageSummaryWriter {
      * @return a content tree with the package summary header
      */
     Content getSummariesList();
+
+    /**
+     * Adds the table of related packages to the documentation tree.
+     *
+     * @param relatedPackages the interfaces to document.
+     * @param summaryContentTree the content tree to which the summaries will be added
+     */
+    void addRelatedPackagesSummary(List<PackageElement> relatedPackages, Content summaryContentTree);
 
     /**
      * Adds the table of interfaces to the documentation tree.

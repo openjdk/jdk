@@ -28,7 +28,6 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/virtualspace.hpp"
-#include "runtime/arguments.hpp"
 #include "utilities/bitMap.hpp"
 
 class BootstrapInfo;
@@ -225,7 +224,6 @@ public:
 class ArchiveUtils {
 public:
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
-  static void check_for_oom(oop exception) NOT_CDS_RETURN;
 };
 
 #endif // SHARE_MEMORY_ARCHIVEUTILS_HPP

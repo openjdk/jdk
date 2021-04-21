@@ -323,18 +323,18 @@ public class TestHtmlVersion extends JavadocTester {
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
                     <main role="main">
-                    <div class="header">""",
+                    <h1 class="title">JavaDoc Help</h1>""",
                 """
-                    <section class="help-section">
-                    <h2>Overview</h2>
+                    <section class="help-section" id="overview">
+                    <h3>Overview</h3>
                     """,
                 """
-                    <section class="help-section">
-                    <h2>Package</h2>
+                    <section class="help-section" id="package">
+                    <h3>Package</h3>
                     """,
                 """
-                    <section class="help-section">
-                    <h2>Class or Interface</h2>
+                    <section class="help-section" id="class">
+                    <h3>Class or Interface</h3>
                     """,
                 """
                     <footer role="contentinfo">""",

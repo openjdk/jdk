@@ -219,7 +219,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
-      if (*p != Universe::non_oop_word()) {
+      if (!Universe::contains_non_oop_word(p)) {
         cl->do_oop(p);
       }
     }
@@ -232,7 +232,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
     oop** const begin = oops->immediates_begin();
     oop** const end = oops->immediates_end();
     for (oop** p = begin; p < end; p++) {
-      if (**p != Universe::non_oop_word()) {
+      if (*p != Universe::non_oop_word()) {
         cl->do_oop(*p);
       }
     }

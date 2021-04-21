@@ -303,10 +303,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     /**
      * Initializes component properties, such as font, foreground,
      * background, caret color, selection color, selected text color,
-     * disabled text color, and border color.  The font, foreground, and
-     * background properties are only set if their current value is either null
-     * or a UIResource, other properties are set if the current
-     * value is null.
+     * disabled text color, border, and margin. Each property is set
+     * if its current value is either null or a UIResource.
      *
      * @see #uninstallDefaults
      * @see #installUI
@@ -2416,13 +2414,13 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 int nch;
                 boolean lastWasCR = false;
                 int last;
-                StringBuffer sbuff = null;
+                StringBuilder sbuff = null;
 
                 // Read in a block at a time, mapping \r\n to \n, as well as single
                 // \r to \n.
                 while ((nch = in.read(buff, 0, buff.length)) != -1) {
                     if (sbuff == null) {
-                        sbuff = new StringBuffer(nch);
+                        sbuff = new StringBuilder(nch);
                     }
                     last = 0;
                     for(int counter = 0; counter < nch; counter++) {

@@ -242,7 +242,7 @@ oop LiveFrameStream::create_primitive_slot_instance(StackValueCollection* values
                          signature,
                          &args,
                          CHECK_NULL);
-  return (instanceOop) result.get_jobject();
+  return (instanceOop) result.get_oop();
 }
 
 objArrayHandle LiveFrameStream::values_to_object_array(StackValueCollection* values, TRAPS) {
@@ -443,7 +443,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   }
 
   // Return normally
-  return (oop)result.get_jobject();
+  return result.get_oop();
 }
 
 // Walk the next batch of stack frames

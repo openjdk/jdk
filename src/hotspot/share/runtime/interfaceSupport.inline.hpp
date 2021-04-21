@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -76,6 +78,7 @@ class ThreadStateTransition : public StackObj {
   ThreadStateTransition(JavaThread *thread) {
     _thread = thread;
     assert(thread != NULL, "must be active Java thread");
+    assert(thread == Thread::current(), "must be current thread");
   }
 
   // Change threadstate in a manner, so safepoint can detect changes.
@@ -150,8 +153,9 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
 };
 
 class ThreadInVMfromJava : public ThreadStateTransition {
+  bool _check_asyncs;
  public:
-  ThreadInVMfromJava(JavaThread* thread) : ThreadStateTransition(thread) {
+  ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true) : ThreadStateTransition(thread), _check_asyncs(check_asyncs) {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
@@ -159,8 +163,9 @@ class ThreadInVMfromJava : public ThreadStateTransition {
       _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
-    // Check for pending. async. exceptions or suspends.
-    if (_thread->has_special_runtime_exit_condition()) _thread->handle_special_runtime_exit_condition();
+    // We prevent asynchronous exceptions from being installed on return to Java in situations
+    // where we can't tolerate them. See bugs: 4324348, 4854693, 4998314, 5040492, 5050705.
+    if (_thread->has_special_runtime_exit_condition()) _thread->handle_special_runtime_exit_condition(_check_asyncs);
   }
 };
 
@@ -222,93 +227,45 @@ class ThreadToNativeFromVM : public ThreadStateTransition {
 };
 
 
+// Parameter in_flight_mutex_addr is only used by class Mutex to avoid certain deadlock
+// scenarios while making transitions that might block for a safepoint or handshake.
+// It's the address of a pointer to the mutex we are trying to acquire. This will be used to
+// access and release said mutex when transitioning back from blocked to vm (destructor) in
+// case we need to stop for a safepoint or handshake.
 class ThreadBlockInVM : public ThreadStateTransition {
- public:
-  ThreadBlockInVM(JavaThread *thread)
-  : ThreadStateTransition(thread) {
-    // Once we are blocked vm expects stack to be walkable
-    thread->frame_anchor()->make_walkable(thread);
-    trans(_thread_in_vm, _thread_blocked);
-  }
-  ~ThreadBlockInVM() {
-    trans(_thread_blocked, _thread_in_vm);
-    // We don't need to clear_walkable because it will happen automagically when we return to java
-  }
-};
-
-// Unlike ThreadBlockInVM, this class is designed to avoid certain deadlock scenarios while making
-// transitions inside class Mutex in cases where we need to block for a safepoint or handshake. It
-// receives an extra argument compared to ThreadBlockInVM, the address of a pointer to the mutex we
-// are trying to acquire. This will be used to access and release the mutex if needed to avoid
-// said deadlocks.
-// It works like ThreadBlockInVM but differs from it in two ways:
-// - When transitioning in (constructor), it checks for safepoints without blocking, i.e., calls
-//   back if needed to allow a pending safepoint to continue but does not block in it.
-// - When transitioning back (destructor), if there is a pending safepoint or handshake it releases
-//   the mutex that is only partially acquired.
-class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
  private:
   Mutex** _in_flight_mutex_addr;
 
-  void release_mutex() {
-    assert(_in_flight_mutex_addr != NULL, "_in_flight_mutex_addr should have been set on constructor");
-    Mutex* in_flight_mutex = *_in_flight_mutex_addr;
-    if (in_flight_mutex != NULL) {
-      in_flight_mutex->release_for_safepoint();
-      *_in_flight_mutex_addr = NULL;
-    }
-  }
  public:
-  ThreadBlockInVMWithDeadlockCheck(JavaThread* thread, Mutex** in_flight_mutex_addr)
+  ThreadBlockInVM(JavaThread* thread, Mutex** in_flight_mutex_addr = NULL)
   : ThreadStateTransition(thread), _in_flight_mutex_addr(in_flight_mutex_addr) {
+    assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
+    thread->check_possible_safepoint();
     // Once we are blocked vm expects stack to be walkable
     thread->frame_anchor()->make_walkable(thread);
-
-    // All unsafe states are treated the same by the VMThread
-    // so we can skip the _thread_in_vm_trans state here. Since
-    // we don't read poll, it's enough to order the stores.
-    OrderAccess::storestore();
-
     thread->set_thread_state(_thread_blocked);
   }
-  ~ThreadBlockInVMWithDeadlockCheck() {
+  ~ThreadBlockInVM() {
+    assert(_thread->thread_state() == _thread_blocked, "coming from wrong thread state");
     // Change to transition state and ensure it is seen by the VM thread.
-    _thread->set_thread_state_fence((JavaThreadState)(_thread_blocked_trans));
+    _thread->set_thread_state_fence(_thread_blocked_trans);
 
     if (SafepointMechanism::should_process(_thread)) {
-      release_mutex();
+      if (_in_flight_mutex_addr != NULL) {
+        release_mutex();
+      }
       SafepointMechanism::process_if_requested(_thread);
     }
 
     _thread->set_thread_state(_thread_in_vm);
   }
-};
 
-
-// This special transition class is only used to prevent asynchronous exceptions
-// from being installed on vm exit in situations where we can't tolerate them.
-// See bugs: 4324348, 4854693, 4998314, 5040492, 5050705.
-class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
- public:
-  ThreadInVMfromJavaNoAsyncException(JavaThread* thread) : ThreadStateTransition(thread) {
-    trans_from_java(_thread_in_vm);
-  }
-  ~ThreadInVMfromJavaNoAsyncException()  {
-    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
-      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
+  void release_mutex() {
+    Mutex* in_flight_mutex = *_in_flight_mutex_addr;
+    if (in_flight_mutex != NULL) {
+      in_flight_mutex->release_for_safepoint();
+      *_in_flight_mutex_addr = NULL;
     }
-    trans(_thread_in_vm, _thread_in_Java);
-    // NOTE: We do not check for pending. async. exceptions.
-    // If we did and moved the pending async exception over into the
-    // pending exception field, we would need to deopt (currently C2
-    // only). However, to do so would require that we transition back
-    // to the _thread_in_vm state. Instead we postpone the handling of
-    // the async exception.
-
-
-    // Check for pending. suspends only.
-    if (_thread->has_special_runtime_exit_condition())
-      _thread->handle_special_runtime_exit_condition(false);
   }
 };
 
@@ -335,6 +292,8 @@ class VMNativeEntryWrapper {
 
 #define VM_LEAF_BASE(result_type, header)                            \
   debug_only(NoHandleMark __hm;)                                     \
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,                    \
+                                         Thread::current()));        \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
@@ -357,8 +316,9 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
-    ThreadInVMfromJava __tiv(thread);                                \
-    VM_ENTRY_BASE(result_type, header, thread)                       \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
+    ThreadInVMfromJava __tiv(current);                               \
+    VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
 
 // JRT_LEAF currently can be called from either _thread_in_Java or
@@ -383,26 +343,28 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
-    ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
-    VM_ENTRY_BASE(result_type, header, thread)                       \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
+    ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
+    VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
 
 // Same as JRT Entry but allows for return value after the safepoint
 // to get back into Java from the VM
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
-    HandleMarkCleaner __hm(thread);
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
+    HandleMarkCleaner __hm(current);
 
 #define JRT_BLOCK                                                    \
     {                                                                \
-    ThreadInVMfromJava __tiv(thread);                                \
-    Thread* THREAD = thread;                                         \
+    ThreadInVMfromJava __tiv(current);                               \
+    Thread* THREAD = current;                                        \
     debug_only(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_NO_ASYNC                                           \
     {                                                                \
-    ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
-    Thread* THREAD = thread;                                         \
+    ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
+    Thread* THREAD = current;                                        \
     debug_only(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_END }
@@ -420,6 +382,7 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -444,6 +407,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -453,6 +417,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread = JavaThread::current();                      \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)

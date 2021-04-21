@@ -266,7 +266,7 @@ static address lookup_special_native(const char* jni_name) {
   return NULL;
 }
 
-address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, TRAPS) {
   address entry;
   const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size, os_style);
 
@@ -283,7 +283,6 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
        entry = (address) os::dll_lookup(os::native_java_library(), jni_name);
     }
     if (entry != NULL) {
-      in_base_library = true;
       return entry;
     }
   }
@@ -340,9 +339,8 @@ address NativeLookup::lookup_critical_style(void* dll, const char* pure_name, co
 
 // Check all the formats of native implementation name to see if there is one
 // for the specified method.
-address NativeLookup::lookup_entry(const methodHandle& method, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
   address entry = NULL;
-  in_base_library = false;
   // Compute pure name
   char* pure_name = pure_jni_name(method);
   if (pure_name == NULL) {
@@ -357,7 +355,7 @@ address NativeLookup::lookup_entry(const methodHandle& method, bool& in_base_lib
                 + method->size_of_parameters(); // actual parameters
 
   // 1) Try JNI short style
-  entry = lookup_style(method, pure_name, "",        args_size, true,  in_base_library, CHECK_NULL);
+  entry = lookup_style(method, pure_name, "",        args_size, true,  CHECK_NULL);
   if (entry != NULL) return entry;
 
   // Compute long name
@@ -369,15 +367,15 @@ address NativeLookup::lookup_entry(const methodHandle& method, bool& in_base_lib
   }
 
   // 2) Try JNI long style
-  entry = lookup_style(method, pure_name, long_name, args_size, true,  in_base_library, CHECK_NULL);
+  entry = lookup_style(method, pure_name, long_name, args_size, true,  CHECK_NULL);
   if (entry != NULL) return entry;
 
   // 3) Try JNI short style without os prefix/suffix
-  entry = lookup_style(method, pure_name, "",        args_size, false, in_base_library, CHECK_NULL);
+  entry = lookup_style(method, pure_name, "",        args_size, false, CHECK_NULL);
   if (entry != NULL) return entry;
 
   // 4) Try JNI long style without os prefix/suffix
-  entry = lookup_style(method, pure_name, long_name, args_size, false, in_base_library, CHECK_NULL);
+  entry = lookup_style(method, pure_name, long_name, args_size, false, CHECK_NULL);
 
   return entry; // NULL indicates not found
 }
@@ -489,7 +487,7 @@ address NativeLookup::lookup_critical_style(void* dll, const methodHandle& metho
 // If any are found, remove them before attemping the look up of the
 // native implementation again.
 // See SetNativeMethodPrefix in the JVM TI Spec for more details.
-address NativeLookup::lookup_entry_prefixed(const methodHandle& method, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup_entry_prefixed(const methodHandle& method, TRAPS) {
 #if INCLUDE_JVMTI
   ResourceMark rm(THREAD);
 
@@ -516,7 +514,7 @@ address NativeLookup::lookup_entry_prefixed(const methodHandle& method, bool& in
       if (wrapper_method != NULL && !wrapper_method->is_native()) {
         // we found a wrapper method, use its native entry
         method->set_is_prefixed_native();
-        return lookup_entry(methodHandle(THREAD, wrapper_method), in_base_library, THREAD);
+        return lookup_entry(methodHandle(THREAD, wrapper_method), THREAD);
       }
     }
   }
@@ -524,16 +522,16 @@ address NativeLookup::lookup_entry_prefixed(const methodHandle& method, bool& in
   return NULL;
 }
 
-address NativeLookup::lookup_base(const methodHandle& method, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
   address entry = NULL;
   ResourceMark rm(THREAD);
 
-  entry = lookup_entry(method, in_base_library, THREAD);
+  entry = lookup_entry(method, THREAD);
   if (entry != NULL) return entry;
 
   // standard native method resolution has failed.  Check if there are any
   // JVM TI prefixes which have been applied to the native method name.
-  entry = lookup_entry_prefixed(method, in_base_library, THREAD);
+  entry = lookup_entry_prefixed(method, THREAD);
   if (entry != NULL) return entry;
 
   // Native function not found, throw UnsatisfiedLinkError
@@ -545,9 +543,9 @@ address NativeLookup::lookup_base(const methodHandle& method, bool& in_base_libr
 }
 
 
-address NativeLookup::lookup(const methodHandle& method, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup(const methodHandle& method, TRAPS) {
   if (!method->has_native_function()) {
-    address entry = lookup_base(method, in_base_library, CHECK_NULL);
+    address entry = lookup_base(method, CHECK_NULL);
     method->set_native_function(entry,
       Method::native_bind_event_is_interesting);
     // -verbose:jni printing
@@ -559,24 +557,4 @@ address NativeLookup::lookup(const methodHandle& method, bool& in_base_library, 
     }
   }
   return method->native_function();
-}
-
-address NativeLookup::base_library_lookup(const char* class_name, const char* method_name, const char* signature) {
-  EXCEPTION_MARK;
-  bool in_base_library = true;  // SharedRuntime inits some math methods.
-  TempNewSymbol c_name = SymbolTable::new_symbol(class_name);
-  TempNewSymbol m_name = SymbolTable::new_symbol(method_name);
-  TempNewSymbol s_name = SymbolTable::new_symbol(signature);
-
-  // Find the class
-  Klass* k = SystemDictionary::resolve_or_fail(c_name, true, CATCH);
-  InstanceKlass* klass  = InstanceKlass::cast(k);
-
-  // Find method and invoke standard lookup
-  methodHandle method (THREAD,
-                       klass->uncached_lookup_method(m_name, s_name, Klass::OverpassLookupMode::find));
-  address result = lookup(method, in_base_library, CATCH);
-  assert(in_base_library, "must be in basic library");
-  guarantee(result != NULL, "must be non NULL");
-  return result;
 }
