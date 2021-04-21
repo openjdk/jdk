@@ -682,11 +682,6 @@ class AdapterHandlerLibrary: public AllStatic {
   static BufferBlob* _buffer; // the temporary code buffer in CodeCache
   static AdapterHandlerTable* _adapters;
   static AdapterHandlerEntry* _abstract_method_handler;
-
-  // used for lookups and code generation
-  static BasicType _sig_bt[];
-  static VMRegPair _regs[];
-
   static BufferBlob* buffer_blob();
   static void initialize();
 
