@@ -953,7 +953,7 @@ public class Locations {
             Path modules = javaHome.resolve("modules");
             if (Files.isDirectory(modules.resolve("java.base"))) {
                 try (Stream<Path> listedModules = Files.list(modules)) {
-                    return listedModules.collect(Collectors.toList());
+                    return listedModules.toList();
                 }
             }
 
