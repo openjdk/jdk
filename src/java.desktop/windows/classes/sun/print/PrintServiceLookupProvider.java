@@ -43,9 +43,7 @@ import javax.print.attribute.standard.PrinterName;
 
 public class PrintServiceLookupProvider extends PrintServiceLookup {
 
-    private String defaultPrinter;
     private PrintService defaultPrintService;
-    private String[] printers; /* excludes the default printer */
     private PrintService[] printServices; /* includes the default printer */
 
     static {
@@ -114,10 +112,11 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
     }
 
     private synchronized void refreshServices() {
-        printers = getAllPrinterNames();
+        String[] printers = getAllPrinterNames();
         if (printers == null) {
             // In Windows it is safe to assume no default if printers == null so we
             // don't get the default.
+            invalidateServices();
             printServices = new PrintService[0];
             return;
         }
@@ -148,16 +147,21 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
             }
         }
 
+        invalidateServices();
+        printServices = newServices;
+    }
+
+    private void invalidateServices() {
         // Look for deleted services and invalidate these
         if (printServices != null) {
             for (int j=0; j < printServices.length; j++) {
                 if ((printServices[j] instanceof Win32PrintService) &&
                     (!printServices[j].equals(defaultPrintService))) {
+
                     ((Win32PrintService)printServices[j]).invalidateService();
                 }
             }
         }
-        printServices = newServices;
     }
 
 
@@ -279,7 +283,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
 
         // Windows does not have notification for a change in default
         // so we always get the latest.
-        defaultPrinter = getDefaultPrinterName();
+        String defaultPrinter = getDefaultPrinterName();
         if (defaultPrinter == null) {
             return null;
         }

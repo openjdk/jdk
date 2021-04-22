@@ -36,7 +36,7 @@
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 

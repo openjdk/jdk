@@ -302,8 +302,7 @@ class InvokerBytecodeGenerator {
     }
 
     private static String debugString(Object arg) {
-        if (arg instanceof MethodHandle) {
-            MethodHandle mh = (MethodHandle) arg;
+        if (arg instanceof MethodHandle mh) {
             MemberName member = mh.internalMemberName();
             if (member != null)
                 return member.toString();
@@ -627,8 +626,7 @@ class InvokerBytecodeGenerator {
 
     private void emitReferenceCast(Class<?> cls, Object arg) {
         Name writeBack = null;  // local to write back result
-        if (arg instanceof Name) {
-            Name n = (Name) arg;
+        if (arg instanceof Name n) {
             if (lambdaForm.useCount(n) > 1) {
                 // This guy gets used more than once.
                 writeBack = n;
@@ -871,13 +869,6 @@ class InvokerBytecodeGenerator {
                     onStack = emitLoop(i);
                     i += 2; // jump to the end of the LOOP idiom
                     continue;
-                case NEW_ARRAY:
-                    Class<?> rtype = name.function.methodType().returnType();
-                    if (isStaticallyNameable(rtype)) {
-                        emitNewArray(name);
-                        continue;
-                    }
-                    break;
                 case ARRAY_LOAD:
                     emitArrayLoad(name);
                     continue;
@@ -1114,43 +1105,6 @@ class InvokerBytecodeGenerator {
         }
     }
 
-    void emitNewArray(Name name) throws InternalError {
-        Class<?> rtype = name.function.methodType().returnType();
-        if (name.arguments.length == 0) {
-            // The array will be a constant.
-            Object emptyArray;
-            try {
-                emptyArray = name.function.resolvedHandle().invoke();
-            } catch (Throwable ex) {
-                throw uncaughtException(ex);
-            }
-            assert(java.lang.reflect.Array.getLength(emptyArray) == 0);
-            assert(emptyArray.getClass() == rtype);  // exact typing
-            mv.visitFieldInsn(Opcodes.GETSTATIC, className, classData(emptyArray), "Ljava/lang/Object;");
-            emitReferenceCast(rtype, emptyArray);
-            return;
-        }
-        Class<?> arrayElementType = rtype.getComponentType();
-        assert(arrayElementType != null);
-        emitIconstInsn(name.arguments.length);
-        int xas = Opcodes.AASTORE;
-        if (!arrayElementType.isPrimitive()) {
-            mv.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(arrayElementType));
-        } else {
-            byte tc = arrayTypeCode(Wrapper.forPrimitiveType(arrayElementType));
-            xas = arrayInsnOpcode(tc, xas);
-            mv.visitIntInsn(Opcodes.NEWARRAY, tc);
-        }
-        // store arguments
-        for (int i = 0; i < name.arguments.length; i++) {
-            mv.visitInsn(Opcodes.DUP);
-            emitIconstInsn(i);
-            emitPushArgument(name, i);
-            mv.visitInsn(xas);
-        }
-        // the array is left on the stack
-        assertStaticType(rtype, name);
-    }
     int refKindOpcode(byte refKind) {
         switch (refKind) {
         case REF_invokeVirtual:      return Opcodes.INVOKEVIRTUAL;
@@ -1679,8 +1633,7 @@ class InvokerBytecodeGenerator {
 
     private void emitPushArgument(Class<?> ptype, Object arg) {
         BasicType bptype = basicType(ptype);
-        if (arg instanceof Name) {
-            Name n = (Name) arg;
+        if (arg instanceof Name n) {
             emitLoadInsn(n.type, n.index());
             emitImplicitConversion(n.type, ptype, n);
         } else if (arg == null && bptype == L_TYPE) {

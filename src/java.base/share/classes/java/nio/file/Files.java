@@ -208,6 +208,10 @@ public final class Files {
      *          if {@code options} contains an invalid combination of options
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
@@ -349,9 +353,10 @@ public final class Files {
      *          if an unsupported open option is specified or the array contains
      *          attributes that cannot be set atomically when creating the file
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
-     *          <i>(optional specific exception)</i>
+     *          and the file is being opened for writing <i>(optional specific
+     *          exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
@@ -395,9 +400,10 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported open option is specified
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
-     *          <i>(optional specific exception)</i>
+     *          and the file is being opened for writing <i>(optional specific
+     *          exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
@@ -637,7 +643,7 @@ public final class Files {
      *          if the array contains an attribute that cannot be set atomically
      *          when creating the file
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists
+     *          If a file of that name already exists
      *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs or the parent directory does not exist
@@ -2981,6 +2987,10 @@ public final class Files {
      *          if an I/O error occurs opening or creating the file
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -3027,6 +3037,10 @@ public final class Files {
      *          if an I/O error occurs opening or creating the file
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -3478,6 +3492,10 @@ public final class Files {
      *          if an I/O error occurs writing to or creating the file
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -3542,6 +3560,10 @@ public final class Files {
      *          text cannot be encoded using the specified charset
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}

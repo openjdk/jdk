@@ -315,6 +315,7 @@ class LambdaForm {
         PUT_DOUBLE_VOLATILE("putDoubleVolatile"),
         TRY_FINALLY("tryFinally"),
         COLLECT("collect"),
+        COLLECTOR("collector"),
         CONVERT("convert"),
         SPREAD("spread"),
         LOOP("loop"),
@@ -568,8 +569,7 @@ class LambdaForm {
             Name n = names[i];
             assert(n.index() == i);
             for (Object arg : n.arguments) {
-                if (arg instanceof Name) {
-                    Name n2 = (Name) arg;
+                if (arg instanceof Name n2) {
                     int i2 = n2.index;
                     assert(0 <= i2 && i2 < names.length) : n.debugString() + ": 0 <= i2 && i2 < names.length: 0 <= " + i2 + " < " + names.length;
                     assert(names[i2] == n2) : Arrays.asList("-1-", i, "-2-", n.debugString(), "-3-", i2, "-4-", n2.debugString(), "-5-", names[i2].debugString(), "-6-", this);
@@ -1133,9 +1133,9 @@ class LambdaForm {
         public boolean equals(Object other) {
             if (this == other) return true;
             if (other == null) return false;
-            if (!(other instanceof NamedFunction)) return false;
-            NamedFunction that = (NamedFunction) other;
-            return this.member != null && this.member.equals(that.member);
+            return (other instanceof NamedFunction that)
+                    && this.member != null
+                    && this.member.equals(that.member);
         }
 
         @Override
@@ -1407,8 +1407,7 @@ class LambdaForm {
             boolean replaced = false;
         eachArg:
             for (int j = 0; j < arguments.length; j++) {
-                if (arguments[j] instanceof Name) {
-                    Name n = (Name) arguments[j];
+                if (arguments[j] instanceof Name n) {
                     int check = n.index;
                     // harmless check to see if the thing is already in newNames:
                     if (check >= 0 && check < newNames.length && n == newNames[check])
@@ -1435,8 +1434,7 @@ class LambdaForm {
             @SuppressWarnings("LocalVariableHidesMemberVariable")
             Object[] arguments = this.arguments;
             for (int j = 0; j < arguments.length; j++) {
-                if (arguments[j] instanceof Name) {
-                    Name n = (Name) arguments[j];
+                if (arguments[j] instanceof Name n) {
                     if (n.isParam() && n.index < INTERNED_ARGUMENT_LIMIT)
                         arguments[j] = internArgument(n);
                 }

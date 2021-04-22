@@ -65,7 +65,7 @@ void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
   ClassLoader::add_to_boot_append_entries(new_entry);
 }
 
-void ClassLoaderExt::setup_app_search_path(TRAPS) {
+void ClassLoaderExt::setup_app_search_path(Thread* current) {
   Arguments::assert_is_dumping_archive();
   _app_class_paths_start_index = ClassLoader::num_boot_classpath_entries();
   char* app_class_path = os::strdup(Arguments::get_appclasspath());
@@ -77,39 +77,39 @@ void ClassLoaderExt::setup_app_search_path(TRAPS) {
     trace_class_path("app loader class path (skipped)=", app_class_path);
   } else {
     trace_class_path("app loader class path=", app_class_path);
-    ClassLoader::setup_app_search_path(app_class_path, CHECK);
+    ClassLoader::setup_app_search_path(current, app_class_path);
   }
 }
 
-void ClassLoaderExt::process_module_table(ModuleEntryTable* met, TRAPS) {
-  ResourceMark rm(THREAD);
+void ClassLoaderExt::process_module_table(Thread* current, ModuleEntryTable* met) {
+  ResourceMark rm(current);
   for (int i = 0; i < met->table_size(); i++) {
     for (ModuleEntry* m = met->bucket(i); m != NULL;) {
       char* path = m->location()->as_C_string();
       if (strncmp(path, "file:", 5) == 0) {
         path = ClassLoader::skip_uri_protocol(path);
-        ClassLoader::setup_module_search_path(path, CHECK);
+        ClassLoader::setup_module_search_path(current, path);
       }
       m = m->next();
     }
   }
 }
-void ClassLoaderExt::setup_module_paths(TRAPS) {
+void ClassLoaderExt::setup_module_paths(Thread* current) {
   Arguments::assert_is_dumping_archive();
   _app_module_paths_start_index = ClassLoader::num_boot_classpath_entries() +
                               ClassLoader::num_app_classpath_entries();
-  Handle system_class_loader (THREAD, SystemDictionary::java_system_loader());
+  Handle system_class_loader (current, SystemDictionary::java_system_loader());
   ModuleEntryTable* met = Modules::get_module_entry_table(system_class_loader);
-  process_module_table(met, CHECK);
+  process_module_table(current, met);
 }
 
-char* ClassLoaderExt::read_manifest(ClassPathEntry* entry, jint *manifest_size, bool clean_text, TRAPS) {
+char* ClassLoaderExt::read_manifest(Thread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text) {
   const char* name = "META-INF/MANIFEST.MF";
   char* manifest;
   jint size;
 
   assert(entry->is_jar_file(), "must be");
-  manifest = (char*) ((ClassPathZipEntry*)entry )->open_entry(name, &size, true, CHECK_NULL);
+  manifest = (char*) ((ClassPathZipEntry*)entry )->open_entry(current, name, &size, true);
 
   if (manifest == NULL) { // No Manifest
     *manifest_size = 0;
@@ -163,11 +163,11 @@ char* ClassLoaderExt::get_class_path_attr(const char* jar_path, char* manifest, 
   return found;
 }
 
-void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
-                                          bool check_for_duplicates, TRAPS) {
-  ResourceMark rm(THREAD);
+void ClassLoaderExt::process_jar_manifest(Thread* current, ClassPathEntry* entry,
+                                          bool check_for_duplicates) {
+  ResourceMark rm(current);
   jint manifest_size;
-  char* manifest = read_manifest(entry, &manifest_size, CHECK);
+  char* manifest = read_manifest(current, entry, &manifest_size);
 
   if (manifest == NULL) {
     return;
@@ -207,13 +207,12 @@ void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
 
       size_t name_len = strlen(file_start);
       if (name_len > 0) {
-        ResourceMark rm(THREAD);
+        ResourceMark rm(current);
         size_t libname_len = dir_len + name_len;
         char* libname = NEW_RESOURCE_ARRAY(char, libname_len + 1);
         int n = os::snprintf(libname, libname_len + 1, "%.*s%s", dir_len, dir_name, file_start);
         assert((size_t)n == libname_len, "Unexpected number of characters in string");
-        bool status = ClassLoader::update_class_path_entry_list(libname, true, false, true /* from_class_path_attr */, CHECK);
-        if (status) {
+        if (ClassLoader::update_class_path_entry_list(current, libname, true, false, true /* from_class_path_attr */)) {
           trace_class_path("library = ", libname);
         } else {
           trace_class_path("library (non-existent) = ", libname);
@@ -226,13 +225,11 @@ void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
   }
 }
 
-void ClassLoaderExt::setup_search_paths(TRAPS) {
-  ClassLoaderExt::setup_app_search_path(CHECK);
+void ClassLoaderExt::setup_search_paths(Thread* current) {
+  ClassLoaderExt::setup_app_search_path(current);
 }
 
-void ClassLoaderExt::record_result(const s2 classpath_index,
-                                   InstanceKlass* result,
-                                   TRAPS) {
+void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result) {
   Arguments::assert_is_dumping_archive();
 
   // We need to remember where the class comes from during dumping.
@@ -275,7 +272,7 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
     PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
                                THREAD->as_Java_thread()->get_thread_stat()->perf_timers_addr(),
                                PerfClassTraceTime::CLASS_LOAD);
-    stream = e->open_stream(file_name, CHECK_NULL);
+    stream = e->open_stream(THREAD, file_name);
   }
 
   if (stream == NULL) {
@@ -329,10 +326,7 @@ ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(Thread* current,
   }
   ClassPathEntry* new_entry = NULL;
 
-  ExceptionMark em(current);
-  Thread* THREAD = current; // For exception macros.
-  new_entry = create_class_path_entry(path, &st, /*throw_exception=*/false,
-                                      false, false, CATCH); // will never throw
+  new_entry = create_class_path_entry(current, path, &st, false, false);
   if (new_entry == NULL) {
     return NULL;
   }

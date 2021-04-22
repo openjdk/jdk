@@ -309,7 +309,7 @@ public class ActivationGroupImpl extends ActivationGroup {
 
         } catch (InvocationTargetException e) {
             throw new ActivationException("exception in object constructor",
-                                          e.getTargetException());
+                                          e.getCause());
 
         } catch (Exception e) {
             throw new ActivationException("unable to activate object", e);

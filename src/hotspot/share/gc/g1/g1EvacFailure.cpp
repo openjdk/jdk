@@ -172,7 +172,7 @@ public:
     if (gap_size >= CollectedHeap::min_fill_size()) {
       CollectedHeap::fill_with_objects(start, gap_size);
 
-      HeapWord* end_first_obj = start + ((oop)start)->size();
+      HeapWord* end_first_obj = start + cast_to_oop(start)->size();
       _hr->cross_threshold(start, end_first_obj);
       // Fill_with_objects() may have created multiple (i.e. two)
       // objects, as the max_fill_size() is half a region.
@@ -181,7 +181,7 @@ public:
       if (end_first_obj != end) {
         _hr->cross_threshold(end_first_obj, end);
 #ifdef ASSERT
-        size_t size_second_obj = ((oop)end_first_obj)->size();
+        size_t size_second_obj = cast_to_oop(end_first_obj)->size();
         HeapWord* end_of_second_obj = end_first_obj + size_second_obj;
         assert(end == end_of_second_obj,
                "More than two objects were used to fill the area from " PTR_FORMAT " to " PTR_FORMAT ", "

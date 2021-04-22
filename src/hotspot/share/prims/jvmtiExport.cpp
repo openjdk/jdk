@@ -61,7 +61,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
@@ -699,8 +699,8 @@ OopStorage* JvmtiExport::weak_tag_storage() {
 void JvmtiExport::initialize_oop_storage() {
   // OopStorage needs to be created early in startup and unconditionally
   // because of OopStorageSet static array indices.
-  _jvmti_oop_storage = OopStorageSet::create_strong("JVMTI OopStorage");
-  _weak_tag_storage  = OopStorageSet::create_weak("JVMTI Tag Weak OopStorage");
+  _jvmti_oop_storage = OopStorageSet::create_strong("JVMTI OopStorage", mtServiceability);
+  _weak_tag_storage  = OopStorageSet::create_weak("JVMTI Tag Weak OopStorage", mtServiceability);
   _weak_tag_storage->register_num_dead_callback(&JvmtiTagMap::gc_notification);
 }
 
@@ -1107,8 +1107,8 @@ class JvmtiCompiledMethodLoadEventMark : public JvmtiMethodEventMark {
  public:
   JvmtiCompiledMethodLoadEventMark(JavaThread *thread, nmethod *nm, void* compile_info_ptr = NULL)
           : JvmtiMethodEventMark(thread,methodHandle(thread, nm->method())) {
-    _code_data = nm->insts_begin();
-    _code_size = nm->insts_size();
+    _code_data = nm->code_begin();
+    _code_size = nm->code_size();
     _compile_info = compile_info_ptr; // Set void pointer of compiledMethodLoad Event. Default value is NULL.
     JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nm, &_map, &_map_length);
   }
@@ -1610,6 +1610,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // Deferred transition to VM, so we can stash away the return oop before GC
   // Note that this transition is not needed when throwing an exception, because
   // there is no oop to retain.
+  JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
     post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
   JRT_BLOCK_END
@@ -2047,7 +2048,7 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
   // convert oop to JNI handle.
   if (sig_type == JVM_SIGNATURE_CLASS) {
     handle_created = true;
-    value->l = (jobject)JNIHandles::make_local(thread, (oop)value->l);
+    value->l = (jobject)JNIHandles::make_local(thread, cast_to_oop(value->l));
   }
 
   post_field_modification(thread, method, location, field_klass, object, field, sig_type, value);

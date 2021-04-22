@@ -26,7 +26,7 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logDecorations.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/management.hpp"
 

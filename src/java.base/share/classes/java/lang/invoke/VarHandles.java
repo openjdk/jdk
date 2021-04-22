@@ -605,8 +605,7 @@ final class VarHandles {
     }
 
     private static void noCheckedExceptions(MethodHandle handle) {
-        if (handle instanceof DirectMethodHandle) {
-            DirectMethodHandle directHandle = (DirectMethodHandle)handle;
+        if (handle instanceof DirectMethodHandle directHandle) {
             byte refKind = directHandle.member.getReferenceKind();
             MethodHandleInfo info = new InfoFromMemberName(
                     MethodHandles.Lookup.IMPL_LOOKUP,

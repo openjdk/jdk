@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import  java.util.concurrent.atomic.AtomicReference;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -56,6 +57,8 @@ import javax.xml.stream.XMLStreamWriter;
 public class IOUtils {
 
     public static void deleteRecursive(Path directory) throws IOException {
+        final AtomicReference<IOException> exception = new AtomicReference<>();
+
         if (!Files.exists(directory)) {
             return;
         }
@@ -67,7 +70,11 @@ public class IOUtils {
                 if (Platform.getPlatform() == Platform.WINDOWS) {
                     Files.setAttribute(file, "dos:readonly", false);
                 }
-                Files.delete(file);
+                try {
+                    Files.delete(file);
+                } catch (IOException ex) {
+                    exception.compareAndSet(null, ex);
+                }
                 return FileVisitResult.CONTINUE;
             }
 
@@ -83,10 +90,17 @@ public class IOUtils {
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException e)
                             throws IOException {
-                Files.delete(dir);
+                try {
+                    Files.delete(dir);
+                } catch (IOException ex) {
+                    exception.compareAndSet(null, ex);
+                }
                 return FileVisitResult.CONTINUE;
             }
         });
+        if (exception.get() != null) {
+            throw exception.get();
+        }
     }
 
     public static void copyRecursive(Path src, Path dest) throws IOException {

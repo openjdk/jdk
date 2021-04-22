@@ -1605,9 +1605,9 @@ run:
             count_addr = (int *)JvmtiExport::get_field_access_count_addr();
             if ( *count_addr > 0 ) {
               if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
-                obj = (oop)NULL;
+                obj = NULL;
               } else {
-                obj = (oop) STACK_OBJECT(-1);
+                obj = STACK_OBJECT(-1);
                 VERIFY_OOP(obj);
               }
               CALL_VM(InterpreterRuntime::post_field_access(THREAD,
@@ -1623,7 +1623,7 @@ run:
             obj = k->java_mirror();
             MORE_STACK(1);  // Assume single slot push
           } else {
-            obj = (oop) STACK_OBJECT(-1);
+            obj = STACK_OBJECT(-1);
             CHECK_NULL(obj);
           }
 
@@ -1729,13 +1729,13 @@ run:
             count_addr = (int *)JvmtiExport::get_field_modification_count_addr();
             if ( *count_addr > 0 ) {
               if ((Bytecodes::Code)opcode == Bytecodes::_putstatic) {
-                obj = (oop)NULL;
+                obj = NULL;
               }
               else {
                 if (cache->is_long() || cache->is_double()) {
-                  obj = (oop) STACK_OBJECT(-3);
+                  obj = STACK_OBJECT(-3);
                 } else {
-                  obj = (oop) STACK_OBJECT(-2);
+                  obj = STACK_OBJECT(-2);
                 }
                 VERIFY_OOP(obj);
               }
@@ -1764,7 +1764,7 @@ run:
             obj = k->java_mirror();
           } else {
             --count;
-            obj = (oop) STACK_OBJECT(count);
+            obj = STACK_OBJECT(count);
             CHECK_NULL(obj);
           }
 

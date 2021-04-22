@@ -29,7 +29,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 

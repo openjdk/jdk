@@ -210,6 +210,9 @@ bool CompilerConfig::is_compilation_mode_selected() {
                     || !FLAG_IS_DEFAULT(UseJVMCICompiler));
 }
 
+bool CompilerConfig::is_interpreter_only() {
+  return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
+}
 
 static bool check_legacy_flags() {
   JVMFlag* compile_threshold_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(CompileThreshold));

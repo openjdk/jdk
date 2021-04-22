@@ -37,11 +37,16 @@
 
 package compiler.intrinsics.bmi;
 
+import jdk.test.lib.Platform;
 import sun.hotspot.cpuinfo.CPUInfo;
 
 public class TestBzhiI2L {
 
     public static void main(String args[]) throws Throwable {
+        if (Platform.isX86()) {
+            System.out.println("INFO: Bzhiq not implemented for x86_32, test SKIPPED" );
+            return;
+        }
         if (!CPUInfo.hasFeature("bmi2")) {
             System.out.println("INFO: CPU does not support bmi2 feature, test SKIPPED" );
             return;

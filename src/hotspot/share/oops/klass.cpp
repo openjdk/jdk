@@ -26,7 +26,6 @@
 #include "jvm_io.h"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -750,11 +749,6 @@ const char* Klass::external_kind() const {
   if (is_interface()) return "interface";
   if (is_abstract()) return "abstract class";
   return "class";
-}
-
-// Unless overridden, modifier_flags is 0.
-jint Klass::compute_modifier_flags(TRAPS) const {
-  return 0;
 }
 
 int Klass::atomic_incr_biased_lock_revocation_count() {

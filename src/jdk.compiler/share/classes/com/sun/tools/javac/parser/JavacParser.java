@@ -1881,7 +1881,7 @@ public class JavacParser implements Parser {
         }
     }
 
-    private final static Fragment[][] decisionTable = new Fragment[][] {
+    private static final Fragment[][] decisionTable = new Fragment[][] {
         /*              VAR                              EXPLICIT                         IMPLICIT  */
         /* VAR      */ {null,                            VarAndExplicitNotAllowed,        VarAndImplicitNotAllowed},
         /* EXPLICIT */ {VarAndExplicitNotAllowed,        null,                            ImplicitAndExplicitNotAllowed},

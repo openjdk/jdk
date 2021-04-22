@@ -26,21 +26,12 @@
 #define SHARE_UTILITIES_HASHTABLE_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/oop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/tableStatistics.hpp"
 
-// This is a generic hashtable, designed to be used for the symbol
-// and string tables.
-//
-// It is implemented as an open hash table with a fixed number of buckets.
-//
-// %note:
-//  - TableEntrys are allocated in blocks to reduce the space overhead.
-
-
+// This is a generic hashtable which is implemented as an open hash table with
+// a fixed number of buckets.
 
 template <MEMFLAGS F> class BasicHashtableEntry {
   friend class VMStructs;
@@ -50,16 +41,11 @@ private:
   // Link to next element in the linked list for this bucket.
   BasicHashtableEntry<F>* _next;
 
-  // Windows IA64 compiler requires subclasses to be able to access these
-protected:
-  // Entry objects should not be created, they should be taken from the
-  // free list with BasicHashtable.new_entry().
-  BasicHashtableEntry() { ShouldNotReachHere(); }
-  // Entry objects should not be destroyed.  They should be placed on
-  // the free list instead with BasicHashtable.free_entry().
-  ~BasicHashtableEntry() { ShouldNotReachHere(); }
-
 public:
+  BasicHashtableEntry(unsigned int hashValue) : _hash(hashValue), _next(nullptr) {}
+  // Still should not call this. Entries are placement new allocated, so are
+  // deleted with free_entry.
+  ~BasicHashtableEntry() { ShouldNotReachHere(); }
 
   unsigned int hash() const             { return _hash; }
   void set_hash(unsigned int hash)      { _hash = hash; }
@@ -86,6 +72,8 @@ private:
   T               _literal;          // ref to item in table.
 
 public:
+  HashtableEntry(unsigned int hashValue, T value) : BasicHashtableEntry<F>(hashValue), _literal(value) {}
+
   // Literal
   T literal() const                   { return _literal; }
   T* literal_addr()                   { return &_literal; }
@@ -142,12 +130,8 @@ private:
   // Instance variables
   int                              _table_size;
   HashtableBucket<F>*              _buckets;
-  BasicHashtableEntry<F>* volatile _free_list;
-  char*                            _first_free_entry;
-  char*                            _end_block;
   int                              _entry_size;
   volatile int                     _number_of_entries;
-  GrowableArrayCHeap<char*, F>     _entry_blocks;
 
 protected:
 
@@ -164,27 +148,14 @@ protected:
   // The following method is not MT-safe and must be done under lock.
   BasicHashtableEntry<F>** bucket_addr(int i) { return _buckets[i].entry_addr(); }
 
-  // Attempt to get an entry from the free list
-  BasicHashtableEntry<F>* new_entry_free_list();
-
   // Table entry management
   BasicHashtableEntry<F>* new_entry(unsigned int hashValue);
 
-  // Used when moving the entry to another table
-  // Clean up links, but do not add to free_list
+  // Used when moving the entry to another table or deleting entry.
+  // Clean up links.
   void unlink_entry(BasicHashtableEntry<F>* entry) {
     entry->set_next(NULL);
     --_number_of_entries;
-  }
-
-  // Move over freelist and free block for allocation
-  void copy_freelist(BasicHashtable* src) {
-    _free_list = src->_free_list;
-    src->_free_list = NULL;
-    _first_free_entry = src->_first_free_entry;
-    src->_first_free_entry = NULL;
-    _end_block = src->_end_block;
-    src->_end_block = NULL;
   }
 
   // Free the buckets in this hashtable
@@ -236,10 +207,7 @@ public:
 
  protected:
 
-  // Table entry management
   HashtableEntry<T, F>* new_entry(unsigned int hashValue, T obj);
-  // Don't create and use freelist of HashtableEntry.
-  HashtableEntry<T, F>* allocate_new_entry(unsigned int hashValue, T obj);
 
   // The following method is MT-safe and may be used with caution.
   HashtableEntry<T, F>* bucket(int i) const {

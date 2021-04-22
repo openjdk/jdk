@@ -3175,7 +3175,7 @@ public class Utils {
         boolean parentPreviewAPI = false;
         Element enclosing = el.getEnclosingElement();
         if (enclosing != null && (enclosing.getKind().isClass() || enclosing.getKind().isInterface())) {
-            parentPreviewAPI = configuration.workArounds.isPreviewAPI(el.getEnclosingElement());
+            parentPreviewAPI = configuration.workArounds.isPreviewAPI(enclosing);
         }
         boolean previewAPI = configuration.workArounds.isPreviewAPI(el);
         return !parentPreviewAPI && previewAPI;

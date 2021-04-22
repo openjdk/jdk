@@ -275,6 +275,13 @@ void SymbolTable::symbols_do(SymbolClosure *cl) {
   _local_table->do_safepoint_scan(sd);
 }
 
+// Call function for all symbols in shared table. Used by -XX:+PrintSharedArchiveAndExit
+void SymbolTable::shared_symbols_do(SymbolClosure *cl) {
+  SharedSymbolIterator iter(cl);
+  _shared_table.iterate(&iter);
+  _dynamic_shared_table.iterate(&iter);
+}
+
 Symbol* SymbolTable::lookup_dynamic(const char* name,
                                     int len, unsigned int hash) {
   Symbol* sym = do_lookup(name, len, hash);
@@ -873,15 +880,4 @@ void SymboltableDCmd::execute(DCmdSource source, TRAPS) {
   VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpSymbols,
                          _verbose.value());
   VMThread::execute(&dumper);
-}
-
-int SymboltableDCmd::num_arguments() {
-  ResourceMark rm;
-  SymboltableDCmd* dcmd = new SymboltableDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }

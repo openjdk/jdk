@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/lambdaFormInvokers.hpp"

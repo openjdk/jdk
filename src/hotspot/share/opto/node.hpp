@@ -693,6 +693,8 @@ public:
       DEFINE_CLASS_ID(EncodeNarrowPtr, Type, 6)
         DEFINE_CLASS_ID(EncodeP, EncodeNarrowPtr, 0)
         DEFINE_CLASS_ID(EncodePKlass, EncodeNarrowPtr, 1)
+      DEFINE_CLASS_ID(Vector, Type, 7)
+        DEFINE_CLASS_ID(VectorMaskCmp, Vector, 0)
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -737,8 +739,6 @@ public:
     DEFINE_CLASS_ID(BoxLock,  Node, 10)
     DEFINE_CLASS_ID(Add,      Node, 11)
     DEFINE_CLASS_ID(Mul,      Node, 12)
-    DEFINE_CLASS_ID(Vector,   Node, 13)
-      DEFINE_CLASS_ID(VectorMaskCmp, Vector, 0)
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt,     Node, 15)
     DEFINE_CLASS_ID(Opaque1,  Node, 16)

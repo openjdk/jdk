@@ -297,9 +297,11 @@
   /* Type Annotations (JDK 8 and above) */                                                        \
   template(type_annotations_name,                     "typeAnnotations")                          \
   /* used by CDS */                                                                               \
-  template(jdk_internal_misc_CDS, "jdk/internal/misc/CDS")                                        \
-  template(generateLambdaFormHolderClasses, "generateLambdaFormHolderClasses")                    \
+  template(jdk_internal_misc_CDS,                     "jdk/internal/misc/CDS")                    \
+  template(generateLambdaFormHolderClasses,           "generateLambdaFormHolderClasses")          \
   template(generateLambdaFormHolderClasses_signature, "([Ljava/lang/String;)[Ljava/lang/Object;") \
+  template(dumpSharedArchive,                         "dumpSharedArchive")                        \
+  template(dumpSharedArchive_signature,               "(ZLjava/lang/String;)V")                   \
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
   template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
@@ -769,7 +771,7 @@ class vmSymbols: AllStatic {
 
  public:
   // Initialization
-  static void initialize(TRAPS);
+  static void initialize();
   // Accessing
   #define VM_SYMBOL_DECLARE(name, ignore)                 \
     static Symbol* name() {                               \

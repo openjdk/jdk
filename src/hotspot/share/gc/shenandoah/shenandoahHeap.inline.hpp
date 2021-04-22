@@ -251,7 +251,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
   // Try to install the new forwarding pointer.
-  oop copy_val = oop(copy);
+  oop copy_val = cast_to_oop(copy);
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
@@ -281,7 +281,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
-  oop obj = oop(entry);
+  oop obj = cast_to_oop(entry);
   return !_marking_context->is_marked_strong(obj);
 }
 
@@ -400,7 +400,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
       for (int c = 0; c < avail; c++) {
         assert (slots[c] < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(tams));
         assert (slots[c] < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(limit));
-        oop obj = oop(slots[c]);
+        oop obj = cast_to_oop(slots[c]);
         assert(oopDesc::is_oop(obj), "sanity");
         assert(ctx->is_marked(obj), "object expected to be marked");
         cl->do_object(obj);
@@ -410,7 +410,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     while (cb < limit_bitmap) {
       assert (cb < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(tams));
       assert (cb < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(limit));
-      oop obj = oop(cb);
+      oop obj = cast_to_oop(cb);
       assert(oopDesc::is_oop(obj), "sanity");
       assert(ctx->is_marked(obj), "object expected to be marked");
       cl->do_object(obj);
@@ -428,7 +428,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
   while (cs < limit) {
     assert (cs >= tams, "only objects past TAMS here: "   PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(tams));
     assert (cs < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(limit));
-    oop obj = oop(cs);
+    oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
     int size = obj->size();

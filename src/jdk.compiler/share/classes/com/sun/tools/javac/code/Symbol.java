@@ -799,7 +799,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
         /** form a fully qualified name from a name and an owner
          */
-        static public Name formFullName(Name name, Symbol owner) {
+        public static Name formFullName(Name name, Symbol owner) {
             if (owner == null) return name;
             if ((owner.kind != ERR) &&
                 (owner.kind.matches(KindSelector.VAL_MTH) ||
@@ -814,7 +814,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         /** form a fully qualified name from a name and an owner, after
          *  converting to flat representation
          */
-        static public Name formFlatName(Name name, Symbol owner) {
+        public static Name formFlatName(Name name, Symbol owner) {
             if (owner == null || owner.kind.matches(KindSelector.VAL_MTH) ||
                 (owner.kind == TYP && owner.type.hasTag(TYPEVAR))
                 ) return name;
@@ -2470,7 +2470,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 this.tag = tag;
             }
 
-            static public AccessCode getFromCode(int code) {
+            public static AccessCode getFromCode(int code) {
                 for (AccessCode aCodes : AccessCode.values()) {
                     if (aCodes.code == code) {
                         return aCodes;
@@ -2512,7 +2512,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         /** Dummy completer to be used when the symbol has been completed or
          * does not need completion.
          */
-        public final static Completer NULL_COMPLETER = new Completer() {
+        public static final Completer NULL_COMPLETER = new Completer() {
             public void complete(Symbol sym) { }
             public boolean isTerminal() { return true; }
         };

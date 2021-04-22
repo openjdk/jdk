@@ -160,9 +160,9 @@ final class DottedVersion implements Comparable<String> {
         return components;
     }
 
-    final private BigInteger[] components;
-    final private String value;
-    final private boolean greedy;
+    private final BigInteger[] components;
+    private final String value;
+    private final boolean greedy;
 
     private static final Pattern DIGITS = Pattern.compile("\\d+");
 }

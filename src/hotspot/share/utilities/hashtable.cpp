@@ -23,20 +23,19 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/altHashing.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/protectionDomainCache.hpp"
-#include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/nmethod.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/symbol.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiTagMapTable.hpp"
 #include "runtime/safepoint.hpp"
@@ -45,66 +44,30 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/numberSeq.hpp"
 
-
 // This hashtable is implemented as an open hash table with a fixed number of buckets.
 
-template <MEMFLAGS F> BasicHashtableEntry<F>* BasicHashtable<F>::new_entry_free_list() {
-  BasicHashtableEntry<F>* entry = NULL;
-  if (_free_list != NULL) {
-    entry = _free_list;
-    _free_list = _free_list->next();
-  }
-  return entry;
-}
+// Hashtable entry allocates in the C heap directly.
 
-// HashtableEntrys are allocated in blocks to reduce the space overhead.
 template <MEMFLAGS F> BasicHashtableEntry<F>* BasicHashtable<F>::new_entry(unsigned int hashValue) {
-  BasicHashtableEntry<F>* entry = new_entry_free_list();
-
-  if (entry == NULL) {
-    if (_first_free_entry + _entry_size >= _end_block) {
-      int block_size = MAX2((int)_table_size / 2, (int)_number_of_entries); // pick a reasonable value
-      block_size = clamp(block_size, 2, 512); // but never go out of this range
-      int len = round_down_power_of_2(_entry_size * block_size);
-      assert(len >= _entry_size, "");
-      _first_free_entry = NEW_C_HEAP_ARRAY2(char, len, F, CURRENT_PC);
-      _entry_blocks.append(_first_free_entry);
-      _end_block = _first_free_entry + len;
-    }
-    entry = (BasicHashtableEntry<F>*)_first_free_entry;
-    _first_free_entry += _entry_size;
-  }
-
-  assert(_entry_size % HeapWordSize == 0, "");
-  entry->set_hash(hashValue);
+  BasicHashtableEntry<F>* entry = ::new (NEW_C_HEAP_ARRAY(char, this->entry_size(), F))
+                                        BasicHashtableEntry<F>(hashValue);
   return entry;
 }
 
 
 template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::new_entry(unsigned int hashValue, T obj) {
-  HashtableEntry<T, F>* entry;
-
-  entry = (HashtableEntry<T, F>*)BasicHashtable<F>::new_entry(hashValue);
-  entry->set_literal(obj);
+  HashtableEntry<T, F>* entry = ::new (NEW_C_HEAP_ARRAY(char, this->entry_size(), F))
+                                      HashtableEntry<T, F>(hashValue, obj);
   return entry;
 }
 
-// Version of hashtable entry allocation that allocates in the C heap directly.
-// The block allocator in BasicHashtable has less fragmentation, but the memory is not freed until
-// the whole table is freed. Use allocate_new_entry() if you want to individually free the memory
-// used by each entry
-template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::allocate_new_entry(unsigned int hashValue, T obj) {
-  HashtableEntry<T, F>* entry = (HashtableEntry<T, F>*) NEW_C_HEAP_ARRAY(char, this->entry_size(), F);
-
-  if (DumpSharedSpaces) {
-    // Avoid random bits in structure padding so we can have deterministic content in CDS archive
-    memset((void*)entry, 0, this->entry_size());
-  }
-  entry->set_hash(hashValue);
-  entry->set_literal(obj);
-  entry->set_next(NULL);
-  return entry;
+template <MEMFLAGS F> inline void BasicHashtable<F>::free_entry(BasicHashtableEntry<F>* entry) {
+  // Unlink from the Hashtable prior to freeing
+  unlink_entry(entry);
+  FREE_C_HEAP_ARRAY(char, entry);
+  JFR_ONLY(_stats_rate.remove();)
 }
+
 
 template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
   FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);

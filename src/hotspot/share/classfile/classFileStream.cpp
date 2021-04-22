@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 

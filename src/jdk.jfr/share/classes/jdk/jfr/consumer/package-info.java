@@ -48,7 +48,7 @@
  *         .stream()
  *         .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
  *         .forEach(e -> System.out.printf("%8d %s\n", e.getValue(), e.getKey()));
- * }
+ *     }
  * }</pre>
  * <p>
  * <b>Null-handling</b>

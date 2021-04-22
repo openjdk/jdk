@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,11 +173,12 @@ class Thread: public ThreadShadow {
   friend class ScanHazardPtrPrintMatchingThreadsClosure;  // for get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
   friend class ThreadsSMRSupport;  // for _nested_threads_hazard_ptr_cnt, _threads_hazard_ptr, _threads_list_ptr access
   friend class ThreadsListHandleTest;  // for _nested_threads_hazard_ptr_cnt, _threads_hazard_ptr, _threads_list_ptr access
+  friend class ValidateHazardPtrsClosure;  // for get_threads_hazard_ptr(), untag_hazard_ptr() access
 
   ThreadsList* volatile _threads_hazard_ptr;
   SafeThreadsListPtr*   _threads_list_ptr;
   ThreadsList*          cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value);
-  ThreadsList*          get_threads_hazard_ptr();
+  ThreadsList*          get_threads_hazard_ptr() const;
   void                  set_threads_hazard_ptr(ThreadsList* new_list);
   static bool           is_hazard_ptr_tagged(ThreadsList* list) {
     return (intptr_t(list) & intptr_t(1)) == intptr_t(1);
@@ -822,6 +824,15 @@ protected:
   // Not for general synchronization use.
   static void SpinAcquire(volatile int * Lock, const char * Name);
   static void SpinRelease(volatile int * Lock);
+
+#if defined(__APPLE__) && defined(AARCH64)
+ private:
+  DEBUG_ONLY(bool _wx_init);
+  WXMode _wx_state;
+ public:
+  void init_wx();
+  WXMode enable_wx(WXMode new_state);
+#endif // __APPLE__ && AARCH64
 };
 
 // Inline implementation of Thread::current()
@@ -1013,6 +1024,11 @@ class JavaThread: public Thread {
 
   // Support for high precision, thread sensitive counters in JVMCI compiled code.
   jlong*    _jvmci_counters;
+
+  // Fast thread locals for use by JVMCI
+  intptr_t*  _jvmci_reserved0;
+  intptr_t*  _jvmci_reserved1;
+  oop        _jvmci_reserved_oop0;
 
  public:
   static jlong* _jvmci_old_thread_counters;
@@ -1796,7 +1812,7 @@ class Threads: AllStatic {
   static void create_vm_init_libraries();
   static void create_vm_init_agents();
   static void shutdown_vm_agents();
-  static bool destroy_vm();
+  static void destroy_vm();
   // Supported VM versions via JNI
   // Includes JNI_VERSION_1_1
   static jboolean is_supported_jni_version_including_1_1(jint version);
@@ -1827,9 +1843,6 @@ class Threads: AllStatic {
   static void oops_do(OopClosure* f, CodeBlobClosure* cf);
   // This version may be called by sequential or parallel code.
   static void possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf);
-
-  // Sweeper
-  static void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses support
   static void metadata_do(MetadataClosure* f);

@@ -199,6 +199,7 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   bool    _compressed_class_ptrs;   // save the flag UseCompressedClassPointers
   size_t  _cloned_vtables_offset;   // The address of the first cloned vtable
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
+  address _heap_begin;              // heap begin at dump time.
   address _heap_end;                // heap end at dump time.
   bool _base_archive_is_default;    // indicates if the base archive is the system default one
 
@@ -241,7 +242,7 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   void set_as_offset(char* p, size_t *offset);
 public:
   // Accessors -- fields declared in CDSFileMapHeaderBase
-  unsigned int magic() const {return _magic;}
+  unsigned int magic()                    const { return _magic; }
   int crc()                               const { return _crc; }
   int version()                           const { return _version; }
 
@@ -262,6 +263,7 @@ public:
   address narrow_klass_base()              const { return (address)mapped_base_address(); }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
+  address heap_begin()                     const { return _heap_begin; }
   address heap_end()                       const { return _heap_end; }
   bool base_archive_is_default()           const { return _base_archive_is_default; }
   const char* jvm_ident()                  const { return _jvm_ident; }
@@ -383,12 +385,16 @@ public:
   void   invalidate();
   int    crc()                 const { return header()->crc(); }
   int    version()             const { return header()->version(); }
+  unsigned int magic()         const { return header()->magic(); }
   address narrow_oop_base()    const { return header()->narrow_oop_base(); }
   int     narrow_oop_shift()   const { return header()->narrow_oop_shift(); }
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
   address narrow_klass_base()  const { return header()->narrow_klass_base(); }
   int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
+
+  void   set_header_base_archive_name_size(size_t size)      { header()->set_base_archive_name_size(size); }
+  void   set_header_base_archive_is_default(bool is_default) { header()->set_base_archive_is_default(is_default); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }
@@ -542,6 +548,10 @@ public:
 
   void print(outputStream* st) {
     header()->print(st);
+  }
+
+  const char* vm_version() {
+    return header()->jvm_ident();
   }
 
  private:

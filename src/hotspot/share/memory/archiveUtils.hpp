@@ -28,8 +28,8 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/virtualspace.hpp"
-#include "runtime/arguments.hpp"
 #include "utilities/bitMap.hpp"
+#include "utilities/exceptions.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;

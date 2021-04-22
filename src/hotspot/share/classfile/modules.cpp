@@ -109,7 +109,7 @@ static ModuleEntry* get_module_entry(Handle module, TRAPS) {
 }
 
 
-static PackageEntry* get_locked_package_entry(ModuleEntry* module_entry, const char* package_name, int len, TRAPS) {
+static PackageEntry* get_locked_package_entry(ModuleEntry* module_entry, const char* package_name, int len) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
   assert(package_name != NULL, "Precondition");
   TempNewSymbol pkg_symbol = SymbolTable::new_symbol(package_name, len);
@@ -120,9 +120,7 @@ static PackageEntry* get_locked_package_entry(ModuleEntry* module_entry, const c
   return package_entry;
 }
 
-static PackageEntry* get_package_entry_by_name(Symbol* package,
-                                               Handle h_loader,
-                                               TRAPS) {
+static PackageEntry* get_package_entry_by_name(Symbol* package, Handle h_loader) {
   if (package != NULL) {
     PackageEntryTable* const package_entry_table =
       get_package_entry_table(h_loader);
@@ -132,8 +130,8 @@ static PackageEntry* get_package_entry_by_name(Symbol* package,
   return NULL;
 }
 
-bool Modules::is_package_defined(Symbol* package, Handle h_loader, TRAPS) {
-  PackageEntry* res = get_package_entry_by_name(package, h_loader, CHECK_false);
+bool Modules::is_package_defined(Symbol* package, Handle h_loader) {
+  PackageEntry* res = get_package_entry_by_name(package, h_loader);
   return res != NULL;
 }
 
@@ -451,7 +449,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   // If the module is defined to the boot loader and an exploded build is being
   // used, prepend <java.home>/modules/modules_name to the system boot class path.
   if (h_loader.is_null() && !ClassLoader::has_jrt_entry()) {
-    ClassLoader::add_to_exploded_build_list(module_symbol, CHECK);
+    ClassLoader::add_to_exploded_build_list(THREAD, module_symbol);
   }
 
 #ifdef COMPILER2
@@ -586,7 +584,7 @@ void Modules::add_module_exports(Handle from_module, jstring package_name, Handl
   const char* pkg = as_internal_package(JNIHandles::resolve_non_null(package_name), buf, sizeof(buf), package_len);
   {
     MutexLocker ml(THREAD, Module_lock);
-    package_entry = get_locked_package_entry(from_module_entry, pkg, package_len, CHECK);
+    package_entry = get_locked_package_entry(from_module_entry, pkg, package_len);
     // Do nothing if modules are the same
     // If the package is not found we'll throw an exception later
     if (from_module_entry != to_module_entry &&
@@ -708,7 +706,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   return JNIHandles::make_local(THREAD, module);
 }
 
-jobject Modules::get_named_module(Handle h_loader, const char* package_name, TRAPS) {
+oop Modules::get_named_module(Handle h_loader, const char* package_name) {
   assert(ModuleEntryTable::javabase_defined(),
          "Attempt to call get_named_module before " JAVA_BASE_NAME " is defined");
   assert(h_loader.is_null() || java_lang_ClassLoader::is_subclass(h_loader->klass()),
@@ -720,11 +718,11 @@ jobject Modules::get_named_module(Handle h_loader, const char* package_name, TRA
   }
   TempNewSymbol package_sym = SymbolTable::new_symbol(package_name);
   const PackageEntry* const pkg_entry =
-    get_package_entry_by_name(package_sym, h_loader, THREAD);
+    get_package_entry_by_name(package_sym, h_loader);
   const ModuleEntry* const module_entry = (pkg_entry != NULL ? pkg_entry->module() : NULL);
 
   if (module_entry != NULL && module_entry->module() != NULL && module_entry->is_named()) {
-    return JNIHandles::make_local(THREAD, module_entry->module());
+    return module_entry->module();
   }
   return NULL;
 }
@@ -757,7 +755,7 @@ void Modules::add_module_exports_to_all_unnamed(Handle module, jstring package_n
   PackageEntry* package_entry = NULL;
   {
     MutexLocker m1(THREAD, Module_lock);
-    package_entry = get_locked_package_entry(module_entry, pkg, pkg_len, CHECK);
+    package_entry = get_locked_package_entry(module_entry, pkg, pkg_len);
 
     // Mark package as exported to all unnamed modules.
     if (package_entry != NULL) {

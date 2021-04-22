@@ -165,6 +165,7 @@
   LOG_TAG(stacktrace) \
   LOG_TAG(stackwalk) \
   LOG_TAG(start) \
+  LOG_TAG(startup) \
   LOG_TAG(startuptime) \
   LOG_TAG(state) \
   LOG_TAG(stats) \

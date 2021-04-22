@@ -153,6 +153,7 @@ jint ShenandoahHeap::initialize() {
   Universe::check_alignment(init_byte_size, reg_size_bytes, "Shenandoah heap");
 
   _num_regions = ShenandoahHeapRegion::region_count();
+  assert(_num_regions == (max_byte_size / reg_size_bytes), "Must match");
 
   // Now we know the number of regions, initialize the heuristics.
   initialize_heuristics();
@@ -1034,7 +1035,7 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
 void ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
 
-  oop humongous_obj = oop(start->bottom());
+  oop humongous_obj = cast_to_oop(start->bottom());
   size_t size = humongous_obj->size();
   size_t required_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
   size_t index = start->index() + required_regions - 1;
@@ -1550,6 +1551,17 @@ public:
 
   bool is_thread_safe() { return true; }
 };
+
+class ShenandoahRendezvousClosure : public HandshakeClosure {
+public:
+  inline ShenandoahRendezvousClosure() : HandshakeClosure("ShenandoahRendezvous") {}
+  inline void do_thread(Thread* thread) {}
+};
+
+void ShenandoahHeap::rendezvous_threads() {
+  ShenandoahRendezvousClosure cl;
+  Handshake::execute(&cl);
+}
 
 void ShenandoahHeap::recycle_trash() {
   free_set()->recycle_trash();

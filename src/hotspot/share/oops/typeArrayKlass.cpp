@@ -62,7 +62,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   // mirror creation fails, loaded_classes_do() doesn't find
   // an array class without a mirror.
   null_loader_data->add_class(ak);
-
+  JFR_ONLY(ASSIGN_PRIMITIVE_CLASS_ID(ak);)
   return ak;
 }
 

@@ -74,7 +74,7 @@ void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
 }
 
 bool ObjectSampler::create_oop_storage() {
-  _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples");
+  _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples", mtTracing);
   assert(_oop_storage != NULL, "invariant");
   _oop_storage->register_num_dead_callback(&oop_storage_gc_notification);
   return true;
@@ -235,7 +235,7 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, Java
   }
 
   sample->set_span(allocated);
-  sample->set_object((oop)obj);
+  sample->set_object(cast_to_oop(obj));
   sample->set_allocated(allocated);
   sample->set_allocation_time(JfrTicks::now());
   sample->set_heap_used_at_last_gc(Universe::heap()->used_at_last_gc());

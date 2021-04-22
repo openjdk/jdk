@@ -56,6 +56,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -93,6 +94,7 @@ static ArchivableStaticFieldInfo closed_archive_subgraph_entry_fields[] = {
 static ArchivableStaticFieldInfo open_archive_subgraph_entry_fields[] = {
   {"jdk/internal/module/ArchivedModuleGraph",     "archivedModuleGraph"},
   {"java/util/ImmutableCollections",              "archivedObjects"},
+  {"java/lang/ModuleLayer",                       "EMPTY_LAYER"},
   {"java/lang/module/Configuration",              "EMPTY_CONFIGURATION"},
   {"jdk/internal/math/FDBigInteger",              "archivedCaches"},
 };
@@ -263,7 +265,7 @@ oop HeapShared::archive_heap_object(oop obj) {
     return NULL;
   }
 
-  oop archived_oop = (oop)G1CollectedHeap::heap()->archive_mem_allocate(len);
+  oop archived_oop = cast_to_oop(G1CollectedHeap::heap()->archive_mem_allocate(len));
   if (archived_oop != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
     // Reinitialize markword to remove age/marking/locking/etc.
@@ -344,6 +346,8 @@ void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion>* closed,
     // Cache for recording where the archived objects are copied to
     create_archived_object_cache();
 
+    log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                  p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
     log_info(cds)("Dumping objects to closed archive heap region ...");
     copy_closed_archive_heap_objects(closed);
 
@@ -424,7 +428,7 @@ void HeapShared::copy_roots() {
     arrayOopDesc::set_length(mem, length);
   }
 
-  _roots = OopHandle(Universe::vm_global(), (oop)mem);
+  _roots = OopHandle(Universe::vm_global(), cast_to_oop(mem));
   for (int i = 0; i < length; i++) {
     roots()->obj_at_put(i, _pending_roots->at(i));
   }
@@ -700,14 +704,15 @@ void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[
 }
 
 void HeapShared::resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD) {
- const ArchivedKlassSubGraphInfoRecord* record =
+  ExceptionMark em(THREAD);
+  const ArchivedKlassSubGraphInfoRecord* record =
    resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
- if (HAS_PENDING_EXCEPTION) {
+  if (HAS_PENDING_EXCEPTION) {
    CLEAR_PENDING_EXCEPTION;
- }
- if (record == NULL) {
+  }
+  if (record == NULL) {
    clear_archived_roots_of(k);
- }
+  }
 }
 
 void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
@@ -715,6 +720,7 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
     return; // nothing to do
   }
 
+  ExceptionMark em(THREAD);
   const ArchivedKlassSubGraphInfoRecord* record =
     resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/true, THREAD);
 
@@ -746,7 +752,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
   if (record != NULL) {
     if (record->is_full_module_graph() && !MetaspaceShared::use_full_module_graph()) {
       if (log_is_enabled(Info, cds, heap)) {
-        ResourceMark rm;
+        ResourceMark rm(THREAD);
         log_info(cds, heap)("subgraph %s cannot be used because full module graph is disabled",
                             k->external_name());
       }
@@ -755,7 +761,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
 
     if (record->has_non_early_klasses() && JvmtiExport::should_post_class_file_load_hook()) {
       if (log_is_enabled(Info, cds, heap)) {
-        ResourceMark rm;
+        ResourceMark rm(THREAD);
         log_info(cds, heap)("subgraph %s cannot be used because JVMTI ClassFileLoadHook is enabled",
                             k->external_name());
       }
@@ -1393,7 +1399,7 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
 
   int num_objs = 0;
   while (p < end) {
-    oop o = (oop)p;
+    oop o = cast_to_oop(p);
     o->oop_iterate(&finder);
     p += o->size();
     if (DumpSharedSpaces) {
