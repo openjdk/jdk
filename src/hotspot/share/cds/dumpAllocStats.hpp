@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_DUMPALLOCSTATS_HPP
-#define SHARE_MEMORY_DUMPALLOCSTATS_HPP
+#ifndef SHARE_CDS_DUMPALLOCSTATS_HPP
+#define SHARE_CDS_DUMPALLOCSTATS_HPP
 
 #include "cds/compactHashtable.hpp"
 #include "memory/allocation.hpp"
@@ -100,4 +100,4 @@ public:
   void print_stats(int ro_all, int rw_all);
 };
 
-#endif // SHARE_MEMORY_DUMPALLOCSTATS_HPP
+#endif // SHARE_CDS_DUMPALLOCSTATS_HPP

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_PRIMS_CDSOFFSETS_HPP
-#define SHARE_PRIMS_CDSOFFSETS_HPP
+#ifndef SHARE_CDS_CDSOFFSETS_HPP
+#define SHARE_CDS_CDSOFFSETS_HPP
 
 #include "memory/allocation.hpp"
 
@@ -44,4 +44,4 @@ class CDSOffsets: public CHeapObj<mtInternal> {
   static int find_offset(const char* name);
 };
 
-#endif // SHARE_PRIMS_CDSOFFSETS_HPP
+#endif // SHARE_CDS_CDSOFFSETS_HPP

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_HEAPSHARED_INLINE_HPP
-#define SHARE_MEMORY_HEAPSHARED_INLINE_HPP
+#ifndef SHARE_CDS_HEAPSHARED_INLINE_HPP
+#define SHARE_CDS_HEAPSHARED_INLINE_HPP
 
 #include "cds/heapShared.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -45,4 +45,4 @@ inline oop HeapShared::decode_from_archive(narrowOop v) {
 
 #endif
 
-#endif // SHARE_MEMORY_HEAPSHARED_INLINE_HPP
+#endif // SHARE_CDS_HEAPSHARED_INLINE_HPP

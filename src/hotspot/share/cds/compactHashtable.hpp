@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
-#define SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
+#ifndef SHARE_CDS_COMPACTHASHTABLE_HPP
+#define SHARE_CDS_COMPACTHASHTABLE_HPP
 
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
@@ -427,4 +427,4 @@ public:
   static void put_utf8(outputStream* st, const char* utf8_string, int utf8_length);
 };
 
-#endif // SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
+#endif // SHARE_CDS_COMPACTHASHTABLE_HPP

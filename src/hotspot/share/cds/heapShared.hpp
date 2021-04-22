@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_HEAPSHARED_HPP
-#define SHARE_MEMORY_HEAPSHARED_HPP
+#ifndef SHARE_CDS_HEAPSHARED_HPP
+#define SHARE_CDS_HEAPSHARED_HPP
 
 #include "cds/compactHashtable.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -415,4 +415,4 @@ class DumpedInternedStrings :
 {};
 #endif
 
-#endif // SHARE_MEMORY_HEAPSHARED_HPP
+#endif // SHARE_CDS_HEAPSHARED_HPP

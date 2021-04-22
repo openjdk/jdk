@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_ARCHIVEUTILS_INLINE_HPP
-#define SHARE_MEMORY_ARCHIVEUTILS_INLINE_HPP
+#ifndef SHARE_CDS_ARCHIVEUTILS_INLINE_HPP
+#define SHARE_CDS_ARCHIVEUTILS_INLINE_HPP
 
 #include "cds/archiveUtils.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -46,4 +46,4 @@ inline bool SharedDataRelocator::do_bit(size_t offset) {
   return true; // keep iterating
 }
 
-#endif // SHARE_MEMORY_ARCHIVEUTILS_INLINE_HPP
+#endif // SHARE_CDS_ARCHIVEUTILS_INLINE_HPP

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_FILEMAP_HPP
-#define SHARE_MEMORY_FILEMAP_HPP
+#ifndef SHARE_CDS_FILEMAP_HPP
+#define SHARE_CDS_FILEMAP_HPP
 
 #include "cds/metaspaceShared.hpp"
 #include "include/cds.h"
@@ -595,4 +595,4 @@ public:
 #endif
 };
 
-#endif // SHARE_MEMORY_FILEMAP_HPP
+#endif // SHARE_CDS_FILEMAP_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
-#define SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
+#ifndef SHARE_CDS_LAMBDAFORMINVOKERS_HPP
+#define SHARE_CDS_LAMBDAFORMINVOKERS_HPP
 #include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 
@@ -43,4 +43,4 @@ class LambdaFormInvokers : public AllStatic {
     return _lambdaform_lines;
   }
 };
-#endif // SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
+#endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP

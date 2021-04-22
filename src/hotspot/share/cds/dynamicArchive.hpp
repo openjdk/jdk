@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_DYNAMICARCHIVE_HPP
-#define SHARE_VM_MEMORY_DYNAMICARCHIVE_HPP
+#ifndef SHARE_CDS_DYNAMICARCHIVE_HPP
+#define SHARE_CDS_DYNAMICARCHIVE_HPP
 
 #include "cds/compactHashtable.hpp"
 #include "cds/filemap.hpp"
@@ -68,4 +68,4 @@ public:
   static bool validate(FileMapInfo* dynamic_info);
 };
 #endif // INCLUDE_CDS
-#endif // SHARE_VM_MEMORY_DYNAMICARCHIVE_HPP
+#endif // SHARE_CDS_DYNAMICARCHIVE_HPP

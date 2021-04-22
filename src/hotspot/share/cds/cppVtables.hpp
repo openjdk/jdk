@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_CPPVTABLES_HPP
-#define SHARE_MEMORY_CPPVTABLES_HPP
+#ifndef SHARE_CDS_CPPVTABLES_HPP
+#define SHARE_CDS_CPPVTABLES_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
@@ -45,4 +45,4 @@ public:
   static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
 };
 
-#endif // SHARE_MEMORY_CPPVTABLES_HPP
+#endif // SHARE_CDS_CPPVTABLES_HPP

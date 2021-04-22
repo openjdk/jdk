@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_CLASSLISTWRITER_HPP
-#define SHARE_CLASSFILE_CLASSLISTWRITER_HPP
+#ifndef SHARE_CDS_CLASSLISTWRITER_HPP
+#define SHARE_CDS_CLASSLISTWRITER_HPP
 
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
@@ -79,4 +79,4 @@ public:
   }
 };
 
-#endif // SHARE_CLASSFILE_CLASSLISTWRITER_HPP
+#endif // SHARE_CDS_CLASSLISTWRITER_HPP
