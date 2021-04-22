@@ -378,6 +378,15 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       valb->find_remove(val);
       block->add_inst(val);
       map_node_to_block(val, block);
+      // Also hoist MachTemp inputs if they exist.
+      for (uint i = 2; i < val->req(); i++) {
+        // DecodeN has 2 regular inputs + optional MachTemp inputs.
+        MachTempNode *temp = val->in(i)->as_MachTemp();
+        assert(get_block_for_node(temp) == valb, "MachTemp is expected to be in same block as the DecodeN");
+        valb->find_remove(temp);
+        block->add_inst(temp);
+        map_node_to_block(temp, block);
+      }
       // DecodeN on x86 may kill flags. Check for flag-killing projections
       // that also need to be hoisted.
       for (DUIterator_Fast jmax, j = val->fast_outs(jmax); j < jmax; j++) {
