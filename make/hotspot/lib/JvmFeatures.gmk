@@ -116,20 +116,10 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
-      archiveBuilder.cpp \
-      archiveUtils.cpp \
-      cdsoffsets.cpp \
-      classListParser.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
-      cppVtables.cpp \
-      dumpAllocStats.cpp \
-      dynamicArchive.cpp \
-      filemap.cpp \
-      heapShared.cpp \
-      lambdaFormInvokers.cpp \
-      metaspaceShared.cpp \
       systemDictionaryShared.cpp
+  JVM_EXCLUDE_PATTERNS += cds/
 endif
 
 ifneq ($(call check-jvm-feature, nmt), true)

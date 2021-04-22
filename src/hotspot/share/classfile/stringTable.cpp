@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/compactHashtable.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"

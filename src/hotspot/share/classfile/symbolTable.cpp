@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/compactHashtable.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.inline.hpp"
