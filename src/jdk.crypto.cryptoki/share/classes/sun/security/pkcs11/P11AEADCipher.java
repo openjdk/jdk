@@ -205,7 +205,7 @@ final class P11AEADCipher extends CipherSpi {
     // see JCE spec
     protected AlgorithmParameters engineGetParameters() {
         String apAlgo;
-        AlgorithmParameterSpec spec;
+        AlgorithmParameterSpec spec = null;
         switch (type) {
             case AES_GCM:
                 apAlgo = "GCM";
@@ -214,7 +214,9 @@ final class P11AEADCipher extends CipherSpi {
                     tagLen = type.defTagLen;
                     random.nextBytes(iv);
                 }
-                spec = new GCMParameterSpec(tagLen << 3, iv);
+                if (iv != null) {
+                    spec = new GCMParameterSpec(tagLen << 3, iv);
+                }
             break;
             case CHACHA20_POLY1305:
                 if (encrypt && iv == null) {
@@ -222,21 +224,26 @@ final class P11AEADCipher extends CipherSpi {
                     random.nextBytes(iv);
                 }
                 apAlgo = "ChaCha20-Poly1305";
-                spec = new IvParameterSpec(iv);
+                if (iv != null) {
+                    spec = new IvParameterSpec(iv);
+                }
             break;
             default:
                 throw new AssertionError("Unsupported type " + type);
         }
-        try {
-            AlgorithmParameters params =
-                AlgorithmParameters.getInstance(apAlgo);
-            params.init(spec);
-            return params;
-        } catch (GeneralSecurityException e) {
-            // NoSuchAlgorithmException, NoSuchProviderException
-            // InvalidParameterSpecException
-            throw new ProviderException("Could not encode parameters", e);
+        if (spec != null) {
+            try {
+                AlgorithmParameters params =
+                    AlgorithmParameters.getInstance(apAlgo);
+                params.init(spec);
+                return params;
+            } catch (GeneralSecurityException e) {
+                // NoSuchAlgorithmException, NoSuchProviderException
+                // InvalidParameterSpecException
+                throw new ProviderException("Could not encode parameters", e);
+            }
         }
+        return null;
     }
 
     // see JCE spec

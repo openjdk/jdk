@@ -34,8 +34,10 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.SecureRandom;
+import java.security.spec.InvalidParameterSpecException;
 import java.util.Arrays;
 import java.util.HexFormat;
 
@@ -59,6 +61,7 @@ public class TestChaChaPoly extends PKCS11Test {
     private static final IvParameterSpec IV_PARAM_SPEC
             = new IvParameterSpec(NONCE);
     private static final String ALGO = "ChaCha20-Poly1305";
+    private static final SecureRandom RAND = new SecureRandom();
     private static Provider p;
 
     @Override
@@ -75,6 +78,8 @@ public class TestChaChaPoly extends PKCS11Test {
         testInit();
         testAEAD();
         testGetBlockSize();
+        testGetIV();
+        testInterop("SunJCE");
     }
 
     private static void testTransformations() throws Exception {
@@ -114,16 +119,14 @@ public class TestChaChaPoly extends PKCS11Test {
     private static void testInitOnCrypt(int opMode) throws Exception {
         System.out.println("== init (" + getOpModeName(opMode) + ") ==");
 
-        AlgorithmParameters algorithmParameters =
-                AlgorithmParameters.getInstance(ALGO);
-        algorithmParameters.init(
-                new byte[] { 4, 12, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8 });
-
         // Need to acquire new Cipher object as ChaCha20-Poly1305 cipher
         // disallow reusing the same key and iv pair
         Cipher.getInstance(ALGO, p).init(opMode, KEY, IV_PARAM_SPEC);
-        Cipher.getInstance(ALGO, p).init(opMode, KEY, IV_PARAM_SPEC,
-                new SecureRandom());
+        Cipher c = Cipher.getInstance(ALGO, p);
+        c.init(opMode, KEY, IV_PARAM_SPEC, RAND);
+        AlgorithmParameters params = c.getParameters();
+        Cipher.getInstance(ALGO, p).init(opMode, KEY, params, RAND);
+
         try {
             // try with invalid param
             Cipher.getInstance(ALGO, p).init(opMode, KEY, CHACHA20_PARAM_SPEC);
@@ -131,8 +134,6 @@ public class TestChaChaPoly extends PKCS11Test {
         } catch (InvalidAlgorithmParameterException e) {
             System.out.println("Expected IAPE - " + e);
         }
-        Cipher.getInstance(ALGO, p).init(opMode, KEY, algorithmParameters,
-            new SecureRandom());
     }
 
     private static void testAEAD() throws Exception {
@@ -185,10 +186,114 @@ public class TestChaChaPoly extends PKCS11Test {
 
     private static void testGetBlockSize(int opMode) throws Exception {
         System.out.println("== getBlockSize (" + getOpModeName(opMode) + ") ==");
-        Cipher ccp = Cipher.getInstance(ALGO, p);
-        if (ccp.getBlockSize() != 0) {
+        Cipher c = Cipher.getInstance(ALGO, p);
+        if (c.getBlockSize() != 0) {
             throw new RuntimeException("Block size must be 0");
         }
+    }
+
+    private static void testGetIV() throws Exception {
+        testGetIV(Cipher.ENCRYPT_MODE);
+        testGetIV(Cipher.DECRYPT_MODE);
+    }
+
+    private static void testGetIV(int opMode) throws Exception {
+        System.out.println("== getIv (" + getOpModeName(opMode) + ") ==");
+
+        try {
+            Cipher.getInstance(ALGO, p).getIV();
+            Cipher.getInstance(ALGO, p).getParameters();
+        } catch (Exception e) {
+            throw new RuntimeException("Should not throw ex", e);
+        }
+        // first init w/ key only
+        AlgorithmParameters params = null;
+        for (int i = 0; i < 6; i++) {
+            System.out.println("IV test# " + i);
+            Cipher c = Cipher.getInstance(ALGO, p);
+            byte[] expectedIV = NONCE;
+            try {
+                switch (i) {
+                case 0 -> {
+                    c.init(opMode, KEY);
+                    expectedIV = null; // randomly-generated
+                }
+                case 1 -> {
+                    c.init(opMode, KEY, RAND);
+                    expectedIV = null; // randomly-generated
+                }
+                case 2 -> {
+                    c.init(opMode, KEY, IV_PARAM_SPEC);
+                    params = c.getParameters();
+                    if (params == null) {
+                        throw new RuntimeException("Params should not be null");
+                    }
+                }
+                case 3 -> c.init(opMode, KEY, IV_PARAM_SPEC, RAND);
+                case 4 -> c.init(opMode, KEY, params);
+                case 5 -> c.init(opMode, KEY, params, RAND);
+                }
+                checkIV(c, expectedIV);
+                System.out.println("=> Passed");
+            } catch (GeneralSecurityException e) {
+                if (opMode == Cipher.DECRYPT_MODE && i < 2) {
+                    System.out.println("=> Passed: Expected Ex thrown");
+                } else {
+                    throw new RuntimeException("Should not throw ex", e);
+                }
+            }
+        }
+    }
+
+    private static void checkIV(Cipher c, byte[] expectedIv) {
+        // the specified cipher has been initialized; the returned IV and
+        // AlgorithmParameters object should be non-null
+        byte[] iv = c.getIV();
+        AlgorithmParameters params = c.getParameters();
+        // fail if either is null
+        if (iv == null || params == null) {
+            throw new RuntimeException("getIV()/getParameters() should " +
+                    "not return null");
+        }
+
+        // check iv matches if not null
+        if (expectedIv != null && !Arrays.equals(expectedIv, iv)) {
+            throw new RuntimeException("IV should match expected value");
+        }
+
+        try {
+            byte[] iv2 = params.getParameterSpec(IvParameterSpec.class).getIV();
+            if (!Arrays.equals(iv, iv2)) {
+                throw new RuntimeException("IV values should be consistent");
+            }
+        } catch (InvalidParameterSpecException ipe) {
+            // should never happen
+            throw new AssertionError();
+        }
+    }
+
+    private static void testInterop(String interopProv) throws Exception {
+        testInterop(Cipher.getInstance(ALGO, p),
+                Cipher.getInstance(ALGO, interopProv));
+        testInterop(Cipher.getInstance(ALGO, interopProv),
+                Cipher.getInstance(ALGO, p));
+    }
+
+    private static void testInterop(Cipher encCipher, Cipher decCipher)
+            throws Exception {
+        System.out.println("Interop: " + encCipher.getProvider().getName() +
+                " -> " + encCipher.getProvider().getName());
+        byte[] pt = HexFormat.of().parseHex("012345678901234567890123456789");
+        encCipher.init(Cipher.ENCRYPT_MODE, KEY);
+        byte[] ct = encCipher.doFinal(pt);
+        decCipher.init(Cipher.DECRYPT_MODE, KEY, encCipher.getParameters());
+        byte[] pt2 = decCipher.doFinal(ct);
+        if (!Arrays.equals(pt, pt2)) {
+            System.out.println("HexDump/pt: " + HexFormat.of().formatHex(pt));
+            System.out.println("HexDump/pt2: " + HexFormat.of().formatHex(pt2));
+            throw new RuntimeException("Recovered data should match");
+        }
+        System.out.println("=> Passed");
     }
 
     private static String getOpModeName(int opMode) {
