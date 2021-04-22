@@ -38,14 +38,9 @@ import java.util.concurrent.CountDownLatch;
 
 public class LegacyDHEKeyExchange extends SSLSocketTemplate{
 
-    private final CountDownLatch serverDoneLatch = new CountDownLatch(1);
-    private final CountDownLatch clientDoneLatch = new CountDownLatch(1);
+    private final CountDownLatch connDoneLatch = new CountDownLatch(2);
 
-    @Override
-    protected void configureClientSocket(SSLSocket socket) {
-        String[] suites = new String [] {"TLS_DHE_RSA_WITH_AES_128_CBC_SHA"};
-        socket.setEnabledCipherSuites(suites);
-    }
+    private static final int LINGER_TIMEOUT = 30; // in seconds
 
     @Override
     protected void runServerApplication(SSLSocket socket) throws Exception {
@@ -57,15 +52,20 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
             if (!expectedExMsg.equals(she.getMessage())) {
                 throw she;
             }
+            System.out.println("Expected exception thrown in server");
         } finally {
-            serverDoneLatch.countDown();
-            clientDoneLatch.await();
+            connDoneLatch.countDown();
+            connDoneLatch.await();
         }
     }
 
     @Override
     protected void runClientApplication(SSLSocket socket) throws Exception {
-        try (socket) {
+        String[] suites = new String [] {"TLS_DHE_RSA_WITH_AES_128_CBC_SHA"};
+        socket.setEnabledCipherSuites(suites);
+        socket.setSoLinger(true, LINGER_TIMEOUT);
+
+        try {
             super.runClientApplication(socket);
             throw new Exception("Legacy DH keys (< 1024) should be restricted");
         } catch (SSLHandshakeException she) {
@@ -74,9 +74,10 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
             if (!expectedExMsg.equals(she.getMessage())) {
                 throw she;
             }
+            System.out.println("Expected exception thrown in client");
         } finally {
-            serverDoneLatch.await();
-            clientDoneLatch.countDown();
+            connDoneLatch.countDown();
+            connDoneLatch.await();
         }
     }
 
