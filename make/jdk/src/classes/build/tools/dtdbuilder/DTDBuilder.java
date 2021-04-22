@@ -56,6 +56,7 @@ import java.net.URL;
  * @see DTDParser
  * @see Parser
  * @author Arthur van Hoff
+ * @author Guy Abossolo Foh
  */
 public
 class DTDBuilder extends DTD {
@@ -283,7 +284,7 @@ class DTDBuilder extends DTD {
     public static void main(String argv[]) {
 
         String dtd_home = System.getProperty("dtd_home") + File.separator;
-        if (dtd_home == null) {
+        if (dtd_home.equals("null" + File.separator)) {
             System.err.println("Must set property 'dtd_home'");
             return;
         }
