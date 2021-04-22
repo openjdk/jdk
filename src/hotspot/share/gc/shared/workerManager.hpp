@@ -50,8 +50,7 @@ class WorkerManager : public AllStatic {
   // create all the worker at start should considered a problem so exit.
   // If initializing = false, there are already some number of worker
   // threads and a failure would not be optimal but should not be fatal.
-  template <class WorkerType>
-  static uint add_workers (WorkerType* holder,
+  static uint add_workers (AbstractWorkGang* holder,
                            uint active_workers,
                            uint total_workers,
                            uint created_workers,
@@ -59,16 +58,14 @@ class WorkerManager : public AllStatic {
                            bool initializing);
 
   // Log (at trace level) a change in the number of created workers.
-  template <class WorkerType>
-  static void log_worker_creation(WorkerType* holder,
+  static void log_worker_creation(AbstractWorkGang* holder,
                                   uint previous_created_workers,
                                   uint active_workers,
                                   uint created_workers,
                                   bool initializing);
 };
 
-template <class WorkerType>
-uint WorkerManager::add_workers(WorkerType* holder,
+uint WorkerManager::add_workers(AbstractWorkGang* holder,
                                 uint active_workers,
                                 uint total_workers,
                                 uint created_workers,
@@ -85,9 +82,7 @@ uint WorkerManager::add_workers(WorkerType* holder,
       log_trace(gc, task)("WorkerManager::add_workers() : "
                           "creation failed due to failed allocation of native %s",
                           new_worker == NULL ? "memory" : "thread");
-      if (new_worker != NULL) {
-        delete new_worker;
-      }
+      delete new_worker;
       if (initializing) {
         vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create worker GC thread. Out of system resources.");
       }
@@ -103,8 +98,7 @@ uint WorkerManager::add_workers(WorkerType* holder,
   return created_workers;
 }
 
-template <class WorkerType>
-void WorkerManager::log_worker_creation(WorkerType* holder,
+void WorkerManager::log_worker_creation(AbstractWorkGang* holder,
                                         uint previous_created_workers,
                                         uint active_workers,
                                         uint created_workers,

@@ -100,8 +100,6 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   // Printing support.
   const char* _name;
 
-  ~AbstractWorkGang() {}
-
  private:
   // Initialize only instance data.
   const bool _are_GC_task_threads;
@@ -110,6 +108,11 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   void set_thread(uint worker_id, AbstractGangWorker* worker) {
     _workers[worker_id] = worker;
   }
+
+  // Add GC workers when _created_workers < _active_workers; otherwise, no-op.
+  // If there's no memory/thread allocation failure, _created_worker is
+  // adjusted to match _active_workers (_created_worker == _active_workers).
+  void add_workers(bool initializing);
 
  public:
   AbstractWorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads);
@@ -134,19 +137,13 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   uint update_active_workers(uint v) {
     assert(v <= _total_workers,
            "Trying to set more workers active than there are");
-    _active_workers = MIN2(v, _total_workers);
-    add_workers(false /* exit_on_failure */);
     assert(v != 0, "Trying to set active workers to 0");
+    _active_workers = v;
+    add_workers(false /* initializing */);
     log_trace(gc, task)("%s: using %d out of %d workers", name(), _active_workers, _total_workers);
     return _active_workers;
   }
-
-  // Add GC workers as needed.
-  void add_workers(bool initializing);
-
-  // Add GC workers as needed to reach the specified number of workers.
-  void add_workers(uint active_workers, bool initializing);
-
+  
   // Return the Ith worker.
   AbstractGangWorker* worker(uint i) const;
 

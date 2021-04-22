@@ -63,11 +63,6 @@ AbstractGangWorker* AbstractWorkGang::install_worker(uint worker_id) {
 }
 
 void AbstractWorkGang::add_workers(bool initializing) {
-  add_workers(_active_workers, initializing);
-}
-
-void AbstractWorkGang::add_workers(uint active_workers, bool initializing) {
-
   os::ThreadType worker_type;
   if (are_ConcurrentGC_threads()) {
     worker_type = os::cgc_thread;
@@ -77,7 +72,7 @@ void AbstractWorkGang::add_workers(uint active_workers, bool initializing) {
   uint previous_created_workers = _created_workers;
 
   _created_workers = WorkerManager::add_workers(this,
-                                                active_workers,
+                                                _active_workers,
                                                 _total_workers,
                                                 _created_workers,
                                                 worker_type,
