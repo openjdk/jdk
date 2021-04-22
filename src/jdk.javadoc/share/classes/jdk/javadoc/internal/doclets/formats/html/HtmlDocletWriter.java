@@ -105,6 +105,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
@@ -2236,6 +2237,7 @@ public class HtmlDocletWriter {
         Set<TypeElement> previewAPI = new HashSet<>(previewAPITypes.previewAPI);
         Set<TypeElement> reflectivePreviewAPI = new HashSet<>(previewAPITypes.reflectivePreviewAPI);
         Set<TypeElement> declaredUsingPreviewFeature = new HashSet<>(previewAPITypes.declaredUsingPreviewFeature);
+        Set<DeclarationPreviewLanguageFeatures> previewLanguageFeatures = new HashSet<>();
         for (Element enclosed : el.getEnclosedElements()) {
             if (!utils.isIncluded(enclosed)) {
                 continue;
@@ -2245,8 +2247,12 @@ public class HtmlDocletWriter {
                 declaredUsingPreviewFeature.addAll(memberAPITypes.declaredUsingPreviewFeature);
                 previewAPI.addAll(memberAPITypes.previewAPI);
                 reflectivePreviewAPI.addAll(memberAPITypes.reflectivePreviewAPI);
+                previewLanguageFeatures.addAll(utils.previewLanguageFeaturesUsed(enclosed));
+            } else if (!utils.previewLanguageFeaturesUsed(enclosed).isEmpty()) {
+                declaredUsingPreviewFeature.add((TypeElement) enclosed);
             }
         }
+        previewLanguageFeatures.addAll(utils.previewLanguageFeaturesUsed(el));
         if (!declaredUsingPreviewFeature.isEmpty()) {
             result.add(withLinks("doclet.UsesDeclaredUsingPreview", className, declaredUsingPreviewFeature));
         }
@@ -2257,6 +2263,21 @@ public class HtmlDocletWriter {
             result.add(withLinks("doclet.ReflectivePreviewAPI", className, reflectivePreviewAPI));
         }
         return result;
+    }
+
+    private Content withPreviewFeatures(String key, String className, String featureName, List<String> features) {
+        String[] sep = new String[] {""};
+        ContentBuilder featureCodes = new ContentBuilder();
+        features.stream()
+                .forEach(c -> {
+                    featureCodes.add(sep[0]);
+                    featureCodes.add(HtmlTree.CODE(new ContentBuilder().add(c)));
+                    sep[0] = ", ";
+                });
+        return contents.getContent(key,
+                HtmlTree.CODE(Text.of(className)),
+                new HtmlTree(TagName.EM).add(featureName),
+                featureCodes);
     }
 
     private Content withLinks(String key, String className, Set<TypeElement> elements) {

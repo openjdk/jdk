@@ -2962,6 +2962,25 @@ public class Utils {
         }
     }
 
+    /**
+     * Return the set of preview language features used to declare the given element.
+     *
+     * @param e the Element to check.
+     * @return the set of preview language features used to declare the given element
+     */
+    public Set<DeclarationPreviewLanguageFeatures> previewLanguageFeaturesUsed(Element e) {
+        return new HashSet<>();
+    }
+
+    public enum DeclarationPreviewLanguageFeatures {
+        NONE(List.of(""));
+        public final List<String> features;
+
+        private DeclarationPreviewLanguageFeatures(List<String> features) {
+            this.features = features;
+        }
+    }
+
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
         List<TypeElement> usedInDeclaration = new ArrayList<>();
         usedInDeclaration.addAll(annotations2Classes(el));
@@ -3010,6 +3029,9 @@ public class Utils {
                 } else {
                     previewAPI.add(type);
                 }
+            }
+            if (!previewLanguageFeaturesUsed(type).isEmpty()) {
+                declaredUsingPreviewFeature.add(type);
             }
         }
 
@@ -3152,7 +3174,8 @@ public class Utils {
             flags.add(ElementFlag.DEPRECATED);
         }
 
-        if (configuration.workArounds.isPreviewAPI(el) ||
+        if (!previewLanguageFeaturesUsed(el).isEmpty() ||
+            configuration.workArounds.isPreviewAPI(el) ||
             !previewAPIs.previewAPI.isEmpty() ||
             !previewAPIs.reflectivePreviewAPI.isEmpty() ||
             !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {

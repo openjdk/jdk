@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -81,6 +82,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.lang.constant.Constable",
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
+
+    private static final Set<String> previewModifiers = Collections.emptySet();
 
     protected final TypeElement typeElement;
 
@@ -189,8 +192,13 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             if (sep != null) {
                 mods.add(sep);
             }
-
-            mods.add(modifiersPart);
+            if (previewModifiers.contains(modifiersPart)) {
+                mods.add(modifiersPart);
+                mods.add(HtmlTree.SUP(links.createLink(htmlIds.forPreviewSection(typeElement),
+                        contents.previewMark)));
+            } else {
+                mods.add(modifiersPart);
+            }
             sep = " ";
         }
         if (modifiers.endsWith(" ")) {
