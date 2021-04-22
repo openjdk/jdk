@@ -142,7 +142,7 @@ class CompilerOracle : AllStatic {
   // Tells whether to break when compiling method
   static bool should_break_at(const methodHandle& method);
 
-    // Tells whether there are any methods to print for print_method_statistics()
+  // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
 
   // Tags the method as blackhole candidate, if possible.
