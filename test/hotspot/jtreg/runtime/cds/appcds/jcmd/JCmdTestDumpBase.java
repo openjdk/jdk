@@ -28,16 +28,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.JDKToolFinder;
 import jtreg.SkippedException;
 import sun.hotspot.WhiteBox;
 
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
 
 public abstract class JCmdTestDumpBase {
     private static boolean isStatic; // set first in subclass for dump type
@@ -47,8 +42,8 @@ public abstract class JCmdTestDumpBase {
     /**************************************
      * for a subclass to do static dump
      *    public class JCmdTestStaticDump extends JCmdTestDumpBase {
-     *        isStatic = true; // must, false for dynamic
      *        public static void test() throws Exception {
+     *            setIsStatic(true);
      *            // do test
      *        }
      *        public static void main(String[] args) throws Exception {
@@ -68,18 +63,23 @@ public abstract class JCmdTestDumpBase {
                              {"JCmdTestLingeredApp",
                               "jdk/test/lib/apps/LingeredApp",
                               "jdk/test/lib/apps/LingeredApp$1"};
-    private static final String BOOT_CLASSES[]    = {"Hello"};
+    private static final String BOOT_CLASSES[] = {"Hello"};
 
     protected static String testJar = null;
     protected static String bootJar = null;
     protected static String allJars = null;
+
+    public static final boolean useBoot = true;
+    public static final boolean noBoot = !useBoot;
+    public static final boolean EXPECT_PASS = true;
+    public static final boolean EXPECT_FAIL = !EXPECT_PASS;
 
     protected static void buildJars() throws Exception {
         testJar = JarBuilder.build("test", TEST_CLASSES);
         bootJar = JarBuilder.build("boot", BOOT_CLASSES);
         System.out.println("Jar file created: " + testJar);
         System.out.println("Jar file created: " + bootJar);
-        allJars = testJar+ File.pathSeparator + bootJar;
+        allJars = testJar + File.pathSeparator + bootJar;
     }
 
     private static void checkCDSEnabled() throws Exception {

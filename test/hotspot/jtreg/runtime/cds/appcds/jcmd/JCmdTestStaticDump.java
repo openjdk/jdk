@@ -36,18 +36,7 @@
  * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JCmdTestStaticDump
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.dcmd.PidJcmdExecutor;
-import jdk.test.lib.process.OutputAnalyzer;
-
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
 
 public class JCmdTestStaticDump extends JCmdTestDumpBase {
 
@@ -82,15 +71,11 @@ public class JCmdTestStaticDump extends JCmdTestDumpBase {
     static void test() throws Exception {
         setIsStatic(true);
         buildJars();
-        int  test_count = 1;
-        final boolean useBoot = true;
-        final boolean noBoot = !useBoot;
-        final boolean EXPECT_PASS = true;
-        final boolean EXPECT_FAIL = !EXPECT_PASS;
 
         LingeredApp app = null;
         long pid;
 
+        int  test_count = 1;
         // Static dump with default name multiple times.
         print2ln(test_count++ + " Static dump with default name multiple times.");
         app  = createLingeredApp("-cp", allJars);

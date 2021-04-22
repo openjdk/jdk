@@ -37,19 +37,10 @@
  */
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.dcmd.PidJcmdExecutor;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.JDKToolFinder;
-
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
 
 public class JCmdTestDynamicDump extends JCmdTestDumpBase {
     static final String DYNAMIC_DUMP_FILE   = "mydynamic";
@@ -58,17 +49,12 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
                                                "Hello source: shared objects file (top)"};
     static void test() throws Exception {
         setIsStatic(false);
-        int  test_count = 1;
-        final boolean useBoot = true;
-        final boolean noBoot = !useBoot;
-        final boolean EXPECT_PASS = true;
-        final boolean EXPECT_FAIL = !EXPECT_PASS;
+        buildJars();
 
         LingeredApp app  = null;
         long pid;
 
-        // build test.jar and boot.jar
-        buildJars();
+        int  test_count = 1;
         // Test dynamic dump with -XX:+RecordDynamicDumpInfo.
         print2ln(test_count++ + " Test dynamic dump with -XX:+RecordDynamicDumpInfo.");
         app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo");
