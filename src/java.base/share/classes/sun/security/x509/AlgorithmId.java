@@ -70,17 +70,13 @@ public class AlgorithmId implements Serializable, DerEncoder {
     // The (parsed) parameters
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private AlgorithmParameters algParams;
-    private boolean constructedFromDer = true;
 
     /**
      * Parameters for this algorithm.  These are stored in unparsed
      * DER-encoded form; subclasses can be made to automaticaly parse
      * them so there is fast access to these parameters.
      */
-    @SuppressWarnings("serial") // Not statically typed as Serializable
-    protected DerValue          params;
-
-    private transient byte[] encodedParams;
+    protected transient byte[] encodedParams;
 
     /**
      * Constructs an algorithm ID which will be initialized
@@ -107,17 +103,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
      */
     public AlgorithmId(ObjectIdentifier oid, AlgorithmParameters algparams) {
         algid = oid;
-        algParams = algparams;
-        constructedFromDer = false;
+        this.algParams = algparams;
         if (algParams != null) {
             try {
                 encodedParams = algParams.getEncoded();
             } catch (IOException ioe) {
-                // It should be safe to ignore this.
-                // This exception can occur if AlgorithmParameters was not
-                // initialized (which should not occur), or if it was
-                // initialized with bogus parameters, which should have
-                // been detected when init was called.
+                // Ignore this at the moment. This exception can occur
+                // if AlgorithmParameters was not initialized yet. Will
+                // try to re-getEncoded() again later.
             }
         }
     }
@@ -131,8 +124,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public AlgorithmId(ObjectIdentifier oid, DerValue params)
             throws IOException {
         this.algid = oid;
-        this.params = params;
-        if (this.params != null) {
+        if (params != null) {
             encodedParams = params.toByteArray();
             decodeParams();
         }
@@ -177,20 +169,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
         DerOutputStream tmp = new DerOutputStream();
 
         bytes.putOID(algid);
-        // Setup params from algParams since no DER encoding is given
-        if (constructedFromDer == false) {
-            if (algParams != null) {
-                if (encodedParams == null) {
-                    // call getEncoded again in case algParams were initialized
-                    // after being passed in to ctor.
-                    encodedParams = algParams.getEncoded();
-                }
-                params = new DerValue(encodedParams);
-            } else {
-                params = null;
-            }
+
+        // Re-getEncoded() from algParams if it was not initialized
+        if (algParams != null && encodedParams == null) {
+            encodedParams = algParams.getEncoded();
+            // If still not initialized. Let the IOE be thrown.
         }
-        if (params == null) {
+
+        if (encodedParams == null) {
             // Changes backed out for compatibility with Solaris
 
             // Several AlgorithmId should omit the whole parameter part when
@@ -242,7 +228,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 bytes.putNull();
             }
         } else {
-            bytes.putDerValue(params);
+            bytes.write(encodedParams);
         }
         tmp.write(DerValue.tag_Sequence, bytes);
         out.write(tmp.toByteArray());
@@ -285,7 +271,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         // first check the list of support oids
         KnownOIDs o = KnownOIDs.findMatch(oidStr);
         if (o == KnownOIDs.SpecifiedSHA2withECDSA) {
-            if (params != null) {
+            if (encodedParams != null) {
                 try {
                     AlgorithmId digestParams =
                         AlgorithmId.parse(new DerValue(encodedParams));
