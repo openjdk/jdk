@@ -91,7 +91,7 @@ public class Types {
 
     final Symtab syms;
     final JavacMessages messages;
-    private Names names;
+    final Names names;
     final boolean allowDefaultMethods;
     final boolean mapCapturesToBounds;
     final Check chk;
@@ -945,11 +945,16 @@ public class Types {
         return overridden.toList();
     }
     //where
-        private final Predicate<Symbol> bridgeFilter = (t) ->
-                    t.kind == MTH &&
-                    t.name != names.init &&
-                    t.name != names.clinit &&
-                    (t.flags() & SYNTHETIC) == 0;
+        // Use anonymous class instead of lambda expression intentionally,
+        // because the variable `names` has modifier: final.
+        private Predicate<Symbol> bridgeFilter = new Predicate<Symbol>() {
+            public boolean test(Symbol t) {
+                return t.kind == MTH &&
+                        t.name != names.init &&
+                        t.name != names.clinit &&
+                        (t.flags() & SYNTHETIC) == 0;
+            }
+        };
 
         private boolean pendingBridges(ClassSymbol origin, TypeSymbol s) {
             //a symbol will be completed from a classfile if (a) symbol has
