@@ -39,6 +39,17 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
+template<bool is_humongous>
+void G1FullGCPrepareTask::G1CalculatePointersClosure::free_pinned_region(HeapRegion* hr) {
+  _regions_freed = true;
+  if (is_humongous) {
+    _g1h->free_humongous_region(hr, nullptr);
+  } else {
+    _g1h->free_region(hr, nullptr);
+  }
+  prepare_for_compaction(hr);
+}
+
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
   bool force_not_compacted = false;
   if (should_compact(hr)) {
@@ -48,15 +59,16 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
     // There is no need to iterate and forward objects in pinned regions ie.
     // prepare them for compaction. The adjust pointers phase will skip
     // work for them.
+    assert(hr->containing_set() == nullptr, "already cleared by PrepareRegionsClosure");
     if (hr->is_humongous()) {
       oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
       if (!_bitmap->is_marked(obj)) {
-        free_humongous_region(hr);
+        free_pinned_region<true>(hr);
       }
     } else if (hr->is_open_archive()) {
       bool is_empty = _collector->live_words(hr->hrm_index()) == 0;
       if (is_empty) {
-        free_open_archive_region(hr);
+        free_pinned_region<false>(hr);
       }
     } else if (hr->is_closed_archive()) {
       // nothing to do with closed archive region
@@ -64,10 +76,17 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       assert(MarkSweepDeadRatio > 0,
              "only skip compaction for other regions when MarkSweepDeadRatio > 0");
 
-      // Force the high live ratio region as compacting to skip these regions in the
+      // Force the high live ratio region as not-compacting to skip these regions in the
       // later compaction step.
       force_not_compacted = true;
-      log_debug(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
+      if (hr->is_young()) {
+        // G1 updates the BOT for old region contents incrementally, but young regions
+        // lack BOT information for performance reasons.
+        // Recreate BOT information of high live ratio young regions here to keep expected
+        // performance during scanning their card tables in the collection pauses later.
+        update_bot(hr);
+      }
+      log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
                             hr->hrm_index(), _collector->live_words(hr->hrm_index()));
     }
   }
@@ -118,35 +137,6 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
     _cp(cp),
     _regions_freed(false) { }
 
-void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(HeapRegion* hr) {
-  assert(hr->is_humongous(), "must be but region %u is %s", hr->hrm_index(), hr->get_short_type_str());
-
-  FreeRegionList dummy_free_list("Humongous Dummy Free List for G1MarkSweep");
-
-  hr->set_containing_set(NULL);
-  _regions_freed = true;
-
-  _g1h->free_humongous_region(hr, &dummy_free_list);
-  prepare_for_compaction(hr);
-  dummy_free_list.remove_all();
-}
-
-void G1FullGCPrepareTask::G1CalculatePointersClosure::free_open_archive_region(HeapRegion* hr) {
-  assert(hr->is_pinned(), "must be");
-  assert(!hr->is_humongous(), "handled elsewhere");
-  assert(hr->is_open_archive(),
-         "Only Open archive regions may be freed here.");
-
-  FreeRegionList dummy_free_list("Pinned Dummy Free List for G1MarkSweep");
-
-  hr->set_containing_set(NULL);
-  _regions_freed = true;
-
-  _g1h->free_region(hr, &dummy_free_list);
-  prepare_for_compaction(hr);
-  dummy_free_list.remove_all();
-}
-
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::should_compact(HeapRegion* hr) {
   if (hr->is_pinned()) {
     return false;
@@ -155,6 +145,22 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::should_compact(HeapRegion*
   size_t live_words_threshold = _collector->scope()->region_compaction_threshold();
   // High live ratio region will not be compacted.
   return live_words <= live_words_threshold;
+}
+
+void G1FullGCPrepareTask::G1CalculatePointersClosure::update_bot(HeapRegion* hr) {
+  HeapWord* const limit = hr->top();
+  HeapWord* next_addr = hr->bottom();
+  HeapWord* threshold = hr->initialize_threshold();
+  HeapWord* prev_addr;
+  while (next_addr < limit) {
+    prev_addr = next_addr;
+    next_addr = _bitmap->get_next_marked_addr(next_addr + 1, limit);
+
+    if (next_addr > threshold) {
+      threshold = hr->cross_threshold(prev_addr, next_addr);
+    }
+  }
+  assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
