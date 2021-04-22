@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @requires vm.flavor != "minimal" & !vm.graal.enabled
  *
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver compiler.compilercontrol.jcmd.PrintDirectivesTest
  */
 
@@ -48,6 +48,8 @@ import jdk.test.lib.Utils;
 
 import java.lang.reflect.Executable;
 
+import static compiler.compilercontrol.share.IntrinsicCommand.VALID_INTRINSIC_SAMPLES;
+
 public class PrintDirectivesTest extends AbstractTestBase {
     private static final int AMOUNT = Utils.getRandomInstance().nextInt(
             Integer.getInteger("compiler.compilercontrol.jcmd."
@@ -63,6 +65,8 @@ public class PrintDirectivesTest extends AbstractTestBase {
         Scenario.Builder builder = Scenario.getBuilder();
         // Add some commands with directives file
         for (int i = 0; i < AMOUNT; i++) {
+            String argument = null;
+
             Executable exec = Utils.getRandomElement(METHODS).first;
             MethodDescriptor methodDescriptor = getValidMethodDescriptor(exec);
             Command command = cmdGen.generateCommand();
@@ -70,9 +74,12 @@ public class PrintDirectivesTest extends AbstractTestBase {
                 // skip invalid command
                 command = Command.COMPILEONLY;
             }
+            if (command == Command.INTRINSIC) {
+                argument = Utils.getRandomElement(VALID_INTRINSIC_SAMPLES);
+            }
             CompileCommand compileCommand = new CompileCommand(command,
                     methodDescriptor, cmdGen.generateCompiler(),
-                    Scenario.Type.DIRECTIVE);
+                    Scenario.Type.DIRECTIVE, argument);
             builder.add(compileCommand);
         }
         // print all directives

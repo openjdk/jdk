@@ -39,7 +39,7 @@ public final class EventWriter {
     // Event may not exceed size for a padded integer
     private static final long MAX_EVENT_SIZE = (1 << 28) -1;
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private final static JVM jvm = JVM.getJVM();
+    private static final JVM jvm = JVM.getJVM();
 
     // The JVM needs access to these values. Don't remove
     private final long threadID;
@@ -191,7 +191,7 @@ public final class EventWriter {
         }
     }
 
-    private void reset() {
+    public void reset() {
         currentPosition = startPosition;
         if (flushOnEnd) {
             flushOnEnd = flush();
@@ -220,6 +220,10 @@ public final class EventWriter {
 
     private void resetNotified() {
         notified = false;
+    }
+
+    private void resetStringPool() {
+        StringPool.reset();
     }
 
     private int usedSize() {
@@ -273,6 +277,7 @@ public final class EventWriter {
 
         if (isNotified()) {
             resetNotified();
+            resetStringPool();
             reset();
             // returning false will trigger restart of the event write attempt
             return false;

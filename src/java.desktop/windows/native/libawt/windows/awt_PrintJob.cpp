@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,8 +261,7 @@ static void pageFormatToSetup(JNIEnv *env, jobject job, jobject page,
 static WORD getOrientationFromDevMode2(HGLOBAL hDevMode);
 static WORD getOrientationFromDevMode(JNIEnv *env, jobject self);
 static void setOrientationInDevMode(HGLOBAL hDevMode, jboolean isPortrait);
-static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
-                        HDC printDC, jbyteArray imageArray,
+static void doPrintBand(JNIEnv *env, HDC printDC, jbyteArray imageArray,
                         jint x, jint y, jint width, jint height);
 static int bitsToDevice(HDC printDC, jbyte *image, long destX, long destY,
                         long width, long height);
@@ -1803,7 +1802,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_printBand
    jint width, jint height) {
 
     HDC printDC = AwtPrintControl::getPrintDC(env, self);
-    doPrintBand(env, JNI_FALSE, printDC, imageArray, x, y, width, height);
+    doPrintBand(env, printDC, imageArray, x, y, width, height);
 }
 
 /*
@@ -1941,7 +1940,9 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_setAdvancedGraphicsMode
 (JNIEnv *env, jobject self, jlong printDC) {
     TRY;
 
-    return (jint) ::SetGraphicsMode((HDC)printDC, GM_ADVANCED);
+    int oldGraphicsMode = ::SetGraphicsMode((HDC)printDC, GM_ADVANCED);
+    DASSERT(oldGraphicsMode != 0);
+    return (jint) oldGraphicsMode;
 
     CATCH_BAD_ALLOC_RET(0);
 }
@@ -1949,15 +1950,16 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_setAdvancedGraphicsMode
 /*
  * Class:     sun_awt_windows_WPrinterJob
  * Method:    setGraphicsMode
- * Signature: (JI)I
+ * Signature: (JI)V
  */
-JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_setGraphicsMode
+JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setGraphicsMode
 (JNIEnv *env, jobject self, jlong printDC, jint mode) {
     TRY;
 
-    return (jint) ::SetGraphicsMode((HDC)printDC, mode);
+    int oldGraphicsMode = ::SetGraphicsMode((HDC)printDC, mode);
+    DASSERT(oldGraphicsMode != 0);
 
-    CATCH_BAD_ALLOC_RET(0);
+    CATCH_BAD_ALLOC;
 }
 
 /*
@@ -1978,7 +1980,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_scale
     xForm.eDx  = (FLOAT) 0;
     xForm.eDy  = (FLOAT) 0;
 
-    ::ModifyWorldTransform((HDC)printDC, &xForm, MWT_RIGHTMULTIPLY);
+    BOOL result = ::ModifyWorldTransform((HDC)printDC, &xForm, MWT_RIGHTMULTIPLY);
+    DASSERT(result);
 
     CATCH_BAD_ALLOC;
 }
@@ -1995,7 +1998,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_getWorldTransform
     double elems[6];
     XFORM xForm;
 
-    ::GetWorldTransform((HDC)printDC, &xForm);
+    BOOL result = ::GetWorldTransform((HDC)printDC, &xForm);
+    DASSERT(result);
 
     elems[0] = (double) xForm.eM11;
     elems[1] = (double) xForm.eM12;
@@ -2030,9 +2034,10 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setWorldTransform
     xForm.eDx  = (FLOAT) elems[4];
     xForm.eDy  = (FLOAT) elems[5];
 
-    ::SetWorldTransform((HDC)printDC, &xForm);
-
     env->ReleaseDoubleArrayElements(transform, elems, 0);
+
+    BOOL result = ::SetWorldTransform((HDC)printDC, &xForm);
+    DASSERT(result);
 
     CATCH_BAD_ALLOC;
 }
@@ -3009,14 +3014,10 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_drawDIBImage
 }
 
 /*
- * An utility function to print passed image byte array to
- * the printDC.
- * browserPrinting flag controls whether the image array
- * used as top-down (browserPrinting == JNI_TRUE) or
- * bottom-up (browserPrinting == JNI_FALSE) DIB.
+ * A utility function to print passed image byte array to the printDC.
+ * Prints as a bottom-up DIB.
  */
-static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
-                        HDC printDC, jbyteArray imageArray,
+static void doPrintBand(JNIEnv *env, HDC printDC, jbyteArray imageArray,
                         jint x, jint y, jint width, jint height) {
 
     TRY;
@@ -3031,15 +3032,9 @@ static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
         long startY = 0;
         long numLines = 0;
 
-        if (browserPrinting) {
-            /* for browser printing use top-down approach */
-            startImage =  image;
-        } else {
-            /* when printing to a real printer dc, the dib
-               should bottom-up */
-            startImage =  image + (scanLineStride * (height - 1));
-            scanLineStride = -scanLineStride;
-        }
+        /* when printing to a real printer dc, the dib should be bottom-up */
+        startImage =  image + (scanLineStride * (height - 1));
+        scanLineStride = -scanLineStride;
         do {
             startImage = findNonWhite(startImage, startY, width, height,
                                       scanLineStride, &numLines);
@@ -3048,15 +3043,7 @@ static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
                 startY += numLines;
                 endImage = findWhite(startImage, startY, width, height,
                                      scanLineStride, &numLines);
-                if (browserPrinting) {
-                    /* passing -numLines as height to indicate that
-                       we treat the image as a top-down DIB */
-                    bitsToDevice(printDC, startImage, x, y + startY, width,
-                                 -numLines);
-                } else {
-                    bitsToDevice(printDC, endImage, x, y + startY, width,
-                                 numLines);
-                }
+                bitsToDevice(printDC, endImage, x, y + startY, width, numLines);
                 startImage = endImage + scanLineStride;
                 startY += numLines;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ class ClassFileParser {
                                   ConstantPool* cp,
                                   TRAPS);
 
-  void prepend_host_package_name(const InstanceKlass* unsafe_anonymous_host, TRAPS);
+  void prepend_host_package_name(Thread* current, const InstanceKlass* unsafe_anonymous_host);
   void fix_unsafe_anonymous_class_name(TRAPS);
 
   void fill_instance_klass(InstanceKlass* ik, bool cf_changed_in_CFLH,
@@ -228,7 +228,7 @@ class ClassFileParser {
 
   void create_combined_annotations(TRAPS);
   void apply_parsed_class_attributes(InstanceKlass* k);  // update k
-  void apply_parsed_class_metadata(InstanceKlass* k, int fields_count, TRAPS);
+  void apply_parsed_class_metadata(InstanceKlass* k, int fields_count);
   void clear_class_metadata();
 
   // Constant pool parsing
@@ -349,7 +349,7 @@ class ClassFileParser {
                                   ClassAnnotationCollector* parsed_annotations,
                                   TRAPS);
 
-  void parse_classfile_synthetic_attribute(TRAPS);
+  void parse_classfile_synthetic_attribute();
   void parse_classfile_signature_attribute(const ClassFileStream* const cfs, TRAPS);
   void parse_classfile_bootstrap_methods_attribute(const ClassFileStream* const cfs,
                                                    ConstantPool* cp,

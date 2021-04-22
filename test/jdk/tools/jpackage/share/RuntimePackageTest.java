@@ -53,8 +53,6 @@ import jdk.jpackage.test.Annotations.Test;
  * @library ../helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @comment Temporary disable for OSX until functionality implemented
- * @requires (os.family != "mac")
  * @requires (jpackage.test.SQETest == null)
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
@@ -68,8 +66,6 @@ import jdk.jpackage.test.Annotations.Test;
  * @library ../helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @comment Temporary disable for OSX until functionality implemented
- * @requires (os.family != "mac")
  * @requires (jpackage.test.SQETest != null)
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
@@ -111,7 +107,11 @@ public class RuntimePackageTest {
         })
         .addInstallVerifier(cmd -> {
             Set<Path> srcRuntime = listFiles(Path.of(cmd.getArgumentValue("--runtime-image")));
-            Set<Path> dstRuntime = listFiles(cmd.appRuntimeDirectory());
+            Path dest = cmd.appRuntimeDirectory();
+            if (TKit.isOSX()) {
+                dest = dest.resolve("Contents/Home");
+            }
+            Set<Path> dstRuntime = listFiles(dest);
 
             Set<Path> intersection = new HashSet<>(srcRuntime);
             intersection.retainAll(dstRuntime);
@@ -126,7 +126,11 @@ public class RuntimePackageTest {
 
     private static Set<Path> listFiles(Path root) throws IOException {
         try (var files = Files.walk(root)) {
-            return files.map(root::relativize).collect(Collectors.toSet());
+            // Ignore files created by system prefs if any.
+            final Path prefsDir = Path.of(".systemPrefs");
+            return files.map(root::relativize)
+                    .filter(x -> !x.startsWith(prefsDir))
+                    .collect(Collectors.toSet());
         }
     }
 

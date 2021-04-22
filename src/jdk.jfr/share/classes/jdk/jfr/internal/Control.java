@@ -38,7 +38,7 @@ import jdk.jfr.internal.settings.JDKSettingControl;
 
 public final class Control {
     private final AccessControlContext context;
-    private final static int CACHE_SIZE = 5;
+    private static final int CACHE_SIZE = 5;
     private final Set<?>[] cachedUnions = new HashSet<?>[CACHE_SIZE];
     private final String[] cachedValues = new String[CACHE_SIZE];
     private final SettingControl delegate;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@
 #ifndef SHARE_OOPS_ARRAY_HPP
 #define SHARE_OOPS_ARRAY_HPP
 
-#include "memory/allocation.hpp"
-#include "memory/metaspace.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 // Array for metadata allocation
 
 template <typename T>
 class Array: public MetaspaceObj {
+  friend class ArchiveBuilder;
   friend class MetadataFactory;
-  friend class MetaspaceShared;
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class MethodHandleCompiler;           // special case
@@ -52,11 +52,7 @@ protected:
  private:
   NONCOPYABLE(Array);
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw() {
-    size_t word_size = Array::size(length);
-    return (void*) Metaspace::allocate(loader_data, word_size,
-                                       MetaspaceObj::array_type(sizeof(T)), THREAD);
-  }
+  inline void* operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw();
 
   static size_t byte_sizeof(int length, size_t elm_byte_size) {
     return sizeof(Array<T>) + MAX2(length - 1, 0) * elm_byte_size;

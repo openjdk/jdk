@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 #include "utilities/macros.hpp"
 
 void oopDesc::print_on(outputStream* st) const {
-  klass()->oop_print_on(oop(this), st);
+  klass()->oop_print_on(const_cast<oopDesc*>(this), st);
 }
 
 void oopDesc::print_address_on(outputStream* st) const {
@@ -68,7 +68,7 @@ char* oopDesc::print_value_string() {
 }
 
 void oopDesc::print_value_on(outputStream* st) const {
-  oop obj = oop(this);
+  oop obj = const_cast<oopDesc*>(this);
   if (java_lang_String::is_instance(obj)) {
     java_lang_String::print(obj, st);
     print_address_on(st);
@@ -143,6 +143,14 @@ bool oopDesc::has_klass_gap() {
   return UseCompressedClassPointers;
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+void oopDesc::set_narrow_klass(narrowKlass nk) {
+  assert(DumpSharedSpaces, "Used by CDS only. Do not abuse!");
+  assert(UseCompressedClassPointers, "must be");
+  _metadata._compressed_klass = nk;
+}
+#endif
+
 void* oopDesc::load_klass_raw(oop obj) {
   if (UseCompressedClassPointers) {
     narrowKlass narrow_klass = obj->_metadata._compressed_klass;
@@ -214,4 +222,7 @@ void oopDesc::verify_forwardee(oop forwardee) {
          "forwarding archive object");
 #endif
 }
+
+bool oopDesc::get_UseParallelGC() { return UseParallelGC; }
+bool oopDesc::get_UseG1GC()       { return UseG1GC;       }
 #endif

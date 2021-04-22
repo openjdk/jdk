@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,10 +188,10 @@ public:
   static bool enabled();
 
   // This should be called by JavaThreads to revoke the bias of an object
-  static void revoke(Handle obj, TRAPS);
+  static void revoke(JavaThread* current, Handle obj);
 
   // This must only be called by a JavaThread to revoke the bias of an owned object.
-  static void revoke_own_lock(Handle obj, TRAPS);
+  static void revoke_own_lock(JavaThread* current, Handle obj);
 
   static void revoke_at_safepoint(Handle obj);
 

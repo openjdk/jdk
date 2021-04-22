@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/shared/c1/cardTableBarrierSetC1.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef ASSERT
@@ -82,9 +83,6 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, L
   LIR_Opr dirty = LIR_OprFact::intConst(CardTable::dirty_card_val());
   if (UseCondCardMark) {
     LIR_Opr cur_value = gen->new_register(T_INT);
-    if (ct->scanned_concurrently()) {
-      __ membar_storeload();
-    }
     __ move(card_addr, cur_value);
 
     LabelObj* L_already_dirty = new LabelObj();
@@ -93,9 +91,6 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, L
     __ move(dirty, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
-    if (ct->scanned_concurrently()) {
-      __ membar_storestore();
-    }
     __ move(dirty, card_addr);
   }
 #endif

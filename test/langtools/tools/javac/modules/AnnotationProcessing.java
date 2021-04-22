@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747 8236842
+ * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747 8236842 8254023
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -518,6 +518,66 @@ public class AnnotationProcessing extends ModuleTestBase {
     }
 
     @Test
+    public void testAnnotationsWithoutTargetInModuleInfo(Path base) throws Exception {
+        Path moduleSrc = base.resolve("module-src");
+        Path m1 = moduleSrc.resolve("m1");
+
+        tb.writeJavaFiles(m1,
+                          "@test.A module m1x { exports test; }",
+                          "package test; public @interface A { }",
+                          "package test; public @interface B { }");
+
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        List<String> expectedLog = List.of("Note: m1x/test.A AP Invoked",
+                                           "Note: m1x/test.A AP Invoked");
+
+        List<String> actualLog = new JavacTask(tb)
+                .options("-processor", AnnotationsWithoutTargetInModuleInfo.class.getName()
+                         + "," + AnnotationsWithoutTargetNotInModuleInfo.class.getName())
+                .outdir(classes)
+                .files(findJavaFiles(m1))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.checkEqual(expectedLog, actualLog);
+    }
+
+    @SupportedAnnotationTypes("m1x/test.A")
+    public static final class AnnotationsWithoutTargetInModuleInfo extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            processingEnv.getMessager().printMessage(Kind.NOTE, "m1x/test.A AP Invoked");
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @SupportedAnnotationTypes("m1x/test.B")
+    public static final class AnnotationsWithoutTargetNotInModuleInfo extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            processingEnv.getMessager().printMessage(Kind.NOTE, "m1x/test.B AP Invoked");
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @Test
     public void testGenerateInMultiModeAPI(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path classes = base.resolve("classes");
@@ -846,7 +906,8 @@ public class AnnotationProcessing extends ModuleTestBase {
                     runCompiler(base,
                                 m1,
                                 classes,
-                                "createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"impl\", \"impl\"" + originating + "), \"impl\", \"impl\")",
+                                """
+                                    createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "impl", "impl\"""" + originating + "), \"impl\", \"impl\")",
                                 options);
                     assertFileExists(classes, modulePath, "impl", "impl");
                 }
@@ -984,28 +1045,31 @@ public class AnnotationProcessing extends ModuleTestBase {
 
     private void compileAP(Path target, String code) {
         String processorCode =
-            "import java.util.*;\n" +
-            "import javax.annotation.processing.*;\n" +
-            "import javax.lang.model.*;\n" +
-            "import javax.lang.model.element.*;\n" +
-            "import javax.lang.model.type.*;\n" +
-            "import javax.lang.model.util.*;\n" +
-            "import javax.tools.*;\n" +
-            "@SupportedAnnotationTypes(\"*\")\n" +
-            "public final class AP extends AnnotationProcessing.GeneratingAP {\n" +
-            "\n" +
-            "        int round;\n" +
-            "\n" +
-            "        @Override\n" +
-            "        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {\n" +
-            "            if (round++ != 0)\n" +
-            "                return false;\n" +
-            "            Filer filer = processingEnv.getFiler();\n" +
-            "            TypeElement jlObject = processingEnv.getElementUtils().getTypeElement(\"java.lang.Object\");\n" +
-            code + ";\n" +
-            "            return false;\n" +
-            "        }\n" +
-            "    }\n";
+            """
+                import java.util.*;
+                import javax.annotation.processing.*;
+                import javax.lang.model.*;
+                import javax.lang.model.element.*;
+                import javax.lang.model.type.*;
+                import javax.lang.model.util.*;
+                import javax.tools.*;
+                @SupportedAnnotationTypes("*")
+                public final class AP extends AnnotationProcessing.GeneratingAP {
+
+                        int round;
+
+                        @Override
+                        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+                            if (round++ != 0)
+                                return false;
+                            Filer filer = processingEnv.getFiler();
+                            TypeElement jlObject = processingEnv.getElementUtils().getTypeElement("java.lang.Object");
+                """ + code + """
+                ;
+                            return false;
+                        }
+                    }
+                """;
         new JavacTask(tb)
           .options("-classpath", System.getProperty("test.class.path"))
           .sources(processorCode)

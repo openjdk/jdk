@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,13 +118,13 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     }
 
     jvm = vm;
-
+#ifndef STATIC_BUILD
     /* Get address of this library and the directory containing it. */
     dladdr((void *)AWT_OnLoad, &dlinfo);
     realpath((char *)dlinfo.dli_fname, buf);
     len = strlen(buf);
     p = strrchr(buf, '/');
-
+#endif
     /*
      * The code below is responsible for:
      * 1. Loading appropriate awt library, i.e. libawt_xawt or libawt_headless
@@ -156,8 +156,10 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     }
 #endif
 
+#ifndef STATIC_BUILD
     /* Calculate library name to load */
     strncpy(p, tk, MAXPATHLEN-len-1);
+#endif
 
     if (fmProp) {
         (*env)->DeleteLocalRef(env, fmProp);
@@ -166,6 +168,8 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
         (*env)->DeleteLocalRef(env, fmanager);
     }
 
+
+#ifndef STATIC_BUILD
     jstring jbuf = JNU_NewStringPlatform(env, buf);
     CHECK_EXCEPTION_FATAL(env, "Could not allocate library name");
     JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "load",
@@ -173,7 +177,7 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
                                jbuf);
 
     awtHandle = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
-
+#endif
     return JNI_VERSION_1_2;
 }
 
@@ -181,60 +185,4 @@ JNIEXPORT jint JNICALL
 DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     return AWT_OnLoad(vm, reserved);
-}
-
-/*
- * This entry point must remain in libawt.so as part of a contract
- * with the CDE variant of Java Media Framework. (sdtjmplay)
- * Reflect this call over to the correct libawt_<toolkit>.so.
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
-                                     jobject frame, jstring jcommand)
-{
-    /* type of the old backdoor function */
-    typedef void JNICALL
-        XsessionWMcommand_type(JNIEnv *env, jobject this,
-                               jobject frame, jstring jcommand);
-
-    static XsessionWMcommand_type *XsessionWMcommand = NULL;
-
-    if (XsessionWMcommand == NULL && awtHandle == NULL) {
-        return;
-    }
-
-    XsessionWMcommand = (XsessionWMcommand_type *)
-        dlsym(awtHandle, "Java_sun_awt_motif_XsessionWMcommand");
-
-    if (XsessionWMcommand == NULL)
-        return;
-
-    (*XsessionWMcommand)(env, this, frame, jcommand);
-}
-
-
-/*
- * This entry point must remain in libawt.so as part of a contract
- * with the CDE variant of Java Media Framework. (sdtjmplay)
- * Reflect this call over to the correct libawt_<toolkit>.so.
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jargv)
-{
-    typedef void JNICALL
-        XsessionWMcommand_New_type(JNIEnv *env, jobjectArray jargv);
-
-    static XsessionWMcommand_New_type *XsessionWMcommand = NULL;
-
-    if (XsessionWMcommand == NULL && awtHandle == NULL) {
-        return;
-    }
-
-    XsessionWMcommand = (XsessionWMcommand_New_type *)
-        dlsym(awtHandle, "Java_sun_awt_motif_XsessionWMcommand_New");
-
-    if (XsessionWMcommand == NULL)
-        return;
-
-    (*XsessionWMcommand)(env, jargv);
 }

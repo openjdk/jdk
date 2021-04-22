@@ -52,13 +52,13 @@ tstring unsafe_format(tstring::const_pointer format, ...) {
 #ifdef _MSC_VER
         ret = _vsntprintf_s(&*fmtout.begin(), fmtout.size(), _TRUNCATE, format, args);
 #else
-#ifdef __GNUC__
+#if defined(__GNUC__) && __GNUC__ >= 5
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
         // With g++ this compiles only with '-std=gnu++0x' option
         ret = vsnprintf(&*fmtout.begin(), fmtout.size(), format, args);
-#ifdef __GNUC__
+#if defined(__GNUC__) && __GNUC__ >= 5
 #pragma GCC diagnostic pop
 #endif
 #endif
@@ -207,35 +207,33 @@ namespace {
  */
 std::string toMultiByte(const std::wstring& utf16str, int encoding) {
     std::string reply;
-    do {
-        int cm = WideCharToMultiByte(encoding,
-                                    0,
-                                    utf16str.c_str(),
-                                    int(utf16str.size()),
-                                    NULL,
-                                    0,
-                                    NULL,
-                                    NULL);
-        if (cm < 0) {
-            JP_THROW("Unexpected reply from WideCharToMultiByte()");
-        }
-        if (0 == cm) {
-            break;
-        }
+    int cm = WideCharToMultiByte(encoding,
+                                 0,
+                                 utf16str.c_str(),
+                                 int(utf16str.size()),
+                                 NULL,
+                                 0,
+                                 NULL,
+                                 NULL);
+    if (cm < 0) {
+        JP_THROW("Unexpected reply from WideCharToMultiByte()");
+    }
+    if (0 == cm) {
+        return reply;
+    }
 
-        reply.resize(cm);
-        int cm2 = WideCharToMultiByte(encoding,
-                                    0,
-                                    utf16str.c_str(),
-                                    int(utf16str.size()),
-                                    &*reply.begin(),
-                                    cm,
-                                    NULL,
-                                    NULL);
-        if (cm != cm2) {
-            JP_THROW("Unexpected reply from WideCharToMultiByte()");
-        }
-    } while(0);
+    reply.resize(cm);
+    int cm2 = WideCharToMultiByte(encoding,
+                                  0,
+                                  utf16str.c_str(),
+                                  int(utf16str.size()),
+                                  &*reply.begin(),
+                                  cm,
+                                  NULL,
+                                  NULL);
+    if (cm != cm2) {
+        JP_THROW("Unexpected reply from WideCharToMultiByte()");
+    }
 
     return reply;
 }
@@ -245,31 +243,29 @@ std::string toMultiByte(const std::wstring& utf16str, int encoding) {
  */
 std::wstring fromMultiByte(const std::string& str, int encoding) {
     std::wstring utf16;
-    do {
-        int cw = MultiByteToWideChar(encoding,
-                                    MB_ERR_INVALID_CHARS,
-                                    str.c_str(),
-                                    int(str.size()),
-                                    NULL,
-                                    0);
-        if (cw < 0) {
-            JP_THROW("Unexpected reply from MultiByteToWideChar()");
-        }
-        if (0 == cw) {
-            break;
-        }
+    int cw = MultiByteToWideChar(encoding,
+                                 MB_ERR_INVALID_CHARS,
+                                 str.c_str(),
+                                 int(str.size()),
+                                 NULL,
+                                 0);
+    if (cw < 0) {
+        JP_THROW("Unexpected reply from MultiByteToWideChar()");
+    }
+    if (0 == cw) {
+        return utf16;
+    }
 
-        utf16.resize(cw);
-        int cw2 = MultiByteToWideChar(encoding,
-                                    MB_ERR_INVALID_CHARS,
-                                    str.c_str(),
-                                    int(str.size()),
-                                    &*utf16.begin(),
-                                    cw);
-        if (cw != cw2) {
-            JP_THROW("Unexpected reply from MultiByteToWideChar()");
-        }
-    } while(0);
+    utf16.resize(cw);
+    int cw2 = MultiByteToWideChar(encoding,
+                                  MB_ERR_INVALID_CHARS,
+                                  str.c_str(),
+                                  int(str.size()),
+                                  &*utf16.begin(),
+                                  cw);
+    if (cw != cw2) {
+        JP_THROW("Unexpected reply from MultiByteToWideChar()");
+    }
 
     return utf16;
 }
@@ -285,6 +281,37 @@ std::string toUtf8(const std::wstring& utf16str) {
 
 std::wstring toUtf16(const std::string& utf8str) {
     return fromMultiByte(utf8str, CP_UTF8);
+}
+
+// converts utf16-encoded string to Windows encoded string (WIDECHAR or ACP)
+tstring toWinString(const std::wstring& utf16) {
+#if defined(_UNICODE) || defined(UNICODE)
+    return utf16;
+#else
+    return toMultiByte(utf16, CP_ACP);
+#endif
+}
+
+// converts utf8-encoded string to Windows encoded string (WIDECHAR or ACP)
+tstring toWinString(const std::string& utf8) {
+    return toWinString(tstrings::toUtf16(utf8));
+}
+
+
+std::string winStringToUtf8(const std::wstring& winStr) {
+    return toUtf8(winStr);
+}
+
+std::string winStringToUtf8(const std::string& winStr) {
+    return toUtf8(fromMultiByte(winStr, CP_ACP));
+}
+
+std::wstring winStringToUtf16(const std::wstring& winStr) {
+    return winStr;
+}
+
+std::wstring winStringToUtf16(const std::string& winStr) {
+    return fromMultiByte(winStr, CP_ACP);
 }
 
 } // namespace tstrings

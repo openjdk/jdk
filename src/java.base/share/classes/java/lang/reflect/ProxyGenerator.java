@@ -98,9 +98,9 @@ final class ProxyGenerator extends ClassWriter {
                             "jdk.proxy.ProxyGenerator.saveGeneratedFiles"));
 
     /* Preloaded ProxyMethod objects for methods in java.lang.Object */
-    private final static ProxyMethod hashCodeMethod;
-    private final static ProxyMethod equalsMethod;
-    private final static ProxyMethod toStringMethod;
+    private static final ProxyMethod hashCodeMethod;
+    private static final ProxyMethod equalsMethod;
+    private static final ProxyMethod toStringMethod;
 
     static {
         try {
@@ -203,10 +203,11 @@ final class ProxyGenerator extends ClassWriter {
     }
 
     /**
-     * Return an array of the type names from an array of Classes.
+     * Return an array of the class and interface names from an array of Classes.
      *
      * @param classes an array of classes or interfaces
-     * @return the array of class names; or null if there are no classes
+     * @return the array of class and interface names; or null if classes is
+     * null or empty
      */
     private static String[] typeNames(List<Class<?>> classes) {
         if (classes == null || classes.size() == 0)

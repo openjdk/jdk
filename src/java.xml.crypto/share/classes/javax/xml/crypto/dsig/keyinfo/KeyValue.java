@@ -133,7 +133,7 @@ public interface KeyValue extends XMLStructure {
      * {@link RetrievalMethod} class to describe a remote
      * <code>DSAKeyValue</code> structure.
      */
-    final static String DSA_TYPE =
+    static final String DSA_TYPE =
         "http://www.w3.org/2000/09/xmldsig#DSAKeyValue";
 
     /**
@@ -143,7 +143,7 @@ public interface KeyValue extends XMLStructure {
      * {@link RetrievalMethod} class to describe a remote
      * <code>RSAKeyValue</code> structure.
      */
-    final static String RSA_TYPE =
+    static final String RSA_TYPE =
         "http://www.w3.org/2000/09/xmldsig#RSAKeyValue";
 
     /**
@@ -153,7 +153,7 @@ public interface KeyValue extends XMLStructure {
      * {@link RetrievalMethod} class to describe a remote
      * <code>ECKeyValue</code> structure.
      */
-    final static String EC_TYPE =
+    static final String EC_TYPE =
         "http://www.w3.org/2009/xmldsig11#ECKeyValue";
 
     /**

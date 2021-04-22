@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -59,10 +57,10 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
@@ -267,6 +265,8 @@ bool os::unsetenv(const char* name) {
   assert(name != NULL, "Null pointer");
   return (SetEnvironmentVariable(name, NULL) == TRUE);
 }
+
+char** os::get_environ() { return _environ; }
 
 // No setuid programs under Windows.
 bool os::have_special_privileges() {
@@ -512,22 +512,13 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
   return NULL;
 }
 
+JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads
 static unsigned __stdcall thread_native_entry(Thread* thread) {
 
   thread->record_stack_base_and_size();
-
-  // Try to randomize the cache line index of hot stack frames.
-  // This helps when threads of the same stack traces evict each other's
-  // cache lines. The threads can be either from the same JVM instance, or
-  // from different JVM instances. The benefit is especially true for
-  // processors with hyperthreading technology.
-  static int counter = 0;
-  int pid = os::current_process_id();
-  _alloca(((pid ^ counter++) & 7) * 128);
-
   thread->initialize_thread_current();
 
   OSThread* osthr = thread->osthread();
@@ -1199,6 +1190,16 @@ void os::die() {
   win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
 }
 
+const char* os::dll_file_extension() { return ".dll"; }
+
+void  os::dll_unload(void *lib) {
+  ::FreeLibrary((HMODULE)lib);
+}
+
+void* os::dll_lookup(void *lib, const char *name) {
+  return (void*)::GetProcAddress((HMODULE)lib, name);
+}
+
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
 //  * dirent_md.c       1.15 00/02/02
 //
@@ -1701,9 +1702,9 @@ void os::print_os_info(outputStream* st) {
   char buffer[1024];
   st->print("HostName: ");
   if (get_host_name(buffer, sizeof(buffer))) {
-    st->print("%s ", buffer);
+    st->print_cr(buffer);
   } else {
-    st->print("N/A ");
+    st->print_cr("N/A");
   }
 #endif
   st->print_cr("OS:");
@@ -2206,28 +2207,7 @@ static int check_pending_signals() {
         return i;
       }
     }
-    JavaThread *thread = JavaThread::current();
-
-    ThreadBlockInVM tbivm(thread);
-
-    bool threadIsSuspended;
-    do {
-      thread->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-      sig_sem->wait();
-
-      // were we externally suspended while we were waiting?
-      threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
-      if (threadIsSuspended) {
-        // The semaphore has been incremented, but while we were waiting
-        // another thread suspended us. We don't want to continue running
-        // while suspended because that would surprise the thread that
-        // suspended us.
-        sig_sem->signal();
-
-        thread->java_suspend_self();
-      }
-    } while (threadIsSuspended);
+    sig_sem->wait_with_safepoint_check(JavaThread::current());
   }
   ShouldNotReachHere();
   return 0; // Satisfy compiler
@@ -2242,29 +2222,24 @@ int os::signal_wait() {
 LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
                       address handler) {
   Thread* thread = Thread::current_or_null();
-  // Save pc in thread
+
 #if defined(_M_ARM64)
-  // Do not blow up if no thread info available.
-  if (thread) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Pc);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->Pc = (DWORD64)handler;
+  #define PC_NAME Pc
 #elif defined(_M_AMD64)
-  // Do not blow up if no thread info available.
-  if (thread != NULL) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->Rip = (DWORD64)handler;
+  #define PC_NAME Rip
+#elif defined(_M_IX86)
+  #define PC_NAME Eip
 #else
-  // Do not blow up if no thread info available.
-  if (thread != NULL) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->Eip = (DWORD)(DWORD_PTR)handler;
+  #error unknown architecture
 #endif
+
+  // Save pc in thread
+  if (thread != nullptr && thread->is_Java_thread()) {
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->PC_NAME);
+  }
+
+  // Set pc to handler
+  exceptionInfo->ContextRecord->PC_NAME = (DWORD64)handler;
 
   // Continue the execution
   return EXCEPTION_CONTINUE_EXECUTION;
@@ -2446,6 +2421,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
 }
 
 //-----------------------------------------------------------------------------
+JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
@@ -3196,34 +3172,6 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// On win32, one cannot release just a part of reserved memory, it's an
-// all or nothing deal.  When we split a reservation, we must break the
-// reservation into two reservations.
-void os::split_reserved_memory(char *base, size_t size, size_t split) {
-
-  char* const split_address = base + split;
-  assert(size > 0, "Sanity");
-  assert(size > split, "Sanity");
-  assert(split > 0, "Sanity");
-  assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
-  assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
-
-  const bool rc = release_memory(base, size) &&
-                  (attempt_reserve_memory_at(base, split) != NULL) &&
-                  (attempt_reserve_memory_at(split_address, size - split) != NULL);
-  if (!rc) {
-    log_warning(os)("os::split_reserved_memory failed for " RANGE_FORMAT,
-                    RANGE_FORMAT_ARGS(base, size));
-    os::print_memory_mappings(base, size, tty);
-    assert(false, "os::split_reserved_memory failed for " RANGE_FORMAT,
-                    RANGE_FORMAT_ARGS(base, size));
-  }
-
-  // NMT: nothing to do here. Since Windows implements the split by
-  //  releasing and re-reserving memory, the parts are already registered
-  //  as individual mappings with NMT.
-}
-
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
@@ -3265,7 +3213,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+  // exec can be ignored
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
@@ -3273,13 +3222,13 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
   return map_or_reserve_memory_aligned(size, alignment, fd);
 }
 
-char* os::pd_reserve_memory(size_t bytes) {
-  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes);
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
+  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes, exec);
 }
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_page_size() == 0, "reserve page size");
@@ -3474,7 +3423,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t bytes) {
+bool os::pd_uncommit_memory(char* addr, size_t bytes, bool exec) {
   if (bytes == 0) {
     // Don't bother the OS with noops.
     return true;
@@ -4213,21 +4162,14 @@ jint os::init_2(void) {
 #endif
 
   // for debugging float code generation bugs
-  if (ForceFloatExceptions) {
-#ifndef  _WIN64
-    static long fp_control_word = 0;
-    __asm { fstcw fp_control_word }
-    // see Intel PPro Manual, Vol. 2, p 7-16
-    const long precision = 0x20;
-    const long underflow = 0x10;
-    const long overflow  = 0x08;
-    const long zero_div  = 0x04;
-    const long denorm    = 0x02;
-    const long invalid   = 0x01;
-    fp_control_word |= invalid;
-    __asm { fldcw fp_control_word }
+#if defined(ASSERT) && !defined(_WIN64)
+  static long fp_control_word = 0;
+  __asm { fstcw fp_control_word }
+  // see Intel PPro Manual, Vol. 2, p 7-16
+  const long invalid   = 0x01;
+  fp_control_word |= invalid;
+  __asm { fldcw fp_control_word }
 #endif
-  }
 
   // If stack_commit_size is 0, windows will reserve the default size,
   // but only commit a small portion of it.
@@ -4520,8 +4462,18 @@ bool os::same_files(const char* file1, const char* file2) {
     return true;
   }
 
-  HANDLE handle1 = create_read_only_file_handle(file1);
-  HANDLE handle2 = create_read_only_file_handle(file2);
+  char* native_file1 = os::strdup_check_oom(file1);
+  native_file1 = os::native_path(native_file1);
+  char* native_file2 = os::strdup_check_oom(file2);
+  native_file2 = os::native_path(native_file2);
+  if (strcmp(native_file1, native_file2) == 0) {
+    os::free(native_file1);
+    os::free(native_file2);
+    return true;
+  }
+
+  HANDLE handle1 = create_read_only_file_handle(native_file1);
+  HANDLE handle2 = create_read_only_file_handle(native_file2);
   bool result = false;
 
   // if we could open both paths...
@@ -4547,6 +4499,9 @@ bool os::same_files(const char* file1, const char* file2) {
   if (handle2 != INVALID_HANDLE_VALUE) {
     ::CloseHandle(handle2);
   }
+
+  os::free(native_file1);
+  os::free(native_file2);
 
   return result;
 }
@@ -4675,6 +4630,18 @@ int os::open(const char *path, int oflag, int mode) {
 
 FILE* os::open(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
+}
+
+size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  return ::write(fd, buf, nBytes);
+}
+
+int os::close(int fd) {
+  return ::close(fd);
+}
+
+void os::exit(int num) {
+  win32::exit_process_or_thread(win32::EPT_PROCESS, num);
 }
 
 // Is a (classpath) directory empty?
@@ -5468,11 +5435,10 @@ void os::PlatformEvent::unpark() {
 
 // The Windows implementation of Park is very straightforward: Basic
 // operations on Win32 Events turn out to have the right semantics to
-// use them directly. We opportunistically resuse the event inherited
-// from Monitor.
+// use them directly.
 
 void Parker::park(bool isAbsolute, jlong time) {
-  guarantee(_ParkEvent != NULL, "invariant");
+  guarantee(_ParkHandle != NULL, "invariant");
   // First, demultiplex/decode time arguments
   if (time < 0) { // don't wait
     return;
@@ -5494,27 +5460,21 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Don't wait if interrupted or already triggered
   if (thread->is_interrupted(false) ||
-      WaitForSingleObject(_ParkEvent, 0) == WAIT_OBJECT_0) {
-    ResetEvent(_ParkEvent);
+      WaitForSingleObject(_ParkHandle, 0) == WAIT_OBJECT_0) {
+    ResetEvent(_ParkHandle);
     return;
   } else {
     ThreadBlockInVM tbivm(thread);
     OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-    thread->set_suspend_equivalent();
 
-    WaitForSingleObject(_ParkEvent, time);
-    ResetEvent(_ParkEvent);
-
-    // If externally suspended while waiting, re-suspend
-    if (thread->handle_special_suspend_equivalent_condition()) {
-      thread->java_suspend_self();
-    }
+    WaitForSingleObject(_ParkHandle, time);
+    ResetEvent(_ParkHandle);
   }
 }
 
 void Parker::unpark() {
-  guarantee(_ParkEvent != NULL, "invariant");
-  SetEvent(_ParkEvent);
+  guarantee(_ParkHandle != NULL, "invariant");
+  SetEvent(_ParkHandle);
 }
 
 // Platform Monitor implementation
@@ -5539,7 +5499,7 @@ int os::PlatformMonitor::wait(jlong millis) {
 
 // Run the specified command in a separate process. Return its exit value,
 // or -1 on failure (e.g. can't create a new process).
-int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
+int os::fork_and_exec(const char* cmd, bool dummy /* ignored */) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   DWORD exit_code;
@@ -5816,58 +5776,6 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   }
   return agent_entry_name;
 }
-
-#ifndef PRODUCT
-
-// test the code path in reserve_memory_special() that tries to allocate memory in a single
-// contiguous memory block at a particular address.
-// The test first tries to find a good approximate address to allocate at by using the same
-// method to allocate some memory at any address. The test then tries to allocate memory in
-// the vicinity (not directly after it to avoid possible by-chance use of that location)
-// This is of course only some dodgy assumption, there is no guarantee that the vicinity of
-// the previously allocated memory is available for allocation. The only actual failure
-// that is reported is when the test tries to allocate at a particular location but gets a
-// different valid one. A NULL return value at this point is not considered an error but may
-// be legitimate.
-void TestReserveMemorySpecial_test() {
-  if (!UseLargePages) {
-    return;
-  }
-  // save current value of globals
-  bool old_use_large_pages_individual_allocation = UseLargePagesIndividualAllocation;
-  bool old_use_numa_interleaving = UseNUMAInterleaving;
-
-  // set globals to make sure we hit the correct code path
-  UseLargePagesIndividualAllocation = UseNUMAInterleaving = false;
-
-  // do an allocation at an address selected by the OS to get a good one.
-  const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
-  if (result == NULL) {
-  } else {
-    os::release_memory_special(result, large_allocation_size);
-
-    // allocate another page within the recently allocated memory area which seems to be a good location. At least
-    // we managed to get it once.
-    const size_t expected_allocation_size = os::large_page_size();
-    char* expected_location = result + os::large_page_size();
-    char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
-    if (actual_location == NULL) {
-    } else {
-      // release memory
-      os::release_memory_special(actual_location, expected_allocation_size);
-      // only now check, after releasing any memory to avoid any leaks.
-      assert(actual_location == expected_location,
-             "Failed to allocate memory at requested location " PTR_FORMAT " of size " SIZE_FORMAT ", is " PTR_FORMAT " instead",
-             expected_location, expected_allocation_size, actual_location);
-    }
-  }
-
-  // restore globals
-  UseLargePagesIndividualAllocation = old_use_large_pages_individual_allocation;
-  UseNUMAInterleaving = old_use_numa_interleaving;
-}
-#endif // PRODUCT
 
 /*
   All the defined signal names for Windows.

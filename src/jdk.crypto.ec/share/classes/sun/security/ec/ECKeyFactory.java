@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,12 +256,12 @@ public final class ECKeyFactory extends KeyFactorySpi {
         }
         if (key instanceof ECPublicKey) {
             ECPublicKey ecKey = (ECPublicKey)key;
-            if (ECPublicKeySpec.class.isAssignableFrom(keySpec)) {
+            if (keySpec.isAssignableFrom(ECPublicKeySpec.class)) {
                 return keySpec.cast(new ECPublicKeySpec(
                     ecKey.getW(),
                     ecKey.getParams()
                 ));
-            } else if (X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            } else if (keySpec.isAssignableFrom(X509EncodedKeySpec.class)) {
                 return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
             } else {
                 throw new InvalidKeySpecException
@@ -269,9 +269,9 @@ public final class ECKeyFactory extends KeyFactorySpi {
                         + "X509EncodedKeySpec for EC public keys");
             }
         } else if (key instanceof ECPrivateKey) {
-            if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            if (keySpec.isAssignableFrom(PKCS8EncodedKeySpec.class)) {
                 return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
-            } else if (ECPrivateKeySpec.class.isAssignableFrom(keySpec)) {
+            } else if (keySpec.isAssignableFrom(ECPrivateKeySpec.class)) {
                 ECPrivateKey ecKey = (ECPrivateKey)key;
                 return keySpec.cast(new ECPrivateKeySpec(
                     ecKey.getS(),

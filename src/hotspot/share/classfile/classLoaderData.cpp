@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -363,7 +364,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
 #ifdef ASSERT
       oop m = k->java_mirror();
       assert(m != NULL, "NULL mirror");
-      assert(m->is_a(SystemDictionary::Class_klass()), "invalid mirror");
+      assert(m->is_a(vmClasses::Class_klass()), "invalid mirror");
 #endif
       klass_closure->do_klass(k);
     }
@@ -585,7 +586,7 @@ Dictionary* ClassLoaderData::create_dictionary() {
   if (_the_null_class_loader_data == NULL) {
     size = _boot_loader_dictionary_size;
     resizable = true;
-  } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
+  } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
     size = 1;  // there's only one class in relection class loader and no initiated classes
   } else if (is_system_class_loader_data()) {
     size = _boot_loader_dictionary_size;
@@ -768,7 +769,7 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::BootMetaspaceType);
       } else if (has_class_mirror_holder()) {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ClassMirrorHolderMetaspaceType);
-      } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
+      } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType);
       } else {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::StandardMetaspaceType);
@@ -929,20 +930,57 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
 void ClassLoaderData::print_value() const { print_value_on(tty); }
 
 #ifndef PRODUCT
-void ClassLoaderData::print_on(outputStream* out) const {
-  out->print("ClassLoaderData CLD: " PTR_FORMAT ", loader: " PTR_FORMAT ", loader_klass: %s {",
-              p2i(this), p2i(_class_loader.ptr_raw()), loader_name_and_id());
-  if (has_class_mirror_holder()) out->print(" has a class holder");
-  if (claimed()) out->print(" claimed");
-  if (is_unloading()) out->print(" unloading");
-  out->print(" metaspace: " INTPTR_FORMAT, p2i(metaspace_or_null()));
+class PrintKlassClosure: public KlassClosure {
+  outputStream* _out;
+public:
+  PrintKlassClosure(outputStream* out): _out(out) { }
 
-  if (_jmethod_ids != NULL) {
-    Method::print_jmethod_ids(this, out);
+  void do_klass(Klass* k) {
+    ResourceMark rm;
+    _out->print("%s,", k->external_name());
   }
-  out->print(" handles count %d", _handles.count());
-  out->print(" dependencies %d", _dependency_count);
-  out->print_cr("}");
+};
+
+void ClassLoaderData::print_on(outputStream* out) const {
+  ResourceMark rm;
+  out->print_cr("ClassLoaderData(" INTPTR_FORMAT ")", p2i(this));
+  out->print_cr(" - name                %s", loader_name_and_id());
+  if (!_holder.is_null()) {
+    out->print   (" - holder              ");
+    _holder.print_on(out);
+    out->print_cr("");
+  }
+  out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.ptr_raw()));
+  out->print_cr(" - metaspace           " INTPTR_FORMAT, p2i(_metaspace));
+  out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
+  out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
+  out->print_cr(" - modified oops       %s", _modified_oops ? "true" : "false");
+  out->print_cr(" - keep alive          %d", _keep_alive);
+  out->print   (" - claim               ");
+  switch(_claim) {
+    case _claim_none:       out->print_cr("none"); break;
+    case _claim_finalizable:out->print_cr("finalizable"); break;
+    case _claim_strong:     out->print_cr("strong"); break;
+    case _claim_other:      out->print_cr("other"); break;
+    default:                ShouldNotReachHere();
+  }
+  out->print_cr(" - handles             %d", _handles.count());
+  out->print_cr(" - dependency count    %d", _dependency_count);
+  out->print   (" - klasses             {");
+  PrintKlassClosure closure(out);
+  ((ClassLoaderData*)this)->classes_do(&closure);
+  out->print_cr(" }");
+  out->print_cr(" - packages            " INTPTR_FORMAT, p2i(_packages));
+  out->print_cr(" - module              " INTPTR_FORMAT, p2i(_modules));
+  out->print_cr(" - unnamed module      " INTPTR_FORMAT, p2i(_unnamed_module));
+  out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
+  if (_jmethod_ids != NULL) {
+    out->print   (" - jmethod count       ");
+    Method::print_jmethod_ids_count(this, out);
+    out->print_cr("");
+  }
+  out->print_cr(" - deallocate list     " INTPTR_FORMAT, p2i(_deallocate_list));
+  out->print_cr(" - next CLD            " INTPTR_FORMAT, p2i(_next));
 }
 #endif // PRODUCT
 

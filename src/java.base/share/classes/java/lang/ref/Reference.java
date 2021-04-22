@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public abstract class Reference<T> {
      *     pending: next element in the pending-Reference list (null if last)
      *    inactive: null
      */
-    private transient Reference<T> discovered;
+    private transient Reference<?> discovered;
 
 
     /* High-priority thread to enqueue pending References
@@ -220,7 +220,7 @@ public abstract class Reference<T> {
     /*
      * Atomically get and clear (set to null) the VM's pending-Reference list.
      */
-    private static native Reference<Object> getAndClearReferencePendingList();
+    private static native Reference<?> getAndClearReferencePendingList();
 
     /*
      * Test whether the VM's pending-Reference list contains any entries.
@@ -232,6 +232,16 @@ public abstract class Reference<T> {
      */
     private static native void waitForReferencePendingList();
 
+    /*
+     * Enqueue a Reference taken from the pending list.  Calling this method
+     * takes us from the Reference<?> domain of the pending list elements to
+     * having a Reference<T> with a correspondingly typed queue.
+     */
+    private void enqueueFromPending() {
+        var q = queue;
+        if (q != ReferenceQueue.NULL) q.enqueue(this);
+    }
+
     private static final Object processPendingLock = new Object();
     private static boolean processPendingActive = false;
 
@@ -241,13 +251,13 @@ public abstract class Reference<T> {
         // These are separate operations to avoid a race with other threads
         // that are calling waitForReferenceProcessing().
         waitForReferencePendingList();
-        Reference<Object> pendingList;
+        Reference<?> pendingList;
         synchronized (processPendingLock) {
             pendingList = getAndClearReferencePendingList();
             processPendingActive = true;
         }
         while (pendingList != null) {
-            Reference<Object> ref = pendingList;
+            Reference<?> ref = pendingList;
             pendingList = ref.discovered;
             ref.discovered = null;
 
@@ -260,8 +270,7 @@ public abstract class Reference<T> {
                     processPendingLock.notifyAll();
                 }
             } else {
-                ReferenceQueue<? super Object> q = ref.queue;
-                if (q != ReferenceQueue.NULL) q.enqueue(ref);
+                ref.enqueueFromPending();
             }
         }
         // Notify any waiters of completion of current round.

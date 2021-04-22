@@ -55,17 +55,17 @@ public abstract class EventByteStream implements Closeable {
         return new FinishedStream(is, blockSize);
     }
 
-    final protected void touch() {
+    protected final void touch() {
         time = System.currentTimeMillis();
     }
 
-    final public long getLastTouched() {
+    public final long getLastTouched() {
         return time;
     }
 
-    abstract public byte[] read() throws IOException;
+    public abstract byte[] read() throws IOException;
 
-    final public long getId() {
+    public final long getId() {
         return identifier;
     }
 }

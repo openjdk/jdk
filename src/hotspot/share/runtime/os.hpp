@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_OS_HPP
 #define SHARE_RUNTIME_OS_HPP
 
-#include "jvm.h"
+#include "jvm_md.h"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -77,6 +77,11 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+enum WXMode {
+  WXWrite,
+  WXExec
+};
+
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
 const bool ExecMem = true;
@@ -125,9 +130,9 @@ class os: AllStatic {
   static address            _polling_page;
   static PageSizes          _page_sizes;
 
-  static char*  pd_reserve_memory(size_t bytes);
+  static char*  pd_reserve_memory(size_t bytes, bool executable);
 
-  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
 
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -139,7 +144,7 @@ class os: AllStatic {
   static void   pd_commit_memory_or_exit(char* addr, size_t size,
                                          size_t alignment_hint,
                                          bool executable, const char* mesg);
-  static bool   pd_uncommit_memory(char* addr, size_t bytes);
+  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
   static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
@@ -182,6 +187,8 @@ class os: AllStatic {
 
   // unset environment variable
   static bool unsetenv(const char* name);
+  // Get environ pointer, platform independently
+  static char** get_environ();
 
   static bool have_special_privileges();
 
@@ -190,7 +197,6 @@ class os: AllStatic {
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
   static void   run_periodic_checks();
-  static bool   supports_monotonic_clock();
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -327,24 +333,14 @@ class os: AllStatic {
   static int    vm_allocation_granularity();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, MEMFLAGS flags = mtOther);
+  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtOther);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes);
-
-  // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
-  //  [base+split, base+size).
-  //  This may remove the original mapping, so its content may be lost.
-  // Both base and split point must be aligned to allocation granularity; split point shall
-  //  be >0 and <size.
-  // Splitting guarantees that the resulting two memory regions can be released independently
-  //  from each other using os::release_memory(). It also means NMT will track these regions
-  //  individually, allowing different tags to be set.
-  static void   split_reserved_memory(char *base, size_t size, size_t split);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -356,7 +352,7 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes);
+  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
 
   // A diagnostic function to print memory mappings in the given range.
@@ -512,8 +508,12 @@ class os: AllStatic {
 
   static bool message_box(const char* title, const char* message);
 
-  // run cmd in a separate process and return its exit code; or -1 on failures
-  static int fork_and_exec(char *cmd, bool use_vfork_if_available = false);
+  // run cmd in a separate process and return its exit code; or -1 on failures.
+  // Note: only safe to use in fatal error situations.
+  // The "prefer_vfork" argument is only used on POSIX platforms to
+  // indicate whether vfork should be used instead of fork to spawn the
+  // child process (ignored on AIX, which always uses vfork).
+  static int fork_and_exec(const char *cmd, bool prefer_vfork = false);
 
   // Call ::exit() on all platforms but Windows
   static void exit(int num);
@@ -598,6 +598,24 @@ class os: AllStatic {
   // and offset is set to -1 (if offset is non-NULL).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
+
+  // Given an address, attempt to locate both the symbol and the library it
+  // resides in. If at least one of these steps was successful, prints information
+  // and returns true.
+  // - if no scratch buffer is given, stack is used
+  // - shorten_paths: path is omitted from library name
+  // - demangle: function name is demangled
+  // - strip_arguments: arguments are stripped (requires demangle=true)
+  // On success prints either one of:
+  // "<function name>+<offset> in <library>"
+  // "<function name>+<offset>"
+  // "<address> in <library>+<offset>"
+  static bool print_function_and_library_name(outputStream* st,
+                                              address addr,
+                                              char* buf = NULL, int buflen = 0,
+                                              bool shorten_paths = true,
+                                              bool demangle = true,
+                                              bool strip_arguments = false);
 
   // Find out whether the pc is in the static code for jvm.dll/libjvm.so.
   static bool address_is_in_vm(address addr);
@@ -918,6 +936,11 @@ class os: AllStatic {
     Thread* _thread;
     bool _done;
   };
+
+#if defined(__APPLE__) && defined(AARCH64)
+  // Enables write or execute access to writeable and executable pages.
+  static void current_thread_enable_wx(WXMode mode);
+#endif // __APPLE__ && AARCH64
 
 #ifndef _WINDOWS
   // Suspend/resume support

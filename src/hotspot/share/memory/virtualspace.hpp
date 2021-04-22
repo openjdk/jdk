@@ -48,6 +48,17 @@ class ReservedSpace {
   ReservedSpace(char* base, size_t size, size_t alignment, bool special,
                 bool executable);
  protected:
+  // Helpers to clear and set members during initialization. Two members
+  // require special treatment:
+  //  * _fd_for_heap     - The fd is set once and should not be cleared
+  //                       even if the reservation has to be retried.
+  //  * _noaccess_prefix - Used for compressed heaps and updated after
+  //                       the reservation is initialized. Always set to
+  //                       0 during initialization.
+  void clear_members();
+  void initialize_members(char* base, size_t size, size_t alignment,
+                          bool special, bool executable);
+
   void initialize(size_t size, size_t alignment, bool large,
                   char* requested_address,
                   bool executable);
@@ -55,11 +66,14 @@ class ReservedSpace {
  public:
   // Constructor
   ReservedSpace();
-  // Initialize the reserved space with the given size. If preferred_page_size
-  // is set, use this as minimum page size/alignment. This may waste some space
-  // if the given size is not aligned to that value, as the reservation will be
+  // Initialize the reserved space with the given size. Depending on the size
+  // a suitable page size and alignment will be used.
+  explicit ReservedSpace(size_t size);
+  // Initialize the reserved space with the given size. The preferred_page_size
+  // is used as the minimum page size/alignment. This may waste some space if
+  // the given size is not aligned to that value, as the reservation will be
   // aligned up to the final alignment in this case.
-  ReservedSpace(size_t size, size_t preferred_page_size = 0);
+  ReservedSpace(size_t size, size_t preferred_page_size);
   ReservedSpace(size_t size, size_t alignment, bool large,
                 char* requested_address = NULL);
 
@@ -76,17 +90,11 @@ class ReservedSpace {
 
   // Splitting
   // This splits the space into two spaces, the first part of which will be returned.
-  // If split==true, the resulting two spaces can be released independently from each other.
-  //  This may cause the original space to loose its content.
-  //  They also will be tracked individually by NMT and can be tagged with different flags.
-  //  Note that this may cause the original space to loose its content.
-  // If split==false, the resulting space will be just a hotspot-internal representation
-  //  of a sub section of the underlying mapping.
-  ReservedSpace first_part(size_t partition_size, size_t alignment, bool split = false);
+  ReservedSpace first_part(size_t partition_size, size_t alignment);
   ReservedSpace last_part (size_t partition_size, size_t alignment);
 
   // These simply call the above using the default alignment.
-  inline ReservedSpace first_part(size_t partition_size, bool split = false);
+  inline ReservedSpace first_part(size_t partition_size);
   inline ReservedSpace last_part (size_t partition_size);
 
   // Alignment
@@ -101,9 +109,9 @@ class ReservedSpace {
 };
 
 ReservedSpace
-ReservedSpace::first_part(size_t partition_size, bool split)
+ReservedSpace::first_part(size_t partition_size)
 {
-  return first_part(partition_size, alignment(), split);
+  return first_part(partition_size, alignment());
 }
 
 ReservedSpace ReservedSpace::last_part(size_t partition_size)

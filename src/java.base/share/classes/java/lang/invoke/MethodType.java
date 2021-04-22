@@ -199,19 +199,13 @@ class MethodType
     /*non-public*/
     static final int MAX_MH_INVOKER_ARITY = MAX_MH_ARITY-1;  // deduct one more for invoker
 
-    private static void checkRtype(Class<?> rtype) {
-        Objects.requireNonNull(rtype);
-    }
-    private static void checkPtype(Class<?> ptype) {
-        Objects.requireNonNull(ptype);
-        if (ptype == void.class)
-            throw newIllegalArgumentException("parameter type cannot be void");
-    }
     /** Return number of extra slots (count of long/double args). */
     private static int checkPtypes(Class<?>[] ptypes) {
         int slots = 0;
         for (Class<?> ptype : ptypes) {
-            checkPtype(ptype);
+            Objects.requireNonNull(ptype);
+            if (ptype == void.class)
+                throw newIllegalArgumentException("parameter type cannot be void");
             if (ptype == double.class || ptype == long.class) {
                 slots++;
             }
@@ -328,10 +322,14 @@ class MethodType
     }
 
     /**
-     * Sole factory method to find or create an interned method type.
+     * Sole factory method to find or create an interned method type. Will perform
+     * input validation on behalf of factory methods
+     *
      * @param rtype desired return type
      * @param ptypes desired parameter types
      * @param trusted whether the ptypes can be used without cloning
+     * @throws NullPointerException if {@code rtype} or {@code ptypes} or any element of {@code ptypes} is null
+     * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
      * @return the unique method type of the desired structure
      */
     /*trusted*/
@@ -345,7 +343,7 @@ class MethodType
             return mt;
 
         // promote the object to the Real Thing, and reprobe
-        MethodType.checkRtype(rtype);
+        Objects.requireNonNull(rtype);
         if (trusted) {
             MethodType.checkPtypes(ptypes);
             mt = primordialMT;
@@ -415,7 +413,6 @@ class MethodType
      */
     public MethodType changeParameterType(int num, Class<?> nptype) {
         if (parameterType(num) == nptype)  return this;
-        checkPtype(nptype);
         Class<?>[] nptypes = ptypes.clone();
         nptypes[num] = nptype;
         return makeImpl(rtype, nptypes, true);
@@ -745,7 +742,7 @@ class MethodType
         MethodType wt = (MethodType)pt.wrapAlt;
         if (wt == null) {
             // fill in lazily
-            wt = MethodTypeForm.canonicalize(pt, MethodTypeForm.WRAP, MethodTypeForm.WRAP);
+            wt = MethodTypeForm.canonicalize(pt, MethodTypeForm.WRAP);
             assert(wt != null);
             pt.wrapAlt = wt;
         }
@@ -757,7 +754,7 @@ class MethodType
         MethodType uwt = (MethodType)wt.wrapAlt;
         if (uwt == null) {
             // fill in lazily
-            uwt = MethodTypeForm.canonicalize(wt, MethodTypeForm.UNWRAP, MethodTypeForm.UNWRAP);
+            uwt = MethodTypeForm.canonicalize(wt, MethodTypeForm.UNWRAP);
             if (uwt == null)
                 uwt = wt;    // type has no wrappers or prims at all
             wt.wrapAlt = uwt;

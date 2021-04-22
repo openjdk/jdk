@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,10 +68,10 @@ public class TestFPBinop {
      * from simplifying some of the expressions by using algebraic
      * identities. */
     static {
-        fOne = new Integer(1).floatValue();
-        fZero = new Integer(0).floatValue();
-        dOne = new Integer(1).doubleValue();
-        dZero = new Integer(0).doubleValue();
+        fOne = Integer.valueOf(1).floatValue();
+        fZero = Integer.valueOf(0).floatValue();
+        dOne = Integer.valueOf(1).doubleValue();
+        dZero = Integer.valueOf(0).doubleValue();
     }
 
     static final boolean DEBUG = false;
@@ -368,7 +368,7 @@ public class TestFPBinop {
 
     static int index(float x) {
         for (int i = 0; i < floatValues.length; i++) {
-            if (new Float(x).equals(new Float(floatValues[i])))
+            if (Float.valueOf(x).equals(Float.valueOf(floatValues[i])))
                 return i;
         }
         throw new TestFailure("ERROR: can't find " + x + " in floatValues.");
@@ -376,7 +376,7 @@ public class TestFPBinop {
 
     static int index(double x) {
         for (int i = 0; i < doubleValues.length; i++) {
-            if (new Double(x).equals(new Double(doubleValues[i])))
+            if (Double.valueOf(x).equals(Double.valueOf(doubleValues[i])))
                 return i;
         }
         throw new TestFailure("ERROR: can't find " + x + " in doubleValues.");

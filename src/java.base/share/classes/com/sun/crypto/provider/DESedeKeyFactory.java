@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public final class DESedeKeyFactory extends SecretKeyFactorySpi {
                 && (key.getFormat().equalsIgnoreCase("RAW"))) {
 
                 // Check if requested key spec is amongst the valid ones
-                if (DESedeKeySpec.class.isAssignableFrom(keySpec)) {
+                if (keySpec.isAssignableFrom(DESedeKeySpec.class)) {
                     return new DESedeKeySpec(key.getEncoded());
 
                 } else {

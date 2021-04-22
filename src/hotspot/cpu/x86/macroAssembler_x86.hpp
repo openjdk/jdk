@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "asm/assembler.hpp"
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
+#include "runtime/vm_version.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -167,6 +168,9 @@ class MacroAssembler: public Assembler {
   void movflt(XMMRegister dst, Address src) { movss(dst, src); }
   void movflt(XMMRegister dst, AddressLiteral src);
   void movflt(Address dst, XMMRegister src) { movss(dst, src); }
+
+  // Move with zero extension
+  void movfltz(XMMRegister dst, XMMRegister src) { movss(dst, src); }
 
   void movdbl(XMMRegister dst, XMMRegister src) {
     if (dst-> encoding() == src->encoding()) return;
@@ -1086,6 +1090,23 @@ public:
   void kmovwl(Register dst, KRegister src) { Assembler::kmovwl(dst, src); }
   void kmovwl(KRegister dst, Address src) { Assembler::kmovwl(dst, src); }
   void kmovwl(KRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
+  void kmovwl(Address dst,  KRegister src) { Assembler::kmovwl(dst, src); }
+  void kmovwl(KRegister dst, KRegister src) { Assembler::kmovwl(dst, src); }
+
+  void kmovql(KRegister dst, KRegister src) { Assembler::kmovql(dst, src); }
+  void kmovql(KRegister dst, Register src) { Assembler::kmovql(dst, src); }
+  void kmovql(Register dst, KRegister src) { Assembler::kmovql(dst, src); }
+  void kmovql(KRegister dst, Address src) { Assembler::kmovql(dst, src); }
+  void kmovql(Address  dst, KRegister src) { Assembler::kmovql(dst, src); }
+  void kmovql(KRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
+
+  // Safe move operation, lowers down to 16bit moves for targets supporting
+  // AVX512F feature and 64bit moves for targets supporting AVX512BW feature.
+  void kmov(Address  dst, KRegister src);
+  void kmov(KRegister dst, Address src);
+  void kmov(KRegister dst, KRegister src);
+  void kmov(Register dst, KRegister src);
+  void kmov(KRegister dst, Register src);
 
   // AVX Unaligned forms
   void vmovdqu(Address     dst, XMMRegister src);
@@ -1241,6 +1262,7 @@ public:
 
   void vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vpaddb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch);
 
   void vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
@@ -1392,7 +1414,7 @@ public:
 
   void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8) {
     if (UseAVX > 2 && VM_Version::supports_avx512novl()) {
-      Assembler::vinserti32x4(dst, dst, src, imm8);
+      Assembler::vinserti32x4(dst, nds, src, imm8);
     } else if (UseAVX > 1) {
       // vinserti128 is available only in AVX2
       Assembler::vinserti128(dst, nds, src, imm8);
@@ -1403,7 +1425,7 @@ public:
 
   void vinserti128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8) {
     if (UseAVX > 2 && VM_Version::supports_avx512novl()) {
-      Assembler::vinserti32x4(dst, dst, src, imm8);
+      Assembler::vinserti32x4(dst, nds, src, imm8);
     } else if (UseAVX > 1) {
       // vinserti128 is available only in AVX2
       Assembler::vinserti128(dst, nds, src, imm8);
@@ -1678,10 +1700,13 @@ public:
 
   // clear memory of size 'cnt' qwords, starting at 'base';
   // if 'is_large' is set, do not try to produce short loop
-  void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large);
+  void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large, KRegister mask=knoreg);
+
+  // clear memory initialization sequence for constant size;
+  void clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp, KRegister mask=knoreg);
 
   // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM registers
-  void xmm_clear_mem(Register base, Register cnt, XMMRegister xtmp);
+  void xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, KRegister mask=knoreg);
 
   // Fill primitive arrays
   void generate_fill(BasicType t, bool aligned,
@@ -1794,11 +1819,24 @@ public:
   // Compress char[] array to byte[].
   void char_array_compress(Register src, Register dst, Register len,
                            XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
-                           XMMRegister tmp4, Register tmp5, Register result);
+                           XMMRegister tmp4, Register tmp5, Register result,
+                           KRegister mask1 = knoreg, KRegister mask2 = knoreg);
 
   // Inflate byte[] array to char[].
   void byte_array_inflate(Register src, Register dst, Register len,
-                          XMMRegister tmp1, Register tmp2);
+                          XMMRegister tmp1, Register tmp2, KRegister mask = knoreg);
+
+  void fill64_masked_avx(uint shift, Register dst, int disp,
+                         XMMRegister xmm, KRegister mask, Register length,
+                         Register temp, bool use64byteVector = false);
+
+  void fill32_masked_avx(uint shift, Register dst, int disp,
+                         XMMRegister xmm, KRegister mask, Register length,
+                         Register temp);
+
+  void fill32_avx(Register dst, int disp, XMMRegister xmm);
+
+  void fill64_avx(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
 
 #ifdef _LP64
   void convert_f2i(Register dst, XMMRegister src);

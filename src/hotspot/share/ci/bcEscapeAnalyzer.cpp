@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "ci/ciField.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciStreams.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
@@ -275,7 +276,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
 
   // direct recursive calls are skipped if they can be bound statically without introducing
   // dependencies and if parameters are passed at the same position as in the current method
-  // other calls are skipped if there are no unescaped arguments passed to them
+  // other calls are skipped if there are no non-escaped arguments passed to them
   bool directly_recursive = (method() == target) &&
                (code != Bytecodes::_invokevirtual || target->is_final_method() || state._stack[arg_base] .is_empty());
 
@@ -301,8 +302,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   // determine actual method (use CHA if necessary)
   ciMethod* inline_target = NULL;
   if (target->is_loaded() && klass->is_loaded()
-      && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
-      && target->is_loaded()) {
+      && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))) {
     if (code == Bytecodes::_invokestatic
         || code == Bytecodes::_invokespecial
         || (code == Bytecodes::_invokevirtual && target->is_final_method())) {
