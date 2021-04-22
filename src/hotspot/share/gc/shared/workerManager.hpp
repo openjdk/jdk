@@ -50,7 +50,7 @@ class WorkerManager : public AllStatic {
   // create all the worker at start should considered a problem so exit.
   // If initializing = false, there are already some number of worker
   // threads and a failure would not be optimal but should not be fatal.
-  static uint add_workers (AbstractWorkGang* holder,
+  static uint add_workers (WorkGang* holder,
                            uint active_workers,
                            uint total_workers,
                            uint created_workers,
@@ -58,14 +58,14 @@ class WorkerManager : public AllStatic {
                            bool initializing);
 
   // Log (at trace level) a change in the number of created workers.
-  static void log_worker_creation(AbstractWorkGang* holder,
+  static void log_worker_creation(WorkGang* holder,
                                   uint previous_created_workers,
                                   uint active_workers,
                                   uint created_workers,
                                   bool initializing);
 };
 
-uint WorkerManager::add_workers(AbstractWorkGang* holder,
+uint WorkerManager::add_workers(WorkGang* holder,
                                 uint active_workers,
                                 uint total_workers,
                                 uint created_workers,
@@ -98,7 +98,7 @@ uint WorkerManager::add_workers(AbstractWorkGang* holder,
   return created_workers;
 }
 
-void WorkerManager::log_worker_creation(AbstractWorkGang* holder,
+void WorkerManager::log_worker_creation(WorkGang* holder,
                                         uint previous_created_workers,
                                         uint active_workers,
                                         uint created_workers,

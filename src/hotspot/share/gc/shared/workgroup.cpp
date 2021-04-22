@@ -34,72 +34,6 @@
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
 
-// Definitions of WorkGang methods.
-
-AbstractWorkGang::AbstractWorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads) :
-      _workers(NULL),
-      _total_workers(workers),
-      _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
-      _created_workers(0),
-      _name(name),
-      _are_GC_task_threads(are_GC_task_threads),
-      _are_ConcurrentGC_threads(are_ConcurrentGC_threads)
-  { }
-
-
-// The current implementation will exit if the allocation
-// of any worker fails.
-void  AbstractWorkGang::initialize_workers() {
-  log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), total_workers());
-  _workers = NEW_C_HEAP_ARRAY(AbstractGangWorker*, total_workers(), mtInternal);
-  add_workers(true);
-}
-
-
-AbstractGangWorker* AbstractWorkGang::install_worker(uint worker_id) {
-  AbstractGangWorker* new_worker = allocate_worker(worker_id);
-  set_thread(worker_id, new_worker);
-  return new_worker;
-}
-
-void AbstractWorkGang::add_workers(bool initializing) {
-  os::ThreadType worker_type;
-  if (are_ConcurrentGC_threads()) {
-    worker_type = os::cgc_thread;
-  } else {
-    worker_type = os::pgc_thread;
-  }
-  uint previous_created_workers = _created_workers;
-
-  _created_workers = WorkerManager::add_workers(this,
-                                                _active_workers,
-                                                _total_workers,
-                                                _created_workers,
-                                                worker_type,
-                                                initializing);
-  _active_workers = MIN2(_created_workers, _active_workers);
-
-  WorkerManager::log_worker_creation(this, previous_created_workers, _active_workers, _created_workers, initializing);
-}
-
-AbstractGangWorker* AbstractWorkGang::worker(uint i) const {
-  // Array index bounds checking.
-  AbstractGangWorker* result = NULL;
-  assert(_workers != NULL, "No workers for indexing");
-  assert(i < total_workers(), "Worker index out of bounds");
-  result = _workers[i];
-  assert(result != NULL, "Indexing to null worker");
-  return result;
-}
-
-void AbstractWorkGang::threads_do(ThreadClosure* tc) const {
-  assert(tc != NULL, "Null ThreadClosure");
-  uint workers = created_workers();
-  for (uint i = 0; i < workers; i++) {
-    tc->do_thread(worker(i));
-  }
-}
-
 static void run_foreground_task_if_needed(AbstractGangTask* task, uint num_workers,
                                           bool add_foreground_work) {
   if (add_foreground_work) {
@@ -193,17 +127,74 @@ public:
     }
   }
 };
+// Definitions of WorkGang methods.
 
-WorkGang::WorkGang(const char* name,
-                   uint  workers,
-                   bool  are_GC_task_threads,
-                   bool  are_ConcurrentGC_threads) :
-    AbstractWorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads),
-    _dispatcher(new GangTaskDispatcher())
-{ }
+WorkGang::WorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads) :
+      _workers(NULL),
+      _total_workers(workers),
+      _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
+      _created_workers(0),
+      _name(name),
+      _are_GC_task_threads(are_GC_task_threads),
+      _are_ConcurrentGC_threads(are_ConcurrentGC_threads),
+      _dispatcher(new GangTaskDispatcher())
+  { }
 
 WorkGang::~WorkGang() {
   delete _dispatcher;
+}
+
+// The current implementation will exit if the allocation
+// of any worker fails.
+void WorkGang::initialize_workers() {
+  log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), total_workers());
+  _workers = NEW_C_HEAP_ARRAY(AbstractGangWorker*, total_workers(), mtInternal);
+  add_workers(true);
+}
+
+
+AbstractGangWorker* WorkGang::install_worker(uint worker_id) {
+  AbstractGangWorker* new_worker = allocate_worker(worker_id);
+  set_thread(worker_id, new_worker);
+  return new_worker;
+}
+
+void WorkGang::add_workers(bool initializing) {
+  os::ThreadType worker_type;
+  if (are_ConcurrentGC_threads()) {
+    worker_type = os::cgc_thread;
+  } else {
+    worker_type = os::pgc_thread;
+  }
+  uint previous_created_workers = _created_workers;
+
+  _created_workers = WorkerManager::add_workers(this,
+                                                _active_workers,
+                                                _total_workers,
+                                                _created_workers,
+                                                worker_type,
+                                                initializing);
+  _active_workers = MIN2(_created_workers, _active_workers);
+
+  WorkerManager::log_worker_creation(this, previous_created_workers, _active_workers, _created_workers, initializing);
+}
+
+AbstractGangWorker* WorkGang::worker(uint i) const {
+  // Array index bounds checking.
+  AbstractGangWorker* result = NULL;
+  assert(_workers != NULL, "No workers for indexing");
+  assert(i < total_workers(), "Worker index out of bounds");
+  result = _workers[i];
+  assert(result != NULL, "Indexing to null worker");
+  return result;
+}
+
+void WorkGang::threads_do(ThreadClosure* tc) const {
+  assert(tc != NULL, "Null ThreadClosure");
+  uint workers = created_workers();
+  for (uint i = 0; i < workers; i++) {
+    tc->do_thread(worker(i));
+  }
 }
 
 AbstractGangWorker* WorkGang::allocate_worker(uint worker_id) {
@@ -225,7 +216,7 @@ void WorkGang::run_task(AbstractGangTask* task, uint num_workers, bool add_foreg
   update_active_workers(old_num_workers);
 }
 
-AbstractGangWorker::AbstractGangWorker(AbstractWorkGang* gang, uint id) {
+AbstractGangWorker::AbstractGangWorker(WorkGang* gang, uint id) {
   _gang = gang;
   set_id(id);
   set_name("%s#%d", gang->name(), id);
