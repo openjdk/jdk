@@ -97,7 +97,6 @@ public class EndlessLoopTest
                 });
                 JTextField t2 = new JTextField();
 
-
                 frame.getContentPane().add(t1, BorderLayout.NORTH);
                 frame.getContentPane().add(t2, BorderLayout.SOUTH);
                 frame.setLocationRelativeTo(null);
@@ -139,7 +138,7 @@ public class EndlessLoopTest
             }
 
             EndlessLoopTest.pass();
-	} finally {
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
