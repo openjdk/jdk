@@ -29,7 +29,7 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @modules jdk.jcmd/sun.tools.common:+open
- * @compile ../test-classes/Hello.java
+ * @compile ../test-classes/Hello.java JCmdTestDumpBase.java
  * @build sun.hotspot.WhiteBox
  * @build JCmdTestLingeredApp JCmdTestStaticDump
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
@@ -45,116 +45,16 @@ import java.util.List;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
 
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 
-public class JCmdTestStaticDump {
-    static final String TEST_CLASSES[]      = {"JCmdTestLingeredApp",
-                                               "jdk/test/lib/apps/LingeredApp",
-                                               "jdk/test/lib/apps/LingeredApp$1"};
-    static final String BOOT_CLASSES[]      = {"Hello"};
+public class JCmdTestStaticDump extends JCmdTestDumpBase {
 
     static final String STATIC_DUMP_FILE    = "mystatic";
-
-
     static final String[] STATIC_MESSAGES   = {"JCmdTestLingeredApp source: shared objects file",
                                                "LingeredApp source: shared objects file",
                                                "Hello source: shared objects file"};
-
-    static String testJar = null;
-    static String bootJar = null;
-    static String allJars = null;
-
-    private static void buildJar() throws Exception {
-        testJar = JarBuilder.build("test", TEST_CLASSES);
-        bootJar = JarBuilder.build("boot", BOOT_CLASSES);
-        System.out.println("Jar file created: " + testJar);
-        System.out.println("Jar file created: " + bootJar);
-        allJars = testJar+ File.pathSeparator + bootJar;
-    }
-
-    private static LingeredApp createLingeredApp(String... args) throws Exception {
-        JCmdTestLingeredApp app  = new JCmdTestLingeredApp();
-        try {
-            LingeredApp.startAppExactJvmOpts(app, args);
-        } catch (Exception e) {
-            Process proc = app.getProcess();
-            if (e instanceof IOException && proc.exitValue() == 0) {
-                // Process started and exit normally.
-                return null;
-            }
-            throw e;
-        }
-        return app;
-    }
-
-    static int logFileCount = 0;
-    private static void runWithArchiveFile(String archiveName, boolean useBoot,  String... messages) throws Exception {
-        List<String> args = new ArrayList<String>();
-        if (useBoot) {
-            args.add("-Xbootclasspath/a:" + bootJar);
-        }
-        args.add("-cp");
-        if (useBoot) {
-            args.add(testJar);
-        } else {
-            args.add(allJars);
-        }
-        args.add("-Xshare:on");
-        args.add("-XX:SharedArchiveFile=" + archiveName);
-        args.add("-Xlog:class+load");
-
-        LingeredApp app = createLingeredApp(args.toArray(new String[0]));
-        app.setLogFileName("JCmdTestStaticDump.log" + (logFileCount++));
-        app.stopApp();
-        String output = app.getOutput().getStdout();
-        if (messages != null) {
-            for (String msg : messages) {
-                if (!output.contains(msg)) {
-                    throw new RuntimeException(msg + " missed from output");
-                }
-            }
-        }
-    }
-
-    private static void test(String archiveFile,
-                             long pid, boolean useBoot, boolean expectOK, String... messages) throws Exception {
-        System.out.println("Expected: " + (expectOK ? "SUCCESS" : "FAIL"));
-        String fileName = archiveFile != null ? archiveFile : ("java_pid" + pid + "_static.jsa");
-        File file = new File(fileName);
-        if (file.exists()) {
-            file.delete();
-        }
-
-        String jcmd = "VM.cds static_dump";
-        if (archiveFile  != null) {
-          jcmd +=  " " + archiveFile;
-        }
-
-        PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
-        OutputAnalyzer output = cmdExecutor.execute(jcmd, true/*silent*/);
-
-        if (expectOK) {
-            output.shouldHaveExitValue(0);
-            if (!file.exists()) {
-                throw new RuntimeException("Could not create shared archive: " + fileName);
-            } else {
-                runWithArchiveFile(fileName, useBoot, messages);
-                file.delete();
-            }
-        } else {
-            if (file.exists()) {
-                throw new RuntimeException("Should not create shared archive " + fileName);
-            }
-        }
-    }
-
-    private static void print2ln(String arg) {
-        System.out.println("\n" + arg + "\n");
-    }
 
     // Those two flags will not create a successful LingeredApp.
     private static String[] noDumpFlags  =
@@ -179,7 +79,9 @@ public class JCmdTestStaticDump {
     // Times to dump cds against same process.
     private static final int ITERATION_TIMES = 2;
 
-    private static void test_static() throws Exception {
+    static void test() throws Exception {
+        setIsStatic(true);
+        buildJars();
         int  test_count = 1;
         final boolean useBoot = true;
         final boolean noBoot = !useBoot;
@@ -261,11 +163,6 @@ public class JCmdTestStaticDump {
     }
 
     public static void main(String... args) throws Exception {
-        boolean cdsEnabled = WhiteBox.getWhiteBox().getBooleanVMFlag("UseSharedSpaces");
-        if (!cdsEnabled) {
-            throw new SkippedException("CDS is not available for this JDK.");
-        }
-        buildJar();
-        test_static();
+        runTest(JCmdTestStaticDump::test);
     }
 }
