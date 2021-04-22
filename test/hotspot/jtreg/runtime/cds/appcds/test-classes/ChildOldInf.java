@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2009 Red Hat, Inc.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +21,8 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
-#include "compiler/disassembler.hpp"
-#include "depChecker_zero.hpp"
-
-// This file is intentionally empty
+public class ChildOldInf implements OldInf {
+    public String doit() {
+        return "ChildOldInf";
+    }
+}

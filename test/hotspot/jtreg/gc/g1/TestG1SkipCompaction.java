@@ -48,7 +48,7 @@ public class TestG1SkipCompaction {
             "-XX:MarkSweepDeadRatio=3",
             "-Xmx8m",
             "-Xms8M",
-            "-Xlog:gc+phases=debug",
+            "-Xlog:gc+phases=trace",
             "-XX:G1HeapRegionSize=1m",
             GCTest.class.getName()
             };
@@ -61,9 +61,8 @@ public class TestG1SkipCompaction {
         Matcher m = r.matcher(output.getStdout());
 
         if (!m.find()) {
-            throw new RuntimeException("Could not find any no moving region output");
+            throw new RuntimeException("Could not find any not compacted regions in the logs");
         }
-
     }
 
     public static void main(String[] args) throws Exception {

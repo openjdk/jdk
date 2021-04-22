@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +21,8 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
-#include "compiler/disassembler.hpp"
-#include "depChecker_aarch64.hpp"
-
-// Nothing to do on aarch64
+public class GChild extends ChildOldSuper {
+    public String doit() {
+        return super.doit();
+    }
+}
