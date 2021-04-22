@@ -258,7 +258,7 @@ findThread(ThreadList *list, jthread thread)
          * thread has terminated, but the ThreadNode may still be present.
          */
         if ( node == NULL ) {
-            if (list == NULL || list == &runningThreads ) {
+            if ( list == NULL || list == &runningThreads ) {
                 node = nonTlsSearch(getEnv(), &runningThreads, thread);
             }
         }
