@@ -3821,11 +3821,10 @@ public final class Formatter implements Closeable, Flushable {
                 else if (precision == 0)
                     prec = 1;
 
-                BigDecimal tenToTheNegFour = BigDecimal.valueOf(1, 4);
-                BigDecimal tenToThePrec = BigDecimal.valueOf(1, -prec);
+                value = value.round(new MathContext(prec));
                 if ((value.equals(BigDecimal.ZERO))
-                    || ((value.compareTo(tenToTheNegFour) != -1)
-                        && (value.compareTo(tenToThePrec) == -1))) {
+                    || ((value.compareTo(BigDecimal.valueOf(1, 4)) != -1)
+                        && (value.compareTo(BigDecimal.valueOf(1, -prec)) == -1))) {
 
                     int e = - value.scale()
                         + (value.unscaledValue().toString().length() - 1);

@@ -1878,6 +1878,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(VectorInsertNode, VectorNode)                           \
   declare_c2_type(VectorUnboxNode, VectorNode)                            \
   declare_c2_type(VectorReinterpretNode, VectorNode)                      \
+  declare_c2_type(VectorMaskCastNode, VectorNode)                         \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
   declare_c2_type(VectorTestNode, Node)                                   \
@@ -2144,8 +2145,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* Thread::SuspendFlags enum */                                         \
   /*****************************/                                         \
                                                                           \
-  declare_constant(Thread::_external_suspend)                             \
-  declare_constant(Thread::_ext_suspended)                                \
   declare_constant(Thread::_has_async_exception)                          \
                                                                           \
   /*******************/                                                   \

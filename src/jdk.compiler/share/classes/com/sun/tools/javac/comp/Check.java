@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import javax.lang.model.element.ElementKind;
@@ -2137,7 +2138,7 @@ public class Check {
         }
     }
 
-    private Filter<Symbol> equalsHasCodeFilter = s -> MethodSymbol.implementation_filter.accepts(s) &&
+    private Predicate<Symbol> equalsHasCodeFilter = s -> MethodSymbol.implementation_filter.test(s) &&
             (s.flags() & BAD_OVERRIDE) == 0;
 
     public void checkClassOverrideEqualsAndHashIfNeeded(DiagnosticPosition pos,
@@ -2216,8 +2217,8 @@ public class Check {
 
     private boolean checkNameClash(ClassSymbol origin, Symbol s1, Symbol s2) {
         ClashFilter cf = new ClashFilter(origin.type);
-        return (cf.accepts(s1) &&
-                cf.accepts(s2) &&
+        return (cf.test(s1) &&
+                cf.test(s2) &&
                 types.hasSameArgs(s1.erasure(types), s2.erasure(types)));
     }
 
@@ -2583,7 +2584,7 @@ public class Check {
      }
 
      //where
-     private class ClashFilter implements Filter<Symbol> {
+     private class ClashFilter implements Predicate<Symbol> {
 
          Type site;
 
@@ -2596,7 +2597,8 @@ public class Check {
                 s.owner == site.tsym;
          }
 
-         public boolean accepts(Symbol s) {
+         @Override
+         public boolean test(Symbol s) {
              return s.kind == MTH &&
                      (s.flags() & SYNTHETIC) == 0 &&
                      !shouldSkip(s) &&
@@ -2647,7 +2649,7 @@ public class Check {
     }
 
     //where
-     private class DefaultMethodClashFilter implements Filter<Symbol> {
+     private class DefaultMethodClashFilter implements Predicate<Symbol> {
 
          Type site;
 
@@ -2655,7 +2657,8 @@ public class Check {
              this.site = site;
          }
 
-         public boolean accepts(Symbol s) {
+         @Override
+         public boolean test(Symbol s) {
              return s.kind == MTH &&
                      (s.flags() & DEFAULT) != 0 &&
                      s.isInheritedIn(site.tsym, types) &&
@@ -3802,7 +3805,7 @@ public class Check {
     private boolean checkUniqueImport(DiagnosticPosition pos, Scope ordinallyImportedSoFar,
                                       Scope staticallyImportedSoFar, Scope topLevelScope,
                                       Symbol sym, boolean staticImport) {
-        Filter<Symbol> duplicates = candidate -> candidate != sym && !candidate.type.isErroneous();
+        Predicate<Symbol> duplicates = candidate -> candidate != sym && !candidate.type.isErroneous();
         Symbol ordinaryClashing = ordinallyImportedSoFar.findFirst(sym.name, duplicates);
         Symbol staticClashing = null;
         if (ordinaryClashing == null && !staticImport) {

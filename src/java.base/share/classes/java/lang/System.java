@@ -2308,6 +2308,10 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, constant);
             }
 
+            public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
+                return String.join(prefix, suffix, delimiter, elements, size);
+            }
+
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }
