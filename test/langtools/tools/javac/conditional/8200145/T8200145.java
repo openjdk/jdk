@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,23 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zErrno.hpp"
-#include "runtime/os.hpp"
+/**
+ * @test
+ * @bug 8200145
+ * @summary Conditional expression mistakenly treated as standalone
+ * @run compile T8200145.java
+ */
 
-#include <errno.h>
-#include <string.h>
+public class T8200145 {
+    static class Outer {
+        class Inner<T> implements Runnable { public void run() {} }
+    }
 
-ZErrno::ZErrno() :
-    _error(errno) {}
-
-ZErrno::ZErrno(int error) :
-    _error(error) {}
-
-ZErrno::operator bool() const {
-  return _error != 0;
-}
-
-bool ZErrno::operator==(int error) const {
-  return _error == error;
-}
-
-bool ZErrno::operator!=(int error) const {
-  return _error != error;
-}
-
-const char* ZErrno::to_string() const {
-  return os::strerror(_error);
+    void test(Outer outer) {
+        boolean test =  1 == 1 ;
+        Outer.Inner<String> inner1 = outer.new Inner<>();
+        Outer.Inner<String> inner2 = test ? outer.new Inner<>() : null;
+        Outer.Inner<String> inner3 = test ? null: outer.new Inner<>();
+        Outer.Inner<String> inner4 = test ? outer.new Inner<>() : outer.new Inner<>();
+    }
 }
