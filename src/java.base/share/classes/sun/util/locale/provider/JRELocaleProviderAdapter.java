@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.util.locale.provider;
 
 import java.security.AccessController;
-import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -42,7 +41,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
-import java.util.ServiceConfigurationError;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -537,7 +535,22 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
         }
 
         locale = locale.stripExtensions();
-        if (langtags.contains(locale.toLanguageTag())) {
+        var langtag = locale.toLanguageTag();
+        if (langtags.contains(langtag)) {
+            return true;
+        }
+
+        var lang = locale.getLanguage();
+        var otherLang = switch (lang) {
+                case "he" -> "iw";
+                case "ji" -> "yi";
+                case "id" -> "in";
+                case "iw" -> "he";
+                case "yi" -> "ji";
+                case "in" -> "id";
+                default -> lang;
+            };
+        if (!lang.equals(otherLang) && langtags.contains(langtag.replaceFirst(lang, otherLang))) {
             return true;
         }
 

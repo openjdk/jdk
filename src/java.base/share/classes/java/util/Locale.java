@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.locale.provider.TimeZoneNameUtility;
+import static sun.util.locale.BaseLocale.OLD_ISO_CODES;
 
 /**
  * A {@code Locale} object represents a specific geographical, political,
@@ -2395,19 +2396,16 @@ public final class Locale implements Cloneable, Serializable {
 
     private static volatile String[] isoCountries;
 
+    // we accept both the old and the new ISO codes for the languages whose ISO
+    // codes have changed, but we always store the NEW code by default.
     private static String convertOldISOCodes(String language) {
-        // we accept both the old and the new ISO codes for the languages whose ISO
-        // codes have changed, but we always store the OLD code, for backward compatibility
-        language = LocaleUtils.toLowerString(language).intern();
-        if (language == "he") {
-            return "iw";
-        } else if (language == "yi") {
-            return "ji";
-        } else if (language == "id") {
-            return "in";
-        } else {
-            return language;
-        }
+        var lang = LocaleUtils.toLowerString(language).intern();
+        return switch (lang) {
+            case "he", "iw" -> OLD_ISO_CODES ? "iw" : "he";
+            case "ji", "yi" -> OLD_ISO_CODES ? "yi" : "ji";
+            case "id", "in" -> OLD_ISO_CODES ? "in" : "id";
+            default -> lang;
+        };
     }
 
     private static LocaleExtensions getCompatibilityExtensions(String language,

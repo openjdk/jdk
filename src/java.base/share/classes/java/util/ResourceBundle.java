@@ -3147,11 +3147,28 @@ public abstract class ResourceBundle {
         public ResourceBundle newBundle(String baseName, Locale locale, String format,
                                         ClassLoader loader, boolean reload)
                     throws IllegalAccessException, InstantiationException, IOException {
-            /*
-             * Legacy mechanism to locate resource bundle in unnamed module only
+            var bundleName = toBundleName(baseName, locale);
+            var bundle = newBundle0(baseName, bundleName, format, loader, reload);
+            if (bundle == null) {
+                bundle = newBundle0(baseName,
+                    switch (locale.getLanguage()) {
+                        case "he" -> bundleName.replaceFirst("_he", "_iw");
+                        case "ji" -> bundleName.replaceFirst("_ji", "_yi");
+                        case "id" -> bundleName.replaceFirst("_id", "_in");
+                        default -> bundleName;
+                    }, format, loader, reload);
+            }
+
+            return bundle;
+        }
+
+        private ResourceBundle newBundle0(String baseName, String bundleName, String format,
+                    ClassLoader loader, boolean reload)
+                    throws IllegalAccessException, InstantiationException, IOException {
+                /*
+                 * Legacy mechanism to locate resource bundle in unnamed module only
              * that is visible to the given loader and accessible to the given caller.
              */
-            String bundleName = toBundleName(baseName, locale);
             ResourceBundle bundle = null;
             if (format.equals("java.class")) {
                 try {

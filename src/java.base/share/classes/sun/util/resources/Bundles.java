@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,20 @@ public abstract class Bundles {
                         @SuppressWarnings("unchecked")
                         Class<ResourceBundle> bundleClass = (Class<ResourceBundle>) c;
                         bundle = bundleAccess.newResourceBundle(bundleClass);
+                    }
+                    if (bundle == null) {
+                        c = Class.forName(Bundles.class.getModule(),
+                                switch (targetLocale.getLanguage()) {
+                                    case "he" -> bundleName.replaceFirst("_he", "_iw");
+                                    case "ji" -> bundleName.replaceFirst("_ji", "_yi");
+                                    case "id" -> bundleName.replaceFirst("_id", "_in");
+                                    default -> bundleName;
+                                });
+                        if (c != null && ResourceBundle.class.isAssignableFrom(c)) {
+                            @SuppressWarnings("unchecked")
+                            Class<ResourceBundle> bundleClass = (Class<ResourceBundle>) c;
+                            bundle = bundleAccess.newResourceBundle(bundleClass);
+                        }
                     }
                 } catch (Exception e) {
                     cacheKey.setCause(e);

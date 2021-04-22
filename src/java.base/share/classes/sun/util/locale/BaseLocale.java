@@ -34,6 +34,7 @@ package sun.util.locale;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
+import sun.security.action.GetPropertyAction;
 
 import java.lang.ref.SoftReference;
 import java.util.StringJoiner;
@@ -98,6 +99,13 @@ public final class BaseLocale {
 
     private volatile int hash;
 
+    /**
+     * Boolean for the old ISO language code compatibility.
+     */
+    public static final boolean OLD_ISO_CODES = GetPropertyAction.privilegedGetProperties()
+            .getProperty("java.locale.useOldISOCodes", "false")
+            .equalsIgnoreCase("true");
+
     // This method must be called with normalize = false only when creating the
     // Locale.* constants and non-normalized BaseLocale$Keys used for lookup.
     private BaseLocale(String language, String script, String region, String variant,
@@ -153,13 +161,12 @@ public final class BaseLocale {
 
         // JDK uses deprecated ISO639.1 language codes for he, yi and id
         if (!language.isEmpty()) {
-            if (language.equals("he")) {
-                language = "iw";
-            } else if (language.equals("yi")) {
-                language = "ji";
-            } else if (language.equals("id")) {
-                language = "in";
-            }
+            language = switch (language) {
+                case "he", "iw" -> OLD_ISO_CODES ? "iw" : "he";
+                case "ji", "yi" -> OLD_ISO_CODES ? "yi" : "ji";
+                case "id", "in" -> OLD_ISO_CODES ? "in" : "id";
+                default -> language;
+            };
         }
 
         Key key = new Key(language, script, region, variant, false);
