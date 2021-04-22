@@ -30,4 +30,5 @@ import java.nio.charset.Charset;
 
 public interface JavaIOAccess {
     Console console();
+    Charset charset();
 }
