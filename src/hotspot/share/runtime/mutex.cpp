@@ -216,7 +216,7 @@ bool Monitor::wait_without_safepoint_check(int64_t timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
-bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
+bool Monitor::wait(int64_t timeout) {
   JavaThread* const self = JavaThread::current();
   // Safepoint checking logically implies an active JavaThread.
   assert(self->is_active_Java_thread(), "invariant");
@@ -239,25 +239,9 @@ bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
   {
     ThreadBlockInVM tbivmdc(self, &in_flight_mutex);
     OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
-    if (as_suspend_equivalent) {
-      self->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition() or
-      // java_suspend_self()
-    }
 
     wait_status = _lock.wait(timeout);
     in_flight_mutex = this;  // save for ~ThreadBlockInVM
-
-    // were we externally suspended while we were waiting?
-    if (as_suspend_equivalent && self->handle_special_suspend_equivalent_condition()) {
-      // Our event wait has finished and we own the lock, but
-      // while we were waiting another thread suspended us. We don't
-      // want to hold the lock while suspended because that
-      // would surprise the thread that suspended us.
-      _lock.unlock();
-      self->java_suspend_self();
-      _lock.lock();
-    }
   }
 
   if (in_flight_mutex != NULL) {
@@ -276,9 +260,9 @@ Mutex::~Mutex() {
   assert_owner(NULL);
 }
 
-// Only Threads_lock, Heap_lock and SR_lock may be safepoint_check_sometimes.
+// Only Threads_lock and Heap_lock may be safepoint_check_sometimes.
 bool is_sometimes_ok(const char* name) {
-  return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0 || strcmp(name, "SR_lock") == 0);
+  return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0);
 }
 
 Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
@@ -388,10 +372,9 @@ void Mutex::check_rank(Thread* thread) {
     }
   }
 
-  // Locks with rank native or suspend_resume are an exception and are not
+  // Locks with rank native are an exception and are not
   // subject to the verification rules.
-  bool check_can_be_skipped = this->rank() == Mutex::native || this->rank() == Mutex::suspend_resume
-                              || SafepointSynchronize::is_at_safepoint();
+  bool check_can_be_skipped = this->rank() == Mutex::native || SafepointSynchronize::is_at_safepoint();
   if (owned_by_self()) {
     // wait() case
     Mutex* least = get_least_ranked_lock_besides_this(locks_owned);
