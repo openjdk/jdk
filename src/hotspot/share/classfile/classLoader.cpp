@@ -109,7 +109,7 @@ static JImageFindResource_t            JImageFindResource     = NULL;
 static JImageGetResource_t             JImageGetResource      = NULL;
 
 // JimageFile pointer, or null if exploded JDK build.
-static JImageFile*                     JImage_File            = NULL;
+static JImageFile*                     JImage_file            = NULL;
 
 // Globals
 
@@ -345,7 +345,7 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
 DEBUG_ONLY(ClassPathImageEntry* ClassPathImageEntry::_singleton = NULL;)
 
 JImageFile* ClassPathImageEntry::jimage() const {
-  return JImage_File;
+  return JImage_file;
 }
 
 JImageFile* ClassPathImageEntry::jimage_non_null() const {
@@ -355,14 +355,10 @@ JImageFile* ClassPathImageEntry::jimage_non_null() const {
   return jimage();
 }
 
-void ClassPathImageEntry::set_jimage(JImageFile* jimage) {
-  JImage_File = jimage;
-}
-
 void ClassPathImageEntry::close_jimage() {
   if (jimage() != NULL) {
     (*JImageClose)(jimage());
-    set_jimage(NULL);
+    JImage_file = NULL;
   }
 }
 
@@ -652,12 +648,12 @@ void ClassLoader::setup_bootstrap_search_path_impl(Thread* current, const char *
       struct stat st;
       if (os::stat(path, &st) == 0) {
         // Directory found
-        if (JImage_File != NULL) {
+        if (JImage_file != NULL) {
           assert(Arguments::has_jimage(), "sanity check");
           const char* canonical_path = get_canonical_path(path, current);
           assert(canonical_path != NULL, "canonical_path issue");
 
-          _jrt_entry = new ClassPathImageEntry(JImage_File, canonical_path);
+          _jrt_entry = new ClassPathImageEntry(JImage_file, canonical_path);
           assert(_jrt_entry != NULL && _jrt_entry->is_modules_image(), "No java runtime image present");
           assert(_jrt_entry->jimage() != NULL, "No java runtime image");
         } else {
@@ -1427,13 +1423,13 @@ char* ClassLoader::lookup_vm_options() {
   load_jimage_library();
 
   jio_snprintf(modules_path, JVM_MAXPATHLEN, "%s%slib%smodules", Arguments::get_java_home(), fileSep, fileSep);
-  JImage_File =(*JImageOpen)(modules_path, &error);
-  if (JImage_File == NULL) {
+  JImage_file =(*JImageOpen)(modules_path, &error);
+  if (JImage_file == NULL) {
     return NULL;
   }
 
   const char *jimage_version = get_jimage_version_string();
-  char *options = lookup_vm_resource(JImage_File, jimage_version, "jdk/internal/vm/options");
+  char *options = lookup_vm_resource(JImage_file, jimage_version, "jdk/internal/vm/options");
   return options;
 }
 

@@ -124,7 +124,6 @@ public:
   const char* name() const { return _name == NULL ? "" : _name; }
   JImageFile* jimage() const;
   JImageFile* jimage_non_null() const;
-  void set_jimage(JImageFile* jimage);
   void close_jimage();
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   virtual ~ClassPathImageEntry() { ShouldNotReachHere(); }
