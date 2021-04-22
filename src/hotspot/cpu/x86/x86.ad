@@ -1599,6 +1599,16 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 #endif // !LP64
+    case Op_SignumF:
+      if (UseSSE < 1) {
+        return false;
+      }
+      break;
+    case Op_SignumD:
+      if (UseSSE < 2) {
+        return false;
+      }
+      break;
   }
   return true;  // Match rules are supported by default.
 }
