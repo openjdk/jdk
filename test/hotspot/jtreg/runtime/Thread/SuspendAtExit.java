@@ -35,7 +35,6 @@ import java.util.concurrent.CountDownLatch;
 public class SuspendAtExit extends Thread {
     private final static String AGENT_LIB = "SuspendAtExit";
     private final static int DEF_TIME_MAX = 30;  // default max # secs to test
-    private final static int N_THREADS = 32;
     private final static int JVMTI_ERROR_THREAD_NOT_ALIVE = 15;
 
     public CountDownLatch exitSyncObj = new CountDownLatch(1);
