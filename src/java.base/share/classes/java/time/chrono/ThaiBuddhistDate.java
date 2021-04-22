@@ -459,11 +459,8 @@ public final class ThaiBuddhistDate
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ThaiBuddhistDate) {
-            ThaiBuddhistDate otherDate = (ThaiBuddhistDate) obj;
-            return this.isoDate.equals(otherDate.isoDate);
-        }
-        return false;
+        return (obj instanceof ThaiBuddhistDate otherDate)
+                && this.isoDate.equals(otherDate.isoDate);
     }
 
     /**

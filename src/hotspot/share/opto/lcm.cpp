@@ -1391,14 +1391,40 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
   }
 
   // If the successor blocks have a CreateEx node, move it back to the top
-  for(uint i4 = 0; i4 < block->_num_succs; i4++ ) {
+  for (uint i4 = 0; i4 < block->_num_succs; i4++) {
     Block *sb = block->_succs[i4];
     uint new_cnt = end - beg;
-    // Remove any newly created, but dead, nodes.
-    for( uint j = new_cnt; j > 0; j-- ) {
+    // Remove any newly created, but dead, nodes by traversing their schedule
+    // backwards. Here, a dead node is a node whose only outputs (if any) are
+    // unused projections.
+    for (uint j = new_cnt; j > 0; j--) {
       Node *n = sb->get_node(j);
-      if (n->outcnt() == 0 &&
-          (!n->is_Proj() || n->as_Proj()->in(0)->outcnt() == 1) ){
+      // Individual projections are examined together with all siblings when
+      // their parent is visited.
+      if (n->is_Proj()) {
+        continue;
+      }
+      bool dead = true;
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* out = n->fast_out(i);
+        // n is live if it has a non-projection output or a used projection.
+        if (!out->is_Proj() || out->outcnt() > 0) {
+          dead = false;
+          break;
+        }
+      }
+      if (dead) {
+        // n's only outputs (if any) are unused projections scheduled next to n
+        // (see PhaseCFG::select()). Remove these projections backwards.
+        for (uint k = j + n->outcnt(); k > j; k--) {
+          Node* proj = sb->get_node(k);
+          assert(proj->is_Proj() && proj->in(0) == n,
+                 "projection should correspond to dead node");
+          proj->disconnect_inputs(C);
+          sb->remove_node(k);
+          new_cnt--;
+        }
+        // Now remove the node itself.
         n->disconnect_inputs(C);
         sb->remove_node(j);
         new_cnt--;

@@ -246,6 +246,7 @@ private:
   static void set_compilation_policy_flags();
   static void set_jvmci_specific_flags();
   static void set_legacy_emulation_flags();
+  static void set_client_emulation_mode_flags();
 };
 
 #endif // SHARE_COMPILER_COMPILERDEFINITIONS_HPP

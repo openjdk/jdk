@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,17 +21,23 @@
  * questions.
  */
 
-package com.sun.tools.javac.util;
-
 /**
- * Simple filter acting as a boolean predicate. Method accepts return true if
- * the supplied element matches against the filter.
+ * @test
+ * @bug 8200145
+ * @summary Conditional expression mistakenly treated as standalone
+ * @run compile T8200145.java
  */
-public interface Filter<T> {
-    /**
-     * Does this element match against the filter?
-     * @param t element to be checked
-     * @return true if the element satisfy constraints imposed by filter
-     */
-    boolean accepts(T t);
+
+public class T8200145 {
+    static class Outer {
+        class Inner<T> implements Runnable { public void run() {} }
+    }
+
+    void test(Outer outer) {
+        boolean test =  1 == 1 ;
+        Outer.Inner<String> inner1 = outer.new Inner<>();
+        Outer.Inner<String> inner2 = test ? outer.new Inner<>() : null;
+        Outer.Inner<String> inner3 = test ? null: outer.new Inner<>();
+        Outer.Inner<String> inner4 = test ? outer.new Inner<>() : outer.new Inner<>();
+    }
 }

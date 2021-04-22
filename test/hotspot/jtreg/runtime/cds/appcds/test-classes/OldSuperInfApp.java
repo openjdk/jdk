@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +21,12 @@
  * questions.
  *
  */
+public class OldSuperInfApp {
+    public static void main(String args[]) {
+        ChildOldInf c = new ChildOldInf();
+        System.out.println(c.doit());
 
-#ifndef CPU_AARCH64_DEPCHECKER_AARCH64_HPP
-#define CPU_AARCH64_DEPCHECKER_AARCH64_HPP
-
-// Nothing to do on aarch64
-
-#endif // CPU_AARCH64_DEPCHECKER_AARCH64_HPP
+        GChild2 g = new GChild2();
+        System.out.println(g.doit());
+    }
+}

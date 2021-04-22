@@ -353,6 +353,9 @@ void ConstantPool::add_dumped_interned_strings() {
 
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
+  if (!_pool_holder->is_linked() && !_pool_holder->is_rewritten()) {
+    return;
+  }
   assert(is_constantPool(), "ensure C++ vtable is restored");
   assert(on_stack(), "should always be set for shared constant pools");
   assert(is_shared(), "should always be set for shared constant pools");
@@ -390,6 +393,9 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 }
 
 void ConstantPool::remove_unshareable_info() {
+  if (!_pool_holder->is_linked() && _pool_holder->is_shared_old_klass()) {
+    return;
+  }
   // Resolved references are not in the shared archive.
   // Save the length for restoration.  It is not necessarily the same length
   // as reference_map.length() if invokedynamic is saved. It is needed when

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,8 @@
  * questions.
  *
  */
-
-#ifndef CPU_X86_DEPCHECKER_X86_HPP
-#define CPU_X86_DEPCHECKER_X86_HPP
-
-// Nothing to do on i486
-
-#endif // CPU_X86_DEPCHECKER_X86_HPP
+public class ChildOldSuper extends OldSuper {
+    public String doit() {
+        return super.doit();
+    }
+}
