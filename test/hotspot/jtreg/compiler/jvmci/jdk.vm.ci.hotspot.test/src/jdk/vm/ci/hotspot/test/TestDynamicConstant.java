@@ -42,6 +42,7 @@ import java.lang.invoke.ConstantBootstraps;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
+import java.util.List;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -221,7 +222,18 @@ public class TestDynamicConstant implements Opcodes {
     @Test
     public void test() throws Throwable {
         MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
-        Class<?>[] types = {boolean.class, byte.class, short.class, char.class, int.class, float.class, long.class, double.class, String.class};
+        Class<?>[] types = {
+                        boolean.class,
+                        byte.class,
+                        short.class,
+                        char.class,
+                        int.class,
+                        float.class,
+                        long.class,
+                        double.class,
+                        String.class,
+                        List.class
+        };
         for (Class<?> type : types) {
             for (CondyType condyType : CondyType.values()) {
                 TestGenerator e = new TestGenerator(type, condyType);
@@ -242,14 +254,14 @@ public class TestDynamicConstant implements Opcodes {
 
                 // Execute code to resolve condy by execution and compare
                 // with condy resolved via ConstantPool
-                Object runResult = m.invoke(null);
-                Object rawConstant;
+                Object expect = m.invoke(null);
+                Object actual;
                 if (lastConstant instanceof PrimitiveConstant) {
-                    rawConstant = ((PrimitiveConstant) lastConstant).asBoxedPrimitive();
+                    actual = ((PrimitiveConstant) lastConstant).asBoxedPrimitive();
                 } else {
-                    rawConstant = ((HotSpotObjectConstant) lastConstant).asObject(String.class);
+                    actual = ((HotSpotObjectConstant) lastConstant).asObject(type);
                 }
-                Assert.assertEquals(runResult, rawConstant, String.format("%s: %s != %s", m, runResult, rawConstant));
+                Assert.assertEquals(actual, expect, m + ":");
             }
         }
     }
@@ -264,6 +276,7 @@ public class TestDynamicConstant implements Opcodes {
     @SuppressWarnings("unused") public static long    getLongBSM   (MethodHandles.Lookup l, String name, Class<?> type) { return Long.MAX_VALUE; }
     @SuppressWarnings("unused") public static double  getDoubleBSM (MethodHandles.Lookup l, String name, Class<?> type) { return Double.MAX_VALUE; }
     @SuppressWarnings("unused") public static String  getStringBSM (MethodHandles.Lookup l, String name, Class<?> type) { return "a string"; }
+    @SuppressWarnings("unused") public static List<?> getListBSM   (MethodHandles.Lookup l, String name, Class<?> type) { return List.of("element"); }
 
 
     public static boolean getBoolean() { return true; }
@@ -275,6 +288,7 @@ public class TestDynamicConstant implements Opcodes {
     public static long    getLong   () { return Long.MAX_VALUE; }
     public static double  getDouble () { return Double.MAX_VALUE; }
     public static String  getString () { return "a string"; }
+    public static List<?> getList   () { return List.of("element"); }
 
     public static boolean getBoolean(boolean v1, boolean v2) { return v1 || v2; }
     public static char    getChar   (char v1, char v2)       { return (char)(v1 ^ v2); }
@@ -285,5 +299,6 @@ public class TestDynamicConstant implements Opcodes {
     public static long    getLong   (long v1, long v2)       { return v1 ^ v2; }
     public static double  getDouble (double v1, double v2)   { return v1 * v2; }
     public static String  getString (String v1, String v2)   { return v1 + v2; }
+    public static List<?> getList   (List<?> v1, List<?> v2) { return List.of(v1, v2); }
     // @formatter:on
 }
