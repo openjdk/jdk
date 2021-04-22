@@ -30,16 +30,25 @@
 #include "oops/oopsHierarchy.hpp"
 
 
-bool G1FullCollector::is_compacted(oop obj) const {
-  return _region_attr_table.is_compacted(cast_from_oop<HeapWord*>(obj));
+bool G1FullCollector::is_compacting(oop obj) const {
+  return _region_attr_table.is_compacting(cast_from_oop<HeapWord *>(obj));
 }
 
-bool G1FullCollector::is_compacted_or_skip_marking(uint region_index) const {
-  return _region_attr_table.is_compacted_or_skip_marking(region_index);
+bool G1FullCollector::is_skip_compacting(uint region_index) const {
+  return _region_attr_table.is_skip_compacting(region_index);
 }
 
 bool G1FullCollector::is_skip_marking(oop obj) const {
   return _region_attr_table.is_skip_marking(cast_from_oop<HeapWord*>(obj));
+}
+
+void G1FullCollector::set_invalid(uint region_idx) {
+  _region_attr_table.set_invalid(region_idx);
+}
+
+void G1FullCollector::update_from_compacting_to_skip_compacting(uint region_idx) {
+  _region_attr_table.verify_is_compacting(region_idx);
+  _region_attr_table.set_skip_compacting(region_idx);
 }
 
 #endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
