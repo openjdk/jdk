@@ -388,8 +388,8 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
 
 #ifdef ASSERT
   oop referent = reference_referent<T>(reference);
-  assert(referent == NULL ||
-         ShenandoahHeap::heap()->marking_context()->is_marked(referent), "only drop references with alive referents");
+  assert(referent == NULL || ShenandoahHeap::heap()->marking_context()->is_marked(referent),
+         "only drop references with alive referents");
 #endif
 
   // Unlink and return next in list
