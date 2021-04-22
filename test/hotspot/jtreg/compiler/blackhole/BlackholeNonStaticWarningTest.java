@@ -23,8 +23,7 @@
 
 /**
  * @test
- * @library /test/lib
- * @build compiler.blackhole.BlackholeTarget
+ * @library /test/lib /
  * @requires vm.flagless
  * @run driver compiler.blackhole.BlackholeNonStaticWarningTest
  */
