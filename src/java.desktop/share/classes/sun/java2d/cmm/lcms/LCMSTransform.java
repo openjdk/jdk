@@ -49,7 +49,7 @@ import sun.java2d.cmm.ColorTransform;
 
 import static sun.java2d.cmm.lcms.LCMSImageLayout.ImageLayoutException;
 
-public class LCMSTransform implements ColorTransform {
+final class LCMSTransform implements ColorTransform {
     long ID;
     private int inFormatter = 0;
     private boolean isInIntPacked = false;
@@ -149,10 +149,26 @@ public class LCMSTransform implements ColorTransform {
         LCMS.colorConvert(this, in, out);
     }
 
+    /**
+     * Returns {@code true} if lcms may supports this format directly.
+     */
+    private static boolean isLCMSSupport(BufferedImage src, BufferedImage dst) {
+        if (!dst.getColorModel().hasAlpha()) {
+            return true;
+        }
+        // lcms as of now does not support pre-alpha
+        if (src.isAlphaPremultiplied() || dst.isAlphaPremultiplied()) {
+            return false;
+        }
+        // lcms does not set correct alpha for transparent dst if src is opaque
+        // is it feature or bug?
+        return dst.getColorModel().hasAlpha() == src.getColorModel().hasAlpha();
+    }
+
     public void colorConvert(BufferedImage src, BufferedImage dst) {
         LCMSImageLayout srcIL, dstIL;
         try {
-            if (!dst.getColorModel().hasAlpha()) {
+            if (isLCMSSupport(src, dst)) {
                 dstIL = LCMSImageLayout.createImageLayout(dst);
 
                 if (dstIL != null) {

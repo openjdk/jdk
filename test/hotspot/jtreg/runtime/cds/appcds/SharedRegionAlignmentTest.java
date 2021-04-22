@@ -31,13 +31,17 @@
  *          disable it if ZGC is used.
  * @bug 8236847
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build sun.hotspot.WhiteBox
  * @build Hello
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver SharedRegionAlignmentTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. SharedRegionAlignmentTest
  */
+
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import sun.hotspot.WhiteBox;
 
 public class SharedRegionAlignmentTest {
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");
@@ -49,13 +53,13 @@ public class SharedRegionAlignmentTest {
         // Dump (3 combinations): largePageArgs
         // Run  (3 combinations): largePageArgs
         String UseLargePages = "-XX:+UseLargePages";
+        String checkString = "Core region alignment: " +
+                             WhiteBox.getWhiteBox().metaspaceSharedRegionAlignment();
 
         String [][] largePageArgs = {
             {}, // default
             {UseLargePages}
         };
-
-        final String logFor64K = "core_region_alignment = 65535";
 
         int dumpCase = 0;
         for (String[] dumpLP: largePageArgs) {
@@ -67,8 +71,8 @@ public class SharedRegionAlignmentTest {
             OutputAnalyzer out = TestCommon.dump(appJar,
                                                  TestCommon.list(mainClass),
                                                  TestCommon.concat(dumpLP, logArg));
-            out.shouldContain("Dumping shared data to file");
-            boolean is_aligned_64k = out.getStdout().contains(logFor64K);
+            out.shouldContain("Dumping shared data to file")
+               .shouldContain(checkString);
 
             int runCase = 0;
             for (String[] runLP: largePageArgs) {
@@ -79,10 +83,8 @@ public class SharedRegionAlignmentTest {
 
                 TestCommon.run(TestCommon.concat(runLP, "-cp", appJar, logArg, mainClass))
                     .assertNormalExit(output -> {
-                            if (is_aligned_64k) {
-                                output.shouldContain(logFor64K);
-                            }
-                            output.shouldContain("Hello World");
+                            output.shouldContain(checkString)
+                                  .shouldContain("Hello World");
                         });
             }
         }

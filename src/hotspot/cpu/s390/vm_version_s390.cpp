@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,22 @@
 bool VM_Version::_is_determine_features_test_running  = false;
 const char*   VM_Version::_model_string;
 
-unsigned long VM_Version::_features[_features_buffer_len]           = {0, 0, 0, 0};
-unsigned long VM_Version::_cipher_features[_features_buffer_len]    = {0, 0, 0, 0};
-unsigned long VM_Version::_msgdigest_features[_features_buffer_len] = {0, 0, 0, 0};
-unsigned int  VM_Version::_nfeatures                                = 0;
-unsigned int  VM_Version::_ncipher_features                         = 0;
-unsigned int  VM_Version::_nmsgdigest_features                      = 0;
-unsigned int  VM_Version::_Dcache_lineSize                          = DEFAULT_CACHE_LINE_SIZE;
-unsigned int  VM_Version::_Icache_lineSize                          = DEFAULT_CACHE_LINE_SIZE;
+unsigned long VM_Version::_features[_features_buffer_len]              = {0, 0, 0, 0};
+unsigned long VM_Version::_cipher_features_KM[_features_buffer_len]    = {0, 0, 0, 0};
+unsigned long VM_Version::_cipher_features_KMA[_features_buffer_len]   = {0, 0, 0, 0};
+unsigned long VM_Version::_cipher_features_KMF[_features_buffer_len]   = {0, 0, 0, 0};
+unsigned long VM_Version::_cipher_features_KMCTR[_features_buffer_len] = {0, 0, 0, 0};
+unsigned long VM_Version::_cipher_features_KMO[_features_buffer_len]   = {0, 0, 0, 0};
+unsigned long VM_Version::_msgdigest_features[_features_buffer_len]    = {0, 0, 0, 0};
+unsigned int  VM_Version::_nfeatures                                   = 0;
+unsigned int  VM_Version::_ncipher_features_KM                         = 0;
+unsigned int  VM_Version::_ncipher_features_KMA                        = 0;
+unsigned int  VM_Version::_ncipher_features_KMF                        = 0;
+unsigned int  VM_Version::_ncipher_features_KMCTR                      = 0;
+unsigned int  VM_Version::_ncipher_features_KMO                        = 0;
+unsigned int  VM_Version::_nmsgdigest_features                         = 0;
+unsigned int  VM_Version::_Dcache_lineSize                             = DEFAULT_CACHE_LINE_SIZE;
+unsigned int  VM_Version::_Icache_lineSize                             = DEFAULT_CACHE_LINE_SIZE;
 
 // The following list contains the (approximate) announcement/availability
 // dates of the many System z generations in existence as of now.
@@ -61,18 +69,29 @@ unsigned int  VM_Version::_Icache_lineSize                          = DEFAULT_CA
 //   z14:  2017-09
 //   z15:  2019-09
 
-static const char* z_gen[]     = {"  ", "G1",         "G2",         "G3",         "G4",         "G5",         "G6",         "G7",         "G8",         "G9"  };
-static const char* z_machine[] = {"  ", "2064",       "2084",       "2094",       "2097",       "2817",       "2827",       "2964",       "3906",       "8561" };
-static const char* z_name[]    = {"  ", "z900",       "z990",       "z9 EC",      "z10 EC",     "z196 EC",    "ec12",       "z13",        "z14",        "z15" };
-static const char* z_WDFM[]    = {"  ", "2006-06-30", "2008-06-30", "2010-06-30", "2012-06-30", "2014-06-30", "2016-12-31", "2019-06-30", "2021-06-30", "tbd" };
-static const char* z_EOS[]     = {"  ", "2014-12-31", "2014-12-31", "2017-10-31", "2019-12-31", "2021-12-31", "tbd",        "tbd",        "tbd",        "tbd" };
+static const char* z_gen[]      = {"  ", "G1",         "G2",         "G3",         "G4",         "G5",         "G6",         "G7",         "G8",         "G9"  };
+static const char* z_machine[]  = {"  ", "2064",       "2084",       "2094",       "2097",       "2817",       "2827",       "2964",       "3906",       "8561" };
+static const char* z_name[]     = {"  ", "z900",       "z990",       "z9 EC",      "z10 EC",     "z196 EC",    "ec12",       "z13",        "z14",        "z15" };
+static const char* z_WDFM[]     = {"  ", "2006-06-30", "2008-06-30", "2010-06-30", "2012-06-30", "2014-06-30", "2016-12-31", "2019-06-30", "2021-06-30", "tbd" };
+static const char* z_EOS[]      = {"  ", "2014-12-31", "2014-12-31", "2017-10-31", "2019-12-31", "2021-12-31", "tbd",        "tbd",        "tbd",        "tbd" };
+static const char* z_features[] = {"  ",
+                                   "system-z, g1-z900, ldisp",
+                                   "system-z, g2-z990, ldisp_fast",
+                                   "system-z, g3-z9, ldisp_fast, extimm",
+                                   "system-z, g4-z10, ldisp_fast, extimm, pcrel_load/store, cmpb",
+                                   "system-z, g5-z196, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update",
+                                   "system-z, g6-ec12, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm",
+                                   "system-z, g7-z13, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr",
+                                   "system-z, g8-z14, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1)",
+                                   "system-z, g9-z15, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, VEnh2 )"
+                                  };
 
 void VM_Version::initialize() {
   determine_features();      // Get processor capabilities.
   set_features_string();     // Set a descriptive feature indication.
 
-  if (Verbose) {
-    print_features();
+  if (Verbose || PrintAssembly || PrintStubCode) {
+    print_features_internal("CPU Version as detected internally:", PrintAssembly || PrintStubCode);
   }
 
   intx cache_line_size = Dcache_lineSize(0);
@@ -278,6 +297,58 @@ void VM_Version::initialize() {
 }
 
 
+int VM_Version::get_model_index() {
+  // returns the index used to access the various model-dependent strings.
+  //  > 0 valid (known) model detected.
+  //  = 0 model not recognized, maybe not yet supported.
+  //  < 0 model detection is ambiguous. The absolute value of the returned value
+  //      is the index of the oldest detected model.
+  int ambiguity = 0;
+  int model_ix  = 0;
+  if (is_z15()) {
+    model_ix = 9;
+    ambiguity++;
+  }
+  if (is_z14()) {
+    model_ix = 8;
+    ambiguity++;
+  }
+  if (is_z13()) {
+    model_ix = 7;
+    ambiguity++;
+  }
+  if (is_ec12()) {
+    model_ix = 6;
+    ambiguity++;
+  }
+  if (is_z196()) {
+    model_ix = 5;
+    ambiguity++;
+  }
+  if (is_z10()) {
+    model_ix = 4;
+    ambiguity++;
+  }
+  if (is_z9()) {
+    model_ix = 3;
+    ambiguity++;
+  }
+  if (is_z990()) {
+    model_ix = 2;
+    ambiguity++;
+  }
+  if (is_z900()) {
+    model_ix = 1;
+    ambiguity++;
+  }
+
+  if (ambiguity > 1) {
+    model_ix = -model_ix;
+  }
+  return model_ix;
+}
+
+
 void VM_Version::set_features_string() {
   // A note on the _features_string format:
   //   There are jtreg tests checking the _features_string for various properties.
@@ -287,63 +358,19 @@ void VM_Version::set_features_string() {
   //   Features may have one comma at the end.
   //   Furthermore, use one, and only one, separator space between features.
   //   Multiple spaces are considered separate tokens, messing up everything.
-  unsigned int ambiguity = 0;
-  unsigned int model_ix  = 0;
-  if (is_z15()) {
-    _features_string = "system-z g9-z15 ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, VEnh2 )";
-    model_ix = 9;
-    ambiguity++;
-  }
-  if (is_z14()) {
-    _features_string = "system-z g8-z14 ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1)";
-    model_ix = 8;
-    ambiguity++;
-  }
-  if (is_z13()) {
-    _features_string = "system-z, g7-z13, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr";
-    model_ix = 7;
-    ambiguity++;
-  }
-  if (is_ec12()) {
-    _features_string = "system-z, g6-ec12, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm";
-    model_ix = 6;
-    ambiguity++;
-  }
-  if (is_z196()) {
-    _features_string = "system-z, g5-z196, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update";
-    model_ix = 5;
-    ambiguity++;
-  }
-  if (is_z10()) {
-    _features_string = "system-z, g4-z10, ldisp_fast, extimm, pcrel_load/store, cmpb";
-    model_ix = 4;
-    ambiguity++;
-  }
-  if (is_z9()) {
-    _features_string = "system-z, g3-z9, ldisp_fast, extimm";
-    model_ix = 3;
-    ambiguity++;
-  }
-  if (is_z990()) {
-    _features_string = "system-z, g2-z990, ldisp_fast";
-    model_ix = 2;
-    ambiguity++;
-  }
-  if (is_z900()) {
-    _features_string = "system-z, g1-z900, ldisp";
-    model_ix = 1;
-    ambiguity++;
-  }
 
+  int model_ix = get_model_index();
   char buf[512];
-  if (ambiguity == 0) {
+  if (model_ix == 0) {
+    _model_string = "unknown model";
     strcpy(buf, "z/Architecture (unknown generation)");
-  } else if (ambiguity == 1) {
+  } else if (model_ix > 0) {
     _model_string = z_name[model_ix];
-    jio_snprintf(buf, sizeof(buf), "%s, out-of-support_as_of_", _features_string, z_EOS[model_ix]);
-  } else if (ambiguity > 1) {
-    tty->print_cr("*** WARNING *** Ambiguous z/Architecture detection, ambiguity = %d", ambiguity);
-    tty->print_cr("                oldest detected generation is %s", _features_string);
+    jio_snprintf(buf, sizeof(buf), "%s, out-of-support_as_of_", z_features[model_ix], z_EOS[model_ix]);
+  } else if (model_ix < 0) {
+    tty->print_cr("*** WARNING *** Ambiguous z/Architecture detection!");
+    tty->print_cr("                oldest detected generation is %s", z_features[-model_ix]);
+    _model_string = "unknown model";
     strcpy(buf, "z/Architecture (ambiguous detection)");
   }
   _features_string = os::strdup(buf);
@@ -398,11 +425,7 @@ bool VM_Version::test_feature_bit(unsigned long* featureBuffer, int featureNum, 
 }
 
 void VM_Version::print_features_internal(const char* text, bool print_anyway) {
-  tty->print_cr("%s %s",       text, features_string());
-  tty->print("%s", text);
-  for (unsigned int i = 0; i < _nfeatures; i++) {
-    tty->print("  0x%16.16lx", _features[i]);
-  }
+  tty->print_cr("%s %s", text, features_string());
   tty->cr();
 
   if (Verbose || print_anyway) {
@@ -432,7 +455,7 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
     if (has_Prefetch()                 ) tty->print_cr("  available: %s", "Prefetch");
     if (has_MoveImmToMem()             ) tty->print_cr("  available: %s", "Direct Moves Immediate to Memory");
     if (has_MemWithImmALUOps()         ) tty->print_cr("  available: %s", "Direct ALU Ops Memory .op. Immediate");
-    if (has_ExtractCPUAttributes()     ) tty->print_cr("  available: %s", "Extract CPU Atributes");
+    if (has_ExtractCPUAttributes()     ) tty->print_cr("  available: %s", "Extract CPU Attributes");
     if (has_ExecuteExtensions()        ) tty->print_cr("available: %s", "ExecuteExtensions");
     if (has_FPSupportEnhancements()    ) tty->print_cr("available: %s", "FPSupportEnhancements");
     if (has_DecimalFloatingPoint()     ) tty->print_cr("available: %s", "DecimalFloatingPoint");
@@ -448,7 +471,7 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
     if (has_CryptoExt3()               ) tty->print_cr("available: %s", "Crypto Extensions 3");
     if (has_CryptoExt4()               ) tty->print_cr("available: %s", "Crypto Extensions 4");
     // EC12
-    if (has_MiscInstrExt()             ) tty->print_cr("available: %s", "Miscelaneous Instruction Extensions");
+    if (has_MiscInstrExt()             ) tty->print_cr("available: %s", "Miscellaneous Instruction Extensions");
     if (has_ExecutionHint()            ) tty->print_cr("  available: %s", "Execution Hints (branch prediction)");
     if (has_ProcessorAssist()          ) tty->print_cr("  available: %s", "Processor Assists");
     if (has_LoadAndTrap()              ) tty->print_cr("  available: %s", "Load and Trap");
@@ -461,25 +484,26 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
     if (has_DFPPackedConversion()      ) tty->print_cr("available: %s", "DFP Packed Conversions");
     if (has_VectorFacility()           ) tty->print_cr("available: %s", "Vector Facility");
     // z14
-    if (has_MiscInstrExt2()            ) tty->print_cr("available: %s", "Miscelaneous Instruction Extensions 2");
+    if (has_MiscInstrExt2()            ) tty->print_cr("available: %s", "Miscellaneous Instruction Extensions 2");
     if (has_VectorEnhancements1()      ) tty->print_cr("available: %s", "Vector Facility Enhancements 3");
     if (has_CryptoExt8()               ) tty->print_cr("available: %s", "Crypto Extensions 8");
     // z15
-    if (has_MiscInstrExt3()            ) tty->print_cr("available: %s", "Miscelaneous Instruction Extensions 3");
+    if (has_MiscInstrExt3()            ) tty->print_cr("available: %s", "Miscellaneous Instruction Extensions 3");
     if (has_VectorEnhancements2()      ) tty->print_cr("available: %s", "Vector Facility Enhancements 3");
     if (has_CryptoExt9()               ) tty->print_cr("available: %s", "Crypto Extensions 9");
 
     if (has_Crypto()) {
       tty->cr();
       tty->print_cr("detailed availability of %s capabilities:", "CryptoFacility");
-      if (test_feature_bit(&_cipher_features[0], -1, 2*Cipher::_featureBits)) {
+      if (test_feature_bit(&_cipher_features_KM[0], -1, 2*Cipher::_featureBits)) {
         tty->cr();
         tty->print_cr("  available: %s", "Message Cipher Functions");
       }
-      if (test_feature_bit(&_cipher_features[0], -1, (int)Cipher::_featureBits)) {
+
+      if (test_feature_bit(&_cipher_features_KM[0], -1, (int)Cipher::_featureBits)) {
         tty->print_cr("    available Crypto Features of KM  (Cipher Message):");
         for (unsigned int i = 0; i < Cipher::_featureBits; i++) {
-          if (test_feature_bit(&_cipher_features[0], i, (int)Cipher::_featureBits)) {
+          if (test_feature_bit(&_cipher_features_KM[0], i, (int)Cipher::_featureBits)) {
             switch (i) {
               case Cipher::_Query:              tty->print_cr("      available: KM   Query");                  break;
               case Cipher::_DEA:                tty->print_cr("      available: KM   DEA");                    break;
@@ -503,10 +527,11 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
           }
         }
       }
-      if (test_feature_bit(&_cipher_features[2], -1, (int)Cipher::_featureBits)) {
+
+      if (test_feature_bit(&_cipher_features_KM[2], -1, (int)Cipher::_featureBits)) {
         tty->print_cr("    available Crypto Features of KMC (Cipher Message with Chaining):");
         for (unsigned int i = 0; i < Cipher::_featureBits; i++) {
-            if (test_feature_bit(&_cipher_features[2], i, (int)Cipher::_featureBits)) {
+          if (test_feature_bit(&_cipher_features_KM[2], i, (int)Cipher::_featureBits)) {
             switch (i) {
               case Cipher::_Query:              tty->print_cr("      available: KMC  Query");                  break;
               case Cipher::_DEA:                tty->print_cr("      available: KMC  DEA");                    break;
@@ -527,35 +552,145 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
           }
         }
       }
+    }
 
+    if (has_CryptoExt4()) {
+      if (test_feature_bit(&_cipher_features_KMF[0], -1, (int)Cipher::_featureBits)) {
+        tty->print_cr("    available Crypto Features of KMF (Cipher Message with Cipher Feedback):");
+        for (unsigned int i = 0; i < Cipher::_featureBits; i++) {
+          if (test_feature_bit(&_cipher_features_KMF[0], i, (int)Cipher::_featureBits)) {
+            switch (i) {
+              case Cipher::_Query:              tty->print_cr("      available: KMF  Query");                  break;
+              case Cipher::_DEA:                tty->print_cr("      available: KMF  DEA");                    break;
+              case Cipher::_TDEA128:            tty->print_cr("      available: KMF  TDEA-128");               break;
+              case Cipher::_TDEA192:            tty->print_cr("      available: KMF  TDEA-192");               break;
+              case Cipher::_EncryptedDEA:       tty->print_cr("      available: KMF  Encrypted DEA");          break;
+              case Cipher::_EncryptedDEA128:    tty->print_cr("      available: KMF  Encrypted DEA-128");      break;
+              case Cipher::_EncryptedDEA192:    tty->print_cr("      available: KMF  Encrypted DEA-192");      break;
+              case Cipher::_AES128:             tty->print_cr("      available: KMF  AES-128");                break;
+              case Cipher::_AES192:             tty->print_cr("      available: KMF  AES-192");                break;
+              case Cipher::_AES256:             tty->print_cr("      available: KMF  AES-256");                break;
+              case Cipher::_EnccryptedAES128:   tty->print_cr("      available: KMF  Encrypted-AES-128");      break;
+              case Cipher::_EnccryptedAES192:   tty->print_cr("      available: KMF  Encrypted-AES-192");      break;
+              case Cipher::_EnccryptedAES256:   tty->print_cr("      available: KMF  Encrypted-AES-256");      break;
+              default: tty->print_cr("      available: unknown KMF code %d", i);      break;
+            }
+          }
+        }
+      }
+
+      if (test_feature_bit(&_cipher_features_KMCTR[0], -1, (int)Cipher::_featureBits)) {
+        tty->print_cr("    available Crypto Features of KMCTR (Cipher Message with Counter):");
+        for (unsigned int i = 0; i < Cipher::_featureBits; i++) {
+          if (test_feature_bit(&_cipher_features_KMCTR[0], i, (int)Cipher::_featureBits)) {
+            switch (i) {
+              case Cipher::_Query:              tty->print_cr("      available: KMCTR  Query");                break;
+              case Cipher::_DEA:                tty->print_cr("      available: KMCTR  DEA");                  break;
+              case Cipher::_TDEA128:            tty->print_cr("      available: KMCTR  TDEA-128");             break;
+              case Cipher::_TDEA192:            tty->print_cr("      available: KMCTR  TDEA-192");             break;
+              case Cipher::_EncryptedDEA:       tty->print_cr("      available: KMCTR  Encrypted DEA");        break;
+              case Cipher::_EncryptedDEA128:    tty->print_cr("      available: KMCTR  Encrypted DEA-128");    break;
+              case Cipher::_EncryptedDEA192:    tty->print_cr("      available: KMCTR  Encrypted DEA-192");    break;
+              case Cipher::_AES128:             tty->print_cr("      available: KMCTR  AES-128");              break;
+              case Cipher::_AES192:             tty->print_cr("      available: KMCTR  AES-192");              break;
+              case Cipher::_AES256:             tty->print_cr("      available: KMCTR  AES-256");              break;
+              case Cipher::_EnccryptedAES128:   tty->print_cr("      available: KMCTR  Encrypted-AES-128");    break;
+              case Cipher::_EnccryptedAES192:   tty->print_cr("      available: KMCTR  Encrypted-AES-192");    break;
+              case Cipher::_EnccryptedAES256:   tty->print_cr("      available: KMCTR  Encrypted-AES-256");    break;
+              default: tty->print_cr("      available: unknown KMCTR code %d", i);      break;
+            }
+          }
+        }
+      }
+
+      if (test_feature_bit(&_cipher_features_KMO[0], -1, (int)Cipher::_featureBits)) {
+        tty->print_cr("    available Crypto Features of KMO (Cipher Message with Output Feedback):");
+        for (unsigned int i = 0; i < Cipher::_featureBits; i++) {
+          if (test_feature_bit(&_cipher_features_KMO[0], i, (int)Cipher::_featureBits)) {
+            switch (i) {
+              case Cipher::_Query:              tty->print_cr("      available: KMO  Query");                  break;
+              case Cipher::_DEA:                tty->print_cr("      available: KMO  DEA");                    break;
+              case Cipher::_TDEA128:            tty->print_cr("      available: KMO  TDEA-128");               break;
+              case Cipher::_TDEA192:            tty->print_cr("      available: KMO  TDEA-192");               break;
+              case Cipher::_EncryptedDEA:       tty->print_cr("      available: KMO  Encrypted DEA");          break;
+              case Cipher::_EncryptedDEA128:    tty->print_cr("      available: KMO  Encrypted DEA-128");      break;
+              case Cipher::_EncryptedDEA192:    tty->print_cr("      available: KMO  Encrypted DEA-192");      break;
+              case Cipher::_AES128:             tty->print_cr("      available: KMO  AES-128");                break;
+              case Cipher::_AES192:             tty->print_cr("      available: KMO  AES-192");                break;
+              case Cipher::_AES256:             tty->print_cr("      available: KMO  AES-256");                break;
+              case Cipher::_EnccryptedAES128:   tty->print_cr("      available: KMO  Encrypted-AES-128");      break;
+              case Cipher::_EnccryptedAES192:   tty->print_cr("      available: KMO  Encrypted-AES-192");      break;
+              case Cipher::_EnccryptedAES256:   tty->print_cr("      available: KMO  Encrypted-AES-256");      break;
+              default: tty->print_cr("      available: unknown KMO code %d", i);      break;
+            }
+          }
+        }
+      }
+    }
+
+    if (has_CryptoExt8()) {
+      if (test_feature_bit(&_cipher_features_KMA[0], -1, (int)Cipher::_featureBits)) {
+        tty->print_cr("    available Crypto Features of KMA (Cipher Message with Authentication):");
+        for (unsigned int i = 0; i < Cipher::_featureBits; i++) {
+          if (test_feature_bit(&_cipher_features_KMA[0], i, (int)Cipher::_featureBits)) {
+            switch (i) {
+              case Cipher::_Query:              tty->print_cr("      available: KMA      Query");              break;
+              case Cipher::_AES128:             tty->print_cr("      available: KMA-GCM  AES-128");            break;
+              case Cipher::_AES192:             tty->print_cr("      available: KMA-GCM  AES-192");            break;
+              case Cipher::_AES256:             tty->print_cr("      available: KMA-GCM  AES-256");            break;
+              case Cipher::_EnccryptedAES128:   tty->print_cr("      available: KMA-GCM  Encrypted-AES-128");  break;
+              case Cipher::_EnccryptedAES192:   tty->print_cr("      available: KMA-GCM  Encrypted-AES-192");  break;
+              case Cipher::_EnccryptedAES256:   tty->print_cr("      available: KMA-GCM  Encrypted-AES-256");  break;
+              default: tty->print_cr("      available: unknown KMA code %d", i);      break;
+            }
+          }
+        }
+      }
+    }
+
+    if (has_Crypto()) {
       if (test_feature_bit(&_msgdigest_features[0], -1, 2*MsgDigest::_featureBits)) {
         tty->cr();
         tty->print_cr("  available: %s", "Message Digest Functions for SHA");
       }
+
       if (test_feature_bit(&_msgdigest_features[0], -1, (int)MsgDigest::_featureBits)) {
         tty->print_cr("    available Features of KIMD (Msg Digest):");
         for (unsigned int i = 0; i < MsgDigest::_featureBits; i++) {
-            if (test_feature_bit(&_msgdigest_features[0], i, (int)MsgDigest::_featureBits)) {
+          if (test_feature_bit(&_msgdigest_features[0], i, (int)MsgDigest::_featureBits)) {
             switch (i) {
-              case MsgDigest::_Query:  tty->print_cr("      available: KIMD Query");   break;
-              case MsgDigest::_SHA1:   tty->print_cr("      available: KIMD SHA-1");   break;
-              case MsgDigest::_SHA256: tty->print_cr("      available: KIMD SHA-256"); break;
-              case MsgDigest::_SHA512: tty->print_cr("      available: KIMD SHA-512"); break;
-              case MsgDigest::_GHASH:  tty->print_cr("      available: KIMD GHASH");   break;
+              case MsgDigest::_Query:     tty->print_cr("      available: KIMD Query");   break;
+              case MsgDigest::_SHA1:      tty->print_cr("      available: KIMD SHA-1");   break;
+              case MsgDigest::_SHA256:    tty->print_cr("      available: KIMD SHA-256"); break;
+              case MsgDigest::_SHA512:    tty->print_cr("      available: KIMD SHA-512"); break;
+              case MsgDigest::_SHA3_224:  tty->print_cr("      available: KIMD SHA3-224");  break;
+              case MsgDigest::_SHA3_256:  tty->print_cr("      available: KIMD SHA3-256");  break;
+              case MsgDigest::_SHA3_384:  tty->print_cr("      available: KIMD SHA3-384");  break;
+              case MsgDigest::_SHA3_512:  tty->print_cr("      available: KIMD SHA3-512");  break;
+              case MsgDigest::_SHAKE_128: tty->print_cr("      available: KIMD SHAKE-128"); break;
+              case MsgDigest::_SHAKE_256: tty->print_cr("      available: KIMD SHAKE-256"); break;
+              case MsgDigest::_GHASH:     tty->print_cr("      available: KIMD GHASH");   break;
               default: tty->print_cr("      available: unknown code %d", i);  break;
             }
           }
         }
       }
+
       if (test_feature_bit(&_msgdigest_features[2], -1, (int)MsgDigest::_featureBits)) {
         tty->print_cr("    available Features of KLMD (Msg Digest):");
         for (unsigned int i = 0; i < MsgDigest::_featureBits; i++) {
           if (test_feature_bit(&_msgdigest_features[2], i, (int)MsgDigest::_featureBits)) {
             switch (i) {
-              case MsgDigest::_Query:  tty->print_cr("      available: KLMD Query");   break;
-              case MsgDigest::_SHA1:   tty->print_cr("      available: KLMD SHA-1");   break;
-              case MsgDigest::_SHA256: tty->print_cr("      available: KLMD SHA-256"); break;
-              case MsgDigest::_SHA512: tty->print_cr("      available: KLMD SHA-512"); break;
+              case MsgDigest::_Query:     tty->print_cr("      available: KLMD Query");   break;
+              case MsgDigest::_SHA1:      tty->print_cr("      available: KLMD SHA-1");   break;
+              case MsgDigest::_SHA256:    tty->print_cr("      available: KLMD SHA-256"); break;
+              case MsgDigest::_SHA512:    tty->print_cr("      available: KLMD SHA-512"); break;
+              case MsgDigest::_SHA3_224:  tty->print_cr("      available: KLMD SHA3-224");  break;
+              case MsgDigest::_SHA3_256:  tty->print_cr("      available: KLMD SHA3-256");  break;
+              case MsgDigest::_SHA3_384:  tty->print_cr("      available: KLMD SHA3-384");  break;
+              case MsgDigest::_SHA3_512:  tty->print_cr("      available: KLMD SHA3-512");  break;
+              case MsgDigest::_SHAKE_128: tty->print_cr("      available: KLMD SHAKE-128"); break;
+              case MsgDigest::_SHAKE_256: tty->print_cr("      available: KLMD SHAKE-256"); break;
               default: tty->print_cr("      available: unknown code %d", i);  break;
             }
           }
@@ -743,6 +878,29 @@ void VM_Version::set_features_from(const char* march) {
 
 }
 
+// getFeatures call interface
+// Z_ARG1 (R2) - feature bit buffer address.
+//               Must be DW aligned.
+// Z_ARG2 (R3) -  > 0 feature bit buffer length (#DWs).
+//                    Implies request to store cpu feature list via STFLE.
+//                = 0 invalid
+//                < 0 function code (which feature information to retrieve)
+//                    Implies that a buffer of at least two DWs is passed in.
+//                =-1 - retrieve cache topology
+//                =-2 - basic cipher instruction capabilities
+//                =-3 - msg digest (secure hash) instruction capabilities
+//                =-4 - vector instruction OS support availability
+//               =-17 - cipher (KMF) support
+//               =-18 - cipher (KMCTR) support
+//               =-19 - cipher (KMO) support
+//               =-20 - cipher (KMA) support
+// Z_ARG3 (R4) - feature code for ECAG instruction
+//
+// Z_RET (R2)  - return value
+//                >  0: success: number of retrieved feature bit string words.
+//                <  0: failure: required number of feature bit string words (buffer too small).
+//                == 0: failure: operation aborted.
+//
 static long (*getFeatures)(unsigned long*, int, int) = NULL;
 
 void VM_Version::set_getFeatures(address entryPoint) {
@@ -765,6 +923,14 @@ int VM_Version::calculate_ECAG_functionCode(unsigned int attributeIndication,
   return (attributeIndication<<4) | (levelIndication<<1) | typeIndication;
 }
 
+void VM_Version::clear_buffer(unsigned long* buffer, unsigned int len) {
+  memset(buffer, 0, sizeof(buffer[0])*len);
+}
+
+void VM_Version::copy_buffer(unsigned long* to, unsigned long* from, unsigned int len) {
+  memcpy(to, from, sizeof(to[0])*len);
+}
+
 void VM_Version::determine_features() {
 
   const int      cbuf_size = _code_buffer_len;
@@ -782,27 +948,38 @@ void VM_Version::determine_features() {
   // Try STFLE. Possible INVOP will cause defaults to be used.
   Label    getFEATURES;
   Label    getCPUFEATURES;                   // fcode = -1 (cache)
-  Label    getCIPHERFEATURES;                // fcode = -2 (cipher)
+  Label    getCIPHERFEATURES_KM;             // fcode = -2 (cipher)
+  Label    getCIPHERFEATURES_KMA;            // fcode = -20 (cipher)
+  Label    getCIPHERFEATURES_KMF;            // fcode = -17 (cipher)
+  Label    getCIPHERFEATURES_KMCTR;          // fcode = -18 (cipher)
+  Label    getCIPHERFEATURES_KMO;            // fcode = -19 (cipher)
   Label    getMSGDIGESTFEATURES;             // fcode = -3 (SHA)
   Label    getVECTORFEATURES;                // fcode = -4 (OS support for vector instructions)
   Label    errRTN;
-  a->z_ltgfr(Z_R0, Z_ARG2);                  // Buf len to r0 and test.
-  a->z_brl(getFEATURES);                     // negative -> Get machine features not covered by facility list.
+  a->z_ltgfr(Z_R0, Z_ARG2);                  // buf_len/fcode to r0 and test.
+  a->z_brl(getFEATURES);                     // negative -> Get machine features or instruction-specific features
   a->z_lghi(Z_R1,0);
   a->z_brz(errRTN);                          // zero -> Function code currently not used, indicate "aborted".
 
-  a->z_aghi(Z_R0, -1);
+  //---<  store feature list  >---
+  // We have three possible outcomes here:
+  // success:    cc = 0 and first DW of feature bit array != 0
+  //             Z_R0 contains index of last stored DW (used_len - 1)
+  // incomplete: cc = 3 and first DW of feature bit array != 0
+  //             Z_R0 contains index of last DW that would have been stored (required_len - 1)
+  a->z_aghi(Z_R0, -1);                       // STFLE needs last index, not length, of feature bit array.
   a->z_stfle(0, Z_ARG1);
-  a->z_lg(Z_R1, 0, Z_ARG1);                  // Get first DW of facility list.
-  a->z_lgr(Z_RET, Z_R0);                     // Calculate rtn value for success.
-  a->z_la(Z_RET, 1, Z_RET);
+  a->z_lg(Z_R1, Address(Z_ARG1, (intptr_t)0)); // Get first DW of facility list.
+  a->z_lgr(Z_RET, Z_R0);                     // Calculate used/required len
+  a->z_la(Z_RET, 1, Z_RET);                  // don't destroy cc from stfle!
   a->z_brnz(errRTN);                         // Instr failed if non-zero CC.
-  a->z_ltgr(Z_R1, Z_R1);                     // Instr failed if first DW == 0.
+  a->z_ltgr(Z_R1, Z_R1);                     // Check if first DW of facility list was filled.
   a->z_bcr(Assembler::bcondNotZero, Z_R14);  // Successful return.
 
+  //---<  error exit  >---
   a->bind(errRTN);
-  a->z_lngr(Z_RET, Z_RET);
-  a->z_ltgr(Z_R1, Z_R1);
+  a->z_lngr(Z_RET, Z_RET);                   // negative return value to indicate "buffer too small"
+  a->z_ltgr(Z_R1, Z_R1);                     // Check if first DW of facility list was filled.
   a->z_bcr(Assembler::bcondNotZero, Z_R14);  // Return "buffer too small".
   a->z_xgr(Z_RET, Z_RET);
   a->z_br(Z_R14);                            // Return "operation aborted".
@@ -811,11 +988,20 @@ void VM_Version::determine_features() {
   a->z_cghi(Z_R0, -1);                       // -1: Extract CPU attributes, currently: cache layout only.
   a->z_bre(getCPUFEATURES);
   a->z_cghi(Z_R0, -2);                       // -2: Extract detailed crypto capabilities (cipher instructions).
-  a->z_bre(getCIPHERFEATURES);
+  a->z_bre(getCIPHERFEATURES_KM);
   a->z_cghi(Z_R0, -3);                       // -3: Extract detailed crypto capabilities (msg digest instructions).
   a->z_bre(getMSGDIGESTFEATURES);
   a->z_cghi(Z_R0, -4);                       // -4: Verify vector instruction availability (OS support).
   a->z_bre(getVECTORFEATURES);
+
+  a->z_cghi(Z_R0, -17);                      // -17: Extract detailed crypto capabilities (cipher instructions).
+  a->z_bre(getCIPHERFEATURES_KMF);
+  a->z_cghi(Z_R0, -18);                      // -18: Extract detailed crypto capabilities (cipher instructions).
+  a->z_bre(getCIPHERFEATURES_KMCTR);
+  a->z_cghi(Z_R0, -19);                      // -19: Extract detailed crypto capabilities (cipher instructions).
+  a->z_bre(getCIPHERFEATURES_KMO);
+  a->z_cghi(Z_R0, -20);                      // -20: Extract detailed crypto capabilities (cipher instructions).
+  a->z_bre(getCIPHERFEATURES_KMA);
 
   a->z_xgr(Z_RET, Z_RET);                    // Not a valid function code.
   a->z_br(Z_R14);                            // Return "operation aborted".
@@ -824,20 +1010,52 @@ void VM_Version::determine_features() {
   a->bind(getMSGDIGESTFEATURES);
   a->z_lghi(Z_R0,(int)MsgDigest::_Query);    // query function code
   a->z_lgr(Z_R1,Z_R2);                       // param block addr, 2*16 bytes min size
-  a->z_kimd(Z_R2,Z_R2);                      // Get available KIMD functions (bit pattern in param blk).
+  a->z_kimd(Z_R2,Z_R2);                      // Get available KIMD functions (bit pattern in param blk). Must use even regs.
   a->z_la(Z_R1,16,Z_R1);                     // next param block addr
-  a->z_klmd(Z_R2,Z_R2);                      // Get available KLMD functions (bit pattern in param blk).
-  a->z_lghi(Z_RET,4);
+  a->z_klmd(Z_R2,Z_R4);                      // Get available KLMD functions (bit pattern in param blk). Must use distinct even regs.
+  a->z_lghi(Z_RET,4);                        // #used words in output buffer
   a->z_br(Z_R14);
 
   // Try KM/KMC query function to get details about crypto instructions.
-  a->bind(getCIPHERFEATURES);
+  a->bind(getCIPHERFEATURES_KM);
   a->z_lghi(Z_R0,(int)Cipher::_Query);       // query function code
   a->z_lgr(Z_R1,Z_R2);                       // param block addr, 2*16 bytes min size (KIMD/KLMD output)
-  a->z_km(Z_R2,Z_R2);                        // get available KM functions
+  a->z_km(Z_R2,Z_R2);                        // get available KM functions. Must use even regs.
   a->z_la(Z_R1,16,Z_R1);                     // next param block addr
   a->z_kmc(Z_R2,Z_R2);                       // get available KMC functions
-  a->z_lghi(Z_RET,4);
+  a->z_lghi(Z_RET,4);                        // #used words in output buffer
+  a->z_br(Z_R14);
+
+  // Try KMA query function to get details about crypto instructions.
+  a->bind(getCIPHERFEATURES_KMA);
+  a->z_lghi(Z_R0,(int)Cipher::_Query);       // query function code
+  a->z_lgr(Z_R1,Z_R2);                       // param block addr, 2*16 bytes min size (KIMD/KLMD output)
+  a->z_kma(Z_R2,Z_R4,Z_R6);                  // get available KMA functions. Must use distinct even regs.
+  a->z_lghi(Z_RET,2);                        // #used words in output buffer
+  a->z_br(Z_R14);
+
+  // Try KMF query function to get details about crypto instructions.
+  a->bind(getCIPHERFEATURES_KMF);
+  a->z_lghi(Z_R0,(int)Cipher::_Query);       // query function code
+  a->z_lgr(Z_R1,Z_R2);                       // param block addr, 2*16 bytes min size (KIMD/KLMD output)
+  a->z_kmf(Z_R2,Z_R2);                       // get available KMA functions. Must use even regs.
+  a->z_lghi(Z_RET,2);                        // #used words in output buffer
+  a->z_br(Z_R14);
+
+  // Try KMCTR query function to get details about crypto instructions.
+  a->bind(getCIPHERFEATURES_KMCTR);
+  a->z_lghi(Z_R0,(int)Cipher::_Query);       // query function code
+  a->z_lgr(Z_R1,Z_R2);                       // param block addr, 2*16 bytes min size (KIMD/KLMD output)
+  a->z_kmctr(Z_R2,Z_R2,Z_R2);                     // get available KMCTR functions. Must use even regs.
+  a->z_lghi(Z_RET,2);                        // #used words in output buffer
+  a->z_br(Z_R14);
+
+  // Try KMO query function to get details about crypto instructions.
+  a->bind(getCIPHERFEATURES_KMO);
+  a->z_lghi(Z_R0,(int)Cipher::_Query);       // query function code
+  a->z_lgr(Z_R1,Z_R2);                       // param block addr, 2*16 bytes min size (KIMD/KLMD output)
+  a->z_kmo(Z_R2,Z_R2);                       // get available KMO functions. Must use even regs.
+  a->z_lghi(Z_RET,2);                        // #used words in output buffer
   a->z_br(Z_R14);
 
   // Use EXTRACT CPU ATTRIBUTE instruction to get information about cache layout.
@@ -868,14 +1086,9 @@ void VM_Version::determine_features() {
     Disassembler::decode(code, code_end, tty);
   }
 
-  // Prepare for detection code execution and clear work buffer.
-  _nfeatures        = 0;
-  _ncipher_features = 0;
+  // prepare work buffer
   unsigned long  buffer[buf_len];
-
-  for (int i = 0; i < buf_len; i++) {
-    buffer[i] = 0L;
-  }
+  clear_buffer(buffer, buf_len);
 
   // execute code
   // Illegal instructions will be replaced by 0 in signal handler.
@@ -883,40 +1096,37 @@ void VM_Version::determine_features() {
   long used_len = call_getFeatures(buffer, buf_len, 0);
 
   bool ok;
-  if (used_len == 1) {
+  if ((used_len > 0) && (used_len <= buf_len)) {
     ok = true;
-  } else if (used_len > 1) {
-    unsigned int used_lenU = (unsigned int)used_len;
-    ok = true;
-    for (unsigned int i = 1; i < used_lenU; i++) {
-      ok = ok && (buffer[i] == 0L);
-    }
-    if (printVerbose && !ok) {
-      bool compact = false;
-      tty->print_cr("Note: feature list has %d (i.e. more than one) array elements.", used_lenU);
+    if (printVerbose) {
+      bool compact = Verbose;
+      tty->print_cr("Note: feature list uses %ld array elements.", used_len);
       if (compact) {
         tty->print("non-zero feature list elements:");
-        for (unsigned int i = 0; i < used_lenU; i++) {
-          tty->print("  [%d]: 0x%16.16lx", i, buffer[i]);
+        for (unsigned int k = 0; k < used_len; k++) {
+          if (buffer[k] != 0) {
+            tty->print("  [%d]: 0x%16.16lx", k, buffer[k]);
+          }
         }
         tty->cr();
       } else {
-        for (unsigned int i = 0; i < used_lenU; i++) {
-          tty->print_cr("non-zero feature list[%d]: 0x%16.16lx", i, buffer[i]);
+        for (unsigned int k = 0; k < used_len; k++) {
+          tty->print_cr("non-zero feature list[%d]: 0x%16.16lx", k, buffer[k]);
         }
       }
 
       if (compact) {
         tty->print_cr("Active features (compact view):");
-        for (unsigned int k = 0; k < used_lenU; k++) {
+        for (unsigned int k = 0; k < used_len; k++) {
           tty->print_cr("  buffer[%d]:", k);
           for (unsigned int j = k*sizeof(long); j < (k+1)*sizeof(long); j++) {
             bool line = false;
             for (unsigned int i = j*8; i < (j+1)*8; i++) {
-              bool bit  = test_feature_bit(buffer, i, used_lenU*sizeof(long)*8);
+              bool bit  = test_feature_bit(buffer, i, used_len*sizeof(long)*8);
               if (bit) {
                 if (!line) {
                   tty->print("    byte[%d]:", j);
+                  tty->fill_to(13);
                   line = true;
                 }
                 tty->print("  [%3.3d]", i);
@@ -929,12 +1139,13 @@ void VM_Version::determine_features() {
         }
       } else {
         tty->print_cr("Active features (full view):");
-        for (unsigned int k = 0; k < used_lenU; k++) {
+        for (unsigned int k = 0; k < used_len; k++) {
           tty->print_cr("  buffer[%d]:", k);
           for (unsigned int j = k*sizeof(long); j < (k+1)*sizeof(long); j++) {
             tty->print("    byte[%d]:", j);
+            tty->fill_to(13);
             for (unsigned int i = j*8; i < (j+1)*8; i++) {
-              bool bit  = test_feature_bit(buffer, i, used_lenU*sizeof(long)*8);
+              bool bit  = test_feature_bit(buffer, i, used_len*sizeof(long)*8);
               if (bit) {
                 tty->print("  [%3.3d]", i);
               } else {
@@ -946,69 +1157,32 @@ void VM_Version::determine_features() {
         }
       }
     }
-    ok = true;
   } else {  // No features retrieved if we reach here. Buffer too short or instr not available.
+    ok = false;
     if (used_len < 0) {
-      ok = false;
       if (printVerbose) {
         tty->print_cr("feature list buffer[%d] too short, required: buffer[%ld]", buf_len, -used_len);
       }
     } else {
       if (printVerbose) {
-        tty->print_cr("feature list could not be retrieved. Running on z900 or z990? Trying to find out...");
+        tty->print_cr("feature list could not be retrieved. Bad function code? Running on z900 or z990?");
       }
-      used_len = call_getFeatures(buffer, 0, 0);       // Must provide at least two DW buffer elements!!!!
-
-      ok = used_len > 0;
-      if (ok) {
-        if (buffer[1]*10 < buffer[0]) {
-          set_features_z900();
-        } else {
-          set_features_z990();
-        }
-
-        if (printVerbose) {
-          tty->print_cr("Note: high-speed long displacement test used %ld iterations.", used_len);
-          tty->print_cr("      Positive displacement loads took %8.8lu microseconds.", buffer[1]);
-          tty->print_cr("      Negative displacement loads took %8.8lu microseconds.", buffer[0]);
-          if (has_long_displacement_fast()) {
-            tty->print_cr("      assuming high-speed long displacement IS     available.");
-          } else {
-            tty->print_cr("      assuming high-speed long displacement is NOT available.");
-          }
-        }
-      } else {
-        if (printVerbose) {
-          tty->print_cr("Note: high-speed long displacement test was not successful.");
-          tty->print_cr("      assuming long displacement is NOT available.");
-        }
-      }
-      return; // Do not copy buffer to _features, no test for cipher features.
     }
   }
 
   if (ok) {
-    // Fill features buffer.
-    // Clear work buffer.
-    for (int i = 0; i < buf_len; i++) {
-      _features[i]           = buffer[i];
-      _cipher_features[i]    = 0;
-      _msgdigest_features[i] = 0;
-      buffer[i]              = 0L;
-    }
+    // Copy detected features to features buffer.
+    copy_buffer(_features, buffer, buf_len);
     _nfeatures = used_len;
   } else {
-    for (int i = 0; i < buf_len; i++) {
-      _features[i]           = 0;
-      _cipher_features[i]    = 0;
-      _msgdigest_features[i] = 0;
-      buffer[i]              = 0L;
-    }
+    // Something went wrong with feature detection. Disable everything.
+    clear_buffer(_features, buf_len);
     _nfeatures = 0;
   }
 
   if (has_VectorFacility()) {
     // Verify that feature can actually be used. OS support required.
+    // We will get a signal if not. Signal handler will disable vector facility
     call_getFeatures(buffer, -4, 0);
     if (printVerbose) {
       ttyLocker ttyl;
@@ -1020,21 +1194,67 @@ void VM_Version::determine_features() {
     }
   }
 
-  // Extract Crypto Facility details.
+  // Clear all Cipher feature buffers and the work buffer.
+  clear_buffer(_cipher_features_KM, buf_len);
+  clear_buffer(_cipher_features_KMA, buf_len);
+  clear_buffer(_cipher_features_KMF, buf_len);
+  clear_buffer(_cipher_features_KMCTR, buf_len);
+  clear_buffer(_cipher_features_KMO, buf_len);
+  clear_buffer(_msgdigest_features, buf_len);
+  _ncipher_features_KM    = 0;
+  _ncipher_features_KMA   = 0;
+  _ncipher_features_KMF   = 0;
+  _ncipher_features_KMCTR = 0;
+  _ncipher_features_KMO   = 0;
+  _nmsgdigest_features    = 0;
+
+  //---------------------------------------
+  //--  Extract Crypto Facility details  --
+  //---------------------------------------
+
   if (has_Crypto()) {
-    // Get cipher features.
+    // Get features of KM/KMC cipher instructions
+    clear_buffer(buffer, buf_len);
     used_len = call_getFeatures(buffer, -2, 0);
-    for (int i = 0; i < buf_len; i++) {
-      _cipher_features[i] = buffer[i];
-    }
-    _ncipher_features = used_len;
+    copy_buffer(_cipher_features_KM, buffer, buf_len);
+    _ncipher_features_KM = used_len;
 
     // Get msg digest features.
+    clear_buffer(buffer, buf_len);
     used_len = call_getFeatures(buffer, -3, 0);
-    for (int i = 0; i < buf_len; i++) {
-      _msgdigest_features[i] = buffer[i];
-    }
+    copy_buffer(_msgdigest_features, buffer, buf_len);
     _nmsgdigest_features = used_len;
+  }
+
+  if (has_CryptoExt4()) {
+    // Get features of KMF cipher instruction
+    clear_buffer(buffer, buf_len);
+    used_len = call_getFeatures(buffer, -17, 0);
+    copy_buffer(_cipher_features_KMF, buffer, buf_len);
+    _ncipher_features_KMF = used_len;
+
+    // Get features of KMCTR cipher instruction
+    clear_buffer(buffer, buf_len);
+    used_len = call_getFeatures(buffer, -18, 0);
+    copy_buffer(_cipher_features_KMCTR, buffer, buf_len);
+    _ncipher_features_KMCTR = used_len;
+
+    // Get features of KMO cipher instruction
+    clear_buffer(buffer, buf_len);
+    used_len = call_getFeatures(buffer, -19, 0);
+    copy_buffer(_cipher_features_KMO, buffer, buf_len);
+    _ncipher_features_KMO = used_len;
+  }
+
+  if (has_CryptoExt8()) {
+    // Get features of KMA cipher instruction
+    clear_buffer(buffer, buf_len);
+    used_len = call_getFeatures(buffer, -20, 0);
+    copy_buffer(_cipher_features_KMA, buffer, buf_len);
+    _ncipher_features_KMA = used_len;
+  }
+  if (printVerbose) {
+    tty->print_cr("  Crypto capabilities retrieved.");
   }
 
   static int   levelProperties[_max_cache_levels];     // All property indications per level.
@@ -1270,4 +1490,3 @@ unsigned long VM_Version::z_SIGSEGV() {
  );
   return ZeroBuffer;
 }
-

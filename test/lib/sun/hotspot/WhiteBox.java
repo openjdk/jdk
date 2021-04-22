@@ -397,7 +397,7 @@ public class WhiteBox {
   public native long allocateMetaspace(ClassLoader classLoader, long size);
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
-  public native long metaspaceReserveAlignment();
+  public native long metaspaceSharedRegionAlignment();
 
   // Metaspace Arena Tests
   public native long createMetaspaceTestContext(long commit_limit, long reserve_limit);

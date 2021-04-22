@@ -253,7 +253,7 @@ public class ECDSAOperations {
         return ECOperations.allZero(temp1);
     }
 
-    static public ImmutableIntegerModuloP b2a(IntegerModuloP b,
+    public static ImmutableIntegerModuloP b2a(IntegerModuloP b,
             IntegerFieldModuloP orderField, byte[] temp1) {
         b.asByteArray(temp1);
         ImmutableIntegerModuloP b2 = orderField.getElement(temp1);

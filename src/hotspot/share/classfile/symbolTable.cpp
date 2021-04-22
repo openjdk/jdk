@@ -881,14 +881,3 @@ void SymboltableDCmd::execute(DCmdSource source, TRAPS) {
                          _verbose.value());
   VMThread::execute(&dumper);
 }
-
-int SymboltableDCmd::num_arguments() {
-  ResourceMark rm;
-  SymboltableDCmd* dcmd = new SymboltableDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
