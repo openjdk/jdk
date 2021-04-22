@@ -10851,7 +10851,7 @@ void Assembler::subq(Register dst, Register src) {
 
 void Assembler::testq(Address dst, int32_t imm32) {
   InstructionMark im(this);
-  emit_int16(get_prefixq(dst), 0xF7);
+  emit_int16(get_prefixq(dst), (unsigned char)0xF7);
   emit_operand(as_Register(0), dst);
   emit_int32(imm32);
 }
