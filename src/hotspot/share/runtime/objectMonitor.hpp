@@ -302,6 +302,22 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(TRAPS);
 
+ private:
+  class ExitOnSuspend {
+   protected:
+    ObjectMonitor* _om;
+    bool _om_exit;
+   public:
+    ExitOnSuspend(ObjectMonitor* om) : _om(om), _om_exit(false) {}
+    void operator()(JavaThread* current);
+    bool om_exited() { return _om_exit; }
+  };
+  class ClearSuccOnSuspend : public ExitOnSuspend {
+   public:
+    ClearSuccOnSuspend(ObjectMonitor* om) : ExitOnSuspend(om) {}
+    void operator()(JavaThread* current);
+  };
+ public:
   bool      enter(JavaThread* current);
   void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);

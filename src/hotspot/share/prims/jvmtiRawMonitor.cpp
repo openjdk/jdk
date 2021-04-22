@@ -44,9 +44,12 @@ void JvmtiPendingMonitors::transition_raw_monitors() {
          "is running. Raw monitor transition will not work");
   JavaThread* current_java_thread = JavaThread::current();
   assert(current_java_thread->thread_state() == _thread_in_vm, "Must be in vm");
-  for (int i = 0; i < count(); i++) {
-    JvmtiRawMonitor* rmonitor = monitors()->at(i);
-    rmonitor->raw_enter(current_java_thread);
+  {
+    ThreadToNativeFromVM ttnfvm(current_java_thread);
+    for (int i = 0; i < count(); i++) {
+      JvmtiRawMonitor* rmonitor = monitors()->at(i);
+      rmonitor->raw_enter(current_java_thread);
+    }
   }
   // pending monitors are converted to real monitor so delete them all.
   dispose();
@@ -217,11 +220,12 @@ inline void JvmtiRawMonitor::dequeue_waiter(QNode& node) {
 // simple_wait is not quite so simple as we have to deal with the interaction
 // with the Thread interrupt state, which resides in the java.lang.Thread object.
 // That state must only be accessed while _thread_in_vm and requires proper thread-state
-// transitions. However, we cannot perform such transitions whilst we hold the RawMonitor,
-// else we can deadlock with the VMThread (which may also use RawMonitors as part of
-// executing various callbacks).
+// transitions.
 // Returns M_OK usually, but M_INTERRUPTED if the thread is a JavaThread and was
 // interrupted.
+// Note:
+//  - simple_wait never reenters the monitor.
+//  - A JavaThread must be in native.
 int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
   guarantee(_owner == self  , "invariant");
   guarantee(_recursions == 0, "invariant");
@@ -235,21 +239,24 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
   int ret = M_OK;
   if (self->is_Java_thread()) {
     JavaThread* jt = self->as_Java_thread();
-    // Transition to VM so we can check interrupt state
-    ThreadInVMfromNative tivm(jt);
-    if (jt->is_interrupted(true)) {
+    guarantee(jt->thread_state() == _thread_in_native, "invariant");
+    {
+      // This transition must be after we exited the monitor.
+      ThreadInVMfromNative tivmfn(jt);
+      if (jt->is_interrupted(true)) {
         ret = M_INTERRUPTED;
-    } else {
-      ThreadBlockInVM tbivm(jt);
-      if (millis <= 0) {
-        self->_ParkEvent->park();
       } else {
-        self->_ParkEvent->park(millis);
+        ThreadBlockInVM tbivm(jt);
+        if (millis <= 0) {
+          self->_ParkEvent->park();
+        } else {
+          self->_ParkEvent->park(millis);
+        }
+        // Return to VM before post-check of interrupt state
       }
-      // Return to VM before post-check of interrupt state
-    }
-    if (jt->is_interrupted(true)) {
-      ret = M_INTERRUPTED;
+      if (jt->is_interrupted(true)) {
+        ret = M_INTERRUPTED;
+      }
     }
   } else {
     if (millis <= 0) {
@@ -260,10 +267,6 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
   }
 
   dequeue_waiter(node);
-
-  simple_enter(self);
-  guarantee(_owner == self, "invariant");
-  guarantee(_recursions == 0, "invariant");
 
   return ret;
 }
@@ -306,49 +309,17 @@ void JvmtiRawMonitor::simple_notify(Thread* self, bool all) {
   return;
 }
 
-// Any JavaThread will enter here with state _thread_blocked unless we
-// are in single-threaded mode during startup.
+void JvmtiRawMonitor::ExitOnSuspend::operator()(JavaThread* current) {
+  // We must exit the monitor in case of a safepoint.
+  _rm->simple_exit(current);
+  _rm_exit = true;
+}
+
+// JavaThreads will enter here with state _thread_in_native.
 void JvmtiRawMonitor::raw_enter(Thread* self) {
-  void* contended;
-  JavaThread* jt = NULL;
-  // don't enter raw monitor if thread is being externally suspended, it will
-  // surprise the suspender if a "suspended" thread can still enter monitor
-  if (self->is_Java_thread()) {
-    jt = self->as_Java_thread();
-    while (true) {
-      // To pause suspend requests while in blocked we must block handshakes.
-      jt->handshake_state()->lock();
-      // Suspend request flag can only be set in handshakes.
-      // By blocking handshakes, suspend request flag cannot change its value.
-      if (!jt->handshake_state()->is_suspended()) {
-        contended = Atomic::cmpxchg(&_owner, (Thread*)NULL, jt);
-        jt->handshake_state()->unlock();
-        break;
-      }
-      jt->handshake_state()->unlock();
-
-      // We may only be in states other than _thread_blocked when we are
-      // in single-threaded mode during startup.
-      guarantee(jt->thread_state() == _thread_blocked, "invariant");
-
-      jt->set_thread_state_fence(_thread_blocked_trans);
-      SafepointMechanism::process_if_requested(jt);
-      // We should transition to thread_in_vm and then to thread_in_vm_trans,
-      // but those are always treated the same as _thread_blocked_trans.
-      jt->set_thread_state(_thread_blocked);
-    }
-  } else {
-    contended = Atomic::cmpxchg(&_owner, (Thread*)NULL, self);
-  }
-
-  if (contended == self) {
+  // TODO Atomic::load on _owner field
+  if (_owner == self) {
     _recursions++;
-    return;
-  }
-
-  if (contended == NULL) {
-    guarantee(_owner == self, "invariant");
-    guarantee(_recursions == 0, "invariant");
     return;
   }
 
@@ -357,24 +328,18 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
   if (!self->is_Java_thread()) {
     simple_enter(self);
   } else {
-    // In multi-threaded mode, we must enter this method blocked.
-    guarantee(jt->thread_state() == _thread_blocked, "invariant");
+    JavaThread* jt = self->as_Java_thread();
+    guarantee(jt->thread_state() == _thread_in_native, "invariant");
+    ThreadInVMfromNative tivmfn(jt);
     for (;;) {
-      simple_enter(jt);
-      if (!SafepointMechanism::should_process(jt)) {
-        // Not suspended so we're done here.
+      ExitOnSuspend eos(this);
+      {
+        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivmp(jt, eos);
+        simple_enter(jt);
+      }
+      if (!eos.monitor_exited()) {
         break;
       }
-      if (!jt->is_suspended()) {
-        // Not suspended so we're done here.
-        break;
-      }
-      simple_exit(jt);
-      jt->set_thread_state_fence(_thread_blocked_trans);
-      SafepointMechanism::process_if_requested(jt);
-      // We should transition to thread_in_vm and then to thread_in_vm_trans,
-      // but those are always treated the same as _thread_blocked_trans.
-      jt->set_thread_state(_thread_blocked);
     }
   }
 
@@ -410,38 +375,45 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
   OrderAccess::fence();
 
   intptr_t save = _recursions;
-  _recursions = 0;
-  _waiters++;
-  ret = simple_wait(self, millis);
-  _recursions = save;
-  _waiters--;
-
-  guarantee(self == _owner, "invariant");
 
   if (self->is_Java_thread()) {
     JavaThread* jt = self->as_Java_thread();
     guarantee(jt->thread_state() == _thread_in_native, "invariant");
-    for (;;) {
-      if (!SafepointMechanism::should_process(jt)) {
-        // Not suspended so we're done here:
-        break;
+
+    _recursions = 0;
+    _waiters++;
+    ret = simple_wait(self, millis);
+    _waiters--;
+
+    {
+      ThreadInVMfromNative tivmfn(jt);
+      for (;;) {
+        ExitOnSuspend eos(this);
+        {
+          ThreadBlockInVMPreprocess<ExitOnSuspend> tbivmp(jt, eos);
+          simple_enter(jt);
+          _recursions = save;
+        }
+        if (!eos.monitor_exited()) {
+          break;
+        }
       }
-      simple_exit(jt);
-      jt->set_thread_state_fence(_thread_in_native_trans);
-      SafepointMechanism::process_if_requested(jt);
       if (jt->is_interrupted(true)) {
         ret = M_INTERRUPTED;
       }
-      // We should transition to thread_in_vm and then to thread_in_vm_trans,
-      // but those are always treated the same as _thread_in_native_trans.
-      jt->set_thread_state(_thread_in_native);
-      simple_enter(jt);
     }
-    guarantee(jt == _owner, "invariant");
   } else {
+    _recursions = 0;
+    _waiters++;
+    ret = simple_wait(self, millis);
+    _waiters--;
+    _recursions = save;
+    simple_enter(self);
     assert(ret != M_INTERRUPTED, "Only JavaThreads can be interrupted");
   }
 
+  guarantee(self == _owner, "invariant");
+  guarantee(save == _recursions, "invariant");
   return ret;
 }
 

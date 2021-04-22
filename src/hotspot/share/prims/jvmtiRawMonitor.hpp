@@ -37,6 +37,21 @@
 // A simplified version of the ObjectMonitor code.
 //
 
+// Important note:
+// Raw monitors can be used in callbacks which happen during safepoint by the VM
+// thread (e.g. heapRootCallback). This means we may not tranisition/safepoint
+// poll in many cases, else the agent JavaThread can deadlock with VM thread,
+// as this old comment says:
+// "We can't safepoint block in here because we could deadlock the vmthread. Blech."
+// The rules are:
+// - We must never safepoint poll if raw monitor is owned.
+// - We may safepoint poll before it is owned and after it have been released.
+// If this were the only thing we needed to think about we could just stay in
+// native for all operations. However we need to honor suspend request, not
+// entering a monitor if suspended, and check for interrupts. Honoring suspened
+// and reading interrupt flag must be done from VM state (a safepoint unsafe
+// state).
+
 class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
 
   // Helper class to allow Threads to be linked into queues.
@@ -74,6 +89,16 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
   void simple_exit(Thread* self);
   int simple_wait(Thread* self, jlong millis);
   void simple_notify(Thread* self, bool all);
+
+  class ExitOnSuspend {
+   protected:
+    JvmtiRawMonitor* _rm;
+    bool _rm_exit;
+   public:
+    ExitOnSuspend(JvmtiRawMonitor* rm) : _rm(rm), _rm_exit(false) {}
+    void operator()(JavaThread* current);
+    bool monitor_exited() { return _rm_exit; }
+  };
 
  public:
 
