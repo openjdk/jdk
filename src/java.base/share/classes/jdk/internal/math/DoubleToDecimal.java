@@ -114,7 +114,7 @@ final public class DoubleToDecimal {
      *     -d.ddddddddddddddddE-eee    H + 7 characters
      * where there are H digits d
      */
-    public final int MAX_CHARS = H + 7;
+    public static final int MAX_CHARS = H + 7;
 
     /* Numerical results are created here... */
     private final byte[] bytes = new byte[MAX_CHARS];
