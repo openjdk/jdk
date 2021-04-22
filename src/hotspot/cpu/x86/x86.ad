@@ -5777,11 +5777,11 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktm
 
 // --------------------------------- Signum ---------------------------
 
-instruct signumF_reg(regF dst, regF zero, regF one, rFlagsReg cr) %{
+instruct signumF_reg(regF dst, regF zero, regF one, rRegP scratch, rFlagsReg cr) %{
   predicate(UseSSE>=1);
   match(Set dst (SignumF dst (Binary zero one)));
-  effect(KILL cr);
-  format %{ "signumF $dst, $dst" %}
+  effect(TEMP scratch, KILL cr);
+  format %{ "signumF $dst, $dst\t! using $scratch as TEMP" %}
   ins_encode %{
     Label exit;
 
@@ -5790,17 +5790,17 @@ instruct signumF_reg(regF dst, regF zero, regF one, rFlagsReg cr) %{
     __ jcc(Assembler::parity, exit);
     __ movflt($dst$$XMMRegister, $one$$XMMRegister);
     __ jcc(Assembler::above, exit);
-    __ xorps($dst$$XMMRegister, ExternalAddress(float_signflip()));
+    __ xorps($dst$$XMMRegister, ExternalAddress(float_signflip()), $scratch$$Register);
     __ bind(exit);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct signumD_reg(regD dst, regD zero, regD one, rFlagsReg cr) %{
+instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr) %{
   predicate(UseSSE>=2);
   match(Set dst (SignumD dst (Binary zero one)));
-  effect(KILL cr);
-  format %{ "signumD $dst, $dst" %}
+  effect(TEMP scratch, KILL cr);
+  format %{ "signumD $dst, $dst\t! using $scratch as TEMP" %}
   ins_encode %{
     Label exit;
 
@@ -5809,7 +5809,7 @@ instruct signumD_reg(regD dst, regD zero, regD one, rFlagsReg cr) %{
     __ jcc(Assembler::parity, exit);
     __ movdbl($dst$$XMMRegister, $one$$XMMRegister);
     __ jcc(Assembler::above, exit);
-    __ xorpd($dst$$XMMRegister, ExternalAddress(double_signflip()));
+    __ xorpd($dst$$XMMRegister, ExternalAddress(double_signflip()), $scratch$$Register);
     __ bind(exit);
   %}
   ins_pipe( pipe_slow );
