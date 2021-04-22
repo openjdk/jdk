@@ -128,7 +128,7 @@ public class ButtonGroupLayoutTraversalTest {
                     window.dispose();
                 }
             });
-        }    
+        }
     }
 
     private static void changeLAF() {
