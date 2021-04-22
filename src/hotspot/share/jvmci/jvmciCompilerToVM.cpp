@@ -632,6 +632,8 @@ C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, job
       if (!is_java_primitive(bt)) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_ILLEGAL());
       }
+
+      // Convert standard box (e.g. java.lang.Integer) to JVMCI box (e.g. jdk.vm.ci.meta.PrimitiveConstant)
       jvalue value;
       jlong raw_value;
       BasicType bt2 = java_lang_boxing_object::get_value(obj, &value);
