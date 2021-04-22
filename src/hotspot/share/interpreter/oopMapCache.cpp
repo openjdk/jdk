@@ -110,9 +110,7 @@ bool OopMapForCacheEntry::compute_map(Thread* current) {
   } else {
     ResourceMark rm;
     if (!GenerateOopMap::compute_map(current)) {
-      // Failure is only possible for a resource-area OOM, or malformed bytecode
-      // with verification disabled.
-      assert(false, "Unexpected exception from compute_map");
+      fatal("Unrecoverable verification or out-of-memory error");
       return false;
     }
     result_for_basicblock(_bci);
@@ -341,9 +339,7 @@ void OopMapCacheEntry::fill(const methodHandle& method, int bci) {
   } else {
     OopMapForCacheEntry gen(method, bci, this);
     if (!gen.compute_map(Thread::current())) {
-      // Failure is only possible for a resource-area OOM, or malformed bytecode
-      // with verification disabled.
-      assert(false, "Unexpected exception from compute_map");
+      fatal("Unrecoverable verification or out-of-memory error");
     }
   }
 }
