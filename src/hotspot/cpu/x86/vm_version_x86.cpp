@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1006,7 +1006,7 @@ void VM_Version::get_processor_features() {
 
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking) {
-    if (is_client_compilation_mode_vm()) {
+    if (!CompilerConfig::is_c2_enabled()) {
       // Only C2 does RTM locking optimization.
       // Can't continue because UseRTMLocking affects UseBiasedLocking flag
       // setting during arguments processing. See use_biased_locking().

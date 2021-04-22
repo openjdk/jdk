@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
@@ -304,13 +304,12 @@ public class Table extends Content {
             int rowIndex = bodyRows.size();
             rowStyle = stripedStyles.get(rowIndex % 2);
         }
-        Set<String> tabClasses = new HashSet<>(); // !! would be better as a List
+        List<String> tabClasses = new ArrayList<>();
         if (tabMap != null) {
-            // Construct a series of CSS classes to add to the cells of this row,
-            // such that there is a default value and a value corresponding to each
-            // tab whose predicate matches the element. The classes correspond to
-            // the equivalent ids. The classes are used to determine the cells to
-            // make visible when a tab is selected.
+            // Construct a series of values to add to the HTML 'class' attribute for the cells of
+            // this row, such that there is a default value and a value corresponding to each tab
+            // whose predicate matches the element. The values correspond to the equivalent ids.
+            // The values are used to determine the cells to make visible when a tab is selected.
             tabClasses.add(id.name());
             int tabIndex = 1;
             for (Map.Entry<String, Predicate<Element>> e : tabMap.entrySet()) {
@@ -382,7 +381,7 @@ public class Table extends Content {
                 main.add(caption);
             } else {
                 String tabName = tabs.iterator().next();
-                main.add(getCaption(new StringContent(tabName)));
+                main.add(getCaption(Text.of(tabName)));
             }
             table.add(getTableBody());
             main.add(table);

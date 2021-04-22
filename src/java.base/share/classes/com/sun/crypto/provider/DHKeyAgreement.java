@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,6 +313,15 @@ extends KeyAgreementSpi {
         // above, so user can recover w/o losing internal state
         generateSecret = false;
 
+        // No further process if z <= 1 or z == (p - 1) (See section 5.7.1,
+        // NIST SP 800-56A Rev 3).
+        BigInteger z = this.y.modPow(this.x, modulus);
+        if ((z.compareTo(BigInteger.ONE) <= 0) ||
+                z.equals(modulus.subtract(BigInteger.ONE))) {
+            throw new ProviderException(
+                    "Generated secret is out-of-range of (1, p -1)");
+        }
+
         /*
          * NOTE: BigInteger.toByteArray() returns a byte array containing
          * the two's-complement representation of this BigInteger with
@@ -327,7 +336,7 @@ extends KeyAgreementSpi {
          * exactly expectedLen bytes of magnitude, we strip any extra
          * leading 0's, or pad with 0's in case of a "short" secret.
          */
-        byte[] secret = this.y.modPow(this.x, modulus).toByteArray();
+        byte[] secret = z.toByteArray();
         if (secret.length == expectedLen) {
             System.arraycopy(secret, 0, sharedSecret, offset,
                              secret.length);

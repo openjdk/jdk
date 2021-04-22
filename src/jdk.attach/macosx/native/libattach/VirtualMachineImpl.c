@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,17 +314,14 @@ JNIEXPORT jstring JNICALL Java_sun_tools_attach_VirtualMachineImpl_getTempDir(JN
     // directory not the java application's temp directory, ala java.io.tmpdir.
 
 #ifdef __APPLE__
-    // macosx has a secure per-user temporary directory
-    static char *temp_path = NULL;
-    char temp_path_storage[PATH_MAX];
-    if (temp_path == NULL) {
-        int pathSize = confstr(_CS_DARWIN_USER_TEMP_DIR, temp_path_storage, PATH_MAX);
-        if (pathSize == 0 || pathSize > PATH_MAX) {
-            strlcpy(temp_path_storage, "/tmp", sizeof(temp_path_storage));
-        }
-        temp_path = temp_path_storage;
+    // macosx has a secure per-user temporary directory.
+    // Don't cache the result as this is only called once.
+    char path[PATH_MAX];
+    int pathSize = confstr(_CS_DARWIN_USER_TEMP_DIR, path, PATH_MAX);
+    if (pathSize == 0 || pathSize > PATH_MAX) {
+        strlcpy(path, "/tmp", sizeof(path));
     }
-    return JNU_NewStringPlatform(env, temp_path);
+    return JNU_NewStringPlatform(env, path);
 #else /* __APPLE__ */
     return (*env)->NewStringUTF(env, "/tmp");
 #endif /* __APPLE__ */

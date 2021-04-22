@@ -352,26 +352,19 @@ void WorkGangBarrierSync::abort() {
 // SubTasksDone functions.
 
 SubTasksDone::SubTasksDone(uint n) :
-  _tasks(NULL), _n_tasks(n), _threads_completed(0) {
+  _tasks(NULL), _n_tasks(n) {
   _tasks = NEW_C_HEAP_ARRAY(bool, n, mtInternal);
-  clear();
-}
-
-bool SubTasksDone::valid() {
-  return _tasks != NULL;
-}
-
-void SubTasksDone::clear() {
   for (uint i = 0; i < _n_tasks; i++) {
     _tasks[i] = false;
   }
-  _threads_completed = 0;
 }
 
-void SubTasksDone::all_tasks_completed_impl(uint n_threads,
-                                            uint skipped[],
-                                            size_t skipped_size) {
 #ifdef ASSERT
+void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
+  if (Atomic::cmpxchg(&_verification_done, false, true)) {
+    // another thread has done the verification
+    return;
+  }
   // all non-skipped tasks are claimed
   for (uint i = 0; i < _n_tasks; ++i) {
     if (!_tasks[i]) {
@@ -391,19 +384,8 @@ void SubTasksDone::all_tasks_completed_impl(uint n_threads,
     assert(task_index < _n_tasks, "Array in range.");
     assert(!_tasks[task_index], "%d is both claimed and skipped.", task_index);
   }
-#endif
-  uint observed = _threads_completed;
-  uint old;
-  do {
-    old = observed;
-    observed = Atomic::cmpxchg(&_threads_completed, old, old+1);
-  } while (observed != old);
-  // If this was the last thread checking in, clear the tasks.
-  uint adjusted_thread_count = (n_threads == 0 ? 1 : n_threads);
-  if (observed + 1 == adjusted_thread_count) {
-    clear();
-  }
 }
+#endif
 
 bool SubTasksDone::try_claim_task(uint t) {
   assert(t < _n_tasks, "bad task id.");
@@ -411,44 +393,16 @@ bool SubTasksDone::try_claim_task(uint t) {
 }
 
 SubTasksDone::~SubTasksDone() {
+  assert(_verification_done, "all_tasks_claimed must have been called.");
   FREE_C_HEAP_ARRAY(bool, _tasks);
 }
 
 // *** SequentialSubTasksDone
 
-void SequentialSubTasksDone::clear() {
-  _n_tasks   = _n_claimed   = 0;
-  _n_threads = _n_completed = 0;
-}
-
-bool SequentialSubTasksDone::valid() {
-  return _n_threads > 0;
-}
-
 bool SequentialSubTasksDone::try_claim_task(uint& t) {
-  t = _n_claimed;
-  while (t < _n_tasks) {
-    uint res = Atomic::cmpxchg(&_n_claimed, t, t+1);
-    if (res == t) {
-      return true;
-    }
-    t = res;
+  t = _num_claimed;
+  if (t < _num_tasks) {
+    t = Atomic::add(&_num_claimed, 1u) - 1;
   }
-  return false;
-}
-
-bool SequentialSubTasksDone::all_tasks_completed() {
-  uint complete = _n_completed;
-  while (true) {
-    uint res = Atomic::cmpxchg(&_n_completed, complete, complete+1);
-    if (res == complete) {
-      break;
-    }
-    complete = res;
-  }
-  if (complete+1 == _n_threads) {
-    clear();
-    return true;
-  }
-  return false;
+  return t < _num_tasks;
 }

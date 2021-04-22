@@ -2068,7 +2068,13 @@ public class LambdaToMethod extends TreeTranslator {
                         };
                         break;
                     case LOCAL_VAR:
-                        ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym);
+                        ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym) {
+                            @Override
+                            public Symbol baseSymbol() {
+                                //keep mapping with original symbol
+                                return sym;
+                            }
+                        };
                         ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
                         // If sym.data == ElementKind.EXCEPTION_PARAMETER,
                         // set ret.data = ElementKind.EXCEPTION_PARAMETER too.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.print.PrinterGraphics;
 import java.beans.PropertyChangeEvent;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
@@ -1754,18 +1753,9 @@ public class SwingUtilities2 {
                     continue;
                             }
 
-                try (BufferedInputStream in
-                        = new BufferedInputStream(resource);
-                        ByteArrayOutputStream out
-                        = new ByteArrayOutputStream(1024)) {
-                            byte[] buffer = new byte[1024];
-                            int n;
-                            while ((n = in.read(buffer)) > 0) {
-                                out.write(buffer, 0, n);
+                            try (BufferedInputStream in = new BufferedInputStream(resource)) {
+                                return in.readAllBytes();
                             }
-                            out.flush();
-                            return out.toByteArray();
-                }
                         } catch (IOException ioe) {
                             System.err.println(ioe.toString());
                         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 /**
  * @test
  * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349 8046949
- *      8046724 8079693 8177334 8205507 8210736 8217878
+ *      8046724 8079693 8177334 8205507 8210736 8217878 8241306
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  *          java.xml.crypto/org.jcp.xml.dsig.internal.dom
  *          jdk.httpserver/com.sun.net.httpserver
+ * @library /test/lib
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
  * @run main/othervm/timeout=300 -Dsun.net.httpserver.nodelay=true GenerationTests
@@ -91,6 +92,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.*;
 
+import jdk.test.lib.security.SecurityUtils;
+
 /**
  * Test that recreates merlin-xmldsig-twenty-three test vectors (and more)
  * but with different keys and X.509 data.
@@ -105,7 +108,7 @@ public class GenerationTests {
             rsaSha1, rsaSha224, rsaSha256, rsaSha384, rsaSha512,
             ecdsaSha1, ecdsaSha224, ecdsaSha256, ecdsaSha384, ecdsaSha512,
             hmacSha1, hmacSha224, hmacSha256, hmacSha384, hmacSha512,
-            rsaSha1mgf1, rsaSha224mgf1, rsaSha256mgf1, rsaSha384mgf1, rsaSha512mgf1;
+            rsaSha1mgf1, rsaSha224mgf1, rsaSha256mgf1, rsaSha384mgf1, rsaSha512mgf1, rsaShaPSS;
     private static DigestMethod sha1, sha224, sha256, sha384, sha512,
                                 sha3_224, sha3_256, sha3_384, sha3_512;
     private static KeyInfo dsa1024, dsa2048, rsa, rsa1024, rsa2048,
@@ -211,7 +214,8 @@ public class GenerationTests {
             SignatureMethod.RSA_SHA256,
             SignatureMethod.ECDSA_SHA256,
             SignatureMethod.HMAC_SHA256,
-            SignatureMethod.SHA256_RSA_MGF1);
+            SignatureMethod.SHA256_RSA_MGF1,
+            SignatureMethod.RSA_PSS);
 
     private static final String[] allSignatureMethods
             = Stream.of(SignatureMethod.class.getDeclaredFields())
@@ -243,9 +247,9 @@ public class GenerationTests {
                 })
                 .toArray(String[]::new);
 
-    // As of JDK 11, the number of defined algorithms are...
+    // As of JDK 17, the number of defined algorithms are...
     static {
-        if (allSignatureMethods.length != 22
+        if (allSignatureMethods.length != 23
                 || allDigestMethods.length != 9) {
             System.out.println(Arrays.toString(allSignatureMethods));
             System.out.println(Arrays.toString(allDigestMethods));
@@ -284,6 +288,9 @@ public class GenerationTests {
     private static boolean result = true;
 
     public static void main(String args[]) throws Exception {
+        // Re-enable sha1 algs
+        SecurityUtils.removeAlgsFromDSigPolicy("sha1");
+
         setup();
         test_create_signature_enveloped_dsa(1024);
         test_create_signature_enveloped_dsa(2048);
@@ -329,6 +336,7 @@ public class GenerationTests {
         test_create_signature_enveloping_sha512_rsa_sha256_mgf1();
         test_create_signature_enveloping_sha512_rsa_sha384_mgf1();
         test_create_signature_enveloping_sha512_rsa_sha512_mgf1();
+        test_create_signature_enveloping_sha512_rsa_pss();
         test_create_signature_reference_dependency();
         test_create_signature_with_attr_in_no_namespace();
         test_create_signature_with_empty_id();
@@ -525,6 +533,7 @@ public class GenerationTests {
         rsaSha256mgf1 = fac.newSignatureMethod(SignatureMethod.SHA256_RSA_MGF1, null);
         rsaSha384mgf1 = fac.newSignatureMethod(SignatureMethod.SHA384_RSA_MGF1, null);
         rsaSha512mgf1 = fac.newSignatureMethod(SignatureMethod.SHA512_RSA_MGF1, null);
+        rsaShaPSS = fac.newSignatureMethod(SignatureMethod. RSA_PSS, null);
 
         ecdsaSha1 = fac.newSignatureMethod(SignatureMethod.ECDSA_SHA1, null);
         ecdsaSha224 = fac.newSignatureMethod(SignatureMethod.ECDSA_SHA224, null);
@@ -603,21 +612,21 @@ public class GenerationTests {
     static void test_create_signature_enveloping_b64_dsa() throws Exception {
         System.out.println("* Generating signature-enveloping-b64-dsa.xml");
         test_create_signature_enveloping
-            (sha1, dsaSha1, dsa1024, signingKey, kvks, true);
+            (sha1, dsaSha1, dsa1024, signingKey, kvks, true, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_dsa() throws Exception {
         System.out.println("* Generating signature-enveloping-dsa.xml");
         test_create_signature_enveloping
-            (sha1, dsaSha1, dsa1024, signingKey, kvks, false);
+            (sha1, dsaSha1, dsa1024, signingKey, kvks, false, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_sha256_dsa() throws Exception {
         System.out.println("* Generating signature-enveloping-sha256-dsa.xml");
         test_create_signature_enveloping
-            (sha256, dsaSha1, dsa1024, signingKey, kvks, false);
+            (sha256, dsaSha1, dsa1024, signingKey, kvks, false, true);
         System.out.println();
     }
 
@@ -626,7 +635,7 @@ public class GenerationTests {
         System.out.println("* Generating signature-enveloping-hmac-sha1-40.xml");
         try {
             test_create_signature_enveloping(sha1, hmacSha1, null,
-                getSecretKey("secret".getBytes("ASCII")), sks, false);
+                getSecretKey("secret".getBytes("ASCII")), sks, false, true);
         } catch (Exception e) {
             if (!(e instanceof XMLSignatureException)) {
                 throw e;
@@ -639,7 +648,7 @@ public class GenerationTests {
         throws Exception {
         System.out.println("* Generating signature-enveloping-hmac-sha256.xml");
         test_create_signature_enveloping(sha1, hmacSha256, null,
-            getSecretKey("secret".getBytes("ASCII")), sks, false);
+            getSecretKey("secret".getBytes("ASCII")), sks, false, true);
         System.out.println();
     }
 
@@ -647,7 +656,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-hmac-sha224.xml");
         test_create_signature_enveloping(sha1, hmacSha224, null,
-                getSecretKey("secret".getBytes("ASCII")), sks, false);
+                getSecretKey("secret".getBytes("ASCII")), sks, false, true);
         System.out.println();
     }
 
@@ -655,7 +664,7 @@ public class GenerationTests {
         throws Exception {
         System.out.println("* Generating signature-enveloping-hmac-sha384.xml");
         test_create_signature_enveloping(sha1, hmacSha384, null,
-            getSecretKey("secret".getBytes("ASCII")), sks, false);
+            getSecretKey("secret".getBytes("ASCII")), sks, false, true);
         System.out.println();
     }
 
@@ -663,14 +672,14 @@ public class GenerationTests {
         throws Exception {
         System.out.println("* Generating signature-enveloping-hmac-sha512.xml");
         test_create_signature_enveloping(sha1, hmacSha512, null,
-            getSecretKey("secret".getBytes("ASCII")), sks, false);
+            getSecretKey("secret".getBytes("ASCII")), sks, false, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_rsa() throws Exception {
         System.out.println("* Generating signature-enveloping-rsa.xml");
         test_create_signature_enveloping(sha1, rsaSha1, rsa,
-            getPrivateKey("RSA", 512), kvks, false);
+            getPrivateKey("RSA", 512), kvks, false, false);
         System.out.println();
     }
 
@@ -678,7 +687,7 @@ public class GenerationTests {
         throws Exception {
         System.out.println("* Generating signature-enveloping-sha384-rsa_sha256.xml");
         test_create_signature_enveloping(sha384, rsaSha256, rsa,
-            getPrivateKey("RSA", 512), kvks, false);
+            getPrivateKey("RSA", 512), kvks, false, false);
         System.out.println();
     }
 
@@ -686,7 +695,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha224-rsa_sha256.xml");
         test_create_signature_enveloping(sha224, rsaSha256, rsa,
-                getPrivateKey("RSA", 512), kvks, false);
+                getPrivateKey("RSA", 512), kvks, false, false);
         System.out.println();
     }
 
@@ -694,7 +703,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha3_224-rsa_sha256.xml");
         test_create_signature_enveloping(sha3_224, rsaSha256, rsa,
-                getPrivateKey("RSA", 512), kvks, false);
+                getPrivateKey("RSA", 512), kvks, false, false);
         System.out.println();
     }
 
@@ -702,7 +711,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha3_256-rsa_sha256.xml");
         test_create_signature_enveloping(sha3_256, rsaSha256, rsa,
-                getPrivateKey("RSA", 512), kvks, false);
+                getPrivateKey("RSA", 512), kvks, false, false);
         System.out.println();
     }
 
@@ -710,7 +719,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha3_384-rsa_sha256.xml");
         test_create_signature_enveloping(sha3_384, rsaSha256, rsa,
-                getPrivateKey("RSA", 512), kvks, false);
+                getPrivateKey("RSA", 512), kvks, false, false);
         System.out.println();
     }
 
@@ -718,7 +727,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha3_512-rsa_sha256.xml");
         test_create_signature_enveloping(sha3_512, rsaSha256, rsa,
-                getPrivateKey("RSA", 512), kvks, false);
+                getPrivateKey("RSA", 512), kvks, false, false);
         System.out.println();
     }
 
@@ -726,7 +735,7 @@ public class GenerationTests {
         throws Exception {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha384.xml");
         test_create_signature_enveloping(sha512, rsaSha384, rsa1024,
-            getPrivateKey("RSA", 1024), kvks, false);
+            getPrivateKey("RSA", 1024), kvks, false, true);
         System.out.println();
     }
 
@@ -734,7 +743,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha224.xml");
         test_create_signature_enveloping(sha512, rsaSha224, rsa1024,
-                getPrivateKey("RSA", 1024), kvks, false);
+                getPrivateKey("RSA", 1024), kvks, false, true);
         System.out.println();
     }
 
@@ -742,7 +751,7 @@ public class GenerationTests {
         throws Exception {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha512.xml");
         test_create_signature_enveloping(sha512, rsaSha512, rsa1024,
-            getPrivateKey("RSA", 1024), kvks, false);
+            getPrivateKey("RSA", 1024), kvks, false, true);
         System.out.println();
     }
 
@@ -750,7 +759,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha1_mgf1.xml");
         test_create_signature_enveloping(sha512, rsaSha1mgf1, rsa1024,
-                getPrivateKey("RSA", 1024), kvks, false);
+                getPrivateKey("RSA", 1024), kvks, false, true);
         System.out.println();
     }
 
@@ -758,7 +767,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha224_mgf1.xml");
         test_create_signature_enveloping(sha512, rsaSha224mgf1, rsa1024,
-                getPrivateKey("RSA", 1024), kvks, false);
+                getPrivateKey("RSA", 1024), kvks, false, true);
         System.out.println();
     }
 
@@ -766,7 +775,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha256_mgf1.xml");
         test_create_signature_enveloping(sha512, rsaSha256mgf1, rsa1024,
-                getPrivateKey("RSA", 1024), kvks, false);
+                getPrivateKey("RSA", 1024), kvks, false, true);
         System.out.println();
     }
 
@@ -774,7 +783,7 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha384_mgf1.xml");
         test_create_signature_enveloping(sha512, rsaSha384mgf1, rsa1024,
-                getPrivateKey("RSA", 1024), kvks, false);
+                getPrivateKey("RSA", 1024), kvks, false, true);
         System.out.println();
     }
 
@@ -782,56 +791,64 @@ public class GenerationTests {
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha512_mgf1.xml");
         test_create_signature_enveloping(sha512, rsaSha512mgf1, rsa2048,
-                getPrivateKey("RSA", 2048), kvks, false);
+                getPrivateKey("RSA", 2048), kvks, false, true);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_sha512_rsa_pss()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha512_rsa_pss.xml");
+        test_create_signature_enveloping(sha512, rsaShaPSS, rsa1024,
+                getPrivateKey("RSA", 1024), kvks, false, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_p256_sha1() throws Exception {
         System.out.println("* Generating signature-enveloping-p256-sha1.xml");
         test_create_signature_enveloping(sha1, ecdsaSha1, p256ki,
-            getECPrivateKey("P256"), kvks, false);
+            getECPrivateKey("P256"), kvks, false, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_p256_sha224() throws Exception {
         System.out.println("* Generating signature-enveloping-p256-sha224.xml");
         test_create_signature_enveloping(sha1, ecdsaSha224, p256ki,
-                getECPrivateKey("P256"), kvks, false);
+                getECPrivateKey("P256"), kvks, false, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_p256_sha256() throws Exception {
         System.out.println("* Generating signature-enveloping-p256-sha256.xml");
         test_create_signature_enveloping(sha1, ecdsaSha256, p256ki,
-                getECPrivateKey("P256"), kvks, false);
+                getECPrivateKey("P256"), kvks, false, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_p256_sha384() throws Exception {
         System.out.println("* Generating signature-enveloping-p256-sha384.xml");
         test_create_signature_enveloping(sha1, ecdsaSha384, p256ki,
-                getECPrivateKey("P256"), kvks, false);
+                getECPrivateKey("P256"), kvks, false, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_p256_sha512() throws Exception {
         System.out.println("* Generating signature-enveloping-p256-sha512.xml");
         test_create_signature_enveloping(sha1, ecdsaSha512, p256ki,
-                getECPrivateKey("P256"), kvks, false);
+                getECPrivateKey("P256"), kvks, false, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_p384_sha1() throws Exception {
         System.out.println("* Generating signature-enveloping-p384-sha1.xml");
         test_create_signature_enveloping(sha1, ecdsaSha1, p384ki,
-            getECPrivateKey("P384"), kvks, false);
+            getECPrivateKey("P384"), kvks, false, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_p521_sha1() throws Exception {
         System.out.println("* Generating signature-enveloping-p521-sha1.xml");
         test_create_signature_enveloping(sha1, ecdsaSha1, p521ki,
-            getECPrivateKey("P521"), kvks, false);
+            getECPrivateKey("P521"), kvks, false, true);
         System.out.println();
     }
 
@@ -963,6 +980,7 @@ public class GenerationTests {
 
         DOMValidateContext dvc = new DOMValidateContext
             (kvks, doc.getDocumentElement());
+        dvc.setProperty("org.jcp.xml.dsig.secureValidation", false);
         XMLSignature sig2 = fac.unmarshalXMLSignature(dvc);
 
         if (sig.equals(sig2) == false) {
@@ -1010,6 +1028,7 @@ public class GenerationTests {
 
         DOMValidateContext dvc = new DOMValidateContext
             (kvks, doc.getDocumentElement());
+        dvc.setProperty("org.jcp.xml.dsig.secureValidation", false);
         dvc.setIdAttributeNS(nc, null, "Id");
         XMLSignature sig2 = fac.unmarshalXMLSignature(dvc);
 
@@ -1451,7 +1470,7 @@ public class GenerationTests {
 
     private static void test_create_signature_enveloping
         (DigestMethod dm, SignatureMethod sm, KeyInfo ki, Key signingKey,
-         KeySelector ks, boolean b64) throws Exception {
+         KeySelector ks, boolean b64, boolean secVal) throws Exception {
 
         // create reference
         Reference ref;
@@ -1486,6 +1505,7 @@ public class GenerationTests {
 
         DOMValidateContext dvc = new DOMValidateContext
             (ks, doc.getDocumentElement());
+        dvc.setProperty("org.jcp.xml.dsig.secureValidation", secVal);
         XMLSignature sig2 = fac.unmarshalXMLSignature(dvc);
 
         if (sig.equals(sig2) == false) {

@@ -189,7 +189,7 @@ final class Parsed implements TemporalAccessor {
                 (time != null && time.isSupported(field))) {
             return true;
         }
-        return field != null && (field instanceof ChronoField == false) && field.isSupportedBy(this);
+        return field != null && (!(field instanceof ChronoField)) && field.isSupportedBy(this);
     }
 
     @Override

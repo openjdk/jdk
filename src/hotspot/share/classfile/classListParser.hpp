@@ -33,6 +33,8 @@
 #define LAMBDA_PROXY_TAG "@lambda-proxy"
 #define LAMBDA_FORM_TAG  "@lambda-form-invoker"
 
+class Thread;
+
 class ID2KlassTable : public KVHashtable<int, InstanceKlass*, mtInternal> {
 public:
   ID2KlassTable() : KVHashtable<int, InstanceKlass*, mtInternal>(1987) {}
@@ -81,6 +83,7 @@ class ClassListParser : public StackObj {
     _line_buf_size        = _max_allowed_line_len + _line_buf_extra
   };
 
+  static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
   FILE* _file;
@@ -113,16 +116,23 @@ class ClassListParser : public StackObj {
   void print_actual_interfaces(InstanceKlass *ik);
   bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
 
-  void resolve_indy(Symbol* class_name_symbol, TRAPS);
+  void resolve_indy(Thread* current, Symbol* class_name_symbol);
   void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
+  bool parse_one_line();
+  Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
+
 public:
   ClassListParser(const char* file);
   ~ClassListParser();
 
+  static bool is_parsing_thread();
   static ClassListParser* instance() {
+    assert(is_parsing_thread(), "call this only in the thread that created ClassListParsing::_instance");
+    assert(_instance != NULL, "must be");
     return _instance;
   }
-  bool parse_one_line();
+
+  int parse(TRAPS);
   void split_tokens_by_whitespace(int offset);
   int split_at_tag_from_line();
   bool parse_at_tags();
@@ -161,8 +171,6 @@ public:
   const char* current_class_name() {
     return _class_name;
   }
-
-  Klass* load_current_class(TRAPS);
 
   bool is_loading_from_source();
 

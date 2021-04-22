@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/classLoaderData.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -40,12 +41,14 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
@@ -371,6 +374,14 @@ MemoryUsage CollectedHeap::memory_usage() {
   return MemoryUsage(InitialHeapSize, used(), capacity(), max_capacity());
 }
 
+void CollectedHeap::set_gc_cause(GCCause::Cause v) {
+  if (UsePerfData) {
+    _gc_lastcause = _gc_cause;
+    _perf_gc_lastcause->set_value(GCCause::to_string(_gc_lastcause));
+    _perf_gc_cause->set_value(GCCause::to_string(v));
+  }
+  _gc_cause = v;
+}
 
 #ifndef PRODUCT
 void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size) {
@@ -446,7 +457,7 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
     fill_with_array(start, words, zap);
   } else if (words > 0) {
     assert(words == min_fill_size(), "unaligned size");
-    ObjAllocator allocator(SystemDictionary::Object_klass(), words);
+    ObjAllocator allocator(vmClasses::Object_klass(), words);
     allocator.initialize(start);
   }
 }

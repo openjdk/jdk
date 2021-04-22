@@ -2666,7 +2666,7 @@ final class P11KeyStore extends KeyStoreSpi {
         }
     }
 
-    private final static long[] LONG0 = new long[0];
+    private static final long[] LONG0 = new long[0];
 
     private static long[] findObjects(Session session, CK_ATTRIBUTE[] attrs)
             throws PKCS11Exception {

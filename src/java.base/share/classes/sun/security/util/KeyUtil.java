@@ -34,7 +34,9 @@ import java.security.interfaces.EdECPublicKey;
 import java.security.interfaces.RSAKey;
 import java.security.interfaces.DSAKey;
 import java.security.interfaces.DSAParams;
+import java.security.interfaces.XECKey;
 import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
@@ -102,6 +104,21 @@ public final class KeyUtil {
         } else if (key instanceof DHKey) {
             DHKey pubk = (DHKey)key;
             size = pubk.getParams().getP().bitLength();
+        } else if (key instanceof XECKey) {
+            XECKey pubk = (XECKey)key;
+            AlgorithmParameterSpec params = pubk.getParams();
+            if (params instanceof NamedParameterSpec) {
+                String name = ((NamedParameterSpec) params).getName();
+                if (name.equalsIgnoreCase(NamedParameterSpec.X25519.getName())) {
+                    size = 255;
+                } else if (name.equalsIgnoreCase(NamedParameterSpec.X448.getName())) {
+                    size = 448;
+                } else {
+                    size = -1;
+                }
+            } else {
+                size = -1;
+            }
         } else if (key instanceof EdECKey) {
             String nc = ((EdECKey) key).getParams().getName();
             if (nc.equalsIgnoreCase(NamedParameterSpec.ED25519.getName())) {

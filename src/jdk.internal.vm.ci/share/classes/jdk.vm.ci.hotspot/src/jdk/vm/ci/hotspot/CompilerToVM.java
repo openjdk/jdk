@@ -612,18 +612,14 @@ final class CompilerToVM {
     native boolean shouldDebugNonSafepoints();
 
     /**
-     * Writes {@code length} bytes from {@code bytes} starting at offset {@code offset} to HotSpot's
-     * log stream.
+     * Writes {@code length} bytes from {@code buffer} to HotSpot's log stream.
      *
+     * @param buffer if {@code length <= 8}, then the bytes are encoded in this value in native
+     *            endianness order otherwise this is the address of a native memory buffer holding
+     *            the bytes
      * @param flush specifies if the log stream should be flushed after writing
-     * @param canThrow specifies if an error in the {@code bytes}, {@code offset} or {@code length}
-     *            arguments should result in an exception or a negative return value
-     * @return 0 on success, -1 if {@code bytes == null && !canThrow}, -2 if {@code !canThrow} and
-     *         copying would cause access of data outside array bounds
-     * @throws NullPointerException if {@code bytes == null}
-     * @throws IndexOutOfBoundsException if copying would cause access of data outside array bounds
      */
-    native int writeDebugOutput(byte[] bytes, int offset, int length, boolean flush, boolean canThrow);
+    native void writeDebugOutput(long buffer, int length, boolean flush);
 
     /**
      * Flush HotSpot's log stream.

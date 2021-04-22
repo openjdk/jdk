@@ -30,9 +30,11 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
@@ -47,6 +49,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -65,6 +68,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/memoryService.hpp"
@@ -279,7 +283,7 @@ void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
 }
 
 void initialize_basic_type_klass(Klass* k, TRAPS) {
-  Klass* ok = SystemDictionary::Object_klass();
+  Klass* ok = vmClasses::Object_klass();
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
@@ -326,7 +330,7 @@ void Universe::genesis(TRAPS) {
       }
     }
 
-    vmSymbols::initialize(CHECK);
+    vmSymbols::initialize();
 
     SystemDictionary::initialize(CHECK);
 
@@ -341,15 +345,15 @@ void Universe::genesis(TRAPS) {
     if (UseSharedSpaces) {
       // Verify shared interfaces array.
       assert(_the_array_interfaces_array->at(0) ==
-             SystemDictionary::Cloneable_klass(), "u3");
+             vmClasses::Cloneable_klass(), "u3");
       assert(_the_array_interfaces_array->at(1) ==
-             SystemDictionary::Serializable_klass(), "u3");
+             vmClasses::Serializable_klass(), "u3");
     } else
 #endif
     {
       // Set up shared interfaces array.  (Do this before supers are set up.)
-      _the_array_interfaces_array->at_put(0, SystemDictionary::Cloneable_klass());
-      _the_array_interfaces_array->at_put(1, SystemDictionary::Serializable_klass());
+      _the_array_interfaces_array->at_put(0, vmClasses::Cloneable_klass());
+      _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
     }
 
     initialize_basic_type_klass(boolArrayKlassObj(), CHECK);
@@ -383,7 +387,7 @@ void Universe::genesis(TRAPS) {
   // SystemDictionary::initialize(CHECK); is run. See the extra check
   // for Object_klass_loaded in objArrayKlassKlass::allocate_objArray_klass_impl.
   _objectArrayKlassObj = InstanceKlass::
-    cast(SystemDictionary::Object_klass())->array_klass(1, CHECK);
+    cast(vmClasses::Object_klass())->array_klass(1, CHECK);
   // OLD
   // Add the class to the class hierarchy manually to make sure that
   // its vtable is initialized after core bootstrapping is completed.
@@ -404,12 +408,12 @@ void Universe::genesis(TRAPS) {
     // moves these objects to the bottom of the old generation.
     int size = FullGCALotDummies * 2;
 
-    objArrayOop    naked_array = oopFactory::new_objArray(SystemDictionary::Object_klass(), size, CHECK);
+    objArrayOop    naked_array = oopFactory::new_objArray(vmClasses::Object_klass(), size, CHECK);
     objArrayHandle dummy_array(THREAD, naked_array);
     int i = 0;
     while (i < size) {
         // Allocate dummy in old generation
-      oop dummy = SystemDictionary::Object_klass()->allocate_instance(CHECK);
+      oop dummy = vmClasses::Object_klass()->allocate_instance(CHECK);
       dummy_array->obj_at_put(i++, dummy);
     }
     {
@@ -459,7 +463,7 @@ void Universe::fixup_mirrors(TRAPS) {
   // but we cannot do that for classes created before java.lang.Class is loaded. Here we simply
   // walk over permanent objects created so far (mostly classes) and fixup their mirrors. Note
   // that the number of objects allocated at this point is very small.
-  assert(SystemDictionary::Class_klass_loaded(), "java.lang.Class should be loaded");
+  assert(vmClasses::Class_klass_loaded(), "java.lang.Class should be loaded");
   HandleMark hm(THREAD);
 
   if (!UseSharedSpaces) {
@@ -472,7 +476,6 @@ void Universe::fixup_mirrors(TRAPS) {
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
-    EXCEPTION_MARK;
     java_lang_Class::fixup_mirror(k, CATCH);
   }
   delete java_lang_Class::fixup_mirror_list();
@@ -511,35 +514,35 @@ oop Universe::swap_reference_pending_list(oop list) {
 #undef assert_pll_locked
 #undef assert_pll_ownership
 
-void Universe::reinitialize_vtable_of(Klass* ko, TRAPS) {
+static void reinitialize_vtable_of(Klass* ko) {
   // init vtable of k and all subclasses
-  ko->vtable().initialize_vtable(false, CHECK);
+  ko->vtable().initialize_vtable();
   if (ko->is_instance_klass()) {
     for (Klass* sk = ko->subklass();
          sk != NULL;
          sk = sk->next_sibling()) {
-      reinitialize_vtable_of(sk, CHECK);
+      reinitialize_vtable_of(sk);
     }
   }
 }
 
-void Universe::reinitialize_vtables(TRAPS) {
+static void reinitialize_vtables() {
   // The vtables are initialized by starting at java.lang.Object and
   // initializing through the subclass links, so that the super
   // classes are always initialized first.
-  Klass* ok = SystemDictionary::Object_klass();
-  Universe::reinitialize_vtable_of(ok, THREAD);
+  Klass* ok = vmClasses::Object_klass();
+  reinitialize_vtable_of(ok);
 }
 
 
-void initialize_itable_for_klass(InstanceKlass* k, TRAPS) {
-  k->itable().initialize_itable(false, CHECK);
+static void initialize_itable_for_klass(InstanceKlass* k) {
+  k->itable().initialize_itable();
 }
 
 
-void Universe::reinitialize_itables(TRAPS) {
-  MutexLocker mcld(THREAD, ClassLoaderDataGraph_lock);
-  ClassLoaderDataGraph::dictionary_classes_do(initialize_itable_for_klass, CHECK);
+static void reinitialize_itables() {
+  MutexLocker mcld(ClassLoaderDataGraph_lock);
+  ClassLoaderDataGraph::dictionary_classes_do(initialize_itable_for_klass);
 }
 
 
@@ -612,7 +615,7 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   // - otherwise, return the default error, without a stack trace.
   int next;
   if ((_preallocated_out_of_memory_error_avail_count > 0) &&
-      SystemDictionary::Throwable_klass()->is_initialized()) {
+      vmClasses::Throwable_klass()->is_initialized()) {
     next = (int)Atomic::add(&_preallocated_out_of_memory_error_avail_count, -1);
     assert(next < (int)PreallocatedOutOfMemoryErrorCount, "avail count is corrupt");
   } else {
@@ -644,7 +647,7 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
 
 // Setup preallocated OutOfMemoryError errors
 void Universe::create_preallocated_out_of_memory_errors(TRAPS) {
-  InstanceKlass* ik = SystemDictionary::OutOfMemoryError_klass();
+  InstanceKlass* ik = vmClasses::OutOfMemoryError_klass();
   objArrayOop oa = oopFactory::new_objArray(ik, _oom_count, CHECK);
   objArrayHandle oom_array(THREAD, oa);
 
@@ -712,6 +715,10 @@ void* Universe::non_oop_word() {
   }
 
   return (void*)_non_oop_bits;
+}
+
+bool Universe::contains_non_oop_word(void* p) {
+  return *(void**)p == non_oop_word();
 }
 
 static void initialize_global_behaviours() {
@@ -866,8 +873,8 @@ OopStorage* Universe::vm_global() {
 }
 
 void Universe::oopstorage_init() {
-  Universe::_vm_global = OopStorageSet::create_strong("VM Global");
-  Universe::_vm_weak = OopStorageSet::create_weak("VM Weak");
+  Universe::_vm_global = OopStorageSet::create_strong("VM Global", mtInternal);
+  Universe::_vm_weak = OopStorageSet::create_weak("VM Weak", mtInternal);
 }
 
 void universe_oopstorage_init() {
@@ -898,29 +905,29 @@ void initialize_known_method(LatestMethodCache* method_cache,
 void Universe::initialize_known_methods(TRAPS) {
   // Set up static method for registering finalizers
   initialize_known_method(_finalizer_register_cache,
-                          SystemDictionary::Finalizer_klass(),
+                          vmClasses::Finalizer_klass(),
                           "register",
                           vmSymbols::object_void_signature(), true, CHECK);
 
   initialize_known_method(_throw_illegal_access_error_cache,
-                          SystemDictionary::internal_Unsafe_klass(),
+                          vmClasses::internal_Unsafe_klass(),
                           "throwIllegalAccessError",
                           vmSymbols::void_method_signature(), true, CHECK);
 
   initialize_known_method(_throw_no_such_method_error_cache,
-                          SystemDictionary::internal_Unsafe_klass(),
+                          vmClasses::internal_Unsafe_klass(),
                           "throwNoSuchMethodError",
                           vmSymbols::void_method_signature(), true, CHECK);
 
   // Set up method for registering loaded classes in class loader vector
   initialize_known_method(_loader_addClass_cache,
-                          SystemDictionary::ClassLoader_klass(),
+                          vmClasses::ClassLoader_klass(),
                           "addClass",
                           vmSymbols::class_void_signature(), false, CHECK);
 
   // Set up method for stack walking
   initialize_known_method(_do_stack_walk_cache,
-                          SystemDictionary::AbstractStackWalker_klass(),
+                          vmClasses::AbstractStackWalker_klass(),
                           "doStackWalk",
                           vmSymbols::doStackWalk_signature(), false, CHECK);
 }
@@ -940,15 +947,14 @@ bool universe_post_init() {
   Universe::_fully_initialized = true;
   EXCEPTION_MARK;
   if (!UseSharedSpaces) {
-    ResourceMark rm;
-    Universe::reinitialize_vtables(CHECK_false);
-    Universe::reinitialize_itables(CHECK_false);
+    reinitialize_vtables();
+    reinitialize_itables();
   }
 
   HandleMark hm(THREAD);
   // Setup preallocated empty java.lang.Class array for Method reflection.
 
-  objArrayOop the_empty_class_array = oopFactory::new_objArray(SystemDictionary::Class_klass(), 0, CHECK_false);
+  objArrayOop the_empty_class_array = oopFactory::new_objArray(vmClasses::Class_klass(), 0, CHECK_false);
   Universe::_the_empty_class_array = OopHandle(Universe::vm_global(), the_empty_class_array);
 
   // Setup preallocated OutOfMemoryError errors
@@ -974,7 +980,7 @@ bool universe_post_init() {
   Universe::_arithmetic_exception_instance = OopHandle(Universe::vm_global(), instance);
 
   // Virtual Machine Error for when we get into a situation we can't resolve
-  k = SystemDictionary::VirtualMachineError_klass();
+  k = vmClasses::VirtualMachineError_klass();
   bool linked = InstanceKlass::cast(k)->link_class_or_fail(CHECK_false);
   if (!linked) {
      tty->print_cr("Unable to link/verify VirtualMachineError class");
@@ -1226,7 +1232,6 @@ Method* LatestMethodCache::get_method() {
   return m;
 }
 
-
 #ifdef ASSERT
 // Release dummy object(s) at bottom of heap
 bool Universe::release_fullgc_alot_dummy() {
@@ -1243,6 +1248,14 @@ bool Universe::release_fullgc_alot_dummy() {
     fullgc_alot_dummy_array->obj_at_put(_fullgc_alot_dummy_next++, NULL);
   }
   return true;
+}
+
+bool Universe::is_gc_active() {
+  return heap()->is_gc_active();
+}
+
+bool Universe::is_in_heap(const void* p) {
+  return heap()->is_in(p);
 }
 
 #endif // ASSERT

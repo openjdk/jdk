@@ -42,7 +42,7 @@ extern NSOpenGLContext *sharedContext;
 @synthesize textureWidth;
 @synthesize textureHeight;
 
-- (id) initWithJavaLayer:(JNFWeakJObjectWrapper *)layer;
+- (id) initWithJavaLayer:(jobject)layer;
 {
 AWT_ASSERT_APPKIT_THREAD;
     // Initialize ourselves
@@ -79,6 +79,8 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (void) dealloc {
+    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
+    (*env)->DeleteWeakGlobalRef(env, self.javaLayer);
     self.javaLayer = nil;
     [super dealloc];
 }
@@ -133,7 +135,7 @@ AWT_ASSERT_APPKIT_THREAD;
     DECLARE_CLASS(jc_JavaLayer, "sun/java2d/opengl/CGLLayer");
     DECLARE_METHOD(jm_drawInCGLContext, jc_JavaLayer, "drawInCGLContext", "()V");
 
-    jobject javaLayerLocalRef = [self.javaLayer jObjectWithEnv:env];
+    jobject javaLayerLocalRef = (*env)->NewLocalRef(env, self.javaLayer);
     if ((*env)->IsSameObject(env, javaLayerLocalRef, NULL)) {
         return;
     }
@@ -172,7 +174,7 @@ Java_sun_java2d_opengl_CGLLayer_nativeCreateLayer
 
 JNI_COCOA_ENTER(env);
 
-    JNFWeakJObjectWrapper *javaLayer = [JNFWeakJObjectWrapper wrapperWithJObject:obj withEnv:env];
+    jobject javaLayer = (*env)->NewWeakGlobalRef(env, obj);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
             AWT_ASSERT_APPKIT_THREAD;

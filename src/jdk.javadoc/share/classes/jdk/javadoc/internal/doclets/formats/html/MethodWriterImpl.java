@@ -38,7 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.MethodWriter;
@@ -103,7 +103,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public Content getMethodDocTreeHeader(ExecutableElement method) {
         Content methodDocTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(name(method)));
+                Text.of(name(method)));
         HtmlId erasureAnchor;
         if ((erasureAnchor = htmlIds.forErasure(method)) != null) {
             heading.setId(erasureAnchor);
@@ -149,21 +149,22 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                     utils.isLinkable(holder))) {
                 writer.addInlineComment(method, methodDocTree);
             } else {
-                Content link =
-                        writer.getDocLink(LinkInfoImpl.Kind.EXECUTABLE_ELEMENT_COPY,
-                        holder, method,
-                        utils.isIncluded(holder)
-                                ? utils.getSimpleName(holder)
-                                : utils.getFullyQualifiedName(holder),
-                            false);
-                Content codeLink = HtmlTree.CODE(link);
-                Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel,
-                        utils.isClass(holder)
-                                ? contents.descfrmClassLabel
-                                : contents.descfrmInterfaceLabel);
-                descfrmLabel.add(Entity.NO_BREAK_SPACE);
-                descfrmLabel.add(codeLink);
-                methodDocTree.add(HtmlTree.DIV(HtmlStyle.block, descfrmLabel));
+                if (!utils.hasHiddenTag(holder) && !utils.hasHiddenTag(method)) {
+                    Content link =
+                            writer.getDocLink(HtmlLinkInfo.Kind.EXECUTABLE_ELEMENT_COPY,
+                                    holder, method,
+                                    utils.isIncluded(holder)
+                                            ? utils.getSimpleName(holder)
+                                            : utils.getFullyQualifiedName(holder));
+                    Content codeLink = HtmlTree.CODE(link);
+                    Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel,
+                            utils.isClass(holder)
+                                    ? contents.descfrmClassLabel
+                                    : contents.descfrmInterfaceLabel);
+                    descfrmLabel.add(Entity.NO_BREAK_SPACE);
+                    descfrmLabel.add(codeLink);
+                    methodDocTree.add(HtmlTree.DIV(HtmlStyle.block, descfrmLabel));
+                }
                 writer.addInlineComment(method, methodDocTree);
             }
         }
@@ -214,14 +215,14 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
         Content classLink = writer.getPreQualifiedClassLink(
-                LinkInfoImpl.Kind.MEMBER, typeElement, false);
+                HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
-            label = new StringContent(utils.isClass(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Declared_In_Class")
                     : resources.getText("doclet.Methods_Declared_In_Interface"));
         } else {
-            label = new StringContent(utils.isClass(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Inherited_From_Class")
                     : resources.getText("doclet.Methods_Inherited_From_Interface"));
         }
@@ -266,36 +267,37 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             //is not visible so don't document this.
             return;
         }
-
-        if (method != null) {
-            Contents contents = writer.contents;
-            Content label;
-            LinkInfoImpl.Kind context;
-            if (utils.isAbstract(holder) && utils.isAbstract(method)){
-                //Abstract method is implemented from abstract class,
-                //not overridden
-                label = contents.specifiedByLabel;
-                context = LinkInfoImpl.Kind.METHOD_SPECIFIED_BY;
-            } else {
-                label = contents.overridesLabel;
-                context = LinkInfoImpl.Kind.METHOD_OVERRIDES;
-            }
-            dl.add(HtmlTree.DT(label));
-            Content overriddenTypeLink =
-                    writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType));
-            Content codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
-            Content methlink = writer.getLink(
-                    new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER, holder)
-                            .where(writer.htmlIds.forMember(method).name())
-                            .label(method.getSimpleName()));
-            Content codeMethLink = HtmlTree.CODE(methlink);
-            Content dd = HtmlTree.DD(codeMethLink);
-            dd.add(Entity.NO_BREAK_SPACE);
-            dd.add(contents.inClass);
-            dd.add(Entity.NO_BREAK_SPACE);
-            dd.add(codeOverriddenTypeLink);
-            dl.add(dd);
+        if (utils.hasHiddenTag(holder) || utils.hasHiddenTag(method)) {
+            return;
         }
+
+        Contents contents = writer.contents;
+        Content label;
+        HtmlLinkInfo.Kind context;
+        if (utils.isAbstract(holder) && utils.isAbstract(method)) {
+            //Abstract method is implemented from abstract class,
+            //not overridden
+            label = contents.specifiedByLabel;
+            context = HtmlLinkInfo.Kind.METHOD_SPECIFIED_BY;
+        } else {
+            label = contents.overridesLabel;
+            context = HtmlLinkInfo.Kind.METHOD_OVERRIDES;
+        }
+        dl.add(HtmlTree.DT(label));
+        Content overriddenTypeLink =
+                writer.getLink(new HtmlLinkInfo(writer.configuration, context, overriddenType));
+        Content codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
+        Content methlink = writer.getLink(
+                new HtmlLinkInfo(writer.configuration, HtmlLinkInfo.Kind.MEMBER, holder)
+                        .where(writer.htmlIds.forMember(method).name())
+                        .label(method.getSimpleName()));
+        Content codeMethLink = HtmlTree.CODE(methlink);
+        Content dd = HtmlTree.DD(codeMethLink);
+        dd.add(Entity.NO_BREAK_SPACE);
+        dd.add(contents.inClass);
+        dd.add(Entity.NO_BREAK_SPACE);
+        dd.add(codeOverriddenTypeLink);
+        dl.add(dd);
     }
 
     /**
@@ -322,13 +324,13 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         for (ExecutableElement implementedMeth : implementedMethods) {
             TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);
             intfac = utils.getDeclaredType(utils.getEnclosingTypeElement(method), intfac);
-            Content intfaclink = writer.getLink(new LinkInfoImpl(
-                    writer.configuration, LinkInfoImpl.Kind.METHOD_SPECIFIED_BY, intfac));
+            Content intfaclink = writer.getLink(new HtmlLinkInfo(
+                    writer.configuration, HtmlLinkInfo.Kind.METHOD_SPECIFIED_BY, intfac));
             Content codeIntfacLink = HtmlTree.CODE(intfaclink);
             dl.add(HtmlTree.DT(contents.specifiedByLabel));
             Content methlink = writer.getDocLink(
-                    LinkInfoImpl.Kind.MEMBER, implementedMeth,
-                    implementedMeth.getSimpleName(), false);
+                    HtmlLinkInfo.Kind.MEMBER, implementedMeth,
+                    implementedMeth.getSimpleName());
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.add(Entity.NO_BREAK_SPACE);
@@ -348,7 +350,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     protected Content getReturnType(ExecutableElement method) {
         TypeMirror type = utils.getReturnType(typeElement, method);
         if (type != null) {
-            return writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type));
+            return writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RETURN_TYPE, type));
         }
         return new ContentBuilder();
     }

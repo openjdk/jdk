@@ -25,11 +25,14 @@
  * @test
  * @bug 8150646 8153013
  * @summary Add support for blocking compiles through whitebox API
- * @requires vm.compiler1.enabled | !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
+ *
+ * @requires vm.compiler1.enabled | !vm.graal.enabled
+ * @requires vm.opt.DeoptimizeALot != true
+ *
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm
  *        -Xbootclasspath/a:.
  *        -Xmixed
@@ -45,14 +48,12 @@ import compiler.testlibrary.CompilerUtils;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
-import java.util.Random;
 
 public class BlockingCompilation {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final Random RANDOM = new Random(42);
 
     public static int foo() {
-        return RANDOM.nextInt();
+        return 42; //constant's value is arbitrary and meaningless
     }
 
     public static void main(String[] args) throws Exception {

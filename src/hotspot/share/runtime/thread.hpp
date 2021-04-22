@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +31,13 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
+#include "oops/oopHandle.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaFrameAnchor.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/osThread.hpp"
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -60,22 +60,15 @@ class ThreadSafepointState;
 class ThreadsList;
 class ThreadsSMRSupport;
 
+class JNIHandleBlock;
 class JvmtiRawMonitor;
 class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
 class JvmtiVMObjectAllocEventCollector;
+class OSThread;
 class ThreadStatistics;
 class ConcurrentLocksDump;
 class MonitorInfo;
-
-class BufferBlob;
-class AbstractCompiler;
-class ciEnv;
-class CompileThread;
-class CompileLog;
-class CompileTask;
-class CompileQueue;
-class CompilerCounters;
 
 class vframeArray;
 class vframe;
@@ -86,10 +79,6 @@ class JvmtiDeferredUpdates;
 
 class ThreadClosure;
 class ICRefillVerifier;
-class IdealGraphPrinter;
-
-class JVMCIEnv;
-class JVMCIPrimitiveArray;
 
 class Metadata;
 class ResourceArea;
@@ -184,11 +173,12 @@ class Thread: public ThreadShadow {
   friend class ScanHazardPtrPrintMatchingThreadsClosure;  // for get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
   friend class ThreadsSMRSupport;  // for _nested_threads_hazard_ptr_cnt, _threads_hazard_ptr, _threads_list_ptr access
   friend class ThreadsListHandleTest;  // for _nested_threads_hazard_ptr_cnt, _threads_hazard_ptr, _threads_list_ptr access
+  friend class ValidateHazardPtrsClosure;  // for get_threads_hazard_ptr(), untag_hazard_ptr() access
 
   ThreadsList* volatile _threads_hazard_ptr;
   SafeThreadsListPtr*   _threads_list_ptr;
   ThreadsList*          cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value);
-  ThreadsList*          get_threads_hazard_ptr();
+  ThreadsList*          get_threads_hazard_ptr() const;
   void                  set_threads_hazard_ptr(ThreadsList* new_list);
   static bool           is_hazard_ptr_tagged(ThreadsList* list) {
     return (intptr_t(list) & intptr_t(1)) == intptr_t(1);
@@ -213,6 +203,10 @@ class Thread: public ThreadShadow {
   }
 
  public:
+  // Is the target JavaThread protected by the calling Thread
+  // or by some other mechanism:
+  static bool is_JavaThread_protected(const JavaThread* p);
+
   void* operator new(size_t size) throw() { return allocate(size, true); }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
     return allocate(size, false); }
@@ -220,85 +214,10 @@ class Thread: public ThreadShadow {
 
  protected:
   static void* allocate(size_t size, bool throw_excpt, MEMFLAGS flags = mtThread);
- private:
 
-  // ***************************************************************
-  // Suspend and resume support
-  // ***************************************************************
-  //
-  // VM suspend/resume no longer exists - it was once used for various
-  // things including safepoints but was deprecated and finally removed
-  // in Java 7. Because VM suspension was considered "internal" Java-level
-  // suspension was considered "external", and this legacy naming scheme
-  // remains.
-  //
-  // External suspend/resume requests come from JVM_SuspendThread,
-  // JVM_ResumeThread, JVMTI SuspendThread, and finally JVMTI
-  // ResumeThread. External
-  // suspend requests cause _external_suspend to be set and external
-  // resume requests cause _external_suspend to be cleared.
-  // External suspend requests do not nest on top of other external
-  // suspend requests. The higher level APIs reject suspend requests
-  // for already suspended threads.
-  //
-  // The external_suspend
-  // flag is checked by has_special_runtime_exit_condition() and java thread
-  // will self-suspend when handle_special_runtime_exit_condition() is
-  // called. Most uses of the _thread_blocked state in JavaThreads are
-  // considered the same as being externally suspended; if the blocking
-  // condition lifts, the JavaThread will self-suspend. Other places
-  // where VM checks for external_suspend include:
-  //   + mutex granting (do not enter monitors when thread is suspended)
-  //   + state transitions from _thread_in_native
-  //
-  // In general, java_suspend() does not wait for an external suspend
-  // request to complete. When it returns, the only guarantee is that
-  // the _external_suspend field is true.
-  //
-  // wait_for_ext_suspend_completion() is used to wait for an external
-  // suspend request to complete. External suspend requests are usually
-  // followed by some other interface call that requires the thread to
-  // be quiescent, e.g., GetCallTrace(). By moving the "wait time" into
-  // the interface that requires quiescence, we give the JavaThread a
-  // chance to self-suspend before we need it to be quiescent. This
-  // improves overall suspend/query performance.
-  //
-  // _suspend_flags controls the behavior of java_ suspend/resume.
-  // It must be set under the protection of SR_lock. Read from the flag is
-  // OK without SR_lock as long as the value is only used as a hint.
-  // (e.g., check _external_suspend first without lock and then recheck
-  // inside SR_lock and finish the suspension)
-  //
-  // _suspend_flags is also overloaded for other "special conditions" so
-  // that a single check indicates whether any special action is needed
-  // eg. for async exceptions.
-  // -------------------------------------------------------------------
-  // Notes:
-  // 1. The suspend/resume logic no longer uses ThreadState in OSThread
-  // but we still update its value to keep other part of the system (mainly
-  // JVMTI) happy. ThreadState is legacy code (see notes in
-  // osThread.hpp).
-  //
-  // 2. It would be more natural if set_external_suspend() is private and
-  // part of java_suspend(), but that probably would affect the suspend/query
-  // performance. Need more investigation on this.
-
-  // suspend/resume lock: used for self-suspend
-  Monitor* _SR_lock;
-
-  // Stack watermark barriers.
-  StackWatermarks _stack_watermarks;
-
- public:
-  inline StackWatermarks* stack_watermarks() { return &_stack_watermarks; }
-
- protected:
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
     //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
-
-    _external_suspend       = 0x20000000U, // thread is asked to self suspend
-    _ext_suspended          = 0x40000000U, // thread has self-suspended
 
     _has_async_exception    = 0x00000001U, // there is a pending async exception
 
@@ -524,8 +443,6 @@ class Thread: public ThreadShadow {
     assert(Thread::current() == this, "set_native_thread_name can only be called on the current thread");
     os::set_native_thread_name(name);
   }
-
-  Monitor* SR_lock() const                       { return _SR_lock; }
 
   bool has_async_exception() const { return (_suspend_flags & _has_async_exception) != 0; }
 
@@ -822,9 +739,13 @@ protected:
  public:
   volatile intptr_t _Stalled;
   volatile int _TypeTag;
-  ParkEvent * _ParkEvent;                     // for Object monitors, JVMTI raw monitors,
+  ParkEvent * volatile _ParkEvent;            // for Object monitors, JVMTI raw monitors,
                                               // and ObjectSynchronizer::read_stable_mark
-  int NativeSyncRecursion;                    // diagnostic
+
+  // Termination indicator used by the signal handler.
+  // _ParkEvent is just a convenient field we can NULL out after setting the JavaThread termination state
+  // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
+  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == NULL; };
 
   volatile int _OnTrap;                       // Resume-at IP delta
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
@@ -836,6 +757,15 @@ protected:
   // Not for general synchronization use.
   static void SpinAcquire(volatile int * Lock, const char * Name);
   static void SpinRelease(volatile int * Lock);
+
+#if defined(__APPLE__) && defined(AARCH64)
+ private:
+  DEBUG_ONLY(bool _wx_init);
+  WXMode _wx_state;
+ public:
+  void init_wx();
+  WXMode enable_wx(WXMode new_state);
+#endif // __APPLE__ && AARCH64
 };
 
 // Inline implementation of Thread::current()
@@ -863,141 +793,6 @@ inline Thread* Thread::current_or_null_safe() {
   return NULL;
 }
 
-class NonJavaThread: public Thread {
-  friend class VMStructs;
-
-  NonJavaThread* volatile _next;
-
-  class List;
-  static List _the_list;
-
-  void add_to_the_list();
-  void remove_from_the_list();
-
- protected:
-  virtual void pre_run();
-  virtual void post_run();
-
- public:
-  NonJavaThread();
-  ~NonJavaThread();
-
-  class Iterator;
-};
-
-// Provides iteration over the list of NonJavaThreads.
-// List addition occurs in pre_run(), and removal occurs in post_run(),
-// so that only live fully-initialized threads can be found in the list.
-// Threads created after an iterator is constructed will not be visited
-// by the iterator. The scope of an iterator is a critical section; there
-// must be no safepoint checks in that scope.
-class NonJavaThread::Iterator : public StackObj {
-  uint _protect_enter;
-  NonJavaThread* _current;
-
-  NONCOPYABLE(Iterator);
-
-public:
-  Iterator();
-  ~Iterator();
-
-  bool end() const { return _current == NULL; }
-  NonJavaThread* current() const { return _current; }
-  void step();
-};
-
-// Name support for threads.  non-JavaThread subclasses with multiple
-// uniquely named instances should derive from this.
-class NamedThread: public NonJavaThread {
-  friend class VMStructs;
-  enum {
-    max_name_len = 64
-  };
- private:
-  char* _name;
-  // log Thread being processed by oops_do
-  Thread* _processed_thread;
-  uint _gc_id; // The current GC id when a thread takes part in GC
-
- public:
-  NamedThread();
-  ~NamedThread();
-  // May only be called once per thread.
-  void set_name(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
-  virtual bool is_Named_thread() const { return true; }
-  virtual char* name() const { return _name == NULL ? (char*)"Unknown Thread" : _name; }
-  Thread *processed_thread() { return _processed_thread; }
-  void set_processed_thread(Thread *thread) { _processed_thread = thread; }
-  virtual void print_on(outputStream* st) const;
-
-  void set_gc_id(uint gc_id) { _gc_id = gc_id; }
-  uint gc_id() { return _gc_id; }
-};
-
-// Worker threads are named and have an id of an assigned work.
-class WorkerThread: public NamedThread {
- private:
-  uint _id;
- public:
-  WorkerThread() : _id(0)               { }
-  virtual bool is_Worker_thread() const { return true; }
-
-  virtual WorkerThread* as_Worker_thread() const {
-    assert(is_Worker_thread(), "Dubious cast to WorkerThread*?");
-    return (WorkerThread*) this;
-  }
-
-  void set_id(uint work_id)             { _id = work_id; }
-  uint id() const                       { return _id; }
-};
-
-// A single WatcherThread is used for simulating timer interrupts.
-class WatcherThread: public NonJavaThread {
-  friend class VMStructs;
- protected:
-  virtual void run();
-
- private:
-  static WatcherThread* _watcher_thread;
-
-  static bool _startable;
-  // volatile due to at least one lock-free read
-  volatile static bool _should_terminate;
- public:
-  enum SomeConstants {
-    delay_interval = 10                          // interrupt delay in milliseconds
-  };
-
-  // Constructor
-  WatcherThread();
-
-  // No destruction allowed
-  ~WatcherThread() {
-    guarantee(false, "WatcherThread deletion must fix the race with VM termination");
-  }
-
-  // Tester
-  bool is_Watcher_thread() const                 { return true; }
-
-  // Printing
-  char* name() const { return (char*)"VM Periodic Task Thread"; }
-  void print_on(outputStream* st) const;
-  void unpark();
-
-  // Returns the single instance of WatcherThread
-  static WatcherThread* watcher_thread()         { return _watcher_thread; }
-
-  // Create and start the single instance of WatcherThread, or stop it on shutdown
-  static void start();
-  static void stop();
-  // Only allow start once the VM is sufficiently initialized
-  // Otherwise the first task to enroll will trigger the start
-  static void make_startable();
- private:
-  int sleep() const;
-};
-
-
 class CompilerThread;
 
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
@@ -1007,6 +802,7 @@ class JavaThread: public Thread {
   friend class JVMCIVMStructs;
   friend class WhiteBox;
   friend class ThreadsSMRSupport; // to access _threadObj for exiting_threads_oops_do
+  friend class HandshakeState;
  private:
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
   OopHandle      _threadObj;                     // The Java level thread object
@@ -1091,6 +887,7 @@ class JavaThread: public Thread {
   NOT_PRODUCT(bool      _requires_cross_modify_fence;) // State used by VerifyCrossModifyFence
 
   // JavaThread termination support
+ public:
   enum TerminatedTypes {
     _not_terminated = 0xDEAD - 2,
     _thread_exiting,                             // JavaThread::exit() has been called for this thread
@@ -1099,6 +896,7 @@ class JavaThread: public Thread {
                                                  // only VM_Exit can set _vm_exited
   };
 
+ private:
   // In general a JavaThread's _terminated field transitions as follows:
   //
   //   _not_terminated => _thread_exiting => _thread_terminated
@@ -1106,8 +904,7 @@ class JavaThread: public Thread {
   // _vm_exited is a special value to cover the case of a JavaThread
   // executing native code after the VM itself is terminated.
   volatile TerminatedTypes _terminated;
-  // suspend/resume support
-  volatile bool         _suspend_equivalent;     // Suspend equivalent condition
+
   jint                  _in_deopt_handler;       // count of deoptimization
                                                  // handlers thread is in
   volatile bool         _doing_unsafe_access;    // Thread may fault due to unsafe access
@@ -1163,6 +960,11 @@ class JavaThread: public Thread {
   // Support for high precision, thread sensitive counters in JVMCI compiled code.
   jlong*    _jvmci_counters;
 
+  // Fast thread locals for use by JVMCI
+  intptr_t*  _jvmci_reserved0;
+  intptr_t*  _jvmci_reserved1;
+  oop        _jvmci_reserved_oop0;
+
  public:
   static jlong* _jvmci_old_thread_counters;
   static void collect_counters(jlong* array, int length);
@@ -1208,6 +1010,11 @@ class JavaThread: public Thread {
   friend class ThreadWaitTransition;
   friend class VM_Exit;
 
+  // Stack watermark barriers.
+  StackWatermarks _stack_watermarks;
+
+ public:
+  inline StackWatermarks* stack_watermarks() { return &_stack_watermarks; }
 
  public:
   // Constructor
@@ -1308,8 +1115,7 @@ class JavaThread: public Thread {
   }
   bool is_terminated() const;
   void set_terminated(TerminatedTypes t);
-  // special for Threads::remove() which is static:
-  void set_terminated_value();
+
   void block_if_vm_exited();
 
   bool doing_unsafe_access()                     { return _doing_unsafe_access; }
@@ -1335,97 +1141,23 @@ class JavaThread: public Thread {
   }
 
   // Suspend/resume support for JavaThread
- private:
-  inline void set_ext_suspended();
-  inline void clear_ext_suspended();
+  bool java_suspend(); // higher-level suspension logic called by the public APIs
+  bool java_resume();  // higher-level resume logic called by the public APIs
+  bool is_suspended()     { return _handshake.is_suspended(); }
 
- public:
-  void java_suspend(); // higher-level suspension logic called by the public APIs
-  void java_resume();  // higher-level resume logic called by the public APIs
-  int  java_suspend_self(); // low-level self-suspension mechanics
+  static void check_safepoint_and_suspend_for_native_trans(JavaThread *thread);
+  // Check for async exception in addition to safepoint.
+  static void check_special_condition_for_native_trans(JavaThread *thread);
+
+  // Whenever a thread transitions from native to vm/java it must suspend
+  // if deopt suspend is present.
+  bool is_suspend_after_native() const {
+    return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
+  }
 
   // Synchronize with another thread that is deoptimizing objects of the
   // current thread, i.e. reverts optimizations based on escape analysis.
   void wait_for_object_deoptimization();
-
- private:
-  // mid-level wrapper around java_suspend_self to set up correct state and
-  // check for a pending safepoint at the end
-  void java_suspend_self_with_safepoint_check();
-
- public:
-  void check_and_wait_while_suspended() {
-    assert(JavaThread::current() == this, "sanity check");
-
-    bool do_self_suspend;
-    do {
-      // were we externally suspended while we were waiting?
-      do_self_suspend = handle_special_suspend_equivalent_condition();
-      if (do_self_suspend) {
-        // don't surprise the thread that suspended us by returning
-        java_suspend_self();
-        set_suspend_equivalent();
-      }
-    } while (do_self_suspend);
-  }
-  static void check_safepoint_and_suspend_for_native_trans(JavaThread *thread);
-  // Check for async exception in addition to safepoint and suspend request.
-  static void check_special_condition_for_native_trans(JavaThread *thread);
-
-  bool is_ext_suspend_completed();
-
-  inline void set_external_suspend();
-  inline void clear_external_suspend();
-
-  bool is_external_suspend() const {
-    return (_suspend_flags & _external_suspend) != 0;
-  }
-  // Whenever a thread transitions from native to vm/java it must suspend
-  // if external|deopt suspend is present.
-  bool is_suspend_after_native() const {
-    return (_suspend_flags & (_external_suspend | _obj_deopt JFR_ONLY(| _trace_flag))) != 0;
-  }
-
-  // external suspend request is completed
-  bool is_ext_suspended() const {
-    return (_suspend_flags & _ext_suspended) != 0;
-  }
-
-  bool is_external_suspend_with_lock() const {
-    MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    return is_external_suspend();
-  }
-
-  // Special method to handle a pending external suspend request
-  // when a suspend equivalent condition lifts.
-  bool handle_special_suspend_equivalent_condition() {
-    assert(is_suspend_equivalent(),
-           "should only be called in a suspend equivalence condition");
-    MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    bool ret = is_external_suspend();
-    if (!ret) {
-      // not about to self-suspend so clear suspend equivalence
-      clear_suspend_equivalent();
-    }
-    // implied else:
-    // We have a pending external suspend request so we leave the
-    // suspend_equivalent flag set until java_suspend_self() sets
-    // the ext_suspended flag and clears the suspend_equivalent
-    // flag. This insures that wait_for_ext_suspend_completion()
-    // will return consistent values.
-    return ret;
-  }
-
-  // utility methods to see if we are doing some kind of suspension
-  bool is_being_ext_suspended() const            {
-    MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    return is_ext_suspended() || is_external_suspend();
-  }
-
-  bool is_suspend_equivalent() const             { return _suspend_equivalent; }
-
-  void set_suspend_equivalent()                  { _suspend_equivalent = true; }
-  void clear_suspend_equivalent()                { _suspend_equivalent = false; }
 
   // Thread.stop support
   void send_thread_stop(oop throwable);
@@ -1446,17 +1178,7 @@ class JavaThread: public Thread {
   // Return true if JavaThread has an asynchronous condition or
   // if external suspension is requested.
   bool has_special_runtime_exit_condition() {
-    // Because we don't use is_external_suspend_with_lock
-    // it is possible that we won't see an asynchronous external suspend
-    // request that has just gotten started, i.e., SR_lock grabbed but
-    // _external_suspend field change either not made yet or not visible
-    // yet. However, this is okay because the request is asynchronous and
-    // we will see the new flag value the next time through. It's also
-    // possible that the external suspend request is dropped after
-    // we have checked is_external_suspend(), we will recheck its value
-    // under SR_lock in java_suspend_self().
-    return (_special_runtime_exit_condition != _no_async_condition) ||
-            is_external_suspend() || is_trace_suspend() || is_obj_deopt_suspend();
+    return (_special_runtime_exit_condition != _no_async_condition) || is_trace_suspend() || is_obj_deopt_suspend();
   }
 
   void set_pending_unsafe_access_error()          { _special_runtime_exit_condition = _async_unsafe_access_error; }
@@ -1896,100 +1618,6 @@ inline JavaThread* JavaThread::current() {
   return Thread::current()->as_Java_thread();
 }
 
-inline CompilerThread* JavaThread::as_CompilerThread() {
-  assert(is_Compiler_thread(), "just checking");
-  return (CompilerThread*)this;
-}
-
-// Dedicated thread to sweep the code cache
-class CodeCacheSweeperThread : public JavaThread {
-  CompiledMethod*       _scanned_compiled_method; // nmethod being scanned by the sweeper
- public:
-  CodeCacheSweeperThread();
-  // Track the nmethod currently being scanned by the sweeper
-  void set_scanned_compiled_method(CompiledMethod* cm) {
-    assert(_scanned_compiled_method == NULL || cm == NULL, "should reset to NULL before writing a new value");
-    _scanned_compiled_method = cm;
-  }
-
-  // Hide sweeper thread from external view.
-  bool is_hidden_from_external_view() const { return true; }
-
-  bool is_Code_cache_sweeper_thread() const { return true; }
-
-  // Prevent GC from unloading _scanned_compiled_method
-  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
-  void nmethods_do(CodeBlobClosure* cf);
-};
-
-// A thread used for Compilation.
-class CompilerThread : public JavaThread {
-  friend class VMStructs;
- private:
-  CompilerCounters* _counters;
-
-  ciEnv*                _env;
-  CompileLog*           _log;
-  CompileTask* volatile _task;  // print_threads_compiling can read this concurrently.
-  CompileQueue*         _queue;
-  BufferBlob*           _buffer_blob;
-
-  AbstractCompiler*     _compiler;
-  TimeStamp             _idle_time;
-
- public:
-
-  static CompilerThread* current();
-
-  CompilerThread(CompileQueue* queue, CompilerCounters* counters);
-  ~CompilerThread();
-
-  bool is_Compiler_thread() const                { return true; }
-
-  virtual bool can_call_java() const;
-
-  // Hide native compiler threads from external view.
-  bool is_hidden_from_external_view() const      { return !can_call_java(); }
-
-  void set_compiler(AbstractCompiler* c)         { _compiler = c; }
-  AbstractCompiler* compiler() const             { return _compiler; }
-
-  CompileQueue* queue()        const             { return _queue; }
-  CompilerCounters* counters() const             { return _counters; }
-
-  // Get/set the thread's compilation environment.
-  ciEnv*        env()                            { return _env; }
-  void          set_env(ciEnv* env)              { _env = env; }
-
-  BufferBlob*   get_buffer_blob() const          { return _buffer_blob; }
-  void          set_buffer_blob(BufferBlob* b)   { _buffer_blob = b; }
-
-  // Get/set the thread's logging information
-  CompileLog*   log()                            { return _log; }
-  void          init_log(CompileLog* log) {
-    // Set once, for good.
-    assert(_log == NULL, "set only once");
-    _log = log;
-  }
-
-  void start_idle_timer()                        { _idle_time.update(); }
-  jlong idle_time_millis() {
-    return TimeHelper::counter_to_millis(_idle_time.ticks_since_update());
-  }
-
-#ifndef PRODUCT
- private:
-  IdealGraphPrinter *_ideal_graph_printer;
- public:
-  IdealGraphPrinter *ideal_graph_printer()           { return _ideal_graph_printer; }
-  void set_ideal_graph_printer(IdealGraphPrinter *n) { _ideal_graph_printer = n; }
-#endif
-
-  // Get/set the thread's current task
-  CompileTask* task()                      { return _task; }
-  void         set_task(CompileTask* task) { _task = task; }
-};
-
 inline JavaThread* Thread::as_Java_thread() {
   assert(is_Java_thread(), "incorrect cast to JavaThread");
   return static_cast<JavaThread*>(this);
@@ -1998,10 +1626,6 @@ inline JavaThread* Thread::as_Java_thread() {
 inline const JavaThread* Thread::as_Java_thread() const {
   assert(is_Java_thread(), "incorrect cast to const JavaThread");
   return static_cast<const JavaThread*>(this);
-}
-
-inline CompilerThread* CompilerThread::current() {
-  return JavaThread::current()->as_CompilerThread();
 }
 
 // The active thread queue. It also keeps track of the current used
@@ -2038,7 +1662,7 @@ class Threads: AllStatic {
   static void create_vm_init_libraries();
   static void create_vm_init_agents();
   static void shutdown_vm_agents();
-  static bool destroy_vm();
+  static void destroy_vm();
   // Supported VM versions via JNI
   // Includes JNI_VERSION_1_1
   static jboolean is_supported_jni_version_including_1_1(jint version);
@@ -2069,9 +1693,6 @@ class Threads: AllStatic {
   static void oops_do(OopClosure* f, CodeBlobClosure* cf);
   // This version may be called by sequential or parallel code.
   static void possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf);
-
-  // Sweeper
-  static void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses support
   static void metadata_do(MetadataClosure* f);

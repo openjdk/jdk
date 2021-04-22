@@ -29,7 +29,6 @@ import java.lang.ref.Reference;
 import java.security.MessageDigest;
 import java.security.KeyRep;
 import java.security.InvalidKeyException;
-import java.util.Arrays;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.DESedeKeySpec;
 

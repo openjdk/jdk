@@ -41,7 +41,6 @@ class UpdateLogBuffersDeferred : public BasicOopIterateClosure {
 private:
   G1CollectedHeap* _g1h;
   G1RedirtyCardsLocalQueueSet* _rdc_local_qset;
-  G1RedirtyCardsQueue* _rdcq;
   G1CardTable*    _ct;
 
   // Remember the last enqueued card to avoid enqueuing the same card over and over;
@@ -49,11 +48,9 @@ private:
   size_t _last_enqueued_card;
 
 public:
-  UpdateLogBuffersDeferred(G1RedirtyCardsLocalQueueSet* rdc_local_qset,
-                           G1RedirtyCardsQueue* rdcq) :
+  UpdateLogBuffersDeferred(G1RedirtyCardsLocalQueueSet* rdc_local_qset) :
     _g1h(G1CollectedHeap::heap()),
     _rdc_local_qset(rdc_local_qset),
-    _rdcq(rdcq),
     _ct(_g1h->card_table()),
     _last_enqueued_card(SIZE_MAX) {}
 
@@ -73,7 +70,7 @@ public:
     }
     size_t card_index = _ct->index_for(p);
     if (card_index != _last_enqueued_card) {
-      _rdc_local_qset->enqueue(*_rdcq, _ct->byte_for_index(card_index));
+      _rdc_local_qset->enqueue(_ct->byte_for_index(card_index));
       _last_enqueued_card = card_index;
     }
   }
@@ -175,7 +172,7 @@ public:
     if (gap_size >= CollectedHeap::min_fill_size()) {
       CollectedHeap::fill_with_objects(start, gap_size);
 
-      HeapWord* end_first_obj = start + ((oop)start)->size();
+      HeapWord* end_first_obj = start + cast_to_oop(start)->size();
       _hr->cross_threshold(start, end_first_obj);
       // Fill_with_objects() may have created multiple (i.e. two)
       // objects, as the max_fill_size() is half a region.
@@ -184,7 +181,7 @@ public:
       if (end_first_obj != end) {
         _hr->cross_threshold(end_first_obj, end);
 #ifdef ASSERT
-        size_t size_second_obj = ((oop)end_first_obj)->size();
+        size_t size_second_obj = cast_to_oop(end_first_obj)->size();
         HeapWord* end_of_second_obj = end_first_obj + size_second_obj;
         assert(end == end_of_second_obj,
                "More than two objects were used to fill the area from " PTR_FORMAT " to " PTR_FORMAT ", "
@@ -206,7 +203,6 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   uint _worker_id;
 
   G1RedirtyCardsLocalQueueSet _rdc_local_qset;
-  G1RedirtyCardsQueue _rdcq;
   UpdateLogBuffersDeferred _log_buffer_cl;
 
 public:
@@ -214,12 +210,10 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
     _rdc_local_qset(rdcqs),
-    _rdcq(&_rdc_local_qset),
-    _log_buffer_cl(&_rdc_local_qset, &_rdcq) {
+    _log_buffer_cl(&_rdc_local_qset) {
   }
 
   ~RemoveSelfForwardPtrHRClosure() {
-    _rdc_local_qset.flush_queue(_rdcq);
     _rdc_local_qset.flush();
   }
 

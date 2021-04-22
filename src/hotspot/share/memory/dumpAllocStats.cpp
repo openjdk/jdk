@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,29 +26,21 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/dumpAllocStats.hpp"
-#include "memory/metaspaceShared.hpp"
 
-void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all) {
-  // Calculate size of data that was not allocated by Metaspace::allocate()
-  MetaspaceSharedStats *stats = MetaspaceShared::stats();
-
+void DumpAllocStats::print_stats(int ro_all, int rw_all) {
   // symbols
-  _counts[RO][SymbolHashentryType] = stats->symbol.hashentry_count;
-  _bytes [RO][SymbolHashentryType] = stats->symbol.hashentry_bytes;
+  _counts[RO][SymbolHashentryType] = _symbol_stats.hashentry_count;
+  _bytes [RO][SymbolHashentryType] = _symbol_stats.hashentry_bytes;
 
-  _counts[RO][SymbolBucketType] = stats->symbol.bucket_count;
-  _bytes [RO][SymbolBucketType] = stats->symbol.bucket_bytes;
+  _counts[RO][SymbolBucketType] = _symbol_stats.bucket_count;
+  _bytes [RO][SymbolBucketType] = _symbol_stats.bucket_bytes;
 
   // strings
-  _counts[RO][StringHashentryType] = stats->string.hashentry_count;
-  _bytes [RO][StringHashentryType] = stats->string.hashentry_bytes;
+  _counts[RO][StringHashentryType] = _string_stats.hashentry_count;
+  _bytes [RO][StringHashentryType] = _string_stats.hashentry_bytes;
 
-  _counts[RO][StringBucketType] = stats->string.bucket_count;
-  _bytes [RO][StringBucketType] = stats->string.bucket_bytes;
-
-  // TODO: count things like dictionary, vtable, etc
-  _bytes[RW][OtherType] += mc_all;
-  rw_all += mc_all; // mc is mapped Read/Write
+  _counts[RO][StringBucketType] = _string_stats.bucket_count;
+  _bytes [RO][StringBucketType] = _string_stats.bucket_bytes;
 
   // prevent divide-by-zero
   if (ro_all < 1) {
@@ -70,7 +62,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all) {
 
   LogMessage(cds) msg;
 
-  msg.debug("Detailed metadata info (excluding st regions; rw stats include mc regions):");
+  msg.debug("Detailed metadata info (excluding heap regions):");
   msg.debug("%s", hdr);
   msg.debug("%s", sep);
   for (int type = 0; type < int(_number_of_types); type ++) {
@@ -115,4 +107,3 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all) {
 
 #undef fmt_stats
 }
-

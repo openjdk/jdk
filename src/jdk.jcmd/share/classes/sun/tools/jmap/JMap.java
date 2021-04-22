@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ public class JMap {
                 // ignore format (not needed at this time)
             } else if (subopt.startsWith("gz=")) {
                compress_level = subopt.substring("gz=".length());
-               if (compress_level == null) {
+               if (compress_level.length() == 0) {
                     System.err.println("Fail: no number provided in option: '" + subopt + "'");
                     usage(1);
                }

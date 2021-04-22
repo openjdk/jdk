@@ -356,7 +356,7 @@ public class ArgumentAttr extends JCTree.Visitor {
         }
 
         @Override
-        final public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
+        public final Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
             Assert.check(dt == this);
             if (deferredAttrContext.mode == AttrMode.SPECULATIVE) {
                 Type t = (resultInfo.pt == Type.recoveryType) ?

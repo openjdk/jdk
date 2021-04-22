@@ -98,7 +98,7 @@ public class ExecutorCompletionService9Test extends JSR166TestCase {
     ArrayList<Integer> results;
 
     void use(Integer x) {
-        if (results == null) results = new ArrayList<Integer>();
+        if (results == null) results = new ArrayList<>();
         results.add(x);
     }
 

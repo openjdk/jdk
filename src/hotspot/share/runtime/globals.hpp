@@ -426,22 +426,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option AbortVMOnVMOperationTimeout")   \
           range(0, max_intx)                                                \
                                                                             \
-  /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
-  /* typically, at most a few retries are needed                    */      \
-  product(intx, SuspendRetryCount, 50,                                      \
-          "Maximum retry count for an external suspend request")            \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(intx, SuspendRetryDelay, 5,                                       \
-          "Milliseconds to delay per retry (* current_retry_count)")        \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(bool, AssertOnSuspendWaitFailure, false,                          \
-          "Assert/Guarantee on external suspend wait failure")              \
-                                                                            \
-  product(bool, TraceSuspendWaitFailures, false,                            \
-          "Trace external suspend wait failures")                           \
-                                                                            \
   product(bool, MaxFDLimit, true,                                           \
           "Bump the number of file descriptors to maximum (Unix only)")     \
                                                                             \
@@ -553,6 +537,12 @@ const intx ObjectAlignmentInBytes = 8;
           "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
+                                                                            \
+  product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
+          "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
+          "level of the dump file. 0 (the default) disables gzip "          \
+          "compression. Otherwise the level must be between 1 and 9.")      \
+          range(0, 9)                                                       \
                                                                             \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
@@ -671,20 +661,17 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, UsePrivilegedStack, true,                                   \
           "Enable the security JVM functions")                              \
                                                                             \
-  develop(bool, ProtectionDomainVerification, true,                         \
-          "Verify protection domain before resolution in system dictionary")\
-                                                                            \
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
   product(bool, ClassUnloadingWithConcurrentMark, true,                     \
           "Do unloading of classes with a concurrent marking cycle")        \
                                                                             \
-  develop(bool, MemProfiling, false,                                        \
-          "Write memory usage profiling to log file")                       \
-                                                                            \
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Print the system dictionary at exit")                            \
+                                                                            \
+  notproduct(bool, PrintClassLoaderDataGraphAtExit, false,                  \
+          "Print the class loader data graph at exit")                      \
                                                                             \
   product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
           "Dynamically resize system dictionaries as needed")               \
@@ -1374,9 +1361,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(intx, SweeperLogEntries, 1024,                                 \
           "Number of records in the ring buffer of sweeper activity")       \
                                                                             \
-  notproduct(intx, MemProfilingInterval, 500,                               \
-          "Time between each invocation of the MemProfiler")                \
-                                                                            \
   develop(intx, MallocCatchPtr, -1,                                         \
           "Hit breakpoint when mallocing/freeing this pointer")             \
                                                                             \
@@ -1467,7 +1451,7 @@ const intx ObjectAlignmentInBytes = 8;
           "Force inlining of throwing methods smaller than this")           \
           range(0, max_jint)                                                \
                                                                             \
-  product_pd(size_t, MetaspaceSize,                                         \
+  product(size_t, MetaspaceSize, NOT_LP64(16 * M) LP64_ONLY(21 * M),        \
           "Initial threshold (in bytes) at which a garbage collection "     \
           "is done to reduce Metaspace usage")                              \
           constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \
@@ -1483,6 +1467,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
+                                                                            \
+  product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
+          "Print metaspace statistics upon VM exit.")                       \
                                                                             \
   product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
           "Metapace allocations are guarded.")                              \
@@ -1885,6 +1872,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, DynamicDumpSharedSpaces, false,                             \
           "Dynamic archive")                                                \
+                                                                            \
+  product(bool, RecordDynamicDumpInfo, false,                               \
+          "Record class info for jcmd VM.cds dynamic_dump")                 \
                                                                             \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \

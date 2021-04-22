@@ -92,7 +92,7 @@ public class SharedSecrets {
             try {
                 Class.forName("java.util.ImmutableCollections$Access", true, null);
                 access = javaUtilCollectionAccess;
-            } catch (ClassNotFoundException e) {};
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }
@@ -130,7 +130,7 @@ public class SharedSecrets {
             try {
                 Class.forName("java.lang.invoke.MethodHandleImpl", true, null);
                 access = javaLangInvokeAccess;
-            } catch (ClassNotFoundException e) {};
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }

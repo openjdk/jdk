@@ -267,12 +267,12 @@ public final class ECKeyFactory extends KeyFactorySpi {
         }
         if (key instanceof ECPublicKey) {
             ECPublicKey ecKey = (ECPublicKey)key;
-            if (ECPublicKeySpec.class.isAssignableFrom(keySpec)) {
+            if (keySpec.isAssignableFrom(ECPublicKeySpec.class)) {
                 return keySpec.cast(new ECPublicKeySpec(
                     ecKey.getW(),
                     ecKey.getParams()
                 ));
-            } else if (X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            } else if (keySpec.isAssignableFrom(X509EncodedKeySpec.class)) {
                 return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
             } else {
                 throw new InvalidKeySpecException
@@ -280,14 +280,14 @@ public final class ECKeyFactory extends KeyFactorySpi {
                         + "X509EncodedKeySpec for EC public keys");
             }
         } else if (key instanceof ECPrivateKey) {
-            if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            if (keySpec.isAssignableFrom(PKCS8EncodedKeySpec.class)) {
                 byte[] encoded = key.getEncoded();
                 try {
                     return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
                 } finally {
                     Arrays.fill(encoded, (byte)0);
                 }
-            } else if (ECPrivateKeySpec.class.isAssignableFrom(keySpec)) {
+            } else if (keySpec.isAssignableFrom(ECPrivateKeySpec.class)) {
                 ECPrivateKey ecKey = (ECPrivateKey)key;
                 return keySpec.cast(new ECPrivateKeySpec(
                     ecKey.getS(),

@@ -28,8 +28,10 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciUtilities.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
@@ -720,12 +722,12 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   default:  ShouldNotReachHere();
   }
 
-#if !defined(_LP64) && defined(TIERED)
-  if (UseSSE < 2) {
+#if !defined(_LP64) && defined(COMPILER2)
+  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_aot_or_jvmci()) {
     // C2 can leave the fpu stack dirty
     __ empty_FPU_stack();
   }
-#endif // !_LP64 && TIERED
+#endif // !_LP64 && COMPILER2
 
   // verify that only rax, and rdx is valid at this time
   __ invalidate_registers(false, true, true, false, true, true);

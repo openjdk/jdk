@@ -59,11 +59,11 @@ import com.sun.tools.sjavac.comp.SjavacImpl;
 public class SjavacServer implements Terminable {
 
     // Prefix of line containing return code.
-    public final static String LINE_TYPE_RC = "RC";
+    public static final String LINE_TYPE_RC = "RC";
 
-    final private String portfilename;
-    final private int poolsize;
-    final private int keepalive;
+    private final String portfilename;
+    private final int poolsize;
+    private final int keepalive;
 
     // The secret cookie shared between server and client through the port file.
     // Used to prevent clients from believing that they are communicating with

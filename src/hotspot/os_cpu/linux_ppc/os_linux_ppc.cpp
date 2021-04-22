@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 
 // no precompiled headers
 #include "jvm.h"
+#include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -271,6 +270,17 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         stub = SharedRuntime::get_poll_stub(pc);
       }
 
+      else if (UseSIGTRAP && sig == SIGTRAP &&
+               ((NativeInstruction*)pc)->is_safepoint_poll_return() &&
+               CodeCache::contains((void*) pc) &&
+               ((cb = CodeCache::find_blob(pc)) != NULL) &&
+               cb->is_compiled()) {
+        if (TraceTraps) {
+          tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
+        }
+        stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+      }
+
       // SIGTRAP-based ic miss check in compiled code.
       else if (sig == SIGTRAP && TrapBasedICMissChecks &&
                nativeInstruction_at(pc)->is_sigtrap_ic_miss_check()) {
@@ -498,3 +508,9 @@ int os::extra_bang_size_in_bytes() {
   // PPC does not require the additional stack bang.
   return 0;
 }
+
+#ifdef HAVE_FUNCTION_DESCRIPTORS
+void* os::resolve_function_descriptor(void* p) {
+  return ((const FunctionDescriptor*)p)->entry();
+}
+#endif

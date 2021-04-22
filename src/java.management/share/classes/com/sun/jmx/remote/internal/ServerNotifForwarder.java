@@ -485,7 +485,7 @@ public class ServerNotifForwarder {
     private final long connectionTimeout;
 
     private static int listenerCounter = 0;
-    private final static int[] listenerCounterLock = new int[0];
+    private static final int[] listenerCounterLock = new int[0];
 
     private NotificationBuffer notifBuffer;
     private final Map<ObjectName, Set<IdAndFilter>> listenerMap =

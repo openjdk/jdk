@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -310,46 +311,72 @@ void outputStream::print_data(void* data, size_t len, bool with_ascii) {
   }
 }
 
-stringStream::stringStream(size_t initial_size) : outputStream() {
-  buffer_length = initial_size;
-  buffer        = NEW_C_HEAP_ARRAY(char, buffer_length, mtInternal);
-  buffer_pos    = 0;
-  buffer_fixed  = false;
+stringStream::stringStream(size_t initial_capacity) :
+  outputStream(),
+  _buffer(_small_buffer),
+  _written(0),
+  _capacity(sizeof(_small_buffer)),
+  _is_fixed(false)
+{
+  if (initial_capacity > _capacity) {
+    grow(initial_capacity);
+  }
   zero_terminate();
 }
 
 // useful for output to fixed chunks of memory, such as performance counters
-stringStream::stringStream(char* fixed_buffer, size_t fixed_buffer_size) : outputStream() {
-  buffer_length = fixed_buffer_size;
-  buffer        = fixed_buffer;
-  buffer_pos    = 0;
-  buffer_fixed  = true;
+stringStream::stringStream(char* fixed_buffer, size_t fixed_buffer_size) :
+  outputStream(),
+  _buffer(fixed_buffer),
+  _written(0),
+  _capacity(fixed_buffer_size),
+  _is_fixed(true)
+{
   zero_terminate();
 }
 
+// Grow backing buffer to desired capacity. Don't call for fixed buffers
+void stringStream::grow(size_t new_capacity) {
+  assert(!_is_fixed, "Don't call for caller provided buffers");
+  assert(new_capacity > _capacity, "Sanity");
+  assert(new_capacity > sizeof(_small_buffer), "Sanity");
+  if (_buffer == _small_buffer) {
+    _buffer = NEW_C_HEAP_ARRAY(char, new_capacity, mtInternal);
+    _capacity = new_capacity;
+    if (_written > 0) {
+      ::memcpy(_buffer, _small_buffer, _written);
+    }
+    zero_terminate();
+  } else {
+    _buffer = REALLOC_C_HEAP_ARRAY(char, _buffer, new_capacity, mtInternal);
+    _capacity = new_capacity;
+  }
+}
+
 void stringStream::write(const char* s, size_t len) {
-  size_t write_len = len;               // number of non-null bytes to write
-  size_t end = buffer_pos + len + 1;    // position after write and final '\0'
-  if (end > buffer_length) {
-    if (buffer_fixed) {
-      // if buffer cannot resize, silently truncate
-      end = buffer_length;
-      write_len = end - buffer_pos - 1; // leave room for the final '\0'
-    } else {
-      // For small overruns, double the buffer.  For larger ones,
-      // increase to the requested size.
-      if (end < buffer_length * 2) {
-        end = buffer_length * 2;
-      }
-      buffer = REALLOC_C_HEAP_ARRAY(char, buffer, end, mtInternal);
-      buffer_length = end;
+  assert(_capacity >= _written + 1, "Sanity");
+  if (len == 0) {
+    return;
+  }
+  const size_t reasonable_max_len = 1 * G;
+  if (len >= reasonable_max_len) {
+    assert(false, "bad length? (" SIZE_FORMAT ")", len);
+    return;
+  }
+  size_t write_len = 0;
+  if (_is_fixed) {
+    write_len = MIN2(len, _capacity - _written - 1);
+  } else {
+    write_len = len;
+    size_t needed = _written + len + 1;
+    if (needed > _capacity) {
+      grow(MAX2(needed, _capacity * 2));
     }
   }
-  // invariant: buffer is always null-terminated
-  guarantee(buffer_pos + write_len + 1 <= buffer_length, "stringStream oob");
+  assert(_written + write_len + 1 <= _capacity, "stringStream oob");
   if (write_len > 0) {
-    memcpy(buffer + buffer_pos, s, write_len);
-    buffer_pos += write_len;
+    ::memcpy(_buffer + _written, s, write_len);
+    _written += write_len;
     zero_terminate();
   }
 
@@ -360,21 +387,22 @@ void stringStream::write(const char* s, size_t len) {
 }
 
 void stringStream::zero_terminate() {
-  assert(buffer != NULL &&
-         buffer_pos < buffer_length, "sanity");
-  buffer[buffer_pos] = '\0';
+  assert(_buffer != NULL &&
+         _written < _capacity, "sanity");
+  _buffer[_written] = '\0';
 }
 
 void stringStream::reset() {
-  buffer_pos = 0; _precount = 0; _position = 0;
+  _written = 0; _precount = 0; _position = 0;
+  _newlines = 0;
   zero_terminate();
 }
 
 char* stringStream::as_string(bool c_heap) const {
   char* copy = c_heap ?
-    NEW_C_HEAP_ARRAY(char, buffer_pos + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, buffer_pos + 1);
-  strncpy(copy, buffer, buffer_pos);
-  copy[buffer_pos] = 0;  // terminating null
+    NEW_C_HEAP_ARRAY(char, _written + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, _written + 1);
+  ::memcpy(copy, _buffer, _written);
+  copy[_written] = 0;  // terminating null
   if (c_heap) {
     // Need to ensure our content is written to memory before we return
     // the pointer to it.
@@ -384,8 +412,8 @@ char* stringStream::as_string(bool c_heap) const {
 }
 
 stringStream::~stringStream() {
-  if (buffer_fixed == false && buffer != NULL) {
-    FREE_C_HEAP_ARRAY(char, buffer);
+  if (!_is_fixed && _buffer != _small_buffer) {
+    FREE_C_HEAP_ARRAY(char, _buffer);
   }
 }
 
@@ -561,8 +589,11 @@ char* fileStream::readln(char *data, int count ) {
   char * ret = NULL;
   if (_file != NULL) {
     ret = ::fgets(data, count, _file);
-    //Get rid of annoying \n char
-    data[::strlen(data)-1] = '\0';
+    // Get rid of annoying \n char only if it is present.
+    size_t len = ::strlen(data);
+    if (len > 0 && data[len - 1] == '\n') {
+      data[len - 1] = '\0';
+    }
   }
   return ret;
 }

@@ -36,10 +36,10 @@ import jdk.internal.misc.Unsafe;
  */
 public final class Options {
 
-    private final static JVM jvm = JVM.getJVM();
-    private final static long WAIT_INTERVAL = 1000; // ms;
+    private static final JVM jvm = JVM.getJVM();
+    private static final long WAIT_INTERVAL = 1000; // ms;
 
-    private final static long MIN_MAX_CHUNKSIZE = 1024 * 1024;
+    private static final long MIN_MAX_CHUNKSIZE = 1024 * 1024;
 
     private static final long DEFAULT_GLOBAL_BUFFER_COUNT = 20;
     private static final long DEFAULT_GLOBAL_BUFFER_SIZE = 524288;

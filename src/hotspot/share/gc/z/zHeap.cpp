@@ -42,6 +42,7 @@
 #include "gc/z/zWorkers.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/handshake.hpp"
@@ -454,8 +455,12 @@ void ZHeap::serviceability_initialize() {
   _serviceability.initialize();
 }
 
-GCMemoryManager* ZHeap::serviceability_memory_manager() {
-  return _serviceability.memory_manager();
+GCMemoryManager* ZHeap::serviceability_cycle_memory_manager() {
+  return _serviceability.cycle_memory_manager();
+}
+
+GCMemoryManager* ZHeap::serviceability_pause_memory_manager() {
+  return _serviceability.pause_memory_manager();
 }
 
 MemoryPool* ZHeap::serviceability_memory_pool() {

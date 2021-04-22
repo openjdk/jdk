@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
@@ -96,7 +97,7 @@ bool JfrRecorderThread::start(JfrCheckpointManager* cp_manager, JfrPostBox* post
   create_thread_args.push_oop(SystemDictionary::java_system_loader());
 
   JfrJavaSupport::call_static(&create_thread_args, CHECK_false);
-  instanceHandle h_thread_oop(THREAD, (instanceOop)result.get_jobject());
+  instanceHandle h_thread_oop(THREAD, (instanceOop)result.get_oop());
   assert(h_thread_oop.not_null(), "invariant");
   // attempt thread start
   Thread* const t = start_thread(h_thread_oop, recorderthread_entry,THREAD);
@@ -108,7 +109,7 @@ bool JfrRecorderThread::start(JfrCheckpointManager* cp_manager, JfrPostBox* post
   // Start failed, remove the thread from the system thread group
   JavaValue void_result(T_VOID);
   JfrJavaArguments remove_thread_args(&void_result);
-  remove_thread_args.set_klass(SystemDictionary::ThreadGroup_klass());
+  remove_thread_args.set_klass(vmClasses::ThreadGroup_klass());
   remove_thread_args.set_name(vmSymbols::remove_method_name());
   remove_thread_args.set_signature(vmSymbols::thread_void_signature());
   remove_thread_args.set_receiver(Universe::system_thread_group());

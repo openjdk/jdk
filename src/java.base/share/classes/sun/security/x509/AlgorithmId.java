@@ -70,7 +70,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
     // The (parsed) parameters
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private AlgorithmParameters algParams;
-    private boolean constructedFromDer = true;
 
     /**
      * Parameters for this algorithm.  These are stored in unparsed
@@ -104,18 +103,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
      */
     public AlgorithmId(ObjectIdentifier oid, AlgorithmParameters algparams) {
         algid = oid;
-        algParams = algparams;
-        constructedFromDer = false;
+        this.algParams = algparams;
         if (algParams != null) {
             try {
                 encodedParams = algParams.getEncoded();
             } catch (IOException ioe) {
-                // It should be safe to ignore this.
-                // This exception can occur if AlgorithmParameters was not
-                // initialized (which should not occur), or if it was
-                // initialized with bogus parameters, which should have
-                // been detected when init was called.
-                assert false;
+                // Ignore this at the moment. This exception can occur
+                // if AlgorithmParameters was not initialized yet. Will
+                // try to re-getEncoded() again later.
             }
         }
     }
@@ -174,7 +169,13 @@ public class AlgorithmId implements Serializable, DerEncoder {
         DerOutputStream tmp = new DerOutputStream();
 
         bytes.putOID(algid);
-        // Setup params from algParams since no DER encoding is given
+
+        // Re-getEncoded() from algParams if it was not initialized
+        if (algParams != null && encodedParams == null) {
+            encodedParams = algParams.getEncoded();
+            // If still not initialized. Let the IOE be thrown.
+        }
+
         if (encodedParams == null) {
             // Changes backed out for compatibility with Solaris
 
@@ -301,6 +302,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * Returns the DER encoded parameter, which can then be
      * used to initialize java.security.AlgorithmParameters.
      *
+     * Note that this* method should always return a new array as it is called
+     * directly by the JDK implementation of X509Certificate.getSigAlgParams()
+     * and X509CRL.getSigAlgParams().
+     *
      * Note: for ecdsa-with-SHA2 plus hash algorithm (Ex: SHA-256), this method
      * returns null because {@link #getName()} has already returned the "full"
      * signature algorithm (Ex: SHA256withECDSA).
@@ -308,10 +313,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @return DER encoded parameters, or null not present.
      */
     public byte[] getEncodedParams() throws IOException {
-        return (encodedParams == null
-                || algid.toString().equals(KnownOIDs.SpecifiedSHA2withECDSA.value()))
-                    ? null
-                    : encodedParams.clone();
+        return (encodedParams == null ||
+            algid.toString().equals(KnownOIDs.SpecifiedSHA2withECDSA.value()))
+                ? null
+                : encodedParams.clone();
     }
 
     /**

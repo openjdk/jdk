@@ -170,7 +170,7 @@ public class DerValue {
     private final boolean allowBER;
 
     // Unsafe. Legacy. Never null.
-    final public DerInputStream data;
+    public final DerInputStream data;
 
     /*
      * These values are the high order bits for the other kinds of tags.
@@ -221,6 +221,9 @@ public class DerValue {
      * Creates a new DerValue by specifying all its fields.
      */
     DerValue(byte tag, byte[] buffer, int start, int end, boolean allowBER) {
+        if ((tag & 0x1f) == 0x1f) {
+            throw new IllegalArgumentException("Tag number over 30 is not supported");
+        }
         this.tag = tag;
         this.buffer = buffer;
         this.start = start;
@@ -331,6 +334,9 @@ public class DerValue {
         }
         int pos = offset;
         tag = buf[pos++];
+        if ((tag & 0x1f) == 0x1f) {
+            throw new IOException("Tag number over 30 at " + offset + " is not supported");
+        }
         int lenByte = buf[pos++];
 
         int length;
@@ -404,6 +410,9 @@ public class DerValue {
     // arg to control whether DER checks are enforced.
     DerValue(InputStream in, boolean allowBER) throws IOException {
         this.tag = (byte)in.read();
+        if ((tag & 0x1f) == 0x1f) {
+            throw new IOException("Tag number over 30 is not supported");
+        }
         int length = DerInputStream.getLength(in);
         if (length == -1) { // indefinite length encoding found
             if (!allowBER) {
@@ -1161,6 +1170,9 @@ public class DerValue {
      * @param val the tag value
      */
     public static byte createTag(byte tagClass, boolean form, byte val) {
+        if (val < 0 || val > 30) {
+            throw new IllegalArgumentException("Tag number over 30 is not supported");
+        }
         byte tag = (byte)(tagClass | val);
         if (form) {
             tag |= (byte)0x20;

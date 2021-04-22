@@ -313,7 +313,7 @@ public class Statement {
                                     iae);
             }
             catch (InvocationTargetException ite) {
-                Throwable te = ite.getTargetException();
+                Throwable te = ite.getCause();
                 if (te instanceof Exception) {
                     throw (Exception)te;
                 }

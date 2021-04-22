@@ -31,7 +31,6 @@
 #import "java_awt_event_InputEvent.h"
 #import "java_awt_event_MouseEvent.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #import "ThreadUtilities.h"
@@ -65,13 +64,13 @@ static jint ns2awtMouseButton(NSInteger mouseButton) {
 {
 @public
     NSMenu *nsmenu;
-    JNFJObjectWrapper *javaObjectWrapper;
+    jobject javaObject;
 }
 
 @property (nonatomic, retain) NSMenu *nsmenu;
-@property (nonatomic, retain) JNFJObjectWrapper *javaObjectWrapper;
+@property (nonatomic) jobject javaObject;
 
-- (id)initFromMenu:(NSMenu *)menu javaObj:(JNFJObjectWrapper *)obj;
+- (id)initFromMenu:(NSMenu *)menu javaObj:(jobject)obj;
 - (NSMenu*)menu;
 @end
 
@@ -79,14 +78,14 @@ static jint ns2awtMouseButton(NSInteger mouseButton) {
 @implementation NativeToJavaDelegate
 
 @synthesize nsmenu;
-@synthesize javaObjectWrapper;
+@synthesize javaObject;
 
-- (id)initFromMenu:(NSMenu *)aMenu javaObj:(JNFJObjectWrapper *)obj
+- (id)initFromMenu:(NSMenu *)aMenu javaObj:(jobject)obj
 {
     self = [super init];
     if (self) {
         self.nsmenu = aMenu;
-        self.javaObjectWrapper = obj;
+        self.javaObject = obj;
     }
     return self;
 }
@@ -97,7 +96,7 @@ static jint ns2awtMouseButton(NSInteger mouseButton) {
 
 - (void)menuWillOpen:(NSMenu *)menu
 {
-    if (self.javaObjectWrapper == nil) {
+    if (self.javaObject == nil) {
 #ifdef DEBUG
         NSLog(@"_javaObject is NULL: (%s - %s : %d)", __FILE__, __FUNCTION__, __LINE__);
 #endif
@@ -109,7 +108,7 @@ JNI_COCOA_ENTER(env);
     //NSLog(@"menuWillOpen %@", [menu title]);
     GET_SCREENMENU_CLASS();
     DECLARE_METHOD(jm_ScreenMenu_invokeOpenLater, sjc_ScreenMenu, "invokeOpenLater", "()V");
-    (*env)->CallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_invokeOpenLater); // AWT_THREADING Safe (AWTRunLoopMode)
+    (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_invokeOpenLater);
     CHECK_EXCEPTION();
 JNI_COCOA_EXIT(env);
 
@@ -117,7 +116,7 @@ JNI_COCOA_EXIT(env);
 
 - (void)menuDidClose:(NSMenu *)menu
 {
-    if (self.javaObjectWrapper == nil) {
+    if (self.javaObject == nil) {
 #ifdef DEBUG
         NSLog(@"_javaObject is NULL: (%s - %s : %d)", __FILE__, __FUNCTION__, __LINE__);
 #endif
@@ -129,7 +128,7 @@ JNI_COCOA_ENTER(env);
     //NSLog(@"menuDidClose %@", [menu title]);
     GET_SCREENMENU_CLASS();
     DECLARE_METHOD(jm_ScreenMenu_invokeMenuClosing, sjc_ScreenMenu, "invokeMenuClosing", "()V");
-    (*env)->CallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_invokeMenuClosing); // AWT_THREADING Safe (AWTRunLoopMode)
+    (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_invokeMenuClosing);
     CHECK_EXCEPTION();
 JNI_COCOA_EXIT(env);
 }
@@ -137,7 +136,7 @@ JNI_COCOA_EXIT(env);
 
 - (void)handleJavaMenuItemTargetedAtIndex:(NSUInteger)menuIndex rect:(NSRect)rect
 {
-    if (self.javaObjectWrapper == nil) {
+    if (self.javaObject== nil) {
 #ifdef DEBUG
         NSLog(@"_javaObject is NULL: (%s - %s : %d)", __FILE__, __FUNCTION__, __LINE__);
 #endif
@@ -149,13 +148,23 @@ JNI_COCOA_ENTER(env);
     // Send that to Java so we can test which item was hit.
     GET_SCREENMENU_CLASS();
     DECLARE_METHOD(jm_ScreenMenu_updateSelectedItem, sjc_ScreenMenu, "handleItemTargeted", "(IIIII)V");
-    (*env)->CallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_updateSelectedItem, menuIndex,
-                    NSMinY(rect), NSMinX(rect), NSMaxY(rect), NSMaxX(rect)); // AWT_THREADING Safe (AWTRunLoopMode)
+    (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_updateSelectedItem, menuIndex,
+                    NSMinY(rect), NSMinX(rect), NSMaxY(rect), NSMaxX(rect));
     CHECK_EXCEPTION();
 
 JNI_COCOA_EXIT(env);
 }
 
+/*
+ * The input is an NSTimeInterval (a double representing seconds and fractions of seconds)
+ * 0.0 means midnight Jan 1, 2001.
+ * The output is a Java long representing time in milliseconds since midnight Jan 1st 1970.
+ * There is a Cocoa constant representing that difference : NSTimeIntervalSince1970
+ */
+static jlong NSTimeIntervalToJavaMilliseconds(NSTimeInterval interval) {
+    NSTimeInterval interval1970 = interval + NSTimeIntervalSince1970;
+    return (jlong)(interval1970 * 1000);
+}
 
 // Called from event handler callback
 - (void)handleJavaMouseEvent:(NSEvent *)event
@@ -187,15 +196,15 @@ JNI_COCOA_EXIT(env);
     jint javaModifiers = ns2awtModifiers([event modifierFlags]) | ns2awtMouseButton([event buttonNumber]);
 
     // Get the event time
-    jlong javaWhen = JNFNSTimeIntervalToJavaMillis([event timestamp]);
+    jlong javaWhen = NSTimeIntervalToJavaMilliseconds([event timestamp]);
 
     // Call the mouse event handler, which will generate Java mouse events.
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 JNI_COCOA_ENTER(env);
     GET_SCREENMENU_CLASS();
     DECLARE_METHOD(jm_ScreenMenu_handleMouseEvent, sjc_ScreenMenu, "handleMouseEvent", "(IIIIJ)V");
-    (*env)->CallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_handleMouseEvent,
-             javaKind, javaX, javaY, javaModifiers, javaWhen); // AWT_THREADING Safe (AWTRunLoopMode)
+    (*env)->CallVoidMethod(env, self.javaObject, jm_ScreenMenu_handleMouseEvent,
+             javaKind, javaX, javaY, javaModifiers, javaWhen);
     CHECK_EXCEPTION();
 JNI_COCOA_EXIT(env);
 }
@@ -215,13 +224,13 @@ JNIEXPORT jlong JNICALL Java_com_apple_laf_ScreenMenu_addMenuListeners
 
 JNI_COCOA_ENTER(env);
 
-    JNFJObjectWrapper *wrapper = [JNFJObjectWrapper wrapperWithJObject:listener withEnv:env];
+    jobject listenerRef = (*env)->NewGlobalRef(env, listener);
     NSMenu *menu = jlong_to_ptr(nativeMenu);
 
-    delegate = [[[NativeToJavaDelegate alloc] initFromMenu:menu javaObj:wrapper] autorelease];
+    delegate = [[[NativeToJavaDelegate alloc] initFromMenu:menu javaObj:listenerRef] autorelease];
     CFRetain(delegate); // GC
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^{
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^{
         NSMenu *menu = delegate.nsmenu;
         if ([menu isJavaMenu]) {
             [menu setDelegate:delegate];
@@ -248,13 +257,15 @@ JNI_COCOA_ENTER(env);
 
     NativeToJavaDelegate *delegate = (NativeToJavaDelegate *)jlong_to_ptr(fModelPtr);
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^{
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^{
         NSMenu *menu = delegate.nsmenu;
         [menu setJavaMenuDelegate:nil];
         [menu setDelegate:nil];
         delegate.nsmenu = nil;
-        delegate.javaObjectWrapper = nil;
     }];
+
+    (*env)->DeleteGlobalRef(env, delegate.javaObject);
+    delegate.javaObject = nil;
 
     CFRelease(delegate); // GC
 
