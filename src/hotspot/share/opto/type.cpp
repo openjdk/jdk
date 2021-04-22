@@ -993,47 +993,6 @@ const Type *Type::filter_helper(const Type *kills, bool include_speculative) con
 }
 
 //------------------------------xdual------------------------------------------
-// Compute dual right now.
-const Type::TYPES Type::dual_type[Type::lastype] = {
-  Bad,          // Bad
-  Control,      // Control
-  Bottom,       // Top
-  Bad,          // Int - handled in v-call
-  Bad,          // Long - handled in v-call
-  Half,         // Half
-  Bad,          // NarrowOop - handled in v-call
-  Bad,          // NarrowKlass - handled in v-call
-
-  Bad,          // Tuple - handled in v-call
-  Bad,          // Array - handled in v-call
-  Bad,          // VectorA - handled in v-call
-  Bad,          // VectorS - handled in v-call
-  Bad,          // VectorD - handled in v-call
-  Bad,          // VectorX - handled in v-call
-  Bad,          // VectorY - handled in v-call
-  Bad,          // VectorZ - handled in v-call
-
-  Bad,          // AnyPtr - handled in v-call
-  Bad,          // RawPtr - handled in v-call
-  Bad,          // OopPtr - handled in v-call
-  Bad,          // InstPtr - handled in v-call
-  Bad,          // AryPtr - handled in v-call
-
-  Bad,          //  MetadataPtr - handled in v-call
-  Bad,          // KlassPtr - handled in v-call
-
-  Bad,          // Function - handled in v-call
-  Abio,         // Abio
-  Return_Address,// Return_Address
-  Memory,       // Memory
-  FloatBot,     // FloatTop
-  FloatCon,     // FloatCon
-  FloatTop,     // FloatBot
-  DoubleBot,    // DoubleTop
-  DoubleCon,    // DoubleCon
-  DoubleTop,    // DoubleBot
-  Top           // Bottom
-};
 
 const Type *Type::xdual() const {
   // Note: the base() accessor asserts the sanity of _base.

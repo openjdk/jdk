@@ -721,7 +721,7 @@ void HeapRegion::verify(VerifyOption vo,
     p += obj_size;
   }
 
-  if (!is_young() && !is_empty()) {
+  if (!is_empty()) {
     _bot_part.verify();
   }
 

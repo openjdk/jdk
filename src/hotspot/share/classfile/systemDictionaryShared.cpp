@@ -1361,7 +1361,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   }
   if (is_jfr_event_class(k)) {
     // We cannot include JFR event classes because they need runtime-specific
-    // instrumentation in order to work with -XX:FlightRecorderOptions=retransform=false.
+    // instrumentation in order to work with -XX:FlightRecorderOptions:retransform=false.
     // There are only a small number of these classes, so it's not worthwhile to
     // support them and make CDS more complicated.
     warn_excluded(k, "JFR event class");
