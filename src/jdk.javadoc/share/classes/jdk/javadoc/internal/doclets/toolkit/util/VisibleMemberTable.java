@@ -459,7 +459,7 @@ public class VisibleMemberTable {
                 .filter(e -> allowInheritedMembers(e, kind, lmt));
 
         // Filter out elements that should not be documented
-
+        // Prefix local results first
         List<Element> list = Stream.concat(lmt.getOrderedMembers(kind).stream(), inheritedStream)
                                    .filter(this::mustDocument)
                                    .toList();
@@ -488,9 +488,12 @@ public class VisibleMemberTable {
         // b. are overridden and should not be visible in this type
         // c. are hidden in the type being considered
         // see allowInheritedMethod, which performs the above actions
-        List<Element> list = inheritedMethods.stream()
+        // nb. This statement has side effects that can initialize
+        // members of the overridenMethodTable field, so it must be
+        // evaluated eagerly with toList().
+        List<Element> inheritedMethodsList = inheritedMethods.stream()
                 .filter(e -> allowInheritedMethod((ExecutableElement) e, overriddenByTable, lmt))
-                .collect(Collectors.toCollection(ArrayList::new));
+                .toList();
 
         // Filter out the local methods, that do not override or simply
         // overrides a super method, or those methods that should not
@@ -499,17 +502,15 @@ public class VisibleMemberTable {
             OverriddenMethodInfo p = overriddenMethodTable.getOrDefault(m, null);
             return p == null || !p.simpleOverride;
         };
-        List<ExecutableElement> localList = lmt.getOrderedMembers(Kind.METHODS)
+
+        Stream<ExecutableElement> localStream = lmt.getOrderedMembers(Kind.METHODS)
                 .stream()
                 .map(m -> (ExecutableElement)m)
-                .filter(isVisible)
-                .toList();
+                .filter(isVisible);
 
-        // Merge the above lists, making sure the local methods precede the others
-        list.addAll(0, localList);
-
+        // Merge the above list and stream, making sure the local methods precede the others
         // Final filtration of elements
-        list = list.stream()
+        List<Element> list = Stream.concat(localStream,inheritedMethodsList.stream())
                 .filter(this::mustDocument)
                 .toList();
 
