@@ -258,6 +258,7 @@ bool Monitor::wait(int64_t timeout) {
 
 Mutex::~Mutex() {
   assert_owner(NULL);
+  os::free(const_cast<char*>(_name));
 }
 
 // Only Threads_lock and Heap_lock may be safepoint_check_sometimes.
@@ -266,9 +267,10 @@ bool is_sometimes_ok(const char* name) {
 }
 
 Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
-             SafepointCheckRequired safepoint_check_required) : _owner(NULL), _name(name) {
+             SafepointCheckRequired safepoint_check_required) : _owner(NULL) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != NULL, "Mutex requires a name");
+  _name = os::strdup(name, mtInternal);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = Rank;
