@@ -2146,7 +2146,7 @@ uint os::processor_id() {
   assert(processor_id >= 0 && processor_id < os::processor_count(), "invalid processor id");
 
   return (uint)processor_id;
-#else
+#else // defined(__APPLE__) && defined(__x86_64__)
   // Return 0 until we find a good way to get the current processor id on
   // the platform. Returning 0 is safe, since there is always at least one
   // processor, but might not be optimal for performance in some cases.
