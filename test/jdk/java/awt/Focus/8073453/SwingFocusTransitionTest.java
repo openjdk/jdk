@@ -26,13 +26,21 @@
  * @key headful
  * @bug 8073453
  * @summary Focus doesn't move when pressing Shift + Tab keys
- * @author Dmitry Markov
  * @compile SwingFocusTransitionTest.java
  * @run main/othervm SwingFocusTransitionTest
  */
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.LayoutFocusTraversalPolicy;
+import javax.swing.SwingUtilities;
+import java.awt.Component;
+import java.awt.DefaultFocusTraversalPolicy;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.Robot;
 import java.awt.event.KeyEvent;
 
 public class SwingFocusTransitionTest {
@@ -41,6 +49,20 @@ public class SwingFocusTransitionTest {
     private static JFrame frame;
     private static JTextField textField;
     private static JButton button;
+
+    private static void blockTillDisplayed(Component comp) {
+        Point p = null;
+        while (p == null) {
+            try {
+                p = comp.getLocationOnScreen();
+            } catch (IllegalStateException e) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                }
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -56,6 +78,7 @@ public class SwingFocusTransitionTest {
 
             robot.waitForIdle();
 
+            blockTillDisplayed(textField);
             checkFocusOwner(textField);
 
             robot.keyPress(KeyEvent.VK_TAB);
@@ -112,19 +135,22 @@ public class SwingFocusTransitionTest {
         p.add(panel);
 
         frame.add(p);
+        frame.setAlwaysOnTop(true);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
-    private static void checkFocusOwner(final Component component) throws Exception {
+    private static void checkFocusOwner(final Component component)
+            throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 if (component != frame.getFocusOwner()) {
-                    throw new RuntimeException("Test Failed! Incorrect focus owner: " + frame.getFocusOwner() +
+                    throw new RuntimeException("Test Failed! Incorrect focus" +
+                            " owner: " + frame.getFocusOwner() +
                             ", but expected: " + component);
                 }
             }
         });
     }
 }
-

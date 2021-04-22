@@ -26,12 +26,19 @@
  * @key headful
  * @bug 8073453
  * @summary Focus doesn't move when pressing Shift + Tab keys
- * @author Dmitry Markov
  * @compile AWTFocusTransitionTest.java
  * @run main/othervm AWTFocusTransitionTest
  */
 
-import java.awt.*;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.DefaultFocusTraversalPolicy;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.TextField;
 import java.awt.event.KeyEvent;
 
 public class AWTFocusTransitionTest {
@@ -40,6 +47,20 @@ public class AWTFocusTransitionTest {
     private static Frame frame;
     private static TextField textField;
     private static Button button;
+
+    private static void blockTillDisplayed(Component comp) {
+        Point p = null;
+        while (p == null) {
+            try {
+                p = comp.getLocationOnScreen();
+            } catch (IllegalStateException e) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                }
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -50,6 +71,7 @@ public class AWTFocusTransitionTest {
 
             robot.waitForIdle();
 
+            blockTillDisplayed(textField);
             checkFocusOwner(textField);
 
             robot.keyPress(KeyEvent.VK_TAB);
@@ -101,14 +123,16 @@ public class AWTFocusTransitionTest {
         p.add(panel);
 
         frame.add(p);
+        frame.setAlwaysOnTop(true);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
     private static void checkFocusOwner(Component component) {
         if (component != frame.getFocusOwner()) {
-            throw new RuntimeException("Test Failed! Incorrect focus owner: " + frame.getFocusOwner() +
+            throw new RuntimeException("Test Failed! Incorrect focus " +
+                    "owner: " + frame.getFocusOwner() +
                     ", but expected: " + component);
         }
     }
 }
-
