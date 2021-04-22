@@ -143,11 +143,11 @@ static char* reserve_memory(char* requested_address, const size_t size,
                             const size_t alignment, int fd, bool exec) {
   char* base;
   // If the memory was requested at a particular address, use
-  // os::attempt_reserve_memory_at() to avoid over mapping something
-  // important.  If available space is not detected, return NULL.
+  // os::attempt_reserve_memory_at() to avoid mapping over something
+  // important.  If the reservation fails, return NULL.
   if (requested_address != 0) {
     assert(is_aligned(requested_address, alignment),
-           "Requested address " PTR_FORMAT "must be aligned to " SIZE_FORMAT,
+           "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
            p2i(requested_address), alignment);
     base = attempt_map_or_reserve_memory_at(requested_address, size, fd, exec);
   } else {
@@ -156,8 +156,7 @@ static char* reserve_memory(char* requested_address, const size_t size,
     // least 64K.
     base = map_or_reserve_memory(size, fd, exec);
     // Check alignment constraints. This is only needed when there is
-    // no requested address. If a requested address is used it must be
-    // aligned.
+    // no requested address.
     if (!is_aligned(base, alignment)) {
       // Base not aligned, retry.
       unmap_or_release_memory(base, size, fd != -1 /*is_file_mapped*/);
@@ -180,13 +179,12 @@ static char* reserve_memory_special(char* requested_address, const size_t size,
   char* base = os::reserve_memory_special(size, alignment, requested_address, exec);
   if (base != NULL) {
     // Check alignment constraints.
-    assert((uintptr_t)base % alignment == 0,
-           "Large pages returned a non-aligned address, base: " PTR_FORMAT
+    assert(is_aligned(base, alignment),
+           "reserve_memory_special() returned an unaligned address, base: " PTR_FORMAT
            " alignment: " SIZE_FORMAT_HEX,
            p2i(base), alignment);
   } else {
-    // failed; fall back to reserve regular memory.
-    if (large_pages_requested()) {
+   if (large_pages_requested()) {
       log_debug(gc, heap, coops)("Reserve regular memory without large pages");
     }
   }
@@ -241,6 +239,7 @@ void ReservedSpace::reserve(size_t size, size_t alignment, bool large,
       initialize_members(base, size, alignment, true, executable);
       return;
     }
+    // Failed to reserve explicit large pages, fall back to normal reservation.
   }
 
   // Not a 'special' reservation.
