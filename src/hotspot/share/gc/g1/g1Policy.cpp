@@ -1416,10 +1416,8 @@ static size_t get_num_regions_adjust_for_plab_waste(size_t byte_count) {
 }
 
 bool G1Policy::proactive_collection_required(uint alloc_region_count) {
-  if (!_g1h->zzinit_complete) {
+  if (!Universe::is_fully_initialized()) {
     // Don't attempt any proactive GC's before initialization is complete.
-    // TODO: Is there a better way to do this without adding a new variable to hold
-    // init state?
     return false;
   }
 
@@ -1476,7 +1474,7 @@ void G1Policy::update_survival_estimates_for_next_collection() {
 
   // Use the minimum old gen collection set as conservative estimate for the number
   // of regions to take for this calculation.
-  uint iterate_count = MIN2(candidates->num_remaining(), calc_min_old_cset_length());
+  uint iterate_count = MIN2(candidates->num_remaining(), calc_min_old_cset_length(candidates));
   uint current_index = candidates->cur_idx();
   size_t old_bytes = 0;
   for (uint i = 0; i < iterate_count; i++) {

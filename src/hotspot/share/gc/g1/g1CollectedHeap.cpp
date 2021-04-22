@@ -1435,7 +1435,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _archive_set("Archive Region Set", new ArchiveRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(NULL),
-  zzinit_complete(false),
   _listener(),
   _numa(G1NUMA::create()),
   _hrm(),
@@ -1790,9 +1789,6 @@ void G1CollectedHeap::safepoint_synchronize_end() {
 void G1CollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
-
-  // TODO: temporary... is there a better way to do this?
-  zzinit_complete = true;
 }
 
 void G1CollectedHeap::ref_processing_init() {
