@@ -25,6 +25,7 @@
  * @test
  * @library /test/lib
  * @build compiler.blackhole.BlackholeTarget
+ * @requires vm.flagless
  * @run driver compiler.blackhole.BlackholeNonVoidWarningTest
  */
 
