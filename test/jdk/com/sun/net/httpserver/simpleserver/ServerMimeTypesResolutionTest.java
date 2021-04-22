@@ -23,7 +23,6 @@
 
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -38,15 +37,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import sun.net.www.MimeTable;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.*;
-
-public abstract class AbstractMimeTypesTest {
+/*
+ * @test
+ * @summary Basic tests for MIME types in response headers
+ * @modules java.base/sun.net.www:+open
+ * @run testng/othervm ServerMimeTypesResolutionTest
+ */
+public class ServerMimeTypesResolutionTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
     static final InetSocketAddress WILDCARD_ADDR = new InetSocketAddress(0);
@@ -109,10 +115,6 @@ public abstract class AbstractMimeTypesTest {
         return "%s%s".formatted(FILE_NAME, extension);
     }
 
-    protected Properties deserialize(String serialized) {
-        return deserialize(serialized,null);
-    }
-
     protected Properties deserialize(String serialized, String delimiter) {
         try {
             Properties properties = new Properties();
@@ -134,57 +136,56 @@ public abstract class AbstractMimeTypesTest {
         }
     }
 
-    protected abstract Properties getActualOperatingSystemSpecificMimeTypes(Properties properties) throws Exception;
+    public Properties getActualOperatingSystemSpecificMimeTypes(Properties properties) throws Exception {
+        properties.load(MimeTable.class.getResourceAsStream("content-types.properties"));
+        return properties;
+    }
 
     @Test
-    public void testKnownMimeTypeHeaders() throws Exception {
-        final var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
-        ss.start();
+    public void testMimeTypeHeaders() throws Exception {
+        final var serverUnderTest = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        serverUnderTest.start();
         try {
             final var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             final Map<String, String> mimeTypesPerFileType = getMimeTypesPerFileType(ACTUAL_MIME_TYPES);
             for (String fileExtension : getFileTypes(ACTUAL_MIME_TYPES)) {
-                final var uri = URI.create(
-                                    "http://localhost:%s/%s".formatted(
-                                            ss.getAddress().getPort(),
-                                            toFileName(fileExtension)
-                                    )
-                );
-                final var request = HttpRequest.newBuilder(uri).build();
-                final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                assertEquals(response.statusCode(), 200);
-                assertEquals(
-                        response.headers().firstValue("content-type").get(),
-                        mimeTypesPerFileType.get(fileExtension)
-                );
+                final String expectedMimeType = mimeTypesPerFileType.get(fileExtension);
+                execute(serverUnderTest, client, fileExtension, expectedMimeType);
             }
+            execute(serverUnderTest, client, UNKNOWN_FILE_EXTENSION,"application/octet-stream");
         } finally {
-            ss.stop(0);
+            serverUnderTest.stop(0);
         }
     }
 
+    private void execute(HttpServer server, HttpClient client, String inputFileExtension, String expectedMimeType)
+                                                                        throws IOException, InterruptedException {
+        final var uri = URI.create(
+                            "http://localhost:%s/%s".formatted(
+                                    server.getAddress().getPort(),
+                                    toFileName(inputFileExtension)
+                            )
+        );
+        final var request = HttpRequest.newBuilder(uri).build();
+        final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(response.statusCode(), 200);
+        assertEquals(response.headers().firstValue("content-type").get(),expectedMimeType);
+    }
+
     @Test
-    public void testUnKnownMimeTypeHeaders() throws Exception {
-        final var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
-        ss.start();
-        try {
-            final var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            final var uri = URI.create(
-                    "http://localhost:%s/%s".formatted(
-                            ss.getAddress().getPort(),
-                            toFileName(UNKNOWN_FILE_EXTENSION)
-                    )
-            );
-            final var request = HttpRequest.newBuilder(uri).build();
-            final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(
-                    response.headers().firstValue("content-type").get(),
-                    "application/octet-stream"
-            );
-        } finally {
-            ss.stop(0);
+    public void verifyCommonMimeTypes() {
+        List<String> commonMimeTypes = Arrays.asList(".aac", ".abw", ".arc", ".avi", ".azw", ".bin", ".bmp", ".bz",
+                ".bz2", ".csh", ".css", ".csv", ".doc", ".docx",".eot", ".epub", ".gz", ".gif", ".htm", ".html", ".ico",
+                ".ics", ".jar", ".jpeg", ".jpg", ".js", ".json", ".jsonld", ".mid", ".midi", ".mjs", ".mp3", ".cda",
+                ".mp4", ".mpeg", ".mpkg", ".odp", ".ods", ".odt", ".oga", ".ogv", ".ogx", ".opus", ".otf", ".png",
+                ".pdf", ".php", ".ppt", ".pptx", ".rar", ".rtf", ".sh", ".svg", ".swf", ".tar", ".tif", ".tiff", ".ts",
+                ".ttf", ".txt", ".vsd", ".wav", ".weba", ".webm", ".webp", ".woff", ".woff2", ".xhtml", ".xls", ".xlsx",
+                ".xml", ".xul", ".zip", ".3gp", "3g2", ".7z");
+        Set<String> actualFileTypes = new HashSet<>(getFileTypes(ACTUAL_MIME_TYPES));
+        for (String commonMimeType : commonMimeTypes) {
+            assertTrue(!actualFileTypes.add(commonMimeType), "expecting %s to be present".formatted(commonMimeType));
         }
     }
+
 
 }

@@ -22,28 +22,17 @@
  */
 
 
-import com.sun.net.httpserver.SimpleFileServer;
-import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
+import jdk.com.sun.net.httpserver.simpleserver.ServerMimeTypesResolutionTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.*;
 
 public abstract class AbstractMimeTypesTest {
@@ -112,7 +101,7 @@ public abstract class AbstractMimeTypesTest {
     }
 
     protected Properties load(String path) throws IOException {
-        InputStream rs = AbstractMimeTypesTest.class.getResourceAsStream(path);
+        InputStream rs = ServerMimeTypesResolutionTest.class.getResourceAsStream(path);
         Properties properties = new Properties();
         properties.load(rs);
         return properties;

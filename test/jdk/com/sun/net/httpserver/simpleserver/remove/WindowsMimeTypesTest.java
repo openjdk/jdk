@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.com.sun.net.httpserver.simpleserver.ServerMimeTypesResolutionTest;
 import sun.net.www.MimeTable;
 
 import java.util.Properties;
@@ -32,7 +33,7 @@ import java.util.Properties;
  * @modules jdk.httpserver java.base/sun.net.www:+open
  * @run testng/othervm WindowsMimeTypesTest
  */
-public class WindowsMimeTypesTest extends AbstractMimeTypesTest {
+public class WindowsMimeTypesTest extends ServerMimeTypesResolutionTest {
 
     protected Properties getActualOperatingSystemSpecificMimeTypes(Properties properties) throws Exception {
         properties.load(MimeTable.class.getResourceAsStream("content-types.properties"));
