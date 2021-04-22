@@ -127,7 +127,13 @@ class LogAsyncFlusher : public NonJavaThread {
  private:
   static LogAsyncFlusher* _instance;
 
-  volatile bool _should_terminate;
+  enum class ThreadState {
+    Running = 0,
+    Terminating,
+    Terminated
+  };
+
+  volatile ThreadState _state;
   // The semantics of _lock is more like a Java monitor.
   // AssyncLog thread sleeps on _lock until the occupancy of the buffer is over 3/4, or timeout
   // It also acts as a mutex to consolidate buffer's MT-safety.

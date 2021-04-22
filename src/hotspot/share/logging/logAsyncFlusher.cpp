@@ -95,7 +95,7 @@ void LogAsyncFlusher::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator 
 }
 
 LogAsyncFlusher::LogAsyncFlusher()
-  : _should_terminate(false),
+  : _state(ThreadState::Running),
     _lock(Mutex::tty, "async-log-monitor", true /* allow_vm_block */, Mutex::_safepoint_check_never),
     _stats(17 /*table_size*/) {
   if (os::create_thread(this, os::asynclog_thread)) {
@@ -141,13 +141,18 @@ void LogAsyncFlusher::flush() {
 }
 
 void LogAsyncFlusher::run() {
-  while (!_should_terminate) {
+  while (_state == ThreadState::Running) {
     {
       MonitorLocker m(&_lock, Mutex::_no_safepoint_check_flag);
       m.wait(500 /* ms, timeout*/);
     }
     flush();
   }
+
+  // Signal thread has terminated
+  MonitorLocker ml(Terminator_lock);
+  Atomic::release_store(&_state, ThreadState::Terminated);
+  ml.notify_all();
 }
 
 LogAsyncFlusher* LogAsyncFlusher::_instance = nullptr;
@@ -162,18 +167,24 @@ void LogAsyncFlusher::initialize() {
 // 1. issue an atomic store-&-fence to close the logging window.
 // 2. flush itself in-place
 // 3. signal the flusher thread to exit
+// 4. wait until asynclog thread exits.
 // 4. (optional) deletes this in post_run()
 void LogAsyncFlusher::terminate() {
   if (_instance != NULL) {
     LogAsyncFlusher* self = _instance;
 
-    // make sure no new log entry will be enqueued after.
     Atomic::release_store_fence<LogAsyncFlusher*, LogAsyncFlusher*>(&_instance, nullptr);
     self->flush();
     {
-      MonitorLocker m(&self->_lock, Mutex::_no_safepoint_check_flag);
-      self->_should_terminate = true;
-      m.notify();
+      MonitorLocker ml(&self->_lock, Mutex::_no_safepoint_check_flag);
+      Atomic::release_store(&self->_state, ThreadState::Terminating);
+      ml.notify();
+    }
+    {
+      MonitorLocker ml(Terminator_lock, Mutex::_no_safepoint_check_flag);
+      while (self->_state != ThreadState::Terminated) {
+        ml.wait();
+      }
     }
   }
 }
