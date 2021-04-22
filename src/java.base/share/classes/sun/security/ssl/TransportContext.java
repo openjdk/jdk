@@ -587,24 +587,9 @@ final class TransportContext implements ConnectionContext {
     // Note: HandshakeStatus.FINISHED status is retrieved in other places.
     HandshakeStatus getHandshakeStatus() {
         if (!outputRecord.isEmpty()) {
-            // If no handshaking, special case to wrap alters or
+            // If not handshaking, special case to wrap alerts or
             // post-handshake messages.
-            if (!isOutboundClosed()) {
-                // Outbound is open.
-                return HandshakeStatus.NEED_WRAP;
-            } else if (isInboundClosed()) {
-                // Both inbound & outbound are closed.
-                return HandshakeStatus.NOT_HANDSHAKING;
-            } else if (handshakeContext != null) {
-                // Inbound is open, and outbound is closed.
-                if (!handshakeContext.delegatedActions.isEmpty()) {
-                    return HandshakeStatus.NEED_TASK;
-                } else if (sslContext.isDTLS() && !inputRecord.isEmpty()) {
-                    return HandshakeStatus.NEED_UNWRAP_AGAIN;
-                } else {
-                    return HandshakeStatus.NEED_UNWRAP;
-                }
-            }   // Otherwise, return NOT_HANDSHAKING.
+            return HandshakeStatus.NEED_WRAP;
         } else if (isOutboundClosed() && isInboundClosed()) {
             return HandshakeStatus.NOT_HANDSHAKING;
         } else if (handshakeContext != null) {

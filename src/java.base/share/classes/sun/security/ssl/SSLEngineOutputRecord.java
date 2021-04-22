@@ -55,7 +55,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         recordLock.lock();
         try {
             if (!isClosed) {
-                if (fragmenter != null && fragmenter.hasAlert()) {
+                if (fragmenter != null && !fragmenter.isEmpty()) {
                     isCloseWaiting = true;
                 } else {
                     super.close();
@@ -173,6 +173,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
                     "application data");
             }
+
 
             srcs = null;    // use no application data.
         }
@@ -533,32 +534,23 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             dstBuf.limit(dstLim);
 
             // Reset the fragmentation offset.
-            if (hsMemo != null) {
-                return new Ciphertext(hsMemo.contentType,
-                        hsMemo.handshakeType, recordSN);
-            } else {
-                if (isCloseWaiting &&
-                        memo.contentType == ContentType.ALERT.id) {
+            try {
+                if (hsMemo != null) {
+                    return new Ciphertext(hsMemo.contentType,
+                            hsMemo.handshakeType, recordSN);
+                } else {
+                    return new Ciphertext(memo.contentType,
+                            SSLHandshake.NOT_APPLICABLE.id, recordSN);
+                }
+            } finally {
+                if (isCloseWaiting && isEmpty()) {
                     close();
                 }
-
-                return new Ciphertext(memo.contentType,
-                        SSLHandshake.NOT_APPLICABLE.id, recordSN);
             }
         }
 
         boolean isEmpty() {
             return handshakeMemos.isEmpty();
-        }
-
-        boolean hasAlert() {
-            for (RecordMemo memo : handshakeMemos) {
-                if (memo.contentType == ContentType.ALERT.id) {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 
