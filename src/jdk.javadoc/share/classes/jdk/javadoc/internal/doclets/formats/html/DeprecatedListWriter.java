@@ -27,8 +27,11 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import com.sun.source.doctree.DeprecatedTree;
 import java.util.List;
+import java.util.ListIterator;
 
 import javax.lang.model.element.Element;
+
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -79,6 +82,10 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
 
     @Override
     protected void addExtraSection(DeprecatedAPIListBuilder list, Content content) {
+        if (list.releases.size() > 1) {
+            content.add(HtmlTree.SPAN(contents.getContent("doclet.Deprecated_Tabs_Intro"))
+                    .addStyle(HtmlStyle.helpNote));
+        }
         addSummaryAPI(list.getForRemoval(), HtmlIds.FOR_REMOVAL,
                     TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
     }
@@ -102,15 +109,18 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
 
     @Override
     protected void addTableTabs(Table table, String headingKey) {
-        if (!configuration.deprecatedAPIListBuilder.releases.isEmpty()) {
+        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+        if (!releases.isEmpty()) {
             table.setDefaultTab(getTableCaption(headingKey)).setAlwaysShowDefaultTab(true);
-            configuration.deprecatedAPIListBuilder.releases.forEach(release -> {
+            ListIterator<String> it = releases.listIterator(releases.size());
+            while (it.hasPrevious()) {
+                String release = it.previous();
                 String tab = TERMINALLY_DEPRECATED_KEY.equals(headingKey)
                         ? resources.getText("doclet.Terminally_Deprecated_In_Release", release)
                         : resources.getText("doclet.Deprecated_In_Release", release);
                 table.addTab(tab,
                         element -> release.equals(utils.getDeprecatedSince(element)));
-            });
+            }
             getMainBodyScript().append(table.getScript());
         }
     }

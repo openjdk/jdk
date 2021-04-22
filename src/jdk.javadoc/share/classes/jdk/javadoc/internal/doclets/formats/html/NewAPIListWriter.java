@@ -29,6 +29,8 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -38,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 
 import java.util.List;
+import java.util.ListIterator;
 
 import static com.sun.source.doctree.DocTree.Kind.SINCE;
 
@@ -58,9 +61,11 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
      *
      * @param configuration the configuration for this doclet
      */
-    public NewAPIListWriter(HtmlConfiguration configuration, DocPath filename) {
+    public NewAPIListWriter(NewAPIBuilder builder, HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename, PageMode.NEW, "new elements",
-                Text.of(configuration.docResources.getText("doclet.New_API")),
+                Text.of(configuration.docResources.getText(
+                        builder.releases.size() > 1 ? "doclet.New_API_Since" : "doclet.New_API_In",
+                        builder.releases.get(0))),
                 "doclet.Window_New_List");
     }
 
@@ -73,18 +78,33 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
-            NewAPIListWriter writer = new NewAPIListWriter(configuration, DocPaths.NEW_LIST);
-            writer.generateSummaryListFile(configuration.newAPIPageBuilder);
+            NewAPIBuilder builder = configuration.newAPIPageBuilder;
+            NewAPIListWriter writer = new NewAPIListWriter(builder, configuration, DocPaths.NEW_LIST);
+            writer.generateSummaryListFile(builder);
+        }
+    }
+
+    @Override
+    protected void addExtraSection(NewAPIBuilder list, Content content) {
+        if (list.releases.size() > 1) {
+            content.add(HtmlTree.SPAN(contents.getContent("doclet.New_Tabs_Intro"))
+                    .addStyle(HtmlStyle.helpNote));
         }
     }
 
     @Override
     protected void addTableTabs(Table table, String headingKey) {
-        if (!configuration.newAPIPageBuilder.releases.isEmpty()) {
-            table.setDefaultTab(getTableCaption(headingKey)).setAlwaysShowDefaultTab(true);
-            configuration.newAPIPageBuilder.releases.forEach(release -> {
+        List<String> releases = configuration.newAPIPageBuilder.releases;
+        if (!releases.isEmpty()) {
+            table.setDefaultTab(getTableCaption(headingKey));
+            ListIterator<String> it = releases.listIterator(releases.size());
+            while (it.hasPrevious()) {
+                String release = it.previous();
                 table.addTab(
-                        configuration.docResources.getText("doclet.New_In_Release", release),
+                        releases.size() == 1
+                                ? getTableCaption(headingKey)
+                                : configuration.docResources.getText(
+                                        "doclet.New_Elements_Added_In_Release", release),
                         element -> {
                             if (!utils.hasDocCommentTree(element)) {
                                 return false;
@@ -96,7 +116,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
                             CommentHelper ch = utils.getCommentHelper(element);
                             return since.stream().anyMatch(tree -> release.equals(ch.getBody(tree).toString()));
                         });
-            });
+            }
             getMainBodyScript().append(table.getScript());
         }
     }
