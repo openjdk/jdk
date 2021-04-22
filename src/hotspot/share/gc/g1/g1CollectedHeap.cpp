@@ -432,7 +432,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       // Now that we have the lock, we first retry the allocation in case another
       // thread changed the region while we were waiting to acquire the lock.
       size_t actual_size;
-      result = _allocator->attempt_allocation(word_size, word_size, &actual_size, false);
+      result = _allocator->attempt_allocation(word_size, word_size, &actual_size);
       if (result != NULL) {
         return result;
       }
@@ -441,7 +441,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       if (!proactive_collection_required) {
         // We've already attempted a lock-free allocation above, so we don't want to
         // do it again. Let's jump straight to replacing the active region.
-        result = _allocator->attempt_allocation_locked(word_size, false /* attempt_lock_free_first */);
+        result = _allocator->attempt_allocation_use_new_region(word_size);
         if (result != NULL) {
           return result;
         }
@@ -512,7 +512,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     // follow-on attempt will be at the start of the next loop
     // iteration (after taking the Heap_lock).
     size_t dummy = 0;
-    result = _allocator->attempt_allocation(word_size, word_size, &dummy, true);
+    result = _allocator->attempt_allocation(word_size, word_size, &dummy);
     if (result != NULL) {
       return result;
     }
@@ -740,7 +740,7 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
   assert(!is_humongous(desired_word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
 
-  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size, true);
+  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
 
   if (result == NULL) {
     *actual_word_size = desired_word_size;
@@ -961,7 +961,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
          "the current alloc region was unexpectedly found to be non-NULL");
 
   if (!is_humongous(word_size)) {
-    return _allocator->attempt_allocation_locked(word_size, true /* attempt_lock_free_first */);
+    return _allocator->attempt_allocation_locked(word_size);
   } else {
     HeapWord* result = humongous_obj_allocate(word_size);
     if (result != NULL && policy()->need_to_start_conc_mark("STW humongous allocation")) {

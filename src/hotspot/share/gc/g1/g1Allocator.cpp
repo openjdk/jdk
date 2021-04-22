@@ -250,8 +250,7 @@ HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
     result = survivor_gc_alloc_region(node_index)->attempt_allocation_locked(min_word_size,
                                                                              desired_word_size,
-                                                                             actual_word_size,
-                                                                             true);
+                                                                             actual_word_size);
     if (result == NULL) {
       set_survivor_full();
     }
@@ -275,8 +274,7 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
     result = old_gc_alloc_region()->attempt_allocation_locked(min_word_size,
                                                               desired_word_size,
-                                                              actual_word_size,
-                                                              true);
+                                                              actual_word_size);
     if (result == NULL) {
       set_old_full();
     }
