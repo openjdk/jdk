@@ -1145,15 +1145,8 @@ class JavaThread: public Thread {
   bool java_resume();  // higher-level resume logic called by the public APIs
   bool is_suspended()     { return _handshake.is_suspended(); }
 
-  static void check_safepoint_and_suspend_for_native_trans(JavaThread *thread);
   // Check for async exception in addition to safepoint.
   static void check_special_condition_for_native_trans(JavaThread *thread);
-
-  // Whenever a thread transitions from native to vm/java it must suspend
-  // if deopt suspend is present.
-  bool is_suspend_after_native() const {
-    return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
-  }
 
   // Synchronize with another thread that is deoptimizing objects of the
   // current thread, i.e. reverts optimizations based on escape analysis.
@@ -1178,7 +1171,8 @@ class JavaThread: public Thread {
   // Return true if JavaThread has an asynchronous condition or
   // if external suspension is requested.
   bool has_special_runtime_exit_condition() {
-    return (_special_runtime_exit_condition != _no_async_condition) || is_trace_suspend() || is_obj_deopt_suspend();
+    return (_special_runtime_exit_condition != _no_async_condition) ||
+           (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
 
   void set_pending_unsafe_access_error()          { _special_runtime_exit_condition = _async_unsafe_access_error; }
