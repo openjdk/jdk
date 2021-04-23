@@ -27,7 +27,7 @@
  * @summary JVM crashes when two threads encounter the same resolution error
  *
  * @library /test/lib
- * @compile TestNestHostErrorWithMultiThread.java
+ * @compile HostNoNestMember.java
  * @compile HostNoNestMember.jcod
  *
  * @run main/othervm TestNestHostErrorWithMultiThread
@@ -35,48 +35,48 @@
 
 import java.util.concurrent.CountDownLatch;
 
-class HostNoNestMember {
-  class Member {
-    private int value;
-  }
-
-  public int foo() {
-    Member m = new Member();
-    return m.value;
-  }
-}
-
 public class TestNestHostErrorWithMultiThread {
 
-  public static void main(String args[]) throws Throwable {
-    TestNestHostErrorWithMultiThread t = new TestNestHostErrorWithMultiThread();
-    t.test();
+  public static void main(String args[]) {
+    CountDownLatch latch1 = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(2);
+
+    new Thread(new Test(latch1, latch2)).start();
+    new Thread(new Test(latch1, latch2)).start();
+
+    try {
+      // waiting thread creation
+      latch2.await();
+      latch1.countDown();
+    } catch (InterruptedException e) {}
   }
 
-  public void test() throws Throwable {
+  static class Test implements Runnable {
+    private CountDownLatch latch1;
+    private CountDownLatch latch2;
 
-    CountDownLatch latch = new CountDownLatch(1);
+    Test(CountDownLatch latch1, CountDownLatch latch2) {
+      this.latch1 = latch1;
+      this.latch2 = latch2;
+    }
 
-    new Thread(() -> {
+    @Override
+    public void run() {
       try {
-        latch.await();
+        latch2.countDown();
+        // Try to have all threads trigger the nesthost check at the same time
+        latch1.await();
         HostNoNestMember h = new HostNoNestMember();
-        h.foo();
+        h.test();
       } catch (IllegalAccessError expected) {
+        String msg = "current type is not listed as a nest member";
+        if (!expected.getMessage().contains(msg)) {
+          throw new Error("Wrong " + expected.getClass().getSimpleName() +": \"" +
+                          expected.getMessage() + "\" does not contain \"" +
+                          msg + "\"", expected);
+        }
         System.out.println("OK - got expected exception: " + expected);
       } catch (InterruptedException e) {}
-    }).start();
-
-    new Thread(() -> {
-      try {
-        latch.await();
-        HostNoNestMember h = new HostNoNestMember();
-        h.foo();
-      } catch (IllegalAccessError expected) {
-        System.out.println("OK - got expected exception: " + expected);
-      } catch (InterruptedException e) {}
-    }).start();
-
-    latch.countDown();
+    }
   }
 }
