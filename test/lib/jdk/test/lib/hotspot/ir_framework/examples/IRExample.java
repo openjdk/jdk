@@ -72,7 +72,6 @@ import jdk.test.lib.hotspot.ir_framework.*;
  */
 // This test is expected to fail when run with JTreg.
 public class IRExample {
-
     int iFld, iFld2, iFld3;
 
     public static void main(String[] args) {

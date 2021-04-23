@@ -31,7 +31,6 @@ package jdk.test.lib.hotspot.ir_framework;
  * @see Test
  */
 public enum CheckAt {
-
     /**
      * Default: Invoke the {@link Check} method each time after invoking the associated {@link Test} method.
      */

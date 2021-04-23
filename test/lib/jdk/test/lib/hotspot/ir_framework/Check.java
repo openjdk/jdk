@@ -91,7 +91,6 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Check {
-
     /**
      * The unique associated {@link Test} method for this {@code @Check} annotated check method. The framework will directly
      * invoke the {@code @Check} method after each invocation or only after the compilation of the associated {@code @Test}

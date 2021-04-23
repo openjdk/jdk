@@ -40,10 +40,10 @@ import java.util.*;
  * @see TestFramework
  */
 public class Scenario {
-    private static final String ADDITIONAL_SCENARIO_FLAGS = System.getProperty("ScenarioFlags", "");
-    private static final String SCENARIOS = System.getProperty("Scenarios", "");
-    private static final List<String> additionalScenarioFlags = new ArrayList<>();
-    private static final Set<Integer> enabledScenarios = new HashSet<>();
+    private static final String ADDITIONAL_SCENARIO_FLAGS_PROPERTY = System.getProperty("ScenarioFlags", "");
+    private static final String SCENARIOS_PROPERTY = System.getProperty("Scenarios", "");
+    private static final List<String> ADDITIONAL_SCENARIO_FLAGS = new ArrayList<>();
+    private static final Set<Integer> ENABLED_SCENARIOS = new HashSet<>();
 
     private final List<String> flags;
     private final int index;
@@ -51,18 +51,18 @@ public class Scenario {
     private String testVMOutput;
 
     static {
-        if (!SCENARIOS.isEmpty()) {
-            System.out.println(Arrays.toString(SCENARIOS.split("\\s*,\\s*")));
+        if (!SCENARIOS_PROPERTY.isEmpty()) {
+            System.out.println(Arrays.toString(SCENARIOS_PROPERTY.split("\\s*,\\s*")));
             try {
-                Arrays.stream(SCENARIOS.split("\\s*,\\s*")).map(Integer::parseInt).forEachOrdered(enabledScenarios::add);
+                Arrays.stream(SCENARIOS_PROPERTY.split("\\s*,\\s*")).map(Integer::parseInt).forEachOrdered(ENABLED_SCENARIOS::add);
             } catch (NumberFormatException e) {
                 throw new TestRunException("Provided a scenario index in the -DScenario comma-separated list which is not "
-                                           + "a number: " + SCENARIOS);
+                                           + "a number: " + SCENARIOS_PROPERTY);
             }
         }
 
-        if (!ADDITIONAL_SCENARIO_FLAGS.isEmpty()) {
-            additionalScenarioFlags.addAll(Arrays.asList(ADDITIONAL_SCENARIO_FLAGS.split("\\s*,\\s*")));
+        if (!ADDITIONAL_SCENARIO_FLAGS_PROPERTY.isEmpty()) {
+            ADDITIONAL_SCENARIO_FLAGS.addAll(Arrays.asList(ADDITIONAL_SCENARIO_FLAGS_PROPERTY.split("\\s*,\\s*")));
         }
     }
 
@@ -80,11 +80,11 @@ public class Scenario {
         this.index = index;
         if (flags != null) {
             this.flags = new ArrayList<>(Arrays.asList(flags));
-            this.flags.addAll(additionalScenarioFlags);
+            this.flags.addAll(ADDITIONAL_SCENARIO_FLAGS);
         } else {
             this.flags = new ArrayList<>();
         }
-        this.enabled = enabledScenarios.isEmpty() || enabledScenarios.contains(index);
+        this.enabled = ENABLED_SCENARIOS.isEmpty() || ENABLED_SCENARIOS.contains(index);
     }
 
     /**

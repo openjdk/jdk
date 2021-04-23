@@ -27,7 +27,6 @@ package jdk.test.lib.hotspot.ir_framework;
  * Checked internal exceptions in the framework to propagate error handling.
  */
 class CheckedTestFrameworkException extends Exception {
-
     CheckedTestFrameworkException(String msg) {
         super(msg);
     }

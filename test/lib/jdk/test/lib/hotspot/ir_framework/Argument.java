@@ -32,7 +32,6 @@ package jdk.test.lib.hotspot.ir_framework;
  * @see Check
  */
 public enum Argument {
-
     /**
      * Provides the default value for any kind of primitive type and object type if the class provides a default constructor.
      */

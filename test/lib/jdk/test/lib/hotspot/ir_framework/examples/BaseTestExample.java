@@ -58,7 +58,6 @@ import jdk.test.lib.hotspot.ir_framework.*;
  * @see TestFramework
  */
 public class BaseTestExample {
-
     int iFld;
 
     public static void main(String[] args) {

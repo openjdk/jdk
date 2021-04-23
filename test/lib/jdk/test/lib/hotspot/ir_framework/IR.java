@@ -65,7 +65,6 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(IRs.class)
 public @interface IR {
-
     /**
      * Define a list of (node) regexes. If any of these regexes are matched on the PrintIdeal or PrintOptoAssembly, the
      * IR rule fails and an {@link IRViolationException} is thrown.

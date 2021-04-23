@@ -39,7 +39,6 @@ import java.util.Map;
  * @see DontCompile
  */
 public enum CompLevel {
-
     /**
      * Can only be used at {@link Test#compLevel()}. After the warm-up, the framework keeps invoking the test over a span
      * of 10s (configurable by setting the property flag {@code -DWaitForCompilationTimeout}) until HotSpot compiles the

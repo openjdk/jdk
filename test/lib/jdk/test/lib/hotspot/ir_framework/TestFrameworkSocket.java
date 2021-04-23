@@ -36,9 +36,8 @@ import java.util.concurrent.FutureTask;
  * Dedicated socket to send data from the flag and test VM back to the driver VM.
  */
 class TestFrameworkSocket implements AutoCloseable {
-    static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
-
     // Static fields used by flag and test VM only.
+    private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
     private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
 
     private static final boolean REPRODUCE = Boolean.getBoolean("Reproduce");

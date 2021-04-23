@@ -33,18 +33,21 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Prints an encoding of all @Test methods whether an @IR rules should be applied to the dedicated test framework socket.
+ * Prints an encoding to the dedicated test framework socket whether @IR rules of @Test methods should be applied or not.
+ * This is done during the execution of the test VM by checking the active VM flags. This encoding is eventually parsed
+ * and checked by the IRMatcher class in the driver VM after the termination of the test VM.
  */
 class IREncodingPrinter {
     public static final String START = "##### IRMatchRulesEncoding - used by TestFramework #####";
     public static final String END = "----- END -----";
     public static final int NO_RULE_APPLIED = -1;
+
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final List<Function<String, Object>> longGetters = Arrays.asList(
             WHITE_BOX::getIntVMFlag, WHITE_BOX::getUintVMFlag, WHITE_BOX::getIntxVMFlag,
             WHITE_BOX::getUintxVMFlag, WHITE_BOX::getUint64VMFlag, WHITE_BOX::getSizeTVMFlag);
-    private final StringBuilder output = new StringBuilder();
 
+    private final StringBuilder output = new StringBuilder();
     private Method method;
     private int ruleIndex;
 

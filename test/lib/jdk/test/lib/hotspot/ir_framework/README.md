@@ -1,8 +1,6 @@
 # IR Test Framework
 This folder contains a test framework whose main purpose is to perform regex-based checks on the C2 IR shape of test methods emitted by the VM flags _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_. The framework can also be used for other non-IR matching (and non-compiler) tests by providing easy to use annotations for commonly used testing patterns and compiler control flags.
 
-The framework is based on the ideas of the currently present IR test framework in [Valhalla](https://github.com/openjdk/valhalla/blob/e9c78ce4fcfd01361c35883e0d68f9ae5a80d079/test/hotspot/jtreg/runtime/valhalla/inlinetypes/InlineTypesTest.java) and aims to replace it at some point.
-
 ## 1. How to Use the Framework
 The framework is intended to be used in JTreg tests. The JTreg header of the test must contain `@library /test/lib` and should be run as a driver with `@run driver`. Annotate the test code with the supported framework annotations and call the framework from within the test's `main()` method. A simple example is shown below:
 
@@ -43,7 +41,7 @@ The simplest form of testing provides a single `@Test` annotated method which th
 More information on base tests with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a base test can be found in [BaseTestsExample](./examples/BaseTestExample.java).
 
 #### Checked Tests
-The base tests do not provide any way of verification by user code. A checked test enabled that by allowing the user to define an additional `@Check` annotated method which is invoked directly after the `@Test` annotated method. This allows the user to perform various checks about the test method including return value verification.
+The base tests do not provide any way of verification by user code. A checked test enables this by allowing the user to define an additional `@Check` annotated method which is invoked directly after the `@Test` annotated method. This allows the user to perform various checks about the test method including return value verification.
 
 More information on checked tests with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify a checked test can be found in [CheckedTestsExample](./examples/CheckedTestExample.java).
 
@@ -62,7 +60,7 @@ The user has the possibility to add an additional `@IR` annotation to any `@Test
  
 A regex can either be a custom string or any of the default regexes provided by the framework in [IRNode](IRNode.java) for some commonly used IR nodes (also provides the possibility of composite regexes).
 
-An IR verification cannot (and does not want to) always be performed. For example, a JTreg test could be run with _-Xint_ or not a debug build (_-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_ are debug build flags). But also CI tier testing could add additional JTreg VM and Javaoptions flags which could make an IR rule unstable. 
+An IR verification cannot always be performed. For example, a JTreg test could be run with _-Xint_ or not a debug build (_-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_ are debug build flags). But also CI tier testing could add additional JTreg VM and Javaoptions flags which could make an IR rule unstable. 
 
 In general, the framework will only perform IR verification if the used VM flags allow a C2 compilation and if non-critical additional JTreg VM and Javaoptions are provided (see whiteflag list in [TestFramework](./TestFramework.java)). The user test code, however, can specify any flags which still allow an IR verification to be performed if a C2 compilation is done (expected flags by user defined `@IR` annotations). 
 
@@ -90,7 +88,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DVerifyIR=false`: Explicitly disable IR verification. This is useful, for example, if some scenarios use VM flags that let `@IR` annotation rules fail and the user does not want to provide separate IR rules or add flag preconditions to the already existing IR rules.
 - `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed.
 - `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution.
-- `-DScenarios=1,2`: Provide a list of scenario indexes to specify which scenarios that should be executed.
+- `-DScenarios=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed.
 - `-DWarmup=200`: Provide a new default value of the number of warm-up iterations (framework default is 2000). This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
 - `-DVerbose=true`: Enable more fain-grained logging (slows the execution down).
 - `-DReproduce=true`: Flag to use when directly running a test VM to bypass dependencies to the driver VM state (for example, when reproducing an issue).
@@ -98,7 +96,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DVerifyVM=true`: The framework runs the test VM with additional verification flags (slows the execution down).
 - `-DExcluceRandom=true`: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.
 - `-DFlipC1C2=true`: The framework compiles all `@Test` annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.
-- `-DShuffleTests=false`: Disables the shuffling of tests (a shuffling is always done by default).
+- `-DShuffleTests=false`: Disables the random execution order of all tests (such a shuffling is always done by default).
 - `-DDumpReplay=true`: Add the `DumpReplay` directive to the test VM.
 - `-DGCAfter=true`: Perform `System.gc()` after each test (slows the execution don).
 
@@ -122,16 +120,5 @@ There are various tests to verify the correctness of the test framework. These t
 
 Additional testing was performed by converting all compiler Inline Types tests that used the currently present IR test framework in Valhalla (see [JDK-8263024](https://bugs.openjdk.java.net/browse/JDK-8263024)). It is strongly advised to make sure a change to the framework still lets these converted tests in Valhalla pass as part of an additional testing step.
 
-## 5. Future Work
-This framework is based on the idea of the currently present IR test framework in [Valhalla](https://github.com/openjdk/valhalla/blob/e9c78ce4fcfd01361c35883e0d68f9ae5a80d079/test/hotspot/jtreg/runtime/valhalla/inlinetypes/InlineTypesTest.java). This IR framework was used with great success in Valhalla and thus served as a foundation for this new IR framework.
- 
- The new framework supports all the features that are present in the Valhalla IR framework with the idea to replace it at some point. The initial design and feature set was kept simple and straight forward and serves well for small to medium sized tests. There are a lot of possibilities to further enhance the framework and make it more powerful. This can be tackled in additional RFEs. A few ideas include:
-
-- Provide more default IR regexes (e.g. for vector nodes etc.) in [IRNode](./IRNode.java) ([JDK-8265197](https://bugs.openjdk.java.net/browse/JDK-8265197)).
-- Parsing the IR directly to perform queries on it, walking it, searching it, match on IR node properties etc. ([JDK-8265198](https://bugs.openjdk.java.net/browse/JDK-8265198)).
-- Investigate more verification possibilities based on additional/other flags (e.g. _-XX:+PrintIdealGraph_, _-XX:+TraceNewVectors_ etc.) ([JDK-8265200](https://bugs.openjdk.java.net/browse/JDK-8265200)).
-- More interface methods for verification in checked and custom run tests.
-- More stress/debug framework flags.
-- Additional check possibilities in `@IR` annotations. 
-
-More information can be found in the JBS issue [JDK-8254129](https://bugs.openjdk.java.net/browse/JDK-8254129) (the initial IR Test Framework RFE).
+## 5. Summary
+ The initial design and feature set was kept simple and straight forward and serves well for small to medium sized tests. There are a lot of possibilities to further enhance the framework and make it more powerful. This can be tackled in additional RFEs. A few ideas can be found as subtasks of the [initial RFE](https://bugs.openjdk.java.net/browse/JDK-8254129) for this framework.

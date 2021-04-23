@@ -144,6 +144,7 @@ public class TestFramework {
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
     private final boolean VERIFY_VM = Boolean.getBoolean("VerifyVM") && Platform.isDebugBuild();
     private boolean VERIFY_IR = Boolean.parseBoolean(System.getProperty("VerifyIR", "true"));
+
     private boolean shouldVerifyIR; // Should we perform IR matching?
     private static String lastTestVMOutput;
     private static boolean toggleBool;
@@ -975,7 +976,6 @@ public class TestFramework {
  * Class to encapsulate information about the test VM output, the run process and the scenario.
  */
 class JVMOutput {
-
     private final Scenario scenario;
     private final OutputAnalyzer oa;
     private final ProcessBuilder process;

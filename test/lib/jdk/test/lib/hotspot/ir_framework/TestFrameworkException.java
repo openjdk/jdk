@@ -28,7 +28,6 @@ package jdk.test.lib.hotspot.ir_framework;
  * in the framework.
  */
 public class TestFrameworkException extends RuntimeException {
-
     TestFrameworkException(String message) {
         super("Internal Test Framework exception - please file a bug:" + System.lineSeparator() + message);
     }

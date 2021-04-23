@@ -27,7 +27,6 @@ package jdk.test.lib.hotspot.ir_framework;
  * Exception that is thrown if a JTreg test violates the supported format by the test framework.
  */
 public class TestFormatException extends RuntimeException {
-
     TestFormatException(String message) {
         super(message);
     }

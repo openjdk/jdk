@@ -28,7 +28,6 @@ package jdk.test.lib.hotspot.ir_framework;
  * {@code -DExclude} defining an empty set with the used test VM flags.
  */
 public class NoTestsRunException extends RuntimeException {
-
     /**
      * Default constructor used by test VM
      */

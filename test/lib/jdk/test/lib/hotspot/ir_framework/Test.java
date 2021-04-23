@@ -78,7 +78,6 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Test {
-
     /**
      * Specify at which compilation level the framework should eventually compile the test method after an optional
      * warm-up period. The default {@link CompLevel#ANY} will let the framework compile the method at the highest
