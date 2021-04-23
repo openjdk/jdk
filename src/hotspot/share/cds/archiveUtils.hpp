@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_ARCHIVEUTILS_HPP
-#define SHARE_MEMORY_ARCHIVEUTILS_HPP
+#ifndef SHARE_CDS_ARCHIVEUTILS_HPP
+#define SHARE_CDS_ARCHIVEUTILS_HPP
 
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
@@ -227,4 +227,4 @@ public:
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
 };
 
-#endif // SHARE_MEMORY_ARCHIVEUTILS_HPP
+#endif // SHARE_CDS_ARCHIVEUTILS_HPP

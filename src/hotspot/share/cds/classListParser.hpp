@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_CLASSLISTPARSER_HPP
-#define SHARE_CLASSFILE_CLASSLISTPARSER_HPP
+#ifndef SHARE_CDS_CLASSLISTPARSER_HPP
+#define SHARE_CDS_CLASSLISTPARSER_HPP
 
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -183,4 +183,4 @@ public:
 
   static void populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS);
 };
-#endif // SHARE_CLASSFILE_CLASSLISTPARSER_HPP
+#endif // SHARE_CDS_CLASSLISTPARSER_HPP

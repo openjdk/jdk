@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_MEMORY_ARCHIVEBUILDER_HPP
-#define SHARE_MEMORY_ARCHIVEBUILDER_HPP
+#ifndef SHARE_CDS_ARCHIVEBUILDER_HPP
+#define SHARE_CDS_ARCHIVEBUILDER_HPP
 
-#include "memory/archiveUtils.hpp"
-#include "memory/dumpAllocStats.hpp"
+#include "cds/archiveUtils.hpp"
+#include "cds/dumpAllocStats.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"
@@ -430,4 +430,4 @@ public:
   void report_out_of_space(const char* name, size_t needed_bytes);
 };
 
-#endif // SHARE_MEMORY_ARCHIVEBUILDER_HPP
+#endif // SHARE_CDS_ARCHIVEBUILDER_HPP

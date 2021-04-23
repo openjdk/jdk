@@ -22,27 +22,25 @@
  *
  */
 
-#ifndef SHARE_MEMORY_CPPVTABLES_HPP
-#define SHARE_MEMORY_CPPVTABLES_HPP
-
-#include "memory/allocation.hpp"
+#ifndef SHARE_CDS_LAMBDAFORMINVOKERS_HPP
+#define SHARE_CDS_LAMBDAFORMINVOKERS_HPP
 #include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "runtime/handles.hpp"
 
-class ArchiveBuilder;
-class Method;
-class SerializeClosure;
-class CppVtableInfo;
+template <class T>
+class GrowableArray;
+class ClassFileStream;
 
-// Support for C++ vtables in CDS archive.
-class CppVtables : AllStatic {
-  static CppVtableInfo** _index;
-public:
-  static char* dumptime_init(ArchiveBuilder* builder);
-  static void zero_archived_vtables();
-  static intptr_t* get_archived_vtable(MetaspaceObj::Type msotype, address obj);
-  static void serialize(SerializeClosure* sc);
-  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
+class LambdaFormInvokers : public AllStatic {
+ private:
+  static GrowableArray<char*>* _lambdaform_lines;
+  static void reload_class(char* name, ClassFileStream& st, TRAPS);
+ public:
+
+  static void append(char* line);
+  static void regenerate_holder_classes(TRAPS);
+  static GrowableArray<char*>* lambdaform_lines() {
+    return _lambdaform_lines;
+  }
 };
-
-#endif // SHARE_MEMORY_CPPVTABLES_HPP
+#endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP

@@ -22,15 +22,15 @@
  *
  */
 
-#ifndef SHARE_MEMORY_HEAPSHARED_HPP
-#define SHARE_MEMORY_HEAPSHARED_HPP
+#ifndef SHARE_CDS_HEAPSHARED_HPP
+#define SHARE_CDS_HEAPSHARED_HPP
 
+#include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.hpp"
@@ -415,4 +415,4 @@ class DumpedInternedStrings :
 {};
 #endif
 
-#endif // SHARE_MEMORY_HEAPSHARED_HPP
+#endif // SHARE_CDS_HEAPSHARED_HPP

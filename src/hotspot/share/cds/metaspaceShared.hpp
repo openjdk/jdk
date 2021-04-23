@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACESHARED_HPP
-#define SHARE_MEMORY_METASPACESHARED_HPP
+#ifndef SHARE_CDS_METASPACESHARED_HPP
+#define SHARE_CDS_METASPACESHARED_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
@@ -203,4 +203,4 @@ private:
   static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs);
   static void unmap_archive(FileMapInfo* mapinfo);
 };
-#endif // SHARE_MEMORY_METASPACESHARED_HPP
+#endif // SHARE_CDS_METASPACESHARED_HPP

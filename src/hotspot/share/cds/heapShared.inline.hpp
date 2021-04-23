@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,27 @@
  *
  */
 
-#ifndef SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
-#define SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
-#include "memory/allStatic.hpp"
-#include "runtime/handles.hpp"
+#ifndef SHARE_CDS_HEAPSHARED_INLINE_HPP
+#define SHARE_CDS_HEAPSHARED_INLINE_HPP
 
-template <class T>
-class GrowableArray;
-class ClassFileStream;
+#include "cds/heapShared.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "utilities/align.hpp"
 
-class LambdaFormInvokers : public AllStatic {
- private:
-  static GrowableArray<char*>* _lambdaform_lines;
-  static void reload_class(char* name, ClassFileStream& st, TRAPS);
- public:
+#if INCLUDE_CDS_JAVA_HEAP
 
-  static void append(char* line);
-  static void regenerate_holder_classes(TRAPS);
-  static GrowableArray<char*>* lambdaform_lines() {
-    return _lambdaform_lines;
-  }
-};
-#endif // SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
+bool HeapShared::is_archived_object(oop p) {
+  return Universe::heap()->is_archived_object(p);
+}
+
+inline oop HeapShared::decode_from_archive(narrowOop v) {
+  assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
+  oop result = cast_to_oop((uintptr_t)_narrow_oop_base + ((uintptr_t)v << _narrow_oop_shift));
+  assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  return result;
+}
+
+#endif
+
+#endif // SHARE_CDS_HEAPSHARED_INLINE_HPP

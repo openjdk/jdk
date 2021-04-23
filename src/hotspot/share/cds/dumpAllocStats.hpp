@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_MEMORY_DUMPALLOCSTATS_HPP
-#define SHARE_MEMORY_DUMPALLOCSTATS_HPP
+#ifndef SHARE_CDS_DUMPALLOCSTATS_HPP
+#define SHARE_CDS_DUMPALLOCSTATS_HPP
 
-#include "memory/allocation.hpp"
 #include "classfile/compactHashtable.hpp"
+#include "memory/allocation.hpp"
 
 // This is for dumping detailed statistics for the allocations
 // in the shared spaces.
@@ -100,4 +100,4 @@ public:
   void print_stats(int ro_all, int rw_all);
 };
 
-#endif // SHARE_MEMORY_DUMPALLOCSTATS_HPP
+#endif // SHARE_CDS_DUMPALLOCSTATS_HPP

@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,27 @@
  *
  */
 
-#ifndef SHARE_MEMORY_HEAPSHARED_INLINE_HPP
-#define SHARE_MEMORY_HEAPSHARED_INLINE_HPP
+#ifndef SHARE_CDS_CPPVTABLES_HPP
+#define SHARE_CDS_CPPVTABLES_HPP
 
-#include "gc/shared/collectedHeap.inline.hpp"
-#include "oops/compressedOops.inline.hpp"
-#include "memory/heapShared.hpp"
-#include "utilities/align.hpp"
+#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-#if INCLUDE_CDS_JAVA_HEAP
+class ArchiveBuilder;
+class Method;
+class SerializeClosure;
+class CppVtableInfo;
 
-bool HeapShared::is_archived_object(oop p) {
-  return Universe::heap()->is_archived_object(p);
-}
+// Support for C++ vtables in CDS archive.
+class CppVtables : AllStatic {
+  static CppVtableInfo** _index;
+public:
+  static char* dumptime_init(ArchiveBuilder* builder);
+  static void zero_archived_vtables();
+  static intptr_t* get_archived_vtable(MetaspaceObj::Type msotype, address obj);
+  static void serialize(SerializeClosure* sc);
+  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
+};
 
-inline oop HeapShared::decode_from_archive(narrowOop v) {
-  assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
-  oop result = cast_to_oop((uintptr_t)_narrow_oop_base + ((uintptr_t)v << _narrow_oop_shift));
-  assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  return result;
-}
-
-#endif
-
-#endif // SHARE_MEMORY_HEAPSHARED_INLINE_HPP
+#endif // SHARE_CDS_CPPVTABLES_HPP

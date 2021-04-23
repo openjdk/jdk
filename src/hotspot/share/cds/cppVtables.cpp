@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveUtils.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/cppVtables.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "logging/log.hpp"
-#include "memory/archiveUtils.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/cppVtables.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"

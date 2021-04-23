@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  *
  */
 
-#ifndef SHARE_PRIMS_CDSOFFSETS_HPP
-#define SHARE_PRIMS_CDSOFFSETS_HPP
+#ifndef SHARE_CDS_CDSOFFSETS_HPP
+#define SHARE_CDS_CDSOFFSETS_HPP
+
+#include "memory/allocation.hpp"
 
 class CDSOffsets: public CHeapObj<mtInternal> {
  private:
@@ -42,4 +44,4 @@ class CDSOffsets: public CHeapObj<mtInternal> {
   static int find_offset(const char* name);
 };
 
-#endif // SHARE_PRIMS_CDSOFFSETS_HPP
+#endif // SHARE_CDS_CDSOFFSETS_HPP

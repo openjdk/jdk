@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/dumpAllocStats.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
-#include "memory/dumpAllocStats.hpp"
 
 void DumpAllocStats::print_stats(int ro_all, int rw_all) {
   // symbols

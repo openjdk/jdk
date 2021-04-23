@@ -22,20 +22,20 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_DYNAMICARCHIVE_HPP
-#define SHARE_VM_MEMORY_DYNAMICARCHIVE_HPP
+#ifndef SHARE_CDS_DYNAMICARCHIVE_HPP
+#define SHARE_CDS_DYNAMICARCHIVE_HPP
 
-#if INCLUDE_CDS
-
+#include "cds/filemap.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "memory/allocation.hpp"
-#include "memory/filemap.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
+
+#if INCLUDE_CDS
 
 class DynamicArchiveHeader : public FileMapHeader {
   friend class CDSOffsets;
@@ -68,4 +68,4 @@ public:
   static bool validate(FileMapInfo* dynamic_info);
 };
 #endif // INCLUDE_CDS
-#endif // SHARE_VM_MEMORY_DYNAMICARCHIVE_HPP
+#endif // SHARE_CDS_DYNAMICARCHIVE_HPP
