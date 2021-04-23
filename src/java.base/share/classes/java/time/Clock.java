@@ -618,9 +618,9 @@ public abstract class Clock {
         }
         @Override
         public boolean equals(Object obj) {
-            return (obj instanceof FixedClock other
+            return obj instanceof FixedClock other
                     && instant.equals(other.instant)
-                    && zone.equals(other.zone));
+                    && zone.equals(other.zone);
         }
         @Override
         public int hashCode() {
@@ -668,9 +668,9 @@ public abstract class Clock {
         }
         @Override
         public boolean equals(Object obj) {
-            return (obj instanceof OffsetClock other
+            return obj instanceof OffsetClock other
                     && baseClock.equals(other.baseClock)
-                    && offset.equals(other.offset));
+                    && offset.equals(other.offset);
         }
         @Override
         public int hashCode() {

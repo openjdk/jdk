@@ -2185,10 +2185,10 @@ public final class ZonedDateTime
         if (this == obj) {
             return true;
         }
-        return (obj instanceof ZonedDateTime other
-            && dateTime.equals(other.dateTime)
-            && offset.equals(other.offset)
-            && zone.equals(other.zone));
+        return obj instanceof ZonedDateTime other
+                && dateTime.equals(other.dateTime)
+                && offset.equals(other.offset)
+                && zone.equals(other.zone);
     }
 
     /**
