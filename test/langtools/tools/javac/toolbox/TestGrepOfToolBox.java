@@ -27,7 +27,7 @@
  * @summary ToolBox::grep should allow for negative filtering
  * @library /tools/lib
  * @build toolbox.ToolBox
- * @run main T8241187
+ * @run main TestGrepOfToolBox
  */
 
 import java.util.Arrays;
@@ -35,7 +35,7 @@ import java.util.List;
 
 import toolbox.ToolBox;
 
-public class T8241187 {
+public class TestGrepOfToolBox {
     public static void main(String[] args) {
         ToolBox tb = new ToolBox();
         List<String> input = Arrays.asList("apple", "banana", "cat", "dog", "end", "ending");
