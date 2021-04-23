@@ -374,11 +374,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     // Check if we need to hoist decodeHeapOop_not_null first.
     Block *valb = get_block_for_node(val);
     if( block != valb && block->_dom_depth < valb->_dom_depth ) {
-      // Hoist it up to the end of the test block.
-      valb->find_remove(val);
-      block->add_inst(val);
-      map_node_to_block(val, block);
-      // Also hoist MachTemp inputs if they exist.
+      // Hoist it up to the end of the test block together with its MachTemp inputs if they exist.
       for (uint i = 2; i < val->req(); i++) {
         // DecodeN has 2 regular inputs + optional MachTemp inputs.
         MachTempNode *temp = val->in(i)->as_MachTemp();
@@ -387,6 +383,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         block->add_inst(temp);
         map_node_to_block(temp, block);
       }
+      valb->find_remove(val);
+      block->add_inst(val);
+      map_node_to_block(val, block);
       // DecodeN on x86 may kill flags. Check for flag-killing projections
       // that also need to be hoisted.
       for (DUIterator_Fast jmax, j = val->fast_outs(jmax); j < jmax; j++) {
