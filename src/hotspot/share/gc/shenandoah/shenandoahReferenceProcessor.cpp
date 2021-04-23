@@ -386,8 +386,11 @@ template <typename T>
 oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
-  assert(reference_referent<T>(reference) == NULL ||
-         ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent<T>(reference)), "only drop references with alive referents");
+#ifdef ASSERT
+  oop referent = reference_referent<T>(reference);
+  assert(referent == NULL || ShenandoahHeap::heap()->marking_context()->is_marked(referent),
+         "only drop references with alive referents");
+#endif
 
   // Unlink and return next in list
   oop next = reference_discovered<T>(reference);
