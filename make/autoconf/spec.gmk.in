@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,7 @@ VERSION_CFLAGS := \
     #
 
 ifneq ($(COMPANY_NAME),)
-  # COMPANY_NAME is set to "N/A" in $AUTOCONF_DIR/version-numbers by default,
+  # COMPANY_NAME is set to "N/A" in make/conf/branding.conf by default,
   # but can be customized with the '--with-vendor-name' configure option.
   # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
   # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
@@ -348,6 +348,8 @@ EXCLUDE_TRANSLATIONS := @EXCLUDE_TRANSLATIONS@
 BUILD_MANPAGES := @BUILD_MANPAGES@
 
 BUILD_CDS_ARCHIVE := @BUILD_CDS_ARCHIVE@
+
+ENABLE_COMPATIBLE_CDS_ALIGNMENT := @ENABLE_COMPATIBLE_CDS_ALIGNMENT@
 
 ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := @ALLOW_ABSOLUTE_PATHS_IN_OUTPUT@
 
@@ -574,6 +576,8 @@ CXXFILT:=@CXXFILT@
 
 LIPO:=@LIPO@
 INSTALL_NAME_TOOL:=@INSTALL_NAME_TOOL@
+METAL := @METAL@
+METALLIB := @METALLIB@
 
 # Options to linker to specify a mapfile.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
@@ -648,6 +652,8 @@ BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
 BUILD_JAVAC=@FIXPATH@ $(BUILD_JDK)/bin/javac
 BUILD_JAR=@FIXPATH@ $(BUILD_JDK)/bin/jar
 
+DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
+
 # Interim langtools modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
@@ -656,6 +662,8 @@ INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim \
     --add-exports java.base/jdk.internal.misc=jdk.compiler.interim \
     --add-exports java.base/sun.invoke.util=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=java.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
     #
 INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
     $(INTERIM_LANGTOOLS_MODULES))))
@@ -663,6 +671,7 @@ INTERIM_LANGTOOLS_ARGS := \
     --limit-modules java.base,jdk.zipfs,$(INTERIM_LANGTOOLS_MODULES_COMMA) \
     --add-modules $(INTERIM_LANGTOOLS_MODULES_COMMA) \
     --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
+    --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
     $(INTERIM_LANGTOOLS_ADD_EXPORTS) \
     #
 JAVAC_MAIN_CLASS = -m jdk.compiler.interim/com.sun.tools.javac.Main

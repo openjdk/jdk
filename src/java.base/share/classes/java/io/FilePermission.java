@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,10 +566,8 @@ public final class FilePermission extends Permission implements Serializable {
      */
     @Override
     public boolean implies(Permission p) {
-        if (!(p instanceof FilePermission))
+        if (!(p instanceof FilePermission that))
             return false;
-
-        FilePermission that = (FilePermission) p;
 
         // we get the effective mask. i.e., the "and" of this and that.
         // They must be equal to that.mask for implies to return true.
@@ -791,10 +789,8 @@ public final class FilePermission extends Permission implements Serializable {
         if (obj == this)
             return true;
 
-        if (! (obj instanceof FilePermission))
+        if (! (obj instanceof FilePermission that))
             return false;
-
-        FilePermission that = (FilePermission) obj;
 
         if (this.invalid || that.invalid) {
             return false;
@@ -1150,14 +1146,12 @@ final class FilePermissionCollection extends PermissionCollection
      */
     @Override
     public void add(Permission permission) {
-        if (! (permission instanceof FilePermission))
+        if (! (permission instanceof FilePermission fp))
             throw new IllegalArgumentException("invalid permission: "+
                                                permission);
         if (isReadOnly())
             throw new SecurityException(
                 "attempt to add a Permission to a readonly PermissionCollection");
-
-        FilePermission fp = (FilePermission)permission;
 
         // Add permission to map if it is absent, or replace with new
         // permission if applicable.
@@ -1195,10 +1189,8 @@ final class FilePermissionCollection extends PermissionCollection
      */
     @Override
     public boolean implies(Permission permission) {
-        if (! (permission instanceof FilePermission))
+        if (! (permission instanceof FilePermission fperm))
             return false;
-
-        FilePermission fperm = (FilePermission) permission;
 
         int desired = fperm.getMask();
         int effective = 0;

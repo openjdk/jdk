@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,6 @@ import jdk.jfr.internal.management.EventByteStream;
  * usage on a remote host and print the events to standard out.
  *
  * <pre>
- * {
  *     {@literal
  *     String host = "com.example";
  *     int port = 4711;
@@ -83,7 +82,7 @@ import jdk.jfr.internal.management.EventByteStream;
  *         rs.onEvent("jdk.GCPhasePause", System.out::println);
  *         rs.start();
  *     }
- * }
+ *     }
  * </pre>
  *
  * @since 16
@@ -123,7 +122,7 @@ public final class RemoteRecordingStream implements EventStream {
     }
 
     // Reference to stream is released when EventStream::close is called
-    final static class ChunkConsumer implements Consumer<Long> {
+    static final class ChunkConsumer implements Consumer<Long> {
 
         private final DiskRepository repository;
 
@@ -133,8 +132,7 @@ public final class RemoteRecordingStream implements EventStream {
 
         @Override
         public void accept(Long endNanos) {
-            Instant t = ManagementSupport.epochNanosToInstant(endNanos);
-            repository.onChunkComplete(t);
+            repository.onChunkComplete(endNanos);
         }
     }
 
@@ -552,8 +550,8 @@ public final class RemoteRecordingStream implements EventStream {
     }
 
     private void startDownload() {
-        Thread downLoadThread = new DownLoadThread(this);
-        downLoadThread.setName("JFR: Download Thread " + creationTime);
+        String name = "JFR: Download Thread " + creationTime;
+        Thread downLoadThread = new DownLoadThread(this, name);
         downLoadThread.start();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,12 @@
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/synchronizer.hpp"
 
-inline intptr_t ObjectMonitor::is_entered(TRAPS) const {
+inline intptr_t ObjectMonitor::is_entered(JavaThread* current) const {
   void* owner = owner_raw();
-  if (THREAD == owner || THREAD->is_lock_owned((address)owner)) {
+  if (current == owner || current->is_lock_owned((address)owner)) {
     return 1;
   }
   return 0;
@@ -115,7 +116,7 @@ inline void ObjectMonitor::set_owner_from(void* old_value, void* new_value) {
 }
 
 // Simply set _owner field to self; current value must match basic_lock_p.
-inline void ObjectMonitor::set_owner_from_BasicLock(void* basic_lock_p, Thread* self) {
+inline void ObjectMonitor::set_owner_from_BasicLock(void* basic_lock_p, JavaThread* current) {
 #ifdef ASSERT
   void* prev = Atomic::load(&_owner);
   assert(prev == basic_lock_p, "unexpected prev owner=" INTPTR_FORMAT
@@ -123,11 +124,11 @@ inline void ObjectMonitor::set_owner_from_BasicLock(void* basic_lock_p, Thread* 
 #endif
   // Non-null owner field to non-null owner field is safe without
   // cmpxchg() as long as all readers can tolerate either flavor.
-  Atomic::store(&_owner, self);
+  Atomic::store(&_owner, current);
   log_trace(monitorinflation, owner)("set_owner_from_BasicLock(): mid="
                                      INTPTR_FORMAT ", basic_lock_p="
                                      INTPTR_FORMAT ", new_value=" INTPTR_FORMAT,
-                                     p2i(this), p2i(basic_lock_p), p2i(self));
+                                     p2i(this), p2i(basic_lock_p), p2i(current));
 }
 
 // Try to set _owner field to new_value if the current value matches

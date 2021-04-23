@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
+import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -799,7 +800,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
         /** form a fully qualified name from a name and an owner
          */
-        static public Name formFullName(Name name, Symbol owner) {
+        public static Name formFullName(Name name, Symbol owner) {
             if (owner == null) return name;
             if ((owner.kind != ERR) &&
                 (owner.kind.matches(KindSelector.VAL_MTH) ||
@@ -814,7 +815,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         /** form a fully qualified name from a name and an owner, after
          *  converting to flat representation
          */
-        static public Name formFlatName(Name name, Symbol owner) {
+        public static Name formFlatName(Name name, Symbol owner) {
             if (owner == null || owner.kind.matches(KindSelector.VAL_MTH) ||
                 (owner.kind == TYP && owner.type.hasTag(TYPEVAR))
                 ) return name;
@@ -1865,8 +1866,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     public static class BindingSymbol extends VarSymbol {
 
-        public BindingSymbol(Name name, Type type, Symbol owner) {
-            super(Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
+        public BindingSymbol(long flags, Name name, Type type, Symbol owner) {
+            super(flags | Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
         }
 
         public boolean isAliasFor(BindingSymbol b) {
@@ -2161,10 +2162,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return implementation(origin, types, checkResult, implementation_filter);
         }
         // where
-            public static final Filter<Symbol> implementation_filter = s ->
+            public static final Predicate<Symbol> implementation_filter = s ->
                     s.kind == MTH && (s.flags() & SYNTHETIC) == 0;
 
-        public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult, Filter<Symbol> implFilter) {
+        public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult, Predicate<Symbol> implFilter) {
             MethodSymbol res = types.implementation(this, origin, checkResult, implFilter);
             if (res != null)
                 return res;
@@ -2470,7 +2471,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 this.tag = tag;
             }
 
-            static public AccessCode getFromCode(int code) {
+            public static AccessCode getFromCode(int code) {
                 for (AccessCode aCodes : AccessCode.values()) {
                     if (aCodes.code == code) {
                         return aCodes;
@@ -2512,7 +2513,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         /** Dummy completer to be used when the symbol has been completed or
          * does not need completion.
          */
-        public final static Completer NULL_COMPLETER = new Completer() {
+        public static final Completer NULL_COMPLETER = new Completer() {
             public void complete(Symbol sym) { }
             public boolean isTerminal() { return true; }
         };

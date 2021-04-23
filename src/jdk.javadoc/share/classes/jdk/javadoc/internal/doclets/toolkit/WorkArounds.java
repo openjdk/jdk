@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,18 @@ public class WorkArounds {
 
         // finally, search by qualified name in all modules
         return elementUtils.getTypeElement(className);
+    }
+
+
+    // TODO: The following should be replaced by a new method such as Elements.isAutomaticModule
+    // see JDK-8261625
+    public boolean isAutomaticModule(ModuleElement me) {
+        if (me == null) {
+            return false;
+        } else {
+            ModuleSymbol msym = (ModuleSymbol) me;
+            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
+        }
     }
 
     // TODO:  need to re-implement this using j.l.m. correctly!, this has
@@ -513,4 +525,15 @@ public class WorkArounds {
                 ? utils.elementUtils.getPackageElement(parsedPackageName)
                 : ((JavacElements) utils.elementUtils).getPackageElement(encl, parsedPackageName);
     }
+
+    public boolean isPreviewAPI(Element el) {
+        Symbol sym = (Symbol) el;
+        return (sym.flags() & Flags.PREVIEW_API) != 0;
+    }
+
+    public boolean isReflectivePreviewAPI(Element el) {
+        Symbol sym = (Symbol) el;
+        return (sym.flags() & Flags.PREVIEW_REFLECTIVE) != 0;
+    }
+
 }

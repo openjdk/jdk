@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.incubator.vector.VectorSpecies;
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
  * @run testng/othervm --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
- *      VectorReshapeTests
+ *      -XX:-TieredCompilation VectorReshapeTests
  */
 
 @Test
@@ -416,7 +416,7 @@ public class VectorReshapeTests {
                            ", origin=" + origin);
         System.out.println("expect: "+Arrays.toString(expected));
         System.out.println("output: "+Arrays.toString(output));
-        Assert.assertEquals(expected, output);
+        Assert.assertEquals(output, expected);
     }
 
     @Test(dataProvider = "byteUnaryOpProvider")

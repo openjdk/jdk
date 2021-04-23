@@ -48,7 +48,7 @@ final class ReferralsCache {
     private static Map<ReferralCacheKey, Map<String, ReferralCacheEntry>>
             referralsMap = new HashMap<>();
 
-    static private final class ReferralCacheKey {
+    private static final class ReferralCacheKey {
         private PrincipalName cname;
         private PrincipalName sname;
         ReferralCacheKey (PrincipalName cname, PrincipalName sname) {

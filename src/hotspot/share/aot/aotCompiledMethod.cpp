@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,12 +180,12 @@ bool AOTCompiledMethod::make_not_entrant_helper(int new_state) {
     // Log the transition once
     log_state_change();
 
-#ifdef TIERED
+#if COMPILER1_OR_COMPILER2
     // Remain non-entrant forever
     if (new_state == not_entrant && method() != NULL) {
         method()->set_aot_code(NULL);
     }
-#endif
+#endif // COMPILER1_OR_COMPILER2
 
     // Remove AOTCompiledMethod from method.
     if (method() != NULL) {
@@ -203,8 +203,8 @@ bool AOTCompiledMethod::make_not_entrant_helper(int new_state) {
   return true;
 }
 
-#ifdef TIERED
 bool AOTCompiledMethod::make_entrant() {
+#if COMPILER1_OR_COMPILER2
   assert(!method()->is_old(), "reviving evolved method!");
 
   NoSafepointVerifier nsv;
@@ -233,8 +233,10 @@ bool AOTCompiledMethod::make_entrant() {
   }
 
   return true;
+#else
+  return false;
+#endif // COMPILER1_OR_COMPILER2
 }
-#endif // TIERED
 
 // Iterate over metadata calling this function.   Used by RedefineClasses
 // Copied from nmethod::metadata_do

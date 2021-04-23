@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib
  * @requires vm.cds.archived.java.heap
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main/othervm/native ReplaceCriticalClassesForSubgraphs
  */
 
@@ -42,12 +42,12 @@ public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
         String tests[] = {
             // Try to replace classes that are used by the archived subgraph graphs. (CDS should be disabled)
             "-early -notshared -subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
-            "-early -notshared -subgraph java/lang/Long java.lang.Long$LongCache",
+            "-early -notshared -subgraph java/lang/Integer java.lang.Integer$IntegerCache",
 
             // CDS should not be disabled -- these critical classes cannot be replaced because
             // JvmtiExport::early_class_hook_env() is false.
             "-subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
-            "-subgraph java/lang/Long java.lang.Long$LongCache",
+            "-subgraph java/lang/Integer java.lang.Integer$IntegerCache",
 
             // Tests for archived full module graph. We cannot use whitebox, which requires appending to bootclasspath.
             // VM will disable full module graph if bootclasspath is appended.

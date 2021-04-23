@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 
 import javax.tools.JavaFileObject;
@@ -944,14 +945,17 @@ public class Types {
         return overridden.toList();
     }
     //where
-        private Filter<Symbol> bridgeFilter = new Filter<Symbol>() {
-            public boolean accepts(Symbol t) {
+        // Use anonymous class instead of lambda expression intentionally,
+        // because the variable `names` has modifier: final.
+        private Predicate<Symbol> bridgeFilter = new Predicate<Symbol>() {
+            public boolean test(Symbol t) {
                 return t.kind == MTH &&
                         t.name != names.init &&
                         t.name != names.clinit &&
                         (t.flags() & SYNTHETIC) == 0;
             }
         };
+
         private boolean pendingBridges(ClassSymbol origin, TypeSymbol s) {
             //a symbol will be completed from a classfile if (a) symbol has
             //an associated file object with CLASS kind and (b) the symbol has
@@ -977,7 +981,7 @@ public class Types {
     * Scope filter used to skip methods that should be ignored (such as methods
     * overridden by j.l.Object) during function interface conversion interface check
     */
-    class DescriptorFilter implements Filter<Symbol> {
+    class DescriptorFilter implements Predicate<Symbol> {
 
        TypeSymbol origin;
 
@@ -986,7 +990,7 @@ public class Types {
        }
 
        @Override
-       public boolean accepts(Symbol sym) {
+       public boolean test(Symbol sym) {
            return sym.kind == MTH &&
                    (sym.flags() & (ABSTRACT | DEFAULT)) == ABSTRACT &&
                    !overridesObjectMethod(origin, sym) &&
@@ -1063,10 +1067,10 @@ public class Types {
      * Is t a subtype of s?<br>
      * (not defined for Method and ForAll types)
      */
-    final public boolean isSubtype(Type t, Type s) {
+    public final boolean isSubtype(Type t, Type s) {
         return isSubtype(t, s, true);
     }
-    final public boolean isSubtypeNoCapture(Type t, Type s) {
+    public final boolean isSubtypeNoCapture(Type t, Type s) {
         return isSubtype(t, s, false);
     }
     public boolean isSubtype(Type t, Type s, boolean capture) {
@@ -1656,7 +1660,9 @@ public class Types {
         } else {
             result = isCastable.visit(t,s);
         }
-        if (result && (t.tsym.isSealed() || s.tsym.isSealed())) {
+        if (result && t.hasTag(CLASS) && t.tsym.kind.matches(Kinds.KindSelector.TYP)
+                && s.hasTag(CLASS) && s.tsym.kind.matches(Kinds.KindSelector.TYP)
+                && (t.tsym.isSealed() || s.tsym.isSealed())) {
             return (t.isCompound() || s.isCompound()) ?
                     false :
                     !areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym);
@@ -1665,11 +1671,11 @@ public class Types {
     }
     // where
         private boolean areDisjoint(ClassSymbol ts, ClassSymbol ss) {
-            if (isSubtype(ts.type, ss.type)) {
+            if (isSubtype(erasure(ts.type), erasure(ss.type))) {
                 return false;
             }
             // if both are classes or both are interfaces, shortcut
-            if (ts.isInterface() == ss.isInterface() && isSubtype(ss.type, ts.type)) {
+            if (ts.isInterface() == ss.isInterface() && isSubtype(erasure(ss.type), erasure(ts.type))) {
                 return false;
             }
             if (ts.isInterface() && !ss.isInterface()) {
@@ -2928,12 +2934,12 @@ public class Types {
 
         class Entry {
             final MethodSymbol cachedImpl;
-            final Filter<Symbol> implFilter;
+            final Predicate<Symbol> implFilter;
             final boolean checkResult;
             final int prevMark;
 
             public Entry(MethodSymbol cachedImpl,
-                    Filter<Symbol> scopeFilter,
+                    Predicate<Symbol> scopeFilter,
                     boolean checkResult,
                     int prevMark) {
                 this.cachedImpl = cachedImpl;
@@ -2942,14 +2948,14 @@ public class Types {
                 this.prevMark = prevMark;
             }
 
-            boolean matches(Filter<Symbol> scopeFilter, boolean checkResult, int mark) {
+            boolean matches(Predicate<Symbol> scopeFilter, boolean checkResult, int mark) {
                 return this.implFilter == scopeFilter &&
                         this.checkResult == checkResult &&
                         this.prevMark == mark;
             }
         }
 
-        MethodSymbol get(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Filter<Symbol> implFilter) {
+        MethodSymbol get(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Predicate<Symbol> implFilter) {
             SoftReference<Map<TypeSymbol, Entry>> ref_cache = _map.get(ms);
             Map<TypeSymbol, Entry> cache = ref_cache != null ? ref_cache.get() : null;
             if (cache == null) {
@@ -2969,7 +2975,7 @@ public class Types {
             }
         }
 
-        private MethodSymbol implementationInternal(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Filter<Symbol> implFilter) {
+        private MethodSymbol implementationInternal(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Predicate<Symbol> implFilter) {
             for (Type t = origin.type; t.hasTag(CLASS) || t.hasTag(TYPEVAR); t = supertype(t)) {
                 t = skipTypeVars(t, false);
                 TypeSymbol c = t.tsym;
@@ -2994,7 +3000,7 @@ public class Types {
 
     private ImplementationCache implCache = new ImplementationCache();
 
-    public MethodSymbol implementation(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Filter<Symbol> implFilter) {
+    public MethodSymbol implementation(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Predicate<Symbol> implFilter) {
         return implCache.get(ms, origin, checkResult, implFilter);
     }
     // </editor-fold>
@@ -3015,17 +3021,17 @@ public class Types {
                 this.scope = scope;
             }
 
-            Filter<Symbol> combine(Filter<Symbol> sf) {
-                return s -> !s.owner.isInterface() && (sf == null || sf.accepts(s));
+            Predicate<Symbol> combine(Predicate<Symbol> sf) {
+                return s -> !s.owner.isInterface() && (sf == null || sf.test(s));
             }
 
             @Override
-            public Iterable<Symbol> getSymbols(Filter<Symbol> sf, LookupKind lookupKind) {
+            public Iterable<Symbol> getSymbols(Predicate<Symbol> sf, LookupKind lookupKind) {
                 return scope.getSymbols(combine(sf), lookupKind);
             }
 
             @Override
-            public Iterable<Symbol> getSymbolsByName(Name name, Filter<Symbol> sf, LookupKind lookupKind) {
+            public Iterable<Symbol> getSymbolsByName(Name name, Predicate<Symbol> sf, LookupKind lookupKind) {
                 return scope.getSymbolsByName(name, combine(sf), lookupKind);
             }
 
@@ -3185,7 +3191,7 @@ public class Types {
         CandidatesCache.Entry e = candidatesCache.new Entry(site, ms);
         List<MethodSymbol> candidates = candidatesCache.get(e);
         if (candidates == null) {
-            Filter<Symbol> filter = new MethodFilter(ms, site);
+            Predicate<Symbol> filter = new MethodFilter(ms, site);
             List<MethodSymbol> candidates2 = List.nil();
             for (Symbol s : membersClosure(site, false).getSymbols(filter)) {
                 if (!site.tsym.isInterface() && !s.owner.isInterface()) {
@@ -3218,7 +3224,7 @@ public class Types {
         return methodsMin.toList();
     }
     // where
-            private class MethodFilter implements Filter<Symbol> {
+            private class MethodFilter implements Predicate<Symbol> {
 
                 Symbol msym;
                 Type site;
@@ -3228,7 +3234,8 @@ public class Types {
                     this.site = site;
                 }
 
-                public boolean accepts(Symbol s) {
+                @Override
+                public boolean test(Symbol s) {
                     return s.kind == MTH &&
                             s.name == msym.name &&
                             (s.flags() & SYNTHETIC) == 0 &&
@@ -4074,17 +4081,13 @@ public class Types {
             return buf.toList();
         }
 
-        private Type arraySuperType = null;
+        private Type arraySuperType;
         private Type arraySuperType() {
             // initialized lazily to avoid problems during compiler startup
             if (arraySuperType == null) {
-                synchronized (this) {
-                    if (arraySuperType == null) {
-                        // JLS 10.8: all arrays implement Cloneable and Serializable.
-                        arraySuperType = makeIntersectionType(List.of(syms.serializableType,
-                                syms.cloneableType), true);
-                    }
-                }
+                // JLS 10.8: all arrays implement Cloneable and Serializable.
+                arraySuperType = makeIntersectionType(List.of(syms.serializableType,
+                        syms.cloneableType), true);
             }
             return arraySuperType;
         }
@@ -4321,6 +4324,8 @@ public class Types {
      * Return the primitive type corresponding to a boxed type.
      */
     public Type unboxedType(Type t) {
+        if (t.hasTag(ERROR))
+            return Type.noType;
         for (int i=0; i<syms.boxedName.length; i++) {
             Name box = syms.boxedName[i];
             if (box != null &&
@@ -4897,7 +4902,7 @@ public class Types {
      * Void if a second argument is not needed.
      */
     public static abstract class DefaultTypeVisitor<R,S> implements Type.Visitor<R,S> {
-        final public R visit(Type t, S s)               { return t.accept(this, s); }
+        public final R visit(Type t, S s)               { return t.accept(this, s); }
         public R visitClassType(ClassType t, S s)       { return visitType(t, s); }
         public R visitWildcardType(WildcardType t, S s) { return visitType(t, s); }
         public R visitArrayType(ArrayType t, S s)       { return visitType(t, s); }
@@ -4924,7 +4929,7 @@ public class Types {
      * Void if a second argument is not needed.
      */
     public static abstract class DefaultSymbolVisitor<R,S> implements Symbol.Visitor<R,S> {
-        final public R visit(Symbol s, S arg)                   { return s.accept(this, arg); }
+        public final R visit(Symbol s, S arg)                   { return s.accept(this, arg); }
         public R visitClassSymbol(ClassSymbol s, S arg)         { return visitSymbol(s, arg); }
         public R visitMethodSymbol(MethodSymbol s, S arg)       { return visitSymbol(s, arg); }
         public R visitOperatorSymbol(OperatorSymbol s, S arg)   { return visitSymbol(s, arg); }
@@ -4977,7 +4982,7 @@ public class Types {
      * visitor; use Void if no return type is needed.
      */
     public static abstract class UnaryVisitor<R> extends SimpleVisitor<R,Void> {
-        final public R visit(Type t) { return t.accept(this, null); }
+        public final R visit(Type t) { return t.accept(this, null); }
     }
 
     /**
@@ -4991,7 +4996,7 @@ public class Types {
      * not needed.
      */
     public static class MapVisitor<S> extends DefaultTypeVisitor<Type,S> {
-        final public Type visit(Type t) { return t.accept(this, null); }
+        public final Type visit(Type t) { return t.accept(this, null); }
         public Type visitType(Type t, S s) { return t; }
     }
 

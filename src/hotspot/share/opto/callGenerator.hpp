@@ -74,6 +74,7 @@ class CallGenerator : public ResourceObj {
   virtual bool      is_late_inline() const         { return false; }
   // same but for method handle calls
   virtual bool      is_mh_late_inline() const      { return false; }
+  virtual bool      is_boxing_late_inline() const  { return false; }
   virtual bool      is_string_late_inline() const  { return false; }
   virtual bool      is_virtual_late_inline() const { return false; }
 

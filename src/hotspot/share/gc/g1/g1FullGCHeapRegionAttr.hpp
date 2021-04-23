@@ -31,12 +31,16 @@
 // fast access during the full collection. In particular some parts of the region
 // type information is encoded in these per-region bytes.
 // Value encoding has been specifically chosen to make required accesses fast.
+// In particular, the table collects whether a region should be compacted, not
+// compacted, or marking (liveness analysis) completely skipped.
+// Reasons for not compacting a region:
+// (1) the HeapRegion itself has been pinned at the start of Full GC.
+// (2) the occupancy of the region is too high to be considered eligible for compaction.
+// The only examples for skipping marking for regions are Closed Archive regions.
 class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
-  static const uint8_t Normal = 0;        // Other kind of region
-  static const uint8_t Pinned = 1;        // Region is a pinned (non-Closed Archive) region
-  static const uint8_t ClosedArchive = 2; // Region is a (pinned) Closed Archive region
-
-  STATIC_ASSERT(ClosedArchive > Pinned);
+  static const uint8_t Compacted = 0;        // Region will be compacted.
+  static const uint8_t NotCompacted = 1;     // Region should not be compacted, but otherwise handled as usual.
+  static const uint8_t SkipMarking = 2;      // Region contents are not even marked through, but contain live objects.
 
   static const uint8_t Invalid = 255;
 
@@ -48,30 +52,23 @@ protected:
   uint8_t default_value() const { return Invalid; }
 
 public:
-  void set_closed_archive(uint idx) { set_by_index(idx, ClosedArchive); }
+  void set_invalid(uint idx) { set_by_index(idx, Invalid); }
+  void set_compacted(uint idx) { set_by_index(idx, Compacted); }
+  void set_skip_marking(uint idx) { set_by_index(idx, SkipMarking); }
+  void set_not_compacted(uint idx) { set_by_index(idx, NotCompacted); }
 
-  bool is_closed_archive(HeapWord* obj) const {
+  bool is_skip_marking(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) == ClosedArchive;
+    return get_by_address(obj) == SkipMarking;
   }
 
-  void set_pinned(uint idx) { set_by_index(idx, Pinned); }
-
-  bool is_pinned_or_closed(HeapWord* obj) const {
+  bool is_compacted(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) >= Pinned;
+    return get_by_address(obj) == Compacted;
   }
 
-  bool is_pinned(HeapWord* obj) const {
-    assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) == Pinned;
-  }
-
-  void set_normal(uint idx) { set_by_index(idx, Normal); }
-
-  bool is_normal(HeapWord* obj) const {
-    assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) == Normal;
+  bool is_compacted_or_skip_marking(uint idx) const {
+    return get_by_index(idx) != NotCompacted;
   }
 };
 

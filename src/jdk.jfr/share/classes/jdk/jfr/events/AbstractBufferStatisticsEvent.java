@@ -28,7 +28,6 @@ package jdk.jfr.events;
 import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.misc.VM;
 import jdk.jfr.*;
-import jdk.jfr.internal.Type;
 
 @Category({ "Java Application", "Statistics" })
 public abstract class AbstractBufferStatisticsEvent extends AbstractJDKEvent {

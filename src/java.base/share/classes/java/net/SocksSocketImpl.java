@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
     SocksSocketImpl(Proxy proxy, SocketImpl delegate) {
         super(delegate);
         SocketAddress a = proxy.address();
-        if (a instanceof InetSocketAddress) {
-            InetSocketAddress ad = (InetSocketAddress) a;
+        if (a instanceof InetSocketAddress ad) {
             // Use getHostString() to avoid reverse lookups
             server = ad.getHostString();
             serverPort = ad.getPort();
@@ -272,9 +271,8 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
         }
 
         SecurityManager security = System.getSecurityManager();
-        if (endpoint == null || !(endpoint instanceof InetSocketAddress))
+        if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
-        InetSocketAddress epoint = (InetSocketAddress) endpoint;
         if (security != null) {
             if (epoint.isUnresolved())
                 security.checkConnect(epoint.getHostName(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,21 +35,21 @@
 
 package sun.java2d.cmm.lcms;
 
-import java.awt.color.ICC_Profile;
 import java.awt.color.CMMException;
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.awt.image.ColorModel;
-import java.awt.image.SampleModel;
 import java.awt.image.DataBuffer;
-import sun.java2d.cmm.*;
-import sun.java2d.cmm.lcms.*;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
+
+import sun.java2d.cmm.ColorTransform;
+
 import static sun.java2d.cmm.lcms.LCMSImageLayout.ImageLayoutException;
 
-
-public class LCMSTransform implements ColorTransform {
+final class LCMSTransform implements ColorTransform {
     long ID;
     private int inFormatter = 0;
     private boolean isInIntPacked = false;
@@ -65,13 +65,6 @@ public class LCMSTransform implements ColorTransform {
     private int numOutComponents = -1;
 
     private Object disposerReferent = new Object();
-
-    /* the class initializer */
-    static {
-        if (ProfileDeferralMgr.deferring) {
-            ProfileDeferralMgr.activateProfiles();
-        }
-    }
 
     public LCMSTransform(ICC_Profile profile, int renderType,
                          int transformType)
@@ -156,10 +149,26 @@ public class LCMSTransform implements ColorTransform {
         LCMS.colorConvert(this, in, out);
     }
 
+    /**
+     * Returns {@code true} if lcms may supports this format directly.
+     */
+    private static boolean isLCMSSupport(BufferedImage src, BufferedImage dst) {
+        if (!dst.getColorModel().hasAlpha()) {
+            return true;
+        }
+        // lcms as of now does not support pre-alpha
+        if (src.isAlphaPremultiplied() || dst.isAlphaPremultiplied()) {
+            return false;
+        }
+        // lcms does not set correct alpha for transparent dst if src is opaque
+        // is it feature or bug?
+        return dst.getColorModel().hasAlpha() == src.getColorModel().hasAlpha();
+    }
+
     public void colorConvert(BufferedImage src, BufferedImage dst) {
         LCMSImageLayout srcIL, dstIL;
         try {
-            if (!dst.getColorModel().hasAlpha()) {
+            if (isLCMSSupport(src, dst)) {
                 dstIL = LCMSImageLayout.createImageLayout(dst);
 
                 if (dstIL != null) {
