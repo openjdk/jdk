@@ -184,7 +184,7 @@ static char* reserve_memory_special(char* requested_address, const size_t size,
            " alignment: " SIZE_FORMAT_HEX,
            p2i(base), alignment);
   } else {
-   if (large_pages_requested()) {
+    if (large_pages_requested()) {
       log_debug(gc, heap, coops)("Reserve regular memory without large pages");
     }
   }
