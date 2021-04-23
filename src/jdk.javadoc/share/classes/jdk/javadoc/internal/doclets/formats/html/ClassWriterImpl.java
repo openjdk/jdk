@@ -195,7 +195,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             if (previewModifiers.contains(modifiersPart)) {
                 mods.add(modifiersPart);
                 mods.add(HtmlTree.SUP(links.createLink(htmlIds.forPreviewSection(typeElement),
-                        contents.previewMark)));
+                                                       contents.previewMark)));
             } else {
                 mods.add(modifiersPart);
             }

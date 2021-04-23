@@ -2258,7 +2258,7 @@ public class HtmlDocletWriter {
                 String featureDisplayName =
                         resources.getText("doclet.Declared_Using_Preview." + feature.name());
                 result.add(withPreviewFeatures("doclet.Declared_Using_Preview", className,
-                        featureDisplayName, feature.features));
+                                               featureDisplayName, feature.features));
             }
         }
         if (!declaredUsingPreviewFeature.isEmpty()) {
@@ -2283,9 +2283,9 @@ public class HtmlDocletWriter {
                     sep[0] = ", ";
                 });
         return contents.getContent(key,
-                HtmlTree.CODE(Text.of(className)),
-                new HtmlTree(TagName.EM).add(featureName),
-                featureCodes);
+                                   HtmlTree.CODE(Text.of(className)),
+                                   new HtmlTree(TagName.EM).add(featureName),
+                                   featureCodes);
     }
 
     private Content withLinks(String key, String className, Set<TypeElement> elements) {
