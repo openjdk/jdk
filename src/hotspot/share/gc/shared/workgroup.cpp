@@ -198,7 +198,7 @@ void WorkGang::threads_do(ThreadClosure* tc) const {
 }
 
 AbstractGangWorker* WorkGang::allocate_worker(uint worker_id) {
-  return new GangWorker(this, worker_id);
+  return new AbstractGangWorker(this, worker_id);
 }
 
 void WorkGang::run_task(AbstractGangTask* task) {
@@ -235,31 +235,15 @@ void AbstractGangWorker::initialize() {
          " of a work gang");
 }
 
-bool AbstractGangWorker::is_GC_task_thread() const {
-  return gang()->are_GC_task_threads();
-}
-
-bool AbstractGangWorker::is_ConcurrentGC_thread() const {
-  return gang()->are_ConcurrentGC_threads();
-}
-
-void AbstractGangWorker::print_on(outputStream* st) const {
-  st->print("\"%s\" ", name());
-  Thread::print_on(st);
-  st->cr();
-}
-
-void AbstractGangWorker::print() const { print_on(tty); }
-
-WorkData GangWorker::wait_for_task() {
+WorkData AbstractGangWorker::wait_for_task() {
   return gang()->dispatcher()->worker_wait_for_task();
 }
 
-void GangWorker::signal_task_done() {
+void AbstractGangWorker::signal_task_done() {
   gang()->dispatcher()->worker_done_with_task();
 }
 
-void GangWorker::run_task(WorkData data) {
+void AbstractGangWorker::run_task(WorkData data) {
   GCIdMark gc_id_mark(data._task->gc_id());
   log_develop_trace(gc, workgang)("Running work gang: %s task: %s worker: %u", name(), data._task->name(), data._worker_id);
 
@@ -269,7 +253,7 @@ void GangWorker::run_task(WorkData data) {
                                   name(), data._task->name(), data._worker_id, p2i(Thread::current()));
 }
 
-void GangWorker::loop() {
+void AbstractGangWorker::loop() {
   while (true) {
     WorkData data = wait_for_task();
 

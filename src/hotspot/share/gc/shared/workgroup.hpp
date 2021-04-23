@@ -44,7 +44,6 @@
 //
 // Worker class hierarchy:
 //   AbstractGangWorker (subclass of WorkerThread)
-//     GangWorker
 
 // Forward declarations of classes defined here
 
@@ -101,7 +100,7 @@ class WorkGang : public CHeapObj<mtInternal> {
   const bool _are_ConcurrentGC_threads;
 
   // To get access to the GangTaskDispatcher instance.
-  friend class GangWorker;
+  friend class AbstractGangWorker;
   GangTaskDispatcher* const _dispatcher;
 
   GangTaskDispatcher* dispatcher() const { return _dispatcher; }
@@ -199,40 +198,28 @@ public:
 
 // Several instances of this class run in parallel as workers for a gang.
 class AbstractGangWorker: public WorkerThread {
-public:
-  AbstractGangWorker(WorkGang* gang, uint id);
-
-  // The only real method: run a task for the gang.
-  virtual void run();
-  // Predicate for Thread
-  virtual bool is_GC_task_thread() const;
-  virtual bool is_ConcurrentGC_thread() const;
-  // Printing
-  void print_on(outputStream* st) const;
-  virtual void print() const;
-
-protected:
+private:
   WorkGang* _gang;
 
-  virtual void initialize();
-  virtual void loop() = 0;
+  void initialize();
+  void loop();
 
   WorkGang* gang() const { return _gang; }
-};
 
-class GangWorker: public AbstractGangWorker {
-public:
-  GangWorker(WorkGang* gang, uint id) : AbstractGangWorker(gang, id) {}
-
-protected:
-  virtual void loop();
-
-private:
   WorkData wait_for_task();
   void run_task(WorkData work);
   void signal_task_done();
 
-  WorkGang* gang() const { return _gang; }
+protected:
+  // The only real method: run a task for the gang.
+  void run() override;
+
+public:
+  AbstractGangWorker(WorkGang* gang, uint id);
+
+  // Predicate for Thread
+  bool is_GC_task_thread() const override { return gang()->are_GC_task_threads(); }
+  bool is_ConcurrentGC_thread() const override { return gang()->are_ConcurrentGC_threads(); }
 };
 
 // A class that acts as a synchronisation barrier. Workers enter
