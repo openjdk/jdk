@@ -285,7 +285,7 @@ void LogConfiguration::disable_outputs() {
   // flush pending entries before the LogOutput instances die.
   LogAsyncFlusher* async = LogAsyncFlusher::instance();
   if (async != nullptr) {
-    async->flush();
+    async->flush(false /* with_lock */);
   }
 
   while (idx > 0) {

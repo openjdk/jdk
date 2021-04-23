@@ -143,17 +143,20 @@ class LogAsyncFlusher : public NonJavaThread {
 
   LogAsyncFlusher();
   void enqueue_impl(const AsyncLogMessage& msg);
+  static void writeback(const LinkedList<AsyncLogMessage>& logs);
   void run() override;
   char* name() const override { return (char*)"AsyncLog Thread"; }
+
  public:
   void enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg);
   void enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator);
-  void flush();
+  void flush(bool with_lock = true);
 
   static LogAsyncFlusher* instance();
   // None of following functions are thread-safe.
   static void initialize();
   static void terminate();
+  static void abort();
 };
 
 #endif // SHARE_LOGGING_ASYNC_FLUSHER_HPP

@@ -38,6 +38,7 @@
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "logging/logAsyncFlusher.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
@@ -1098,6 +1099,7 @@ void os::shutdown() {
   // allow PerfMemory to attempt cleanup of any persistent resources
   perfMemory_exit();
 
+  LogAsyncFlusher::abort();
   // flush buffered output, finish log files
   ostream_abort();
 

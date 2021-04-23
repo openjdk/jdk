@@ -119,25 +119,33 @@ bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uintx* counter) {
   return true;
 }
 
-// Caveat: current thread must not hold _tty_lock.
-// Cannot install ttyUnlocker here because flush() may be invoked before defaultStream
-// initialization.
-void LogAsyncFlusher::flush() {
-  LinkedListImpl<AsyncLogMessage, ResourceObj::C_HEAP, mtLogging> logs;
-
-  { // critical area
-    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    _buffer.pop_all(&logs);
-
-    AsyncLogMapIterator iter;
-    _stats.iterate(&iter);
-  }
-
+void LogAsyncFlusher::writeback(const LinkedList<AsyncLogMessage>& logs) {
   LinkedListIterator<AsyncLogMessage> it(logs.head());
   while (!it.is_empty()) {
     AsyncLogMessage* e = it.next();
     e->writeback();
   }
+}
+
+void LogAsyncFlusher::flush(bool with_lock) {
+  LinkedListImpl<AsyncLogMessage, ResourceObj::C_HEAP, mtLogging> logs;
+
+  if (with_lock) { // critical area
+    // Caveat: current thread must not hold _tty_lock or other lower rank lockers.
+    // Cannot install ttyUnlocker here because flush() may be invoked before defaultStream
+    // initialization.
+    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+    _buffer.pop_all(&logs);
+    AsyncLogMapIterator iter;
+    _stats.iterate(&iter);
+  } else {
+    // C++ lambda can simplify the code snippet.
+    _buffer.pop_all(&logs);
+    AsyncLogMapIterator iter;
+    _stats.iterate(&iter);
+  }
+
+  writeback(logs);
 }
 
 void LogAsyncFlusher::run() {
@@ -195,5 +203,25 @@ LogAsyncFlusher* LogAsyncFlusher::instance() {
   } else {
     // current thread may has been detached.
     return nullptr;
+  }
+}
+
+// Different from terminate(), abort is invoked by os::abort().
+// There are 2 constraints:
+// 1. must be async-safe because os::abort may be invoked by a signal handler while other
+// threads are executing.
+// 2. must not obtain _lock. eg. gtest.MutexRank.mutex_lock_access_leaf(test_mutex_rank.cpp)
+// holds assess lock and then traps SIGSEGV on purpose.
+//
+// Unlike terminate, abort() just ensures all pending log messages are flushed.
+void LogAsyncFlusher::abort() {
+  if (_instance != nullptr) {
+    // to meet prior constraints, I borrow the idea in LogConfiguration::disable_outputs(),
+    // the following code shut down all outputs for all tagsets with RCU synchroniziation.
+    // After then, I can flush pending queue without a lock.
+    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+      ts->disable_outputs();
+    }
+    _instance->flush(false /*with_lock*/);
   }
 }
