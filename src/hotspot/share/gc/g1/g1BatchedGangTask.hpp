@@ -115,7 +115,7 @@ protected:
 public:
   void work(uint worker_id) override;
 
-  // How many workers can this gang task keep busy and could be started. 
+  // How many workers can this gang task keep busy and could be started.
   uint num_busy_workers() const;
   // Informs the G1AbstractSubTasks about that we will start execution with the
   // given number of workers.

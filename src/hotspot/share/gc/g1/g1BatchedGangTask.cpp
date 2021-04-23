@@ -99,4 +99,4 @@ G1BatchedGangTask::~G1BatchedGangTask() {
   for (G1AbstractSubTask* task : _serial_tasks) {
     delete task;
   }
-}  
+}
