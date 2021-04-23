@@ -25,8 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -56,6 +61,10 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * The doclet specific writer that will output the result.
      */
     private final PackageSummaryWriter packageWriter;
+
+    // Maximum number of subpackages and sibling packages to list in related packages table
+    private final static int MAX_SUBPACKAGES = 20;
+    private final static int MAX_SIBLING_PACKAGES = 5;
 
     /**
      * Construct a new PackageSummaryBuilder.
@@ -108,7 +117,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildPackageDoc() throws DocletException {
-        Content contentTree = packageWriter.getPackageHeader(utils.getPackageName(packageElement));
+        Content contentTree = packageWriter.getPackageHeader();
 
         buildContent();
 
@@ -146,6 +155,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     protected void buildSummary(Content packageContentTree) throws DocletException {
         Content summariesList = packageWriter.getSummariesList();
 
+        buildRelatedPackagesSummary(summariesList);
         buildInterfaceSummary(summariesList);
         buildClassSummary(summariesList);
         buildEnumSummary(summariesList);
@@ -155,6 +165,18 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         buildAnnotationTypeSummary(summariesList);
 
         packageContentTree.add(packageWriter.getPackageSummary(summariesList));
+    }
+
+    /**
+     * Builds a list of "nearby" packages (subpackages, super and sibling packages).
+     *
+     * @param summariesList the list of summaries to which the summary will be added
+     */
+    protected void buildRelatedPackagesSummary(Content summariesList) {
+        List<PackageElement> packages = findRelatedPackages();
+        if (!packages.isEmpty()) {
+            packageWriter.addRelatedPackagesSummary(packages, summariesList);
+        }
     }
 
     /**
@@ -290,5 +312,41 @@ public class PackageSummaryBuilder extends AbstractBuilder {
             return;
         }
         packageWriter.addPackageTags(packageContentTree);
+    }
+
+    private List<PackageElement> findRelatedPackages() {
+        String pkgName = packageElement.getQualifiedName().toString();
+
+        // always add super package
+        int lastdot = pkgName.lastIndexOf('.');
+        String pkgPrefix = lastdot > 0 ? pkgName.substring(0, lastdot) : null;
+        List<PackageElement> packages = new ArrayList<>(
+                filterPackages(p -> p.getQualifiedName().toString().equals(pkgPrefix)));
+
+        // add subpackages unless there are very many of them
+        Pattern subPattern = Pattern.compile(pkgName.replace(".", "\\.") + "\\.\\w+");
+        List<PackageElement> subpackages = filterPackages(
+                p -> subPattern.matcher(p.getQualifiedName().toString()).matches());
+        if (subpackages.size() <= MAX_SUBPACKAGES) {
+            packages.addAll(subpackages);
+        }
+
+        // only add sibling packages if we are beneath threshold, and number of siblings is beneath threshold as well
+        if (pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
+            Pattern siblingPattern = Pattern.compile(pkgPrefix.replace(".", "\\.") + "\\.\\w+");
+
+            List<PackageElement> siblings = filterPackages(
+                    p -> siblingPattern.matcher(p.getQualifiedName().toString()).matches());
+            if (siblings.size() <= MAX_SIBLING_PACKAGES) {
+                packages.addAll(siblings);
+            }
+        }
+        return packages;
+    }
+
+    private List<PackageElement> filterPackages(Predicate<? super PackageElement> filter) {
+        return configuration.packages.stream()
+                .filter(p -> p != packageElement && filter.test(p))
+                .collect(Collectors.toList());
     }
 }

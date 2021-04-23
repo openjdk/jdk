@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import com.sun.jndi.ldap.Connection;
  * @see StartTlsRequest
  * @author Vincent Ryan
  */
-final public class StartTlsResponseImpl extends StartTlsResponse {
+public final class StartTlsResponseImpl extends StartTlsResponse {
 
     private static final boolean debug = false;
 
@@ -351,6 +351,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
                 System.out.println(
                         "StartTLS: Calling sslSocket.startHandshake");
             }
+            ldapConnection.setHandshakeCompletedListener(sslSocket);
             sslSocket.startHandshake();
             if (debug) {
                 System.out.println(

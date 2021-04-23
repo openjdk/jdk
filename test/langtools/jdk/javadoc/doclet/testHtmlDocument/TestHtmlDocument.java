@@ -74,7 +74,7 @@ public class TestHtmlDocument extends JavadocTester {
         HtmlTree head = new HtmlTree(TagName.HEAD);
         HtmlTree title = new HtmlTree(TagName.TITLE);
         // String content within the document
-        StringContent titleContent = new StringContent("Markup test");
+        TextBuilder titleContent = new TextBuilder("Markup test");
         title.add(titleContent);
         head.add(title);
         // Test META tag
@@ -101,16 +101,16 @@ public class TestHtmlDocument extends JavadocTester {
         Comment pMarker = new Comment("======== START OF PARAGRAPH ========");
         body.add(pMarker);
         HtmlTree p = new HtmlTree(TagName.P);
-        StringContent bodyContent = new StringContent(
+        TextBuilder bodyContent = new TextBuilder(
                 "This document is generated from sample source code and HTML " +
                 "files with examples of a wide variety of Java language constructs: packages, " +
                 "subclasses, subinterfaces, nested classes, nested interfaces," +
                 "inheriting from other packages, constructors, fields," +
                 "methods, and so forth. ");
         p.add(bodyContent);
-        StringContent anchorContent = new StringContent("Click Here");
+        TextBuilder anchorContent = new TextBuilder("Click Here");
         p.add(HtmlTree.A("testLink.html", anchorContent));
-        StringContent pContent = new StringContent(" to <test> out a link.");
+        TextBuilder pContent = new TextBuilder(" to <test> out a link.");
         p.add(pContent);
         body.add(p);
         HtmlTree p1 = new HtmlTree(TagName.P);
@@ -131,11 +131,11 @@ public class TestHtmlDocument extends JavadocTester {
         HtmlTree dlDisplay = new HtmlTree(TagName.DL);
         dlDisplay.add(new HtmlTree(TagName.DT));
         HtmlTree dd = new HtmlTree (TagName.DD);
-        StringContent ddContent = new StringContent("Test DD");
+        TextBuilder ddContent = new TextBuilder("Test DD");
         dd.add(ddContent);
         dlDisplay.add(dd);
         body.add(dlDisplay);
-        StringContent emptyString = new StringContent("");
+        TextBuilder emptyString = new TextBuilder("");
         body.add(emptyString);
         Comment emptyComment = new Comment("");
         body.add(emptyComment);

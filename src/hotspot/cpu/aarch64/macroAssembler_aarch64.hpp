@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 #include "asm/assembler.inline.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
@@ -527,6 +528,7 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
+
 public:
 
   // Generalized Test Bit And Branch, including a "far" variety which
@@ -967,7 +969,9 @@ public:
 
   void verify_sve_vector_length();
   void reinitialize_ptrue() {
-    sve_ptrue(ptrue, B);
+    if (UseSVE > 0) {
+      sve_ptrue(ptrue, B);
+    }
   }
   void verify_ptrue();
 
@@ -1037,6 +1041,8 @@ public:
 
   void atomic_xchg(Register prev, Register newv, Register addr);
   void atomic_xchgw(Register prev, Register newv, Register addr);
+  void atomic_xchgl(Register prev, Register newv, Register addr);
+  void atomic_xchglw(Register prev, Register newv, Register addr);
   void atomic_xchgal(Register prev, Register newv, Register addr);
   void atomic_xchgalw(Register prev, Register newv, Register addr);
 

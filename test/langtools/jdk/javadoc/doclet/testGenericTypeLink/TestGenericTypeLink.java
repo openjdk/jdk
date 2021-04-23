@@ -125,15 +125,15 @@ public class TestGenericTypeLink extends JavadocTester {
                 "-package", "pkg2");
         checkExit(Exit.ERROR);
         checkOutput("pkg2/B.html", true,
-                "<div class=\"block\"><code>java.util.Foo<String></code>\n"
-                + " Baz<Object>\n"
-                + " <code>#b(List<Integer>)</code></div>",
+                "<div class=\"block\"><code>java.util.Foo&lt;String&gt;</code>\n"
+                + " Baz&lt;Object&gt;\n"
+                + " <code>#b(List&lt;Integer&gt;)</code></div>",
 
                 "<dl class=\"notes\">\n"
                 + "<dt>See Also:</dt>\n"
-                + "<dd><code>java.util.List<Bar></code>, \n"
-                + "<code>Baz<Object, String></code>, \n"
-                + "<code>B#b(List<Baz>)</code></dd>\n</dl>");
+                + "<dd><code>java.util.List&lt;Bar&gt;</code>, \n"
+                + "<code>Baz&lt;Object, String&gt;</code>, \n"
+                + "<code>B#b(List&lt;Baz&gt;)</code></dd>\n</dl>");
     }
 }
 

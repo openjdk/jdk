@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "ci/ciMethodData.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -419,7 +419,6 @@ static void merge_ranges(SwitchRange* ranges, int& rp) {
 
 //-------------------------------do_tableswitch--------------------------------
 void Parse::do_tableswitch() {
-  Node* lookup = pop();
   // Get information about tableswitch
   int default_dest = iter().get_dest_table(0);
   int lo_index     = iter().get_int_table(1);
@@ -429,6 +428,7 @@ void Parse::do_tableswitch() {
   if (len < 1) {
     // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
+    pop(); // the effect of the instruction execution on the operand stack
     merge(default_dest);
     return;
   }
@@ -485,22 +485,24 @@ void Parse::do_tableswitch() {
   }
 
   // Safepoint in case if backward branch observed
-  if( makes_backward_branch && UseLoopSafepoints )
+  if (makes_backward_branch && UseLoopSafepoints) {
     add_safepoint();
+  }
 
+  Node* lookup = pop(); // lookup value
   jump_switch_ranges(lookup, &ranges[0], &ranges[rp]);
 }
 
 
 //------------------------------do_lookupswitch--------------------------------
 void Parse::do_lookupswitch() {
-  Node *lookup = pop();         // lookup value
   // Get information about lookupswitch
   int default_dest = iter().get_dest_table(0);
   int len          = iter().get_int_table(1);
 
   if (len < 1) {    // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
+    pop(); // the effect of the instruction execution on the operand stack
     merge(default_dest);
     return;
   }
@@ -536,7 +538,7 @@ void Parse::do_lookupswitch() {
     }
     prev = match_int+1;
   }
-  if (prev-1 != max_jint) {
+  if (prev != min_jint) {
     defaults += (float)max_jint - prev + 1;
   }
   float default_cnt = 1;
@@ -577,9 +579,11 @@ void Parse::do_lookupswitch() {
   }
 
   // Safepoint in case backward branch observed
-  if (makes_backward_branch && UseLoopSafepoints)
+  if (makes_backward_branch && UseLoopSafepoints) {
     add_safepoint();
+  }
 
+  Node *lookup = pop(); // lookup value
   jump_switch_ranges(lookup, &ranges[0], &ranges[rp]);
 }
 
@@ -859,10 +863,16 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 
   // Clean the 32-bit int into a real 64-bit offset.
   // Otherwise, the jint value 0 might turn into an offset of 0x0800000000.
-  const TypeInt* ikeytype = TypeInt::make(0, num_cases, Type::WidenMin);
   // Make I2L conversion control dependent to prevent it from
   // floating above the range check during loop optimizations.
-  key_val = C->conv_I2X_index(&_gvn, key_val, ikeytype, control());
+  // Do not use a narrow int type here to prevent the data path from dying
+  // while the control path is not removed. This can happen if the type of key_val
+  // is later known to be out of bounds of [0, num_cases] and therefore a narrow cast
+  // would be replaced by TOP while C2 is not able to fold the corresponding range checks.
+  // Set _carry_dependency for the cast to avoid being removed by IGVN.
+#ifdef _LP64
+  key_val = C->constrained_convI2L(&_gvn, key_val, TypeInt::INT, control(), true /* carry_dependency */);
+#endif
 
   // Shift the value by wordsize so we have an index into the table, rather
   // than a switch value
@@ -975,7 +985,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 #ifndef PRODUCT
   if (switch_depth == 0) {
     _max_switch_depth = 0;
-    _est_switch_depth = log2_intptr((hi-lo+1)-1)+1;
+    _est_switch_depth = log2i_graceful((hi - lo + 1) - 1) + 1;
   }
 #endif
 
@@ -2582,19 +2592,18 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_i2b:
     // Sign extend
     a = pop();
-    a = _gvn.transform( new LShiftINode(a,_gvn.intcon(24)) );
-    a = _gvn.transform( new RShiftINode(a,_gvn.intcon(24)) );
-    push( a );
+    a = Compile::narrow_value(T_BYTE, a, NULL, &_gvn, true);
+    push(a);
     break;
   case Bytecodes::_i2s:
     a = pop();
-    a = _gvn.transform( new LShiftINode(a,_gvn.intcon(16)) );
-    a = _gvn.transform( new RShiftINode(a,_gvn.intcon(16)) );
-    push( a );
+    a = Compile::narrow_value(T_SHORT, a, NULL, &_gvn, true);
+    push(a);
     break;
   case Bytecodes::_i2c:
     a = pop();
-    push( _gvn.transform( new AndINode(a,_gvn.intcon(0xFFFF)) ) );
+    a = Compile::narrow_value(T_CHAR, a, NULL, &_gvn, true);
+    push(a);
     break;
 
   case Bytecodes::_i2f:

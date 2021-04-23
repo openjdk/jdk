@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,6 +427,9 @@ public class TreeInfo {
             JCTry t = (JCTry) tree;
             return endPos((t.finalizer != null) ? t.finalizer
                           : (t.catchers.nonEmpty() ? t.catchers.last().body : t.body));
+        } else if (tree.hasTag(SWITCH) &&
+                   ((JCSwitch) tree).endpos != Position.NOPOS) {
+            return ((JCSwitch) tree).endpos;
         } else if (tree.hasTag(SWITCH_EXPRESSION) &&
                    ((JCSwitchExpression) tree).endpos != Position.NOPOS) {
             return ((JCSwitchExpression) tree).endpos;
@@ -1029,7 +1032,7 @@ public class TreeInfo {
      */
     public static long firstFlag(long flags) {
         long flag = 1;
-        while ((flag & flags & ExtendedStandardFlags) == 0)
+        while ((flag & flags) == 0)
             flag = flag << 1;
         return flag;
     }
@@ -1324,4 +1327,9 @@ public class TreeInfo {
         return tree.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE);
     }
 
+    public static boolean isErrorEnumSwitch(JCExpression selector, List<JCCase> cases) {
+        return selector.type.tsym.kind == Kinds.Kind.ERR &&
+               cases.stream().flatMap(c -> c.pats.stream())
+                             .allMatch(p -> p.hasTag(IDENT));
+    }
 }

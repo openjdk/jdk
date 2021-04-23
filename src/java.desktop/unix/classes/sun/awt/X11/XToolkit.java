@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,8 +351,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                         awtUnlock();
                         try {
                             ((X11GraphicsEnvironment)GraphicsEnvironment.
-                             getLocalGraphicsEnvironment()).
-                                displayChanged();
+                             getLocalGraphicsEnvironment()).rebuildDevices();
                         } finally {
                             awtLock();
                         }
@@ -2039,40 +2038,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                       (numButtons > 2 && (me.getModifiersEx() & InputEvent.BUTTON3_DOWN_MASK) != 0));
         }
         return false;
-    }
-
-    static long reset_time_utc;
-    static final long WRAP_TIME_MILLIS = 0x00000000FFFFFFFFL;
-
-    /*
-     * This function converts between the X server time (number of milliseconds
-     * since the last server reset) and the UTC time for the 'when' field of an
-     * InputEvent (or another event type with a timestamp).
-     */
-    static long nowMillisUTC_offset(long server_offset) {
-        // ported from awt_util.c
-        /*
-         * Because Time is of type 'unsigned long', it is possible that Time will
-         * never wrap when using 64-bit Xlib. However, if a 64-bit client
-         * connects to a 32-bit server, I suspect the values will still wrap. So
-         * we should not attempt to remove the wrap checking even if _LP64 is
-         * true.
-         */
-
-        long current_time_utc = System.currentTimeMillis();
-        if (log.isLoggable(PlatformLogger.Level.FINER)) {
-            log.finer("reset_time=" + reset_time_utc + ", current_time=" + current_time_utc
-                      + ", server_offset=" + server_offset + ", wrap_time=" + WRAP_TIME_MILLIS);
-        }
-
-        if ((current_time_utc - reset_time_utc) > WRAP_TIME_MILLIS) {
-            reset_time_utc = System.currentTimeMillis() - getCurrentServerTime();
-        }
-
-        if (log.isLoggable(PlatformLogger.Level.FINER)) {
-            log.finer("result = " + (reset_time_utc + server_offset));
-        }
-        return reset_time_utc + server_offset;
     }
 
     /**

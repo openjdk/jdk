@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,8 @@ void PhaseChaitin::insert_proj( Block *b, uint i, Node *spill, uint maxlrg ) {
   // Do not insert between a call and his Catch
   if( b->get_node(i)->is_Catch() ) {
     // Put the instruction at the top of the fall-thru block.
+    // This assumes that the instruction is not used in the other exception
+    // blocks. Global code motion is responsible for maintaining this invariant.
     // Find the fall-thru projection
     while( 1 ) {
       const CatchProjNode *cp = b->get_node(++i)->as_CatchProj();
@@ -183,7 +185,9 @@ uint PhaseChaitin::split_DEF( Node *def, Block *b, int loc, uint maxlrg, Node **
 //------------------------------split_USE--------------------------------------
 // Splits at uses can involve redeffing the LRG, so no CISC Spilling there.
 // Debug uses want to know if def is already stack enabled.
-uint PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint maxlrg, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx ) {
+// Return value
+//   -1 : bailout, 0: no spillcopy created, 1: create a new spillcopy
+int PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint maxlrg, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx ) {
 #ifdef ASSERT
   // Increment the counter for this lrg
   splits.at_put(slidx, splits.at(slidx)+1);
@@ -211,6 +215,7 @@ uint PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def,
       if( def_down ) {
         // DEF is DOWN, so connect USE directly to the DEF
         use->set_req(useidx, def);
+        return 0;
       } else {
         // Block and index where the use occurs.
         Block *b = _cfg.get_block_for_node(use);
@@ -223,15 +228,15 @@ uint PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def,
         // did we fail to split?
         if (!spill) {
           // Bail
-          return 0;
+          return -1;
         }
         // insert into basic block
-        insert_proj( b, bindex, spill, maxlrg++ );
+        insert_proj( b, bindex, spill, maxlrg );
         // Use the new split
         use->set_req(useidx,spill);
+        return 1;
       }
       // No further split handling needed for this use
-      return maxlrg;
     }  // End special splitting for debug info live range
   }  // If debug info
 
@@ -253,7 +258,7 @@ uint PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def,
         use->dump();
       }
 #endif
-      return maxlrg;
+      return 0;
     }
   }
 
@@ -272,15 +277,14 @@ uint PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def,
   }
 
   Node *spill = get_spillcopy_wide(spill_type, def, use, useidx );
-  if( !spill ) return 0;        // Bailed out
+  if( !spill ) return -1;        // Bailed out
   // Insert SpillCopy before the USE, which uses the reaching DEF as
   // its input, and defs a new live range, which is used by this node.
-  insert_proj( b, bindex, spill, maxlrg++ );
+  insert_proj( b, bindex, spill, maxlrg );
   // Use the spill/clone
   use->set_req(useidx,spill);
 
-  // return updated live range count
-  return maxlrg;
+  return 1;
 }
 
 //------------------------------clone_node----------------------------
@@ -956,12 +960,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                 // This def has been rematerialized a couple of times without
                 // progress. It doesn't care if it lives UP or DOWN, so
                 // spill it down now.
-                maxlrg = split_USE(MachSpillCopyNode::BasePointerToMem, def,b,n,inpidx,maxlrg,false,false,splits,slidx);
+                int delta = split_USE(MachSpillCopyNode::BasePointerToMem, def,b,n,inpidx,maxlrg,false,false,splits,slidx);
                 // If it wasn't split bail
-                if (!maxlrg) {
+                if (delta < 0) {
                   return 0;
                 }
-                insidx++;  // Reset iterator to skip USE side split
+                maxlrg += delta;
+                insidx += delta;  // Reset iterator to skip USE side split
               } else {
                 // Just hook the def edge
                 n->set_req(inpidx, def);
@@ -1036,24 +1041,26 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                  (!is_vect && umask.is_misaligned_pair()))) {
               // These need a Split regardless of overlap or pressure
               // SPLIT - NO DEF - NO CISC SPILL
-              maxlrg = split_USE(MachSpillCopyNode::Bound, def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
+              int delta = split_USE(MachSpillCopyNode::Bound, def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
               // If it wasn't split bail
-              if (!maxlrg) {
+              if (delta < 0) {
                 return 0;
               }
-              insidx++;  // Reset iterator to skip USE side split
+              maxlrg += delta;
+              insidx += delta;  // Reset iterator to skip USE side split
               continue;
             }
 
             if (UseFPUForSpilling && n->is_MachCall() && !uup && !dup ) {
               // The use at the call can force the def down so insert
               // a split before the use to allow the def more freedom.
-              maxlrg = split_USE(MachSpillCopyNode::CallUse, def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
+              int delta = split_USE(MachSpillCopyNode::CallUse, def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
               // If it wasn't split bail
-              if (!maxlrg) {
+              if (delta < 0) {
                 return 0;
               }
-              insidx++;  // Reset iterator to skip USE side split
+              maxlrg += delta;
+              insidx += delta;  // Reset iterator to skip USE side split
               continue;
             }
 
@@ -1084,12 +1091,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               else {  // Both are either up or down, and there is no overlap
                 if( dup ) {  // If UP, reg->reg copy
                   // COPY ACROSS HERE - NO DEF - NO CISC SPILL
-                  maxlrg = split_USE(MachSpillCopyNode::RegToReg, def,b,n,inpidx,maxlrg,false,false, splits,slidx);
+                  int delta = split_USE(MachSpillCopyNode::RegToReg, def,b,n,inpidx,maxlrg,false,false, splits,slidx);
                   // If it wasn't split bail
-                  if (!maxlrg) {
+                  if (delta < 0) {
                     return 0;
                   }
-                  insidx++;  // Reset iterator to skip USE side split
+                  maxlrg += delta;
+                  insidx += delta;  // Reset iterator to skip USE side split
                 }
                 else {       // DOWN, mem->mem copy
                   // COPY UP & DOWN HERE - NO DEF - NO CISC SPILL
@@ -1098,13 +1106,15 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                   const RegMask* tmp_rm = Matcher::idealreg2regmask[def_ideal];
                   Node *spill = new MachSpillCopyNode(MachSpillCopyNode::MemToReg, def, dmask, *tmp_rm);
                   insert_proj( b, insidx, spill, maxlrg );
+                  maxlrg++; insidx++;
                   // Then Split-DOWN as if previous Split was DEF
-                  maxlrg = split_USE(MachSpillCopyNode::RegToMem, spill,b,n,inpidx,maxlrg,false,false, splits,slidx);
+                  int delta = split_USE(MachSpillCopyNode::RegToMem, spill,b,n,inpidx,maxlrg,false,false, splits,slidx);
                   // If it wasn't split bail
-                  if (!maxlrg) {
+                  if (delta < 0) {
                     return 0;
                   }
-                  insidx += 2;  // Reset iterator to skip USE side splits
+                  maxlrg += delta;
+                  insidx += delta;  // Reset iterator to skip USE side splits
                 }
               }  // End else no overlap
             }  // End if dup == uup
@@ -1124,12 +1134,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                   }
                 }
                 // COPY DOWN HERE - NO DEF - NO CISC SPILL
-                maxlrg = split_USE(MachSpillCopyNode::RegToMem, def,b,n,inpidx,maxlrg,false,false, splits,slidx);
+                int delta = split_USE(MachSpillCopyNode::RegToMem, def,b,n,inpidx,maxlrg,false,false, splits,slidx);
                 // If it wasn't split bail
-                if (!maxlrg) {
+                if (delta < 0) {
                   return 0;
                 }
-                insidx++;  // Reset iterator to skip USE side split
+                maxlrg += delta;
+                insidx += delta;  // Reset iterator to skip USE side split
                 // Check for debug-info split.  Capture it for later
                 // debug splits of the same value
                 if (jvms && jvms->debug_start() <= inpidx && inpidx < oopoff)
@@ -1139,17 +1150,18 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               else {       // DOWN, Split-UP and check register pressure
                 if( is_high_pressure( b, &lrgs(useidx), insidx ) ) {
                   // COPY UP HERE - NO DEF - CISC SPILL
-                  maxlrg = split_USE(MachSpillCopyNode::MemToReg, def,b,n,inpidx,maxlrg,true,true, splits,slidx);
+                  int delta = split_USE(MachSpillCopyNode::MemToReg, def,b,n,inpidx,maxlrg,true,true, splits,slidx);
                   // If it wasn't split bail
-                  if (!maxlrg) {
+                  if (delta < 0) {
                     return 0;
                   }
-                  insidx++;  // Reset iterator to skip USE side split
+                  maxlrg += delta;
+                  insidx += delta;  // Reset iterator to skip USE side split
                 } else {                          // LRP
                   // COPY UP HERE - WITH DEF - NO CISC SPILL
-                  maxlrg = split_USE(MachSpillCopyNode::MemToReg, def,b,n,inpidx,maxlrg,true,false, splits,slidx);
+                  int delta = split_USE(MachSpillCopyNode::MemToReg, def,b,n,inpidx,maxlrg,true,false, splits,slidx);
                   // If it wasn't split bail
-                  if (!maxlrg) {
+                  if (delta < 0) {
                     return 0;
                   }
                   // Flag this lift-up in a low-pressure block as
@@ -1160,7 +1172,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                   // Since this is a new DEF, update Reachblock & UP
                   Reachblock[slidx] = n->in(inpidx);
                   UPblock[slidx] = true;
-                  insidx++;  // Reset iterator to skip USE side split
+                  maxlrg += delta;
+                  insidx += delta;  // Reset iterator to skip USE side split
                 }
               }  // End else DOWN
             }  // End dup != uup
@@ -1267,15 +1280,17 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       IndexSet *liveout = _live->live(b);
       if( !liveout->member(defidx) ) {
 #ifdef ASSERT
-        // The index defidx is not live.  Check the liveout array to ensure that
-        // it contains no members which compress to defidx.  Finding such an
-        // instance may be a case to add liveout adjustment in compress_uf_map().
-        // See 5063219.
-        if (!liveout->is_empty()) {
-          uint member;
-          IndexSetIterator isi(liveout);
-          while ((member = isi.next()) != 0) {
-            assert(defidx != _lrg_map.find_const(member), "Live out member has not been compressed");
+        if (VerifyRegisterAllocator) {
+          // The index defidx is not live.  Check the liveout array to ensure that
+          // it contains no members which compress to defidx.  Finding such an
+          // instance may be a case to add liveout adjustment in compress_uf_map().
+          // See 5063219.
+          if (!liveout->is_empty()) {
+            uint member;
+            IndexSetIterator isi(liveout);
+            while ((member = isi.next()) != 0) {
+              assert(defidx != _lrg_map.find_const(member), "Live out member has not been compressed");
+            }
           }
         }
 #endif
@@ -1358,11 +1373,12 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       // Grab the UP/DOWN sense for the input
       u1 = UP[pidx][slidx];
       if( u1 != (phi_up != 0)) {
-        maxlrg = split_USE(MachSpillCopyNode::PhiLocationDifferToInputLocation, def, b, phi, i, maxlrg, !u1, false, splits,slidx);
+        int delta = split_USE(MachSpillCopyNode::PhiLocationDifferToInputLocation, def, b, phi, i, maxlrg, !u1, false, splits,slidx);
         // If it wasn't split bail
-        if (!maxlrg) {
+        if (delta < 0) {
           return 0;
         }
+        maxlrg += delta;
       }
     }  // End for all inputs to the Phi
   }  // End for all Phi Nodes

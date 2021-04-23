@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_SAFEPOINTMECHANISM_HPP
 
 #include "runtime/globals.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
@@ -47,7 +48,6 @@ class SafepointMechanism : public AllStatic {
 
   static inline void disarm_local_poll(JavaThread* thread);
 
-  static inline bool local_poll(Thread* thread);
   static inline bool global_poll();
 
   static void process(JavaThread *thread);
@@ -79,7 +79,7 @@ public:
   };
 
   // Call this method to see if this thread should block for a safepoint or process handshake.
-  static inline bool should_process(Thread* thread);
+  static inline bool should_process(JavaThread* thread);
 
   // Processes a pending requested operation.
   static inline void process_if_requested(JavaThread* thread);

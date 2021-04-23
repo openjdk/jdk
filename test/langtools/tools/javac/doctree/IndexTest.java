@@ -165,8 +165,14 @@ DocComment[DOC_COMMENT, pos:1
     Index[INDEX, pos:5
       term:
         Text[TEXT, pos:13, {@xyz}]
-      description: 1
-        Text[TEXT, pos:20, "{@see_xyz}"_def]
+      description: 3
+        Text[TEXT, pos:20, "]
+        UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:21
+          tag:see
+          content: 1
+            Text[TEXT, pos:27, xyz]
+        ]
+        Text[TEXT, pos:31, "_def]
     ]
   body: empty
   block tags: empty

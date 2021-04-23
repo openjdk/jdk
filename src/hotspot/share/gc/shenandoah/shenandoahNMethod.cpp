@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -150,30 +149,6 @@ ShenandoahNMethod* ShenandoahNMethod::for_nmethod(nmethod* nm) {
   return new ShenandoahNMethod(nm, oops, non_immediate_oops);
 }
 
-template <bool HAS_FWD>
-class ShenandoahKeepNMethodMetadataAliveClosure : public OopClosure {
-private:
-  ShenandoahBarrierSet* const _bs;
-public:
-  ShenandoahKeepNMethodMetadataAliveClosure() :
-    _bs(static_cast<ShenandoahBarrierSet*>(BarrierSet::barrier_set())) {
-  }
-
-  virtual void do_oop(oop* p) {
-    oop obj = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(obj)) {
-      if (HAS_FWD) {
-        obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      }
-      _bs->enqueue(obj);
-    }
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
 void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
   ShenandoahNMethod* data = gc_data(nm);
   assert(data != NULL, "Sanity");
@@ -181,13 +156,8 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (heap->is_concurrent_mark_in_progress()) {
-    if (heap->has_forwarded_objects()) {
-      ShenandoahKeepNMethodMetadataAliveClosure<true> cl;
-      data->oops_do(&cl);
-    } else {
-      ShenandoahKeepNMethodMetadataAliveClosure<false> cl;
-      data->oops_do(&cl);
-    }
+    ShenandoahKeepAliveClosure cl;
+    data->oops_do(&cl);
   } else if (heap->is_concurrent_weak_root_in_progress() ||
              heap->is_concurrent_strong_root_in_progress()) {
     ShenandoahEvacOOMScope evac_scope;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,16 @@ template<bool cond, typename T = void>
 using EnableIf = std::enable_if<cond, T>;
 
 // ENABLE_IF(Condition...)
+// ENABLE_IF_SDEFN(Condition...)
 //
-// This macro can be used in a function template parameter list to control
-// the presence of that overload via SFINAE.
+// The ENABLE_IF macro can be used in a function template parameter list to
+// control the presence of that overload via SFINAE.
+//
+// When the declaration and definition of a function template are separate,
+// only the declaration can use ENABLE_IF in the template parameter list.
+// The definition should instead use ENABLE_IF_SDEFN with an _equivalent_
+// (C++14 14.4 and 14.5.6.1) Condition for the corresponding template
+// parameter.  ("SDEFN" is short for "SEPARATE_DEFINITION".)
 //
 // Condition must be a constant expression whose value is convertible to
 // bool.  The Condition is captured as a variadic macro parameter so that it
@@ -85,6 +92,14 @@ using EnableIf = std::enable_if<cond, T>;
 // largely hidden using a macro, resulting in more readable uses of SFINAE
 // for function templates.
 //
+// One of those details is that a function template definition that is
+// separate from its declaration cannot have a default value.  Thus,
+// ENABLE_IF can't be used in such a definition.  But the type expression in
+// the separate definition must be equivalent (C++14 14.4 and 14.5.6.1) to
+// that in the declation.  The ENABLE_IF_SDEFN macro provides the common
+// code for the separate definition that must match the corresponding
+// declaration code at the token level.
+//
 // The Condition must be wrapped in parenthesis in the expansion. Otherwise,
 // a '>' operator in the expression may be misinterpreted as the end of the
 // template parameter list.  But rather than simply wrapping in parenthesis,
@@ -95,14 +110,34 @@ using EnableIf = std::enable_if<cond, T>;
 // parameter.  Such a Condition will be evaluated at template definition
 // time, as part of template type checking.  If Condition is false, that
 // will result in a compile-time error rather than the desired SFINAE
-// exclusion.  A solution is to add a preceding dummy type template
-// parameter defaulting to 'int' and use that as the result type for
-// enable_if_t, thereby making it dependent.  This situation is sufficiently
-// rare that no additional macro support is provided for it; just use the
-// underlying enable_if_t directly.  (There is an automatic macro-based
-// solution, but it involves the __COUNTER__ extension.)
+// exclusion.  This situation is sufficiently rare that no additional
+// macro support is provided for it.  (One solution is to add a new
+// type parameter defaulted to the type being checked in Condition, and
+// use that new parameter instead in Condition.  There is an automatic
+// macro-based solution, but it involves the __COUNTER__ extension.)
+//
+// Some references suggest a different approach to using a template
+// parameter for SFINAE. An anonymous type parameter with a default type
+// that uses std::enable_if can also be used in some cases, i.e.
+//
+//   typename = std::enable_if_t<CONDITION>
+//
+// However, this doesn't work when there are overloads that need to be
+// selected amongst via SFINAE. Two signatures that differ only in a
+// template parameter default are not distinct overloads, they are multiple
+// definitions of the same function.
+//
+// Some versions of gcc permit ENABLE_IF to be used in some separate
+// definitions.  Other toolchains reject such usage.
+//
+// The expansion of ENABLE_IF doesn't use ENABLE_IF_SDEFN (or both use a
+// common helper) because of issues with the Visual Studio preprocessor's
+// handling of variadic macros.
 
 #define ENABLE_IF(...) \
   std::enable_if_t<bool(__VA_ARGS__), int> = 0
+
+#define ENABLE_IF_SDEFN(...) \
+  std::enable_if_t<bool(__VA_ARGS__), int>
 
 #endif // SHARE_METAPROGRAMMING_ENABLEIF_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6492694 8026567 8048351 8162363 8183511 8169819 8074407 8196202 8202626
+ * @bug      6492694 8026567 8048351 8162363 8183511 8169819 8074407 8196202 8202626 8261976
  * @summary  Test package deprecation.
  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -73,7 +73,7 @@ public class TestPackageDeprecation extends JavadocTester {
                 "pkg1");
         checkOutput("class-use/C2.ModalExclusionType.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="#unnamed.package">&lt;Unnamed&gt;</a></div>""");
+                    <div class="col-first even-row-color"><a href="#unnamed-package">Unnamed Package</a></div>""");
 
         checkFiles(false,
                 "pkg1/package-summary.html",

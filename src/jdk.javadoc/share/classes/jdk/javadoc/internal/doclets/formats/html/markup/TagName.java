@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- * @see <a href=""https://html.spec.whatwg.org/multipage/syntax.html#syntax-tag-name>WhatWG: Tag Name</a>
+ * @see <a href="https://html.spec.whatwg.org/multipage/syntax.html#syntax-tag-name">WhatWG: Tag Name</a>
  * @see <a href="https://www.w3.org/TR/html51/syntax.html#tag-name">HTML 5.1: Tag Name</a>
  */
 public enum TagName {
@@ -83,6 +83,7 @@ public enum TagName {
     SPAN,
     STRONG,
     SUB,
+    SUP,
     TABLE,
     TBODY,
     THEAD,

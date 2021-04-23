@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_HPP
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
 
@@ -78,7 +77,6 @@ class JfrTraceIdLoadBarrier : AllStatic {
   static traceid load(const ClassLoaderData* cld);
   static traceid load(const Klass* klass);
   static traceid load(const Klass* klass, const Method* method);
-  static traceid load(jclass jc);
   static traceid load(const Method* method);
   static traceid load(const ModuleEntry* module);
   static traceid load(const PackageEntry* package);

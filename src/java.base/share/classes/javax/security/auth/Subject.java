@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -949,6 +949,9 @@ public final class Subject implements java.io.Serializable {
 
     /**
      * Writes this object out to a stream (i.e., serializes it).
+     *
+     * @param  oos the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream oos)
@@ -960,6 +963,10 @@ public final class Subject implements java.io.Serializable {
 
     /**
      * Reads this object from a stream (i.e., deserializes it)
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @SuppressWarnings("unchecked")
     @java.io.Serial
@@ -1408,6 +1415,9 @@ public final class Subject implements java.io.Serializable {
          *      the caller has permission to access each credential
          *      in the set.  If the security check passes,
          *      the set is serialized.
+         *
+         * @param  oos the {@code ObjectOutputStream} to which data is written
+         * @throws IOException if an I/O error occurs
          */
         @java.io.Serial
         private void writeObject(java.io.ObjectOutputStream oos)
@@ -1427,6 +1437,13 @@ public final class Subject implements java.io.Serializable {
             oos.writeFields();
         }
 
+        /**
+         * Restores the state of this object from the stream.
+         *
+         * @param  ois the {@code ObjectInputStream} from which data is read
+         * @throws IOException if an I/O error occurs
+         * @throws ClassNotFoundException if a serialized class cannot be loaded
+         */
         @SuppressWarnings("unchecked")
         @java.io.Serial
         private void readObject(ObjectInputStream ois)

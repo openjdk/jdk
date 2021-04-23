@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,9 @@ abstract class P11Key implements Key, Length {
 
     private static final long serialVersionUID = -2575874101938349339L;
 
-    private final static String PUBLIC = "public";
-    private final static String PRIVATE = "private";
-    private final static String SECRET = "secret";
+    private static final String PUBLIC = "public";
+    private static final String PRIVATE = "private";
+    private static final String SECRET = "secret";
 
     // type of key, one of (PUBLIC, PRIVATE, SECRET)
     final String type;
@@ -228,7 +228,7 @@ abstract class P11Key implements Key, Length {
             throw new NotSerializableException
                 ("Cannot serialize sensitive and unextractable keys");
         }
-        return new KeyRep(type, getAlgorithm(), format, getEncoded());
+        return new KeyRep(type, getAlgorithm(), format, getEncodedInternal());
     }
 
     public String toString() {
@@ -280,7 +280,7 @@ abstract class P11Key implements Key, Length {
         }
     }
 
-    private final static CK_ATTRIBUTE[] A0 = new CK_ATTRIBUTE[0];
+    private static final CK_ATTRIBUTE[] A0 = new CK_ATTRIBUTE[0];
 
     private static CK_ATTRIBUTE[] getAttributes(Session session, long keyID,
             CK_ATTRIBUTE[] knownAttributes, CK_ATTRIBUTE[] desiredAttributes) {

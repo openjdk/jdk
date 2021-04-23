@@ -142,7 +142,7 @@ public class RequiredModelMBean
     private boolean registered = false;
     private transient MBeanServer server = null;
 
-    private final static JavaSecurityAccess javaSecurityAccess = SharedSecrets.getJavaSecurityAccess();
+    private static final JavaSecurityAccess javaSecurityAccess = SharedSecrets.getJavaSecurityAccess();
     final private AccessControlContext acc = AccessController.getContext();
 
     /*************************************/
@@ -1201,7 +1201,7 @@ public class RequiredModelMBean
                       "RequiredModelMBean while trying to " +
                       "invoke operation " + opName);
         } catch (InvocationTargetException ite) {
-            Throwable mmbTargEx = ite.getTargetException();
+            Throwable mmbTargEx = ite.getCause();
             if (mmbTargEx instanceof RuntimeException) {
                 throw new MBeanException ((RuntimeException)mmbTargEx,
                       "RuntimeException thrown in RequiredModelMBean "+

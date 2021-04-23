@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compiledICHolder.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -703,8 +705,6 @@ address CompiledMethod::continuation_for_implicit_exception(address pc, bool for
 #ifdef ASSERT
   if (cont_offset == 0) {
     Thread* thread = Thread::current();
-    ResetNoHandleMark rnm; // Might be called from LEAF/QUICK ENTRY
-    HandleMark hm(thread);
     ResourceMark rm(thread);
     CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb != NULL && cb == this, "");

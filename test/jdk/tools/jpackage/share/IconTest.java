@@ -220,7 +220,7 @@ public class IconTest {
             case DefaultIcon:
                 lookupString = String.format(
                         "Using default package resource %s [icon] (add %s%s to the resource-dir to customize)",
-                        LauncherIconVerifier.getDefaultIcon().getFileName(),
+                        "JavaApp" + TKit.ICON_SUFFIX,
                         launcherName, TKit.ICON_SUFFIX);
                 break;
 

@@ -240,9 +240,8 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
   return res;
 }
 
-static Node* find_or_make_CastII(PhaseIterGVN* igvn, Node* parent, Node* control,
-                                 const TypeInt* type) {
-  Node* n = new CastIINode(parent, type);
+static Node* find_or_make_CastII(PhaseIterGVN* igvn, Node* parent, Node* control, const TypeInt* type, bool carry_dependency) {
+  Node* n = new CastIINode(parent, type, carry_dependency);
   n->set_req(0, control);
   Node* existing = igvn->hash_find_insert(n);
   if (existing != NULL) {
@@ -275,8 +274,8 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* x = z->in(1);
     Node* y = z->in(2);
 
-    Node* cx = find_or_make_CastII(igvn, x, in(0), rx->is_int());
-    Node* cy = find_or_make_CastII(igvn, y, in(0), ry->is_int());
+    Node* cx = find_or_make_CastII(igvn, x, in(0), rx->is_int(), _carry_dependency);
+    Node* cy = find_or_make_CastII(igvn, y, in(0), ry->is_int(), _carry_dependency);
     switch (op) {
       case Op_AddI:  return new AddINode(cx, cy);
       case Op_SubI:  return new SubINode(cx, cy);
