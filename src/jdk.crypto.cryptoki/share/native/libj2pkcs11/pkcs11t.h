@@ -102,9 +102,14 @@ typedef CK_ULONG CK_NOTIFICATION;
 #define CKN_SURRENDER           0UL
 #define CKN_OTP_CHANGED         1UL
 
+typedef CK_ULONG CK_PROFILE_ID;
+
 typedef CK_ULONG          CK_SLOT_ID;
 
 typedef CK_SLOT_ID CK_PTR CK_SLOT_ID_PTR;
+#define NETSCAPE_SLOT_ID 1
+#define PRIVATE_KEY_SLOT_ID 2
+#define FIPS_SLOT_ID 3
 
 
 /* CK_SLOT_INFO provides information about a slot */
