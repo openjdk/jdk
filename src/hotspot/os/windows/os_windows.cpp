@@ -39,7 +39,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_share_windows.hpp"
 #include "os_windows.inline.hpp"
@@ -519,16 +518,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 static unsigned __stdcall thread_native_entry(Thread* thread) {
 
   thread->record_stack_base_and_size();
-
-  // Try to randomize the cache line index of hot stack frames.
-  // This helps when threads of the same stack traces evict each other's
-  // cache lines. The threads can be either from the same JVM instance, or
-  // from different JVM instances. The benefit is especially true for
-  // processors with hyperthreading technology.
-  static int counter = 0;
-  int pid = os::current_process_id();
-  _alloca(((pid ^ counter++) & 7) * 128);
-
   thread->initialize_thread_current();
 
   OSThread* osthr = thread->osthread();
@@ -1198,6 +1187,16 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
   win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
+}
+
+const char* os::dll_file_extension() { return ".dll"; }
+
+void  os::dll_unload(void *lib) {
+  ::FreeLibrary((HMODULE)lib);
+}
+
+void* os::dll_lookup(void *lib, const char *name) {
+  return (void*)::GetProcAddress((HMODULE)lib, name);
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
@@ -2207,28 +2206,7 @@ static int check_pending_signals() {
         return i;
       }
     }
-    JavaThread *thread = JavaThread::current();
-
-    ThreadBlockInVM tbivm(thread);
-
-    bool threadIsSuspended;
-    do {
-      thread->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-      sig_sem->wait();
-
-      // were we externally suspended while we were waiting?
-      threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
-      if (threadIsSuspended) {
-        // The semaphore has been incremented, but while we were waiting
-        // another thread suspended us. We don't want to continue running
-        // while suspended because that would surprise the thread that
-        // suspended us.
-        sig_sem->signal();
-
-        thread->java_suspend_self();
-      }
-    } while (threadIsSuspended);
+    sig_sem->wait_with_safepoint_check(JavaThread::current());
   }
   ShouldNotReachHere();
   return 0; // Satisfy compiler
@@ -4653,6 +4631,18 @@ FILE* os::open(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
 }
 
+size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  return ::write(fd, buf, nBytes);
+}
+
+int os::close(int fd) {
+  return ::close(fd);
+}
+
+void os::exit(int num) {
+  win32::exit_process_or_thread(win32::EPT_PROCESS, num);
+}
+
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
   errno_t err;
@@ -5475,15 +5465,9 @@ void Parker::park(bool isAbsolute, jlong time) {
   } else {
     ThreadBlockInVM tbivm(thread);
     OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-    thread->set_suspend_equivalent();
 
     WaitForSingleObject(_ParkHandle, time);
     ResetEvent(_ParkHandle);
-
-    // If externally suspended while waiting, re-suspend
-    if (thread->handle_special_suspend_equivalent_condition()) {
-      thread->java_suspend_self();
-    }
   }
 }
 

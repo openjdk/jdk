@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/filemap.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciSymbol.hpp"
-#include "classfile/compactHashtable.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
@@ -58,7 +58,6 @@
 #include "memory/referenceType.hpp"
 #include "memory/universe.hpp"
 #include "memory/virtualspace.hpp"
-#include "memory/filemap.hpp"
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
@@ -1878,6 +1877,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(VectorInsertNode, VectorNode)                           \
   declare_c2_type(VectorUnboxNode, VectorNode)                            \
   declare_c2_type(VectorReinterpretNode, VectorNode)                      \
+  declare_c2_type(VectorMaskCastNode, VectorNode)                         \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
   declare_c2_type(VectorTestNode, Node)                                   \
@@ -2144,8 +2144,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* Thread::SuspendFlags enum */                                         \
   /*****************************/                                         \
                                                                           \
-  declare_constant(Thread::_external_suspend)                             \
-  declare_constant(Thread::_ext_suspended)                                \
   declare_constant(Thread::_has_async_exception)                          \
                                                                           \
   /*******************/                                                   \

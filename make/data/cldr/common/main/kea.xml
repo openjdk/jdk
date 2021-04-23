@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -2883,7 +2883,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="XOF">
 				<displayName>Franku CFA (BCEAO)</displayName>
 				<displayName count="other">Franku CFA (BCEAO)</displayName>
-				<symbol>CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<symbol>CFPF</symbol>
@@ -3068,7 +3068,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kilati</displayName>
 				<unitPattern count="other">{0} kilati</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>miligrama pur desilitru</displayName>
 				<unitPattern count="other">{0} miligrama pur desilitru</unitPattern>
 			</unit>
@@ -3783,7 +3783,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kt</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dl</displayName>
 				<unitPattern count="other">{0} mg/dl</unitPattern>
 			</unit>
@@ -3989,8 +3989,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µm</displayName>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<displayName>μm</displayName>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nm</displayName>

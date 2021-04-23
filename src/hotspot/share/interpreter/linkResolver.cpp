@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/archiveUtils.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/resolutionErrors.hpp"
@@ -40,7 +41,6 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/archiveUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"

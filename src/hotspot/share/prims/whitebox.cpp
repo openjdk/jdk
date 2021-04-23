@@ -24,6 +24,10 @@
 
 #include "precompiled.hpp"
 #include <new>
+#include "cds/cdsoffsets.hpp"
+#include "cds/filemap.hpp"
+#include "cds/heapShared.inline.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
@@ -43,12 +47,9 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
-#include "memory/filemap.hpp"
-#include "memory/heapShared.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspace/testHelpers.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -92,9 +93,6 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#if INCLUDE_CDS
-#include "prims/cdsoffsets.hpp"
-#endif // INCLUDE_CDS
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"

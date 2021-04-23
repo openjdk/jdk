@@ -1170,7 +1170,7 @@ void nmethod::inc_decompile_count() {
 
 bool nmethod::try_transition(int new_state_int) {
   signed char new_state = new_state_int;
-#ifdef DEBUG
+#ifdef ASSERT
   if (new_state != unloaded) {
     assert_lock_strong(CompiledMethod_lock);
   }
