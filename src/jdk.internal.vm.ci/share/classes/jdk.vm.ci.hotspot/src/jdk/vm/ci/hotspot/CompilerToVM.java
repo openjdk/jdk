@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,11 +215,11 @@ final class CompilerToVM {
      * constant pool cache first.
      *
      * The behavior of this method is undefined if {@code cpi} does not denote one of the following
-     * entry types: {@code JVM_CONSTANT_String}, {@code JVM_CONSTANT_MethodHandle},
-     * {@code JVM_CONSTANT_MethodHandleInError}, {@code JVM_CONSTANT_MethodType} and
-     * {@code JVM_CONSTANT_MethodTypeInError}.
+     * entry types: {@code JVM_CONSTANT_Dynamic}, {@code JVM_CONSTANT_String},
+     * {@code JVM_CONSTANT_MethodHandle}, {@code JVM_CONSTANT_MethodHandleInError},
+     * {@code JVM_CONSTANT_MethodType} and {@code JVM_CONSTANT_MethodTypeInError}.
      */
-    native HotSpotObjectConstantImpl resolvePossiblyCachedConstantInPool(HotSpotConstantPool constantPool, int cpi);
+    native JavaConstant resolvePossiblyCachedConstantInPool(HotSpotConstantPool constantPool, int cpi);
 
     /**
      * Gets the {@code JVM_CONSTANT_NameAndType} index from the entry at index {@code cpi} in

@@ -109,8 +109,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
-  set_evacuation_failed(false);
+  reset_evacuation_failed();
   set_old();
+  _next_marked_bytes = 0;
 }
 
 void HeapRegion::unlink_from_list() {
@@ -138,7 +139,7 @@ void HeapRegion::hr_clear(bool clear_space) {
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
 
-  _evacuation_failed = false;
+  Atomic::store(&_evacuation_failed, false);
   _gc_efficiency = -1.0;
 }
 
