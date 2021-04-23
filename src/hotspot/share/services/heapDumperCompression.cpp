@@ -250,14 +250,9 @@ void CompressionBackend::deactivate() {
     ml.notify_all();
   }
 
-  // Wait for the threads to drain the compression work list.
+  // Wait for the threads to drain the compression work list.and do some work yourself.
   while (!_to_compress.is_empty()) {
-    // If we have no threads, compress the current one itself.
-    if (_nr_of_threads == 0) {
-      do_foreground_work();
-    } else {
-      ml.wait();
-    }
+    do_foreground_work();
   }
 
   _active = false;
