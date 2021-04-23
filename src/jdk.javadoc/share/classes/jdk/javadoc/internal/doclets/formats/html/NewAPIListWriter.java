@@ -63,9 +63,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
      */
     public NewAPIListWriter(NewAPIBuilder builder, HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename, PageMode.NEW, "new elements",
-                Text.of(configuration.docResources.getText(
-                        builder.releases.size() > 1 ? "doclet.New_API_Since" : "doclet.New_API_In",
-                        builder.releases.get(0))),
+                Text.of(getHeading(builder, configuration)),
                 "doclet.Window_New_List");
     }
 
@@ -129,5 +127,13 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     @Override
     protected String getTableCaption(String headingKey) {
         return resources.getText("doclet.New_Elements", super.getTableCaption(headingKey));
+    }
+
+    private static String getHeading(NewAPIBuilder builder, HtmlConfiguration configuration) {
+        return configuration.docResources.getText(
+                builder.releases.size() > 1 ? "doclet.New_API_Since" : "doclet.New_API_In",
+                configuration.getOptions().sinceName() == null
+                        ? builder.releases.get(0)
+                        : configuration.getOptions().sinceName());
     }
 }

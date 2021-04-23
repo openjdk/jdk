@@ -56,11 +56,6 @@ public class NewAPIBuilder extends SummaryAPIListBuilder {
         buildSummaryAPIInfo();
     }
 
-    public boolean isEmpty() {
-        // Builders in the list are guaranteed to be non-empty
-        return false;
-    }
-
     private static boolean isNewAPI(Element e, Utils utils, List<String> releases) {
         if (!utils.hasDocCommentTree(e)) {
             return false;

@@ -177,12 +177,6 @@ public abstract class BaseOptions {
     private boolean linkSource = false;
 
     /**
-     * Argument for command line option {@code -since}.
-     */
-    // A list containing release names
-    private final List<String> since = new ArrayList<>();
-
-    /**
      * Argument for command-line option {@code -nocomment}.
      * True if user wants to suppress descriptions and tags.
      */
@@ -254,6 +248,18 @@ public abstract class BaseOptions {
      * used. Default is don't show version information.
      */
     private boolean showVersion = false;
+
+    /**
+     * Argument for command line option {@code --since}.
+     */
+    // A list containing release names
+    private final List<String> since = new ArrayList<>();
+
+    /**
+     * Argument for command line option {@code --since-name}.
+     */
+    // A list containing release names
+    private String sinceName;
 
     /**
      * Argument for command-line option {@code -sourcetab}.
@@ -399,14 +405,6 @@ public abstract class BaseOptions {
                     }
                 },
 
-                new Option(resources, "-since", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        since.add(args.get(0));
-                        return true;
-                    }
-                },
-
                 new Option(resources, "-nocomment") {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -487,6 +485,22 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         serialWarn = true;
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--since", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        since.add(args.get(0));
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--since-name", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        sinceName = args.get(0);
                         return true;
                     }
                 },
@@ -815,13 +829,6 @@ public abstract class BaseOptions {
     }
 
     /**
-     * Arguments for command line option {@code -since}.
-     */
-    public List<String> since() {
-        return Collections.unmodifiableList(since);
-    }
-
-    /**
      * Argument for command-line option {@code -nocomment}.
      * True if user wants to suppress descriptions and tags.
      */
@@ -912,6 +919,20 @@ public abstract class BaseOptions {
      */
     public boolean showVersion() {
         return showVersion;
+    }
+
+    /**
+     * Arguments for command line option {@code --since}.
+     */
+    public List<String> since() {
+        return Collections.unmodifiableList(since);
+    }
+
+    /**
+     * Arguments for command line option {@code --since-name}.
+     */
+    public String sinceName() {
+        return sinceName;
     }
 
     /**
