@@ -1317,8 +1317,7 @@ bool ConcreteMethodFinder::witnessed_reabstraction_in_supers(Klass* k) {
         m = super->find_instance_method(_name, _signature, Klass::PrivateLookupMode::skip);
         if (m != NULL) { // inherited method found
           if (m->is_abstract() || m->is_overpass()) {
-            _found_methods[_num_participants] = m;
-            return true; // abstract method found
+            return record_witness(super, m); // abstract method found
           }
           return false;
         }
