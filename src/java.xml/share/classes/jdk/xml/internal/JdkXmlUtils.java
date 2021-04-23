@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,18 @@ import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 
+import static com.sun.org.apache.xalan.internal.XalanConstants.JDK_EXTENSION_CLASSLOADER;
+import static com.sun.org.apache.xalan.internal.XalanConstants.JDK_EXT_CLASSLOADER;
+import com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory;
+import static com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory.JDK_IS_STANDALONE;
+import static com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory.ORACLE_IS_STANDALONE;
+import static com.sun.org.apache.xml.internal.serializer.dom3.DOMConstants.FQ_IS_STANDALONE;
+import static com.sun.org.apache.xml.internal.serializer.dom3.DOMConstants.SP_IS_STANDALONE;
+import static jdk.xml.internal.JdkXmlFeatures.ORACLE_ENABLE_EXTENSION_FUNCTION;
+import static jdk.xml.internal.JdkXmlFeatures.ORACLE_FEATURE_SERVICE_MECHANISM;
+import static jdk.xml.internal.JdkXmlFeatures.SP_ENABLE_EXTENSION_FUNCTION;
+import static jdk.xml.internal.JdkXmlFeatures.SP_ENABLE_EXTENSION_FUNCTION_SPEC;
+
 /**
  * Constants for use across JAXP processors.
  */
@@ -62,6 +74,10 @@ public class JdkXmlUtils {
     public static final String NAMESPACE_PREFIXES_FEATURE =
         Constants.SAX_FEATURE_PREFIX + Constants.NAMESPACE_PREFIXES_FEATURE;
 
+    /**
+     * JDK Implementation Specific Features and Properties
+     */
+    public static final String SP_XSLTC_IS_STANDALONE = OutputPropertiesFactory.SP_IS_STANDALONE;
 
     /**
      * Catalog features
@@ -409,5 +425,107 @@ public class JdkXmlUtils {
         } catch (SAXException ex1) {
         }
         return null;
+    }
+
+    /**
+     * Properties Name Map that includes Implementation-Specific Features and
+     * Properties except the limits that are defined in XMLSecurityManager.
+     * The purpose of the map is to provide a map between names with URL style
+     * prefix and those with "jdk.xml". The later are currently specified in the
+     * module summary, and share the same name with their System Properties.
+     */
+    public static enum ImplPropMap {
+
+        ISSTANDALONE("isStandalone", FQ_IS_STANDALONE, SP_IS_STANDALONE, true, null, null),
+        XSLTCISSTANDALONE("xsltcIsStandalone", JDK_IS_STANDALONE, SP_XSLTC_IS_STANDALONE,
+            true, ORACLE_IS_STANDALONE, null),
+        CDATACHUNKSIZE("cdataChunkSize", CDATA_CHUNK_SIZE, CDATA_CHUNK_SIZE, false, null, null),
+        EXTCLSLOADER("extensionClassLoader", JDK_EXTENSION_CLASSLOADER, null,
+            true, JDK_EXT_CLASSLOADER, null),
+        ENABLEEXTFUNC("enableExtensionFunctions", ORACLE_ENABLE_EXTENSION_FUNCTION,
+            SP_ENABLE_EXTENSION_FUNCTION_SPEC, true, null, SP_ENABLE_EXTENSION_FUNCTION),
+        OVERRIDEPARSER("overrideDefaultParser", OVERRIDE_PARSER, OVERRIDE_PARSER,
+            false, ORACLE_FEATURE_SERVICE_MECHANISM, ORACLE_FEATURE_SERVICE_MECHANISM),
+        RESETSYMBOLTABLE("resetSymbolTable", RESET_SYMBOL_TABLE, RESET_SYMBOL_TABLE,
+            false, null, null);
+
+        private final String name;
+        private final String qName;
+        private final String spName;
+        private final boolean differ;
+        private final String oldQName;
+        private final String oldSPName;
+
+        /**
+         * Constructs an instance.
+         * @param name the property name
+         * @param qName the qualified property name
+         * @param spName the corresponding System Property
+         * @param differ a flag indicating whether qName and spName are the same
+         * @param oldName the legacy property name, null if N/A
+         * @param oldSPName the legacy System Property name, null if N/A
+         */
+        ImplPropMap(String name, String qName, String spName, boolean differ,
+                String oldQName, String oldSPName) {
+            this.name = name;
+            this.qName = qName;
+            this.spName = spName;
+            this.differ = differ;
+            this.oldQName = oldQName;
+            this.oldSPName = oldSPName;
+        }
+
+        /**
+         * Checks whether the specified name is the property. Checks both the
+         * property and System Property if they differ. Checks also the legacy
+         * name if applicable.
+         *
+         * @param name the specified name
+         * @return true if there is a match, false otherwise
+         */
+        public boolean is(String name) {
+                   // current spec calls for using a name same as spName
+            return (spName != null && spName.equals(name)) ||
+                   // check qName only if it differs from spName
+                   (differ && qName.equals(name)) ||
+                   // check the legacy name if applicable
+                   (oldQName != null && oldQName.equals(name));
+        }
+
+        /**
+         * Returns the qualified name of the property.
+         *
+         * @return the qualified name of the property
+         */
+        public String qName() {
+            return qName;
+        }
+
+        /**
+         * Returns the legacy name of the property.
+         *
+         * @return the legacy name of the property
+         */
+        public String qNameOld() {
+            return oldQName;
+        }
+
+        /**
+         * Returns the name of the corresponding System Property.
+         *
+         * @return the name of the System Property
+         */
+        public String systemProperty() {
+            return spName;
+        }
+
+        /**
+         * Returns the name of the legacy System Property.
+         *
+         * @return the name of the legacy System Property
+         */
+        public String systemPropertyOld() {
+            return oldSPName;
+        }
     }
 }

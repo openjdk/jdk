@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,10 @@ public class PropertyManager {
     }
 
     public Object getProperty(String property){
-        return supportedProps.get(property);
+        /** Check to see if the property is managed by the security manager **/
+        String propertyValue = (fSecurityManager != null) ?
+                fSecurityManager.getLimitAsString(property) : null;
+        return propertyValue != null ? propertyValue : supportedProps.get(property);
     }
 
     public void setProperty(String property, Object value){

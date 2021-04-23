@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public final class XMLSecurityManager {
             return apiProperty;
         }
 
-        String systemProperty() {
+        public String systemProperty() {
             return systemProperty;
         }
 
@@ -270,7 +270,7 @@ public final class XMLSecurityManager {
         } else {
             int temp;
             if (Integer.class.isAssignableFrom(value.getClass())) {
-                temp = ((Integer)value).intValue();
+                temp = (Integer)value;
             } else {
                 temp = Integer.parseInt((String) value);
                 if (temp < 0) {
@@ -379,7 +379,9 @@ public final class XMLSecurityManager {
      */
     public int getIndex(String propertyName) {
         for (Limit limit : Limit.values()) {
-            if (limit.equalsAPIPropertyName(propertyName)) {
+            // see JDK-8265248, accept both the URL and jdk.xml as prefix
+            if (limit.equalsAPIPropertyName(propertyName) ||
+                    limit.equalsSystemPropertyName(propertyName)) {
                 //internally, ordinal is used as index
                 return limit.ordinal();
             }
@@ -557,7 +559,7 @@ public final class XMLSecurityManager {
      * @param securityManager an instance of XMLSecurityManager
      * @return an instance of the new security manager XMLSecurityManager
      */
-    static public XMLSecurityManager convert(Object value, XMLSecurityManager securityManager) {
+    public static XMLSecurityManager convert(Object value, XMLSecurityManager securityManager) {
         if (value == null) {
             if (securityManager == null) {
                 securityManager = new XMLSecurityManager(true);
@@ -578,5 +580,26 @@ public final class XMLSecurityManager {
             }
             return securityManager;
         }
+    }
+
+    /**
+     * Maps to the qualified property name if the specified name is the System
+     * Property. This method can be used to accept input of a property with
+     * "jdk.xml" prefix as specified in the module summary, but allow the
+     * internal operations to continue using the existing name with an URL
+     * style prefix.
+     *
+     * @param name the specified name
+     * @return the qualified property name if the specified name matches the
+     * System Property of one of the limits, null otherwise
+     * @see JDK-8265248
+     */
+    public static String mapPropertyName(String name) {
+        for (Limit limit : Limit.values()) {
+            if (limit.equalsSystemPropertyName(name)) {
+                return limit.apiProperty();
+            }
+        }
+        return null;
     }
 }

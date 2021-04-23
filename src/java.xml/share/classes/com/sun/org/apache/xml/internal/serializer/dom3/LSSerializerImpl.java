@@ -21,7 +21,6 @@
 
 package com.sun.org.apache.xml.internal.serializer.dom3;
 
-import com.sun.org.apache.xerces.internal.impl.Constants;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -39,10 +38,10 @@ import com.sun.org.apache.xml.internal.serializer.Encodings;
 import com.sun.org.apache.xml.internal.serializer.Serializer;
 import com.sun.org.apache.xml.internal.serializer.ToXMLStream;
 import com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory;
-import com.sun.org.apache.xml.internal.serializer.SerializerFactory;
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
 import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
+import jdk.xml.internal.JdkXmlUtils.ImplPropMap;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.DOMErrorHandler;
@@ -68,7 +67,7 @@ import org.w3c.dom.ls.LSSerializerFilter;
  * @version $Id:
  *
  * @xsl.usage internal
- * @LastModified: Jan 2021
+ * @LastModified: Apr 2021
  */
 final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
@@ -188,6 +187,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
             DOMConstants.DOM_IGNORE_UNKNOWN_CHARACTER_DENORMALIZATIONS,
             DOMConstants.DOM_XMLDECL,
             DOMConstants.FQ_IS_STANDALONE,
+            DOMConstants.SP_IS_STANDALONE,
             DOMConstants.DOM_ERROR_HANDLER
     };
 
@@ -396,7 +396,8 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                     || name.equalsIgnoreCase(DOMConstants.DOM_DISCARD_DEFAULT_CONTENT)
                     || name.equalsIgnoreCase(DOMConstants.DOM_FORMAT_PRETTY_PRINT)
                     || name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)
-                    || name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)){
+                    || name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)
+                    || name.equalsIgnoreCase(DOMConstants.SP_IS_STANDALONE)){
                 // both values supported
                 return true;
             }
@@ -454,7 +455,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
             return ((fFeatures & PRETTY_PRINT) != 0) ? Boolean.TRUE : Boolean.FALSE;
         } else if (name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)) {
             return ((fFeatures & XMLDECL) != 0) ? Boolean.TRUE : Boolean.FALSE;
-        } else if (name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)) {
+        } else if (ImplPropMap.ISSTANDALONE.is(name)) {
             return ((fFeatures & IS_STANDALONE) != 0) ? Boolean.TRUE : Boolean.FALSE;
         } else if (name.equalsIgnoreCase(DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE)) {
             return ((fFeatures & ELEM_CONTENT_WHITESPACE) != 0) ? Boolean.TRUE : Boolean.FALSE;
@@ -626,7 +627,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                 } else {
                     fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "yes");
                 }
-            } else if (name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)) {
+            } else if (ImplPropMap.ISSTANDALONE.is(name)) {
                 fFeatures = state ? fFeatures | IS_STANDALONE : fFeatures & ~IS_STANDALONE;
                 fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE, state ? "yes" : "no");
 

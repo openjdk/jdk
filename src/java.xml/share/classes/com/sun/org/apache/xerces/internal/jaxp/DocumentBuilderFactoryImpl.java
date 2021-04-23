@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,6 +22,7 @@ package com.sun.org.apache.xerces.internal.jaxp;
 
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.XMLConstants;
@@ -36,6 +37,8 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
+ *
+ * @LastModified: Apr 2021
  */
 public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     /** These are DocumentBuilderFactory attributes not DOM attributes */
@@ -104,7 +107,13 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
             attributes = new HashMap<>();
         }
 
-        attributes.put(name, value);
+        String limitName = XMLSecurityManager.mapPropertyName(name);
+        // use the limit name if found, otherwise continue as usual
+        if (limitName != null) {
+            attributes.put(limitName, value);
+        } else {
+            attributes.put(name, value);
+        }
 
         // Test the attribute name by possibly throwing an exception
         try {
@@ -124,7 +133,15 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     {
         // See if it's in the attributes Map
         if (attributes != null) {
-            Object val = attributes.get(name);
+            Object val;
+            String limitName = XMLSecurityManager.mapPropertyName(name);
+            // use the limit name if found, otherwise continue as usual
+            if (limitName != null) {
+                val = attributes.get(limitName);
+            } else {
+                val = attributes.get(name);
+            }
+
             if (val != null) {
                 return val;
             }

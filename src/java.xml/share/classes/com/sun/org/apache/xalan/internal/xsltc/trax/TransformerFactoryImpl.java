@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -73,6 +73,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.JdkXmlUtils.ImplPropMap;
 import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.TransformErrorListener;
 import org.xml.sax.InputSource;
@@ -85,7 +86,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: Aug 2019
+ * @LastModified: Apr 2021
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader
@@ -357,7 +358,7 @@ public class TransformerFactoryImpl
               return Boolean.FALSE;
         } else if (name.equals(XalanConstants.SECURITY_MANAGER)) {
             return _xmlSecurityManager;
-        } else if (name.equals(XalanConstants.JDK_EXTENSION_CLASSLOADER)) {
+        } else if (ImplPropMap.EXTCLSLOADER.is(name)) {
            return _extensionClassLoader;
         } else if (JdkXmlUtils.CATALOG_FILES.equals(name)) {
             return _catalogFiles;
@@ -369,7 +370,7 @@ public class TransformerFactoryImpl
             return _catalogResolve;
         } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
             return buildCatalogFeatures();
-        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+        } else if (ImplPropMap.CDATACHUNKSIZE.is(name)) {
             return _cdataChunkSize;
         }
 
@@ -486,7 +487,7 @@ public class TransformerFactoryImpl
                 return;
             }
         }
-        else if ( name.equals(XalanConstants.JDK_EXTENSION_CLASSLOADER)) {
+        else if (ImplPropMap.EXTCLSLOADER.is(name)) {
             if (value instanceof ClassLoader) {
                 _extensionClassLoader = (ClassLoader) value;
                 return;
@@ -511,7 +512,7 @@ public class TransformerFactoryImpl
             _catalogResolve = (String) value;
             cfBuilder = CatalogFeatures.builder().with(Feature.RESOLVE, _catalogResolve);
             return;
-        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+        } else if (ImplPropMap.CDATACHUNKSIZE.is(name)) {
             _cdataChunkSize = JdkXmlUtils.getValue(value, _cdataChunkSize);
             return;
         }

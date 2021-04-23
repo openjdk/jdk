@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public final class XMLSecurityManager {
             return apiProperty;
         }
 
-        String systemProperty() {
+        public String systemProperty() {
             return systemProperty;
         }
 
@@ -259,14 +259,17 @@ public final class XMLSecurityManager {
             //if it's explicitly set, it's treated as yes no matter the value
             printEntityCountInfo = (String)value;
         } else {
-            int temp = 0;
-            try {
+            int temp;
+            if (Integer.class.isAssignableFrom(value.getClass())) {
+                temp = (Integer)value;
+            } else {
                 temp = Integer.parseInt((String) value);
                 if (temp < 0) {
                     temp = 0;
                 }
-            } catch (NumberFormatException e) {}
-            setLimit(index, state, temp);        }
+            }
+            setLimit(index, state, temp);
+        }
     }
 
     /**
@@ -377,7 +380,9 @@ public final class XMLSecurityManager {
      */
     public int getIndex(String propertyName) {
         for (Limit limit : Limit.values()) {
-            if (limit.equalsAPIPropertyName(propertyName)) {
+            // see JDK-8265248, accept both the URL and jdk.xml as prefix
+            if (limit.equalsAPIPropertyName(propertyName) ||
+                    limit.equalsSystemPropertyName(propertyName)) {
                 //internally, ordinal is used as index
                 return limit.ordinal();
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@
 package jdk.xml.internal;
 
 import javax.xml.XMLConstants;
-import static jdk.xml.internal.JdkXmlUtils.OVERRIDE_PARSER;
+import jdk.xml.internal.JdkXmlUtils.ImplPropMap;
 import static jdk.xml.internal.JdkXmlUtils.SP_USE_CATALOG;
-import static jdk.xml.internal.JdkXmlUtils.RESET_SYMBOL_TABLE;
 
 /**
  * This class manages JDK's XML Features. Previously added features and properties
@@ -64,14 +63,13 @@ public class JdkXmlFeatures {
          * FSP: extension function is enforced by FSP. When FSP is on, extension
          * function is disabled.
          */
-        ENABLE_EXTENSION_FUNCTION(ORACLE_ENABLE_EXTENSION_FUNCTION, SP_ENABLE_EXTENSION_FUNCTION_SPEC,
-                ORACLE_ENABLE_EXTENSION_FUNCTION, SP_ENABLE_EXTENSION_FUNCTION,
+        ENABLE_EXTENSION_FUNCTION(ImplPropMap.ENABLEEXTFUNC, null, null, null, null,
                 true, false, true, true),
         /**
          * The {@link javax.xml.XMLConstants.USE_CATALOG} feature.
          * FSP: USE_CATALOG is not enforced by FSP.
          */
-        USE_CATALOG(PROPERTY_USE_CATALOG, SP_USE_CATALOG,
+        USE_CATALOG(null, PROPERTY_USE_CATALOG, SP_USE_CATALOG,
                 null, null,
                 true, false, true, false),
 
@@ -79,18 +77,17 @@ public class JdkXmlFeatures {
          * Feature resetSymbolTable
          * FSP: RESET_SYMBOL_TABLE_FEATURE is not enforced by FSP.
          */
-        RESET_SYMBOL_TABLE_FEATURE(RESET_SYMBOL_TABLE, RESET_SYMBOL_TABLE,
-                null, null,
+        RESET_SYMBOL_TABLE_FEATURE(ImplPropMap.RESETSYMBOLTABLE, null, null, null, null,
                 false, false, true, false),
 
         /**
          * Feature overrideDefaultParser
          * FSP: not enforced by FSP.
          */
-        JDK_OVERRIDE_PARSER(OVERRIDE_PARSER, OVERRIDE_PARSER,
-                ORACLE_FEATURE_SERVICE_MECHANISM, ORACLE_FEATURE_SERVICE_MECHANISM,
+        JDK_OVERRIDE_PARSER(ImplPropMap.OVERRIDEPARSER, null, null, null, null,
                 false, false, true, false);
 
+        private final ImplPropMap implMap;
         private final String name;
         private final String nameSP;
         private final String nameOld;
@@ -112,12 +109,21 @@ public class JdkXmlFeatures {
          * FSP (Feature_Secure_Processing) enforced
          * with a System property
          */
-        XmlFeature(String name, String nameSP, String nameOld, String nameOldSP,
-                boolean value, boolean valueEnforced, boolean hasSystem, boolean enforced) {
-            this.name = name;
-            this.nameSP = nameSP;
-            this.nameOld = nameOld;
-            this.nameOldSP = nameOldSP;
+        XmlFeature(ImplPropMap implMap, String name, String nameSP, String nameOld,
+                String nameOldSP, boolean value, boolean valueEnforced,
+                boolean hasSystem, boolean enforced) {
+            this.implMap = implMap;
+            if (implMap != null) {
+                this.name = implMap.qName();
+                this.nameSP = implMap.systemProperty();
+                this.nameOld = implMap.qNameOld();
+                this.nameOldSP = implMap.systemPropertyOld();
+            } else {
+                this.name = name;
+                this.nameSP = nameSP;
+                this.nameOld = nameOld;
+                this.nameOldSP = nameOldSP;
+            }
             this.valueDefault = value;
             this.valueEnforced = valueEnforced;
             this.hasSystem = hasSystem;
@@ -131,6 +137,9 @@ public class JdkXmlFeatures {
          * otherwise
          */
         boolean equalsPropertyName(String propertyName) {
+            if (implMap != null) {
+                return implMap.is(propertyName);
+            }
             return name.equals(propertyName) ||
                     (nameOld != null && nameOld.equals(propertyName));
         }

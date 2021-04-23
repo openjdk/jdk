@@ -83,6 +83,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.JdkXmlUtils.ImplPropMap;
 import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.TransformErrorListener;
 import org.xml.sax.ContentHandler;
@@ -95,7 +96,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: Feb 2021
+ * @LastModified: Apr 2021
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache
@@ -230,6 +231,9 @@ public final class TransformerImpl extends Transformer
 
     int _cdataChunkSize = JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT;
 
+    // Impl-specific property: xsltcIsStandalone
+    String _xsltcIsStandalone;
+
     /**
      * This class wraps an ErrorListener into a MessageHandler in order to
      * capture messages reported via xsl:message.
@@ -281,6 +285,7 @@ public final class TransformerImpl extends Transformer
         _properties = createOutputProperties(outputProperties);
         String v = SecuritySupport.getJAXPSystemProperty(OutputPropertiesFactory.SP_IS_STANDALONE);
         if (v != null) {
+            _xsltcIsStandalone = v;
             _properties.setProperty(OutputPropertiesFactory.JDK_IS_STANDALONE, v);
         }
         _propertiesClone = (Properties) _properties.clone();
@@ -905,6 +910,9 @@ public final class TransformerImpl extends Transformer
     public String getOutputProperty(String name)
         throws IllegalArgumentException
     {
+        if (ImplPropMap.XSLTCISSTANDALONE.is(name)) {
+            return _xsltcIsStandalone;
+        }
         if (!validOutputProperty(name)) {
             ErrorMsg err = new ErrorMsg(ErrorMsg.JAXP_UNKNOWN_PROP_ERR, name);
             throw new IllegalArgumentException(err.toString());
@@ -965,6 +973,9 @@ public final class TransformerImpl extends Transformer
         if (!validOutputProperty(name)) {
             ErrorMsg err = new ErrorMsg(ErrorMsg.JAXP_UNKNOWN_PROP_ERR, name);
             throw new IllegalArgumentException(err.toString());
+        }
+        if (ImplPropMap.XSLTCISSTANDALONE.is(name)) {
+            _xsltcIsStandalone = value;
         }
         _properties.setProperty(name, value);
     }
@@ -1037,7 +1048,7 @@ public final class TransformerImpl extends Transformer
                     }
                 }
             }
-            else if (isStandaloneProperty(name)) {
+            else if (ImplPropMap.XSLTCISSTANDALONE.is(name)) {
                  if (value != null && value.equals("yes")) {
                      translet._isStandalone = true;
                  }
@@ -1101,7 +1112,7 @@ public final class TransformerImpl extends Transformer
                     handler.setIndentAmount(Integer.parseInt(value));
                 }
             }
-            else if (isStandaloneProperty(name)) {
+            else if (ImplPropMap.XSLTCISSTANDALONE.is(name)) {
                 if (value != null && value.equals("yes")) {
                     handler.setIsStandalone(true);
                 }
@@ -1219,20 +1230,10 @@ public final class TransformerImpl extends Transformer
                 name.equals(OutputKeys.OMIT_XML_DECLARATION)   ||
                 name.equals(OutputKeys.STANDALONE) ||
                 name.equals(OutputKeys.VERSION) ||
-                isStandaloneProperty(name) ||
+                ImplPropMap.XSLTCISSTANDALONE.is(name) ||
                 name.charAt(0) == '{');
     }
 
-    /**
-     * Checks whether the property requested is the isStandalone property. Both
-     * the new and legacy property names are supported.
-     * @param name the property name
-     * @return true if the property is "isStandalone", false otherwise
-     */
-    private boolean isStandaloneProperty(String name) {
-        return (name.equals(OutputPropertiesFactory.JDK_IS_STANDALONE) ||
-                    name.equals(OutputPropertiesFactory.ORACLE_IS_STANDALONE));
-    }
     /**
      * Checks if a given output property is default (2nd layer only)
      */

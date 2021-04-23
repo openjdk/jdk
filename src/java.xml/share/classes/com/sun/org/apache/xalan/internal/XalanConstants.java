@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +174,8 @@ public final class XalanConstants {
      * for extension functions loading during translation process
      */
     public static final String JDK_EXTENSION_CLASSLOADER = "jdk.xml.transform.extensionClassLoader";
+    // spec-compatible name with a prefix "jdk.xml"
+    public static final String JDK_EXT_CLASSLOADER = "jdk.xml.extensionClassLoader";
 
     //legacy System Properties
     public final static String ENTITY_EXPANSION_LIMIT = "entityExpansionLimit";
