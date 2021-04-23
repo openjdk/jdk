@@ -27,14 +27,16 @@ package runtime/LocalVariableTable;
 public class  TestLongLVTHelper
 {
 
+// Method with large locals variable table.
+// Purpose: verify stack pages touch order (see TestLongLVT.java)
 public static Method tst:"()I"
-    stack 3 locals 30000
+    stack 3 locals 65535
 {
                 iconst_1;
                 newarray int;
                 dup;
-                astore_w   29000;
-                aload_w  29000;
+                astore_w   65500;
+                aload_w  65500;
                 if_acmpne       FAILED;
 
                 iconst_0;

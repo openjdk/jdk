@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8265756
  * @library /test/lib /
  * @compile TestLongLVTHelper.jasm
  * @run main runtime.LocalVariableTable.TestLongLVT
@@ -35,6 +36,14 @@ import jdk.test.lib.Asserts;
 
 public class TestLongLVT {
 
+    // Some platforms (such as windows-aarch64) may have
+    // stack page touch order restrictions.
+    // Test calls method with large local variables table
+    // to trigger usage of several stack memory pages and
+    // check the validity of the touch order.
+    //
+    // Helper method is written in jasm as this allows to
+    // specify local variables table size directly.
     public static void main(String args[]) {
         Asserts.assertEQ(TestLongLVTHelper.tst(), 0);
     }
