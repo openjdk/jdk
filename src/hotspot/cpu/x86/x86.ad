@@ -5793,15 +5793,8 @@ instruct signumF_reg(regF dst, regF zero, regF one, rRegP scratch, rFlagsReg cr)
   effect(TEMP scratch, KILL cr);
   format %{ "signumF $dst, $dst\t! using $scratch as TEMP" %}
   ins_encode %{
-    Label exit;
-
-    __ ucomiss($dst$$XMMRegister, $zero$$XMMRegister);
-    __ jcc(Assembler::equal, exit);
-    __ jcc(Assembler::parity, exit);
-    __ movflt($dst$$XMMRegister, $one$$XMMRegister);
-    __ jcc(Assembler::above, exit);
-    __ xorps($dst$$XMMRegister, ExternalAddress(float_signflip()), $scratch$$Register);
-    __ bind(exit);
+    int opcode = this->ideal_Opcode();
+    __ signum_fp(opcode, $dst$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister, $scratch$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5812,15 +5805,8 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
   effect(TEMP scratch, KILL cr);
   format %{ "signumD $dst, $dst\t! using $scratch as TEMP" %}
   ins_encode %{
-    Label exit;
-
-    __ ucomisd($dst$$XMMRegister, $zero$$XMMRegister);
-    __ jcc(Assembler::equal, exit);
-    __ jcc(Assembler::parity, exit);
-    __ movdbl($dst$$XMMRegister, $one$$XMMRegister);
-    __ jcc(Assembler::above, exit);
-    __ xorpd($dst$$XMMRegister, ExternalAddress(double_signflip()), $scratch$$Register);
-    __ bind(exit);
+    int opcode = this->ideal_Opcode();
+    __ signum_fp(opcode, $dst$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister, $scratch$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
