@@ -369,23 +369,33 @@ final class PreSharedKeyExtension {
                 SSLSessionContextImpl sessionCache = (SSLSessionContextImpl)
                         shc.sslContext.engineGetServerSessionContext();
                 int idIndex = 0;
-                SSLSessionImpl s = null;
 
                 for (PskIdentity requestedId : pskSpec.identities) {
+                    SSLSessionImpl s = null;
                     // If we are keeping state, see if the identity is in the cache
                     if (requestedId.identity.length == SessionId.MAX_LENGTH) {
-                        s = sessionCache.get(requestedId.identity);
-                    }
-                    // See if the identity is a stateless ticket
-                    if (s == null &&
-                            requestedId.identity.length > SessionId.MAX_LENGTH &&
-                            sessionCache.statelessEnabled()) {
+                        synchronized (sessionCache) {
+                            s = sessionCache.get(requestedId.identity);
+
+                            if (s != null && canRejoin(clientHello, shc, s)) {
+                                // The session can't be resumed again---remove it from cache
+                                sessionCache.remove(s.getSessionId());
+                            } else {
+                                s = null;
+                            }
+                        }
+                    } else if (requestedId.identity.length > SessionId.MAX_LENGTH &&
+                                sessionCache.statelessEnabled()) {
+                        // Identity is a stateless ticket
                         ByteBuffer b =
-                            new SessionTicketSpec(shc, requestedId.identity).
+                                new SessionTicketSpec(shc, requestedId.identity).
                                         decrypt(shc);
                         if (b != null) {
                             try {
                                 s = new SSLSessionImpl(shc, b);
+                                if (!canRejoin(clientHello, shc, s)) {
+                                    s = null;
+                                }
                             } catch (IOException | RuntimeException e) {
                                 s = null;
                             }
@@ -398,8 +408,7 @@ final class PreSharedKeyExtension {
                             }
                         }
                     }
-
-                    if (s != null && canRejoin(clientHello, shc, s)) {
+                    if (s != null) {
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.fine("Resuming session: ", s);
                         }
