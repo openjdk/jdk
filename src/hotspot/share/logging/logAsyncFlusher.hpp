@@ -33,8 +33,8 @@
 #include "utilities/hashtable.hpp"
 #include "utilities/linkedlist.hpp"
 
-template <typename E>
-class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, mtLogging> {
+template <typename E, MEMFLAGS F>
+class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
  private:
   LinkedListNode<E>* _tail;
   size_t _size;
@@ -42,10 +42,11 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, mtLogging
  public:
   LinkedListDeque() : _tail(NULL), _size(0) {}
   void push_back(const E& e) {
-    if (!_tail)
+    if (!_tail) {
       _tail = this->add(e);
-    else
+    } else {
       _tail = this->insert_after(e, _tail);
+    }
 
     ++_size;
   }
@@ -112,21 +113,27 @@ public:
 
   void writeback();
 
+  // two AsyncLogMessage are equal if both _output and _message are same.
   bool equals(const AsyncLogMessage& o) const {
-    return (&_output == &o._output) && (_message == o._message || !strcmp(_message, o._message));
+    if (_message == o._message) {
+      return &_output == &o._output;
+    } else if (_message == NULL || o._message == NULL) {
+      return false;
+    } else {
+      return &_output == &o._output && !strcmp(_message, o._message);
+    }
   }
 
   const char* message() const { return _message; }
   LogFileOutput* output() const { return &_output; }
 };
 
-typedef LinkedListDeque<AsyncLogMessage> AsyncLogBuffer;
+typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
 typedef KVHashtable<LogFileOutput*, uintx, mtLogging> AsyncLogMap;
 struct AsyncLogMapIterator {
   bool do_entry(LogFileOutput* output, uintx* counter);
 };
 
-// Flusher is a NonJavaThread which manages a FIFO capacity-bound buffer.
 class LogAsyncFlusher : public NonJavaThread {
  private:
   static LogAsyncFlusher* _instance;
@@ -158,6 +165,7 @@ class LogAsyncFlusher : public NonJavaThread {
  public:
   void enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg);
   void enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator);
+  // Use with_lock = false at your own risk. It is only safe without any active reader.
   void flush(bool with_lock = true);
 
   static LogAsyncFlusher* instance();

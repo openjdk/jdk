@@ -37,7 +37,7 @@ class AsyncLogTest : public LogTestFixture {
 };
 
 TEST_VM_F(AsyncLogTest, fifo) {
-  LinkedListDeque<int> fifo;
+  LinkedListDeque<int, mtLogging> fifo;
   LinkedListImpl<int, ResourceObj::C_HEAP, mtLogging> result;
 
   fifo.push_back(1);
@@ -73,7 +73,7 @@ TEST_VM_F(AsyncLogTest, fifo) {
 }
 
 TEST_VM_F(AsyncLogTest, deque) {
-  LinkedListDeque<int> deque;
+  LinkedListDeque<int, mtLogging> deque;
   const int N = 10;
 
   EXPECT_EQ(NULL, deque.front());

@@ -259,8 +259,9 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   }
 
   log_trace(logging)("Initializing logging to file '%s' (filecount: %u"
-                     ", filesize: " SIZE_FORMAT " KiB).",
-                     _file_name, _file_count, _rotate_size / K);
+                     ", filesize: " SIZE_FORMAT " KiB, async: %s).",
+                     _file_name, _file_count, _rotate_size / K,
+                     _async_mode ? "true" : "false");
 
   if (_file_count > 0 && file_exist) {
     if (!is_regular_file(_file_name)) {

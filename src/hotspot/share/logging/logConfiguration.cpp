@@ -551,7 +551,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr("   filecount=.. - Number of files to keep in rotation (not counting the active file)."
                                     " If set to 0, log rotation is disabled."
                                     " This will cause existing log files to be overwritten.");
-  out->print_cr("   async=true|false - write asynchronously or not.");
+  out->print_cr("   async=true|false - write asynchronously or not, false by default.");
   out->cr();
 
   out->print_cr("Some examples:");

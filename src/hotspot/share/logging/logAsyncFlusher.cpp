@@ -62,7 +62,7 @@ void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
   assert(_buffer.size() < AsyncLogBufferSize, "_buffer is over-sized.");
   _buffer.push_back(msg);
 
-  // notify async log thread if occupancy is over 3/4
+  // notify asynclog thread if occupancy is over 3/4
   size_t sz = _buffer.size();
   if (sz > (AsyncLogBufferSize >> 2) * 3 ) {
     _lock.notify();
@@ -81,8 +81,8 @@ void LogAsyncFlusher::enqueue(LogFileOutput& output, const LogDecorations& decor
   }
 }
 
-// LogMessageBuffer consists of a multiple-part/multiple-line messsage.
-// the mutex here gurantees its interity.
+// LogMessageBuffer consists of a multiple-part/multiple-line messsages.
+// the mutex here gurantees its integrity.
 void LogAsyncFlusher::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
   ttyUnlocker ttyul;
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
@@ -110,7 +110,7 @@ bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uintx* counter) {
   char out_of_band[sz];
 
   if (*counter > 0) {
-    jio_snprintf(out_of_band, sz, UINTX_FORMAT " messages dropped...", *counter);
+    jio_snprintf(out_of_band, sz, UINTX_FORMAT_W(6) " messages dropped...", *counter);
     output->write_blocking(decorations, out_of_band);
     *counter = 0;
   }
@@ -171,11 +171,11 @@ void LogAsyncFlusher::initialize() {
 }
 
 // Termination
-// 1. issue an atomic store-&-fence to close the logging window.
-// 2. flush itself in-place
-// 3. signal the flusher thread to exit
+// 1. issue an atomic release_store&fence to close the logging window.
+// 2. flush itself in-place.
+// 3. signal asynclog thread to exit.
 // 4. wait until asynclog thread exits.
-// 4. (optional) deletes this in post_run()
+// 5. (optional) delete this in post_run().
 void LogAsyncFlusher::terminate() {
   if (_instance != NULL) {
     LogAsyncFlusher* self = _instance;
@@ -207,16 +207,17 @@ LogAsyncFlusher* LogAsyncFlusher::instance() {
 
 // Different from terminate(), abort is invoked by os::abort().
 // There are 2 constraints:
-// 1. must be async-safe because os::abort may be invoked by a signal handler while other
+// 1. must be async-safe because os::abort() may be invoked by a signal handler while other
 // threads are executing.
 // 2. must not obtain _lock. eg. gtest.MutexRank.mutex_lock_access_leaf(test_mutex_rank.cpp)
-// holds assess lock and then traps SIGSEGV on purpose.
+// holds a 'assess' lock and then traps SIGSEGV on purpose.
 //
-// Unlike terminate, abort() just ensures all pending log messages are flushed.
+// Unlike terminate, abort() just ensures all pending log messages are flushed. It doesnot
+// exit asynclog thread.
 void LogAsyncFlusher::abort() {
   if (_instance != nullptr) {
-    // to meet prior constraints, I borrow the idea in LogConfiguration::disable_outputs(),
-    // the following code shut down all outputs for all tagsets with RCU synchroniziation.
+    // To meet prior constraints, I borrow the idea in LogConfiguration::disable_outputs(),
+    // the following code shut down all outputs for all tagsets with a RCU synchroniziation.
     // After then, I can flush pending queue without a lock.
     for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
       ts->disable_outputs();

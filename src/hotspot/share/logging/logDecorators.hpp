@@ -86,16 +86,6 @@ class LogDecorators {
   LogDecorators() : _decorators(DefaultDecoratorsMask) {
   }
 
-  LogDecorators(const LogDecorators& o) : _decorators(o._decorators) {
-  }
-
-  LogDecorators& operator=(const LogDecorators& rhs) {
-    if (this != &rhs) {
-      _decorators = rhs._decorators;
-    }
-    return *this;
-  }
-
   void clear() {
     _decorators = 0;
   }
@@ -114,20 +104,12 @@ class LogDecorators {
     _decorators |= source._decorators;
   }
 
-  void combine_with(LogDecorators::Decorator source) {
-    _decorators |= LogDecorators::mask(source);
-  }
-
   void without(LogDecorators::Decorator source) {
     _decorators &= ~LogDecorators::mask(source);
   }
 
   bool is_empty() const {
     return _decorators == 0;
-  }
-
-  bool operator==(const LogDecorators& rhs) {
-    return _decorators == rhs._decorators;
   }
 
   bool is_decorator(LogDecorators::Decorator decorator) const {
