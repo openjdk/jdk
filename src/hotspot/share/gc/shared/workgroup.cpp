@@ -148,13 +148,13 @@ WorkGang::~WorkGang() {
 // of any worker fails.
 void WorkGang::initialize_workers() {
   log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), total_workers());
-  _workers = NEW_C_HEAP_ARRAY(AbstractGangWorker*, total_workers(), mtInternal);
+  _workers = NEW_C_HEAP_ARRAY(GangWorker*, total_workers(), mtInternal);
   add_workers(true);
 }
 
 
-AbstractGangWorker* WorkGang::install_worker(uint worker_id) {
-  AbstractGangWorker* new_worker = allocate_worker(worker_id);
+GangWorker* WorkGang::install_worker(uint worker_id) {
+  GangWorker* new_worker = allocate_worker(worker_id);
   set_thread(worker_id, new_worker);
   return new_worker;
 }
@@ -179,9 +179,9 @@ void WorkGang::add_workers(bool initializing) {
   WorkerManager::log_worker_creation(this, previous_created_workers, _active_workers, _created_workers, initializing);
 }
 
-AbstractGangWorker* WorkGang::worker(uint i) const {
+GangWorker* WorkGang::worker(uint i) const {
   // Array index bounds checking.
-  AbstractGangWorker* result = NULL;
+  GangWorker* result = NULL;
   assert(_workers != NULL, "No workers for indexing");
   assert(i < total_workers(), "Worker index out of bounds");
   result = _workers[i];
@@ -197,8 +197,8 @@ void WorkGang::threads_do(ThreadClosure* tc) const {
   }
 }
 
-AbstractGangWorker* WorkGang::allocate_worker(uint worker_id) {
-  return new AbstractGangWorker(this, worker_id);
+GangWorker* WorkGang::allocate_worker(uint worker_id) {
+  return new GangWorker(this, worker_id);
 }
 
 void WorkGang::run_task(AbstractGangTask* task) {
@@ -216,18 +216,18 @@ void WorkGang::run_task(AbstractGangTask* task, uint num_workers, bool add_foreg
   update_active_workers(old_num_workers);
 }
 
-AbstractGangWorker::AbstractGangWorker(WorkGang* gang, uint id) {
+GangWorker::GangWorker(WorkGang* gang, uint id) {
   _gang = gang;
   set_id(id);
   set_name("%s#%d", gang->name(), id);
 }
 
-void AbstractGangWorker::run() {
+void GangWorker::run() {
   initialize();
   loop();
 }
 
-void AbstractGangWorker::initialize() {
+void GangWorker::initialize() {
   assert(_gang != NULL, "No gang to run in");
   os::set_priority(this, NearMaxPriority);
   log_develop_trace(gc, workgang)("Running gang worker for gang %s id %u", gang()->name(), id());
@@ -235,15 +235,15 @@ void AbstractGangWorker::initialize() {
          " of a work gang");
 }
 
-WorkData AbstractGangWorker::wait_for_task() {
+WorkData GangWorker::wait_for_task() {
   return gang()->dispatcher()->worker_wait_for_task();
 }
 
-void AbstractGangWorker::signal_task_done() {
+void GangWorker::signal_task_done() {
   gang()->dispatcher()->worker_done_with_task();
 }
 
-void AbstractGangWorker::run_task(WorkData data) {
+void GangWorker::run_task(WorkData data) {
   GCIdMark gc_id_mark(data._task->gc_id());
   log_develop_trace(gc, workgang)("Running work gang: %s task: %s worker: %u", name(), data._task->name(), data._worker_id);
 
@@ -253,7 +253,7 @@ void AbstractGangWorker::run_task(WorkData data) {
                                   name(), data._task->name(), data._worker_id, p2i(Thread::current()));
 }
 
-void AbstractGangWorker::loop() {
+void GangWorker::loop() {
   while (true) {
     WorkData data = wait_for_task();
 

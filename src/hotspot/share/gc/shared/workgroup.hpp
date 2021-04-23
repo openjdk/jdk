@@ -43,11 +43,11 @@
 //   WorkGang
 //
 // Worker class hierarchy:
-//   AbstractGangWorker (subclass of WorkerThread)
+//   GangWorker (subclass of WorkerThread)
 
 // Forward declarations of classes defined here
 
-class AbstractGangWorker;
+class GangWorker;
 class Semaphore;
 class ThreadClosure;
 class GangTaskDispatcher;
@@ -85,7 +85,7 @@ struct WorkData {
 class WorkGang : public CHeapObj<mtInternal> {
  private:
   // The array of worker threads for this gang.
-  AbstractGangWorker** _workers;
+  GangWorker** _workers;
   // The count of the number of workers in the gang.
   uint _total_workers;
   // The currently active workers in this gang.
@@ -100,12 +100,12 @@ class WorkGang : public CHeapObj<mtInternal> {
   const bool _are_ConcurrentGC_threads;
 
   // To get access to the GangTaskDispatcher instance.
-  friend class AbstractGangWorker;
+  friend class GangWorker;
   GangTaskDispatcher* const _dispatcher;
 
   GangTaskDispatcher* dispatcher() const { return _dispatcher; }
 
-  void set_thread(uint worker_id, AbstractGangWorker* worker) {
+  void set_thread(uint worker_id, GangWorker* worker) {
     _workers[worker_id] = worker;
   }
 
@@ -114,7 +114,7 @@ class WorkGang : public CHeapObj<mtInternal> {
   // adjusted to match _active_workers (_created_worker == _active_workers).
   void add_workers(bool initializing);
 
-  AbstractGangWorker* allocate_worker(uint which);
+  GangWorker* allocate_worker(uint which);
 
  public:
   WorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads);
@@ -151,7 +151,7 @@ class WorkGang : public CHeapObj<mtInternal> {
   }
 
   // Return the Ith worker.
-  AbstractGangWorker* worker(uint i) const;
+  GangWorker* worker(uint i) const;
 
   // Base name (without worker id #) of threads.
   const char* group_name() { return name(); }
@@ -159,7 +159,7 @@ class WorkGang : public CHeapObj<mtInternal> {
   void threads_do(ThreadClosure* tc) const;
 
   // Create a GC worker and install it into the work gang.
-  virtual AbstractGangWorker* install_worker(uint which);
+  virtual GangWorker* install_worker(uint which);
 
   // Debugging.
   const char* name() const { return _name; }
@@ -197,7 +197,7 @@ public:
 };
 
 // Several instances of this class run in parallel as workers for a gang.
-class AbstractGangWorker: public WorkerThread {
+class GangWorker: public WorkerThread {
 private:
   WorkGang* _gang;
 
@@ -215,7 +215,7 @@ protected:
   void run() override;
 
 public:
-  AbstractGangWorker(WorkGang* gang, uint id);
+  GangWorker(WorkGang* gang, uint id);
 
   // Predicate for Thread
   bool is_GC_task_thread() const override { return gang()->are_GC_task_threads(); }

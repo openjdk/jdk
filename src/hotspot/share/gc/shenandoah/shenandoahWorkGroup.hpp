@@ -64,7 +64,7 @@ public:
 
   // Create a GC worker and install it into the work gang.
   // We need to initialize gclab for dynamic allocated workers
-  AbstractGangWorker* install_worker(uint which);
+  GangWorker* install_worker(uint which);
 
   void set_initialize_gclab() { assert(!_initialize_gclab, "Can only enable once"); _initialize_gclab = true; }
 };
