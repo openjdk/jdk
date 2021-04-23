@@ -91,28 +91,7 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
      * this method is sometimes needed for proper type checking.
      */
     Type findComponentType(String signature) throws ClassNotLoadedException {
-
-        JNITypeParser sig = new JNITypeParser(signature);
-        if (sig.isReference()) {
-            // It's a reference type
-            JNITypeParser parser = new JNITypeParser(componentSignature());
-            List<ReferenceType> list = vm.classesByName(parser.typeName());
-            Iterator<ReferenceType> iter = list.iterator();
-            while (iter.hasNext()) {
-                ReferenceType type = iter.next();
-                ClassLoaderReference cl = type.classLoader();
-                if ((cl == null)?
-                         (classLoader() == null) :
-                         (cl.equals(classLoader()))) {
-                    return type;
-                }
-            }
-            // Component class has not yet been loaded
-            throw new ClassNotLoadedException(componentTypeName());
-        } else {
-            // It's a primitive type
-            return vm.primitiveTypeMirror(sig.jdwpTag());
-        }
+        return findType(signature);
     }
 
     public Type componentType() throws ClassNotLoadedException {
