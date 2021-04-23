@@ -28,15 +28,14 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Locale;
+import java.util.*;
+
+import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.util.HexDumpEncoder;
 
 enum SSLExtension implements SSLStringizer {
-    // Extensions defined in RFC 6066
+    // Extensions defined in RFC 6066 (TLS Extensions: Extension Definitions)
     CH_SERVER_NAME          (0x0000,  "server_name",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_TO_13,
@@ -64,6 +63,7 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 null,
                                 ServerNameExtension.shStringizer),
+
     CH_MAX_FRAGMENT_LENGTH (0x0001, "max_fragment_length",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_TO_13,
@@ -91,6 +91,7 @@ enum SSLExtension implements SSLStringizer {
                                 MaxFragExtension.eeOnTradeConsumer,
                                 null,
                                 MaxFragExtension.maxFragLenStringizer),
+
     CLIENT_CERTIFICATE_URL  (0x0002, "client_certificate_url"),
     TRUSTED_CA_KEYS         (0x0003, "trusted_ca_keys"),
     TRUNCATED_HMAC          (0x0004, "truncated_hmac"),
@@ -124,17 +125,17 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 CertStatusExtension.certStatusRespStringizer),
 
-    // extensions defined in RFC 4681
+    // Extensions defined in RFC 4681 (TLS User Mapping Extension)
     USER_MAPPING            (0x0006, "user_mapping"),
 
-    // extensions defined in RFC 5878
+    // Extensions defined in RFC 5878 (TLS Authorization Extensions)
     CLIENT_AUTHZ            (0x0007, "client_authz"),
     SERVER_AUTHZ            (0x0008, "server_authz"),
 
-    // extensions defined in RFC 5081
+    // Extensions defined in RFC 6091 (Using OpenPGP Keys for TLS Authentication)
     CERT_TYPE               (0x0009, "cert_type"),
 
-    // extensions defined in RFC 4492 (ECC)
+    // Extensions defined in RFC 8422 (ECC Cipher Suites for TLS Versions 1.2 and Earlier)
     CH_SUPPORTED_GROUPS     (0x000A, "supported_groups",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_TO_13,
@@ -173,55 +174,16 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 ECPointFormatsExtension.epfStringizer),
 
-    // extensions defined in RFC 5054
+    // Extensions defined in RFC 5054 (Using the SRP Protocol for TLS Authentication)
     SRP                     (0x000C, "srp"),
 
-    // extensions defined in RFC 5246
-    CH_SIGNATURE_ALGORITHMS (0x000D, "signature_algorithms",
-                                SSLHandshake.CLIENT_HELLO,
-                                ProtocolVersion.PROTOCOLS_12_13,
-                                SignatureAlgorithmsExtension.chNetworkProducer,
-                                SignatureAlgorithmsExtension.chOnLoadConsumer,
-                                SignatureAlgorithmsExtension.chOnLoadAbsence,
-                                SignatureAlgorithmsExtension.chOnTradeConsumer,
-                                SignatureAlgorithmsExtension.chOnTradeAbsence,
-                                SignatureAlgorithmsExtension.ssStringizer),
-    CR_SIGNATURE_ALGORITHMS (0x000D, "signature_algorithms",
-                                SSLHandshake.CERTIFICATE_REQUEST,
-                                ProtocolVersion.PROTOCOLS_OF_13,
-                                SignatureAlgorithmsExtension.crNetworkProducer,
-                                SignatureAlgorithmsExtension.crOnLoadConsumer,
-                                SignatureAlgorithmsExtension.crOnLoadAbsence,
-                                SignatureAlgorithmsExtension.crOnTradeConsumer,
-                                null,
-                                SignatureAlgorithmsExtension.ssStringizer),
-
-    CH_SIGNATURE_ALGORITHMS_CERT (0x0032, "signature_algorithms_cert",
-                                SSLHandshake.CLIENT_HELLO,
-                                ProtocolVersion.PROTOCOLS_12_13,
-                                CertSignAlgsExtension.chNetworkProducer,
-                                CertSignAlgsExtension.chOnLoadConsumer,
-                                null,
-                                CertSignAlgsExtension.chOnTradeConsumer,
-                                null,
-                                CertSignAlgsExtension.ssStringizer),
-    CR_SIGNATURE_ALGORITHMS_CERT (0x0032, "signature_algorithms_cert",
-                                SSLHandshake.CERTIFICATE_REQUEST,
-                                ProtocolVersion.PROTOCOLS_OF_13,
-                                CertSignAlgsExtension.crNetworkProducer,
-                                CertSignAlgsExtension.crOnLoadConsumer,
-                                null,
-                                CertSignAlgsExtension.crOnTradeConsumer,
-                                null,
-                                CertSignAlgsExtension.ssStringizer),
-
-    // extensions defined in RFC 5764
+    // Extensions defined in RFC 5764 (DTLS Extension to Establish Keys for the SRTP)
     USE_SRTP                (0x000E, "use_srtp"),
 
-    // extensions defined in RFC 6520
+    // Extensions defined in RFC 6520 (TLS and DTLS Heartbeat Extension)
     HEARTBEAT               (0x000E, "heartbeat"),
 
-    // extension defined in RFC 7301 (ALPN)
+    // Extensions defined in RFC 7301 (TLS Application-Layer Protocol Negotiation Extension)
     CH_ALPN                 (0x0010, "application_layer_protocol_negotiation",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_TO_13,
@@ -250,7 +212,7 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 AlpnExtension.alpnStringizer),
 
-    // extensions defined in RFC 6961
+    // Extensions defined in RFC 6961 (TLS Multiple Certificate Status Request Extension)
     CH_STATUS_REQUEST_V2    (0x0011, "status_request_v2",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_TO_12,
@@ -270,20 +232,20 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 CertStatusExtension.certStatusReqV2Stringizer),
 
-    // extensions defined in RFC 6962
+    // Extensions defined in RFC 6962 (Certificate Transparency)
     SIGNED_CERT_TIMESTAMP   (0x0012, "signed_certificate_timestamp"),
 
-    // extensions defined in RFC 7250
+    // Extensions defined in RFC 7250 (Using Raw Public Keys in TLS and DTLS)
     CLIENT_CERT_TYPE        (0x0013, "client_certificate_type"),
     SERVER_CERT_TYPE        (0x0014, "server_certificate_type"),
 
-    // extensions defined in RFC 7685
+    // Extensions defined in RFC 7685 (TLS ClientHello Padding Extension)
     PADDING                 (0x0015, "padding"),
 
-    // extensions defined in RFC 7366
+    // Extensions defined in RFC 7366 (Encrypt-then-MAC for TLS and DTLS)
     ENCRYPT_THEN_MAC        (0x0016, "encrypt_then_mac"),
 
-    // extensions defined in RFC 7627
+    // Extensions defined in RFC 7627 (TLS Session Hash and Extended Master Secret Extension)
     CH_EXTENDED_MASTER_SECRET  (0x0017, "extended_master_secret",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_TO_12,
@@ -303,13 +265,13 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 ExtendedMasterSecretExtension.emsStringizer),
 
-    // extensions defined in RFC draft-ietf-tokbind-negotiation
-    TOKEN_BINDING           (0x0018, "token_binding "),
+    // Extensions defined in RFC 8472 (TLS Extension for Token Binding Protocol Negotiation)
+    TOKEN_BINDING           (0x0018, "token_binding"),
 
-    // extensions defined in RFC 7924
+    // Extensions defined in RFC 7924 (TLS Cached Information Extension)
     CACHED_INFO             (0x0019, "cached_info"),
 
-    // extensions defined in RFC 5077
+    // Extensions defined in RFC 5077 (TLS Session Resumption without Server-Side State)
     CH_SESSION_TICKET       (0x0023, "session_ticket",
             SSLHandshake.CLIENT_HELLO,
             ProtocolVersion.PROTOCOLS_10_12,
@@ -320,7 +282,6 @@ enum SSLExtension implements SSLStringizer {
             null,
             SessionTicketExtension.steStringizer),
             //null),
-
     SH_SESSION_TICKET       (0x0023, "session_ticket",
             SSLHandshake.SERVER_HELLO,
             ProtocolVersion.PROTOCOLS_10_12,
@@ -332,7 +293,26 @@ enum SSLExtension implements SSLStringizer {
             SessionTicketExtension.steStringizer),
             //null),
 
-    // extensions defined in TLS 1.3
+    // Extensions defined in RFC 8446 (TLS Protocol Version 1.3)
+    CH_SIGNATURE_ALGORITHMS (0x000D, "signature_algorithms",
+                                SSLHandshake.CLIENT_HELLO,
+                                ProtocolVersion.PROTOCOLS_12_13,
+                                SignatureAlgorithmsExtension.chNetworkProducer,
+                                SignatureAlgorithmsExtension.chOnLoadConsumer,
+                                SignatureAlgorithmsExtension.chOnLoadAbsence,
+                                SignatureAlgorithmsExtension.chOnTradeConsumer,
+                                SignatureAlgorithmsExtension.chOnTradeAbsence,
+                                SignatureAlgorithmsExtension.ssStringizer),
+    CR_SIGNATURE_ALGORITHMS (0x000D, "signature_algorithms",
+                                SSLHandshake.CERTIFICATE_REQUEST,
+                                ProtocolVersion.PROTOCOLS_OF_13,
+                                SignatureAlgorithmsExtension.crNetworkProducer,
+                                SignatureAlgorithmsExtension.crOnLoadConsumer,
+                                SignatureAlgorithmsExtension.crOnLoadAbsence,
+                                SignatureAlgorithmsExtension.crOnTradeConsumer,
+                                null,
+                                SignatureAlgorithmsExtension.ssStringizer),
+
     CH_EARLY_DATA           (0x002A, "early_data"),
     EE_EARLY_DATA           (0x002A, "early_data"),
     NST_EARLY_DATA          (0x002A, "early_data"),
@@ -348,7 +328,6 @@ enum SSLExtension implements SSLStringizer {
                                 SupportedVersionsExtension.chStringizer),
     SH_SUPPORTED_VERSIONS   (0x002B, "supported_versions",
                                 SSLHandshake.SERVER_HELLO,
-                                        // and HelloRetryRequest
                                 ProtocolVersion.PROTOCOLS_OF_13,
                                 SupportedVersionsExtension.shNetworkProducer,
                                 SupportedVersionsExtension.shOnLoadConsumer,
@@ -407,7 +386,6 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 PskKeyExchangeModesExtension.chOnTradeAbsence,
                                 PskKeyExchangeModesExtension.pkemStringizer),
-
     CH_CERTIFICATE_AUTHORITIES (0x002F, "certificate_authorities",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_OF_13,
@@ -417,7 +395,6 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 null,
                                 CertificateAuthoritiesExtension.ssStringizer),
-
     CR_CERTIFICATE_AUTHORITIES (0x002F, "certificate_authorities",
                                 SSLHandshake.CERTIFICATE_REQUEST,
                                 ProtocolVersion.PROTOCOLS_OF_13,
@@ -430,6 +407,25 @@ enum SSLExtension implements SSLStringizer {
 
     OID_FILTERS             (0x0030, "oid_filters"),
     POST_HANDSHAKE_AUTH     (0x0030, "post_handshake_auth"),
+
+    CH_SIGNATURE_ALGORITHMS_CERT (0x0032, "signature_algorithms_cert",
+                                SSLHandshake.CLIENT_HELLO,
+                                ProtocolVersion.PROTOCOLS_12_13,
+                                CertSignAlgsExtension.chNetworkProducer,
+                                CertSignAlgsExtension.chOnLoadConsumer,
+                                null,
+                                CertSignAlgsExtension.chOnTradeConsumer,
+                                null,
+                                CertSignAlgsExtension.ssStringizer),
+    CR_SIGNATURE_ALGORITHMS_CERT (0x0032, "signature_algorithms_cert",
+                                SSLHandshake.CERTIFICATE_REQUEST,
+                                ProtocolVersion.PROTOCOLS_OF_13,
+                                CertSignAlgsExtension.crNetworkProducer,
+                                CertSignAlgsExtension.crOnLoadConsumer,
+                                null,
+                                CertSignAlgsExtension.crOnTradeConsumer,
+                                null,
+                                CertSignAlgsExtension.ssStringizer),
 
     CH_KEY_SHARE            (0x0033, "key_share",
                                 SSLHandshake.CLIENT_HELLO,
@@ -463,7 +459,7 @@ enum SSLExtension implements SSLStringizer {
                                 null, null, null, null,
                                 KeyShareExtension.hrrStringizer),
 
-    // Extensions defined in RFC 5746
+    // Extensions defined in RFC 5746 (TLS Renegotiation Indication Extension)
     CH_RENEGOTIATION_INFO   (0xff01, "renegotiation_info",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_TO_12,
@@ -483,7 +479,7 @@ enum SSLExtension implements SSLStringizer {
                                 null,
                                 RenegoInfoExtension.rniStringizer),
 
-    // TLS 1.3 PSK extension must be last
+    // RFC 8446 (TLS Protocol Version 1.3) PSK extension must be last
     CH_PRE_SHARED_KEY       (0x0029, "pre_shared_key",
                                 SSLHandshake.CLIENT_HELLO,
                                 ProtocolVersion.PROTOCOLS_OF_13,
@@ -648,8 +644,8 @@ enum SSLExtension implements SSLStringizer {
     }
 
     public boolean isAvailable(ProtocolVersion protocolVersion) {
-        for (int i = 0; i < supportedProtocols.length; i++) {
-            if (supportedProtocols[i] == protocolVersion) {
+        for (ProtocolVersion supportedProtocol : supportedProtocols) {
+            if (supportedProtocol == protocolVersion) {
                 return true;
             }
         }
@@ -713,18 +709,23 @@ enum SSLExtension implements SSLStringizer {
         static final Collection<SSLExtension> defaults;
 
         static {
+            Collection<String> clientDisabledExtensions =
+                    getDisabledExtensions("jdk.tls.client.disableExtensions");
             Collection<SSLExtension> extensions = new LinkedList<>();
             for (SSLExtension extension : SSLExtension.values()) {
-                if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE) {
+                if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE &&
+                        !clientDisabledExtensions.contains(extension.name)) {
                     extensions.add(extension);
                 }
             }
 
-            // Switch off SNI extention?
-            boolean enableExtension =
-                Utilities.getBooleanProperty("jsse.enableSNIExtension", true);
-            if (!enableExtension) {
-                extensions.remove(CH_SERVER_NAME);
+            // Switch off SNI extension?
+            if (extensions.contains(CH_SERVER_NAME)) {
+                boolean enableExtension = Utilities.getBooleanProperty(
+                        "jsse.enableSNIExtension", true);
+                if (!enableExtension) {
+                    extensions.remove(CH_SERVER_NAME);
+                }
             }
 
             // To switch off the max_fragment_length extension.
@@ -735,13 +736,15 @@ enum SSLExtension implements SSLStringizer {
             // the two properties set to true, the extension is switch on.
             // We may remove the "jsse.enableMFLExtension" property in the
             // future.  Please don't continue to use the misspelling property.
-            enableExtension =
-                Utilities.getBooleanProperty(
-                        "jsse.enableMFLNExtension", false) ||
-                Utilities.getBooleanProperty(
-                        "jsse.enableMFLExtension", false);
-            if (!enableExtension) {
-                extensions.remove(CH_MAX_FRAGMENT_LENGTH);
+            if (extensions.contains(CH_MAX_FRAGMENT_LENGTH)) {
+                boolean enableExtension =
+                        Utilities.getBooleanProperty(
+                                "jsse.enableMFLNExtension", false) ||
+                        Utilities.getBooleanProperty(
+                                "jsse.enableMFLExtension", false);
+                if (!enableExtension) {
+                    extensions.remove(CH_MAX_FRAGMENT_LENGTH);
+                }
             }
 
             // To switch on certificate_authorities extension in ClientHello.
@@ -782,10 +785,12 @@ enum SSLExtension implements SSLStringizer {
             // lot in practice.  When there is a need to use this extension
             // in ClientHello handshake message, please take care of the
             // potential compatibility and interoperability issues above.
-            enableExtension = Utilities.getBooleanProperty(
-                    "jdk.tls.client.enableCAExtension", false);
-            if (!enableExtension) {
-                extensions.remove(CH_CERTIFICATE_AUTHORITIES);
+            if (extensions.contains(CH_CERTIFICATE_AUTHORITIES)) {
+                boolean enableExtension = Utilities.getBooleanProperty(
+                        "jdk.tls.client.enableCAExtension", false);
+                if (!enableExtension) {
+                    extensions.remove(CH_CERTIFICATE_AUTHORITIES);
+                }
             }
 
             defaults = Collections.unmodifiableCollection(extensions);
@@ -797,14 +802,51 @@ enum SSLExtension implements SSLStringizer {
         static final Collection<SSLExtension> defaults;
 
         static {
+            Collection<String> serverDisabledExtensions =
+                    getDisabledExtensions("jdk.tls.server.disableExtensions");
             Collection<SSLExtension> extensions = new LinkedList<>();
             for (SSLExtension extension : SSLExtension.values()) {
-                if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE) {
+                if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE &&
+                        !serverDisabledExtensions.contains(extension.name)) {
                     extensions.add(extension);
                 }
             }
 
             defaults = Collections.unmodifiableCollection(extensions);
         }
+    }
+
+    // Get disabled extensions, which could be customized with System Properties.
+    private static Collection<String> getDisabledExtensions(
+                String propertyName) {
+        String property = GetPropertyAction.privilegedGetProperty(propertyName);
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+            SSLLogger.fine(
+                    "System property " + propertyName + " is set to '" +
+                            property + "'");
+        }
+        if (property != null && !property.isEmpty()) {
+            // remove double quote marks from beginning/end of the property
+            if (property.length() > 1 && property.charAt(0) == '"' &&
+                    property.charAt(property.length() - 1) == '"') {
+                property = property.substring(1, property.length() - 1);
+            }
+        }
+
+        if (property != null && !property.isEmpty()) {
+            String[] extensionNames = property.split(",");
+            Collection<String> extensions =
+                    new ArrayList<>(extensionNames.length);
+            for (String extension : extensionNames) {
+                extension = extension.trim();
+                if (!extension.isEmpty()) {
+                    extensions.add(extension);
+                }
+            }
+
+            return extensions;
+        }
+
+        return Collections.emptyList();
     }
 }

@@ -730,11 +730,9 @@ public abstract class Clock {
         }
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof TickClock) {
-                TickClock other = (TickClock) obj;
-                return baseClock.equals(other.baseClock) && tickNanos == other.tickNanos;
-            }
-            return false;
+            return (obj instanceof TickClock other)
+                    && tickNanos == other.tickNanos
+                    && baseClock.equals(other.baseClock);
         }
         @Override
         public int hashCode() {

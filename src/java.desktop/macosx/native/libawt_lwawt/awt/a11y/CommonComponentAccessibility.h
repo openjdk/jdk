@@ -36,6 +36,8 @@
 + (JavaComponentAccessibility * _Nullable) getComponentAccessibility:(NSString * _Nonnull)role;
 - (NSRect)accessibilityFrame;
 - (nullable id)accessibilityParent;
+- (BOOL)performAccessibleAction:(int)index;
+- (BOOL)isAccessibilityElement;
 @end
 
 #endif

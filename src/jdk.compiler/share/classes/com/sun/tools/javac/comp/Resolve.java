@@ -69,6 +69,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.lang.model.element.ElementVisitor;
 
@@ -385,9 +386,14 @@ public class Resolve {
     }
 
     boolean isAccessible(Env<AttrContext> env, Type t, boolean checkInner) {
-        return (t.hasTag(ARRAY))
-            ? isAccessible(env, types.cvarUpperBound(types.elemtype(t)))
-            : isAccessible(env, t.tsym, checkInner);
+        if (t.hasTag(ARRAY)) {
+            return isAccessible(env, types.cvarUpperBound(types.elemtype(t)));
+        } else if (t.isUnion()) {
+            return StreamSupport.stream(((UnionClassType) t).getAlternativeTypes().spliterator(), false)
+                    .allMatch(alternative -> isAccessible(env, alternative.tsym, checkInner));
+        } else {
+            return isAccessible(env, t.tsym, checkInner);
+        }
     }
 
     /** Is symbol accessible as a member of given type in given environment?
@@ -1792,7 +1798,7 @@ public class Resolve {
         return bestSoFar;
     }
     //where
-        class LookupFilter implements Filter<Symbol> {
+        class LookupFilter implements Predicate<Symbol> {
 
             boolean abstractOk;
 
@@ -1800,7 +1806,8 @@ public class Resolve {
                 this.abstractOk = abstractOk;
             }
 
-            public boolean accepts(Symbol s) {
+            @Override
+            public boolean test(Symbol s) {
                 long flags = s.flags();
                 return s.kind == MTH &&
                         (flags & SYNTHETIC) == 0 &&
@@ -2623,6 +2630,15 @@ public class Resolve {
     LogResolveHelper basicLogResolveHelper = new LogResolveHelper() {
         public boolean resolveDiagnosticNeeded(Type site, List<Type> argtypes, List<Type> typeargtypes) {
             return !site.isErroneous();
+        }
+        public List<Type> getArgumentTypes(ResolveError errSym, Symbol accessedSym, Name name, List<Type> argtypes) {
+            return argtypes;
+        }
+    };
+
+    LogResolveHelper silentLogResolveHelper = new LogResolveHelper() {
+        public boolean resolveDiagnosticNeeded(Type site, List<Type> argtypes, List<Type> typeargtypes) {
+            return false;
         }
         public List<Type> getArgumentTypes(ResolveError errSym, Symbol accessedSym, Name name, List<Type> argtypes) {
             return argtypes;
@@ -3773,7 +3789,7 @@ public class Resolve {
         for (Type t1 : types.interfaces(t)) {
             boolean shouldAdd = true;
             for (Type t2 : types.directSupertypes(t)) {
-                if (t1 != t2 && types.isSubtypeNoCapture(t2, t1)) {
+                if (t1 != t2 && !t2.hasTag(ERROR) && types.isSubtypeNoCapture(t2, t1)) {
                     shouldAdd = false;
                 }
             }

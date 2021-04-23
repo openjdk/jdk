@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ void closeDatabaseView(MSIHANDLE hView) {
 
 
 namespace {
-UniqueMSIHANDLE openDatabase(const tstring& msiPath) {
+MSIHANDLE openDatabase(const tstring& msiPath) {
     MSIHANDLE h = 0;
     const UINT status = MsiOpenDatabase(msiPath.c_str(),
                                                     MSIDBOPEN_READONLY, &h);
@@ -57,7 +57,7 @@ UniqueMSIHANDLE openDatabase(const tstring& msiPath) {
                                 << "MsiOpenDatabase(" << msiPath
                                 << ", MSIDBOPEN_READONLY) failed", status));
     }
-    return UniqueMSIHANDLE(h);
+    return h;
 }
 
 } // namespace
@@ -115,7 +115,7 @@ DatabaseRecord::DatabaseRecord(unsigned fieldCount) {
         JP_THROW(msi::Error(tstrings::any() << "MsiCreateRecord("
                         << fieldCount << ") failed", ERROR_FUNCTION_FAILED));
     }
-    handle = UniqueMSIHANDLE(h);
+    handle = h;
 }
 
 
@@ -139,7 +139,7 @@ DatabaseRecord& DatabaseRecord::tryFetch(DatabaseView& view) {
 
 
 DatabaseRecord& DatabaseRecord::setString(unsigned idx, const tstring& v) {
-    const UINT status = MsiRecordSetString(handle.get(), idx, v.c_str());
+    const UINT status = MsiRecordSetString(handle, idx, v.c_str());
     if (status != ERROR_SUCCESS) {
         JP_THROW(Error(tstrings::any() << "MsiRecordSetString(" << idx
                                         << ", " << v << ") failed", status));
@@ -149,7 +149,7 @@ DatabaseRecord& DatabaseRecord::setString(unsigned idx, const tstring& v) {
 
 
 DatabaseRecord& DatabaseRecord::setInteger(unsigned idx, int v) {
-    const UINT status = MsiRecordSetInteger(handle.get(), idx, v);
+    const UINT status = MsiRecordSetInteger(handle, idx, v);
     if (status != ERROR_SUCCESS) {
         JP_THROW(Error(tstrings::any() << "MsiRecordSetInteger(" << idx
                                         << ", " << v << ") failed", status));
@@ -160,7 +160,7 @@ DatabaseRecord& DatabaseRecord::setInteger(unsigned idx, int v) {
 
 DatabaseRecord& DatabaseRecord::setStreamFromFile(unsigned idx,
                                                         const tstring& v) {
-    const UINT status = MsiRecordSetStream(handle.get(), idx, v.c_str());
+    const UINT status = MsiRecordSetStream(handle, idx, v.c_str());
     if (status != ERROR_SUCCESS) {
         JP_THROW(Error(tstrings::any() << "MsiRecordSetStream(" << idx
                                         << ", " << v << ") failed", status));
@@ -170,7 +170,7 @@ DatabaseRecord& DatabaseRecord::setStreamFromFile(unsigned idx,
 
 
 unsigned DatabaseRecord::getFieldCount() const {
-    const unsigned reply = MsiRecordGetFieldCount(handle.get());
+    const unsigned reply = MsiRecordGetFieldCount(handle);
     if (int(reply) <= 0) {
         JP_THROW(Error(std::string("MsiRecordGetFieldCount() failed"),
                                                     ERROR_FUNCTION_FAILED));
@@ -180,7 +180,7 @@ unsigned DatabaseRecord::getFieldCount() const {
 
 
 int DatabaseRecord::getInteger(unsigned idx) const {
-    int const reply = MsiRecordGetInteger(handle.get(), idx);
+    int const reply = MsiRecordGetInteger(handle, idx);
     if (reply == MSI_NULL_INTEGER) {
         JP_THROW(Error(tstrings::any() << "MsiRecordGetInteger(" << idx
                                         << ") failed", ERROR_FUNCTION_FAILED));
@@ -199,7 +199,7 @@ void DatabaseRecord::saveStreamToFile(unsigned idx,
     DWORD bytes;
     do {
         bytes = ReadStreamBufferBytes;
-        const UINT status = MsiRecordReadStream(handle.get(), UINT(idx),
+        const UINT status = MsiRecordReadStream(handle, UINT(idx),
                                                     buffer.data(), &bytes);
         if (status != ERROR_SUCCESS) {
             JP_THROW(Error(std::string("MsiRecordReadStream() failed"),
@@ -216,25 +216,23 @@ DatabaseView::DatabaseView(const Database& db, const tstring& sqlQuery,
     MSIHANDLE h = 0;
 
     // Create SQL query.
-    for (const UINT status = MsiDatabaseOpenView(db.dbHandle.get(),
+    for (const UINT status = MsiDatabaseOpenView(db.dbHandle,
                             sqlQuery.c_str(), &h); status != ERROR_SUCCESS; ) {
         JP_THROW(Error(tstrings::any() << "MsiDatabaseOpenView("
                                         << sqlQuery << ") failed", status));
     }
 
-    UniqueMSIHANDLE tmp(h);
-
     // Run SQL query.
-    for (const UINT status = MsiViewExecute(h, queryParam.handle.get());
+    for (const UINT status = MsiViewExecute(h, queryParam.handle);
                                                 status != ERROR_SUCCESS; ) {
+        closeMSIHANDLE(h);
         JP_THROW(Error(tstrings::any() << "MsiViewExecute("
                                         << sqlQuery << ") failed", status));
     }
 
     // MsiViewClose should be called only after
     // successful MsiViewExecute() call.
-    handle = UniqueDbView(h);
-    tmp.release();
+    handle = h;
 }
 
 
@@ -253,7 +251,7 @@ DatabaseRecord DatabaseView::tryFetch() {
 
     // Fetch data from executed SQL query.
     // Data is stored in a record object.
-    for (const UINT status = MsiViewFetch(handle.get(), &h);
+    for (const UINT status = MsiViewFetch(handle, &h);
                                                 status != ERROR_SUCCESS; ) {
         if (status == ERROR_NO_MORE_ITEMS) {
             return DatabaseRecord();
@@ -264,14 +262,14 @@ DatabaseRecord DatabaseView::tryFetch() {
     }
 
     DatabaseRecord reply;
-    reply.handle = UniqueMSIHANDLE(h);
+    reply.handle = h;
     return reply;
 }
 
 
 DatabaseView& DatabaseView::modify(const DatabaseRecord& record,
                                                         MSIMODIFY mode) {
-    const UINT status = MsiViewModify(handle.get(), mode, record.handle.get());
+    const UINT status = MsiViewModify(handle, mode, record.handle);
     if (status != ERROR_SUCCESS) {
         JP_THROW(Error(tstrings::any() << "MsiViewModify(mode=" << mode
                                                     << ") failed", status));

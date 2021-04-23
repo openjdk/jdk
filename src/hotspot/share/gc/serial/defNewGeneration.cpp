@@ -556,8 +556,6 @@ void DefNewGeneration::collect(bool   full,
   // The preserved marks should be empty at the start of the GC.
   _preserved_marks_set.init(1);
 
-  heap->rem_set()->prepare_for_younger_refs_iterate(false);
-
   assert(heap->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
 
@@ -575,13 +573,9 @@ void DefNewGeneration::collect(bool   full,
          "save marks have not been newly set.");
 
   {
-    // DefNew needs to run with n_threads == 0, to make sure the serial
-    // version of the card table scanning code is used.
-    // See: CardTableRS::non_clean_card_iterate_possibly_parallel.
     StrongRootsScope srs(0);
 
-    heap->young_process_roots(&srs,
-                              &scan_closure,
+    heap->young_process_roots(&scan_closure,
                               &younger_gen_closure,
                               &cld_scan_closure);
   }
@@ -711,7 +705,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
 
   // Try allocating obj in to-space (unless too old)
   if (old->age() < tenuring_threshold()) {
-    obj = (oop) to()->allocate(s);
+    obj = cast_to_oop(to()->allocate(s));
   }
 
   // Otherwise try allocating obj tenured

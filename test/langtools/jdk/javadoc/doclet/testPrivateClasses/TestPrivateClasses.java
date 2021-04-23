@@ -61,10 +61,10 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PublicChild.html", true,
                 // Field inheritence from non-public superclass.
                 """
-                    <a href="#fieldInheritedFromParent">fieldInheritedFromParent</a>""",
+                    <a href="#fieldInheritedFromParent" class="member-name-link">fieldInheritedFromParent</a>""",
                 // Method inheritance from non-public superclass.
                 """
-                    <a href="#methodInheritedFromParent(int)">methodInheritedFromParent</a>""",
+                    <a href="#methodInheritedFromParent(int)" class="member-name-link">methodInheritedFromParent</a>""",
                 // private class does not show up in tree
                 """
                     <div class="inheritance" title="Inheritance Tree">java.lang.Object
@@ -113,10 +113,10 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PublicInterface.html", true,
                 // Field inheritance from non-public superinterface.
                 """
-                    <a href="#fieldInheritedFromInterface">fieldInheritedFromInterface</a>""",
+                    <a href="#fieldInheritedFromInterface" class="member-name-link">fieldInheritedFromInterface</a>""",
                 // Method inheritance from non-public superinterface.
                 """
-                    <a href="#methodInterface(int)">methodInterface</a>""",
+                    <a href="#methodInterface(int)" class="member-name-link">methodInterface</a>""",
                 //Make sure implemented interfaces from private superclass are inherited
                 """
                     <dl class="notes">
@@ -217,7 +217,7 @@ public class TestPrivateClasses extends JavadocTester {
 
         checkOutput("pkg/PrivateInterface.html", true,
                 """
-                    <a href="#methodInterface(int)">methodInterface</a>"""
+                    <a href="#methodInterface(int)" class="member-name-link">methodInterface</a>"""
         );
 
         checkOutput("pkg2/C.html", true,

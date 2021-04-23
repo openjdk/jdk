@@ -92,16 +92,7 @@ Java_sun_nio_ch_UnixDomainSockets_socketSupported(JNIEnv *env, jclass cl)
         return JNI_FALSE;
     }
     closesocket(s);
-
-    /* Check for build 18362 or newer, due to Windows bug described in 8259014 */
-
-    OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0, {0}, 0, 0 };
-    DWORDLONG cond_mask = 0;
-
-    VER_SET_CONDITION(cond_mask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
-    osvi.dwBuildNumber  = 18362; // Windows 10 (1903) or newer
-
-    return VerifyVersionInfoW(&osvi, VER_BUILDNUMBER, cond_mask) != 0;
+    return JNI_TRUE;
 }
 
 JNIEXPORT jint JNICALL

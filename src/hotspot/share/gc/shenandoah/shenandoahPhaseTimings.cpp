@@ -97,16 +97,15 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
   assert(phase >= 0 && phase < _num_phases, "Out of bounds");
   switch (phase) {
     case init_evac:
-    case scan_roots:
-    case update_roots:
-    case final_update_refs_roots:
-    case full_gc_scan_roots:
+    case finish_mark:
+    case purge_weak_par:
+    case full_gc_mark:
     case full_gc_update_roots:
     case full_gc_adjust_roots:
-    case degen_gc_scan_conc_roots:
+    case degen_gc_stw_mark:
+    case degen_gc_mark:
     case degen_gc_update_roots:
     case full_gc_weakrefs:
-    case full_gc_scan_conc_roots:
     case full_gc_purge_class_unload:
     case full_gc_purge_weak_par:
     case degen_gc_weakrefs:
@@ -114,8 +113,9 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case degen_gc_purge_weak_par:
     case heap_iteration_roots:
     case conc_mark_roots:
+    case conc_thread_roots:
     case conc_weak_roots_work:
-    case conc_weak_refs_work:
+    case conc_weak_refs:
     case conc_strong_roots:
       return true;
     default:
@@ -125,12 +125,10 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
 
 bool ShenandoahPhaseTimings::is_root_work_phase(Phase phase) {
   switch (phase) {
-    case scan_roots:
-    case update_roots:
+    case finish_mark:
     case init_evac:
-    case final_update_refs_roots:
     case degen_gc_update_roots:
-    case full_gc_scan_roots:
+    case full_gc_mark:
     case full_gc_update_roots:
     case full_gc_adjust_roots:
       return true;

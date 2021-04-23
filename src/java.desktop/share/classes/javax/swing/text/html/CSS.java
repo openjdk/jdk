@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.text.html;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -2453,6 +2454,7 @@ public class CSS implements Serializable {
             return null;
         }
 
+        @Serial
         private void writeObject(java.io.ObjectOutputStream s)
                      throws IOException {
             s.defaultWriteObject();
@@ -2464,6 +2466,7 @@ public class CSS implements Serializable {
             }
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
                 throws ClassNotFoundException, IOException {
             s.defaultReadObject();
@@ -2877,18 +2880,14 @@ public class CSS implements Serializable {
             lengthMapping.put("cm", 28.3464f);
             lengthMapping.put("pc", 12f);
             lengthMapping.put("in", 72f);
-            int res = 72;
-            try {
-                res = Toolkit.getDefaultToolkit().getScreenResolution();
-            } catch (HeadlessException e) {
-            }
-            // mapping according to the CSS2 spec
-            w3cLengthMapping.put("pt", res / 72f);
-            w3cLengthMapping.put("px", 1f);
-            w3cLengthMapping.put("mm", res / 25.4f);
-            w3cLengthMapping.put("cm", res / 2.54f);
-            w3cLengthMapping.put("pc", res / 6f);
-            w3cLengthMapping.put("in", (float) res);
+            // Mapping according to the CSS2.2 spec
+            // https://www.w3.org/TR/CSS22/syndata.html#x39
+            w3cLengthMapping.put("pt", 96f / 72f);         // 1/72 of 1in
+            w3cLengthMapping.put("px", 1f);                // 1/96 of 1in
+            w3cLengthMapping.put("mm", 96f / 2.54f / 10f); // 1/10 of 1cm
+            w3cLengthMapping.put("cm", 96f / 2.54f);       // 96px/2.54
+            w3cLengthMapping.put("pc", 96f / 6f);          // 1/6 of 1in
+            w3cLengthMapping.put("in", 96f);               // 96px
         }
 
         LengthUnit(String value, short defaultType, float defaultValue) {
@@ -3563,6 +3562,7 @@ public class CSS implements Serializable {
     // Serialization support
     //
 
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws IOException
     {
@@ -3593,6 +3593,7 @@ public class CSS implements Serializable {
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {

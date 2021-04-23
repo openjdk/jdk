@@ -31,15 +31,12 @@ import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
-import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DeprecatedTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -154,8 +151,8 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      */
     protected void addTableRow(Table table, TypeElement klass) {
         List<Content> rowContents = new ArrayList<>();
-        Content classLink = getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.INDEX, klass));
+        Content classLink = getLink(new HtmlLinkInfo(
+                configuration, HtmlLinkInfo.Kind.INDEX, klass));
         ContentBuilder description = new ContentBuilder();
         Set<ElementFlag> flags = utils.elementFlags(klass);
         if (flags.contains(ElementFlag.PREVIEW)) {

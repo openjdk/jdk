@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
@@ -43,7 +44,7 @@ static oop new_java_util_arraylist(TRAPS) {
   JavaValue result(T_OBJECT);
   JfrJavaArguments args(&result, "java/util/ArrayList", "<init>", "()V", CHECK_NULL);
   JfrJavaSupport::new_object(&args, CHECK_NULL);
-  return (oop)result.get_jobject();
+  return result.get_oop();
 }
 
 static const int initial_array_size = 64;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,6 +212,7 @@ public:
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::ZERO; }
   virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -224,6 +225,7 @@ public:
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeLong::ZERO; }
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 

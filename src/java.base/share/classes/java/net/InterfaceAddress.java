@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,17 +101,10 @@ public class InterfaceAddress {
      * @see     java.net.InterfaceAddress#hashCode()
      */
     public boolean equals(Object obj) {
-        if (obj instanceof InterfaceAddress) {
-            InterfaceAddress cmp = (InterfaceAddress) obj;
-
-            if (Objects.equals(address, cmp.address) &&
+        return obj instanceof InterfaceAddress cmp &&
+                Objects.equals(address, cmp.address) &&
                 Objects.equals(broadcast, cmp.broadcast) &&
-                maskLength == cmp.maskLength)
-            {
-                return true;
-            }
-        }
-        return false;
+                maskLength == cmp.maskLength;
     }
 
     /**

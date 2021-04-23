@@ -27,7 +27,7 @@
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
- *      8243559 8225072 8258630 8259312
+ *      8243559 8225072 8258630 8259312 8256421 8225081
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -54,12 +54,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 90;
+    private static final int COUNT = 91;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "50:97:53:06:1B:40:32:71:D6:CD:3B:29:89:7C:BF:BF:41:6F:56:B1:0D:E9:B8:2A:8C:7C:C2:CD:CD:9F:10:EF";
+            = "9B:C3:0B:24:D4:26:E4:A9:4F:2C:96:25:06:9B:08:E5:13:5B:0B:33:74:5F:78:DB:BD:91:CD:31:D4:37:07:28";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -180,8 +180,6 @@ public class VerifyCACerts {
                     "3B:22:2E:56:67:11:E9:92:30:0D:C0:B1:5A:B9:47:3D:AF:DE:F8:C8:4D:0C:EF:7D:33:17:B4:C1:82:1D:14:36");
             put("swisssignsilverg2ca [jdk]",
                     "BE:6C:4D:A2:BB:B9:BA:59:B6:F3:93:97:68:37:42:46:C3:C0:05:99:3F:A9:8F:02:0D:1D:ED:BE:D4:8A:81:D5");
-            put("soneraclass2ca [jdk]",
-                    "79:08:B4:03:14:C1:38:10:0B:51:8D:07:35:80:7F:FB:FC:F8:51:8A:00:95:33:71:05:BA:38:6B:15:3D:D9:27");
             put("securetrustca [jdk]",
                     "F1:C1:B5:0A:E5:A2:0D:D8:03:0E:C9:F6:BC:24:82:3D:D3:67:B5:25:57:59:B4:E7:1B:61:FC:E9:F7:37:5D:73");
             put("xrampglobalca [jdk]",
@@ -248,6 +246,10 @@ public class VerifyCACerts {
                     "2E:7B:F1:6C:C2:24:85:A7:BB:E2:AA:86:96:75:07:61:B0:AE:39:BE:3B:2F:E9:D0:CC:6D:4E:F7:34:91:42:5C");
             put("sslrooteccca [jdk]",
                     "34:17:BB:06:CC:60:07:DA:1B:96:1C:92:0B:8A:B4:CE:3F:AD:82:0E:4A:A3:0B:9A:CB:C4:A7:4E:BD:CE:BC:65");
+            put("haricarootca2015 [jdk]",
+                    "A0:40:92:9A:02:CE:53:B4:AC:F4:F2:FF:C6:98:1C:E4:49:6F:75:5E:6D:45:FE:0B:2A:69:2B:CD:52:52:3F:36");
+            put("haricaeccrootca2015 [jdk]",
+                    "44:B5:45:AA:8A:25:E6:5A:73:CA:15:DC:27:FC:36:D2:4C:1C:B9:95:3A:06:65:39:B1:15:82:DC:48:7B:48:33");
         }
     };
 
@@ -266,8 +268,6 @@ public class VerifyCACerts {
             add("luxtrustglobalrootca [jdk]");
             // Valid until: Wed Mar 17 11:33:33 PDT 2021
             add("quovadisrootca [jdk]");
-            // Valid until: Tue Apr 06 00:29:40 PDT 2021
-            add("soneraclass2ca [jdk]");
         }
     };
 

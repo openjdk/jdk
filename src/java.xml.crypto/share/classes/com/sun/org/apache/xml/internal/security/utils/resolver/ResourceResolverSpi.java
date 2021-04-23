@@ -22,22 +22,14 @@
  */
 package com.sun.org.apache.xml.internal.security.utils.resolver;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 
 /**
  * During reference validation, we have to retrieve resources from somewhere.
  *
+ * Extensions of this class must be thread-safe.
  */
 public abstract class ResourceResolverSpi {
-
-    private static final com.sun.org.slf4j.internal.Logger LOG =
-        com.sun.org.slf4j.internal.LoggerFactory.getLogger(ResourceResolverSpi.class);
-
-    /** Field properties */
-    protected Map<String, String> properties;
 
     /**
      * This is the workhorse method used to resolve resources.
@@ -51,55 +43,6 @@ public abstract class ResourceResolverSpi {
         throws ResourceResolverException;
 
     /**
-     * Method engineSetProperty
-     *
-     * @param key
-     * @param value
-     */
-    public void engineSetProperty(String key, String value) {
-        if (properties == null) {
-            properties = new HashMap<>();
-        }
-        properties.put(key, value);
-    }
-
-    /**
-     * Method engineGetProperty
-     *
-     * @param key
-     * @return the value of the property
-     */
-    public String engineGetProperty(String key) {
-        if (properties == null) {
-            return null;
-        }
-        return properties.get(key);
-    }
-
-    /**
-     *
-     * @param newProperties
-     */
-    public void engineAddProperies(Map<String, String> newProperties) {
-        if (newProperties != null && !newProperties.isEmpty()) {
-            if (properties == null) {
-                properties = new HashMap<>();
-            }
-            properties.putAll(newProperties);
-        }
-    }
-
-    /**
-     * Tells if the implementation does can be reused by several threads safely.
-     * It normally means that the implementation does not have any member, or there is
-     * member change between engineCanResolve and engineResolve invocations. Or it maintains all
-     * member info in ThreadLocal methods.
-     */
-    public boolean engineIsThreadSafe() {
-        return false;
-    }
-
-    /**
      * This method helps the {@link ResourceResolver} to decide whether a
      * {@link ResourceResolverSpi} is able to perform the requested action.
      *
@@ -108,78 +51,4 @@ public abstract class ResourceResolverSpi {
      */
     public abstract boolean engineCanResolveURI(ResourceResolverContext context);
 
-    /**
-     * Method engineGetPropertyKeys
-     *
-     * @return the property keys
-     */
-    public String[] engineGetPropertyKeys() {
-        return new String[0];
-    }
-
-    /**
-     * Method understandsProperty
-     *
-     * @param propertyToTest
-     * @return true if understands the property
-     */
-    public boolean understandsProperty(String propertyToTest) {
-        String[] understood = this.engineGetPropertyKeys();
-
-        if (understood != null) {
-            for (String str : understood) {
-                if (str.equals(propertyToTest)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-
-    /**
-     * Fixes a platform dependent filename to standard URI form.
-     *
-     * @param str The string to fix.
-     *
-     * @return Returns the fixed URI string.
-     */
-    public static String fixURI(String str) {
-
-        // handle platform dependent strings
-        str = str.replace(java.io.File.separatorChar, '/');
-
-        if (str.length() >= 4) {
-
-            // str =~ /^\W:\/([^/])/ # to speak perl ;-))
-            char ch0 = Character.toUpperCase(str.charAt(0));
-            char ch1 = str.charAt(1);
-            char ch2 = str.charAt(2);
-            char ch3 = str.charAt(3);
-            boolean isDosFilename = 'A' <= ch0 && ch0 <= 'Z'
-                && ch1 == ':' && ch2 == '/'
-                && ch3 != '/';
-
-            if (isDosFilename) {
-                LOG.debug("Found DOS filename: {}", str);
-            }
-        }
-
-        // Windows fix
-        if (str.length() >= 2) {
-            char ch1 = str.charAt(1);
-
-            if (ch1 == ':') {
-                char ch0 = Character.toUpperCase(str.charAt(0));
-
-                if ('A' <= ch0 && ch0 <= 'Z') {
-                    str = "/" + str;
-                }
-            }
-        }
-
-        // done
-        return str;
-    }
 }

@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-
 import java.util.*;
 
 import javax.lang.model.element.PackageElement;
@@ -108,7 +106,7 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
             for (PackageElement pkg : configuration.packages) {
                 if (!pkg.isUnnamed()) {
                     if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                        Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
+                        Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
                         Content summaryContent = new ContentBuilder();
                         addSummaryComment(pkg, summaryContent);
                         table.addRow(pkg, packageLinkContent, summaryContent);

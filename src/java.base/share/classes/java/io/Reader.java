@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,10 +253,10 @@ public abstract class Reader implements Readable, Closeable {
      * @return     The number of characters read, or -1 if the end of the
      *             stream has been reached
      *
-     * @throws     IOException  If an I/O error occurs
      * @throws     IndexOutOfBoundsException
      *             If {@code off} is negative, or {@code len} is negative,
      *             or {@code len} is greater than {@code cbuf.length - off}
+     * @throws     IOException  If an I/O error occurs
      */
     public abstract int read(char cbuf[], int off, int len) throws IOException;
 
@@ -269,6 +269,8 @@ public abstract class Reader implements Readable, Closeable {
     /**
      * Skips characters.  This method will block until some characters are
      * available, an I/O error occurs, or the end of the stream is reached.
+     * If the stream is already at its end before this method is invoked,
+     * then no characters are skipped and zero is returned.
      *
      * @param  n  The number of characters to skip
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -83,6 +83,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.TransformErrorListener;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -94,7 +95,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: Aug 2019
+ * @LastModified: Feb 2021
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache
@@ -278,6 +279,10 @@ public final class TransformerImpl extends Transformer
             _translet.setMessageHandler(new MessageHandler(_errorListener));
         }
         _properties = createOutputProperties(outputProperties);
+        String v = SecuritySupport.getJAXPSystemProperty(OutputPropertiesFactory.SP_IS_STANDALONE);
+        if (v != null) {
+            _properties.setProperty(OutputPropertiesFactory.JDK_IS_STANDALONE, v);
+        }
         _propertiesClone = (Properties) _properties.clone();
         _indentNumber = indentNumber;
         _tfactory = tfactory;
@@ -1032,7 +1037,7 @@ public final class TransformerImpl extends Transformer
                     }
                 }
             }
-            else if (name.equals(OutputPropertiesFactory.ORACLE_IS_STANDALONE)) {
+            else if (isStandaloneProperty(name)) {
                  if (value != null && value.equals("yes")) {
                      translet._isStandalone = true;
                  }
@@ -1096,7 +1101,7 @@ public final class TransformerImpl extends Transformer
                     handler.setIndentAmount(Integer.parseInt(value));
                 }
             }
-            else if (name.equals(OutputPropertiesFactory.ORACLE_IS_STANDALONE)) {
+            else if (isStandaloneProperty(name)) {
                 if (value != null && value.equals("yes")) {
                     handler.setIsStandalone(true);
                 }
@@ -1214,10 +1219,20 @@ public final class TransformerImpl extends Transformer
                 name.equals(OutputKeys.OMIT_XML_DECLARATION)   ||
                 name.equals(OutputKeys.STANDALONE) ||
                 name.equals(OutputKeys.VERSION) ||
-                name.equals(OutputPropertiesFactory.ORACLE_IS_STANDALONE) ||
+                isStandaloneProperty(name) ||
                 name.charAt(0) == '{');
     }
 
+    /**
+     * Checks whether the property requested is the isStandalone property. Both
+     * the new and legacy property names are supported.
+     * @param name the property name
+     * @return true if the property is "isStandalone", false otherwise
+     */
+    private boolean isStandaloneProperty(String name) {
+        return (name.equals(OutputPropertiesFactory.JDK_IS_STANDALONE) ||
+                    name.equals(OutputPropertiesFactory.ORACLE_IS_STANDALONE));
+    }
     /**
      * Checks if a given output property is default (2nd layer only)
      */

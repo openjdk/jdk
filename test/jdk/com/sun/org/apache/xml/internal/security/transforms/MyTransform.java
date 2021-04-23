@@ -21,21 +21,32 @@
  * questions.
  */
 
+import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.transforms.Transform;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
+import org.w3c.dom.Element;
+
+import java.io.OutputStream;
 
 public class MyTransform extends TransformSpi {
 
     public static final String URI =
         "http://com.sun.org.apache.xml.internal.security.transforms.MyTransform";
 
-    public MyTransform() {
+    static {
         try {
             System.out.println("Registering Transform");
             Transform.register(URI, "MyTransform");
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    protected XMLSignatureInput enginePerformTransform(
+            XMLSignatureInput input, OutputStream os, Element transformElement,
+            String baseURI, boolean secureValidation) {
+        return null;
     }
 
     protected String engineGetURI() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
@@ -43,7 +43,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -52,6 +51,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 
 static void trace_class_resolution(oop mirror) {
   if (mirror == NULL || java_lang_Class::is_primitive(mirror)) {
@@ -99,7 +99,7 @@ oop Reflection::box(jvalue* value, BasicType type, TRAPS) {
   }
   if (is_reference_type(type)) {
     // regular objects are not boxed
-    return (oop) value->l;
+    return cast_to_oop(value->l);
   }
   oop result = java_lang_boxing_object::create(type, value, CHECK_NULL);
   if (result == NULL) {
@@ -273,7 +273,7 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
   }
   if (a->is_objArray()) {
     if (value_type == T_OBJECT) {
-      oop obj = (oop) value->l;
+      oop obj = cast_to_oop(value->l);
       if (obj != NULL) {
         Klass* element_klass = ObjArrayKlass::cast(a->klass())->element_klass();
         if (!obj->is_a(element_klass)) {
@@ -471,8 +471,8 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
   }
   // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
   // succeed trivially.
-  if (SystemDictionary::reflect_MagicAccessorImpl_klass_is_loaded() &&
-      current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
+  if (vmClasses::reflect_MagicAccessorImpl_klass_is_loaded() &&
+      current_class->is_subclass_of(vmClasses::reflect_MagicAccessorImpl_klass())) {
     return ACCESS_OK;
   }
 
@@ -697,7 +697,7 @@ bool Reflection::verify_member_access(const Klass* current_class,
 
   // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
   // succeed trivially.
-  if (current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
+  if (current_class->is_subclass_of(vmClasses::reflect_MagicAccessorImpl_klass())) {
     return true;
   }
 
@@ -760,7 +760,7 @@ static objArrayHandle get_parameter_types(const methodHandle& method,
                                           oop* return_type,
                                           TRAPS) {
   // Allocate array holding parameter types (java.lang.Class instances)
-  objArrayOop m = oopFactory::new_objArray(SystemDictionary::Class_klass(), parameter_count, CHECK_(objArrayHandle()));
+  objArrayOop m = oopFactory::new_objArray(vmClasses::Class_klass(), parameter_count, CHECK_(objArrayHandle()));
   objArrayHandle mirrors(THREAD, m);
   int index = 0;
   // Collect parameter types
@@ -951,7 +951,7 @@ static methodHandle resolve_interface_call(InstanceKlass* klass,
 }
 
 // Conversion
-static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror, TRAPS) {
+static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror) {
   assert(java_lang_Class::is_primitive(basic_type_mirror),
     "just checking");
   return java_lang_Class::primitive_type(basic_type_mirror);
@@ -1103,7 +1103,7 @@ static oop invoke(InstanceKlass* klass,
     oop arg = args->obj_at(i);
     if (java_lang_Class::is_primitive(type_mirror)) {
       jvalue value;
-      BasicType ptype = basic_type_mirror_to_basic_type(type_mirror, CHECK_NULL);
+      BasicType ptype = basic_type_mirror_to_basic_type(type_mirror);
       BasicType atype = Reflection::unbox_for_primitive(arg, &value, CHECK_NULL);
       if (ptype != atype) {
         Reflection::widen(&value, atype, ptype, CHECK_NULL);
@@ -1175,7 +1175,7 @@ oop Reflection::invoke_method(oop method_mirror, Handle receiver, objArrayHandle
   oop return_type_mirror = java_lang_reflect_Method::return_type(method_mirror);
   BasicType rtype;
   if (java_lang_Class::is_primitive(return_type_mirror)) {
-    rtype = basic_type_mirror_to_basic_type(return_type_mirror, CHECK_NULL);
+    rtype = basic_type_mirror_to_basic_type(return_type_mirror);
   } else {
     rtype = T_OBJECT;
   }

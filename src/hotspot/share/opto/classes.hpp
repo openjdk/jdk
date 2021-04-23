@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,6 +200,7 @@ macro(Lock)
 macro(Loop)
 macro(LoopLimit)
 macro(Mach)
+macro(MachNullCheck)
 macro(MachProj)
 macro(MulAddS2I)
 macro(MaxI)
@@ -293,7 +294,7 @@ shmacro(ShenandoahCompareAndSwapN)
 shmacro(ShenandoahCompareAndSwapP)
 shmacro(ShenandoahWeakCompareAndSwapN)
 shmacro(ShenandoahWeakCompareAndSwapP)
-shmacro(ShenandoahEnqueueBarrier)
+shmacro(ShenandoahIUBarrier)
 shmacro(ShenandoahLoadReferenceBarrier)
 macro(SCMemProj)
 macro(CopySignD)
@@ -445,6 +446,7 @@ macro(VectorBoxAllocate)
 macro(VectorUnbox)
 macro(VectorMaskWrapper)
 macro(VectorMaskCmp)
+macro(VectorMaskCast)
 macro(VectorTest)
 macro(VectorBlend)
 macro(VectorRearrange)

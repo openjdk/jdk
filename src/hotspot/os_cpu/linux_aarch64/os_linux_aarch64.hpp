@@ -26,9 +26,11 @@
 #ifndef OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_HPP
 #define OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_HPP
 
-  static void setup_fpu();
+#if defined(COMPATIBLE_CDS_ALIGNMENT)
+#define CDS_CORE_REGION_ALIGNMENT (64*K)
+#endif
 
-  static bool is_allocatable(size_t bytes);
+  static void setup_fpu();
 
   // Used to register dynamic code cache area with the OS
   // Note: Currently only used in 64 bit Windows implementations

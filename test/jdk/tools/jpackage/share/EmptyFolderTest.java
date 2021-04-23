@@ -37,6 +37,7 @@ import jdk.jpackage.internal.ApplicationLayout;
  * @library /test/lib
  * @build EmptyFolderBase
  * @build jdk.jpackage.test.*
+ * @build EmptyFolderTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m EmptyFolderTest
  */

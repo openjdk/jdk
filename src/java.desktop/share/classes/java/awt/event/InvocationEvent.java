@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package java.awt.event;
 
-import sun.awt.AWTAccessor;
-
-import java.awt.ActiveEvent;
 import java.awt.AWTEvent;
+import java.awt.ActiveEvent;
+import java.io.Serial;
+
+import sun.awt.AWTAccessor;
 
 /**
  * An event which executes the {@code run()} method on a {@code Runnable
@@ -146,9 +147,10 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      */
     private long when;
 
-    /*
-     * JDK 1.1 serialVersionUID.
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 436056344909459450L;
 
     /**

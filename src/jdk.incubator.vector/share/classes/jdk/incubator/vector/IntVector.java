@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2143,7 +2143,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                            S shuffle,
                                            IntVector v) {
         VectorMask<Integer> valid = shuffle.laneIsValid();
-        S ws = shuffletype.cast(shuffle.wrapIndexes());
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         IntVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, int.class, length(),

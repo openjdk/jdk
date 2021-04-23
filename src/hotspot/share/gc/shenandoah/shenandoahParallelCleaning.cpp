@@ -31,10 +31,12 @@
 #include "gc/shenandoah/shenandoahParallelCleaning.hpp"
 #include "runtime/safepoint.hpp"
 
-ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(BoolObjectClosure* is_alive,
+ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(ShenandoahPhaseTimings::Phase phase,
+                                                           BoolObjectClosure* is_alive,
                                                            uint num_workers,
                                                            bool unloading_occurred) :
   AbstractGangTask("Shenandoah Class Unloading"),
+  _phase(phase),
   _unloading_occurred(unloading_occurred),
   _code_cache_task(num_workers, is_alive, unloading_occurred),
   _klass_cleaning_task() {
@@ -42,11 +44,15 @@ ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(BoolObjectClosure* is
 }
 
 void ShenandoahClassUnloadingTask::work(uint worker_id) {
-  _code_cache_task.work(worker_id);
+  {
+    ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::CodeCacheUnload, worker_id);
+    _code_cache_task.work(worker_id);
+  }
   // Clean all klasses that were not unloaded.
   // The weak metadata in klass doesn't need to be
   // processed if there was no unloading.
   if (_unloading_occurred) {
+    ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::CLDUnlink, worker_id);
     _klass_cleaning_task.work();
   }
 }

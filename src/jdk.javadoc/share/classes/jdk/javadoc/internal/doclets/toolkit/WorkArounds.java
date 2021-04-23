@@ -198,6 +198,18 @@ public class WorkArounds {
         return elementUtils.getTypeElement(className);
     }
 
+
+    // TODO: The following should be replaced by a new method such as Elements.isAutomaticModule
+    // see JDK-8261625
+    public boolean isAutomaticModule(ModuleElement me) {
+        if (me == null) {
+            return false;
+        } else {
+            ModuleSymbol msym = (ModuleSymbol) me;
+            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
+        }
+    }
+
     // TODO:  need to re-implement this using j.l.m. correctly!, this has
     //        implications on testInterface, the note here is that javac's supertype
     //        does the right thing returning Parameters in scope.

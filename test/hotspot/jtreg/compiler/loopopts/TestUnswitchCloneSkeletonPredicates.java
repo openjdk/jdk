@@ -27,9 +27,9 @@
  * @summary Test the complete cloning of skeleton predicates to unswitched loops as done when cloning them to the main loop.
  * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.loopopts.TestUnswitchCloneSkeletonPredicates::*
  *                   compiler.loopopts.TestUnswitchCloneSkeletonPredicates
- * @run main/othervm -Xcomp -XX:-PartialPeelLoop -XX:CompileCommand=compileonly,compiler.loopopts.TestUnswitchCloneSkeletonPredicates::*
+ * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:-PartialPeelLoop -XX:CompileCommand=compileonly,compiler.loopopts.TestUnswitchCloneSkeletonPredicates::*
  *                   compiler.loopopts.TestUnswitchCloneSkeletonPredicates
- * @run main/othervm -XX:-PartialPeelLoop compiler.loopopts.TestUnswitchCloneSkeletonPredicates
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-PartialPeelLoop compiler.loopopts.TestUnswitchCloneSkeletonPredicates
  */
 package compiler.loopopts;
 
