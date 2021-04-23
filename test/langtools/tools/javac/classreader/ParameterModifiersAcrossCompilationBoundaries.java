@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main T8226216
+ * @run main ParameterModifiersAcrossCompilationBoundaries
  */
 
 import java.util.Arrays;
@@ -41,7 +41,7 @@ import toolbox.ToolBox;
 import toolbox.JavacTask;
 import toolbox.Task;
 
-public class T8226216 extends TestRunner {
+public class ParameterModifiersAcrossCompilationBoundaries extends TestRunner {
     ToolBox tb;
 
     String moduleCode = """
@@ -107,13 +107,13 @@ public class T8226216 extends TestRunner {
             }
             """;
 
-    public T8226216() {
+    public ParameterModifiersAcrossCompilationBoundaries() {
         super(System.err);
         tb = new ToolBox();
     }
 
     public static void main(String[] args) throws Exception {
-        T8226216 t = new T8226216();
+        var t = new ParameterModifiersAcrossCompilationBoundaries();
         t.runTests();
     }
 
