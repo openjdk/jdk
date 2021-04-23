@@ -2754,6 +2754,23 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
 
 #ifdef JFR_HAVE_INTRINSICS
 
+/**
+ * if oop->klass != null
+ *   epoch = _epoch_state ? 2 : 1
+ *   if oop->klass->trace_id & ((epoch << META_SHIFT) | epoch)) != epoch
+ *     SET_USED_THIS_EPOCH
+ *     enqueue klass
+ *     if (!signaled) // JfrSignal::signal
+ *       signaled = true
+ *   id = oop->klass->trace_id >> TRACE_ID_SHIFT // normal class path
+ * else
+ *   if oop->array_klass != null
+ *     id = (oop->array_klass->trace_id >> TRACE_ID_SHIFT) + 1 // primitive class path
+ *   else
+ *     id = LAST_TYPE_ID + 1 // void class path
+ *   if (!signaled)
+ *     signaled = true
+ */
 bool LibraryCallKit::inline_native_classID() {
   Node* cls = null_check(argument(0), T_OBJECT);
 
