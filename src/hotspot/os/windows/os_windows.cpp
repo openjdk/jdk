@@ -58,6 +58,7 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/semaphore.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/thread.inline.hpp"
