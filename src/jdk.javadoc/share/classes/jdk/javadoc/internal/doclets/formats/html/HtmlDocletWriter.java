@@ -2253,6 +2253,14 @@ public class HtmlDocletWriter {
             }
         }
         previewLanguageFeatures.addAll(utils.previewLanguageFeaturesUsed(el));
+        if (!previewLanguageFeatures.isEmpty()) {
+            for (DeclarationPreviewLanguageFeatures feature : previewLanguageFeatures) {
+                String featureDisplayName =
+                        resources.getText("doclet.Declared_Using_Preview." + feature.name());
+                result.add(withPreviewFeatures("doclet.Declared_Using_Preview", className,
+                        featureDisplayName, feature.features));
+            }
+        }
         if (!declaredUsingPreviewFeature.isEmpty()) {
             result.add(withLinks("doclet.UsesDeclaredUsingPreview", className, declaredUsingPreviewFeature));
         }
