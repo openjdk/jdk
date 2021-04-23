@@ -293,7 +293,6 @@ public:
   void initialize(bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
   static int    LogOfHRGrainBytes;
-  static int    LogOfHRGrainWords;
   static int    LogCardsPerRegion;
 
   static size_t GrainBytes;
@@ -318,8 +317,8 @@ public:
 
   // It sets up the heap region size (GrainBytes / GrainWords), as
   // well as other related fields that are based on the heap region
-  // size (LogOfHRGrainBytes / LogOfHRGrainWords /
-  // CardsPerRegion). All those fields are considered constant
+  // size (LogOfHRGrainBytes / CardsPerRegion).
+  // All those fields are considered constant
   // throughout the JVM's execution, therefore they should only be set
   // up once during initialization time.
   static void setup_heap_region_size(size_t max_heap_size);
