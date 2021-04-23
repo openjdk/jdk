@@ -77,7 +77,7 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if ((in11 == in21 && in12 == in22) ||
         (in11 == in22 && in12 == in21)) {
       set_req(1, in11);
-      set_req(2, in22);
+      set_req(2, in12);
       PhaseIterGVN* igvn = phase->is_IterGVN();
       if (igvn) {
         igvn->_worklist.push(in1);
