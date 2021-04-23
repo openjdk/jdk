@@ -2662,8 +2662,9 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     // Fill in the signature array, for the calling-convention call.
     int total_args_passed = method->size_of_parameters(); // All args on stack
 
-    BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
-    VMRegPair* regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
+    BasicType stack_sig_bt[16];
+    BasicType* sig_bt = (total_args_passed <= 16) ? stack_sig_bt : NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
+
     int i = 0;
     if (!method->is_static())  // Pass in receiver first
       sig_bt[i++] = T_OBJECT;
@@ -2689,6 +2690,9 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     if (entry != NULL) {
       return entry;
     }
+
+    VMRegPair stack_regs[16];
+    VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
 
     // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
     int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
@@ -2885,9 +2889,12 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       // Fill in the signature array, for the calling-convention call.
       const int total_args_passed = method->size_of_parameters();
 
-      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
-      VMRegPair*   regs = NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
-      int i=0;
+      BasicType stack_sig_bt[16];
+      VMRegPair stack_regs[16];
+      BasicType* sig_bt = (total_args_passed <= 16) ? stack_sig_bt : NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
+      VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
+
+      int i = 0;
       if (!method->is_static())  // Pass in receiver first
         sig_bt[i++] = T_OBJECT;
       SignatureStream ss(method->signature());
