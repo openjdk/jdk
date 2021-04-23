@@ -115,6 +115,8 @@ public class MarkUnsafeAccessTest extends GraalCompilerTest {
         testMappedByteBuffer(MappedByteBuffer::get);
     }
 
+    // TODO Re-enable this test once JDK-8259360 got fixed.
+    /*
     @Test
     public void testCompiled() throws IOException {
         Assume.assumeFalse("Crashes on AArch64 (GR-8351)", System.getProperty("os.arch").equalsIgnoreCase("aarch64"));
@@ -136,6 +138,7 @@ public class MarkUnsafeAccessTest extends GraalCompilerTest {
             }
         });
     }
+    */
 
     private static final int BLOCK_SIZE = 512;
     private static final int BLOCK_COUNT = 16;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import jdk.test.lib.process.ProcessTools;
  */
 public class TestBadOptionValues {
 
-    private static final String START_FLIGHT_RECORDING = "-XX:StartFlightRecording=";
-    private static final String FLIGHT_RECORDER_OPTIONS = "-XX:FlightRecorderOptions=";
+    private static final String START_FLIGHT_RECORDING = "-XX:StartFlightRecording:";
+    private static final String FLIGHT_RECORDER_OPTIONS = "-XX:FlightRecorderOptions:";
 
     private static void test(String prepend, String expectedOutput, String... options) throws Exception {
         ProcessBuilder pb;

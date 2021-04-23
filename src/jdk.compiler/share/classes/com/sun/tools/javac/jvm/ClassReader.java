@@ -1514,9 +1514,6 @@ public class ClassReader {
     }
 
     Type readTypeOrClassSymbol(int i) {
-        // support preliminary jsr175-format class files
-        if (poolReader.hasTag(i, CONSTANT_Class))
-            return poolReader.getClass(i).type;
         return readTypeToProxy(i);
     }
     Type readTypeToProxy(int i) {

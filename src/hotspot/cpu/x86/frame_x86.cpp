@@ -35,7 +35,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/monitorChunk.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
