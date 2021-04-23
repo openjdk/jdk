@@ -3732,10 +3732,19 @@ void os::large_page_init() {
   // re-add the default page size to the list of page sizes to be sure.
   all_large_pages.add(default_large_page_size);
 
-  // Populate large page sizes to _page_sizes
+  // Populate large page sizes to _page_sizes. Add pages that
+  // are less than or equal to LargePageSizeInBytes, except when LargePageSizeInBytes=0
+  // or FLAG_IS_DEFAULT(LargePageSizeInBytes), add all sizes
   for (size_t page_size = all_large_pages.largest(); page_size != 0;
          page_size = all_large_pages.next_smaller(page_size)) {
-    _page_sizes.add(page_size);
+    if (LargePageSizeInBytes != 0
+        || !FLAG_IS_DEFAULT(LargePageSizeInBytes)) {
+      if (page_size <= LargePageSizeInBytes){
+        _page_sizes.add(page_size);
+      }
+    } else {
+      _page_sizes.add(page_size);
+    }
   }
 
   LogTarget(Info, pagesize) lt;
@@ -3752,14 +3761,9 @@ void os::large_page_init() {
       log_info(os)("Overriding default large page size using LargePageSizeInBytes");
     } else {
       _large_page_size = default_large_page_size;
-      warning("Setting LargePageSizeInBytes=" SIZE_FORMAT " has no effect on this OS. Using the default large page size "
-              SIZE_FORMAT "%s.",
-              LargePageSizeInBytes,
-              byte_size_in_proper_unit(_large_page_size), proper_unit_for_byte_size(_large_page_size));
-
     }
   } else {
-      _large_page_size = default_large_page_size;
+    _large_page_size = default_large_page_size;
   }
 
   // Now determine the type of large pages to use:
