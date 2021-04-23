@@ -212,7 +212,8 @@ module java.base {
         jdk.jartool,
         jdk.jfr,
         jdk.jlink,
-        jdk.jpackage;
+        jdk.jpackage,
+        jdk.incubator.foreign;
     exports jdk.internal.perf to
         java.management,
         jdk.management.agent,
@@ -228,7 +229,8 @@ module java.base {
         java.sql.rowset,
         jdk.dynalink,
         jdk.internal.vm.ci,
-        jdk.unsupported;
+        jdk.unsupported,
+        jdk.incubator.foreign;
     exports jdk.internal.vm to
         jdk.internal.jvmstat,
         jdk.management.agent;

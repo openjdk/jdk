@@ -25,6 +25,7 @@ package org.openjdk.bench.jdk.incubator.foreign;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.LibraryLookup;
 import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -49,7 +50,7 @@ import static jdk.incubator.foreign.CLinker.asVarArg;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign", "-Dforeign.restricted=permit" })
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign", "--enable-native-access=ALL-UNNAMED" })
 public class VaList {
 
     static final CLinker linker = CLinker.getInstance();
@@ -75,13 +76,13 @@ public class VaList {
 
     @Benchmark
     public void vaList() throws Throwable {
-        try (CLinker.VaList vaList = CLinker.VaList.make(b ->
-            b.vargFromInt(C_INT, 1)
-             .vargFromDouble(C_DOUBLE, 2D)
-             .vargFromLong(C_LONG_LONG, 3L)
-        )) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            CLinker.VaList vaList = CLinker.VaList.make(b ->
+                    b.vargFromInt(C_INT, 1)
+                            .vargFromDouble(C_DOUBLE, 2D)
+                            .vargFromLong(C_LONG_LONG, 3L), scope);
             MH_vaList.invokeExact(3,
-                                  vaList);
+                    vaList);
         }
     }
 }

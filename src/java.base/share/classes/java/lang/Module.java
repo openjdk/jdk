@@ -56,8 +56,8 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
-import jdk.internal.misc.VM;
 import jdk.internal.module.IllegalAccessLogger;
+import jdk.internal.module.IllegalNativeAccessChecker;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
@@ -111,6 +111,8 @@ public final class Module implements AnnotatedElement {
     // the module descriptor
     private final ModuleDescriptor descriptor;
 
+    // is this module a native module
+    private volatile boolean enableNativeAccess = false;
 
     /**
      * Creates a new named Module. The resulting Module will be defined to the
@@ -135,8 +137,11 @@ public final class Module implements AnnotatedElement {
         String loc = Objects.toString(uri, null);
         Object[] packages = descriptor.packages().toArray();
         defineModule0(this, isOpen, vs, loc, packages);
+        if (loader == null || loader == ClassLoaders.platformClassLoader()) {
+            // boot/builtin modules are always native
+            addEnableNativeAccess();
+        }
     }
-
 
     /**
      * Create the unnamed Module for the given ClassLoader.
@@ -149,7 +154,6 @@ public final class Module implements AnnotatedElement {
         this.loader = loader;
         this.descriptor = null;
     }
-
 
     /**
      * Creates a named module but without defining the module to the VM.
@@ -244,6 +248,20 @@ public final class Module implements AnnotatedElement {
             }
         }
         return null;
+    }
+
+    boolean isEnableNativeAccess() {
+        if (enableNativeAccess) {
+            return true;
+        }
+
+        // lazy init for unnamed modules
+        if (!isNamed() && IllegalNativeAccessChecker.enableNativeAccessAllUnnamedModules()) {
+            enableNativeAccess = true;
+            return true;
+        }
+
+        return false;
     }
 
     // --
@@ -408,6 +426,11 @@ public final class Module implements AnnotatedElement {
             }
             implAddReads(other, true);
         }
+        return this;
+    }
+
+    Module addEnableNativeAccess() {
+        enableNativeAccess = true;
         return this;
     }
 

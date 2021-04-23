@@ -63,6 +63,7 @@ struct CodeBlobType {
 //    AdapterBlob        : Used to hold C2I/I2C adapters
 //    VtableBlob         : Used for holding vtable chunks
 //    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
+//    EntryBlob          : Used for upcalls from native code
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
@@ -85,6 +86,8 @@ struct CodeBlobType {
 
 
 class CodeBlobLayout;
+class EntryBlob; // for as_entry_blob()
+class JavaFrameAnchor; // for EntryBlob::jfa_for_frame
 
 class CodeBlob {
   friend class VMStructs;
@@ -147,6 +150,7 @@ public:
   virtual bool is_method_handles_adapter_blob() const { return false; }
   virtual bool is_aot() const                         { return false; }
   virtual bool is_compiled() const                    { return false; }
+  virtual bool is_entry_blob() const                  { return false; }
 
   inline bool is_compiled_by_c1() const    { return _type == compiler_c1; };
   inline bool is_compiled_by_c2() const    { return _type == compiler_c2; };
@@ -160,6 +164,7 @@ public:
   CompiledMethod* as_compiled_method_or_null() { return is_compiled() ? (CompiledMethod*) this : NULL; }
   CompiledMethod* as_compiled_method()         { assert(is_compiled(), "must be compiled"); return (CompiledMethod*) this; }
   CodeBlob* as_codeblob_or_null() const        { return (CodeBlob*) this; }
+  EntryBlob* as_entry_blob() const             { assert(is_entry_blob(), "must be entry blob"); return (EntryBlob*) this; }
 
   // Boundaries
   address header_begin() const        { return (address) this; }
@@ -391,6 +396,7 @@ class BufferBlob: public RuntimeBlob {
   friend class AdapterBlob;
   friend class VtableBlob;
   friend class MethodHandlesAdapterBlob;
+  friend class EntryBlob;
   friend class WhiteBox;
 
  private:
@@ -728,6 +734,35 @@ class SafepointBlob: public SingletonBlob {
 
   // Typing
   bool is_safepoint_stub() const                 { return true; }
+};
+
+//----------------------------------------------------------------------------------------------------
+
+// For Panama upcall stubs
+class EntryBlob: public BufferBlob {
+ private:
+  intptr_t _exception_handler_offset;
+  jobject _receiver;
+  ByteSize _jfa_sp_offset;
+
+  EntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
+            jobject receiver, ByteSize jfa_sp_offset);
+
+ public:
+  // Creation
+  static EntryBlob* create(const char* name, CodeBuffer* cb,
+                           intptr_t exception_handler_offset, jobject receiver,
+                           ByteSize jfa_sp_offset);
+
+  address exception_handler() { return code_begin() + _exception_handler_offset; }
+  jobject receiver() { return _receiver; }
+  ByteSize jfa_sp_offset() const { return _jfa_sp_offset; }
+
+  // defined in frame_ARCH.cpp
+  JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
+
+  // Typing
+  virtual bool is_entry_blob() const override { return true; }
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP

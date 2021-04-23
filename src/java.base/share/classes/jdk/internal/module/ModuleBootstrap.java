@@ -268,7 +268,8 @@ public final class ModuleBootstrap {
         if (baseUri == null)
             throw new InternalError(JAVA_BASE + " does not have a location");
         BootLoader.loadModule(base);
-        Modules.defineModule(null, base.descriptor(), baseUri);
+        SharedSecrets.getJavaLangAccess()
+                .addEnableNativeAccess(Modules.defineModule(null, base.descriptor(), baseUri));
 
         // Step 2a: Scan all modules when --validate-modules specified
 
@@ -467,6 +468,9 @@ public final class ModuleBootstrap {
                              bootLayer,
                              extraExportsOrOpens);
         }
+
+        // add enable native access
+        addEnableNativeAccess(bootLayer);
 
         Counters.add("jdk.module.boot.7.adjustModulesTime");
 
@@ -869,6 +873,21 @@ public final class ModuleBootstrap {
         builder.complete();
     }
 
+    private static void addEnableNativeAccess(ModuleLayer layer) {
+        // add native modules explicitly provided on the command line
+
+        JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+        for (String name : IllegalNativeAccessChecker.enableNativeAccessModules()) {
+            Optional<Module> module = layer.findModule(name);
+            if (module.isPresent()) {
+                jla.addEnableNativeAccess(module.get());
+            } else {
+                // silently skip.
+                // warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
+            }
+        }
+    }
+
     /**
      * Decodes the values of --add-reads, -add-exports, --add-opens or
      * --patch-modules options that are encoded in system properties.
@@ -992,7 +1011,7 @@ public final class ModuleBootstrap {
     private static final String ADD_OPENS    = "--add-opens";
     private static final String ADD_READS    = "--add-reads";
     private static final String PATCH_MODULE = "--patch-module";
-
+    private static final String ENABLE_NATIVE_ACCESS = "--enable-native-access";
 
     /*
      * Returns the command-line option name corresponds to the specified

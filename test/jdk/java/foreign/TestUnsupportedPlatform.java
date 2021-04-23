@@ -30,17 +30,8 @@
  */
 
 import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.NativeScope;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-
-import static jdk.incubator.foreign.MemoryAddress.NULL;
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_BYTE;
 import static org.testng.Assert.assertNull;
 
 // tests run on 32-bit platforms, which are currently not supported

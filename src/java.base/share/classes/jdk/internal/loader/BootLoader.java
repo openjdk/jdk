@@ -60,7 +60,9 @@ public class BootLoader {
     private static final String JAVA_HOME = StaticProperty.javaHome();
 
     static {
-        UNNAMED_MODULE = SharedSecrets.getJavaLangAccess().defineUnnamedModule(null);
+        JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+        UNNAMED_MODULE = jla.defineUnnamedModule(null);
+        jla.addEnableNativeAccess(UNNAMED_MODULE);
         setBootLoaderUnnamedModule0(UNNAMED_MODULE);
     }
 

@@ -2583,8 +2583,13 @@ Node* GraphKit::sign_extend_short(Node* in) {
 }
 
 //-----------------------------make_native_call-------------------------------
-Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep) {
-  uint n_filtered_args = nargs - 2; // -fallback, -nep;
+Node* GraphKit::make_native_call(address call_addr, const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep) {
+  // Select just the actual call args to pass on
+  // [MethodHandle fallback, long addr, HALF addr, ... args , NativeEntryPoint nep]
+  //                                             |          |
+  //                                             V          V
+  //                                             [ ... args ]
+  uint n_filtered_args = nargs - 4; // -fallback, -addr (2), -nep;
   ResourceMark rm;
   Node** argument_nodes = NEW_RESOURCE_ARRAY(Node*, n_filtered_args);
   const Type** arg_types = TypeTuple::fields(n_filtered_args);
@@ -2594,7 +2599,7 @@ Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNative
   {
     for (uint vm_arg_pos = 0, java_arg_read_pos = 0;
         vm_arg_pos < n_filtered_args; vm_arg_pos++) {
-      uint vm_unfiltered_arg_pos = vm_arg_pos + 1; // +1 to skip fallback handle argument
+      uint vm_unfiltered_arg_pos = vm_arg_pos + 3; // +3 to skip fallback handle argument and addr (2 since long)
       Node* node = argument(vm_unfiltered_arg_pos);
       const Type* type = call_type->domain()->field_at(TypeFunc::Parms + vm_unfiltered_arg_pos);
       VMReg reg = type == Type::HALF
@@ -2630,7 +2635,6 @@ Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNative
     TypeTuple::make(TypeFunc::Parms + n_returns, ret_types)
   );
 
-  address call_addr = nep->entry_point();
   if (nep->need_transition()) {
     RuntimeStub* invoker = SharedRuntime::make_native_invoker(call_addr,
                                                               nep->shadow_space(),
