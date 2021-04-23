@@ -212,7 +212,6 @@ void mutex_init() {
   def(CGC_lock                     , PaddedMonitor, special,     true,  _safepoint_check_never);      // coordinate between fore- and background GC
   def(STS_lock                     , PaddedMonitor, leaf,        true,  _safepoint_check_never);
 
-  def(FullGCCount_lock             , PaddedMonitor, leaf,        true,  _safepoint_check_never);      // in support of ExplicitGCInvokesConcurrent
   if (UseG1GC) {
     def(G1OldGCCount_lock          , PaddedMonitor, leaf,        true,  _safepoint_check_always);
 
