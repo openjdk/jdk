@@ -23,8 +23,9 @@
 
 // key: compiler.err.override.incompatible.ret
 // key: compiler.misc.foreach.cant.get.applicable.iterator
-// key: compiler.err.cant.resolve.location.args
-// key: compiler.misc.location
+// key: compiler.err.does.not.override.abstract
+// key: compiler.err.override.incompatible.ret
+// key: compiler.misc.cant.implement
 
 public class ForeachCantGetApplicableIterator {
     public void test(String[] args) {

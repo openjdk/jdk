@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main T8232765
+ * @run main TestReturnTypeOfIterator
  */
 
 import java.util.Arrays;
@@ -40,16 +40,16 @@ import toolbox.ToolBox;
 import toolbox.TestRunner;
 import toolbox.Task;
 
-public class T8232765 extends TestRunner {
+public class TestReturnTypeOfIterator extends TestRunner {
     ToolBox tb;
 
-    T8232765() {
+    TestReturnTypeOfIterator() {
         super(System.err);
         tb = new ToolBox();
     }
 
     public static void main(String[] args) throws Exception {
-        T8232765 t = new T8232765();
+        var t = new TestReturnTypeOfIterator();
         t.runTests();
     }
 
@@ -75,10 +75,10 @@ public class T8232765 extends TestRunner {
         List<String> expected = Arrays.asList(
                 "T8232765.java:4:9: compiler.err.override.incompatible.ret: " +
                         "(compiler.misc.foreach.cant.get.applicable.iterator), void, java.util.Iterator<E>",
-                "T8232765.java:4:22: compiler.err.cant.resolve.location.args: " +
-                        "kindname.method, hasNext, , , (compiler.misc.location: kindname.class, void, null)",
-                "2 errors",
-                "Fatal Error: Unable to find method hasNext");
+                "T8232765.java:8:1: compiler.err.does.not.override.abstract: MyLinkedList, iterator(), java.lang.Iterable",
+                "T8232765.java:9:17: compiler.err.override.incompatible.ret: (compiler.misc.cant.implement: iterator()," +
+                        " MyLinkedList, iterator(), java.lang.Iterable), void, java.util.Iterator<T>",
+                "3 errors");
         tb.checkEqual(expected, output);
     }
 
@@ -102,11 +102,12 @@ public class T8232765 extends TestRunner {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
         List<String> expected = Arrays.asList(
-                "T8232765.java:7:5: compiler.err.does.not.override.abstract: " +
-                        "T8232765.MyLinkedList, iterator(), java.lang.Iterable",
-                "T8232765.java:8:21: compiler.err.override.incompatible.ret: (compiler.misc.cant.implement: iterator()" +
-                        ", T8232765.MyLinkedList, iterator(), java.lang.Iterable), void, java.util.Iterator<T>",
-                "2 errors");
+                "T8232765.java:4:9: compiler.err.override.incompatible.ret: " +
+                        "(compiler.misc.foreach.cant.get.applicable.iterator), void, java.util.Iterator<E>",
+                "T8232765.java:7:5: compiler.err.does.not.override.abstract: T8232765.MyLinkedList, iterator(), java.lang.Iterable",
+                "T8232765.java:8:21: compiler.err.override.incompatible.ret: (compiler.misc.cant.implement: iterator()," +
+                        " T8232765.MyLinkedList, iterator(), java.lang.Iterable), void, java.util.Iterator<T>",
+                "3 errors");
         tb.checkEqual(expected, output);
     }
 }
