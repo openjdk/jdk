@@ -155,7 +155,7 @@ protected:
 
 public:
   ElfFile(const char* filepath);
-  ~ElfFile();
+  virtual ~ElfFile();
 
   bool decode(address addr, char* buf, int buflen, int* offset);
 
