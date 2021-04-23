@@ -32,6 +32,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -57,6 +58,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe_hp.hpp"
 
@@ -464,6 +466,10 @@ C2V_VMENTRY_NULL(jobject, findUniqueConcreteMethod, (JNIEnv* env, jobject, jobje
   }
   if (method->can_be_statically_bound()) {
     JVMCI_THROW_MSG_NULL(InternalError, err_msg("Effectively static method %s.%s should be handled in Java code", method->method_holder()->external_name(), method->external_name()));
+  }
+
+  if (method->is_abstract()) {
+    return NULL;
   }
 
   methodHandle ucm;

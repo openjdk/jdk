@@ -29,6 +29,7 @@
 #include "memory/iterator.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/bitMap.hpp"
+#include "utilities/exceptions.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;

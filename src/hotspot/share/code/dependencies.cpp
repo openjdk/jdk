@@ -1190,6 +1190,8 @@ class ConcreteMethodFinder : public AbstractClassHierarchyWalker {
   virtual Klass* find_witness_in(KlassDepChange* changes);
   virtual Klass* find_witness_anywhere(InstanceKlass* context_type);
 
+  bool witnessed_reabstraction_in_supers(Klass* k);
+
  public:
   ConcreteMethodFinder(Method* m, Klass* participant = NULL) : AbstractClassHierarchyWalker(participant) {
     assert(m != NULL && m->is_method(), "sanity");
@@ -1291,10 +1293,43 @@ Klass* ConcreteMethodFinder::find_witness_in(KlassDepChange* changes) {
   assert(!is_participant(new_type), "only old classes are participants");
   if (is_witness(new_type)) {
     return new_type;
+  } else {
+    // No witness found, but is_witness() doesn't detect method re-abstraction in case of spot-checking.
+    if (witnessed_reabstraction_in_supers(new_type)) {
+      return new_type;
+    }
   }
   // No witness found.  The dependency remains unbroken.
   return NULL;
 }
+
+bool ConcreteMethodFinder::witnessed_reabstraction_in_supers(Klass* k) {
+  if (!k->is_instance_klass()) {
+    return false; // no methods to find in an array type
+  } else {
+    // Looking for a case when an abstract method is inherited into a concrete class.
+    if (Dependencies::is_concrete_klass(k) && !k->is_interface()) {
+      Method* m = InstanceKlass::cast(k)->find_instance_method(_name, _signature, Klass::PrivateLookupMode::skip);
+      if (m != NULL) {
+        return false; // no reabstraction possible: local method found
+      }
+      for (InstanceKlass* super = k->java_super(); super != NULL; super = super->java_super()) {
+        m = super->find_instance_method(_name, _signature, Klass::PrivateLookupMode::skip);
+        if (m != NULL) { // inherited method found
+          if (m->is_abstract() || m->is_overpass()) {
+            _found_methods[_num_participants] = m;
+            return true; // abstract method found
+          }
+          return false;
+        }
+      }
+      assert(false, "root method not found");
+      return true;
+    }
+    return false;
+  }
+}
+
 
 Klass* ConcreteMethodFinder::find_witness_anywhere(InstanceKlass* context_type) {
   // Walk hierarchy under a context type, looking for unexpected types.
@@ -1397,7 +1432,6 @@ bool Dependencies::is_concrete_method(Method* m, Klass* k) {
   return true;
  }
 
-
 Klass* Dependencies::find_finalizable_subclass(Klass* k) {
   if (k->is_interface())  return NULL;
   if (k->has_finalizer()) return k;
@@ -1410,7 +1444,6 @@ Klass* Dependencies::find_finalizable_subclass(Klass* k) {
   return NULL;
 }
 
-
 bool Dependencies::is_concrete_klass(ciInstanceKlass* k) {
   if (k->is_abstract())  return false;
   // We could also return false if k does not yet appear to be
@@ -1422,7 +1455,6 @@ bool Dependencies::is_concrete_klass(ciInstanceKlass* k) {
 bool Dependencies::has_finalizable_subclass(ciInstanceKlass* k) {
   return k->has_finalizable_subclass();
 }
-
 
 // Any use of the contents (bytecodes) of a method must be
 // marked by an "evol_method" dependency, if those contents

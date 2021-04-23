@@ -1292,20 +1292,17 @@ public final class Instant
      * <p>
      * The comparison is based on the time-line position of the instants.
      *
-     * @param otherInstant  the other instant, null returns false
+     * @param other  the other instant, null returns false
      * @return true if the other instant is equal to this one
      */
     @Override
-    public boolean equals(Object otherInstant) {
-        if (this == otherInstant) {
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
         }
-        if (otherInstant instanceof Instant) {
-            Instant other = (Instant) otherInstant;
-            return this.seconds == other.seconds &&
-                   this.nanos == other.nanos;
-        }
-        return false;
+        return (other instanceof Instant otherInstant)
+                && this.seconds == otherInstant.seconds
+                && this.nanos == otherInstant.nanos;
     }
 
     /**

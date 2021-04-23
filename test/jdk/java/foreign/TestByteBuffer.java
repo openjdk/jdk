@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,29 @@ public class TestByteBuffer {
             try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_ONLY)) {
                 checkTuples(segment, segment.asByteBuffer(), 1);
             }
+        }
+    }
+
+    static final long LARGE_SIZE = 3L * 1024L * 1024L * 1024L; // 3GB
+
+    @Test
+    public void testLargeMappedSegment() throws Throwable {
+        if (System.getProperty("sun.arch.data.model").equals("32")) {
+            throw new SkipException("large mapped files not supported on 32-bit systems");
+        }
+
+        File f = new File("testLargeMappedSegment.out");
+        f.createNewFile();
+        f.deleteOnExit();
+
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0, LARGE_SIZE, FileChannel.MapMode.READ_WRITE)) {
+            MappedMemorySegments.isLoaded(segment);
+            MappedMemorySegments.load(segment);
+            MappedMemorySegments.isLoaded(segment);
+            MappedMemorySegments.force(segment);
+            MappedMemorySegments.isLoaded(segment);
+            MappedMemorySegments.unload(segment);
+            MappedMemorySegments.isLoaded(segment);
         }
     }
 
