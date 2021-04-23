@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,18 @@
  * @requires vm.aot
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
- * @run driver ClassFileInstaller ClassFileInstaller
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.lib.helpers.ClassFileInstaller
  * @run driver compiler.aot.cli.IncorrectAOTLibraryTest
  * @summary check if incorrect aot library is handled properly
  */
 
 package compiler.aot.cli;
 
+import java.nio.file.Paths;
+
 public class IncorrectAOTLibraryTest {
     private static final String OPTION
-            = "-XX:AOTLibrary=./ClassFileInstaller.class";
+            = "-XX:AOTLibrary=./" + Paths.get("jdk", "test", "lib", "helpers", "ClassFileInstaller.class").toString();
     private static final String[] EXPECTED_MESSAGES = new String[] {
         "error opening file:"
     };

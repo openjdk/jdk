@@ -183,9 +183,9 @@ public class ManagementFactoryHelper {
     //
     static final class LoggingMXBeanAccess {
 
-        final static String LOG_MANAGER_CLASS_NAME = "java.util.logging.LogManager";
-        final static String LOGGING_MXBEAN_CLASS_NAME = "java.util.logging.LoggingMXBean";
-        final static Class<?> LOG_MANAGER_CLASS = loadLoggingClass(LOG_MANAGER_CLASS_NAME);
+        static final String LOG_MANAGER_CLASS_NAME = "java.util.logging.LogManager";
+        static final String LOGGING_MXBEAN_CLASS_NAME = "java.util.logging.LoggingMXBean";
+        static final Class<?> LOG_MANAGER_CLASS = loadLoggingClass(LOG_MANAGER_CLASS_NAME);
 
         static boolean isAvailable() {
             return LOG_MANAGER_CLASS != null;
@@ -355,7 +355,7 @@ public class ManagementFactoryHelper {
         return bufferPools;
     }
 
-    private final static String BUFFER_POOL_MXBEAN_NAME = "java.nio:type=BufferPool";
+    private static final String BUFFER_POOL_MXBEAN_NAME = "java.nio:type=BufferPool";
 
     /**
      * Creates management interface for the given buffer pool.
@@ -484,19 +484,19 @@ public class ManagementFactoryHelper {
         }
     }
 
-    private final static String HOTSPOT_CLASS_LOADING_MBEAN_NAME =
+    private static final String HOTSPOT_CLASS_LOADING_MBEAN_NAME =
         "sun.management:type=HotspotClassLoading";
 
-    private final static String HOTSPOT_COMPILATION_MBEAN_NAME =
+    private static final String HOTSPOT_COMPILATION_MBEAN_NAME =
         "sun.management:type=HotspotCompilation";
 
-    private final static String HOTSPOT_MEMORY_MBEAN_NAME =
+    private static final String HOTSPOT_MEMORY_MBEAN_NAME =
         "sun.management:type=HotspotMemory";
 
     private static final String HOTSPOT_RUNTIME_MBEAN_NAME =
         "sun.management:type=HotspotRuntime";
 
-    private final static String HOTSPOT_THREAD_MBEAN_NAME =
+    private static final String HOTSPOT_THREAD_MBEAN_NAME =
         "sun.management:type=HotspotThreading";
 
     static void registerInternalMBeans(MBeanServer mbs) {

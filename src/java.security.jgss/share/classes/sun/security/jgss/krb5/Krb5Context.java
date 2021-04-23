@@ -124,7 +124,7 @@ class Krb5Context implements GSSContextSpi {
     private Credentials serviceCreds;
     private KrbApReq apReq;
     Ticket serviceTicket;
-    final private GSSCaller caller;
+    private final GSSCaller caller;
     private static final boolean DEBUG = Krb5Util.DEBUG;
 
     /**

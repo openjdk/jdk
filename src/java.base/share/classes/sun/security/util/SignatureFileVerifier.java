@@ -33,7 +33,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SignatureException;
-import java.security.Timestamp;
 import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
@@ -47,6 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarException;
 import java.util.jar.JarFile;
@@ -60,16 +60,6 @@ public class SignatureFileVerifier {
 
     /* Are we debugging ? */
     private static final Debug debug = Debug.getInstance("jar");
-
-    /**
-     * Holder class to delay initialization of DisabledAlgorithmConstraints
-     * until needed.
-     */
-    private static class ConfigurationHolder {
-        static final DisabledAlgorithmConstraints JAR_DISABLED_CHECK =
-            new DisabledAlgorithmConstraints(
-                    DisabledAlgorithmConstraints.PROPERTY_JAR_DISABLED_ALGS);
-    }
 
     private ArrayList<CodeSigner[]> signerCache;
 
@@ -99,13 +89,13 @@ public class SignatureFileVerifier {
     /* for generating certpath objects */
     private CertificateFactory certificateFactory = null;
 
-    /** Algorithms that have been checked if they are weak. */
-    private Map<String, Boolean> permittedAlgs= new HashMap<>();
-
-    /** TSA timestamp of signed jar.  The newest timestamp is used.  If there
-     *  was no TSA timestamp used when signed, current time is used ("null").
+    /** Algorithms that have been previously checked against disabled
+     *  constraints.
      */
-    private Timestamp timestamp = null;
+    private Map<String, Boolean> permittedAlgs = new HashMap<>();
+
+    /** ConstraintsParameters for checking disabled algorithms */
+    private JarConstraintsParameters params;
 
     /**
      * Create the named SignatureFileVerifier.
@@ -320,32 +310,23 @@ public class SignatureFileVerifier {
                                         name);
         }
 
-
         CodeSigner[] newSigners = getSigners(infos, block);
 
         // make sure we have something to do all this work for...
-        if (newSigners == null)
+        if (newSigners == null) {
             return;
+        }
 
-        /*
-         * Look for the latest timestamp in the signature block.  If an entry
-         * has no timestamp, use current time (aka null).
-         */
-        for (CodeSigner s: newSigners) {
-            if (debug != null) {
-                debug.println("Gathering timestamp for:  " + s.toString());
-            }
-            if (s.getTimestamp() == null) {
-                timestamp = null;
-                break;
-            } else if (timestamp == null) {
-                timestamp = s.getTimestamp();
-            } else {
-                if (timestamp.getTimestamp().before(
-                        s.getTimestamp().getTimestamp())) {
-                    timestamp = s.getTimestamp();
-                }
-            }
+        // check if any of the algorithms used to verify the SignerInfos
+        // are disabled
+        params = new JarConstraintsParameters(newSigners);
+        Set<String> notDisabledAlgorithms =
+            SignerInfo.verifyAlgorithms(infos, params, name + " PKCS7");
+
+        // add the SignerInfo algorithms that are ok to the permittedAlgs map
+        // so they are not checked again
+        for (String algorithm : notDisabledAlgorithms) {
+            permittedAlgs.put(algorithm, Boolean.TRUE);
         }
 
         Iterator<Map.Entry<String,Attributes>> entries =
@@ -396,13 +377,14 @@ public class SignatureFileVerifier {
      * store the result. If the algorithm is in the map use that result.
      * False is returned for weak algorithm, true for good algorithms.
      */
-    boolean permittedCheck(String key, String algorithm) {
+    private boolean permittedCheck(String key, String algorithm) {
         Boolean permitted = permittedAlgs.get(algorithm);
         if (permitted == null) {
             try {
-                ConfigurationHolder.JAR_DISABLED_CHECK.permits(algorithm,
-                        new ConstraintsParameters(timestamp));
-            } catch(GeneralSecurityException e) {
+                params.setExtendedExceptionMsg(name + ".SF", key + " attribute");
+                DisabledAlgorithmConstraints
+                    .jarConstraints().permits(algorithm, params);
+            } catch (GeneralSecurityException e) {
                 permittedAlgs.put(algorithm, Boolean.FALSE);
                 permittedAlgs.put(key.toUpperCase(), Boolean.FALSE);
                 if (debug != null) {

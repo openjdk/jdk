@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,6 +345,9 @@ class MetaspaceObj {
                      size_t word_size,
                      Type type, Thread* thread) throw();
                      // can't use TRAPS from this header file.
+  void* operator new(size_t size, ClassLoaderData* loader_data,
+                     size_t word_size,
+                     Type type) throw();
   void operator delete(void* p) { ShouldNotCallThis(); }
 
   // Declare a *static* method with the same signature in any subclass of MetaspaceObj

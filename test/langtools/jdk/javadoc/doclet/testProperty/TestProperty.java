@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,19 +80,19 @@ public class TestProperty extends JavadocTester {
                     <div class="col-first even-row-color"><code><a href="ObjectProperty.html" title="clas\
                     s in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj<\
                     /a>[]&gt;</code></div>
-                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
-                    #badProperty">bad</a></span></code></div>
+                    <div class="col-second even-row-color"><code><a href="#badProperty" class="membe\
+                    r-name-link">bad</a></code></div>
                     <div class="col-last even-row-color">""",
 
                 // tab classes should be used in the method table
                 """
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code><a href="ObjectProperty.html" title="class in pk\
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab4"><code><a href="ObjectProperty.html" title="class in pk\
                     g">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&g\
                     t;</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#badPro\
-                    perty()">badProperty</a></span>()</code></div>"""
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab2 method-summary-table-tab4"><code><a href="#badProperty()" class="member-nam\
+                    e-link">badProperty</a>()</code></div>"""
         );
 
         checkOutput("pkg/MyClassT.html", true,

@@ -79,7 +79,7 @@ public:
   STATIC_ASSERT(BitsPerByte == 8);
   static const size_t WordAlreadyScanned = (SIZE_MAX / 255) * g1_card_already_scanned;
 
-  G1CardTable(MemRegion whole_heap): CardTable(whole_heap, /* scanned concurrently */ true), _listener() {
+  G1CardTable(MemRegion whole_heap): CardTable(whole_heap), _listener() {
     _listener.set_card_table(this);
   }
 

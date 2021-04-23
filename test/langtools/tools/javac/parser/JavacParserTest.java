@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1689,6 +1689,73 @@ public class JavacParserTest extends TestCase {
         if (!Objects.equals(span, Arrays.asList("I"))) {
             throw new AssertionError("Unexpected span: " + span);
         }
+    }
+
+    @Test //JDK-8259050
+    void testBrokenUnicodeEscape() throws IOException {
+        String code = "package t;\n" +
+                      "class Test {\n" +
+                      "    private String s1 = \"\\" + "uaaa\";\n" +
+                      "    private String s2 = \\" + "uaaa;\n" +
+                      "}\n";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees trees = Trees.instance(ct);
+        String ast = cut.toString().replaceAll("\\R", "\n");
+        String expected = """
+                          package t;
+
+                          class Test {
+                              private String s1 = "";
+                              private String s2 = (ERROR);
+                          } """;
+        assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testBrokenUnicodeEscape: " + codes,
+                Arrays.<String>asList("compiler.err.illegal.unicode.esc",
+                                      "compiler.err.illegal.unicode.esc"),
+                codes);
+    }
+
+    @Test //JDK-8259050
+    void testUsupportedTextBlock() throws IOException {
+        String code = """
+                      package t;
+                      class Test {
+                          private String s = \"""
+                                             \""";
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, List.of("--release", "14"),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees trees = Trees.instance(ct);
+        String ast = cut.toString().replaceAll("\\R", "\n");
+        String expected = """
+                          package t;
+
+                          class Test {
+                              private String s = "";
+                          } """;
+        assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testUsupportedTextBlock: " + codes,
+                Arrays.<String>asList("compiler.err.feature.not.supported.in.source.plural"),
+                codes);
     }
 
     void run(String[] args) throws Exception {

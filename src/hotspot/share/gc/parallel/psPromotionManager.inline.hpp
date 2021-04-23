@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
@@ -152,12 +153,12 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
     if (!promote_immediately) {
       // Try allocating obj in to-space (unless too old)
       if (age < PSScavenge::tenuring_threshold()) {
-        new_obj = (oop) _young_lab.allocate(new_obj_size);
+        new_obj = cast_to_oop(_young_lab.allocate(new_obj_size));
         if (new_obj == NULL && !_young_gen_is_full) {
           // Do we allocate directly, or flush and refill?
           if (new_obj_size > (YoungPLABSize / 2)) {
             // Allocate this object directly
-            new_obj = (oop)young_space()->cas_allocate(new_obj_size);
+            new_obj = cast_to_oop(young_space()->cas_allocate(new_obj_size));
             promotion_trace_event(new_obj, o, new_obj_size, age, false, NULL);
           } else {
             // Flush and fill
@@ -167,7 +168,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
             if (lab_base != NULL) {
               _young_lab.initialize(MemRegion(lab_base, YoungPLABSize));
               // Try the young lab allocation again.
-              new_obj = (oop) _young_lab.allocate(new_obj_size);
+              new_obj = cast_to_oop(_young_lab.allocate(new_obj_size));
               promotion_trace_event(new_obj, o, new_obj_size, age, false, &_young_lab);
             } else {
               _young_gen_is_full = true;
@@ -185,7 +186,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
       }
 #endif  // #ifndef PRODUCT
 
-      new_obj = (oop) _old_lab.allocate(new_obj_size);
+      new_obj = cast_to_oop(_old_lab.allocate(new_obj_size));
       new_obj_is_tenured = true;
 
       if (new_obj == NULL) {
@@ -193,13 +194,13 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
           // Do we allocate directly, or flush and refill?
           if (new_obj_size > (OldPLABSize / 2)) {
             // Allocate this object directly
-            new_obj = (oop)old_gen()->cas_allocate(new_obj_size);
+            new_obj = cast_to_oop(old_gen()->allocate(new_obj_size));
             promotion_trace_event(new_obj, o, new_obj_size, age, true, NULL);
           } else {
             // Flush and fill
             _old_lab.flush();
 
-            HeapWord* lab_base = old_gen()->cas_allocate(OldPLABSize);
+            HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
             if(lab_base != NULL) {
 #ifdef ASSERT
               // Delay the initialization of the promotion lab (plab).
@@ -210,7 +211,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
 #endif
               _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
               // Try the old lab allocation again.
-              new_obj = (oop) _old_lab.allocate(new_obj_size);
+              new_obj = cast_to_oop(_old_lab.allocate(new_obj_size));
               promotion_trace_event(new_obj, o, new_obj_size, age, true, &_old_lab);
             }
           }

@@ -293,7 +293,7 @@ public final class MinguoChronology extends AbstractChronology implements Serial
 
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
-        if (era instanceof MinguoEra == false) {
+        if (!(era instanceof MinguoEra)) {
             throw new ClassCastException("Era must be MinguoEra");
         }
         return (era == MinguoEra.ROC ? yearOfEra : 1 - yearOfEra);

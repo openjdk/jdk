@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -107,7 +108,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _java_mirror = NULL;
 
   if (is_shared()) {
-    if (k != SystemDictionary::Object_klass()) {
+    if (k != vmClasses::Object_klass()) {
       super();
     }
     //compute_nonstatic_fields();  // done outside of constructor
@@ -260,7 +261,7 @@ bool ciInstanceKlass::uses_default_loader() const {
  */
 BasicType ciInstanceKlass::box_klass_type() const {
   if (uses_default_loader() && is_loaded()) {
-    return SystemDictionary::box_klass_type(get_Klass());
+    return vmClasses::box_klass_type(get_Klass());
   } else {
     return T_OBJECT;
   }
@@ -280,6 +281,31 @@ bool ciInstanceKlass::is_boxed_value_offset(int offset) const {
   BasicType bt = box_klass_type();
   return is_java_primitive(bt) &&
          (offset == java_lang_boxing_object::value_offset(bt));
+}
+
+static bool is_klass_initialized(Symbol* klass_name) {
+  VM_ENTRY_MARK;
+  InstanceKlass* ik = SystemDictionary::find_instance_klass(klass_name, Handle(), Handle());
+  return ik != nullptr && ik->is_initialized();
+}
+
+bool ciInstanceKlass::is_box_cache_valid() const {
+  BasicType box_type = box_klass_type();
+
+  if (box_type != T_OBJECT) {
+    switch(box_type) {
+      case T_INT:     return is_klass_initialized(java_lang_Integer_IntegerCache::symbol());
+      case T_CHAR:    return is_klass_initialized(java_lang_Character_CharacterCache::symbol());
+      case T_SHORT:   return is_klass_initialized(java_lang_Short_ShortCache::symbol());
+      case T_BYTE:    return is_klass_initialized(java_lang_Byte_ByteCache::symbol());
+      case T_LONG:    return is_klass_initialized(java_lang_Long_LongCache::symbol());
+      case T_BOOLEAN:
+      case T_FLOAT:
+      case T_DOUBLE:  return true;
+      default:;
+    }
+  }
+  return false;
 }
 
 // ------------------------------------------------------------------
@@ -689,7 +715,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
             _out->print_cr("null");
           } else if (value->is_instance()) {
             assert(fd->field_type() == T_OBJECT, "");
-            if (value->is_a(SystemDictionary::String_klass())) {
+            if (value->is_a(vmClasses::String_klass())) {
               const char* ascii_value = java_lang_String::as_quoted_ascii(value);
               _out->print("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
             } else {
@@ -727,7 +753,7 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   // Try to record related loaded classes
   Klass* sub = ik->subklass();
   while (sub != NULL) {
-    if (sub->is_instance_klass()) {
+    if (sub->is_instance_klass() && !sub->is_hidden() && !InstanceKlass::cast(sub)->is_unsafe_anonymous()) {
       out->print_cr("instanceKlass %s", sub->name()->as_quoted_ascii());
     }
     sub = sub->next_sibling();

@@ -507,7 +507,7 @@ public:
   void set_parameter_type(int i, ciKlass* k);
   void set_return_type(int bci, ciKlass* k);
 
-  void load_data();
+  bool load_data();
 
   // Convert a dp (data pointer) to a di (data index).
   int dp_to_di(address dp) {

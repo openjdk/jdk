@@ -135,7 +135,7 @@ public class Main {
             System.exit(1);
         } catch (InvocationTargetException e) {
             // leave VM to handle the stacktrace, in the standard manner
-            throw e.getTargetException();
+            throw e.getCause();
         }
     }
 
@@ -422,7 +422,7 @@ public class Main {
         } catch (InvocationTargetException e) {
             // remove stack frames for source launcher
             int invocationFrames = e.getStackTrace().length;
-            Throwable target = e.getTargetException();
+            Throwable target = e.getCause();
             StackTraceElement[] targetTrace = target.getStackTrace();
             target.setStackTrace(Arrays.copyOfRange(targetTrace, 0, targetTrace.length - invocationFrames));
             throw e;

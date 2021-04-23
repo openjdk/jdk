@@ -31,7 +31,7 @@
  * @requires ((vm.compMode == "Xmixed") & vm.compiler2.enabled & vm.jvmti)
  * @library /test/lib /test/hotspot/jtreg
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @compile IterateHeapWithEscapeAnalysisEnabled.java
  *
  * @comment BLOCK BEGIN EXCLUSIVE TESTCASES {
