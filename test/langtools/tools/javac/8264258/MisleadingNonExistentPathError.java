@@ -20,7 +20,7 @@ public class MisleadingNonExistentPathError {
 
         // Not found, but in the 'java' package which is in scope as per JLS 6.3 and observable as per JLS 7.4.3
         Class<?> c4 = java.NotFound.class;
-        
+
         // Not found, but in a (system) package which exists and is in scope
         Object c5 = new java.lang();
     }
