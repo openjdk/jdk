@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 /**
  * This class implements the AES algorithm in its various modes
@@ -163,9 +164,12 @@ abstract class AESCipher extends CipherSpi {
             byte[] value = key.getEncoded();
             if (value == null) {
                 throw new InvalidKeyException("Key encoding must not be null");
-            } else if (value.length != fixedKeySize) {
-                throw new InvalidKeyException("The key must be " +
-                    fixedKeySize + " bytes");
+            } else {
+                Arrays.fill(value, (byte)0);
+                if (value.length != fixedKeySize) {
+                    throw new InvalidKeyException("The key must be " +
+                            fixedKeySize + " bytes");
+                }
             }
         }
     }
@@ -515,6 +519,7 @@ abstract class AESCipher extends CipherSpi {
      */
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
+        Arrays.fill(encoded, (byte)0);
         if (!AESCrypt.isKeySizeValid(encoded.length)) {
             throw new InvalidKeyException("Invalid AES key length: " +
                                           encoded.length + " bytes");
