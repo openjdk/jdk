@@ -78,7 +78,7 @@ package java.lang;
  * <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a>.
- * 
+ *
  * @apiNote
  * A record class structure can be obtained at runtime via reflection.
  * See {@link Class#isRecord()} and {@link Class#getRecordComponents()} for more details.
