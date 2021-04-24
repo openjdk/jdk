@@ -1631,7 +1631,7 @@ public final class Class<T> implements java.io.Serializable,
      * in source code, can have a non-empty name including special
      * characters, such as "{@code $}".
      *
-     * <p>The simple name of an {@linkplain isArray() array class} is the simple name of the
+     * <p>The simple name of an {@linkplain #isArray() array class} is the simple name of the
      * component type with "[]" appended.  In particular the simple
      * name of an array class whose component type is anonymous is "[]".
      *
@@ -2364,8 +2364,7 @@ public final class Class<T> implements java.io.Serializable,
      * <p> This method can be used to find the record canonical constructor:
      *
      * <pre>{@code
-     * static <T extends Record>
-     * Constructor<T> getCanonicalConstructor(Class<T> cls)
+     * static <T extends Record> Constructor<T> getCanonicalConstructor(Class<T> cls)
      *     throws NoSuchMethodException {
      *   Class<?>[] paramTypes =
      *     Arrays.stream(cls.getRecordComponents())
@@ -3126,15 +3125,15 @@ public final class Class<T> implements java.io.Serializable,
             return unsafe.compareAndSetReference(clazz, reflectionDataOffset, oldData, newData);
         }
 
-        static <T> boolean casAnnotationType(Class<?> clazz,
-                                             AnnotationType oldType,
-                                             AnnotationType newType) {
+        static boolean casAnnotationType(Class<?> clazz,
+                                         AnnotationType oldType,
+                                         AnnotationType newType) {
             return unsafe.compareAndSetReference(clazz, annotationTypeOffset, oldType, newType);
         }
 
-        static <T> boolean casAnnotationData(Class<?> clazz,
-                                             AnnotationData oldData,
-                                             AnnotationData newData) {
+        static boolean casAnnotationData(Class<?> clazz,
+                                         AnnotationData oldData,
+                                         AnnotationData newData) {
             return unsafe.compareAndSetReference(clazz, annotationDataOffset, oldData, newData);
         }
     }
