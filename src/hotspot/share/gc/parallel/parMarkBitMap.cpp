@@ -77,11 +77,6 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   return false;
 }
 
-#ifdef ASSERT
-extern size_t mark_bitmap_count;
-extern size_t mark_bitmap_size;
-#endif  // #ifdef ASSERT
-
 bool
 ParMarkBitMap::mark_obj(HeapWord* addr, size_t size)
 {
@@ -90,8 +85,6 @@ ParMarkBitMap::mark_obj(HeapWord* addr, size_t size)
     const idx_t end_bit = addr_to_bit(addr + size - 1);
     bool end_bit_ok = _end_bits.par_set_bit(end_bit);
     assert(end_bit_ok, "concurrency problem");
-    DEBUG_ONLY(Atomic::inc(&mark_bitmap_count));
-    DEBUG_ONLY(Atomic::add(&mark_bitmap_size, size));
     return true;
   }
   return false;
