@@ -158,7 +158,7 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * @since 1.7
      */
     public DeflaterOutputStream(OutputStream out, boolean syncFlush) {
-        this(out, new Deflater(), 512, syncFlush);
+        this(out, out != null ? new Deflater() : null, 512, syncFlush);
         usesDefaultDeflater = true;
     }
 

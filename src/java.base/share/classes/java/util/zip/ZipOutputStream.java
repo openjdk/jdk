@@ -130,7 +130,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * @since 1.7
      */
     public ZipOutputStream(OutputStream out, Charset charset) {
-        super(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true));
+        super(out, out != null ? new Deflater(Deflater.DEFAULT_COMPRESSION, true) : null);
         if (charset == null)
             throw new NullPointerException("charset is null");
         this.zc = ZipCoder.get(charset);

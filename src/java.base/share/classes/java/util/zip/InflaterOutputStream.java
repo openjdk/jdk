@@ -74,7 +74,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * @throws NullPointerException if {@code out} is null
      */
     public InflaterOutputStream(OutputStream out) {
-        this(out, new Inflater());
+        this(out, out != null ? new Inflater() : null);
         usesDefaultInflater = true;
     }
 

@@ -90,7 +90,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
     public GZIPOutputStream(OutputStream out, int size, boolean syncFlush)
         throws IOException
     {
-        super(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true),
+        super(out, out != null ? new Deflater(Deflater.DEFAULT_COMPRESSION, true) : null,
               size,
               syncFlush);
         usesDefaultDeflater = true;

@@ -105,7 +105,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @param in the input stream
      */
     public InflaterInputStream(InputStream in) {
-        this(in, new Inflater());
+        this(in, in != null ? new Inflater() : null);
         usesDefaultInflater = true;
     }
 
