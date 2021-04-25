@@ -1639,10 +1639,12 @@ bool LibraryCallKit::inline_math_pow() {
   const TypeD* d = _gvn.type(exp)->isa_double_constant();
   if (d != NULL) {
     if (d->getd() == 2.0) {
+#if !(defined(X86) && !defined(_LP64)) // excludes x86_32
       // Special case: pow(x, 2.0) => x * x
       Node* base = round_double_node(argument(0));
       set_result(_gvn.transform(new MulDNode(base, base)));
       return true;
+#endif
     }
 #if defined(X86) && defined(_LP64)
     else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
