@@ -60,9 +60,6 @@ public class DebugdUtils {
     public void attach(long pid) throws IOException {
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         jhsdbLauncher.addVMArgs(Utils.getTestJavaOpts());
-        if (prefix != null) {
-            jhsdbLauncher.addToolArg("-J-Dsun.jvm.hotspot.rmi.serverNamePrefix=" + prefix);
-        }
         jhsdbLauncher.addToolArg("debugd");
         jhsdbLauncher.addToolArg("--pid");
         jhsdbLauncher.addToolArg(Long.toString(pid));
@@ -76,6 +73,10 @@ public class DebugdUtils {
         }
         if (disableRegistry) {
             jhsdbLauncher.addToolArg("--disable-registry");
+        }
+        if (prefix != null) {
+            jhsdbLauncher.addToolArg("--prefix");
+            jhsdbLauncher.addToolArg(prefix);
         }
         debugdProcess = (new ProcessBuilder(jhsdbLauncher.getCommand())).start();
 

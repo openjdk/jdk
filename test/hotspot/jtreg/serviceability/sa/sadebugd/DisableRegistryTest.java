@@ -33,7 +33,7 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8263636
+ * @bug 8263636 8263635
  * @summary Test to use already started RMI registry
  * @requires vm.hasSA
  * @requires os.family != "windows"
@@ -56,13 +56,12 @@ public class DisableRegistryTest {
     }
 
     private static void test(String prefix) throws IOException, InterruptedException {
+        assert prefix != null;
+
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
-        if (prefix != null) {
-            jhsdbLauncher.addToolArg("-J-Dsun.jvm.hotspot.rmi.serverNamePrefix=" + prefix);
-        }
         jhsdbLauncher.addToolArg("jinfo");
         jhsdbLauncher.addToolArg("--connect");
-        jhsdbLauncher.addToolArg("localhost:" + REGISTRY_PORT);
+        jhsdbLauncher.addToolArg("localhost:" + REGISTRY_PORT + "/" + prefix);
 
         Process jhsdb = (SATestUtils.createProcessBuilder(jhsdbLauncher)).start();
         OutputAnalyzer out = new OutputAnalyzer(jhsdb);
@@ -71,7 +70,7 @@ public class DisableRegistryTest {
         System.err.println(out.getStderr());
 
         out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
-        out.shouldContain("Attaching to remote server localhost:10000, please wait...");
+        out.shouldContain("Attaching to remote server localhost:10000");
         out.shouldContain("java.vm.version");
         out.shouldHaveExitValue(0);
 

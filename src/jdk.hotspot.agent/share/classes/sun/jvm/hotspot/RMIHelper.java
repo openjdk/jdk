@@ -28,10 +28,12 @@ import java.io.*;
 import java.net.*;
 import java.rmi.*;
 import java.rmi.registry.*;
+import java.util.regex.*;
 import sun.jvm.hotspot.debugger.DebuggerException;
 
 public class RMIHelper {
     private static final boolean startRegistry;
+    private static final Pattern CONNECT_PATTERN = Pattern.compile("^((?<id>.+?)@)?(?<host>.+?)(/(?<prefix>.+))?$");
     private static int port;
     private static String serverNamePrefix;
 
@@ -88,24 +90,18 @@ public class RMIHelper {
     }
 
     public static Remote lookup(String debugServerID) throws DebuggerException {
-        // debugServerID follows the pattern [unique_id@]host[:port]
+        // debugServerID follows the pattern [unique_id@]host[:port][/prefix]
         // we have to transform this as //host[:port]/<serverNamePrefix>['_'<unique_id>]
+        Matcher matcher = CONNECT_PATTERN.matcher(debugServerID);
+        matcher.find();
 
-        int index = debugServerID.indexOf('@');
         StringBuilder nameBuf = new StringBuilder("//");
-        String uniqueID = null;
-        if (index != -1) {
-            nameBuf.append(debugServerID.substring(index + 1));
-            uniqueID = debugServerID.substring(0, index);
-        } else {
-            nameBuf.append(debugServerID);
-        }
-
+        nameBuf.append(matcher.group("host"));
         nameBuf.append('/');
-        nameBuf.append(serverNamePrefix);
-        if (uniqueID != null) {
+        nameBuf.append(matcher.group("prefix") == null ? serverNamePrefix : matcher.group("prefix"));
+        if (matcher.group("id") != null) {
             nameBuf.append('_');
-            nameBuf.append(uniqueID);
+            nameBuf.append(matcher.group("id"));
         }
 
         try {
