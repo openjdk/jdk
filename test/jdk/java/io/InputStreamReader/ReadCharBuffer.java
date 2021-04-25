@@ -49,7 +49,7 @@ public class ReadCharBuffer {
 
     @DataProvider(name = "buffers")
     public Object[][] createBuffers() {
-        // test both on-heap and off-heap buffers has they make use different code paths
+        // test both on-heap and off-heap buffers as they make use different code paths
         return new Object[][]{
                 new Object[]{CharBuffer.allocate(BUFFER_SIZE)},
                 new Object[]{ByteBuffer.allocateDirect(BUFFER_SIZE * 2).asCharBuffer()}
