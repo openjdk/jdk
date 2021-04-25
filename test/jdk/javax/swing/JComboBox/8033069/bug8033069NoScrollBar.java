@@ -100,6 +100,7 @@ public class bug8033069NoScrollBar {
         frame.add(panel);
 
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
