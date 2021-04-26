@@ -78,6 +78,7 @@ class ThreadStateTransition : public StackObj {
   ThreadStateTransition(JavaThread *thread) {
     _thread = thread;
     assert(thread != NULL, "must be active Java thread");
+    assert(thread == Thread::current(), "must be current thread");
   }
 
   // Change threadstate in a manner, so safepoint can detect changes.
@@ -110,18 +111,18 @@ class ThreadStateTransition : public StackObj {
   static inline void transition_from_native(JavaThread *thread, JavaThreadState to) {
     assert((to & 1) == 0, "odd numbers are transitions states");
     assert(thread->thread_state() == _thread_in_native, "coming from wrong thread state");
+    assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
+
     // Change to transition state and ensure it is seen by the VM thread.
     thread->set_thread_state_fence(_thread_in_native_trans);
 
     // We never install asynchronous exceptions when coming (back) in
     // to the runtime from native code because the runtime is not set
     // up to handle exceptions floating around at arbitrary points.
-    if (SafepointMechanism::should_process(thread) || thread->is_suspend_after_native()) {
-      JavaThread::check_safepoint_and_suspend_for_native_trans(thread);
-    }
-
+    SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
     thread->set_thread_state(to);
   }
+
  protected:
    void trans(JavaThreadState from, JavaThreadState to)  { transition(_thread, from, to); }
    void trans_from_java(JavaThreadState to)              { transition_from_java(_thread, to); }
@@ -315,9 +316,9 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
-    ThreadInVMfromJava __tiv(thread);                                \
-    VM_ENTRY_BASE(result_type, header, thread)                       \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
+    ThreadInVMfromJava __tiv(current);                               \
+    VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
 
 // JRT_LEAF currently can be called from either _thread_in_Java or
@@ -342,28 +343,28 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
-    ThreadInVMfromJava __tiv(thread, false /* check asyncs */);      \
-    VM_ENTRY_BASE(result_type, header, thread)                       \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
+    ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
+    VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
 
 // Same as JRT Entry but allows for return value after the safepoint
 // to get back into Java from the VM
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
-    HandleMarkCleaner __hm(thread);
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
+    HandleMarkCleaner __hm(current);
 
 #define JRT_BLOCK                                                    \
     {                                                                \
-    ThreadInVMfromJava __tiv(thread);                                \
-    Thread* THREAD = thread;                                         \
+    ThreadInVMfromJava __tiv(current);                               \
+    Thread* THREAD = current;                                        \
     debug_only(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_NO_ASYNC                                           \
     {                                                                \
-    ThreadInVMfromJava __tiv(thread, false /* check asyncs */);      \
-    Thread* THREAD = thread;                                         \
+    ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
+    Thread* THREAD = current;                                        \
     debug_only(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_END }

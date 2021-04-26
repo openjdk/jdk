@@ -85,6 +85,7 @@ void InlineCacheBuffer_init();
 void compilerOracle_init();
 bool compileBroker_init();
 void dependencyContext_init();
+void dependencies_init();
 
 // Initialization after compiler initialization
 bool universe_post_init();  // must happen after compiler_init
@@ -143,6 +144,7 @@ jint init_globals() {
   InlineCacheBuffer_init();
   compilerOracle_init();
   dependencyContext_init();
+  dependencies_init();
 
   if (!compileBroker_init()) {
     return JNI_EINVAL;

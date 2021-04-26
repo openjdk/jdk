@@ -131,6 +131,17 @@ inline void Assembler::divw_(  Register d, Register a, Register b) { emit_int32(
 inline void Assembler::divwu(  Register d, Register a, Register b) { emit_int32(DIVWU_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(0)); }
 inline void Assembler::divwu_( Register d, Register a, Register b) { emit_int32(DIVWU_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
 
+// Prefixed instructions, introduced by POWER10
+inline void Assembler::paddi(Register d, Register a, long si34, bool r = false) {
+  assert(a != R0 || r, "r0 not allowed, unless R is set (CIA relative)");
+  paddi_r0ok( d, a, si34, r);
+}
+
+inline void Assembler::paddi_r0ok(Register d, Register a, long si34, bool r = false) {
+  emit_int32(PADDI_PREFIX_OPCODE | r_eo(r) | d0_eo(si34));
+  emit_int32(PADDI_SUFFIX_OPCODE | rt(d)   | ra(a)   | d1_eo(si34));
+}
+
 // Fixed-Point Arithmetic Instructions with Overflow detection
 inline void Assembler::addo(    Register d, Register a, Register b) { emit_int32(ADD_OPCODE    | rt(d) | ra(a) | rb(b) | oe(1) | rc(0)); }
 inline void Assembler::addo_(   Register d, Register a, Register b) { emit_int32(ADD_OPCODE    | rt(d) | ra(a) | rb(b) | oe(1) | rc(1)); }
@@ -168,6 +179,9 @@ inline void Assembler::li(   Register d, int si16)             { Assembler::addi
 inline void Assembler::lis(  Register d, int si16)             { Assembler::addis_r0ok(d, R0, si16); }
 inline void Assembler::addir(Register d, int si16, Register a) { Assembler::addi(d, a, si16); }
 inline void Assembler::subi( Register d, Register a, int si16) { Assembler::addi(d, a, -si16); }
+
+// Prefixed instructions, introduced by POWER10
+inline void Assembler::pli(Register d, long si34) { Assembler::paddi_r0ok( d, R0, si34, false); }
 
 // PPC 1, section 3.3.9, Fixed-Point Compare Instructions
 inline void Assembler::cmpi(  ConditionRegister f, int l, Register a, int si16)   { emit_int32( CMPI_OPCODE  | bf(f) | l10(l) | ra(a) | simm(si16,16)); }

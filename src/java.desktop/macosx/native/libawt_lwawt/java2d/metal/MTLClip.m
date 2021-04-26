@@ -310,6 +310,7 @@ static void initTemplatePipelineDescriptors() {
             clearPassDescriptor.stencilAttachment.texture = _stencilTextureRef;
             clearPassDescriptor.stencilAttachment.clearStencil = 0;
             clearPassDescriptor.stencilAttachment.loadAction = MTLLoadActionClear;
+            clearPassDescriptor.stencilAttachment.storeAction = MTLStoreActionStore;
 
             id<MTLCommandBuffer> commandBuf = [_mtlc createCommandBuffer];
             id <MTLRenderCommandEncoder> clearEncoder = [commandBuf renderCommandEncoderWithDescriptor:clearPassDescriptor];
