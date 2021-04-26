@@ -78,7 +78,6 @@ public class ButtonGroupLayoutTraversalTest {
                 robot.waitForIdle();
             }
 
-            robot.waitForIdle();
             robot.delay(200);
 
             for (int i = 0; i < nx * ny; i++) {
