@@ -271,9 +271,6 @@ public abstract class $Type$Buffer
     // Cached array base offset
     private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
 
-    // Number of bytes per $type$
-    private static final long ELEMENT_SIZE = 1L << $LG_BYTES_PER_VALUE$;
-
     // These fields are declared here rather than in Heap-X-Buffer in order to
     // reduce the number of virtual method invocations needed to access these
     // values, which is especially costly when coding small buffers.
@@ -915,7 +912,6 @@ public abstract class $Type$Buffer
     }
 
     private $Type$Buffer getArray(int index, $type$[] dst, int offset, int length) {
-#if[rw]
         if (
 #if[char]
             isAddressable() &&
@@ -931,7 +927,7 @@ public abstract class $Type$Buffer
                 if (order() != ByteOrder.nativeOrder())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
                             scope(), null, base(), bufAddr,
-                            dst, dstOffset, len, ELEMENT_SIZE);
+                            dst, dstOffset, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
@@ -947,9 +943,6 @@ public abstract class $Type$Buffer
             }
         }
         return this;
-#else[rw]
-        throw new ReadOnlyBufferException();
-#end[rw]
     }
 
     // -- Bulk put operations --
@@ -1104,7 +1097,7 @@ public abstract class $Type$Buffer
                 if (this.order() != src.order())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
                             src.scope(), scope(), srcBase, srcAddr,
-                            base, addr, len, ELEMENT_SIZE);
+                            base, addr, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
@@ -1324,7 +1317,7 @@ public abstract class $Type$Buffer
                 if (order() != ByteOrder.nativeOrder())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
                             null, scope(), src, srcOffset,
-                            base(), bufAddr, len, ELEMENT_SIZE);
+                            base(), bufAddr, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
