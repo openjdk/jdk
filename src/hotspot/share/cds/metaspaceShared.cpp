@@ -361,6 +361,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
+  LambdaFormInvokers::serialize(soc);
   soc->do_tag(666);
 }
 
@@ -460,6 +461,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   SystemDictionaryShared::write_to_archive();
 
+  // Write lambform lines into archive
+  LambdaFormInvokers::dump_static_archive_invokers();
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -932,10 +935,6 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
     _requested_base_address = static_mapinfo->requested_base_address();
-    if (DynamicDumpSharedSpaces) {
-      // Read stored LF format lines stored in static archive
-      static_mapinfo->read_lambdaform_invokers();
-    }
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
     } else {
@@ -1452,6 +1451,19 @@ void MetaspaceShared::initialize_shared_spaces() {
     SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
+  }
+
+  // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
+  if (DynamicDumpSharedSpaces) {
+    // Read stored LF format lines stored in static archive
+    Array<Array<char>*>* static_archive_invokers = LambdaFormInvokers::static_archive_invokers();
+    if (static_archive_invokers != nullptr) {
+      for (int i = 0; i < static_archive_invokers->length(); i++) {
+        Array<char>* line = static_archive_invokers->at(i);
+        char* str = line->adr_at(0);
+        LambdaFormInvokers::append_filtered(str);
+      }
+    }
   }
 
   if (PrintSharedArchiveAndExit) {

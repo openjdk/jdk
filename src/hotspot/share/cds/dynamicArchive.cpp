@@ -27,9 +27,9 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -369,13 +369,10 @@ void DynamicArchive::dump() {
   }
 
   // regenerate lambdaform holder classes
-  if (LambdaFormInvokers::should_regenerate_holder_classes()) {
-    JavaThread* THREAD = JavaThread::current();
-    assert(THREAD->is_Java_thread(), "Should be JavaThread");
-    log_info(cds, dynamic)("Regenerate lambdaform holder classes ...");
-    LambdaFormInvokers::regenerate_holder_classes(THREAD);
-    log_info(cds, dynamic)("Regenerate lambdaform holder classes ...done");
-  }
+  JavaThread* THREAD = JavaThread::current();
+  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...");
+  LambdaFormInvokers::regenerate_holder_classes(THREAD);
+  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...done");
 
   VM_PopulateDynamicDumpSharedSpace op;
   VMThread::execute(&op);

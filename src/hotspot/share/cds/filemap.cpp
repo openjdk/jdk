@@ -30,12 +30,12 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/lambdaFormInvokers.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
-#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -300,8 +300,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- use_full_module_graph           %d", _use_full_module_graph);
   st->print_cr("- ptrmap_size_in_bits:            " SIZE_FORMAT, _ptrmap_size_in_bits);
-  st->print_cr("- lambdaform_invokers_offset:     " SIZE_FORMAT, _lambdaform_invokers_offset);
-  st->print_cr("- size_lambdaform_invokers        " SIZE_FORMAT, _size_lambdaform_invokers);
 }
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
@@ -1246,52 +1244,6 @@ void FileMapInfo::write_header() {
       write_bytes(base_archive_name, header()->base_archive_name_size());
     }
   }
-}
-
-// Write all lambdafor_invoker_lines into static archive.
-void FileMapInfo::write_lambdaform_invokers() {
-  GrowableArrayCHeap<char*, mtClassShared>* all_lines = LambdaFormInvokers::lambdaform_lines();
-  log_info(cds)("lambdaform_invokers file_offset = " SIZE_FORMAT, header()->lambdaform_invokers_offset());
-  log_info(cds)("lambdaform_invokers size = " SIZE_FORMAT, header()->size_lambdaform_invokers());
-  assert(_file_offset == header()->lambdaform_invokers_offset(), "Anything writen after file offset set?");
-  if (all_lines != nullptr) {
-    int len = all_lines->length();
-    for (int i = 0; i < len; i++) {
-      char* line = all_lines->at(i);
-      write_bytes(line, strlen(line) + 1); // including ending '\0'.
-    }
-  }
-}
-
-void FileMapInfo::read_lambdaform_invokers() {
-  assert(UseSharedSpaces, "Must be shared mod");
-  size_t offset = header()->lambdaform_invokers_offset();
-  size_t size   = header()->size_lambdaform_invokers();
-  char* base = os::map_memory(_fd, _full_path, offset,  nullptr, size,
-                                true/*read only*/, true/*exec*/, mtClassShared);
-  if (base == nullptr) {
-    // read content from file
-    base = (char*)os::malloc(header()->size_lambdaform_invokers(), mtClassShared);
-    if (base == nullptr) {
-      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "failed to allocate memory for lambdaform_invokers, out of memory.");
-    }
-    if (lseek(_fd, (long)header()->lambdaform_invokers_offset(), SEEK_SET) !=
-                   (long)header()->lambdaform_invokers_offset()  ||
-      read_bytes(base, size) != size) {
-      vm_exit_during_initialization("Could not read lambdaform_invvokers from file!");
-    }
-  }
-
-  size_t count = 0;
-  size_t len;
-  int    index = 0;
-  while (count < size) {
-    len = strlen(base) + 1;
-    LambdaFormInvokers::append_filtered(base);
-    count += len;
-    base  += len;
-  }
-  log_info(cds)("Total lambdaform lines (filtered)  from static archive %d  and total bytes " SIZE_FORMAT, index, size);
 }
 
 size_t FileMapRegion::used_aligned() const {

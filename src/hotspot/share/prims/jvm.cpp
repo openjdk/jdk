@@ -28,6 +28,7 @@
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
+#include "cds/lambdaFormInvokers.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -35,7 +36,6 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
@@ -3660,8 +3660,11 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
     if (DynamicDumpSharedSpaces) {
+      // Note: LambdaFormInvokers::append_filtered and LambdaFormInvokers::append take same format which is not
+      // same as below the print format. The line does not include LAMBDA_FORM_TAG.
       LambdaFormInvokers::append_filtered(os::strdup((const char*)c_line, mtInternal));
-    } else {
+    }
+    if (ClassListWriter::is_enabled()) {
       ClassListWriter w;
       w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
     }

@@ -27,9 +27,9 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -1096,11 +1096,6 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
   if (mapinfo->header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
     mapinfo->set_header_base_archive_name_size(strlen(Arguments::GetSharedArchivePath()) + 1);
     mapinfo->set_header_base_archive_is_default(FLAG_IS_DEFAULT(SharedArchiveFile));
-  }
-  if (mapinfo->is_static()) {
-    mapinfo->set_lambdaform_invokers_offset();
-    mapinfo->set_size_lambdaform_invokers(LambdaFormInvokers::total_bytes());
-    mapinfo->write_lambdaform_invokers();
   }
   mapinfo->set_header_crc(mapinfo->compute_header_crc());
   // After this point, we should not write any data into mapinfo->header() since this

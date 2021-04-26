@@ -29,12 +29,14 @@
 #include "utilities/growableArray.hpp"
 
 class ClassFileStream;
+template <class T> class Array;
 
 class LambdaFormInvokers : public AllStatic {
  private:
   static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
   static void reload_class(char* name, ClassFileStream& st, TRAPS);
-
+  // for storing LF form lines in read only table.
+  static Array<Array<char>*>* _static_archive_invokers;
  public:
   static void append(char* line);
   static void append_filtered(char* line);
@@ -42,10 +44,10 @@ class LambdaFormInvokers : public AllStatic {
   static GrowableArrayCHeap<char*, mtClassShared>* lambdaform_lines() {
     return _lambdaform_lines;
   }
-  static size_t total_bytes();
-  static bool should_regenerate_holder_classes() {
-    assert(DynamicDumpSharedSpaces, "Dynamic dump only");
-    return _lambdaform_lines != nullptr && _lambdaform_lines->length() > 0;
+  static  Array<Array<char>*>* static_archive_invokers() {
+    return _static_archive_invokers;
   }
+  static void dump_static_archive_invokers();
+  static void serialize(SerializeClosure* soc);
 };
 #endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP
