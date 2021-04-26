@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,26 @@
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
+static bool check_get_mempolicy_support() {
+  int dummy = 0;
+  int mode = -1;
+  // Check whether get_mempolicy is supported since most containers may disable it by default.
+  if (ZSyscall::get_mempolicy(&mode, NULL, 0, (void*)&dummy, MPOL_F_NODE | MPOL_F_ADDR) == -1) {
+    if (!FLAG_IS_DEFAULT(UseNUMA)) {
+      warning("ZGC NUMA support is disabled since get_mempolicy is unsupported.");
+    }
+    return false;
+  }
+
+  return true;
+}
+
 void ZNUMA::pd_initialize() {
-  _enabled = UseNUMA;
+  _enabled = UseNUMA && check_get_mempolicy_support();
 }
 
 uint32_t ZNUMA::count() {
