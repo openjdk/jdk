@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,3 +28,7 @@
 #############################################################################
 
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
+
+vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 windows-x64
+
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8265349 generic-all

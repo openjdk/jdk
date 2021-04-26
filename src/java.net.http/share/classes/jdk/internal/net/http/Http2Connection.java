@@ -121,6 +121,7 @@ class Http2Connection  {
 
     static private final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
     static private final int MAX_SERVER_STREAM_ID = Integer.MAX_VALUE - 1; // 2147483646
+    static private final int BUFFER = 8; // added as an upper bound
 
     /**
      * Flag set when no more streams to be opened on this connection.
@@ -1111,8 +1112,10 @@ class Http2Connection  {
      * and CONTINUATION frames from the list and return the List<Http2Frame>.
      */
     private List<HeaderFrame> encodeHeaders(OutgoingHeaders<Stream<?>> frame) {
+        // max value of frame size is clamped by default frame size to avoid OOM
+        int bufferSize = Math.min(Math.max(getMaxSendFrameSize(), 1024), DEFAULT_FRAME_SIZE);
         List<ByteBuffer> buffers = encodeHeadersImpl(
-                getMaxSendFrameSize(),
+                bufferSize,
                 frame.getAttachment().getRequestPseudoHeaders(),
                 frame.getUserHeaders(),
                 frame.getSystemHeaders());
@@ -1135,9 +1138,9 @@ class Http2Connection  {
     // by the sendLock. / (see sendFrame())
     // private final ByteBufferPool headerEncodingPool = new ByteBufferPool();
 
-    private ByteBuffer getHeaderBuffer(int maxFrameSize) {
-        ByteBuffer buf = ByteBuffer.allocate(maxFrameSize);
-        buf.limit(maxFrameSize);
+    private ByteBuffer getHeaderBuffer(int size) {
+        ByteBuffer buf = ByteBuffer.allocate(size);
+        buf.limit(size);
         return buf;
     }
 
@@ -1152,8 +1155,8 @@ class Http2Connection  {
      *     header field names MUST be converted to lowercase prior to their
      *     encoding in HTTP/2...
      */
-    private List<ByteBuffer> encodeHeadersImpl(int maxFrameSize, HttpHeaders... headers) {
-        ByteBuffer buffer = getHeaderBuffer(maxFrameSize);
+    private List<ByteBuffer> encodeHeadersImpl(int bufferSize, HttpHeaders... headers) {
+        ByteBuffer buffer = getHeaderBuffer(bufferSize);
         List<ByteBuffer> buffers = new ArrayList<>();
         for(HttpHeaders header : headers) {
             for (Map.Entry<String, List<String>> e : header.map().entrySet()) {
@@ -1164,7 +1167,7 @@ class Http2Connection  {
                     while (!hpackOut.encode(buffer)) {
                         buffer.flip();
                         buffers.add(buffer);
-                        buffer =  getHeaderBuffer(maxFrameSize);
+                        buffer =  getHeaderBuffer(bufferSize);
                     }
                 }
             }
@@ -1173,6 +1176,7 @@ class Http2Connection  {
         buffers.add(buffer);
         return buffers;
     }
+
 
     private List<ByteBuffer> encodeHeaders(OutgoingHeaders<Stream<?>> oh, Stream<?> stream) {
         oh.streamid(stream.streamid);

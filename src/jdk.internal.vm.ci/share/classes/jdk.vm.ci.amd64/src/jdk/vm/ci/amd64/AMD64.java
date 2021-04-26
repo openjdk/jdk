@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.nio.ByteOrder;
 import java.util.EnumSet;
 
 import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.CPUFeatureName;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.code.RegisterArray;
@@ -171,7 +172,7 @@ public class AMD64 extends Architecture {
      * Basic set of CPU features mirroring what is returned from the cpuid instruction. See:
      * {@code VM_Version::cpuFeatureFlags}.
      */
-    public enum CPUFeature {
+    public enum CPUFeature implements CPUFeatureName {
         CX8,
         CMOV,
         FXSR,
@@ -189,6 +190,7 @@ public class AMD64 extends Architecture {
         LZCNT,
         TSC,
         TSCINV,
+        TSCINV_BIT,
         AVX,
         AVX2,
         AES,
@@ -206,7 +208,18 @@ public class AMD64 extends Architecture {
         AVX512BW,
         AVX512VL,
         SHA,
-        FMA
+        FMA,
+        VZEROUPPER,
+        AVX512_VPOPCNTDQ,
+        AVX512_VPCLMULQDQ,
+        AVX512_VAES,
+        AVX512_VNNI,
+        FLUSH,
+        FLUSHOPT,
+        CLWB,
+        AVX512_VBMI2,
+        AVX512_VBMI,
+        HV,
     }
 
     private final EnumSet<CPUFeature> features;
@@ -238,6 +251,7 @@ public class AMD64 extends Architecture {
         }
     }
 
+    @Override
     public EnumSet<CPUFeature> getFeatures() {
         return features;
     }

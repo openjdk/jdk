@@ -65,7 +65,7 @@ static uintptr_t relocate_object_inner(ZForwarding* forwarding, uintptr_t from_a
 
   // Allocate object
   const size_t size = ZUtils::object_size(from_addr);
-  const uintptr_t to_addr = ZHeap::heap()->alloc_object_non_blocking(size);
+  const uintptr_t to_addr = ZHeap::heap()->alloc_object_for_relocation(size);
   if (to_addr == 0) {
     // Allocation failed
     return 0;
@@ -78,7 +78,7 @@ static uintptr_t relocate_object_inner(ZForwarding* forwarding, uintptr_t from_a
   const uintptr_t to_addr_final = forwarding_insert(forwarding, from_addr, to_addr, cursor);
   if (to_addr_final != to_addr) {
     // Already relocated, try undo allocation
-    ZHeap::heap()->undo_alloc_object(to_addr, size);
+    ZHeap::heap()->undo_alloc_object_for_relocation(to_addr, size);
   }
 
   return to_addr_final;

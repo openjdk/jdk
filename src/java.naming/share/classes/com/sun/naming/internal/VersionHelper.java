@@ -96,6 +96,10 @@ public final class VersionHelper {
         return loadClass(className, getContextClassLoader());
     }
 
+    public Class<?> loadClassWithoutInit(String className) throws ClassNotFoundException {
+        return loadClass(className, false, getContextClassLoader());
+    }
+
     /**
      * @param className A non-null fully qualified class name.
      * @param codebase  A non-null, space-separated list of URL strings.
@@ -118,10 +122,15 @@ public final class VersionHelper {
      * This internal method is used with Thread Context Class Loader (TCCL),
      * please don't expose this method as public.
      */
+    Class<?> loadClass(String className, boolean initialize, ClassLoader cl)
+            throws ClassNotFoundException {
+        Class<?> cls = Class.forName(className, initialize, cl);
+        return cls;
+    }
+
     Class<?> loadClass(String className, ClassLoader cl)
             throws ClassNotFoundException {
-        Class<?> cls = Class.forName(className, true, cl);
-        return cls;
+        return loadClass(className, true, cl);
     }
 
     /*
