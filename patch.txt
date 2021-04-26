@@ -1,0 +1,432 @@
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/consumer/EventStream.java b/src/jdk.jfr/share/classes/jdk/jfr/consumer/EventStream.java
+index 079813bfb77..ff84196c972 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/consumer/EventStream.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/consumer/EventStream.java
+@@ -138,7 +138,14 @@ public interface EventStream extends AutoCloseable {
+      */
+     public static EventStream openRepository() throws IOException {
+         Utils.checkAccessFlightRecorder();
+-        return new EventDirectoryStream(AccessController.getContext(), null, SecuritySupport.PRIVILEGED, null, Collections.emptyList());
++        return new EventDirectoryStream(
++            AccessController.getContext(),
++            null,
++            SecuritySupport.PRIVILEGED,
++            null,
++            Collections.emptyList(),
++            false
++        );
+     }
+ 
+     /**
+@@ -161,7 +168,14 @@ public interface EventStream extends AutoCloseable {
+     public static EventStream openRepository(Path directory) throws IOException {
+         Objects.requireNonNull(directory);
+         AccessControlContext acc = AccessController.getContext();
+-        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, Collections.emptyList());
++        return new EventDirectoryStream(
++            acc,
++            directory,
++            FileAccess.UNPRIVILEGED,
++            null,
++            Collections.emptyList(),
++            true
++        );
+     }
+ 
+     /**
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/consumer/RecordingStream.java b/src/jdk.jfr/share/classes/jdk/jfr/consumer/RecordingStream.java
+index 7d3a313a209..694be0667a9 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/consumer/RecordingStream.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/consumer/RecordingStream.java
+@@ -108,7 +108,14 @@ public final class RecordingStream implements AutoCloseable, EventStream {
+         this.recording.setName("Recording Stream: " + creationTime);
+         try {
+             PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+-            this.directoryStream = new EventDirectoryStream(acc, null, SecuritySupport.PRIVILEGED, pr, configurations());
++            this.directoryStream = new EventDirectoryStream(
++                acc,
++                null,
++                SecuritySupport.PRIVILEGED,
++                pr,
++                configurations(),
++                false
++            );
+         } catch (IOException ioe) {
+             this.recording.close();
+             throw new IllegalStateException(ioe.getMessage());
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/PlatformRecorder.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/PlatformRecorder.java
+index 46f40bf1f59..ddfca0e4cad 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/PlatformRecorder.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/PlatformRecorder.java
+@@ -621,7 +621,7 @@ public final class PlatformRecorder {
+     public synchronized void migrate(SafePath repo) throws IOException {
+         // Must set repository while holding recorder lock so
+         // the final chunk in repository gets marked correctly
+-        Repository.getRepository().setBasePath(repo);
++        Repository.getRepository().setBasePath(false, repo);
+         boolean disk = false;
+         for (PlatformRecording s : getRecordings()) {
+             if (RecordingState.RUNNING == s.getState() && s.isToDisk()) {
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/Repository.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/Repository.java
+index 06a17489400..4c4e673b620 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/Repository.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/Repository.java
+@@ -55,14 +55,14 @@ public final class Repository {
+         return instance;
+     }
+ 
+-    public synchronized void setBasePath(SafePath baseLocation) throws IOException {
++    public synchronized void setBasePath(boolean probe, SafePath baseLocation) throws IOException {
+         if(baseLocation.equals(this.baseLocation)) {
+             Logger.log(LogTag.JFR, LogLevel.INFO, "Same base repository path " + baseLocation.toString() + " is set");
+             return;
+         }
+         // Probe to see if repository can be created, needed for fail fast
+         // during JVM startup or JFR.configure
+-        this.repository = createRepository(baseLocation);
++        this.repository = createRepository(probe, baseLocation);
+         this.chunkFilename = null;
+         try {
+             // Remove so we don't "leak" repositories, if JFR is never started
+@@ -76,14 +76,14 @@ public final class Repository {
+ 
+     public synchronized void ensureRepository() throws IOException {
+         if (baseLocation == null) {
+-            setBasePath(SecuritySupport.JAVA_IO_TMPDIR);
++            setBasePath(true, SecuritySupport.JAVA_IO_TMPDIR);
+         }
+     }
+ 
+     synchronized RepositoryChunk newChunk(ZonedDateTime timestamp) {
+         try {
+             if (!SecuritySupport.existDirectory(repository)) {
+-                this.repository = createRepository(baseLocation);
++                this.repository = createRepository(false, baseLocation);
+                 jvm.setRepositoryLocation(repository.toString());
+                 SecuritySupport.setProperty(JFR_REPOSITORY_LOCATION_PROPERTY, repository.toString());
+                 cleanupDirectories.add(repository);
+@@ -102,11 +102,12 @@ public final class Repository {
+         }
+     }
+ 
+-    private static SafePath createRepository(SafePath basePath) throws IOException {
++    private static SafePath createRepository(boolean probe, SafePath basePath) throws IOException {
+         SafePath canonicalBaseRepositoryPath = createRealBasePath(basePath);
+         SafePath f = null;
+ 
+-        String basename = Utils.formatDateTime(LocalDateTime.now()) + "_" + JVM.getJVM().getPid();
++        String basename = probe ? "probe_" : "";
++        basename+= Utils.formatDateTime(LocalDateTime.now()) + "_" + JVM.getJVM().getPid();
+         String name = basename;
+ 
+         int i = 0;
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/SecuritySupport.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/SecuritySupport.java
+index 60246811484..3dd2f9bf41c 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/SecuritySupport.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/SecuritySupport.java
+@@ -46,6 +46,7 @@ import java.nio.file.Paths;
+ import java.nio.file.SimpleFileVisitor;
+ import java.nio.file.StandardOpenOption;
+ import java.nio.file.attribute.BasicFileAttributes;
++import java.nio.file.attribute.FileTime;
+ import java.security.AccessControlContext;
+ import java.security.AccessController;
+ import java.security.Permission;
+@@ -506,6 +507,18 @@ public final class SecuritySupport {
+         public boolean exists(Path p) throws IOException {
+             return doPrivilegedIOWithReturn( () -> Files.exists(p));
+         }
++
++        @Override
++        public boolean isDirectory(Path p) {
++            return doPrivilegedWithReturn( () -> Files.isDirectory(p));
++        }
++
++        @Override
++        public FileTime getLastModified(Path p) throws IOException {
++            // Timestamp only needed when examining repository for other JVMs,
++            // in which case an unprivileged mode should be used.
++            throw new InternalError("Should not reach here");
++        }
+     }
+ 
+ 
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/EventDirectoryStream.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/EventDirectoryStream.java
+index 543a1c93297..3c921ddd9af 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/EventDirectoryStream.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/EventDirectoryStream.java
+@@ -40,6 +40,7 @@ import jdk.jfr.Configuration;
+ import jdk.jfr.consumer.RecordedEvent;
+ import jdk.jfr.internal.JVM;
+ import jdk.jfr.internal.PlatformRecording;
++import jdk.jfr.internal.SecuritySupport;
+ import jdk.jfr.internal.Utils;
+ import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
+ 
+@@ -64,10 +65,21 @@ public class EventDirectoryStream extends AbstractEventStream {
+ 
+     private volatile Consumer<Long> onCompleteHandler;
+ 
+-    public EventDirectoryStream(AccessControlContext acc, Path p, FileAccess fileAccess, PlatformRecording recording, List<Configuration> configurations) throws IOException {
++    public EventDirectoryStream(
++            AccessControlContext acc,
++            Path p,
++            FileAccess fileAccess,
++            PlatformRecording recording,
++            List<Configuration> configurations,
++            boolean allowSubDirectories
++            ) throws IOException {
++
+         super(acc, recording, configurations);
++        if (p != null && SecuritySupport.PRIVILEGED == fileAccess) {
++            throw new SecurityException("Priviliged file access not allowed with potentially malicious Path implementation");
++        }
+         this.fileAccess = Objects.requireNonNull(fileAccess);
+-        this.repositoryFiles = new RepositoryFiles(fileAccess, p);
++        this.repositoryFiles = new RepositoryFiles(fileAccess, p, allowSubDirectories);
+     }
+ 
+     @Override
+@@ -136,6 +148,7 @@ public class EventDirectoryStream extends AbstractEventStream {
+             return;
+         }
+         currentChunkStartNanos = repositoryFiles.getTimestamp(path);
++        System.out.println("Chunk parsing: " + path);
+         try (RecordingInput input = new RecordingInput(path.toFile(), fileAccess)) {
+             currentParser = new ChunkParser(input, disp.parserConfiguration);
+             long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/FileAccess.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/FileAccess.java
+index 66f72a8dd55..66cfe3d5101 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/FileAccess.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/FileAccess.java
+@@ -31,6 +31,7 @@ import java.io.RandomAccessFile;
+ import java.nio.file.DirectoryStream;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
++import java.nio.file.attribute.FileTime;
+ 
+ // Protected by modular boundaries.
+ public abstract class FileAccess {
+@@ -48,6 +49,10 @@ public abstract class FileAccess {
+ 
+     public abstract boolean exists(Path s) throws IOException;
+ 
++    public abstract boolean isDirectory(Path p);
++
++    public abstract FileTime getLastModified(Path p) throws IOException;
++
+     private static class UnPrivileged extends FileAccess {
+         @Override
+         public RandomAccessFile openRAF(File f, String mode) throws IOException {
+@@ -78,5 +83,17 @@ public abstract class FileAccess {
+         public boolean exists(Path p) {
+             return Files.exists(p);
+         }
++
++        @Override
++        public boolean isDirectory(Path p) {
++            return Files.isDirectory(p);
++        }
++
++        @Override
++        public FileTime getLastModified(Path p) throws IOException {
++            return Files.getLastModifiedTime(p);
++        }
+     }
++
++
+ }
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/OngoingStream.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/OngoingStream.java
+index ac61378141e..91d725c1e48 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/OngoingStream.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/OngoingStream.java
+@@ -61,7 +61,7 @@ public final class OngoingStream extends EventByteStream {
+         this.blockSize = blockSize;
+         this.startTimeNanos = startTimeNanos;
+         this.endTimeNanos = endTimeNanos;
+-        this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null);
++        this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null, false);
+     }
+ 
+     @Override
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/RepositoryFiles.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/RepositoryFiles.java
+index 754e5fd6d3d..cdae473bc89 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/RepositoryFiles.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/RepositoryFiles.java
+@@ -27,7 +27,10 @@ package jdk.jfr.internal.consumer;
+ 
+ import java.io.IOException;
+ import java.nio.file.DirectoryStream;
++import java.nio.file.Files;
+ import java.nio.file.Path;
++import java.nio.file.attribute.FileTime;
++import java.time.LocalDateTime;
+ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.HashMap;
+@@ -35,6 +38,7 @@ import java.util.HashSet;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.NavigableMap;
++import java.util.Optional;
+ import java.util.Set;
+ import java.util.SortedMap;
+ import java.util.TreeMap;
+@@ -47,6 +51,7 @@ import jdk.jfr.internal.SecuritySupport.SafePath;
+ 
+ public final class RepositoryFiles {
+     private static final Object WAIT_OBJECT = new Object();
++    private static final String DIRECTORY_PATTERN = "DDDD_DD_DD_DD_DD_DD_";
+     public static void notifyNewFile() {
+         synchronized (WAIT_OBJECT) {
+             WAIT_OBJECT.notifyAll();
+@@ -56,15 +61,16 @@ public final class RepositoryFiles {
+     private final FileAccess fileAccess;
+     private final NavigableMap<Long, Path> pathSet = new TreeMap<>();
+     private final Map<Path, Long> pathLookup = new HashMap<>();
+-    private final Path repository;
+     private final Object waitObject;
+-
++    private boolean allowSubDirectory;
+     private volatile boolean closed;
++    private Path repository;
+ 
+-    public RepositoryFiles(FileAccess fileAccess, Path repository) {
++    public RepositoryFiles(FileAccess fileAccess, Path repository, boolean allowSubDirectory) {
+         this.repository = repository;
+         this.fileAccess = fileAccess;
+         this.waitObject = repository == null ? WAIT_OBJECT : new Object();
++        this.allowSubDirectory = allowSubDirectory;
+     }
+ 
+     long getTimestamp(Path p) {
+@@ -167,6 +173,14 @@ public final class RepositoryFiles {
+     private boolean updatePaths() throws IOException {
+         boolean foundNew = false;
+         Path repoPath = repository;
++
++        if (allowSubDirectory) {
++            Path subDirectory = findSubDirectory(repoPath);
++            if (subDirectory != null) {
++                repoPath = subDirectory;
++            }
++        }
++
+         if (repoPath == null) {
+             // Always get the latest repository if 'jcmd JFR.configure
+             // repositorypath=...' has been executed
+@@ -209,20 +223,78 @@ public final class RepositoryFiles {
+                 long size = fileAccess.fileSize(p);
+                 if (size >= ChunkHeader.headerSize()) {
+                     long startNanos = readStartTime(p);
+-                    pathSet.put(startNanos, p);
+-                    pathLookup.put(p, startNanos);
+-                    foundNew = true;
++                    if (startNanos != -1) {
++                        pathSet.put(startNanos, p);
++                        pathLookup.put(p, startNanos);
++                        foundNew = true;
++                    }
+                 }
+             }
++            if (allowSubDirectory && foundNew) {
++                // Found a valid file, possibly in a subdirectory.
++                // Use the same (sub)directory from now on.
++                repository = repoPath;
++                allowSubDirectory = false;
++            }
++
+             return foundNew;
+         }
+     }
+ 
+-    private long readStartTime(Path p) throws IOException {
++    private Path findSubDirectory(Path repoPath) {
++        FileTime latestTimestamp = null;
++        Path latestPath = null;
++        try (DirectoryStream<Path> dirStream = fileAccess.newDirectoryStream(repoPath)) {
++            for (Path p : dirStream) {
++                String filename = p.getFileName().toString();
++                if (isRepository(filename) && fileAccess.isDirectory(p)) {
++                    FileTime timestamp = getLastModified(p);
++                    if (timestamp != null) {
++                        if (latestPath == null || latestTimestamp.compareTo(timestamp) <= 0) {
++                            latestPath = p;
++                            latestTimestamp = timestamp;
++                        }
++                    }
++                }
++            }
++        } catch (IOException e) {
++            // Ignore
++        }
++        return latestPath;
++    }
++
++    private FileTime getLastModified(Path p) {
++        try {
++            return fileAccess.getLastModified(p);
++        } catch (IOException e) {
++            return null;
++        }
++    }
++
++    private static boolean isRepository(String filename) {
++        if (filename.length() < DIRECTORY_PATTERN.length()) {
++            return false;
++        }
++        for (int i = 0; i < DIRECTORY_PATTERN.length(); i++) {
++            char expected = DIRECTORY_PATTERN.charAt(i);
++            char c = filename.charAt(i);
++            if (expected == 'D' && !Character.isDigit(c)) {
++                return false;
++            }
++            if (expected == '_' && c != '_') {
++                return false;
++            }
++        }
++        return true;
++    }
++
++    private long readStartTime(Path p) {
+         try (RecordingInput in = new RecordingInput(p.toFile(), fileAccess, 100)) {
+             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Parsing header for chunk start time");
+             ChunkHeader c = new ChunkHeader(in);
+             return c.getStartNanos();
++        } catch (IOException ioe) {
++            return -1;
+         }
+     }
+ 
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdConfigure.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdConfigure.java
+index 78127138b8f..5c878b03be7 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdConfigure.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdConfigure.java
+@@ -93,7 +93,7 @@ final class DCmdConfigure extends AbstractDCmd {
+                 if (FlightRecorder.isInitialized()) {
+                     PrivateAccess.getInstance().getPlatformRecorder().migrate(s);
+                 } else {
+-                    Repository.getRepository().setBasePath(s);
++                    Repository.getRepository().setBasePath(false, s);
+                 }
+                 Logger.log(LogTag.JFR, LogLevel.INFO, "Base repository path set to " + repositoryPath);
+             } catch (Exception e) {
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/management/ManagementSupport.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/management/ManagementSupport.java
+index 39343ffb644..14cd860a98c 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/management/ManagementSupport.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/management/ManagementSupport.java
+@@ -174,6 +174,13 @@ public final class ManagementSupport {
+             AccessControlContext acc,
+             Path directory,
+             List<Configuration> confs) throws IOException {
+-        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, confs);
++        return new EventDirectoryStream(
++            acc,
++            directory,
++            FileAccess.UNPRIVILEGED,
++            null,
++            confs,
++            false
++        );
+     }
+ }
