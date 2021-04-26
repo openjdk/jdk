@@ -48,6 +48,16 @@ bool G1BatchedGangTask::try_claim_serial_task(int& task) {
   return task < _serial_tasks.length();
 }
 
+void G1BatchedGangTask::add_serial_task(G1AbstractSubTask* task) {
+  assert(task != nullptr, "must be");
+  _serial_tasks.push(task);
+}
+
+void G1BatchedGangTask::add_parallel_task(G1AbstractSubTask* task) {
+  assert(task != nullptr, "must be");
+  _parallel_tasks.push(task);
+}
+
 G1BatchedGangTask::G1BatchedGangTask(const char* name, G1GCPhaseTimes* phase_times) :
   AbstractGangTask(name),
   _num_serial_tasks_done(0),

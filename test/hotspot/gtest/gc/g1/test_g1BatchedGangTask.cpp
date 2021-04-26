@@ -32,7 +32,7 @@
 class G1BatchedGangTaskWorkers : AllStatic {
   static WorkGang* _work_gang;
   static WorkGang* work_gang() {
-    if (_work_gang == NULL) {
+    if (_work_gang == nullptr) {
       _work_gang = new WorkGang("G1 Small Workers", MaxWorkers, false, false);
       _work_gang->initialize_workers();
       _work_gang->update_active_workers(MaxWorkers);
@@ -47,7 +47,7 @@ public:
   }
 };
 
-WorkGang* G1BatchedGangTaskWorkers::_work_gang = NULL;
+WorkGang* G1BatchedGangTaskWorkers::_work_gang = nullptr;
 
 class G1TestSubTask : public G1AbstractSubTask {
   mutable uint _phase;
@@ -81,7 +81,7 @@ public:
   G1TestSubTask() : G1AbstractSubTask(G1GCPhaseTimes::GCParPhasesSentinel),
     _phase(0),
     _num_do_work(0),
-    _do_work_called_by(NULL),
+    _do_work_called_by(nullptr),
     _max_workers(0) {
     check_and_inc_phase(0);
   }
@@ -142,9 +142,9 @@ public:
 
 class G1TestBatchedGangTask : public G1BatchedGangTask {
 public:
-  G1TestBatchedGangTask() : G1BatchedGangTask("Batched Gang Test Task", NULL) {
-    _serial_tasks.push(new G1SerialTestSubTask());
-    _parallel_tasks.push(new G1ParallelTestSubTask());
+  G1TestBatchedGangTask() : G1BatchedGangTask("Batched Gang Test Task", nullptr) {
+    add_serial_task(new G1SerialTestSubTask());
+    add_parallel_task(new G1ParallelTestSubTask());
   }
 };
 

@@ -106,9 +106,12 @@ class G1BatchedGangTask : public AbstractGangTask {
 
   NONCOPYABLE(G1BatchedGangTask);
 
-protected:
   GrowableArrayCHeap<G1AbstractSubTask*, mtGC> _serial_tasks;
   GrowableArrayCHeap<G1AbstractSubTask*, mtGC> _parallel_tasks;
+
+protected:
+  void add_serial_task(G1AbstractSubTask* task);
+  void add_parallel_task(G1AbstractSubTask* task);
 
   G1BatchedGangTask(const char* name, G1GCPhaseTimes* phase_times);
 
