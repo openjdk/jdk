@@ -36,6 +36,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.ConsoleHandler;
@@ -135,9 +136,11 @@ public class FilterTest {
                 (var e) -> {
                     try (InputStream is = e.getRequestBody();
                          OutputStream os = e.getResponseBody()) {
-                        var len = is.transferTo(os);
+                        is.readAllBytes();
                         e.getResponseHeaders().set("x-foo", "bar");
-                        e.sendResponseHeaders(200, len);
+                        var resp = "hello world".getBytes(StandardCharsets.UTF_8);
+                        e.sendResponseHeaders(200, resp.length);
+                        os.write(resp);
                     } catch (IOException ioe) {
                         ioe.printStackTrace(System.out);
                         throw new UncheckedIOException(ioe);
@@ -211,8 +214,10 @@ public class FilterTest {
                 (var e) -> {
                     try (InputStream is = e.getRequestBody();
                          OutputStream os = e.getResponseBody()) {
-                        var len = is.transferTo(os);
-                        e.sendResponseHeaders(200, len);
+                        is.readAllBytes();
+                        var resp = "hello world".getBytes(StandardCharsets.UTF_8);
+                        e.sendResponseHeaders(200, resp.length);
+                        os.write(resp);
                         respCode.set(e.getResponseCode());
                     } catch (IOException ioe) {
                         ioe.printStackTrace(System.out);
@@ -264,15 +269,17 @@ public class FilterTest {
     }
 
     /**
-     * A test handler that discards the request and echos the request body
+     * A test handler that discards the request and sends a response
      */
     static class EchoHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             try (InputStream is = exchange.getRequestBody();
                  OutputStream os = exchange.getResponseBody()) {
-                var len = is.transferTo(os);
-                exchange.sendResponseHeaders(200, len);
+                is.readAllBytes();
+                var resp = "hello world".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, resp.length);
+                os.write(resp);
             }
         }
     }
