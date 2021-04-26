@@ -488,25 +488,27 @@ Klass* JfrJavaSupport::klass(const jobject handle) {
 }
 
 // caller needs ResourceMark
+const char* JfrJavaSupport::c_str(oop string, Thread* t) {
+  DEBUG_ONLY(check_java_thread_in_vm(t));
+  char* resource_copy = NULL;
+  const typeArrayOop value = java_lang_String::value(string);
+  if (value != NULL) {
+    const int length = java_lang_String::utf8_length(string, value);
+    resource_copy = NEW_RESOURCE_ARRAY_IN_THREAD(t, char, (length + 1));
+    if (resource_copy == NULL) {
+      JfrJavaSupport::throw_out_of_memory_error("Unable to allocate thread local native memory", t);
+      return NULL;
+    }
+    assert(resource_copy != NULL, "invariant");
+    java_lang_String::as_utf8_string(string, value, resource_copy, length + 1);
+  }
+  return resource_copy;
+}
+
+// caller needs ResourceMark
 const char* JfrJavaSupport::c_str(jstring string, Thread* t) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
-  if (string == NULL) {
-    return NULL;
-  }
-  const char* temp = NULL;
-  const oop java_string = resolve_non_null(string);
-  const typeArrayOop value = java_lang_String::value(java_string);
-  if (value != NULL) {
-    const size_t length = java_lang_String::utf8_length(java_string, value);
-    temp = NEW_RESOURCE_ARRAY_IN_THREAD(t, const char, (length + 1));
-    if (temp == NULL) {
-       JfrJavaSupport::throw_out_of_memory_error("Unable to allocate thread local native memory", t);
-       return NULL;
-    }
-    assert(temp != NULL, "invariant");
-    java_lang_String::as_utf8_string(java_string, value, const_cast<char*>(temp), (int) length + 1);
-  }
-  return temp;
+  return string != NULL ? c_str(resolve_non_null(string), t) : NULL;
 }
 
 /*
@@ -602,10 +604,9 @@ const char* const JDK_JFR_MODULE_NAME = "jdk.jfr";
 const char* const JDK_JFR_PACKAGE_NAME = "jdk/jfr";
 
 static bool is_jdk_jfr_module_in_readability_graph() {
-  Thread* const t = Thread::current();
   // take one of the packages in the module to be located and query for its definition.
   TempNewSymbol pkg_sym = SymbolTable::new_symbol(JDK_JFR_PACKAGE_NAME);
-  return Modules::is_package_defined(pkg_sym, Handle(), t);
+  return Modules::is_package_defined(pkg_sym, Handle());
 }
 
 static void print_module_resolution_error(outputStream* stream) {

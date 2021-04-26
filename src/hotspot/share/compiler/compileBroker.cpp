@@ -50,13 +50,13 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
@@ -653,7 +653,9 @@ void CompileBroker::compilation_init_phase1(Thread* THREAD) {
       }
       if (FLAG_IS_DEFAULT(JVMCIHostThreads)) {
       } else {
+#ifdef COMPILER1
         _c1_count = JVMCIHostThreads;
+#endif // COMPILER1
       }
     }
   }

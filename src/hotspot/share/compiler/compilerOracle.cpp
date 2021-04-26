@@ -911,9 +911,6 @@ void compilerOracle_init() {
   if (has_command(CompileCommand::Print)) {
     if (PrintAssembly) {
       warning("CompileCommand and/or %s file contains 'print' commands, but PrintAssembly is also enabled", default_cc_file);
-    } else if (FLAG_IS_DEFAULT(DebugNonSafepoints)) {
-      warning("printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output");
-      DebugNonSafepoints = true;
     }
   }
 }

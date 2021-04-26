@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.Debug;
+import sun.security.validator.Validator;
 
 /**
  * Common utility methods and classes used by the PKIX CertPathValidator and
@@ -87,7 +88,7 @@ class PKIX {
         private Set<TrustAnchor> anchors;
         private List<X509Certificate> certs;
         private Timestamp timestamp;
-        private String variant;
+        private String variant = Validator.VAR_GENERIC;
 
         ValidatorParams(CertPath cp, PKIXParameters params)
             throws InvalidAlgorithmParameterException
@@ -155,9 +156,17 @@ class PKIX {
         }
         Date date() {
             if (!gotDate) {
-                date = params.getDate();
-                if (date == null)
-                    date = new Date();
+                // use timestamp if checking signed code that is
+                // timestamped, otherwise use date parameter
+                if (timestamp != null &&
+                    (variant.equals(Validator.VAR_CODE_SIGNING) ||
+                     variant.equals(Validator.VAR_PLUGIN_CODE_SIGNING))) {
+                    date = timestamp.getTimestamp();
+                } else {
+                    date = params.getDate();
+                    if (date == null)
+                        date = new Date();
+                }
                 gotDate = true;
             }
             return date;
@@ -196,10 +205,6 @@ class PKIX {
         // in order to clone CertPathCheckers before building a new chain
         PKIXParameters getPKIXParameters() {
             return params;
-        }
-
-        Timestamp timestamp() {
-            return timestamp;
         }
 
         String variant() {

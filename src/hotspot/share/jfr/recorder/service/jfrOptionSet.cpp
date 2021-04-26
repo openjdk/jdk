@@ -46,13 +46,13 @@ struct ObsoleteOption {
 
 static const ObsoleteOption OBSOLETE_OPTIONS[] = {
   {"checkpointbuffersize", ""},
-  {"maxsize",              "Use -XX:StartFlightRecording=maxsize=... instead."},
-  {"maxage",               "Use -XX:StartFlightRecording=maxage=... instead."},
-  {"settings",             "Use -XX:StartFlightRecording=settings=... instead."},
-  {"defaultrecording",     "Use -XX:StartFlightRecording=disk=false to create an in-memory recording."},
-  {"disk",                 "Use -XX:StartFlightRecording=disk=... instead."},
-  {"dumponexit",           "Use -XX:StartFlightRecording=dumponexit=... instead."},
-  {"dumponexitpath",       "Use -XX:StartFlightRecording=filename=... instead."},
+  {"maxsize",              "Use -XX:StartFlightRecording:maxsize=... instead."},
+  {"maxage",               "Use -XX:StartFlightRecording:maxage=... instead."},
+  {"settings",             "Use -XX:StartFlightRecording:settings=... instead."},
+  {"defaultrecording",     "Use -XX:StartFlightRecording:disk=false to create an in-memory recording."},
+  {"disk",                 "Use -XX:StartFlightRecording:disk=... instead."},
+  {"dumponexit",           "Use -XX:StartFlightRecording:dumponexit=... instead."},
+  {"dumponexitpath",       "Use -XX:StartFlightRecording:filename=... instead."},
   {"loglevel",             "Use -Xlog:jfr=... instead."}
 };
 

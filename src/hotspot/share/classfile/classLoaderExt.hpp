@@ -45,8 +45,8 @@ private:
   };
 
   static char* get_class_path_attr(const char* jar_path, char* manifest, jint manifest_size);
-  static void setup_app_search_path(TRAPS); // Only when -Xshare:dump
-  static void process_module_table(ModuleEntryTable* met, TRAPS);
+  static void setup_app_search_path(Thread* current); // Only when -Xshare:dump
+  static void process_module_table(Thread* current, ModuleEntryTable* met);
   // index of first app JAR in shared classpath entry table
   static jshort _app_class_paths_start_index;
   // index of first modular JAR in shared modulepath entry table
@@ -61,13 +61,13 @@ private:
   static ClassPathEntry* find_classpath_entry_from_cache(Thread* current, const char* path);
 
 public:
-  static void process_jar_manifest(ClassPathEntry* entry, bool check_for_duplicates, TRAPS);
+  static void process_jar_manifest(Thread* current, ClassPathEntry* entry, bool check_for_duplicates);
 
   // Called by JVMTI code to add boot classpath
   static void append_boot_classpath(ClassPathEntry* new_entry);
 
-  static void setup_search_paths(TRAPS);
-  static void setup_module_paths(TRAPS);
+  static void setup_search_paths(Thread* current);
+  static void setup_module_paths(Thread* current);
 
   static char* read_manifest(Thread* current, ClassPathEntry* entry, jint *manifest_size) {
     // Remove all the new-line continuations (which wrap long lines at 72 characters, see

@@ -34,6 +34,8 @@
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
+#include <cstddef>
+
 class oopDesc;
 
 // Defaults for macros that might be defined per compiler.

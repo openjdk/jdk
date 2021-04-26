@@ -86,7 +86,7 @@ package jdk.jfr;
 @Enabled(true)
 @StackTrace(true)
 @Registered(true)
-abstract public class Event extends jdk.internal.event.Event {
+public abstract class Event extends jdk.internal.event.Event {
     /**
      * Sole constructor, for invocation by subclass constructors, typically
      * implicit.
@@ -98,7 +98,7 @@ abstract public class Event extends jdk.internal.event.Event {
      * Starts the timing of this event.
      */
     @Override
-    final public void begin() {
+    public final void begin() {
     }
 
     /**
@@ -107,7 +107,7 @@ abstract public class Event extends jdk.internal.event.Event {
      * The {@code end} method must be invoked after the {@code begin} method.
      */
     @Override
-    final public void end() {
+    public final void end() {
     }
 
     /**
@@ -119,7 +119,7 @@ abstract public class Event extends jdk.internal.event.Event {
      * ends when the {@code commit} method is invoked.
      */
     @Override
-    final public void commit() {
+    public final void commit() {
     }
 
     /**
@@ -130,7 +130,7 @@ abstract public class Event extends jdk.internal.event.Event {
      * @return {@code true} if event is enabled, {@code false} otherwise
      */
     @Override
-    final public boolean isEnabled() {
+    public final boolean isEnabled() {
         return false;
     }
 
@@ -144,7 +144,7 @@ abstract public class Event extends jdk.internal.event.Event {
      *         system, {@code false} otherwise
      */
     @Override
-    final public boolean shouldCommit() {
+    public final boolean shouldCommit() {
         return false;
     }
 
@@ -170,6 +170,6 @@ abstract public class Event extends jdk.internal.event.Event {
      * @see EventFactory
      */
     @Override
-    final public void set(int index, Object value) {
+    public final void set(int index, Object value) {
     }
 }

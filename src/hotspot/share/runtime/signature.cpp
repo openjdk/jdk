@@ -203,6 +203,12 @@ SignatureStream::SignatureStream(const Symbol* signature,
 }
 
 SignatureStream::~SignatureStream() {
+  if (_previous_name == vmSymbols::java_lang_Object()) {
+    // no names were created
+    assert(_names == NULL, "_names unexpectedly created");
+    return;
+  }
+
   // decrement refcount for names created during signature parsing
   _previous_name->decrement_refcount();
   if (_names != NULL) {
@@ -456,10 +462,11 @@ ResolvingSignatureStream::ResolvingSignatureStream(fieldDescriptor& field)
   initialize_load_origin(field.field_holder());
 }
 
-void ResolvingSignatureStream::cache_handles(TRAPS) {
+void ResolvingSignatureStream::cache_handles() {
   assert(_load_origin != NULL, "");
-  _class_loader = Handle(THREAD, _load_origin->class_loader());
-  _protection_domain = Handle(THREAD, _load_origin->protection_domain());
+  JavaThread* current = JavaThread::current();
+  _class_loader = Handle(current, _load_origin->class_loader());
+  _protection_domain = Handle(current, _load_origin->protection_domain());
 }
 
 Klass* ResolvingSignatureStream::as_klass_if_loaded(TRAPS) {

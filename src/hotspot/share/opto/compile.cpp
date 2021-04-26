@@ -71,7 +71,6 @@
 #include "opto/type.hpp"
 #include "opto/vector.hpp"
 #include "opto/vectornode.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -554,6 +553,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _do_cleanup(false),
                   _has_reserved_stack_access(target->has_reserved_stack_access()),
 #ifndef PRODUCT
+                  _igv_idx(0),
                   _trace_opto_output(directive->TraceOptoOutputOption),
                   _print_ideal(directive->PrintIdealOption),
 #endif
@@ -860,6 +860,7 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_incrementally(false),
     _has_reserved_stack_access(false),
 #ifndef PRODUCT
+    _igv_idx(0),
     _trace_opto_output(directive->TraceOptoOutputOption),
     _print_ideal(directive->PrintIdealOption),
 #endif
@@ -2440,7 +2441,7 @@ static bool is_vector_bitwise_op(Node* n) {
 }
 
 static bool is_vector_bitwise_cone_root(Node* n) {
-  if (!is_vector_bitwise_op(n)) {
+  if (n->bottom_type()->isa_vectmask() || !is_vector_bitwise_op(n)) {
     return false;
   }
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -2754,7 +2755,6 @@ void Compile::Code_Gen() {
     if (failing()) {
       return;
     }
-    print_method(PHASE_AFTER_MATCHING, 3);
   }
   // In debug mode can dump m._nodes.dump() for mapping of ideal to machine
   // nodes.  Mapping is only valid at the root of each matched subtree.
@@ -4686,7 +4686,7 @@ void Compile::sort_macro_nodes() {
   }
 }
 
-void Compile::print_method(CompilerPhaseType cpt, const char *name, int level, int idx) {
+void Compile::print_method(CompilerPhaseType cpt, const char *name, int level) {
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
@@ -4708,7 +4708,7 @@ void Compile::print_method(CompilerPhaseType cpt, int level, int idx) {
     jio_snprintf(output, sizeof(output), "%s", CompilerPhaseTypeHelper::to_string(cpt));
   }
 #endif
-  print_method(cpt, output, level, idx);
+  print_method(cpt, output, level);
 }
 
 void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
@@ -4774,7 +4774,7 @@ void igv_print(bool network, const char* phase_name) {
 
 // Called from debugger. Normal write to the default _printer. Only works if Ideal Graph Visualizer printing flags are set.
 void igv_print_default() {
-  Compile::current()->print_method(PHASE_DEBUG, 0, 0);
+  Compile::current()->print_method(PHASE_DEBUG, 0);
 }
 
 // Called from debugger, especially when replaying a trace in which the program state cannot be altered like with rr replay.

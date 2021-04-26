@@ -190,7 +190,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
 
   bool value = true;
   JVMFlag *jvmciEnableFlag = JVMFlag::find_flag("EnableJVMCIProduct");
-  if (JVMFlagAccess::boolAtPut(jvmciEnableFlag, &value, origin) != JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::set_bool(jvmciEnableFlag, &value, origin) != JVMFlag::SUCCESS) {
     return false;
   }
 

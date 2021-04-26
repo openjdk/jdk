@@ -807,6 +807,12 @@ void ShenandoahConcurrentGC::op_weak_roots() {
     ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
     heap->workers()->run_task(&task);
   }
+
+  // Perform handshake to flush out dead oops
+  {
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
+    heap->rendezvous_threads();
+  }
 }
 
 void ShenandoahConcurrentGC::op_class_unloading() {

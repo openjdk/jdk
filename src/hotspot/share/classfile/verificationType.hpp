@@ -316,7 +316,7 @@ class VerificationType {
     }
   }
 
-  VerificationType get_component(ClassVerifier* context, TRAPS) const;
+  VerificationType get_component(ClassVerifier* context) const;
 
   int dimensions() const {
     assert(is_array(), "Must be an array");

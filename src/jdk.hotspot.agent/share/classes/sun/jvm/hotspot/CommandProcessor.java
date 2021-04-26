@@ -227,7 +227,7 @@ public class CommandProcessor {
             }
         }
         String join(String sep) {
-            StringBuffer result = new StringBuffer();
+            StringBuilder result = new StringBuilder();
             for (int w = i; w < length; w++) {
                 result.append(tokens[w]);
                 if (w + 1 < length) {
@@ -350,7 +350,7 @@ public class CommandProcessor {
     Address lookup(String symbol) {
         if (symbol.indexOf("::") != -1) {
             String[] parts = symbol.split("::");
-            StringBuffer mangled = new StringBuffer("__1c");
+            StringBuilder mangled = new StringBuilder("__1c");
             for (int i = 0; i < parts.length; i++) {
                 int len = parts[i].length();
                 if (len >= 26) {
@@ -1755,7 +1755,7 @@ public class CommandProcessor {
                 }
 
                 /* Compute filename for class. */
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 if (tokenCount > 1) {
                     buf.append(t.nextToken());
                 } else {
@@ -1967,7 +1967,7 @@ public class CommandProcessor {
                 ln = "";
                 err.println("History is empty");
             } else {
-                StringBuffer result = new StringBuffer();
+                StringBuilder result = new StringBuilder();
                 Matcher m = historyPattern.matcher(ln);
                 int start = 0;
                 while (m.find()) {

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       //     happens rarely.  In heap based and disjoint base compressd oop modes also loads
       //     are used for null checks.
 
+      CodeBlob *cb = NULL;
       int stop_type = -1;
       // Handle signal from NativeJump::patch_verified_entry().
       if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
@@ -231,14 +232,28 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         goto run_stub;
       }
 
-      else if (USE_POLL_BIT_ONLY
-               ? (sig == SIGTRAP && ((NativeInstruction*)pc)->is_safepoint_poll())
-               : (sig == SIGSEGV && SafepointMechanism::is_poll_address(addr))) {
+      else if ((sig == USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV) &&
+               ((NativeInstruction*)pc)->is_safepoint_poll() &&
+               CodeCache::contains((void*) pc) &&
+               ((cb = CodeCache::find_blob(pc)) != NULL) &&
+               cb->is_compiled()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (%s)", p2i(pc),
                         USE_POLL_BIT_ONLY ? "SIGTRAP" : "SIGSEGV");
         }
         stub = SharedRuntime::get_poll_stub(pc);
+        goto run_stub;
+      }
+
+      else if (UseSIGTRAP && sig == SIGTRAP &&
+               ((NativeInstruction*)pc)->is_safepoint_poll_return() &&
+               CodeCache::contains((void*) pc) &&
+               ((cb = CodeCache::find_blob(pc)) != NULL) &&
+               cb->is_compiled()) {
+        if (TraceTraps) {
+          tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
+        }
+        stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
         goto run_stub;
       }
 

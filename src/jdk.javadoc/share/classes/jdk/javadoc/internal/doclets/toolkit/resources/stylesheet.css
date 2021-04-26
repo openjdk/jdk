@@ -605,7 +605,7 @@ ul.ui-autocomplete  li {
 .result-highlight {
     font-weight:bold;
 }
-#search {
+#search-input {
     background-image:url('resources/glass.png');
     background-size:13px;
     background-repeat:no-repeat;
@@ -615,7 +615,7 @@ ul.ui-autocomplete  li {
     right:-18px;
     width:400px;
 }
-#reset {
+#reset-button {
     background-color: rgb(255,255,255);
     background-image:url('resources/x.png');
     background-position:center;
@@ -655,7 +655,7 @@ ul.ui-autocomplete  li {
 .inherited-list {
     margin: 10px 0 10px 0;
 }
-section.description {
+section.class-description {
     line-height: 1.4;
 }
 .summary section[class$="-summary"], .details section[class$="-details"],
@@ -795,12 +795,12 @@ table.striped > tbody > tr > th {
  * Tweak font sizes and paddings for small screens.
  */
 @media screen and (max-width: 1050px) {
-    #search {
+    #search-input {
         width: 300px;
     }
 }
 @media screen and (max-width: 800px) {
-    #search {
+    #search-input {
         width: 200px;
     }
     .top-nav,
@@ -833,7 +833,7 @@ table.striped > tbody > tr > th {
     }
 }
 @media screen and (max-width: 500px) {
-    #search {
+    #search-input {
         width: 150px;
     }
     .top-nav,

@@ -426,22 +426,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option AbortVMOnVMOperationTimeout")   \
           range(0, max_intx)                                                \
                                                                             \
-  /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
-  /* typically, at most a few retries are needed                    */      \
-  product(intx, SuspendRetryCount, 50,                                      \
-          "Maximum retry count for an external suspend request")            \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(intx, SuspendRetryDelay, 5,                                       \
-          "Milliseconds to delay per retry (* current_retry_count)")        \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(bool, AssertOnSuspendWaitFailure, false,                          \
-          "Assert/Guarantee on external suspend wait failure")              \
-                                                                            \
-  product(bool, TraceSuspendWaitFailures, false,                            \
-          "Trace external suspend wait failures")                           \
-                                                                            \
   product(bool, MaxFDLimit, true,                                           \
           "Bump the number of file descriptors to maximum (Unix only)")     \
                                                                             \
@@ -683,11 +667,11 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ClassUnloadingWithConcurrentMark, true,                     \
           "Do unloading of classes with a concurrent marking cycle")        \
                                                                             \
-  develop(bool, MemProfiling, false,                                        \
-          "Write memory usage profiling to log file")                       \
-                                                                            \
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Print the system dictionary at exit")                            \
+                                                                            \
+  notproduct(bool, PrintClassLoaderDataGraphAtExit, false,                  \
+          "Print the class loader data graph at exit")                      \
                                                                             \
   product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
           "Dynamically resize system dictionaries as needed")               \
@@ -1377,9 +1361,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(intx, SweeperLogEntries, 1024,                                 \
           "Number of records in the ring buffer of sweeper activity")       \
                                                                             \
-  notproduct(intx, MemProfilingInterval, 500,                               \
-          "Time between each invocation of the MemProfiler")                \
-                                                                            \
   develop(intx, MallocCatchPtr, -1,                                         \
           "Hit breakpoint when mallocing/freeing this pointer")             \
                                                                             \
@@ -1891,6 +1872,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, DynamicDumpSharedSpaces, false,                             \
           "Dynamic archive")                                                \
+                                                                            \
+  product(bool, RecordDynamicDumpInfo, false,                               \
+          "Record class info for jcmd VM.cds dynamic_dump")                 \
                                                                             \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \

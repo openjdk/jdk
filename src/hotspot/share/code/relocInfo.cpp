@@ -541,10 +541,11 @@ oop* oop_Relocation::oop_addr() {
 
 
 oop oop_Relocation::oop_value() {
-  oop v = *oop_addr();
   // clean inline caches store a special pseudo-null
-  if (v == Universe::non_oop_word())  v = NULL;
-  return v;
+  if (Universe::contains_non_oop_word(oop_addr())) {
+    return NULL;
+  }
+  return *oop_addr();
 }
 
 

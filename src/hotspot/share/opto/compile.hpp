@@ -293,6 +293,7 @@ class Compile : public Phase {
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
+  uint                  _igv_idx;               // Counter for IGV node identifiers
   bool                  _trace_opto_output;
   bool                  _print_ideal;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
@@ -601,6 +602,7 @@ class Compile : public Phase {
   }
 
 #ifndef PRODUCT
+  uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
   bool          print_ideal() const             { return _print_ideal; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
@@ -643,7 +645,7 @@ class Compile : public Phase {
 #endif
   }
 
-  void print_method(CompilerPhaseType cpt, const char *name, int level = 1, int idx = 0);
+  void print_method(CompilerPhaseType cpt, const char *name, int level = 1);
   void print_method(CompilerPhaseType cpt, int level = 1, int idx = 0);
   void print_method(CompilerPhaseType cpt, Node* n, int level = 3);
 

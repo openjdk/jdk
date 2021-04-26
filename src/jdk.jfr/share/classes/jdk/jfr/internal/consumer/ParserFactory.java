@@ -286,7 +286,7 @@ final class ParserFactory {
         }
     }
 
-    private final static class ArrayParser extends Parser {
+    private static final class ArrayParser extends Parser {
         private final Parser elementParser;
 
         public ArrayParser(Parser elementParser) {
@@ -312,7 +312,7 @@ final class ParserFactory {
         }
     }
 
-    private final static class CompositeParser extends Parser {
+    private static final class CompositeParser extends Parser {
         private final Parser[] parsers;
 
         public CompositeParser(Parser[] valueParsers) {

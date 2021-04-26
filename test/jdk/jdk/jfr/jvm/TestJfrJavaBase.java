@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class TestJfrJavaBase {
                 TestJfrJavaBase.class.getName(), "runtest"));
             output.shouldHaveExitValue(0);
         } else {
-            output = ProcessTools.executeTestJava("-XX:StartFlightRecording=dumponexit=true",
+            output = ProcessTools.executeTestJava("-XX:StartFlightRecording:dumponexit=true",
                 "--limit-modules", "java.base", "-version");
             checkOutput(output);
             output.shouldHaveExitValue(1);

@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 /**
  * Builds list of packages providing dynamic libraries for the given set of files.
  */
-final public class LibProvidersLookup {
+public final class LibProvidersLookup {
     static boolean supported() {
         return (new ToolValidator(TOOL_LDD).validate() == null);
     }

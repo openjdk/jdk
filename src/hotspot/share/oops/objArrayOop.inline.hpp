@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_OBJARRAYOOP_INLINE_HPP
 #define SHARE_OOPS_OBJARRAYOOP_INLINE_HPP
 
-#include "oops/access.inline.hpp"
+#include "oops/access.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
