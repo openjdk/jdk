@@ -98,8 +98,7 @@ public class TestKeyFactory extends PKCS11Test {
             }
             @Override
             public byte[] getEncoded() {
-                // skip cloning for testing key.
-                return encodedPriv;
+                return encodedPriv.clone();
             }
         };
         byte[] encodedPub = Base64.getDecoder().decode(PKCS1_PUB_STR);
@@ -114,8 +113,7 @@ public class TestKeyFactory extends PKCS11Test {
             }
             @Override
             public byte[] getEncoded() {
-                // skip cloning for testing key.
-                return encodedPub;
+                return encodedPub.clone();
             }
         };
     }

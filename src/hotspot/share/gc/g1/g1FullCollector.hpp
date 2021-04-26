@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,12 +103,14 @@ public:
     return _live_stats[region_index]._live_words;
   }
 
-  void update_attribute_table(HeapRegion* hr, bool force_pinned = false);
+  void before_marking_update_attribute_table(HeapRegion* hr);
 
-  inline bool is_in_pinned_or_closed(oop obj) const;
-  inline bool is_in_pinned(oop obj) const;
-  inline bool is_in_pinned(uint region_index) const;
-  inline bool is_in_closed(oop obj) const;
+  inline bool is_compacting(oop obj) const;
+  inline bool is_skip_compacting(uint region_index) const;
+  inline bool is_skip_marking(oop obj) const;
+
+  inline void set_invalid(uint region_idx);
+  inline void update_from_compacting_to_skip_compacting(uint region_idx);
 
 private:
   void phase1_mark_live_objects();

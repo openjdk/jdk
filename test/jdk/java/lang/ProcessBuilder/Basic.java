@@ -27,7 +27,7 @@
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
- *      8067796 8224905 8263729
+ *      8067796 8224905 8263729 8265173
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -2150,10 +2150,12 @@ public class Basic {
                     switch (action & 0x1) {
                         case 0:
                             childArgs.set(1, "-XX:+DisplayVMOutputToStderr");
+                            childArgs.add(2, "-Xlog:all=warning:stderr");
                             pb.redirectError(INHERIT);
                             break;
                         case 1:
                             childArgs.set(1, "-XX:+DisplayVMOutputToStdout");
+                            childArgs.add(2, "-Xlog:all=warning:stdout");
                             pb.redirectOutput(INHERIT);
                             break;
                         default:

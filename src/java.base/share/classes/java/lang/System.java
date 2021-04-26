@@ -114,7 +114,13 @@ public final class System {
      * The "standard" input stream. This stream is already
      * open and ready to supply input data. Typically this stream
      * corresponds to keyboard input or another input source specified by
-     * the host environment or user.
+     * the host environment or user. In case this stream is wrapped
+     * in a {@link java.io.InputStreamReader}, {@link Console#charset()}
+     * should be used for the charset, or consider using
+     * {@link Console#reader()}.
+     *
+     * @see Console#charset()
+     * @see Console#reader()
      */
     public static final InputStream in = null;
 
@@ -122,7 +128,10 @@ public final class System {
      * The "standard" output stream. This stream is already
      * open and ready to accept output data. Typically this stream
      * corresponds to display output or another output destination
-     * specified by the host environment or user.
+     * specified by the host environment or user. The encoding used
+     * in the conversion from characters to bytes is equivalent to
+     * {@link Console#charset()} if the {@code Console} exists,
+     * {@link Charset#defaultCharset()} otherwise.
      * <p>
      * For simple stand-alone Java applications, a typical way to write
      * a line of output data is:
@@ -142,6 +151,8 @@ public final class System {
      * @see     java.io.PrintStream#println(long)
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
+     * @see     Console#charset()
+     * @see     Charset#defaultCharset()
      */
     public static final PrintStream out = null;
 
@@ -156,6 +167,12 @@ public final class System {
      * of a user even if the principal output stream, the value of the
      * variable {@code out}, has been redirected to a file or other
      * destination that is typically not continuously monitored.
+     * The encoding used in the conversion from characters to bytes is
+     * equivalent to {@link Console#charset()} if the {@code Console}
+     * exists, {@link Charset#defaultCharset()} otherwise.
+     *
+     * @see     Console#charset()
+     * @see     Charset#defaultCharset()
      */
     public static final PrintStream err = null;
 
@@ -2014,6 +2031,9 @@ public final class System {
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
         setIn0(new BufferedInputStream(fdIn));
+        // sun.stdout/err.encoding are set when the VM is associated with the terminal,
+        // thus they are equivalent to Console.charset(), otherwise the encoding
+        // defaults to Charset.defaultCharset()
         setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
         setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
 
@@ -2306,6 +2326,10 @@ public final class System {
 
             public long stringConcatMix(long lengthCoder, String constant) {
                 return StringConcatHelper.mix(lengthCoder, constant);
+            }
+
+            public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
+                return String.join(prefix, suffix, delimiter, elements, size);
             }
 
             public Object classData(Class<?> c) {

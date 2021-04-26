@@ -321,7 +321,7 @@ public:
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
-  void record_concurrent_mark_cleanup_end();
+  void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
   void print_phases();
 
