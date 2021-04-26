@@ -22,37 +22,29 @@
  * questions.
  */
 
-package runtime/LocalVariableTable;
+/*
+ * @test
+ * @bug 8265756
+ * @library /test/lib /
+ * @compile TestLargeLocalVarsStackRegionHelper.jasm
+ * @run main runtime.Locals.TestLargeLocalVarsStackRegion
+ */
 
-public class  TestLongLVTHelper
-{
+package runtime.Locals;
 
-// Method with large locals variable table.
-// Purpose: verify stack pages touch order (see TestLongLVT.java)
-public static Method tst:"()I"
-    stack 3 locals 65535
-{
-                iconst_1;
-                newarray int;
-                dup;
-                astore_w   65500;
-                aload_w  65500;
-                if_acmpne       FAILED;
+import jdk.test.lib.Asserts;
 
-                iconst_0;
-                ireturn; // passed
+public class TestLargeLocalVarsStackRegion {
 
-        FAILED:
-                iconst_1; // failed
-                ireturn;
-}
-
-public Method <init>:"()V"
-        stack 1 locals 1
-{
-    aload_0;
-    invokespecial   Method java/lang/Object.<init>:"()V";
-    return;
-}
-
+    // Some platforms (such as windows-aarch64) may have
+    // stack page touch order restrictions.
+    // Test calls method with large local vars stack region
+    // to trigger usage of several stack memory pages and
+    // check the validity of the touch order.
+    //
+    // Helper method is written in jasm as this allows to
+    // specify local vars stack region size directly.
+    public static void main(String args[]) {
+        Asserts.assertEQ(TestLargeLocalVarsStackRegionHelper.tst(), 0);
+    }
 }
