@@ -5920,18 +5920,6 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   _minor_version = stream->get_u2_fast();
   _major_version = stream->get_u2_fast();
 
-  if (DumpSharedSpaces && _major_version < JAVA_6_VERSION) {
-    ResourceMark rm;
-    warning("Pre JDK 6 class not supported by CDS: %u.%u %s",
-            _major_version,  _minor_version, _class_name->as_C_string());
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_UnsupportedClassVersionError(),
-      "Unsupported major.minor version for dump time %u.%u",
-      _major_version,
-      _minor_version);
-  }
-
   // Check version numbers - we check this even with verifier off
   verify_class_version(_major_version, _minor_version, _class_name, CHECK);
 

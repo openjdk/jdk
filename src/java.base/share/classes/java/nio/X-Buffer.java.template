@@ -1058,7 +1058,7 @@ public abstract class $Type$Buffer
 #end[!byte]
                 try {
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            scope(), src.scope(), srcBase,
+                            src.scope(), scope(), srcBase,
                             srcAddr, base, addr, len);
                 } finally {
                     Reference.reachabilityFence(src);
@@ -1068,7 +1068,7 @@ public abstract class $Type$Buffer
             } else {
                 try {
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            scope(), src.scope(), srcBase,
+                            src.scope(), scope(), srcBase,
                             srcAddr, base, addr, len, (long)1 << $LG_BYTES_PER_VALUE$);
                 } finally {
                     Reference.reachabilityFence(src);

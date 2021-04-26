@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -38,7 +39,6 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
