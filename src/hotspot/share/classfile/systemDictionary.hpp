@@ -293,8 +293,6 @@ public:
                                   const char* message);
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
 
-  static ProtectionDomainCacheEntry* cache_get(Handle protection_domain);
-
  private:
   // Static tables owned by the SystemDictionary
 

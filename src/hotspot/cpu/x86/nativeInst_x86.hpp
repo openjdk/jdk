@@ -27,7 +27,6 @@
 
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
 
 // We have interfaces for the following instructions:

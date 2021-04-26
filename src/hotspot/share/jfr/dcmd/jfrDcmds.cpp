@@ -30,7 +30,11 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "logging/log.hpp"
+#include "logging/logConfiguration.hpp"
+#include "logging/logMessage.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
@@ -128,21 +132,52 @@ static bool invalid_state(outputStream* out, TRAPS) {
   return is_disabled(out) || !is_module_available(out, THREAD);
 }
 
-static void print_pending_exception(outputStream* output, oop throwable) {
+static void handle_pending_exception(outputStream* output, bool startup, oop throwable) {
   assert(throwable != NULL, "invariant");
 
   oop msg = java_lang_Throwable::message(throwable);
-
-  if (msg != NULL) {
-    char* text = java_lang_String::as_utf8_string(msg);
-    output->print_raw_cr(text);
+  if (msg == NULL) {
+    return;
+  }
+  char* text = java_lang_String::as_utf8_string(msg);
+  if (text != NULL) {
+    if (startup) {
+      log_error(jfr,startup)("%s", text);
+    } else {
+      output->print_cr("%s", text);
+    }
   }
 }
 
-static void print_message(outputStream* output, const char* message) {
-  if (message != NULL) {
-    output->print_raw(message);
+static void print_message(outputStream* output, oop content, TRAPS) {
+  objArrayOop lines = objArrayOop(content);
+  assert(lines != NULL, "invariant");
+  assert(lines->is_array(), "must be array");
+  const int length = lines->length();
+  for (int i = 0; i < length; ++i) {
+    const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
+    if (text == NULL) {
+      // An oome has been thrown and is pending.
+      break;
+    }
+    output->print_cr("%s", text);
   }
+}
+
+static void log(oop content, TRAPS) {
+    LogMessage(jfr,startup) msg;
+    objArrayOop lines = objArrayOop(content);
+    assert(lines != NULL, "invariant");
+    assert(lines->is_array(), "must be array");
+    const int length = lines->length();
+    for (int i = 0; i < length; ++i) {
+      const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
+      if (text == NULL) {
+        // An oome has been thrown and is pending.
+        break;
+      }
+      msg.info("%s", text);
+    }
 }
 
 static void handle_dcmd_result(outputStream* output,
@@ -151,10 +186,11 @@ static void handle_dcmd_result(outputStream* output,
                                TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   assert(output != NULL, "invariant");
+  const bool startup = DCmd_Source_Internal == source;
   if (HAS_PENDING_EXCEPTION) {
-    print_pending_exception(output, PENDING_EXCEPTION);
+    handle_pending_exception(output, startup, PENDING_EXCEPTION);
     // Don't clear excption on startup, JVM should fail initialization.
-    if (DCmd_Source_Internal != source) {
+    if (!startup) {
       CLEAR_PENDING_EXCEPTION;
     }
     return;
@@ -162,9 +198,20 @@ static void handle_dcmd_result(outputStream* output,
 
   assert(!HAS_PENDING_EXCEPTION, "invariant");
 
-  if (result != NULL) {
-    const char* result_chars = java_lang_String::as_utf8_string(result);
-    print_message(output, result_chars);
+  if (startup) {
+    if (log_is_enabled(Warning, jfr, startup))  {
+      // if warning is set, assume user hasn't configured log level
+      // Log to Info and reset to Warning. This way user can disable
+      // default output by setting -Xlog:jfr+startup=error/off
+      LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(jfr, startup));
+      log(result, THREAD);
+      LogConfiguration::configure_stdout(LogLevel::Warning, true, LOG_TAGS(jfr, startup));
+    } else {
+      log(result, THREAD);
+    }
+  } else {
+      // Print output for jcmd or MXBean
+      print_message(output, result, THREAD);
   }
 }
 
@@ -261,7 +308,7 @@ void JfrDumpFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
 
   static const char klass[] = "jdk/jfr/internal/dcmd/DCmdDump";
   static const char method[] = "execute";
-  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Ljava/lang/String;";
+  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);
@@ -327,7 +374,7 @@ void JfrCheckFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
 
   static const char klass[] = "jdk/jfr/internal/dcmd/DCmdCheck";
   static const char method[] = "execute";
-  static const char signature[] = "(Ljava/lang/String;Ljava/lang/Boolean;)Ljava/lang/String;";
+  static const char signature[] = "(Ljava/lang/String;Ljava/lang/Boolean;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);
@@ -471,7 +518,7 @@ void JfrStartFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
   static const char method[] = "execute";
   static const char signature[] = "(Ljava/lang/String;[Ljava/lang/String;Ljava/lang/Long;"
     "Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/String;"
-    "Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Boolean;)Ljava/lang/String;";
+    "Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Boolean;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);
@@ -541,7 +588,7 @@ void JfrStopFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
 
   static const char klass[] = "jdk/jfr/internal/dcmd/DCmdStop";
   static const char method[] = "execute";
-  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
+  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);
@@ -654,7 +701,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   static const char method[] = "execute";
   static const char signature[] = "(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;"
     "Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;"
-    "Ljava/lang/Long;Ljava/lang/Boolean;)Ljava/lang/String;";
+    "Ljava/lang/Long;Ljava/lang/Boolean;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);

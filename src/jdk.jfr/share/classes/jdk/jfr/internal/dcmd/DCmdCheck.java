@@ -58,7 +58,7 @@ final class DCmdCheck extends AbstractDCmd {
      *
      * @throws DCmdException if the check could not be completed.
      */
-    public String execute(String recordingText, Boolean verbose) throws DCmdException {
+    public String[] execute(String recordingText, Boolean verbose) throws DCmdException {
         executeInternal(recordingText, verbose);
         return getResult();
     }

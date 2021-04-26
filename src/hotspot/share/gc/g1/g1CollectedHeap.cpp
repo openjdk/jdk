@@ -28,6 +28,7 @@
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
@@ -1088,7 +1089,8 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
 }
 
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
-                                         bool clear_all_soft_refs) {
+                                         bool clear_all_soft_refs,
+                                         bool do_maximum_compaction) {
   assert_at_safepoint_on_vm_thread();
 
   if (GCLocker::check_active_before_gc()) {
@@ -1099,7 +1101,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
 
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
 
   collector.prepare_collection();
@@ -1114,8 +1116,12 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   // Currently, there is no facility in the do_full_collection(bool) API to notify
   // the caller that the collection did not succeed (e.g., because it was locked
   // out by the GC locker). So, right now, we'll ignore the return value.
+  // When clear_all_soft_refs is set we want to do a maximum compaction
+  // not leaving any dead wood.
+  bool do_maximum_compaction = clear_all_soft_refs;
   bool dummy = do_full_collection(true,                /* explicit_gc */
-                                  clear_all_soft_refs);
+                                  clear_all_soft_refs,
+                                  do_maximum_compaction);
 }
 
 void G1CollectedHeap::resize_heap_if_necessary() {
@@ -1157,9 +1163,13 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   }
 
   if (do_gc) {
+    // When clear_all_soft_refs is set we want to do a maximum compaction
+    // not leaving any dead wood.
+    bool do_maximum_compaction = clear_all_soft_refs;
     // Expansion didn't work, we'll try to do a Full GC.
     *gc_succeeded = do_full_collection(false, /* explicit_gc */
-                                       clear_all_soft_refs);
+                                       clear_all_soft_refs,
+                                       do_maximum_compaction);
   }
 
   return NULL;
@@ -1434,7 +1444,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _cm_thread(NULL),
   _cr(NULL),
   _task_queues(NULL),
-  _evacuation_failed(false),
+  _num_regions_failed_evacuation(0),
   _evacuation_failed_info_array(NULL),
   _preserved_marks_set(true /* in_c_heap */),
 #ifndef PRODUCT
@@ -2871,7 +2881,8 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
   if (should_upgrade_to_full_gc(gc_cause())) {
     log_info(gc, ergo)("Attempting maximally compacting collection");
     bool result = do_full_collection(false /* explicit gc */,
-                                     true /* clear_all_soft_refs */);
+                                     true  /* clear_all_soft_refs */,
+                                     false /* do_maximum_compaction */);
     // do_full_collection only fails if blocked by GC locker, but
     // we've already checked for that above.
     assert(result, "invariant");
@@ -3076,8 +3087,16 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 }
 
 void G1CollectedHeap::remove_self_forwarding_pointers(G1RedirtyCardsQueueSet* rdcqs) {
-  G1ParRemoveSelfForwardPtrsTask rsfp_task(rdcqs);
-  workers()->run_task(&rsfp_task);
+  uint num_workers = MIN2(workers()->active_workers(), num_regions_failed_evacuation());
+
+  G1ParRemoveSelfForwardPtrsTask cl(rdcqs);
+  log_debug(gc, ergo)("Running %s using %u workers for %u failed regions",
+                      cl.name(), num_workers, num_regions_failed_evacuation());
+  workers()->run_task(&cl, num_workers);
+
+  assert(cl.num_failed_regions() == num_regions_failed_evacuation(),
+         "Removed regions %u inconsistent with expected %u",
+         cl.num_failed_regions(), num_regions_failed_evacuation());
 }
 
 void G1CollectedHeap::restore_after_evac_failure(G1RedirtyCardsQueueSet* rdcqs) {
@@ -3090,10 +3109,6 @@ void G1CollectedHeap::restore_after_evac_failure(G1RedirtyCardsQueueSet* rdcqs) 
 }
 
 void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj, markWord m) {
-  if (!_evacuation_failed) {
-    _evacuation_failed = true;
-  }
-
   _evacuation_failed_info_array[worker_id].register_copy_failure(obj->size());
   _preserved_marks_set.get(worker_id)->push_if_necessary(obj, m);
 }
@@ -3647,7 +3662,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   _bytes_used_during_gc = 0;
 
   _expand_heap_after_alloc_failure = true;
-  _evacuation_failed = false;
+  Atomic::store(&_num_regions_failed_evacuation, 0u);
 
   // Disable the hot card cache.
   _hot_card_cache->reset_hot_cache_claimed_index();
@@ -4336,14 +4351,13 @@ void G1CollectedHeap::free_collection_set(G1CollectionSet* collection_set, G1Eva
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {
-  HeapRegionSet* _proxy_set;
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
 public:
 
   G1FreeHumongousRegionClosure() :
-    _proxy_set(NULL), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
+    _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
