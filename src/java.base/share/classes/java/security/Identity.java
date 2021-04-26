@@ -327,24 +327,23 @@ public abstract class Identity implements Principal, Serializable {
      * {@link #identityEquals(Identity) identityEquals}, which subclasses should
      * override.
      *
-     * @param identity the object to test for equality with this identity.
+     * @param obj the object to test for equality with this identity.
      *
      * @return true if the objects are considered equal, false otherwise.
      *
      * @see #identityEquals
      */
-    public final boolean equals(Object identity) {
+    public final boolean equals(Object obj) {
 
-        if (identity == this) {
+        if (obj == this) {
             return true;
         }
 
-        if (identity instanceof Identity) {
-            Identity i = (Identity)identity;
-            if (this.fullName().equals(i.fullName())) {
+        if (obj instanceof Identity other) {
+            if (this.fullName().equals(other.fullName())) {
                 return true;
             } else {
-                return identityEquals(i);
+                return identityEquals(other);
             }
         }
         return false;

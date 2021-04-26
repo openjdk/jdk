@@ -157,22 +157,20 @@ public class CodeSource implements java.io.Serializable {
             return true;
 
         // objects types must be equal
-        if (!(obj instanceof CodeSource))
+        if (!(obj instanceof CodeSource other))
             return false;
-
-        CodeSource cs = (CodeSource) obj;
 
         // URLs must match
         if (location == null) {
-            // if location is null, then cs.location must be null as well
-            if (cs.location != null) return false;
+            // if location is null, then other.location must be null as well
+            if (other.location != null) return false;
         } else {
-            // if location is not null, then it must equal cs.location
-            if (!location.equals(cs.location)) return false;
+            // if location is not null, then it must equal other.location
+            if (!location.equals(other.location)) return false;
         }
 
         // certs must match
-        return matchCerts(cs, true);
+        return matchCerts(other, true);
     }
 
     /**
