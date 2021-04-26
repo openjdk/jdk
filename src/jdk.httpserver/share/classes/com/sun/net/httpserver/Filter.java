@@ -143,12 +143,32 @@ public abstract class Filter {
     public abstract String description ();
 
     /**
-     * Returns a pre-processing Filter with the given description and operation.
+     * Returns a pre-processing {@code Filter} with the given description and
+     * operation.
      *
-     * <p>The {@link Consumer operation} is the effective implementation of
-     * the returned Filter and is executed for each {@code HttpExchange} before
-     * invoking the next filter in the chain, or the exchange handler
-     * (if this is the final filter in the chain).
+     * <p>The {@code description} string describes the returned filter. The
+     * {@link Consumer operation} is the effective implementation of the filter.
+     * It is executed for each {@code HttpExchange} before invoking either the
+     * next filter in the chain or the exchange handler (if this is the final
+     * filter in the chain).
+     *
+     * @apiNote
+     * A beforeHandler filter is typically used to examine or modify the
+     * exchange state before it is handled. The filter operation is executed
+     * before {@link Filter.Chain#doFilter(HttpExchange)} is invoked, so before
+     * any subsequent filters in the chain and the exchange handler are
+     * executed. The response is commonly sent by the exchange handler.
+     * The filter is only expected to send the response in the uncommon case
+     * that the exchange will not be handled after the filter is executed.
+     *
+     * <p> Example of adding a response header to all responses:
+     * <pre>{@code
+     *     var filter = Filter.beforeHandler("Add response header X-Content-Type-Options",
+     *                 (var e) -> e.getResponseHeaders().set("X-Content-Type-Options", "nosniff"));
+     *     var server = HttpServer.create(new InetSocketAddress(0), 10);
+     *     server.createContext("/", new SomeHandler()).getFilters().add(filter);
+     *     server.start();
+     * }</pre>
      *
      * @param description the description of the returned filter
      * @param operation the operation of the returned filter
@@ -156,8 +176,8 @@ public abstract class Filter {
      * @throws NullPointerException if any argument is null
      * @since 17
      */
-    public static Filter beforeResponse(String description,
-                                        Consumer<HttpExchange> operation) {
+    public static Filter beforeHandler(String description,
+                                       Consumer<HttpExchange> operation) {
         Objects.requireNonNull(description);
         Objects.requireNonNull(operation);
         return new Filter() {
@@ -174,12 +194,44 @@ public abstract class Filter {
     }
 
     /**
-     * Returns a post-processing Filter with the given description and operation.
+     * Returns a post-processing {@code Filter} with the given description and
+     * operation.
      *
-     * <p>The {@link Consumer operation} is the effective implementation of
-     * the returned Filter and is executed for each {@code HttpExchange} after
-     * invoking the next filter in the chain, or the exchange handler
-     * (if this is the final filter in the chain).
+     * <p>The {@code description} string describes the returned filter. The
+     * {@link Consumer operation} is the effective implementation of the filter.
+     * It is executed for each {@code HttpExchange} after invoking either the
+     * next filter in the chain or the exchange handler (if this filter is the
+     * final filter in the chain).
+     *
+     * @apiNote
+     * An afterHandler filter is typically used to examine the exchange state
+     * rather than modifying it. The filter operation is executed after
+     * {@link Filter.Chain#doFilter(HttpExchange)} is invoked, this means any
+     * subsequent filters in the chain and the exchange handler have been
+     * executed and the response has commonly been sent. The filter is only
+     * expected to send the response in the uncommon case that the exchange
+     * has not been handled before the filter is executed.
+     *
+     * <p> Example of logging the response code of all exchanges:
+     * <pre>{@code
+     *     var filter = Filter.afterHandler("Log response code", (var e) -> log(e.getResponseCode());
+     *     var server = HttpServer.create(new InetSocketAddress(0), 10);
+     *     var context = server.createContext("/", new SomeHandler());
+     *     context.getFilters().add(filter);
+     *     server.start();
+     * }</pre>
+     *
+     * <p> Example of adding a sequence of afterHandler filters to a context
+     * (note the ordering):
+     * <pre>{@code
+     *     var filter1 = Filter.afterHandler("Set a1", (var e) -> e.setAttribute("a1", "some value"));
+     *     var filter2 = Filter.afterHandler("Get a1", (var e) -> doSomething(e.getAttribute("a1")));
+     *     var server = HttpServer.create(new InetSocketAddress(0), 10);
+     *     var context = server.createContext("/", new SomeHandler());
+     *     context.getFilters().add(filter2);
+     *     context.getFilters().add(filter1);
+     *     server.start();
+     * }</pre>
      *
      * @param description the description of the returned filter
      * @param operation the operation of the returned filter
@@ -187,8 +239,8 @@ public abstract class Filter {
      * @throws NullPointerException if any argument is null
      * @since 17
      */
-    public static Filter afterResponse(String description,
-                                       Consumer<HttpExchange> operation) {
+    public static Filter afterHandler(String description,
+                                      Consumer<HttpExchange> operation) {
         Objects.requireNonNull(description);
         Objects.requireNonNull(operation);
         return new Filter() {

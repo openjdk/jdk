@@ -23,17 +23,21 @@
 
 /*
  * @test
- * @summary Basic tests for static factory methods of Filter
+ * @summary  Tests for Filter static factory methods
  * @run testng/othervm FilterTest
  */
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,11 +55,11 @@ public class FilterTest {
     static final Class<NullPointerException> NPE = NullPointerException.class;
 
     static final boolean ENABLE_LOGGING = true;
+    static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeTest
     public void setup() {
         if (ENABLE_LOGGING) {
-            Logger logger = Logger.getLogger("com.sun.net.httpserver");
             ConsoleHandler ch = new ConsoleHandler();
             logger.setLevel(Level.ALL);
             ch.setLevel(Level.ALL);
@@ -65,25 +69,25 @@ public class FilterTest {
 
     @Test
     public void testNull() {
-        expectThrows(NPE, () -> Filter.beforeResponse(null, (HttpExchange e) -> e.getResponseHeaders().set("X-Foo", "Bar")));
-        expectThrows(NPE, () -> Filter.beforeResponse("Some description", null));
-        expectThrows(NPE, () -> Filter.afterResponse(null, HttpExchange::getResponseCode));
-        expectThrows(NPE, () -> Filter.afterResponse("Some description", null));
+        expectThrows(NPE, () -> Filter.beforeHandler(null, (HttpExchange e) -> e.getResponseHeaders().set("X-Foo", "Bar")));
+        expectThrows(NPE, () -> Filter.beforeHandler("Some description", null));
+        expectThrows(NPE, () -> Filter.afterHandler(null, HttpExchange::getResponseCode));
+        expectThrows(NPE, () -> Filter.afterHandler("Some description", null));
     }
 
     @Test
     public void testDescription() {
         var desc = "Some description";
-        var beforeFilter = Filter.beforeResponse(desc, HttpExchange::getRequestBody);
-        var afterFilter = Filter.afterResponse(desc, HttpExchange::getRequestBody);
+        var beforeFilter = Filter.beforeHandler(desc, HttpExchange::getRequestBody);
+        var afterFilter = Filter.afterHandler(desc, HttpExchange::getResponseCode);
         assertEquals(desc, beforeFilter.description());
         assertEquals(desc, afterFilter.description());
     }
 
     @Test
-    public void testBeforeResponse() throws Exception {
-        var handler = new TestHttpHandler();
-        var filter = Filter.beforeResponse("Add x-foo response header",
+    public void testBeforeHandler() throws Exception {
+        var handler = new EchoHandler();
+        var filter = Filter.beforeHandler("Add x-foo response header",
                 (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
         var server = HttpServer.create(new InetSocketAddress(0), 10);
         server.createContext("/", handler).getFilters().add(filter);
@@ -101,11 +105,11 @@ public class FilterTest {
     }
 
     @Test
-    public void testBeforeResponseRepeated() throws Exception {
-        var handler = new TestHttpHandler();
-        var filter1 = Filter.beforeResponse("Add x-foo response header",
+    public void testBeforeHandlerRepeated() throws Exception {
+        var handler = new EchoHandler();
+        var filter1 = Filter.beforeHandler("Add x-foo response header",
                 (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
-        var filter2 = Filter.beforeResponse("Update x-foo response header",
+        var filter2 = Filter.beforeHandler("Update x-foo response header",
                 (var e) -> e.getResponseHeaders().set("x-foo", "barbar"));
         var server = HttpServer.create(new InetSocketAddress(0), 10);
         var context = server.createContext("/", handler);
@@ -125,11 +129,20 @@ public class FilterTest {
     }
 
     @Test
-    public void testAfterResponse() throws Exception {
-        var handler = new TestHttpHandler();
-        var respCode = new int[1];
-        var filter = Filter.afterResponse("Log response code",
-                (var e) -> respCode[0] = e.getResponseCode());
+    public void testBeforeHandlerSendResponse() throws Exception {
+        var handler = new NoResponseHandler();
+        var filter = Filter.beforeHandler("Add x-foo response header and send response",
+                (var e) -> {
+                    try (InputStream is = e.getRequestBody();
+                         OutputStream os = e.getResponseBody()) {
+                        var len = is.transferTo(os);
+                        e.getResponseHeaders().set("x-foo", "bar");
+                        e.sendResponseHeaders(200, len);
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace(System.out);
+                        throw new UncheckedIOException(ioe);
+                    }
+                });
         var server = HttpServer.create(new InetSocketAddress(0), 10);
         server.createContext("/", handler).getFilters().add(filter);
         server.start();
@@ -138,45 +151,96 @@ public class FilterTest {
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
-            assertEquals(response.statusCode(), respCode[0]);
+            assertEquals(response.headers().map().size(), 3);
+            assertEquals(response.headers().firstValue("x-foo").orElseThrow(), "bar");
         } finally {
             server.stop(0);
         }
     }
 
     @Test
-    public void testAfterResponseRepeated() throws Exception {
-        var handler = new TestHttpHandler();
-        var attr = new String[1];
-        final var value = "some value";
-        var afterFilter1 = Filter.afterResponse("Set attribute",
-                (var e) -> e.setAttribute("test-attr", value));
-        var afterFilter2 = Filter.afterResponse("Read attribute",
-                (var e) -> attr[0] = (String) e.getAttribute("test-attr"));
+    public void testAfterHandler() throws Exception {
+        var handler = new EchoHandler();
+        var respCode = new AtomicInteger();
+        var filter = Filter.afterHandler("Log response code",
+                (var e) -> respCode.set(e.getResponseCode()));
         var server = HttpServer.create(new InetSocketAddress(0), 10);
-        var context = server.createContext("/", handler);
-        context.getFilters().add(afterFilter2);
-        context.getFilters().add(afterFilter1);
+        server.createContext("/", handler).getFilters().add(filter);
         server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
-            assertEquals(attr[0], value);
+            assertEquals(response.statusCode(), respCode.get());
         } finally {
             server.stop(0);
         }
     }
 
     @Test
-    public void testBeforeAndAfterResponse() throws Exception {
-        var handler = new TestHttpHandler();
-        var respCode = new int[1];
-        var beforeFilter = Filter.beforeResponse("Add x-foo response header",
+    public void testAfterHandlerRepeated() throws Exception {
+        var handler = new EchoHandler();
+        var attr = new AtomicReference<String>();
+        final var value = "some value";
+        var filter1 = Filter.afterHandler("Set attribute",
+                (var e) -> e.setAttribute("test-attr", value));
+        var filter2 = Filter.afterHandler("Read attribute",
+                (var e) -> attr.set((String) e.getAttribute("test-attr")));
+        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var context = server.createContext("/", handler);
+        context.getFilters().add(filter2);
+        context.getFilters().add(filter1);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(attr.get(), value);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testAfterHandlerSendResponse() throws Exception {
+        var handler = new NoResponseHandler();
+        var respCode = new AtomicInteger();
+        var filter = Filter.afterHandler("Log response code and send response",
+                (var e) -> {
+                    try (InputStream is = e.getRequestBody();
+                         OutputStream os = e.getResponseBody()) {
+                        var len = is.transferTo(os);
+                        e.sendResponseHeaders(200, len);
+                        respCode.set(e.getResponseCode());
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace(System.out);
+                        throw new UncheckedIOException(ioe);
+                    }
+                });
+        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        server.createContext("/", handler).getFilters().add(filter);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.statusCode(), respCode.get());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testBeforeAndAfterHandler() throws Exception {
+        var handler = new EchoHandler();
+        var respCode = new AtomicInteger();
+        var beforeFilter = Filter.beforeHandler("Add x-foo response header",
                 (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
-        var afterFilter = Filter.afterResponse("Log response code",
-                (var e) -> respCode[0] = e.getResponseCode());
+        var afterFilter = Filter.afterHandler("Log response code",
+                (var e) -> respCode.set(e.getResponseCode()));
         var server = HttpServer.create(new InetSocketAddress(0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(beforeFilter);
@@ -187,7 +251,7 @@ public class FilterTest {
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
-            assertEquals(response.statusCode(), respCode[0]);
+            assertEquals(response.statusCode(), respCode.get());
             assertEquals(response.headers().map().size(), 3);
             assertEquals(response.headers().firstValue("x-foo").orElseThrow(), "bar");
         } finally {
@@ -200,15 +264,24 @@ public class FilterTest {
     }
 
     /**
-     * A test handler that discards the request and sends no response
+     * A test handler that discards the request and echos the request body
      */
-    static class TestHttpHandler implements HttpHandler {
+    static class EchoHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            try (InputStream is = exchange.getRequestBody()) {
-                is.readAllBytes();
-                exchange.sendResponseHeaders(200, -1);
+            try (InputStream is = exchange.getRequestBody();
+                 OutputStream os = exchange.getResponseBody()) {
+                var len = is.transferTo(os);
+                exchange.sendResponseHeaders(200, len);
             }
         }
+    }
+
+    /**
+     * A test handler that does nothing
+     */
+    static class NoResponseHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException { }
     }
 }
