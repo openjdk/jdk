@@ -24,7 +24,7 @@ package compiler.vectorization;
 
 /**
  * @test
- * @bug 8263972 
+ * @bug 8263972
  * @requires vm.compiler2.enabled & vm.compMode != "Xint"
  *
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*TestMemoryVectorMismatched::test compiler.vectorization.TestMemoryVectorMismatched
@@ -32,7 +32,7 @@ package compiler.vectorization;
 public class TestMemoryVectorMismatched {
     public static void main(String[] g) {
         int a = 400;
-        long expected = -35984L; 
+        long expected = -35984L;
         for (int i = 0; i < 10; i++) {
             long v = test(a);
             if (v != expected) {
