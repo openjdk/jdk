@@ -47,7 +47,7 @@ TEST_VM(MutexName, mutex_name) {
   }
   for (int i = 0; i < iterations; i++) {
     FormatBuffer<128> f("MyLock lock #%u", i);
-    ASSERT_TRUE(strcmp(m[i]->name(), f.buffer()) == 0) << "Wrong name!";
+    ASSERT_STREQ(m[i]->name(), f.buffer()) << "Wrong name!";
   }
 }
 
