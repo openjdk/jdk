@@ -1536,6 +1536,15 @@ public class Attr extends JCTree.Visitor {
                     elemtype = iterableParams.isEmpty()
                         ? syms.objectType
                         : types.wildUpperBound(iterableParams.head);
+
+                    // Check the return type of the method iterator().
+                    // This is the bare minimum we need to verify to make sure code generation doesn't crash.
+                    Symbol iterSymbol = rs.resolveInternalMethod(tree.pos(),
+                            loopEnv, exprType, names.iterator, List.nil(), List.nil());
+                    if (types.asSuper(iterSymbol.type.getReturnType(), syms.iteratorType.tsym) == null) {
+                        log.error(tree.pos(),
+                                Errors.ForeachNotApplicableToType(exprType, Fragments.TypeReqArrayOrIterable));
+                    }
                 }
             }
             if (tree.var.isImplicitlyTyped()) {
