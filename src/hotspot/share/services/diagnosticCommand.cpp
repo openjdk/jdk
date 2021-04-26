@@ -556,10 +556,11 @@ ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
   _all("-all", "Inspect all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _parallel_thread_num("-parallel",
-       "Number of parallel threads for heap iteration. "
-       "0 means let the VM determine the number of threads. "
-       "1 means use one thread, i.e. disable parallelism. "
-       "n means use n threads. n must be positive.",
+       "Number of parallel threads to use for heap inspection. "
+       "0 (the default) means let the VM determine the number of threads to use. "
+       "1 means use one thread (disable parallelism). "
+       "For any other value the VM will try to use the specified number of "
+       "threads, but might use fewer.",
        "INT", false, "0") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_option(&_parallel_thread_num);
