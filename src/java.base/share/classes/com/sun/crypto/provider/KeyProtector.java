@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import javax.crypto.SealedObject;
 import javax.crypto.spec.*;
 import javax.security.auth.DestroyFailedException;
 
+import jdk.internal.access.SharedSecrets;
 import sun.security.x509.AlgorithmId;
 import sun.security.util.ObjectIdentifier;
 import sun.security.util.KnownOIDs;
@@ -201,10 +202,17 @@ final class KeyProtector {
 
             // determine the private-key algorithm, and parse private key
             // using the appropriate key factory
+            PrivateKeyInfo privateKeyInfo = new PrivateKeyInfo(plain);
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(plain);
             String oidName = new AlgorithmId
-                (new PrivateKeyInfo(plain).getAlgorithm().getOID()).getName();
-            KeyFactory kFac = KeyFactory.getInstance(oidName);
-            return kFac.generatePrivate(new PKCS8EncodedKeySpec(plain));
+                (privateKeyInfo.getAlgorithm().getOID()).getName();
+            try {
+                KeyFactory kFac = KeyFactory.getInstance(oidName);
+                return kFac.generatePrivate(spec);
+            } finally {
+                privateKeyInfo.clear();
+                SharedSecrets.getJavaSecuritySpecAccess().clearEncodedKeySpec(spec);
+            }
         } catch (NoSuchAlgorithmException ex) {
             // Note: this catch needed to be here because of the
             // later catch of GeneralSecurityException

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -551,8 +551,9 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
   // Drop into the slow path if we need a safepoint check
-  if (SafepointMechanism::should_process(THREAD)) {
+  if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -577,7 +578,6 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     return normal_entry(method, 0, THREAD);
   }
 
-  JavaThread* thread = THREAD->as_Java_thread();
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
@@ -639,8 +639,9 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
   // Drop into the slow path if we need a safepoint check
-  if (SafepointMechanism::should_process(THREAD)) {
+  if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -666,7 +667,6 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     return normal_entry(method, 0, THREAD);
   }
 
-  JavaThread* thread = THREAD->as_Java_thread();
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
@@ -734,7 +734,7 @@ int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
   ZeroStack *stack = thread->zero_stack();
 
   // Drop into the slow path if we need a safepoint check
-  if (SafepointMechanism::should_process(THREAD)) {
+  if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
   }
 

@@ -23,8 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveUtils.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/classListParser.hpp"
+#include "cds/dynamicArchive.hpp"
+#include "cds/filemap.hpp"
+#include "cds/heapShared.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classListParser.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -43,14 +49,8 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
-#include "memory/archiveUtils.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/dynamicArchive.hpp"
-#include "memory/filemap.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -1380,15 +1380,25 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     //    class loader doesn't expect it.
     if (has_class_failed_verification(k)) {
       warn_excluded(k, "Failed verification");
+      return true;
     } else {
-      warn_excluded(k, "Not linked");
+      if (!MetaspaceShared::is_old_class(k)) {
+        warn_excluded(k, "Not linked");
+        return true;
+      }
     }
-    return true;
   }
-  if (k->major_version() < 50 /*JAVA_6_VERSION*/) {
+  if (DynamicDumpSharedSpaces && k->major_version() < 50 /*JAVA_6_VERSION*/) {
+    // In order to support old classes during dynamic dump, class rewriting needs to
+    // be reverted. This would result in more complex code and testing but not much gain.
     ResourceMark rm;
     log_warning(cds)("Pre JDK 6 class not supported by CDS: %u.%u %s",
                      k->major_version(),  k->minor_version(), k->name()->as_C_string());
+    return true;
+  }
+
+  if (MetaspaceShared::is_old_class(k) && k->is_linked()) {
+    warn_excluded(k, "Old class has been linked");
     return true;
   }
 

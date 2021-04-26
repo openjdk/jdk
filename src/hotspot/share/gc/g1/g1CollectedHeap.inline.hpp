@@ -35,6 +35,7 @@
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "runtime/atomic.hpp"
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
@@ -186,6 +187,18 @@ void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
 
 void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
+}
+
+bool G1CollectedHeap::evacuation_failed() const {
+  return num_regions_failed_evacuation() > 0;
+}
+
+uint G1CollectedHeap::num_regions_failed_evacuation() const {
+  return Atomic::load(&_num_regions_failed_evacuation);
+}
+
+void G1CollectedHeap::notify_region_failed_evacuation() {
+  Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
 }
 
 #ifndef PRODUCT
