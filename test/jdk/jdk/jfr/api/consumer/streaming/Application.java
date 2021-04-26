@@ -145,8 +145,8 @@ public class Application {
                     if (vmd.id().equals(pid)) {
                         VirtualMachine vm = VirtualMachine.attach(vmd);
                         Object repo = vm.getSystemProperties().get("jdk.jfr.repository");
+                        vm.detach();
                         if (repo != null) {
-                            vm.detach();
                             return;
                         }
                     }
