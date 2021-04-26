@@ -97,7 +97,6 @@ void MemReporterBase::print_virtual_memory_region(const char* type, address base
 
 
 void MemSummaryReporter::report() {
-  const char* scale = current_scale();
   outputStream* out = output();
   size_t total_reserved_amount = _malloc_snapshot->total() +
     _vm_snapshot->total_reserved();
@@ -106,6 +105,12 @@ void MemSummaryReporter::report() {
 
   // Overall total
   out->print_cr("\nNative Memory Tracking:\n");
+
+  if (scale() > 1) {
+    out->print_cr("(Omitting categories weighting less than 1%s)", current_scale());
+    out->cr();
+  }
+
   out->print("Total: ");
   print_total(total_reserved_amount, total_committed_amount);
   out->print("\n");
@@ -243,22 +248,35 @@ void MemDetailReporter::report_detail() {
   outputStream* out = output();
   out->print_cr("Details:\n");
 
-  report_malloc_sites();
-  report_virtual_memory_allocation_sites();
+  int num_omitted =
+      report_malloc_sites() +
+      report_virtual_memory_allocation_sites();
+  if (num_omitted > 0) {
+    assert(scale() > 1, "sanity");
+    out->print_cr("(%d call sites weighting less than 1%s each omitted.)",
+                   num_omitted, current_scale());
+    out->cr();
+  }
 }
 
-void MemDetailReporter::report_malloc_sites() {
+int MemDetailReporter::report_malloc_sites() {
   MallocSiteIterator         malloc_itr = _baseline.malloc_sites(MemBaseline::by_size);
-  if (malloc_itr.is_empty()) return;
+  if (malloc_itr.is_empty()) return 0;
 
   outputStream* out = output();
 
   const MallocSite* malloc_site;
+  int num_omitted = 0;
   while ((malloc_site = malloc_itr.next()) != NULL) {
-    // Don't report if size is too small
-    if (amount_in_current_scale(malloc_site->size()) == 0)
+    // Don't report free sites; does not count toward omitted count.
+    if (malloc_site->size() == 0) {
       continue;
-
+    }
+    // Don't report if site has allocated less than one unit of whatever our scale is
+    if (scale() > 1 && amount_in_current_scale(malloc_site->size()) == 0) {
+      num_omitted ++;
+      continue;
+    }
     const NativeCallStack* stack = malloc_site->call_stack();
     stack->print_on(out);
     out->print("%29s", " ");
@@ -268,22 +286,28 @@ void MemDetailReporter::report_malloc_sites() {
     print_malloc(malloc_site->size(), malloc_site->count(),flag);
     out->print_cr("\n");
   }
+  return num_omitted;
 }
 
-void MemDetailReporter::report_virtual_memory_allocation_sites()  {
+int MemDetailReporter::report_virtual_memory_allocation_sites()  {
   VirtualMemorySiteIterator  virtual_memory_itr =
     _baseline.virtual_memory_sites(MemBaseline::by_size);
 
-  if (virtual_memory_itr.is_empty()) return;
+  if (virtual_memory_itr.is_empty()) return 0;
 
   outputStream* out = output();
   const VirtualMemoryAllocationSite*  virtual_memory_site;
-
+  int num_omitted = 0;
   while ((virtual_memory_site = virtual_memory_itr.next()) != NULL) {
-    // Don't report if size is too small
-    if (amount_in_current_scale(virtual_memory_site->reserved()) == 0)
+    // Don't report free sites; does not count toward omitted count.
+    if (virtual_memory_site->reserved() == 0) {
       continue;
-
+    }
+    // Don't report if site has reserved less than one unit of whatever our scale is
+    if (scale() > 1 && amount_in_current_scale(virtual_memory_site->reserved()) == 0) {
+      num_omitted++;
+      continue;
+    }
     const NativeCallStack* stack = virtual_memory_site->call_stack();
     stack->print_on(out);
     out->print("%28s (", " ");
@@ -294,6 +318,7 @@ void MemDetailReporter::report_virtual_memory_allocation_sites()  {
     }
     out->print_cr(")\n");
   }
+  return num_omitted;
 }
 
 
@@ -359,9 +384,13 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 }
 
 void MemSummaryDiffReporter::report_diff() {
-  const char* scale = current_scale();
   outputStream* out = output();
   out->print_cr("\nNative Memory Tracking:\n");
+
+  if (scale() > 1) {
+    out->print_cr("(Omitting categories weighting less than 1%s)", current_scale());
+    out->cr();
+  }
 
   // Overall diff
   out->print("Total: ");

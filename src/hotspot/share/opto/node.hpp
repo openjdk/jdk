@@ -323,6 +323,10 @@ protected:
   // preserved in _parse_idx.
   const node_idx_t _idx;
   DEBUG_ONLY(const node_idx_t _parse_idx;)
+  // IGV node identifier. It is similar to Node::_debug_idx in that it is unique
+  // across all compilation phases, but different in that it is initialized in
+  // each compilation, for stability.
+  NOT_PRODUCT(node_idx_t _igv_idx;)
 
   // Get the (read-only) number of input edges
   uint req() const { return _cnt; }

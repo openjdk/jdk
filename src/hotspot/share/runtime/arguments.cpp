@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -38,7 +39,6 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -47,7 +47,7 @@
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
@@ -521,6 +521,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "SuspendRetryCount",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "SuspendRetryDelay",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
@@ -538,6 +540,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
+  { "AssertOnSuspendWaitFailure",   JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "TraceSuspendWaitFailures",     JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::undefined() },
 #endif
@@ -3114,9 +3118,19 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
       log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
     }
   }
-  if (ArchiveClassesAtExit == NULL) {
-    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
+
+  // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit
+  if (ArchiveClassesAtExit != NULL && RecordDynamicDumpInfo) {
+    log_info(cds)("RecordDynamicDumpInfo is for jcmd only, could not set with -XX:ArchiveClassesAtExit.");
+    return JNI_ERR;
   }
+
+  if (ArchiveClassesAtExit == NULL && !RecordDynamicDumpInfo) {
+    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
+  } else {
+    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, true);
+  }
+
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
@@ -3497,6 +3511,11 @@ bool Arguments::init_shared_archive_paths() {
     }
     check_unsupported_dumping_properties();
     SharedDynamicArchivePath = os::strdup_check_oom(ArchiveClassesAtExit, mtArguments);
+  } else {
+    if (SharedDynamicArchivePath != nullptr) {
+      os::free(SharedDynamicArchivePath);
+      SharedDynamicArchivePath = nullptr;
+    }
   }
   if (SharedArchiveFile == NULL) {
     SharedArchivePath = get_default_shared_archive_path();

@@ -2208,7 +2208,7 @@ public final class DateTimeFormatter {
             Objects.requireNonNull(obj, "obj");
             Objects.requireNonNull(toAppendTo, "toAppendTo");
             Objects.requireNonNull(pos, "pos");
-            if (obj instanceof TemporalAccessor == false) {
+            if (!(obj instanceof TemporalAccessor)) {
                 throw new IllegalArgumentException("Format target must implement TemporalAccessor");
             }
             pos.setBeginIndex(0);

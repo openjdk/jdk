@@ -114,8 +114,8 @@ public:
   // Object allocation
   uintptr_t alloc_tlab(size_t size);
   uintptr_t alloc_object(size_t size);
-  uintptr_t alloc_object_non_blocking(size_t size);
-  void undo_alloc_object(uintptr_t addr, size_t size);
+  uintptr_t alloc_object_for_relocation(size_t size);
+  void undo_alloc_object_for_relocation(uintptr_t addr, size_t size);
   bool is_alloc_stalled() const;
   void check_out_of_memory();
 
@@ -147,7 +147,8 @@ public:
 
   // Serviceability
   void serviceability_initialize();
-  GCMemoryManager* serviceability_memory_manager();
+  GCMemoryManager* serviceability_cycle_memory_manager();
+  GCMemoryManager* serviceability_pause_memory_manager();
   MemoryPool* serviceability_memory_pool();
   ZServiceabilityCounters* serviceability_counters();
 

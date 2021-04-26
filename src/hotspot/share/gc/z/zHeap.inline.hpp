@@ -79,15 +79,15 @@ inline uintptr_t ZHeap::alloc_object(size_t size) {
   return addr;
 }
 
-inline uintptr_t ZHeap::alloc_object_non_blocking(size_t size) {
-  uintptr_t addr = _object_allocator.alloc_object_non_blocking(size);
+inline uintptr_t ZHeap::alloc_object_for_relocation(size_t size) {
+  const uintptr_t addr = _object_allocator.alloc_object_for_relocation(&_page_table, size);
   assert(ZAddress::is_good_or_null(addr), "Bad address");
   return addr;
 }
 
-inline void ZHeap::undo_alloc_object(uintptr_t addr, size_t size) {
+inline void ZHeap::undo_alloc_object_for_relocation(uintptr_t addr, size_t size) {
   ZPage* const page = _page_table.get(addr);
-  _object_allocator.undo_alloc_object(page, addr, size);
+  _object_allocator.undo_alloc_object_for_relocation(page, addr, size);
 }
 
 inline uintptr_t ZHeap::relocate_object(uintptr_t addr) {

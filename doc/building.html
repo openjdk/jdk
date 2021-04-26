@@ -76,7 +76,7 @@
 <li><a href="#specifying-the-target-platform">Specifying the Target Platform</a></li>
 <li><a href="#toolchain-considerations">Toolchain Considerations</a></li>
 <li><a href="#native-libraries">Native Libraries</a></li>
-<li><a href="#creating-and-using-sysroots-with-qemu-deboostrap">Creating And Using Sysroots With qemu-deboostrap</a></li>
+<li><a href="#cross-compiling-with-debian-sysroots">Cross compiling with Debian sysroots</a></li>
 <li><a href="#building-for-armaarch64">Building for ARM/aarch64</a></li>
 <li><a href="#building-for-musl">Building for musl</a></li>
 <li><a href="#verifying-the-build">Verifying the Build</a></li>
@@ -320,6 +320,7 @@
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install libfreetype6-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install freetype-devel</code>.</li>
 <li>To install on Alpine Linux, try running <code>sudo apk add freetype-dev</code>.</li>
+<li>To install on macOS, try running <code>brew install freetype</code>.</li>
 </ul>
 <p>Use <code>--with-freetype-include=&lt;path&gt;</code> and <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code> does not automatically locate the platform FreeType files.</p>
 <h3 id="cups">CUPS</h3>
@@ -628,7 +629,7 @@ cp: cannot stat `arm-linux-gnueabihf/libSM.so&#39;: No such file or directory
 cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</code></pre></li>
 <li><p>If the X11 libraries are not properly detected by <code>configure</code>, you can point them out by <code>--with-x</code>.</p></li>
 </ul>
-<h3 id="creating-and-using-sysroots-with-qemu-deboostrap">Creating And Using Sysroots With qemu-deboostrap</h3>
+<h3 id="cross-compiling-with-debian-sysroots">Cross compiling with Debian sysroots</h3>
 <p>Fortunately, you can create sysroots for foreign architectures with tools provided by your OS. On Debian/Ubuntu systems, one could use <code>qemu-deboostrap</code> to create the <em>target</em> system chroot, which would have the native libraries and headers specific to that <em>target</em> system. After that, we can use the cross-compiler on the <em>build</em> system, pointing into chroot to get the build dependencies right. This allows building for foreign architectures with native compilation speed.</p>
 <p>For example, cross-compiling to AArch64 from x86_64 could be done like this:</p>
 <ul>
@@ -638,7 +639,7 @@ cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</c
 <pre><code>sudo qemu-debootstrap \
   --arch=arm64 \
   --verbose \
-  --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev \
+  --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
   --resolve-deps \
   buster \
   ~/sysroot-arm64 \
@@ -646,67 +647,125 @@ cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</c
 <li><p>Make sure the symlinks inside the newly created chroot point to proper locations:</p>
 <pre><code>sudo chroot ~/sysroot-arm64 symlinks -cr .</code></pre></li>
 <li><p>Configure and build with newly created chroot as sysroot/toolchain-path:</p>
-<pre><code>CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure \
- --openjdk-target=aarch64-linux-gnu \
- --with-sysroot=~/sysroot-arm64 \
- --with-toolchain-path=~/sysroot-arm64 \
- --with-freetype-lib=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/ \
- --with-freetype-include=~/sysroot-arm64/usr/include/freetype2/ \
- --x-libraries=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/
+<pre><code>sh ./configure \
+  --openjdk-target=aarch64-linux-gnu \
+  --with-sysroot=~/sysroot-arm64
 make images
 ls build/linux-aarch64-server-release/</code></pre></li>
 </ul>
 <p>The build does not create new files in that chroot, so it can be reused for multiple builds without additional cleanup.</p>
+<p>The build system should automatically detect the toolchain paths and dependencies, but sometimes it might require a little nudge with:</p>
+<ul>
+<li><p>Native compilers: override <code>CC</code> or <code>CXX</code> for <code>./configure</code></p></li>
+<li><p>Freetype lib location: override <code>--with-freetype-lib</code>, for example <code>${sysroot}/usr/lib/${target}/</code></p></li>
+<li><p>Freetype includes location: override <code>--with-freetype-include</code> for example <code>${sysroot}/usr/include/freetype2/</code></p></li>
+<li><p>X11 libraries location: override <code>--x-libraries</code>, for example <code>${sysroot}/usr/lib/${target}/</code></p></li>
+</ul>
 <p>Architectures that are known to successfully cross-compile like this are:</p>
 <table>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Target</th>
-<th style="text-align: left;"><code>CC</code></th>
-<th style="text-align: left;"><code>CXX</code></th>
-<th style="text-align: left;"><code>--arch=...</code></th>
+<th style="text-align: left;">Debian tree</th>
+<th style="text-align: left;">Debian arch</th>
 <th style="text-align: left;"><code>--openjdk-target=...</code></th>
+<th><code>--with-jvm-variants=...</code></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">x86</td>
-<td style="text-align: left;">default</td>
-<td style="text-align: left;">default</td>
+<td style="text-align: left;">buster</td>
 <td style="text-align: left;">i386</td>
 <td style="text-align: left;">i386-linux-gnu</td>
+<td>(all)</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">armhf</td>
-<td style="text-align: left;">gcc-arm-linux-gnueabihf</td>
-<td style="text-align: left;">g++-arm-linux-gnueabihf</td>
+<td style="text-align: left;">arm</td>
+<td style="text-align: left;">buster</td>
 <td style="text-align: left;">armhf</td>
 <td style="text-align: left;">arm-linux-gnueabihf</td>
+<td>(all)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">aarch64</td>
-<td style="text-align: left;">gcc-aarch64-linux-gnu</td>
-<td style="text-align: left;">g++-aarch64-linux-gnu</td>
+<td style="text-align: left;">buster</td>
 <td style="text-align: left;">arm64</td>
 <td style="text-align: left;">aarch64-linux-gnu</td>
+<td>(all)</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">ppc64el</td>
-<td style="text-align: left;">gcc-powerpc64le-linux-gnu</td>
-<td style="text-align: left;">g++-powerpc64le-linux-gnu</td>
+<td style="text-align: left;">ppc64le</td>
+<td style="text-align: left;">buster</td>
 <td style="text-align: left;">ppc64el</td>
 <td style="text-align: left;">powerpc64le-linux-gnu</td>
+<td>(all)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">s390x</td>
-<td style="text-align: left;">gcc-s390x-linux-gnu</td>
-<td style="text-align: left;">g++-s390x-linux-gnu</td>
+<td style="text-align: left;">buster</td>
 <td style="text-align: left;">s390x</td>
 <td style="text-align: left;">s390x-linux-gnu</td>
+<td>(all)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">mipsle</td>
+<td style="text-align: left;">buster</td>
+<td style="text-align: left;">mipsel</td>
+<td style="text-align: left;">mipsel-linux-gnu</td>
+<td>zero</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">mips64le</td>
+<td style="text-align: left;">buster</td>
+<td style="text-align: left;">mips64el</td>
+<td style="text-align: left;">mips64el-linux-gnueabi64</td>
+<td>zero</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">armel</td>
+<td style="text-align: left;">buster</td>
+<td style="text-align: left;">arm</td>
+<td style="text-align: left;">arm-linux-gnueabi</td>
+<td>zero</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ppc</td>
+<td style="text-align: left;">sid</td>
+<td style="text-align: left;">powerpc</td>
+<td style="text-align: left;">powerpc-linux-gnu</td>
+<td>zero</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ppc64be</td>
+<td style="text-align: left;">sid</td>
+<td style="text-align: left;">ppc64</td>
+<td style="text-align: left;">powerpc64-linux-gnu</td>
+<td>(all)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m68k</td>
+<td style="text-align: left;">sid</td>
+<td style="text-align: left;">m68k</td>
+<td style="text-align: left;">m68k-linux-gnu</td>
+<td>zero</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">alpha</td>
+<td style="text-align: left;">sid</td>
+<td style="text-align: left;">alpha</td>
+<td style="text-align: left;">alpha-linux-gnu</td>
+<td>zero</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">sh4</td>
+<td style="text-align: left;">sid</td>
+<td style="text-align: left;">sh4</td>
+<td style="text-align: left;">sh4-linux-gnu</td>
+<td>zero</td>
 </tr>
 </tbody>
 </table>
-<p>Additional architectures might be supported by Debian/Ubuntu Ports.</p>
 <h3 id="building-for-armaarch64">Building for ARM/aarch64</h3>
 <p>A common cross-compilation target is the ARM CPU. When building for ARM, it is useful to set the ABI profile. A number of pre-defined ABI profiles are available using <code>--with-abi-profile</code>: arm-vfp-sflt, arm-vfp-hflt, arm-sflt, armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer properly supported by the JDK.</p>
 <h3 id="building-for-musl">Building for musl</h3>

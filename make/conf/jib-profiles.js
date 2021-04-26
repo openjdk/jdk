@@ -396,8 +396,13 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = (input.build_os == 'macosx' && input.build_cpu == 'aarch64') ? "16" : "15";
-    common.boot_jdk_build_number = "36";
+    if (input.build_os == 'macosx' && input.build_cpu == 'aarch64') {
+        common.boot_jdk_version = "17";
+        common.boot_jdk_build_number = "19";
+    } else {
+        common.boot_jdk_version = "16";
+        common.boot_jdk_build_number = "36";
+    }
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -419,8 +424,10 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
-            configure_args: concat(common.configure_args_64bit,
+            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc"],
+            configure_args: concat(
+                (input.build_cpu == "x64" ? common.configure_args_64bit
+                 : "--openjdk-target=x86_64-linux-gnu"),
                 "--with-zlib=system", "--disable-dtrace",
                 (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
                     "--build=x86_64-unknown-linux-gnu" ] : [])),
@@ -1044,10 +1051,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc10.2.0-OL6.4+1.0",
+        linux_x64: "gcc10.3.0-OL6.4+1.0",
         macosx: "Xcode12.4+1.0",
-        windows_x64: "VS2019-16.7.2+1.1",
-        linux_aarch64: "gcc10.2.0-OL7.6+1.0",
+        windows_x64: "VS2019-16.9.3+1.0",
+        linux_aarch64: "gcc10.3.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0"
@@ -1078,27 +1085,15 @@ var getJibProfilesDependencies = function (input, common) {
         boot_jdk_platform = "windows-" + input.build_cpu;
         boot_jdk_ext = ".zip";
     }
-    var boot_jdk;
-    if (boot_jdk_platform == 'osx-aarch64') {
-        boot_jdk = {
-            organization: common.organization,
-            ext: "tar.gz",
-            module: "jdk-macosx_aarch64",
-            revision: "16+1.0-beta1",
-            configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
-            environment_path: common.boot_jdk_home + "/bin"
-        }
-    } else {
-        boot_jdk = {
-            server: "jpg",
-            product: "jdk",
-            version: common.boot_jdk_version,
-            build_number: common.boot_jdk_build_number,
-            file: "bundles/" + boot_jdk_platform + "/jdk-" + common.boot_jdk_version + "_"
-                + boot_jdk_platform + "_bin" + boot_jdk_ext,
-            configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
-            environment_path: common.boot_jdk_home + "/bin"
-        }
+    var boot_jdk = {
+        server: "jpg",
+        product: "jdk",
+        version: common.boot_jdk_version,
+        build_number: common.boot_jdk_build_number,
+        file: "bundles/" + boot_jdk_platform + "/jdk-" + common.boot_jdk_version + "_"
+            + boot_jdk_platform + "_bin" + boot_jdk_ext,
+        configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
+        environment_path: common.boot_jdk_home + "/bin"
     }
 
     var makeBinDir = (input.build_os == "windows"
@@ -1122,7 +1117,10 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "devkit-" + input.build_platform,
-            revision: devkit_platform_revisions[input.build_platform]
+            revision: devkit_platform_revisions[input.build_platform],
+            // Only set --with-build-devkit when cross compiling.
+            configure_args: (input.build_cpu == input.target_cpu ? false
+                : "--with-build-devkit=" + input.get("build_devkit", "home_path"))
         },
 
         lldb: {
