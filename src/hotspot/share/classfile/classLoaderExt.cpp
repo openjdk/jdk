@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
@@ -37,7 +38,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"

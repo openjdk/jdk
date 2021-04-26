@@ -5260,7 +5260,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
   if (klass_id != vmSymbolID::NO_SID) {
     for (int j = 0; j < methods->length(); ++j) {
       Method* method = methods->at(j);
-      method->init_intrinsic_id();
+      method->init_intrinsic_id(klass_id);
 
       if (CheckIntrinsics) {
         // Check if an intrinsic is defined for method 'method',
@@ -5919,18 +5919,6 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   // Version numbers
   _minor_version = stream->get_u2_fast();
   _major_version = stream->get_u2_fast();
-
-  if (DumpSharedSpaces && _major_version < JAVA_6_VERSION) {
-    ResourceMark rm;
-    warning("Pre JDK 6 class not supported by CDS: %u.%u %s",
-            _major_version,  _minor_version, _class_name->as_C_string());
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_UnsupportedClassVersionError(),
-      "Unsupported major.minor version for dump time %u.%u",
-      _major_version,
-      _minor_version);
-  }
 
   // Check version numbers - we check this even with verifier off
   verify_class_version(_major_version, _minor_version, _class_name, CHECK);

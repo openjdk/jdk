@@ -1968,7 +1968,7 @@ public class Attr extends JCTree.Visitor {
         }
         //where
             boolean primitiveOrBoxed(Type t) {
-                return (!t.hasTag(TYPEVAR) && types.unboxedTypeOrType(t).isPrimitive());
+                return (!t.hasTag(TYPEVAR) && !t.isErroneous() && types.unboxedTypeOrType(t).isPrimitive());
             }
 
             TreeTranslator removeClassParams = new TreeTranslator() {
@@ -5489,8 +5489,7 @@ public class Attr extends JCTree.Visitor {
         public void visitMethodDef(JCMethodDecl tree) {
             if (tree.recvparam != null &&
                     !tree.recvparam.vartype.type.isErroneous()) {
-                checkForDeclarationAnnotations(tree.recvparam.mods.annotations,
-                        tree.recvparam.vartype.type.tsym);
+                checkForDeclarationAnnotations(tree.recvparam.mods.annotations, tree.recvparam.sym);
             }
             if (tree.restype != null && tree.restype.type != null) {
                 validateAnnotatedType(tree.restype, tree.restype.type);

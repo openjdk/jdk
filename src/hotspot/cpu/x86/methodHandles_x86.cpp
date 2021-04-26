@@ -555,18 +555,25 @@ void trace_method_handle_stub(const char* adaptername,
       PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
-      // Current C frame
       frame cur_frame = os::current_frame();
 
       if (cur_frame.fp() != 0) {  // not walkable
 
         // Robust search of trace_calling_frame (independent of inlining).
         // Assumes saved_regs comes from a pusha in the trace_calling_frame.
+        //
+        // We have to start the search from cur_frame, because trace_calling_frame may be it.
+        // It is guaranteed that trace_calling_frame is different from the top frame.
+        // But os::current_frame() does NOT return the top frame: it returns the next frame under it (caller's frame).
+        // (Due to inlining and tail call optimizations, caller's frame doesn't necessarily correspond to the immediate
+        // caller in the source code.)
         assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
-        frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
+        frame trace_calling_frame = cur_frame;
         while (trace_calling_frame.fp() < saved_regs) {
+          assert(trace_calling_frame.cb() == NULL, "not a C frame");
           trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
         }
+        assert(trace_calling_frame.sp() < saved_regs, "wrong frame");
 
         // safely create a frame and call frame::describe
         intptr_t *dump_sp = trace_calling_frame.sender_sp();

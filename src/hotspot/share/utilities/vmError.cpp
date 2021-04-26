@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
@@ -32,7 +33,6 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "memory/universe.hpp"
