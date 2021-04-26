@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -642,6 +643,12 @@ void ZStatPhaseCycle::register_start(const Ticks& start) const {
 }
 
 void ZStatPhaseCycle::register_end(const Ticks& start, const Ticks& end) const {
+  if (ZAbort::should_abort()) {
+    log_info(gc)("Garbage Collection (%s) Aborted",
+                 GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+    return;
+  }
+
   timer()->register_gc_end(end);
 
   ZCollectedHeap::heap()->print_heap_after_gc();
@@ -712,6 +719,10 @@ void ZStatPhaseConcurrent::register_start(const Ticks& start) const {
 }
 
 void ZStatPhaseConcurrent::register_end(const Ticks& start, const Ticks& end) const {
+  if (ZAbort::should_abort()) {
+    return;
+  }
+
   timer()->register_gc_concurrent_end(end);
 
   const Tickspan duration = end - start;
@@ -730,6 +741,10 @@ void ZStatSubPhase::register_start(const Ticks& start) const {
 }
 
 void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
+  if (ZAbort::should_abort()) {
+    return;
+  }
+
   ZTracer::tracer()->report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
