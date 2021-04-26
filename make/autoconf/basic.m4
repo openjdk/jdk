@@ -89,6 +89,15 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   fi
   AC_SUBST(WORKSPACE_ROOT)
 
+  # OpenJDK needs at least 6GB free to compile.
+  AC_MSG_CHECKING([for available disk space])
+  DISK_SPACE=`$DF -k "${WORKSPACE_ROOT}" | $TAIL -1 | $AWK '{print $ 4}'`
+  if test "$DISK_SPACE" -gt "6000000"; then
+    AC_MSG_RESULT([$DISK_SPACE])
+  else
+    AC_MSG_ERROR([openjdk requires at least 6 GB of free disk space to compile])
+  fi
+
   UTIL_FIXUP_PATH(CONFIGURE_START_DIR)
   AC_SUBST(CONFIGURE_START_DIR)
 
