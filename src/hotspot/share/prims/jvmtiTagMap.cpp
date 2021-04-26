@@ -118,7 +118,7 @@ JvmtiTagMap* JvmtiTagMap::tag_map_for(JvmtiEnv* env) {
       tag_map = new JvmtiTagMap(env);
     }
   } else {
-    DEBUG_ONLY(Thread::current()->check_possible_safepoint());
+    DEBUG_ONLY(JavaThread::current()->check_possible_safepoint());
   }
   return tag_map;
 }

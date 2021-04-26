@@ -555,12 +555,12 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   int offset = __ offset();
 #ifdef _LP64
   const Register poll_addr = rscratch1;
-  __ movptr(poll_addr, Address(r15_thread, Thread::polling_page_offset()));
+  __ movptr(poll_addr, Address(r15_thread, JavaThread::polling_page_offset()));
 #else
   assert(tmp->is_cpu_register(), "needed");
   const Register poll_addr = tmp->as_register();
   __ get_thread(poll_addr);
-  __ movptr(poll_addr, Address(poll_addr, in_bytes(Thread::polling_page_offset())));
+  __ movptr(poll_addr, Address(poll_addr, in_bytes(JavaThread::polling_page_offset())));
 #endif
   add_debug_info_for_branch(info);
   __ relocate(relocInfo::poll_type);
