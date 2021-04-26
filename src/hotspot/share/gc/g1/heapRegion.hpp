@@ -170,8 +170,8 @@ public:
 
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc();
-  // Update pinned heap region (not compacted) to be consistent after Full GC.
-  void reset_not_compacted_after_full_gc();
+  // Update skip-compacting heap region to be consistent after Full GC.
+  void reset_skip_compacting_after_full_gc();
 
   // All allocated blocks are occupied by objects in a HeapRegion
   bool block_is_obj(const HeapWord* p) const;
