@@ -73,6 +73,10 @@ public class CustomInputToolBuilder extends KullaTesting {
     }
 
     private void doTest(String code, String... expectedLines) throws Exception {
+        doTest(false, code, expectedLines);
+    }
+
+    private void doTest(boolean interactiveTerminal, String code, String... expectedLines) throws Exception {
             byte[] cmdInputData = (code + "\n/exit\n").getBytes();
             InputStream cmdInput = new ByteArrayInputStream(cmdInputData);
             InputStream userInput = new ByteArrayInputStream("a\n".getBytes());
@@ -82,10 +86,10 @@ public class CustomInputToolBuilder extends KullaTesting {
             JavaShellToolBuilder.builder()
                     .in(cmdInput, userInput)
                     .out(printOut, printOut, printOut)
+                    .interactiveTerminal(interactiveTerminal)
                     .promptCapture(true)
                     .start("--no-startup");
 
-            String expected = "read: 97";
             String actual = new String(out.toByteArray());
             List<String> actualLines = Arrays.asList(actual.split("\\R"));
 
@@ -94,5 +98,26 @@ public class CustomInputToolBuilder extends KullaTesting {
                             "actual:\n" + actualLines + "\n, expected:\n" + expectedLine);
             }
     }
-}
 
+    public void checkInteractiveTerminal() throws Exception {
+        String testJdk = System.getProperty(TEST_JDK);
+        try {
+            System.clearProperty(TEST_JDK);
+
+            //note the exact format of the output is not specified here, and the test mostly validates
+            //the current behavior, and shows the output changes based on the interactiveTerminal setting:
+            doTest(true,
+                   "System.out.println(\"read: \" + System.in.read());",
+                   "\u001b[?2004h\u0005System.out.println(\"read: \" + System.in.read()\u001b[2D\u001b[2C)\u001b[29D\u001b[29C;",
+                   "\u001b[?2004lread: 97",
+                   "\u001b[?2004h\u0005/exit");
+            doTest(true,
+                   "1 + 1",
+                   "\u001b[?2004h\u00051 + 1",
+                   "\u001b[?2004l$1 ==> 2",
+                   "\u001b[?2004h\u0005/exit");
+        } finally {
+            System.setProperty(TEST_JDK, testJdk);
+        }
+    }
+}
