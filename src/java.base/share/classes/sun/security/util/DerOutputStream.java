@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,6 +165,17 @@ extends ByteArrayOutputStream implements DerEncoder {
     public void putInteger(BigInteger i) throws IOException {
         write(DerValue.tag_Integer);
         byte[]    buf = i.toByteArray(); // least number  of bytes
+        putLength(buf.length);
+        write(buf, 0, buf.length);
+    }
+
+    /**
+     * Marshals a DER integer on the output stream.
+     *
+     * @param i the integer in bytes, equivalent to BigInteger::toByteArray.
+     */
+    public void putInteger(byte[] buf) throws IOException {
+        write(DerValue.tag_Integer);
         putLength(buf.length);
         write(buf, 0, buf.length);
     }
@@ -574,5 +585,9 @@ extends ByteArrayOutputStream implements DerEncoder {
      */
     public void derEncode(OutputStream out) throws IOException {
         out.write(toByteArray());
+    }
+
+    byte[] buf() {
+        return buf;
     }
 }

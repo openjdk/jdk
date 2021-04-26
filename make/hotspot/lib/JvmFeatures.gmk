@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -116,23 +116,10 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
-      archiveBuilder.cpp \
-      archiveUtils.cpp \
-      classListParser.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
-      cppVtables.cpp \
-      dumpAllocStats.cpp \
-      dynamicArchive.cpp \
-      filemap.cpp \
-      heapShared.cpp \
-      lambdaFormInvokers.cpp \
-      metaspaceShared.cpp \
-      metaspaceShared_$(HOTSPOT_TARGET_CPU).cpp \
-      metaspaceShared_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
-      sharedClassUtil.cpp \
-      sharedPathsMiscInfo.cpp \
       systemDictionaryShared.cpp
+  JVM_EXCLUDE_PATTERNS += cds/
 endif
 
 ifneq ($(call check-jvm-feature, nmt), true)

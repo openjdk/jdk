@@ -459,11 +459,8 @@ public final class MinguoDate
         if (this == obj) {
             return true;
         }
-        if (obj instanceof MinguoDate) {
-            MinguoDate otherDate = (MinguoDate) obj;
-            return this.isoDate.equals(otherDate.isoDate);
-        }
-        return false;
+        return (obj instanceof MinguoDate otherDate)
+                && this.isoDate.equals(otherDate.isoDate);
     }
 
     /**

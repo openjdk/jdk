@@ -851,8 +851,8 @@ public:
   // The parallel task queues
   G1ScannerTasksQueueSet *_task_queues;
 
-  // True iff a evacuation has failed in the current collection.
-  bool _evacuation_failed;
+  // Number of regions evacuation failed in the current collection.
+  volatile uint _num_regions_failed_evacuation;
 
   EvacuationFailedInfo* _evacuation_failed_info_array;
 
@@ -1137,7 +1137,11 @@ public:
   bool try_collect(GCCause::Cause cause);
 
   // True iff an evacuation has failed in the most-recent collection.
-  bool evacuation_failed() { return _evacuation_failed; }
+  inline bool evacuation_failed() const;
+  inline uint num_regions_failed_evacuation() const;
+  // Notify that the garbage collection encountered an evacuation failure in a
+  // region. Should only be called once per region.
+  inline void notify_region_failed_evacuation();
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint archive_regions_removed,

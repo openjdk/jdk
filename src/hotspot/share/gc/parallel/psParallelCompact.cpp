@@ -411,13 +411,6 @@ print_initial_summary_data(ParallelCompactData& summary_data,
 }
 #endif  // #ifndef PRODUCT
 
-#ifdef  ASSERT
-size_t add_obj_count;
-size_t add_obj_size;
-size_t mark_bitmap_count;
-size_t mark_bitmap_size;
-#endif  // #ifdef ASSERT
-
 ParallelCompactData::ParallelCompactData() :
   _region_start(NULL),
   DEBUG_ONLY(_region_end(NULL) COMMA)
@@ -537,9 +530,6 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t beg_region = obj_ofs >> Log2RegionSize;
   // end_region is inclusive
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
-
-  DEBUG_ONLY(Atomic::inc(&add_obj_count);)
-  DEBUG_ONLY(Atomic::add(&add_obj_size, len);)
 
   if (beg_region == end_region) {
     // All in one region.
@@ -991,9 +981,6 @@ void PSParallelCompact::pre_compact()
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   _space_info[from_space_id].set_space(heap->young_gen()->from_space());
   _space_info[to_space_id].set_space(heap->young_gen()->to_space());
-
-  DEBUG_ONLY(add_obj_count = add_obj_size = 0;)
-  DEBUG_ONLY(mark_bitmap_count = mark_bitmap_size = 0;)
 
   // Increment the invocation count
   heap->increment_total_collections(true);
@@ -1610,19 +1597,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
                                       bool maximum_compaction)
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
-
-#ifdef ASSERT
-  log_develop_debug(gc, marking)(
-      "add_obj_count=" SIZE_FORMAT " "
-      "add_obj_bytes=" SIZE_FORMAT,
-      add_obj_count,
-      add_obj_size * HeapWordSize);
-  log_develop_debug(gc, marking)(
-      "mark_bitmap_count=" SIZE_FORMAT " "
-      "mark_bitmap_bytes=" SIZE_FORMAT,
-      mark_bitmap_count,
-      mark_bitmap_size * HeapWordSize);
-#endif // ASSERT
 
   // Quick summarization of each space into itself, to see how much is live.
   summarize_spaces_quick();
