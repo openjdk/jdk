@@ -398,6 +398,11 @@ public:
   }
 };
 
+// Macro to execute a termination check after a concurrent phase. Note
+// that it's important that the termination check comes after the call
+// to the function f, since we can't abort between pause_relocate_start()
+// and concurrent_relocate(). We need to let concurrent_relocate() call
+// abort_page() on the remaining entries in the relocation set.
 #define concurrent(f)                 \
   do {                                \
     concurrent_##f();                 \
