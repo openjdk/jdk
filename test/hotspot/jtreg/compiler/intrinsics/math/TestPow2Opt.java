@@ -25,34 +25,29 @@
  * @test
  * @bug 8265917
  * @summary test the optimization of pow(x, 2.0)
+ * @run main/othervm TestPow2Opt
+ * @run main/othervm -Xint TestPow2Opt
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestPow2Opt
  * @run main/othervm -Xbatch -XX:-TieredCompilation  TestPow2Opt
  */
 
 public class TestPow2Opt {
 
-  static double test(double a) {
-    return Math.pow(a, 2.0);
+  static void test(double a) {
+    double r1 = a * a;
+    double r2 = Math.pow(a, 2.0);
+    if (r1 != r2) {
+      throw new RuntimeException("pow(" + a + ", 2.0), expected: " + r1 + ", actual: " + r2);
+    }
   }
 
   public static void main(String[] args) throws Exception {
-    // v1: value returned by the interpreter
-    double v1 = test(1.0 / 2047);
-
-    // Warmup
-    double sum = 0.0;
-    for (int i = 1; i < 100000; i++) {
-      sum += test(i + 0.0);
+    for (int i = 0; i < 10; i++) {
+      for (int j = 1; j < 100000; j++) {
+        test(j * 1.0);
+        test(1.0 / j);
+      }
     }
-
-    // v2: value returned by the compiler
-    double v2 = test(1.0 / 2047);
-
-    if (v1 != v2) {
-      throw new RuntimeException("v1 should be equal to v2, actual: " + "v1 = " + v1 + " v2 = " + v2);
-    }
-
-    System.out.println(sum);
   }
 
 }
