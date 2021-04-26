@@ -2312,11 +2312,11 @@ void* JavaThread::popframe_preserved_args() {
   return _popframe_preserved_args;
 }
 
-ByteSize JavaThread::popframe_preserved_args_size() {
+ByteSize JavaThread::popframe_preserved_args_size() const {
   return in_ByteSize(_popframe_preserved_args_size);
 }
 
-WordSize JavaThread::popframe_preserved_args_size_in_words() {
+WordSize JavaThread::popframe_preserved_args_size_in_words() const {
   int sz = in_bytes(popframe_preserved_args_size());
   assert(sz % wordSize == 0, "argument size must be multiple of wordSize");
   return in_WordSize(sz / wordSize);
