@@ -26,7 +26,7 @@
  * @summary Negative tests for simpleserver command-line tool
  * @library /test/lib
  * @modules jdk.httpserver
- * @build jdk.test.lib.util.FileUtils
+ * @build jdk.test.lib.util.FileUtils jdk.test.lib.Platform
  * @run testng/othervm CommandLineNegativeTest
  */
 
@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.function.Consumer;
+import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -188,15 +189,20 @@ public class CommandLineNegativeTest {
     @Test
     public void testRootNotReadable() throws Exception {
         Path root = Files.createDirectories(TEST_DIR.resolve("not/readable/dir"));
-        try {
-            root.toFile().setReadable(false);
-            assertFalse(Files.isReadable(root));
-            simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
-                    .resultChecker(r ->
-                            assertContains(r.output, "Error: server config failed: "
-                                    + "Path is not readable: " + root.toString()));
-        } finally {
-            root.toFile().setReadable(true);
+        if (!Platform.isWindows()) {  // tested manually on Windows
+                                      // reason: cannot revoke an owner's read
+                                      // access to a directory that was created
+                                      // by that owner
+            try {
+                root.toFile().setReadable(false, false);
+                assertFalse(Files.isReadable(root));
+                simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
+                        .resultChecker(r ->
+                                assertContains(r.output, "Error: server config failed: "
+                                        + "Path is not readable: " + root.toString()));
+            } finally {
+                root.toFile().setReadable(true, false);
+            }
         }
     }
 

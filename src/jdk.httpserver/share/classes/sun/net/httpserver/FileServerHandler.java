@@ -91,8 +91,7 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     void handleSupportedMethod(HttpExchange exchange, Path path, boolean writeBody)
-        throws IOException
-    {
+        throws IOException {
         if (Files.isSymbolicLink(path)) {
             handleNotFound(exchange);
         }

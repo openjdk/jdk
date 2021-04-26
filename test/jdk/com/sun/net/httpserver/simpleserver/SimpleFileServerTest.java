@@ -24,6 +24,8 @@
 /*
  * @test
  * @summary Basic tests for SimpleFileServerTest
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run testng/othervm SimpleFileServerTest
  */
 
@@ -42,6 +44,7 @@ import java.util.logging.Logger;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
+import jdk.test.lib.Platform;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -257,14 +260,19 @@ public class SimpleFileServerTest {
             assertTrue(iae.getMessage().contains("does not exist"));
         }
         {   // not readable
-            Path p = Files.createDirectory(CWD.resolve("aDir"));
-            p.toFile().setReadable(false);
-            assert !Files.isReadable(p);
-            try {
-                var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
-                assertTrue(iae.getMessage().contains("not readable"));
-            } finally {
-                p.toFile().setReadable(true);
+            if (!Platform.isWindows()) {  // tested manually on Windows
+                                          // reason: cannot revoke an owner's read
+                                          // access to a directory that was created
+                                          // by that owner
+                Path p = Files.createDirectory(CWD.resolve("aDir"));
+                p.toFile().setReadable(false, false);
+                assert !Files.isReadable(p);
+                try {
+                    var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
+                    assertTrue(iae.getMessage().contains("not readable"));
+                } finally {
+                    p.toFile().setReadable(true, false);
+                }
             }
         }
     }
