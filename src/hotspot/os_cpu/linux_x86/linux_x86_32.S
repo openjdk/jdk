@@ -479,6 +479,7 @@ ci_CopyLeft:
         # 32-bit
         #
         # count treated as signed
+        /*
         #
         # if (from > to) {
         #   while (--count >= 0) {
@@ -489,6 +490,7 @@ ci_CopyLeft:
         #     to[count] = from[count];
         #   }
         # }
+        */
         .p2align 4,,15
 	.type    _Copy_conjoint_jlongs_atomic,@function
 _Copy_conjoint_jlongs_atomic:

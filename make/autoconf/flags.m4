@@ -374,15 +374,13 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
 
   # Generate make dependency files
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    C_FLAG_DEPS="-MMD -MF"
+    GENDEPS_FLAGS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    C_FLAG_DEPS="-MMD -MF"
+    GENDEPS_FLAGS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    C_FLAG_DEPS="-qmakedep=gcc -MF"
+    GENDEPS_FLAGS="-qmakedep=gcc -MF"
   fi
-  CXX_FLAG_DEPS="$C_FLAG_DEPS"
-  AC_SUBST(C_FLAG_DEPS)
-  AC_SUBST(CXX_FLAG_DEPS)
+  AC_SUBST(GENDEPS_FLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_POST_TOOLCHAIN],
