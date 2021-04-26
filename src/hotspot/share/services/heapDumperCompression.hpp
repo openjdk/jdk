@@ -202,6 +202,7 @@ class CompressionBackend : StackObj {
   WriteWork* get_work();
   void do_compress(WriteWork* work);
   void finish_work(WriteWork* work);
+  void flush_buffer_without_lock(MonitorLocker* ml);
 
 public:
   // compressor can be NULL if no compression is used.
@@ -218,7 +219,7 @@ public:
 
   char const* error() const { return _err; }
 
-  // sets up a internal buffer, fill with external buffer and send to compressor
+  // Sets up an internal buffer, fill with external buffer, and sends to compressor.
   void flush_external_buffer(char* buffer, size_t used, size_t max);
 
   // Commits the old buffer (using the value in *used) and sets up a new one.

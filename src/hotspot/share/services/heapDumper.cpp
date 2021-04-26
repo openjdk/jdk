@@ -576,7 +576,7 @@ void AbstractDumpWriter::start_sub_record(u1 tag, u4 len) {
     // Will be fixed up later if we add more sub-records.  If this is a huge sub-record,
     // this is already the correct length, since we don't add more sub-records.
     write_u4(len);
-    assert (Bytes::get_Java_u4((address)(buffer() + 5)) == len, "Inconsitent size!");
+    assert(Bytes::get_Java_u4((address)(buffer() + 5)) == len, "Inconsitent size!");
     _in_dump_segment = true;
     _is_huge_sub_record = len > buffer_size() - dump_segment_header_size;
   } else if (_is_huge_sub_record || (len > buffer_size() - position())) {
@@ -698,7 +698,7 @@ class ParDumpWriter : public AbstractDumpWriter {
   ParWriterBufferQueue* _buffer_queue;
   size_t _internal_buffer_used;
   char* _buffer_base;
-  bool _splited_data;
+  bool _split_data;
   static const uint BackendFlushThreshold = 2;
  protected:
   virtual void flush(bool force = false) {
@@ -707,23 +707,24 @@ class ParDumpWriter : public AbstractDumpWriter {
       refresh_buffer();
     }
 
-    if (_splited_data || _is_huge_sub_record) {
+    if (_split_data || _is_huge_sub_record) {
       return;
     }
 
     if (should_flush_buf_list(force)) {
-      assert(!_in_dump_segment && !_splited_data && !_is_huge_sub_record, "incomplete data send to backend!\n");
+      assert(!_in_dump_segment && !_split_data && !_is_huge_sub_record, "incomplete data send to backend!\n");
       flush_to_backend(force);
     }
   }
 
  public:
+  // Check for error after constructing the object and destroy it in case of an error.
   ParDumpWriter(DumpWriter* dw) :
     AbstractDumpWriter(),
     _backend_ptr(dw->backend_ptr()),
     _buffer_queue((new (std::nothrow) ParWriterBufferQueue())),
     _buffer_base(NULL),
-    _splited_data(false) {
+    _split_data(false) {
     // prepare internal buffer
     allocate_internal_buffer();
   }
@@ -734,7 +735,7 @@ class ParDumpWriter : public AbstractDumpWriter {
             "All data must be send to backend");
      if (_buffer_base != NULL) {
        os::free(_buffer_base);
-        _buffer_base = NULL;
+       _buffer_base = NULL;
      }
      delete _buffer_queue;
      _buffer_queue = NULL;
@@ -759,8 +760,8 @@ class ParDumpWriter : public AbstractDumpWriter {
   virtual void write_raw(void* s, size_t len) {
     assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
     debug_only(_sub_record_left -= len);
-    assert(!_splited_data, "invalid splited data");
-    _splited_data = true;
+    assert(!_split_data, "Invalid split data");
+    _split_data = true;
     // flush buffer to make room.
     while (len > buffer_size() - position()) {
       assert(!_in_dump_segment || _is_huge_sub_record,
@@ -772,7 +773,7 @@ class ParDumpWriter : public AbstractDumpWriter {
       set_position(position() + to_write);
       flush();
     }
-    _splited_data = false;
+    _split_data = false;
     memcpy(buffer() + position(), s, len);
     set_position(position() + len);
   }
@@ -850,7 +851,7 @@ class ParDumpWriter : public AbstractDumpWriter {
   }
 
   void flush_to_backend(bool force) {
-    // Guarantee there is only one writer update backend buffers.
+    // Guarantee there is only one writer updating the backend buffers.
     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
     while (!_buffer_queue->is_empty()) {
       ParWriterBufferQueueElem* entry = _buffer_queue->dequeue();
@@ -859,7 +860,7 @@ class ParDumpWriter : public AbstractDumpWriter {
       reclaim_entry(entry);
       entry = NULL;
     }
-    assert(_pos == 0, "available buffer must be clean before flush");
+    assert(_pos == 0, "available buffer must be empty before flush");
     // Flush internal buffer.
     if (_internal_buffer_used > 0) {
       flush_buffer(_buffer_base, _internal_buffer_used);
@@ -1662,11 +1663,11 @@ class StickyClassDumper : public KlassClosure {
 // Large object heap dump support.
 // To avoid memory consumption, when dumping large objects such as huge array and
 // large objects whose size are larger than LARGE_OBJECT_DUMP_THRESHOLD, the scanned
-// partial object/array data will be send to the backend directly instead of caching
+// partial object/array data will be sent to the backend directly instead of caching
 // the whole object/array in the internal buffer.
 // The HeapDumpLargeObjectList is used to save the large object when dumper scans
-// the heap. The large objects could be added (push) parallelly by multiple dumpers.
-// But they will be removed (pop) serially only by the VM thread.
+// the heap. The large objects could be added (push) parallelly by multiple dumpers,
+// But they will be removed (popped) serially only by the VM thread.
 class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
  private:
   class HeapDumpLargeObjectListElem : public CHeapObj<mtInternal> {
@@ -1687,7 +1688,7 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
     assert (obj != NULL, "sanity check");
     HeapDumpLargeObjectListElem* entry = new HeapDumpLargeObjectListElem(obj);
     if (entry == NULL) {
-      warning("Fail to allocate element for large object list");
+      warning("failed to allocate element for large object list");
       return;
     }
     assert (entry->_obj != NULL, "sanity check");
@@ -1771,8 +1772,8 @@ void HeapObjectDumper::do_object(oop o) {
     return;
   }
 
-  // If large object list exist and it is large object/array,
-  // add oop into the list and skip scan, VM thread will process it later.
+  // If large object list exists and it is large object/array,
+  // add oop into the list and skip scan. VM thread will process it later.
   if (_list != NULL && is_large(o)) {
     _list->atomic_push(o);
     return;
@@ -1839,7 +1840,7 @@ class DumperController : public CHeapObj<mtInternal> {
        _waiting_number++;
        ml.wait();
      }
-     assert(_started == true,  "dumper is waken up with wrong state");
+     assert(_started == true,  "dumper woke up with wrong state");
      _waiting_number--;
    }
 
@@ -1915,15 +1916,15 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
     }
     // Calculate dumper and writer threads number.
     _num_writer_threads = num_total - _num_dumper_threads;
-    // If dumper threads number is zero, there is only VMThread work as a dumper.
-    // If dumper threads number is equal to active workers, need at lest one thread work as writer.
+    // If dumper threads number is zero, only the VMThread works as a dumper.
+    // If dumper threads number is equal to active workers, need at lest one worker thread as writer.
     if (_num_dumper_threads > 0 && _num_writer_threads == 0) {
       _num_writer_threads = 1;
       _num_dumper_threads = num_total - _num_writer_threads;
     }
 
     uint total_dumper_threads = _num_dumper_threads + 1 /* VMThread */;
-    // prepare parallel writer.
+    // Prepare parallel writer.
     if (_num_dumper_threads > 0) {
       ParDumpWriter::before_work();
       _dumper_controller = new (std::nothrow) DumperController(_num_dumper_threads);
