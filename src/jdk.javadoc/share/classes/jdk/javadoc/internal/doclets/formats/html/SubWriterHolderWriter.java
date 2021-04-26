@@ -327,11 +327,12 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     /**
      * Get the member tree
      *
+     * @param id the id to be used for the content tree
      * @param style the style class to be added to the content tree
      * @param contentTree the tree used to generate the complete member tree
      * @return the member tree
      */
-    public Content getMemberTree(HtmlStyle style, Content contentTree) {
-        return HtmlTree.SECTION(style, contentTree);
+    public Content getMemberTree(HtmlId id, HtmlStyle style, Content contentTree) {
+        return HtmlTree.SECTION(style, contentTree).setId(id);
     }
 }

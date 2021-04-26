@@ -179,7 +179,7 @@ public class ModelMBeanAttributeInfo
          */
         private Descriptor attrDescriptor = validDescriptor(null);
 
-        private final static String currClass = "ModelMBeanAttributeInfo";
+        private static final String currClass = "ModelMBeanAttributeInfo";
 
         /**
          * Constructs a ModelMBeanAttributeInfo object with a default

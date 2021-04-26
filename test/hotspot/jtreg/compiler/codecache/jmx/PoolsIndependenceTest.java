@@ -57,11 +57,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jtreg.SkippedException;
+
 public class PoolsIndependenceTest implements NotificationListener {
 
     private final Map<String, AtomicInteger> counters;
     private final BlobType btype;
     private volatile long lastEventTimestamp;
+    private volatile long maxUsageRegistered;
+    private final long TEST_TIMEOUT_LIMIT = System.currentTimeMillis() +
+        Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - 5_000; // 5 seconds allowance is arbitrary
 
     public PoolsIndependenceTest(BlobType btype) {
         counters = new HashMap<>();
@@ -70,6 +75,7 @@ public class PoolsIndependenceTest implements NotificationListener {
         }
         this.btype = btype;
         lastEventTimestamp = 0;
+        maxUsageRegistered = 0;
         CodeCacheUtils.disableCollectionUsageThresholds();
     }
 
@@ -81,17 +87,25 @@ public class PoolsIndependenceTest implements NotificationListener {
 
     protected void runTest() {
         MemoryPoolMXBean bean = btype.getMemoryPool();
+        System.out.printf("INFO: Starting scenario with %s%n", bean.getName());
         ((NotificationEmitter) ManagementFactory.getMemoryMXBean()).
                 addNotificationListener(this, null, null);
-        bean.setUsageThreshold(bean.getUsage().getUsed() + 1);
+        final long usageThresholdLimit = bean.getUsage().getUsed() + 1;
+        bean.setUsageThreshold(usageThresholdLimit);
+
         long beginTimestamp = System.currentTimeMillis();
+        final long phaseTimeout = Math.min(TEST_TIMEOUT_LIMIT,
+                beginTimestamp + 20_000); // 20 seconds is enought for everybody.
+
         CodeCacheUtils.WB.allocateCodeBlob(
                 CodeCacheUtils.ALLOCATION_SIZE, btype.id);
         CodeCacheUtils.WB.fullGC();
+
         /* waiting for expected event to be received plus double the time took
          to receive expected event(for possible unexpected) and
          plus 1 second in case expected event received (almost)immediately */
         Utils.waitForCondition(() -> {
+            maxUsageRegistered = Math.max(bean.getUsage().getUsed(), maxUsageRegistered);
             long currentTimestamp = System.currentTimeMillis();
             int eventsCount
                     = counters.get(btype.getMemoryPool().getName()).get();
@@ -100,10 +114,25 @@ public class PoolsIndependenceTest implements NotificationListener {
                     return true;
                 }
                 long timeLastEventTook
-                        = beginTimestamp - lastEventTimestamp;
-                long timeoutValue
+                        = lastEventTimestamp - beginTimestamp;
+
+                long awaitForUnexpectedTimeout
                         = 1000L + beginTimestamp + 3L * timeLastEventTook;
-                return currentTimestamp > timeoutValue;
+
+                return currentTimestamp > Math.min(phaseTimeout, awaitForUnexpectedTimeout);
+            };
+
+            if (currentTimestamp > phaseTimeout) {
+                if (maxUsageRegistered < usageThresholdLimit) {
+                    throw new SkippedException("The code cache usage hasn't exceeded" +
+                            " the limit of " + usageThresholdLimit +
+                            " (max usage reached is " + maxUsageRegistered + ")" +
+                            " within test timeouts, can't test notifications");
+                } else {
+                    Asserts.fail("UsageThresholdLimit was set to " + usageThresholdLimit +
+                            ", max usage of " + maxUsageRegistered + " have been registered" +
+                            ", but no notifications issued");
+                }
             }
             return false;
         });

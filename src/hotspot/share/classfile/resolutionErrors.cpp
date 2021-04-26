@@ -137,7 +137,7 @@ void ResolutionErrorTable::free_entry(ResolutionErrorEntry *entry) {
   if (entry->nest_host_error() != NULL) {
     FREE_C_HEAP_ARRAY(char, entry->nest_host_error());
   }
-  Hashtable<ConstantPool*, mtClass>::free_entry(entry);
+  BasicHashtable<mtClass>::free_entry(entry);
 }
 
 

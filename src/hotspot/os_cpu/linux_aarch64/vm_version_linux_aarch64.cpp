@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 
 #include <asm/hwcap.h>
@@ -168,24 +169,43 @@ void VM_Version::get_os_cpu_info() {
   }
 }
 
-void VM_Version::get_compatible_board(char *buf, int buflen) {
+static bool read_fully(const char *fname, char *buf, size_t buflen) {
   assert(buf != NULL, "invalid argument");
   assert(buflen >= 1, "invalid argument");
-  *buf = '\0';
-  int fd = open("/proc/device-tree/compatible", O_RDONLY);
+  int fd = os::open(fname, O_RDONLY, 0);
   if (fd != -1) {
-    ssize_t read_sz = read(fd, buf, buflen - 1);
-    if (read_sz > 0) {
-      buf[read_sz] = '\0';
+    ssize_t read_sz = os::read(fd, buf, buflen);
+    os::close(fd);
+
+    // Skip if the contents is just "\n" because some machine only sets
+    // '\n' to the board name.
+    // (e.g. esys/devices/virtual/dmi/id/board_name)
+    if (read_sz > 0 && !(read_sz == 1 && *buf == '\n')) {
       // Replace '\0' to ' '
-      for (char *ch = buf; ch < buf + read_sz; ch++) {
+      for (char *ch = buf; ch < buf + read_sz - 1; ch++) {
         if (*ch == '\0') {
           *ch = ' ';
         }
       }
-    } else {
-      *buf = '\0';
+      buf[read_sz - 1] = '\0';
+      return true;
     }
-    close(fd);
+  }
+  *buf = '\0';
+  return false;
+}
+
+void VM_Version::get_compatible_board(char *buf, int buflen) {
+  const char *board_name_file_list[] = {
+    "/proc/device-tree/compatible",
+    "/sys/devices/virtual/dmi/id/board_name",
+    "/sys/devices/virtual/dmi/id/product_name",
+    NULL
+  };
+
+  for (const char **fname = board_name_file_list; *fname != NULL; fname++) {
+    if (read_fully(*fname, buf, buflen)) {
+      return;
+    }
   }
 }

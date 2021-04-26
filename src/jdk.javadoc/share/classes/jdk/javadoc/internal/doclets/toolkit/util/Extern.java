@@ -385,7 +385,7 @@ public class Extern {
         private static final long serialVersionUID = 0;
 
         Fault(String msg, Exception cause) {
-            super(msg, cause);
+            super(msg + (cause == null ? "" : " (" + cause + ")"), cause);
         }
     }
 

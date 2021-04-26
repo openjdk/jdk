@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,9 @@
  *   but where no huge pages are configured, these tests are still useful. They
  *   will test correct initialization. Later reserve calls will fail and fall
  *   back to small pages (while complaining loudly) but this should not affect
- *   the gtests.
+ *   the gtests. When tests complain, they would spew a lot of warning messages,
+ *   which could blow out the test runner Java heaps. This is why we are running
+ *   with -XX:-PrintWarnings.
  */
 
 /* @test id=use-large-pages
@@ -39,7 +41,8 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseLargePages
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=os* -XX:-PrintWarnings -XX:+UseLargePages
  */
 
 /* @test id=use-large-pages-1G
@@ -49,7 +52,8 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseLargePages -XX:LargePageSizeInBytes=1G
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=os* -XX:-PrintWarnings -XX:+UseLargePages -XX:LargePageSizeInBytes=1G
  */
 
 /* @test id=use-large-pages-sysV
@@ -58,5 +62,6 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseLargePages -XX:+UseSHM
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=os* -XX:-PrintWarnings -XX:+UseLargePages -XX:+UseSHM
  */

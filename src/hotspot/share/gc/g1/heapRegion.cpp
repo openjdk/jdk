@@ -109,8 +109,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
-  set_evacuation_failed(false);
+  reset_evacuation_failed();
   set_old();
+  _next_marked_bytes = 0;
 }
 
 void HeapRegion::unlink_from_list() {
@@ -138,7 +139,7 @@ void HeapRegion::hr_clear(bool clear_space) {
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
 
-  _evacuation_failed = false;
+  Atomic::store(&_evacuation_failed, false);
   _gc_efficiency = -1.0;
 }
 
@@ -666,7 +667,7 @@ void HeapRegion::verify(VerifyOption vo,
   bool is_region_humongous = is_humongous();
   size_t object_num = 0;
   while (p < top()) {
-    oop obj = oop(p);
+    oop obj = cast_to_oop(p);
     size_t obj_size = block_size(p);
     object_num += 1;
 
@@ -721,12 +722,12 @@ void HeapRegion::verify(VerifyOption vo,
     p += obj_size;
   }
 
-  if (!is_young() && !is_empty()) {
+  if (!is_empty()) {
     _bot_part.verify();
   }
 
   if (is_region_humongous) {
-    oop obj = oop(this->humongous_start_region()->bottom());
+    oop obj = cast_to_oop(this->humongous_start_region()->bottom());
     if (cast_from_oop<HeapWord*>(obj) > bottom() || cast_from_oop<HeapWord*>(obj) + obj->size() < bottom()) {
       log_error(gc, verify)("this humongous region is not part of its' humongous object " PTR_FORMAT, p2i(obj));
       *failures = true;
@@ -811,7 +812,7 @@ void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
   HeapWord* prev_p = NULL;
   VerifyRemSetClosure vr_cl(g1h, vo);
   while (p < top()) {
-    oop obj = oop(p);
+    oop obj = cast_to_oop(p);
     size_t obj_size = block_size(p);
 
     if (!g1h->is_obj_dead_cond(obj, this, vo)) {
@@ -873,7 +874,7 @@ void HeapRegion::object_iterate(ObjectClosure* blk) {
   HeapWord* p = bottom();
   while (p < top()) {
     if (block_is_obj(p)) {
-      blk->do_object(oop(p));
+      blk->do_object(cast_to_oop(p));
     }
     p += block_size(p);
   }

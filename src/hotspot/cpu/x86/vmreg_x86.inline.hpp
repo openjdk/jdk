@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ inline VMReg XMMRegisterImpl::as_VMReg() {
 }
 
 inline VMReg KRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_xmm);
+  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_xmm);
 }
 
 #endif // CPU_X86_VMREG_X86_INLINE_HPP

@@ -105,7 +105,8 @@ void ThreadService::init() {
   _thread_allocated_memory_enabled = true; // Always on, so enable it
 
   // Initialize OopStorage for thread stack sampling walking
-  _thread_service_storage = OopStorageSet::create_strong("ThreadService OopStorage");
+  _thread_service_storage = OopStorageSet::create_strong("ThreadService OopStorage",
+                                                         mtServiceability);
 }
 
 void ThreadService::reset_peak_thread_count() {
@@ -878,7 +879,7 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   _sleep_count = stat->sleep_count();
 
   _thread_status = java_lang_Thread::get_thread_status(threadObj);
-  _is_ext_suspended = thread->is_being_ext_suspended();
+  _is_suspended = thread->is_suspended();
   _is_in_native = (thread->thread_state() == _thread_in_native);
 
   Handle obj = ThreadService::get_current_contended_monitor(thread);

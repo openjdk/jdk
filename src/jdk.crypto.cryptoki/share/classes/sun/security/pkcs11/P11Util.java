@@ -168,7 +168,7 @@ public final class P11Util {
         }
     }
 
-    private final static char[] hexDigits = "0123456789abcdef".toCharArray();
+    private static final char[] hexDigits = "0123456789abcdef".toCharArray();
 
     static String toString(byte[] b) {
         if (b == null) {

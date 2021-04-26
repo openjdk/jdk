@@ -112,7 +112,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
                            &args,
                            CHECK_NULL);
 
-    instanceOop p = (instanceOop) result.get_jobject();
+    instanceOop p = (instanceOop) result.get_oop();
     instanceHandle pool(THREAD, p);
 
     {

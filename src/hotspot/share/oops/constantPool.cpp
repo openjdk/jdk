@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
@@ -36,7 +37,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
@@ -197,7 +197,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
     // Create Java array for holding resolved strings, methodHandles,
     // methodTypes, invokedynamic and invokehandle appendix objects, etc.
     objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
-    Handle refs_handle (THREAD, (oop)stom);  // must handleize.
+    Handle refs_handle (THREAD, stom);  // must handleize.
     set_resolved_references(loader_data->add_handle(refs_handle));
   }
 }
@@ -353,6 +353,9 @@ void ConstantPool::add_dumped_interned_strings() {
 
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
+  if (!_pool_holder->is_linked() && !_pool_holder->is_rewritten()) {
+    return;
+  }
   assert(is_constantPool(), "ensure C++ vtable is restored");
   assert(on_stack(), "should always be set for shared constant pools");
   assert(is_shared(), "should always be set for shared constant pools");
@@ -382,7 +385,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       int map_length = resolved_reference_length();
       if (map_length > 0) {
         objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
-        Handle refs_handle(THREAD, (oop)stom);  // must handleize.
+        Handle refs_handle(THREAD, stom);  // must handleize.
         set_resolved_references(loader_data->add_handle(refs_handle));
       }
     }
@@ -390,6 +393,9 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 }
 
 void ConstantPool::remove_unshareable_info() {
+  if (!_pool_holder->is_linked() && _pool_holder->is_shared_old_klass()) {
+    return;
+  }
   // Resolved references are not in the shared archive.
   // Save the length for restoration.  It is not necessarily the same length
   // as reference_map.length() if invokedynamic is saved. It is needed when
@@ -603,7 +609,8 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     // Avoid constant pool verification at a safepoint, which takes the Module_lock.
     if (k != NULL && !SafepointSynchronize::is_at_safepoint()) {
       // Make sure that resolving is legal
-      EXCEPTION_MARK;
+      ExceptionMark em(thread);
+      Thread* THREAD = thread; // For exception macros.
       // return NULL if verification fails
       verify_constant_pool_resolve(this_cp, k, THREAD);
       if (HAS_PENDING_EXCEPTION) {
@@ -1267,7 +1274,7 @@ void ConstantPool::unreference_symbols() {
 // Compare this constant pool's entry at index1 to the constant pool
 // cp2's entry at index2.
 bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
-       int index2, TRAPS) {
+       int index2) {
 
   // The error tags are equivalent to non-error tags when comparing
   jbyte t1 = tag_at(index1).non_error_value();
@@ -1286,8 +1293,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   switch (t1) {
   case JVM_CONSTANT_Class:
   {
-    Klass* k1 = klass_at(index1, CHECK_false);
-    Klass* k2 = cp2->klass_at(index2, CHECK_false);
+    Klass* k1 = resolved_klass_at(index1);
+    Klass* k2 = cp2->resolved_klass_at(index2);
     if (k1 == k2) {
       return true;
     }
@@ -1297,8 +1304,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   {
     int recur1 = klass_index_at(index1);
     int recur2 = cp2->klass_index_at(index2);
-    bool match = compare_entry_to(recur1, cp2, recur2, CHECK_false);
-    if (match) {
+    if (compare_entry_to(recur1, cp2, recur2)) {
       return true;
     }
   } break;
@@ -1318,12 +1324,11 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   {
     int recur1 = uncached_klass_ref_index_at(index1);
     int recur2 = cp2->uncached_klass_ref_index_at(index2);
-    bool match = compare_entry_to(recur1, cp2, recur2, CHECK_false);
+    bool match = compare_entry_to(recur1, cp2, recur2);
     if (match) {
       recur1 = uncached_name_and_type_ref_index_at(index1);
       recur2 = cp2->uncached_name_and_type_ref_index_at(index2);
-      match = compare_entry_to(recur1, cp2, recur2, CHECK_false);
-      if (match) {
+      if (compare_entry_to(recur1, cp2, recur2)) {
         return true;
       }
     }
@@ -1360,12 +1365,10 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   {
     int recur1 = name_ref_index_at(index1);
     int recur2 = cp2->name_ref_index_at(index2);
-    bool match = compare_entry_to(recur1, cp2, recur2, CHECK_false);
-    if (match) {
+    if (compare_entry_to(recur1, cp2, recur2)) {
       recur1 = signature_ref_index_at(index1);
       recur2 = cp2->signature_ref_index_at(index2);
-      match = compare_entry_to(recur1, cp2, recur2, CHECK_false);
-      if (match) {
+      if (compare_entry_to(recur1, cp2, recur2)) {
         return true;
       }
     }
@@ -1375,8 +1378,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   {
     int recur1 = string_index_at(index1);
     int recur2 = cp2->string_index_at(index2);
-    bool match = compare_entry_to(recur1, cp2, recur2, CHECK_false);
-    if (match) {
+    if (compare_entry_to(recur1, cp2, recur2)) {
       return true;
     }
   } break;
@@ -1394,8 +1396,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   {
     int k1 = method_type_index_at(index1);
     int k2 = cp2->method_type_index_at(index2);
-    bool match = compare_entry_to(k1, cp2, k2, CHECK_false);
-    if (match) {
+    if (compare_entry_to(k1, cp2, k2)) {
       return true;
     }
   } break;
@@ -1407,8 +1408,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     if (k1 == k2) {
       int i1 = method_handle_index_at(index1);
       int i2 = cp2->method_handle_index_at(index2);
-      bool match = compare_entry_to(i1, cp2, i2, CHECK_false);
-      if (match) {
+      if (compare_entry_to(i1, cp2, i2)) {
         return true;
       }
     }
@@ -1420,9 +1420,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     int k2 = cp2->bootstrap_name_and_type_ref_index_at(index2);
     int i1 = bootstrap_methods_attribute_index(index1);
     int i2 = cp2->bootstrap_methods_attribute_index(index2);
-    // separate statements and variables because CHECK_false is used
-    bool match_entry = compare_entry_to(k1, cp2, k2, CHECK_false);
-    bool match_operand = compare_operand_to(i1, cp2, i2, CHECK_false);
+    bool match_entry = compare_entry_to(k1, cp2, k2);
+    bool match_operand = compare_operand_to(i1, cp2, i2);
     return (match_entry && match_operand);
   } break;
 
@@ -1432,9 +1431,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     int k2 = cp2->bootstrap_name_and_type_ref_index_at(index2);
     int i1 = bootstrap_methods_attribute_index(index1);
     int i2 = cp2->bootstrap_methods_attribute_index(index2);
-    // separate statements and variables because CHECK_false is used
-    bool match_entry = compare_entry_to(k1, cp2, k2, CHECK_false);
-    bool match_operand = compare_operand_to(i1, cp2, i2, CHECK_false);
+    bool match_entry = compare_entry_to(k1, cp2, k2);
+    bool match_operand = compare_operand_to(i1, cp2, i2);
     return (match_entry && match_operand);
   } break;
 
@@ -1615,7 +1613,7 @@ void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_
   int dest_i = to_i;  // leave original alone for debug purposes
 
   for (int src_i = start_i; src_i <= end_i; /* see loop bottom */ ) {
-    copy_entry_to(from_cp, src_i, to_cp, dest_i, CHECK);
+    copy_entry_to(from_cp, src_i, to_cp, dest_i);
 
     switch (from_cp->tag_at(src_i).value()) {
     case JVM_CONSTANT_Double:
@@ -1640,8 +1638,7 @@ void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_
 // Copy this constant pool's entry at from_i to the constant pool
 // to_cp's entry at to_i.
 void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
-                                        const constantPoolHandle& to_cp, int to_i,
-                                        TRAPS) {
+                                        const constantPoolHandle& to_cp, int to_i) {
 
   int tag = from_cp->tag_at(from_i).value();
   switch (tag) {
@@ -1785,11 +1782,11 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
 // constant pool's entry at pattern_i. Returns the index of a
 // matching entry or zero (0) if there is no matching entry.
 int ConstantPool::find_matching_entry(int pattern_i,
-      const constantPoolHandle& search_cp, TRAPS) {
+      const constantPoolHandle& search_cp) {
 
   // index zero (0) is not used
   for (int i = 1; i < search_cp->length(); i++) {
-    bool found = compare_entry_to(pattern_i, search_cp, i, CHECK_0);
+    bool found = compare_entry_to(pattern_i, search_cp, i);
     if (found) {
       return i;
     }
@@ -1801,10 +1798,10 @@ int ConstantPool::find_matching_entry(int pattern_i,
 
 // Compare this constant pool's bootstrap specifier at idx1 to the constant pool
 // cp2's bootstrap specifier at idx2.
-bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2, TRAPS) {
+bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2) {
   int k1 = operand_bootstrap_method_ref_index_at(idx1);
   int k2 = cp2->operand_bootstrap_method_ref_index_at(idx2);
-  bool match = compare_entry_to(k1, cp2, k2, CHECK_false);
+  bool match = compare_entry_to(k1, cp2, k2);
 
   if (!match) {
     return false;
@@ -1814,7 +1811,7 @@ bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, i
     for (int j = 0; j < argc; j++) {
       k1 = operand_argument_index_at(idx1, j);
       k2 = cp2->operand_argument_index_at(idx2, j);
-      match = compare_entry_to(k1, cp2, k2, CHECK_false);
+      match = compare_entry_to(k1, cp2, k2);
       if (!match) {
         return false;
       }
@@ -1828,9 +1825,9 @@ bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, i
 // this constant pool's bootstrap specifier data at pattern_i index.
 // Return the index of a matching bootstrap attribute record or (-1) if there is no match.
 int ConstantPool::find_matching_operand(int pattern_i,
-                    const constantPoolHandle& search_cp, int search_len, TRAPS) {
+                    const constantPoolHandle& search_cp, int search_len) {
   for (int i = 0; i < search_len; i++) {
-    bool found = compare_operand_to(pattern_i, search_cp, i, CHECK_(-1));
+    bool found = compare_operand_to(pattern_i, search_cp, i);
     if (found) {
       return i;
     }

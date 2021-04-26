@@ -53,8 +53,6 @@ public class FontManagerNativeLibrary {
                       NB: consider moving freetype wrapper part to separate
                           shared library in order to avoid dependency. */
                    System.loadLibrary("freetype");
-                   /* Same for harfbuzz */
-                   System.loadLibrary("harfbuzz");
                }
                System.loadLibrary("fontmanager");
 

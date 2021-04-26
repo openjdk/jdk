@@ -60,8 +60,8 @@ public class TestClassTree extends JavadocTester {
                     <h2 title="Annotation Interface Hierarchy">Annotation Interface Hierarchy</h2>
                     <ul>
                     <li class="circle">pkg.<a href="AnnotationType.html" class="type-name-link" titl\
-                    e="annotation in pkg">AnnotationType</a> (implements java.lang.annotation.Annota\
-                    tion)</li>
+                    e="annotation interface in pkg">AnnotationType</a> (implements java.lang.annotat\
+                    ion.Annotation)</li>
                     </ul>""",
                 """
                     <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>

@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -55,6 +56,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
@@ -110,6 +112,13 @@ import org.xml.sax.SAXException;
  * files.
  * <li>JpIsSystemWide. Set to "yes" if --win-per-user-install command line
  * option was not specified. Undefined otherwise
+ * <li>JpAppSizeKb. Set to estimated size of the application in kilobytes
+ * <li>JpHelpURL. Set to value of --win-help-url command line option if it
+ * was specified. Undefined otherwise
+ * <li>JpAboutURL. Set to value of --about-url command line option if it
+ * was specified. Undefined otherwise
+ * <li>JpUpdateURL. Set to value of --win-update-url command line option if it
+ * was specified. Undefined otherwise
  * </ul>
  *
  * <p>
@@ -166,6 +175,20 @@ public class WinMsiBundler  extends AbstractBundler {
                     (s, p) -> s
             );
 
+    private static final BundlerParamInfo<String> HELP_URL =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.WIN_HELP_URL.getId(),
+            String.class,
+            null,
+            (s, p) -> s);
+
+    private static final BundlerParamInfo<String> UPDATE_URL =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.WIN_UPDATE_URL.getId(),
+            String.class,
+            null,
+            (s, p) -> s);
+
     private static final BundlerParamInfo<String> UPGRADE_UUID =
             new StandardBundlerParam<>(
             Arguments.CLIOptions.WIN_UPGRADE_UUID.getId(),
@@ -195,10 +218,10 @@ public class WinMsiBundler  extends AbstractBundler {
         wixFragments = Stream.of(
                 Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
                 Map.entry("ui.wxf", new WixUiFragmentBuilder())
-        ).map(e -> {
+        ).<WixFragmentBuilder>map(e -> {
             e.getValue().setOutputFileName(e.getKey());
             return e.getValue();
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Override
@@ -396,6 +419,21 @@ public class WinMsiBundler  extends AbstractBundler {
         }
     }
 
+    private long getAppImageSizeKb(Map<String, ? super Object> params) throws
+            IOException {
+        ApplicationLayout appLayout;
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            appLayout = ApplicationLayout.javaRuntime();
+        } else {
+            appLayout = ApplicationLayout.windowsAppImage();
+        }
+        appLayout = appLayout.resolveAt(WIN_APP_IMAGE.fetchFrom(params));
+
+        long size = appLayout.sizeInBytes() >> 10;
+
+        return size;
+    }
+
     private Map<String, String> prepareMainProjectFile(
             Map<String, ? super Object> params) throws IOException {
         Map<String, String> data = new HashMap<>();
@@ -421,6 +459,20 @@ public class WinMsiBundler  extends AbstractBundler {
         if (Files.exists(installerIcon)) {
             data.put("JpIcon", installerIcon.toString());
         }
+
+        Optional.ofNullable(HELP_URL.fetchFrom(params)).ifPresent(value -> {
+            data.put("JpHelpURL", value);
+        });
+
+        Optional.ofNullable(UPDATE_URL.fetchFrom(params)).ifPresent(value -> {
+            data.put("JpUpdateURL", value);
+        });
+
+        Optional.ofNullable(ABOUT_URL.fetchFrom(params)).ifPresent(value -> {
+            data.put("JpAboutURL", value);
+        });
+
+        data.put("JpAppSizeKb", Long.toString(getAppImageSizeKb(params)));
 
         final Path configDir = CONFIG_ROOT.fetchFrom(params);
 
@@ -520,7 +572,7 @@ public class WinMsiBundler  extends AbstractBundler {
                     .filter(Files::isReadable)
                     .filter(pathMatcher::matches)
                     .sorted((a, b) -> a.getFileName().toString().compareToIgnoreCase(b.getFileName().toString()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 

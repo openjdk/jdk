@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -140,7 +138,7 @@ public class TestDeoptimization {
         Events.assertEventThread(event);
         Events.assertField(event, "compileId").atLeast(0);
         Events.assertField(event, "compiler").containsAny(COMPILER);
-        Events.assertField(event, "lineNumber").equal(45);
+        Events.assertField(event, "lineNumber").equal(43);
         Events.assertField(event, "bci").atMost(1);
         // Both graal and c2 traps at ifeq. c2 deopt reinterpret from unstable ifeq, while Graal deopt reinterpret from next instruction after last state change.
         Events.assertField(event, "instruction").containsAny("ifeq", "iload_0");

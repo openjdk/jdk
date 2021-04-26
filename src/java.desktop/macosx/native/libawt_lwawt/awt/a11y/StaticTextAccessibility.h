@@ -34,7 +34,7 @@
 @interface StaticTextAccessibility : CommonTextAccessibility<NSAccessibilityStaticText> {
 
 };
-- (nullable NSString *)accessibilityAttributedString:(NSRange)range;
+- (nullable NSString *)accessibilityAttributedStringForRange:(NSRange)range;
 - (nullable NSString *)accessibilityValue;
 - (NSRange)accessibilityVisibleCharacterRange;
 @end

@@ -34,7 +34,7 @@ import java.nio.file.Path;
 
 // Protected by modular boundaries.
 public abstract class FileAccess {
-    public final static FileAccess UNPRIVILEGED = new UnPrivileged();
+    public static final FileAccess UNPRIVILEGED = new UnPrivileged();
 
     public abstract RandomAccessFile openRAF(File f, String mode) throws IOException;
 

@@ -463,7 +463,7 @@ public class TestRecordTypes extends JavadocTester {
 
         Set<ElementType> t = types.isEmpty() ? EnumSet.allOf(ElementType.class) : types;
         String anno = """
-            <a href="Anno.html" title="annotation in p">@Anno</a>""";
+            <a href="Anno.html" title="annotation interface in p">@Anno</a>""";
         String rcAnno = t.contains(ElementType.RECORD_COMPONENT) ? anno + " " : "";
         String fAnno = t.contains(ElementType.FIELD) ? "<span class=\"annotations\">" + anno + "\n</span>" : "";
         String pAnno = t.contains(ElementType.PARAMETER) ? anno + "\n " : "";

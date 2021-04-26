@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspaceShared.hpp"
-#include "runtime/arguments.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"

@@ -413,10 +413,6 @@ void os::setup_fpu() {
 #endif
 }
 
-bool os::is_allocatable(size_t bytes) {
-  return true;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 

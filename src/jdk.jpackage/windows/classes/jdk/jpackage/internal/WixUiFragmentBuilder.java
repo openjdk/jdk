@@ -68,7 +68,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
                 ShortcutsFolder.values()).filter(shortcutFolder -> {
             return shortcutFolder.requested(params)
                     && SHORTCUT_PROMPT.fetchFrom(params);
-        }).collect(Collectors.toList());
+        }).toList();
 
         withShortcutPromptDlg = !shortcutFolders.isEmpty();
 
@@ -265,10 +265,10 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
             var pair = new DialogPair(firstId, secondId);
             return Map.of(pair, nextBuilders.stream().map(b -> {
                 return buildPublish(b.create()).next().create();
-            }).collect(Collectors.toList()), pair.flip(),
+            }).toList(), pair.flip(),
                     prevBuilders.stream().map(b -> {
                         return buildPublish(b.create()).back().create();
-                    }).collect(Collectors.toList()));
+                    }).toList());
         }
 
         static Map<DialogPair, List<Publish>> createPair(Dialog firstId,
@@ -327,7 +327,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         private final String id;
     }
 
-    private final static class DialogPair {
+    private static final class DialogPair {
 
         DialogPair(Dialog first, Dialog second) {
             this(first.id, second.id);
@@ -375,7 +375,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         private final String secondId;
     }
 
-    private final static class Publish {
+    private static final class Publish {
 
         Publish(String control, String condition, int order) {
             this.control = control;
@@ -388,7 +388,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         private final int order;
     }
 
-    private final static class PublishBuilder {
+    private static final class PublishBuilder {
 
         PublishBuilder() {
             order(0);

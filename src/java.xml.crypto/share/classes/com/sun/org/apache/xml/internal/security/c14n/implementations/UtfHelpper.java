@@ -118,42 +118,6 @@ public final class UtfHelpper {
         }
     }
 
-    @Deprecated
-    public static void writeCharToUtf8(final char c, final OutputStream out) throws IOException {
-        if (c < 0x80) {
-            out.write(c);
-            return;
-        }
-        if (c >= 0xD800 && c <= 0xDBFF || c >= 0xDC00 && c <= 0xDFFF) {
-            //No Surrogates in sun java
-            out.write(0x3f);
-            return;
-        }
-        int bias;
-        int write;
-        char ch;
-        if (c > 0x07FF) {
-            ch = (char)(c>>>12);
-            write = 0xE0;
-            if (ch > 0) {
-                write |= ch & 0x0F;
-            }
-            out.write(write);
-            write = 0x80;
-            bias = 0x3F;
-        } else {
-            write = 0xC0;
-            bias = 0x1F;
-        }
-        ch = (char)(c>>>6);
-        if (ch > 0) {
-            write |= ch & bias;
-        }
-        out.write(write);
-        out.write(0x80 | ((c) & 0x3F));
-
-    }
-
     public static void writeStringToUtf8(
         final String str, final OutputStream out
     ) throws IOException {
@@ -247,7 +211,7 @@ public final class UtfHelpper {
                 continue;
             }
             if (!expanded) {
-                byte newResult[] = new byte[6*length];
+                byte[] newResult = new byte[6*length];
                 System.arraycopy(result, 0, newResult, 0, out);
                 result = newResult;
                 expanded = true;
@@ -292,7 +256,7 @@ public final class UtfHelpper {
             }
         }
         if (expanded) {
-            byte newResult[] = new byte[out];
+            byte[] newResult = new byte[out];
             System.arraycopy(result, 0, newResult, 0, out);
             result = newResult;
         }

@@ -28,7 +28,6 @@ package gc.TestJNIWeak;
  * @summary Test return of JNI weak global refs during concurrent
  * marking, verifying the use of the load barrier to keep the
  * referent alive.
- * @modules java.base
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox

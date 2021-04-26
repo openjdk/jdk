@@ -106,6 +106,7 @@ public class Contents {
     public final Content functionalInterface;
     public final Content functionalInterfaceMessage;
     public final Content helpLabel;
+    public final Content helpSubNavLabel;
     public final Content hierarchyForAllPackages;
     public final Content implementation;
     public final Content implementingClassesLabel;
@@ -130,6 +131,8 @@ public class Contents {
     public final Content navConstructor;
     public final Content navEnum;
     public final Content navField;
+    public final Content navHelpNavigation;
+    public final Content navHelpPages;
     public final Content navMethod;
     public final Content navModuleDescription;
     public final Content navModules;
@@ -159,6 +162,7 @@ public class Contents {
     public final Content record;
     public final Content recordComponents;
     public final Content referencedIn;
+    public final Content relatedPackages;
     public final Content returns;
     public final Content seeAlso;
     public final Content serializedForm;
@@ -252,6 +256,7 @@ public class Contents {
         functionalInterface = getContent("doclet.Functional_Interface");
         functionalInterfaceMessage = getContent("doclet.Functional_Interface_Message");
         helpLabel = getContent("doclet.Help");
+        helpSubNavLabel = getContent("doclet.Help_Sub_Nav");
         hierarchyForAllPackages = getContent("doclet.Hierarchy_For_All_Packages");
         implementation = getContent("doclet.Implementation");
         implementingClassesLabel = getContent("doclet.Implementing_Classes");
@@ -276,6 +281,8 @@ public class Contents {
         navConstructor = getContent("doclet.navConstructor");
         navEnum = getContent("doclet.navEnum");
         navField = getContent("doclet.navField");
+        navHelpNavigation = getContent("doclet.navNavigation");
+        navHelpPages = getContent("doclet.navPages");
         navMethod = getContent("doclet.navMethod");
         navModuleDescription = getContent("doclet.navModuleDescription");
         navModules = getContent("doclet.navModules");
@@ -305,6 +312,7 @@ public class Contents {
         record = getContent("doclet.RecordClass");
         recordComponents = getContent("doclet.RecordComponents");
         referencedIn = getContent("doclet.ReferencedIn");
+        relatedPackages = getContent("doclet.Related_Packages");
         returns = getContent("doclet.Returns");
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");

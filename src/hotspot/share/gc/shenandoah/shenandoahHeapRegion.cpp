@@ -392,7 +392,7 @@ void ShenandoahHeapRegion::oop_iterate_objects(OopIterateClosure* blk) {
   HeapWord* t = top();
   // Could call objects iterate, but this is easier.
   while (obj_addr < t) {
-    oop obj = oop(obj_addr);
+    oop obj = cast_to_oop(obj_addr);
     obj_addr += obj->oop_iterate_size(blk);
   }
 }
@@ -402,7 +402,7 @@ void ShenandoahHeapRegion::oop_iterate_humongous(OopIterateClosure* blk) {
   // Find head.
   ShenandoahHeapRegion* r = humongous_start_region();
   assert(r->is_humongous_start(), "need humongous head here");
-  oop obj = oop(r->bottom());
+  oop obj = cast_to_oop(r->bottom());
   obj->oop_iterate(blk, MemRegion(bottom(), top()));
 }
 
@@ -448,9 +448,9 @@ HeapWord* ShenandoahHeapRegion::block_start(const void* p) const {
     HeapWord* cur = last;
     while (cur <= p) {
       last = cur;
-      cur += oop(cur)->size();
+      cur += cast_to_oop(cur)->size();
     }
-    shenandoah_assert_correct(NULL, oop(last));
+    shenandoah_assert_correct(NULL, cast_to_oop(last));
     return last;
   }
 }
@@ -460,7 +460,7 @@ size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
          "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(p), p2i(bottom()), p2i(end()));
   if (p < top()) {
-    return oop(p)->size();
+    return cast_to_oop(p)->size();
   } else {
     assert(p == top(), "just checking");
     return pointer_delta(end(), (HeapWord*) p);
@@ -575,7 +575,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   RegionSizeBytesMask = RegionSizeBytes - 1;
 
   guarantee(RegionCount == 0, "we should only set it once");
-  RegionCount = max_heap_size / RegionSizeBytes;
+  RegionCount = align_up(max_heap_size, RegionSizeBytes) / RegionSizeBytes;
   guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
 
   guarantee(HumongousThresholdWords == 0, "we should only set it once");

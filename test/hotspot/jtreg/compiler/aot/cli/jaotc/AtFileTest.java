@@ -47,7 +47,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class AtFileTest {
     public static void main(String[] args) throws Exception {
-        Path file = Paths.get("jatoc.cmd");
+        Path file = Paths.get("jaotc.cmd");
         Files.write(file, List.of("--class-name",
                 JaotcTestHelper.getClassAotCompilationName(HelloWorldOne.class)));
         OutputAnalyzer oa = JaotcTestHelper.compileLibrary("@" + file.toString());
