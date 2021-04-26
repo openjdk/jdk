@@ -105,7 +105,7 @@ class ConsoleIOContext extends IOContext {
     String prefix = "";
 
     ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout,
-                     boolean interactive, int columns, int rows) throws Exception {
+                     boolean interactive) throws Exception {
         this.repl = repl;
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
@@ -124,9 +124,6 @@ class ConsoleIOContext extends IOContext {
                 terminal = new TestTerminal(nonBlockingInput, cmdout);
             } else {
                 Size size = null;
-                if (columns != (-1) && rows != (-1)) {
-                    size = new Size(columns, rows);
-                }
                 terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout, interactive,
                                                       size);
                 if (!interactive) {

@@ -161,8 +161,6 @@ public class JShellTool implements MessageHandler {
     final Map<String, String> envvars;
     final Locale locale;
     final boolean interactiveTerminal;
-    final int terminalColumns;
-    final int terminalRows;
 
     final Feedback feedback = new Feedback();
 
@@ -183,7 +181,7 @@ public class JShellTool implements MessageHandler {
             PrintStream console,
             InputStream userin, PrintStream userout, PrintStream usererr,
             PersistentStorage prefs, Map<String, String> envvars, Locale locale,
-            boolean interactiveTerminal, int terminalColumns, int terminalRows) {
+            boolean interactiveTerminal) {
         this.cmdin = cmdin;
         this.cmdout = cmdout;
         this.cmderr = cmderr;
@@ -200,8 +198,6 @@ public class JShellTool implements MessageHandler {
         this.envvars = envvars;
         this.locale = locale;
         this.interactiveTerminal = interactiveTerminal;
-        this.terminalColumns = terminalColumns;
-        this.terminalRows = terminalRows;
     }
 
     private ResourceBundle versionRB = null;
@@ -983,7 +979,7 @@ public class JShellTool implements MessageHandler {
             };
             Runtime.getRuntime().addShutdownHook(shutdownHook);
             // execute from user input
-            try (IOContext in = new ConsoleIOContext(this, cmdin, console, interactiveTerminal, terminalColumns, terminalRows)) {
+            try (IOContext in = new ConsoleIOContext(this, cmdin, console, interactiveTerminal)) {
                 int indent;
                 try {
                     String indentValue = indent();

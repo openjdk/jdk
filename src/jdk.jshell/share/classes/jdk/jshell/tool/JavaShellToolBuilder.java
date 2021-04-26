@@ -209,24 +209,6 @@ public interface JavaShellToolBuilder {
     }
 
     /**
-     * Set to number of columns and rows of the terminal to which the output of this Java Shell
-     * is attached.
-     *
-     * When the input stream for this Java Shell is {@code System.in}, these values are ignored,
-     * and the size of the terminal is auto-detected.
-     *
-     * @implSpec If this method is not called, default values are chosen.
-     *
-     * @param columns the number of columns of the attached terminal
-     * @param rows the number of rows of the attached terminal
-     * @return the {@code JavaShellToolBuilder} instance
-     * @since 17
-     */
-    default JavaShellToolBuilder terminalSize(int columns, int rows) {
-        return this;
-    }
-
-    /**
      * Run an instance of the Java shell tool as configured by the other methods
      * in this interface.  This call is not destructive, more than one call of
      * this method may be made from a configured builder. The  exit code from
