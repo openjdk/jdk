@@ -43,7 +43,7 @@ const char* G1AbstractSubTask::name() const {
 bool G1BatchedGangTask::try_claim_serial_task(int& task) {
   task = Atomic::load(&_num_serial_tasks_done);
   if (task < _serial_tasks.length()) {
-    task = Atomic::add(&_num_serial_tasks_done, 1) - 1;
+    task = Atomic::fetch_and_add(&_num_serial_tasks_done, 1);
   }
   return task < _serial_tasks.length();
 }
