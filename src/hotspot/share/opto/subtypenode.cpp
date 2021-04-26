@@ -234,7 +234,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
           chk_off_X = phase->transform(new ConvI2LNode(chk_off_X));
 #endif
           Node* p2 = phase->transform(new AddPNode(subklass, subklass, chk_off_X));
-          Node* nkls = phase->transform(LoadKlassNode::make(*phase, NULL, C->immutable_memory(), p2, phase->type(p2)->is_ptr(), TypeKlassPtr::OBJECT_OR_NULL));
+          Node* nkls = phase->transform(LoadKlassNode::make(*phase, NULL, C->immutable_memory(), p2, phase->type(p2)->is_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
 
           return verify_helper(phase, nkls, cached_t);
         }

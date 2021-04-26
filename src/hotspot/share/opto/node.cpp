@@ -1787,10 +1787,7 @@ void Node::dump(const char* suffix, bool mark, outputStream *st) const {
   if (t != NULL && (t->isa_instptr() || t->isa_klassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
     const TypeKlassPtr *tkls = t->isa_klassptr();
-    ciKlass*           klass = toop ? toop->klass() : (tkls ? tkls->klass() : NULL );
-    if (klass && klass->is_loaded() && klass->is_interface()) {
-      st->print("  Interface:");
-    } else if (toop) {
+    if (toop) {
       st->print("  Oop:");
     } else if (tkls) {
       st->print("  Klass:");

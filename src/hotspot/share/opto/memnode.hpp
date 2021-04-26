@@ -529,7 +529,7 @@ public:
 
   // Polymorphic factory method:
   static Node* make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at,
-                    const TypeKlassPtr* tk = TypeKlassPtr::OBJECT);
+                    const TypeKlassPtr* tk = TypeInstKlassPtr::OBJECT);
 };
 
 //------------------------------LoadNKlassNode---------------------------------
