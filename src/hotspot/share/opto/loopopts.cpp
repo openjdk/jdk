@@ -1433,6 +1433,8 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
     if (n_loop != _ltree_root && n->outcnt() > 1) {
+      // Compute early control: needed for anti-dependence analysis. It's also possible that as a result of
+      // previous transformations in this loop opts round, the node can be hoisted now: early control will tell us.
       Node* early_ctrl = compute_early_ctrl(n, n_ctrl);
       if (n_loop->is_member(get_loop(early_ctrl)) && // check that this one can't be hoisted now
           ctrl_of_all_uses_out_of_loop(n, early_ctrl, n_loop)) { // All uses in outer loops!
@@ -1576,6 +1578,8 @@ bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, I
     if (u->Opcode() == Op_Opaque1) {
       return false;  // Found loop limit, bugfix for 4677003
     }
+    // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure calls to
+    // get_late_ctrl_with_anti_dep() use their own tag
     _dom_lca_tags_round++;
     assert(_dom_lca_tags_round != 0, "shouldn't wrap around");
 

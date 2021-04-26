@@ -5041,6 +5041,7 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
           if (C->can_alias(adr_type, load_alias_idx)) {
             LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
           } else if (s->is_CFG() && s->is_Multi()) {
+            // Look for the memory use of s (that is the use of its memory projection)
             for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
               Node* s1 = s->fast_out(i);
               assert(s1->is_Proj(), "projection expected");
