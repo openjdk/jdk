@@ -87,8 +87,8 @@ public:
 
   // Assembly stub generation helpers
 
-  static constexpr ByteSize last_Java_sp_offset() { return byte_offset_of(JavaFrameAnchor, _last_Java_sp); }
-  static constexpr ByteSize last_Java_pc_offset() { return byte_offset_of(JavaFrameAnchor, _last_Java_pc); }
+  static ByteSize last_Java_sp_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_sp); }
+  static ByteSize last_Java_pc_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_pc); }
 
 };
 

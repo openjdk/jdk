@@ -145,7 +145,7 @@ class Thread: public ThreadShadow {
   GCThreadLocalData _gc_data;
 
  public:
-  static constexpr ByteSize gc_data_offset() {
+  static ByteSize gc_data_offset() {
     return byte_offset_of(Thread, _gc_data);
   }
 
@@ -198,7 +198,7 @@ class Thread: public ThreadShadow {
   void inc_nested_threads_hazard_ptr_cnt() {
     _nested_threads_hazard_ptr_cnt++;
   }
-  uint nested_threads_hazard_ptr_cnt() const {
+  uint nested_threads_hazard_ptr_cnt() {
     return _nested_threads_hazard_ptr_cnt;
   }
 
@@ -250,7 +250,7 @@ class Thread: public ThreadShadow {
     _suspendible_thread = false;
   }
 
-  bool is_suspendible_thread() const { return _suspendible_thread; }
+  bool is_suspendible_thread() { return _suspendible_thread; }
 #endif
 
  private:
@@ -283,7 +283,7 @@ class Thread: public ThreadShadow {
   ICRefillVerifier* _missed_ic_stub_refill_verifier;
 
  public:
-  ICRefillVerifier* missed_ic_stub_refill_verifier() const {
+  ICRefillVerifier* missed_ic_stub_refill_verifier() {
     return _missed_ic_stub_refill_verifier;
   }
 
@@ -480,7 +480,7 @@ class Thread: public ThreadShadow {
 
  public:
 #ifndef PRODUCT
-  bool skip_gcalot() const     { return _skip_gcalot; }
+  bool skip_gcalot()           { return _skip_gcalot; }
   void set_skip_gcalot(bool v) { _skip_gcalot = v;    }
 #endif
 
@@ -508,26 +508,26 @@ class Thread: public ThreadShadow {
   void set_metadata_handles(GrowableArray<Metadata*>* handles){ _metadata_handles = handles; }
 
   // Thread-Local Allocation Buffer (TLAB) support
-  ThreadLocalAllocBuffer& tlab() { return _tlab; }
+  ThreadLocalAllocBuffer& tlab()                 { return _tlab; }
   void initialize_tlab();
 
-  jlong allocated_bytes() const         { return _allocated_bytes; }
+  jlong allocated_bytes()               { return _allocated_bytes; }
   void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
   void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
   inline jlong cooked_allocated_bytes();
 
-  ThreadHeapSampler& heap_sampler() { return _heap_sampler; }
+  ThreadHeapSampler& heap_sampler()     { return _heap_sampler; }
 
   ThreadStatisticalInfo& statistical_info() { return _statistical_info; }
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_ACCESSOR_JFR;)
 
-  bool is_trace_suspend() const         { return (_suspend_flags & _trace_flag) != 0; }
+  bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
 
-  bool is_obj_deopt_suspend() const     { return (_suspend_flags & _obj_deopt) != 0; }
+  bool is_obj_deopt_suspend()           { return (_suspend_flags & _obj_deopt) != 0; }
 
   // For tracking the heavyweight monitor the thread is pending on.
-  ObjectMonitor* current_pending_monitor() const {
+  ObjectMonitor* current_pending_monitor() {
     return _current_pending_monitor;
   }
   void set_current_pending_monitor(ObjectMonitor* monitor) {
@@ -536,12 +536,12 @@ class Thread: public ThreadShadow {
   void set_current_pending_monitor_is_from_java(bool from_java) {
     _current_pending_monitor_is_from_java = from_java;
   }
-  bool current_pending_monitor_is_from_java() const {
+  bool current_pending_monitor_is_from_java() {
     return _current_pending_monitor_is_from_java;
   }
 
   // For tracking the ObjectMonitor on which this thread called Object.wait()
-  ObjectMonitor* current_waiting_monitor() const {
+  ObjectMonitor* current_waiting_monitor() {
     return _current_waiting_monitor;
   }
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
@@ -549,7 +549,7 @@ class Thread: public ThreadShadow {
   }
 
   // For tracking the Jvmti raw monitor the thread is pending on.
-  JvmtiRawMonitor* current_pending_raw_monitor() const {
+  JvmtiRawMonitor* current_pending_raw_monitor() {
     return _current_pending_raw_monitor;
   }
   void set_current_pending_raw_monitor(JvmtiRawMonitor* monitor) {
@@ -695,7 +695,7 @@ protected:
   bool owns_locks() const                        { return owned_locks() != NULL; }
 
   // Deadlock detection
-  ResourceMark* current_resource_mark() const    { return _current_resource_mark; }
+  ResourceMark* current_resource_mark()          { return _current_resource_mark; }
   void set_current_resource_mark(ResourceMark* rm) { _current_resource_mark = rm; }
 #endif // ASSERT
 
@@ -710,25 +710,25 @@ protected:
  public:
   void entering_jvmti_env_iteration()            { ++_jvmti_env_iteration_count; }
   void leaving_jvmti_env_iteration()             { --_jvmti_env_iteration_count; }
-  bool is_inside_jvmti_env_iteration() const     { return _jvmti_env_iteration_count > 0; }
+  bool is_inside_jvmti_env_iteration()           { return _jvmti_env_iteration_count > 0; }
 
   // Code generation
-  static constexpr ByteSize exception_file_offset()        { return byte_offset_of(Thread, _exception_file); }
-  static constexpr ByteSize exception_line_offset()        { return byte_offset_of(Thread, _exception_line); }
-  static constexpr ByteSize active_handles_offset()        { return byte_offset_of(Thread, _active_handles); }
+  static ByteSize exception_file_offset()        { return byte_offset_of(Thread, _exception_file); }
+  static ByteSize exception_line_offset()        { return byte_offset_of(Thread, _exception_line); }
+  static ByteSize active_handles_offset()        { return byte_offset_of(Thread, _active_handles); }
 
-  static constexpr ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base); }
-  static constexpr ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size); }
+  static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base); }
+  static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size); }
 
-  static constexpr ByteSize polling_word_offset()          { return byte_offset_of(Thread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_word);}
-  static constexpr ByteSize polling_page_offset()          { return byte_offset_of(Thread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_page);}
+  static ByteSize polling_word_offset()          { return byte_offset_of(Thread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_word);}
+  static ByteSize polling_page_offset()          { return byte_offset_of(Thread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_page);}
 
-  static constexpr ByteSize tlab_start_offset()            { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::start_offset(); }
-  static constexpr ByteSize tlab_end_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::end_offset(); }
-  static constexpr ByteSize tlab_top_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::top_offset(); }
-  static constexpr ByteSize tlab_pf_top_offset()           { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::pf_top_offset(); }
+  static ByteSize tlab_start_offset()            { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::start_offset(); }
+  static ByteSize tlab_end_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::end_offset(); }
+  static ByteSize tlab_top_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::top_offset(); }
+  static ByteSize tlab_pf_top_offset()           { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::pf_top_offset(); }
 
-  static constexpr ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
+  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
@@ -741,7 +741,7 @@ protected:
   // Termination indicator used by the signal handler.
   // _ParkEvent is just a convenient field we can NULL out after setting the JavaThread termination state
   // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
-  bool has_terminated() const                 { return Atomic::load(&_ParkEvent) == NULL; };
+  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == NULL; };
 
   volatile int _OnTrap;                       // Resume-at IP delta
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
@@ -808,7 +808,7 @@ class JavaThread: public Thread {
   int _java_call_counter;
 
  public:
-  int  java_call_counter() const                 { return _java_call_counter; }
+  int  java_call_counter()                       { return _java_call_counter; }
   void inc_java_call_counter()                   { _java_call_counter++; }
   void dec_java_call_counter() {
     assert(_java_call_counter > 0, "Invalid nesting of JavaCallWrapper");
@@ -1074,7 +1074,7 @@ class JavaThread: public Thread {
 
   // last_Java_sp
   bool has_last_Java_frame() const               { return _anchor.has_last_Java_frame(); }
-  intptr_t* last_Java_sp()   const               { return _anchor.last_Java_sp(); }
+  intptr_t* last_Java_sp() const                 { return _anchor.last_Java_sp(); }
 
   // last_Java_pc
 
@@ -1106,10 +1106,10 @@ class JavaThread: public Thread {
 
   void block_if_vm_exited();
 
-  bool doing_unsafe_access() const               { return _doing_unsafe_access; }
+  bool doing_unsafe_access()                     { return _doing_unsafe_access; }
   void set_doing_unsafe_access(bool val)         { _doing_unsafe_access = val; }
 
-  bool do_not_unlock_if_synchronized() const       { return _do_not_unlock_if_synchronized; }
+  bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
 
   SafepointMechanism::ThreadData* poll_data() { return &_poll_data; }
@@ -1149,7 +1149,7 @@ class JavaThread: public Thread {
   }
 
   // Are any async conditions present?
-  bool has_async_condition() const { return (_special_runtime_exit_condition != _no_async_condition); }
+  bool has_async_condition() { return (_special_runtime_exit_condition != _no_async_condition); }
 
   void check_and_handle_async_exceptions(bool check_unsafe_error = true);
 
@@ -1158,7 +1158,7 @@ class JavaThread: public Thread {
 
   // Return true if JavaThread has an asynchronous condition or
   // if external suspension is requested.
-  bool has_special_runtime_exit_condition() const {
+  bool has_special_runtime_exit_condition() {
     return (_special_runtime_exit_condition != _no_async_condition) ||
            (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
@@ -1188,20 +1188,20 @@ class JavaThread: public Thread {
   // The special resourceMark used during deoptimization
 
   void set_deopt_mark(DeoptResourceMark* value)  { _deopt_mark = value; }
-  DeoptResourceMark* deopt_mark(void) const      { return _deopt_mark; }
+  DeoptResourceMark* deopt_mark(void)            { return _deopt_mark; }
 
   void set_deopt_compiled_method(CompiledMethod* nm)  { _deopt_nmethod = nm; }
-  CompiledMethod* deopt_compiled_method() const  { return _deopt_nmethod; }
+  CompiledMethod* deopt_compiled_method()        { return _deopt_nmethod; }
 
   Method*    callee_target() const               { return _callee_target; }
-  void set_callee_target  (Method* x)            { _callee_target   = x; }
+  void set_callee_target  (Method* x)          { _callee_target   = x; }
 
   // Oop results of vm runtime calls
   oop  vm_result() const                         { return _vm_result; }
   void set_vm_result  (oop x)                    { _vm_result   = x; }
 
   Metadata*    vm_result_2() const               { return _vm_result_2; }
-  void set_vm_result_2  (Metadata* x)            { _vm_result_2   = x; }
+  void set_vm_result_2  (Metadata* x)          { _vm_result_2   = x; }
 
   MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
   void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
@@ -1247,61 +1247,61 @@ class JavaThread: public Thread {
   // Misc. accessors/mutators
   void set_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = true; }
   void clr_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = false; }
-  bool do_not_unlock(void) const                 { return _do_not_unlock_if_synchronized; }
+  bool do_not_unlock(void)                       { return _do_not_unlock_if_synchronized; }
 
   // For assembly stub generation
-  static constexpr ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
-  static constexpr ByteSize jni_environment_offset()       { return byte_offset_of(JavaThread, _jni_environment); }
-  static constexpr ByteSize pending_jni_exception_check_fn_offset() {
+  static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
+  static ByteSize jni_environment_offset()       { return byte_offset_of(JavaThread, _jni_environment); }
+  static ByteSize pending_jni_exception_check_fn_offset() {
     return byte_offset_of(JavaThread, _pending_jni_exception_check_fn);
   }
-  static constexpr ByteSize last_Java_sp_offset() {
+  static ByteSize last_Java_sp_offset() {
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_sp_offset();
   }
-  static constexpr ByteSize last_Java_pc_offset() {
+  static ByteSize last_Java_pc_offset() {
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_pc_offset();
   }
-  static constexpr ByteSize frame_anchor_offset() {
+  static ByteSize frame_anchor_offset() {
     return byte_offset_of(JavaThread, _anchor);
   }
-  static constexpr ByteSize callee_target_offset()         { return byte_offset_of(JavaThread, _callee_target); }
-  static constexpr ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
-  static constexpr ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
-  static constexpr ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
-  static constexpr ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
-  static constexpr ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }
+  static ByteSize callee_target_offset()         { return byte_offset_of(JavaThread, _callee_target); }
+  static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
+  static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
+  static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
+  static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
+  static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }
 #if INCLUDE_JVMCI
-  static constexpr ByteSize pending_deoptimization_offset() { return byte_offset_of(JavaThread, _pending_deoptimization); }
-  static constexpr ByteSize pending_monitorenter_offset()  { return byte_offset_of(JavaThread, _pending_monitorenter); }
-  static constexpr ByteSize pending_failed_speculation_offset() { return byte_offset_of(JavaThread, _pending_failed_speculation); }
-  static constexpr ByteSize jvmci_alternate_call_target_offset() { return byte_offset_of(JavaThread, _jvmci._alternate_call_target); }
-  static constexpr ByteSize jvmci_implicit_exception_pc_offset() { return byte_offset_of(JavaThread, _jvmci._implicit_exception_pc); }
-  static constexpr ByteSize jvmci_counters_offset()        { return byte_offset_of(JavaThread, _jvmci_counters); }
+  static ByteSize pending_deoptimization_offset() { return byte_offset_of(JavaThread, _pending_deoptimization); }
+  static ByteSize pending_monitorenter_offset()  { return byte_offset_of(JavaThread, _pending_monitorenter); }
+  static ByteSize pending_failed_speculation_offset() { return byte_offset_of(JavaThread, _pending_failed_speculation); }
+  static ByteSize jvmci_alternate_call_target_offset() { return byte_offset_of(JavaThread, _jvmci._alternate_call_target); }
+  static ByteSize jvmci_implicit_exception_pc_offset() { return byte_offset_of(JavaThread, _jvmci._implicit_exception_pc); }
+  static ByteSize jvmci_counters_offset()        { return byte_offset_of(JavaThread, _jvmci_counters); }
 #endif // INCLUDE_JVMCI
-  static constexpr ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop); }
-  static constexpr ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc); }
-  static constexpr ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
-  static constexpr ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
+  static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop); }
+  static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc); }
+  static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
+  static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
 
   // StackOverflow offsets
-  static constexpr ByteSize stack_overflow_limit_offset()  {
+  static ByteSize stack_overflow_limit_offset()  {
     return byte_offset_of(JavaThread, _stack_overflow_state._stack_overflow_limit);
   }
-  static constexpr ByteSize stack_guard_state_offset()     {
+  static ByteSize stack_guard_state_offset()     {
     return byte_offset_of(JavaThread, _stack_overflow_state._stack_guard_state);
   }
-  static constexpr ByteSize reserved_stack_activation_offset() {
+  static ByteSize reserved_stack_activation_offset() {
     return byte_offset_of(JavaThread, _stack_overflow_state._reserved_stack_activation);
   }
 
-  static constexpr ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags); }
+  static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags); }
 
-  static constexpr ByteSize do_not_unlock_if_synchronized_offset() { return byte_offset_of(JavaThread, _do_not_unlock_if_synchronized); }
-  static constexpr ByteSize should_post_on_exceptions_flag_offset() {
+  static ByteSize do_not_unlock_if_synchronized_offset() { return byte_offset_of(JavaThread, _do_not_unlock_if_synchronized); }
+  static ByteSize should_post_on_exceptions_flag_offset() {
     return byte_offset_of(JavaThread, _should_post_on_exceptions_flag);
   }
-  static constexpr ByteSize doing_unsafe_access_offset() { return byte_offset_of(JavaThread, _doing_unsafe_access); }
-  NOT_PRODUCT(static constexpr ByteSize requires_cross_modify_fence_offset()  { return byte_offset_of(JavaThread, _requires_cross_modify_fence); })
+  static ByteSize doing_unsafe_access_offset() { return byte_offset_of(JavaThread, _doing_unsafe_access); }
+  NOT_PRODUCT(static ByteSize requires_cross_modify_fence_offset()  { return byte_offset_of(JavaThread, _requires_cross_modify_fence); })
 
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
@@ -1319,8 +1319,8 @@ class JavaThread: public Thread {
   }
 
   // JNI critical regions. These can nest.
-  bool in_critical() const   { return _jni_active_critical > 0; }
-  bool in_last_critical() const  { return _jni_active_critical == 1; }
+  bool in_critical()    { return _jni_active_critical > 0; }
+  bool in_last_critical()  { return _jni_active_critical == 1; }
   inline void enter_critical();
   void exit_critical() {
     assert(Thread::current() == this, "this must be current thread");
@@ -1470,16 +1470,16 @@ class JavaThread: public Thread {
     popframe_processing_bit                = 0x02,
     popframe_force_deopt_reexecution_bit   = 0x04
   };
-  PopCondition popframe_condition() const             { return (PopCondition) _popframe_condition; }
+  PopCondition popframe_condition()                   { return (PopCondition) _popframe_condition; }
   void set_popframe_condition(PopCondition c)         { _popframe_condition = c; }
   void set_popframe_condition_bit(PopCondition c)     { _popframe_condition |= c; }
   void clear_popframe_condition()                     { _popframe_condition = popframe_inactive; }
-  static constexpr ByteSize popframe_condition_offset() { return byte_offset_of(JavaThread, _popframe_condition); }
-  bool has_pending_popframe() const                   { return (popframe_condition() & popframe_pending_bit) != 0; }
-  bool popframe_forcing_deopt_reexecution() const     { return (popframe_condition() & popframe_force_deopt_reexecution_bit) != 0; }
+  static ByteSize popframe_condition_offset()         { return byte_offset_of(JavaThread, _popframe_condition); }
+  bool has_pending_popframe()                         { return (popframe_condition() & popframe_pending_bit) != 0; }
+  bool popframe_forcing_deopt_reexecution()           { return (popframe_condition() & popframe_force_deopt_reexecution_bit) != 0; }
   void clear_popframe_forcing_deopt_reexecution()     { _popframe_condition &= ~popframe_force_deopt_reexecution_bit; }
 
-  bool pop_frame_in_process(void) const               { return ((_popframe_condition & popframe_processing_bit) != 0); }
+  bool pop_frame_in_process(void)                     { return ((_popframe_condition & popframe_processing_bit) != 0); }
   void set_pop_frame_in_process(void)                 { _popframe_condition |= popframe_processing_bit; }
   void clr_pop_frame_in_process(void)                 { _popframe_condition &= ~popframe_processing_bit; }
 
@@ -1496,8 +1496,8 @@ class JavaThread: public Thread {
  public:
   void  popframe_preserve_args(ByteSize size_in_bytes, void* start);
   void* popframe_preserved_args();
-  ByteSize popframe_preserved_args_size() const;
-  WordSize popframe_preserved_args_size_in_words() const;
+  ByteSize popframe_preserved_args_size();
+  WordSize popframe_preserved_args_size_in_words();
   void  popframe_free_preserved_args();
 
 
@@ -1515,9 +1515,9 @@ class JavaThread: public Thread {
 
  public:
   // used by the interpreter for fullspeed debugging support (see above)
-  static constexpr ByteSize interp_only_mode_offset() { return byte_offset_of(JavaThread, _interp_only_mode); }
-  bool is_interp_only_mode() const          { return (_interp_only_mode != 0); }
-  int get_interp_only_mode() const          { return _interp_only_mode; }
+  static ByteSize interp_only_mode_offset() { return byte_offset_of(JavaThread, _interp_only_mode); }
+  bool is_interp_only_mode()                { return (_interp_only_mode != 0); }
+  int get_interp_only_mode()                { return _interp_only_mode; }
   void increment_interp_only_mode()         { ++_interp_only_mode; }
   void decrement_interp_only_mode()         { --_interp_only_mode; }
 
@@ -1528,7 +1528,7 @@ class JavaThread: public Thread {
   int    _should_post_on_exceptions_flag;
 
  public:
-  int   should_post_on_exceptions_flag() const { return _should_post_on_exceptions_flag; }
+  int   should_post_on_exceptions_flag()  { return _should_post_on_exceptions_flag; }
   void  set_should_post_on_exceptions_flag(int val)  { _should_post_on_exceptions_flag = val; }
 
  private:
@@ -1564,7 +1564,7 @@ class JavaThread: public Thread {
  private:
   GrowableArray<MonitorInfo*>* _cached_monitor_info;
  public:
-  GrowableArray<MonitorInfo*>* cached_monitor_info() const { return _cached_monitor_info; }
+  GrowableArray<MonitorInfo*>* cached_monitor_info() { return _cached_monitor_info; }
   void set_cached_monitor_info(GrowableArray<MonitorInfo*>* info) { _cached_monitor_info = info; }
 
   // clearing/querying jni attach status
