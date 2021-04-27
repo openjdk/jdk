@@ -87,13 +87,13 @@ public class CompareKeys {
                     origKey.getClass().getName());
         } else {
             System.out.println("Result- equals: "
-                    + !origKey.equals(copyKey));
+                    + origKey.equals(copyKey));
             System.out.println("Result- hashCode: "
-                    + !(origKey.hashCode() == copyKey.hashCode()));
-            System.out.println("Result- encoded check: " + !Arrays.equals(
+                    + (origKey.hashCode() == copyKey.hashCode()));
+            System.out.println("Result- encoded check: " + Arrays.equals(
                     origKey.getEncoded(), copyKey.getEncoded()));
             System.out.println("Result- format check: "
-                    + !origKey.getFormat().equals(copyKey.getFormat()));
+                    + origKey.getFormat().equals(copyKey.getFormat()));
             throw new RuntimeException("Key inequality found");
         }
     }
