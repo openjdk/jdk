@@ -44,7 +44,7 @@ class GrowableArrayCHeap;
 //
 // A "parallel" task could be some large amount of work that typically naturally
 // splits across the heap in some way. Current examples would be clearing the
-// card table 
+// card table.
 //
 // See G1BatchedGangTask for information on execution.
 class G1AbstractSubTask : public CHeapObj<mtGC> {
