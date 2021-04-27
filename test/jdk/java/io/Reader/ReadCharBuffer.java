@@ -103,8 +103,8 @@ public class ReadCharBuffer {
 
     @Test
     public void readZeroLength() {
-        BufferedReader r =
-            new BufferedReader(new CharArrayReader(new char[]{1, 2, 3}));
+        char[] buf = new char[] {1, 2, 3};
+        BufferedReader r = new BufferedReader(new CharArrayReader(buf));
         int n = -1;
         try {
             n = r.read(CharBuffer.allocate(0));
