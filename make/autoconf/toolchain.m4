@@ -664,18 +664,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     UTIL_LOOKUP_TOOLCHAIN_PROGS(LD, link)
     TOOLCHAIN_VERIFY_LINK_BINARY(LD)
     LDCXX="$LD"
-    # jaotc being a windows program expects the linker to be supplied with exe suffix.but without
-    # fixpath
-    LD_JAOTC="${LD##$FIXPATH }"
   else
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
-    # jaotc expects 'ld' as the linker rather than the compiler.
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(LD_JAOTC, ld)
   fi
   AC_SUBST(LD)
-  AC_SUBST(LD_JAOTC)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
   AC_SUBST(LDCXX)
 
