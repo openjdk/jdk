@@ -527,6 +527,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   // directory search
   char* oldest_user = NULL;
   time_t oldest_ctime = 0;
+  char buffer[MAXPATHLEN + 1];
   int searchpid;
   char* tmpdirname = (char *)os::get_temp_directory();
 #if defined(LINUX)
@@ -537,7 +538,6 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   if (nspid == -1) {
     searchpid = vmid;
   } else {
-    char buffer[MAXPATHLEN + 1];
     jio_snprintf(buffer, MAXPATHLEN, "/proc/%d/root%s", vmid, tmpdirname);
     tmpdirname = buffer;
     searchpid = nspid;
