@@ -66,7 +66,7 @@ public class TestPrintOptoAssemblyLineNumbers {
 
         public static void main(String[] args) {
             int count = 0;
-            for (int x = 0; x < 200_000; x++){
+            for (int x = 0; x < 200_000; x++) {
                 if (foo("something" + x)) { // <- test expects this line of code to be on line 68
                     count += 1;
                 }
