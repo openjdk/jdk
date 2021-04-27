@@ -1444,19 +1444,19 @@ Klass* InstanceKlass::array_klass(int n, TRAPS) {
       }
     }
   }
-  // _this will always be set at this point
+  // array_klasses() will always be set at this point
   ObjArrayKlass* oak = array_klasses();
   return oak->array_klass(n, THREAD);
 }
 
 Klass* InstanceKlass::array_klass_or_null(int n) {
   // Need load-acquire for lock-free read
-  if (array_klasses_acquire() == NULL) {
+  ObjArrayKlass* oak = array_klasses_acquire();
+  if (oak == NULL) {
     return NULL;
+  } else {
+    return oak->array_klass_or_null(n);
   }
-  // _this will always be set at this point
-  ObjArrayKlass* oak = array_klasses();
-  return oak->array_klass_or_null(n);
 }
 
 Klass* InstanceKlass::array_klass(TRAPS) {
