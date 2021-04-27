@@ -252,8 +252,9 @@ public:
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
     G1IsAliveClosure is_alive(&_collector);
-    G1FullKeepAliveClosure keep_alive(_collector.marker(index(worker_id)));
-    G1FollowStackClosure* complete_gc = _collector.marker(index(worker_id))->stack_closure();
+    uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
+    G1FullKeepAliveClosure keep_alive(_collector.marker(index));
+    G1FollowStackClosure* complete_gc = _collector.marker(index)->stack_closure();
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, complete_gc);
   }
 };

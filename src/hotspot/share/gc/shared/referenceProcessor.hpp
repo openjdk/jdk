@@ -637,10 +637,6 @@ public:
   }
 
   virtual void prepare_run_task_hook() {}
-
-  uint index(uint id) const {
-    return (_tm == RefProcThreadModel::Single) ? 0 : id;
-  }
 };
 
 // Temporarily change the number of workers based on given reference count.

@@ -3352,10 +3352,11 @@ public:
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
-    _pss.state_for_worker(index(worker_id))->set_ref_discoverer(nullptr);
+    uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
+    _pss.state_for_worker(index)->set_ref_discoverer(nullptr);
     G1STWIsAliveClosure is_alive(&_g1h);
-    G1CopyingKeepAliveClosure keep_alive(&_g1h, _pss.state_for_worker(index(worker_id)));
-    G1ParEvacuateFollowersClosure complete_gc(&_g1h, _pss.state_for_worker(index(worker_id)), &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
+    G1CopyingKeepAliveClosure keep_alive(&_g1h, _pss.state_for_worker(index));
+    G1ParEvacuateFollowersClosure complete_gc(&_g1h, _pss.state_for_worker(index), &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
   }
 

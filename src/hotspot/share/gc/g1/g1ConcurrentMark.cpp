@@ -1472,8 +1472,9 @@ public:
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
     G1CMIsAliveClosure is_alive(&_g1h);
-    G1CMKeepAliveAndDrainClosure keep_alive(&_cm, _cm.task(index(worker_id)), _tm == RefProcThreadModel::Single);
-    G1CMDrainMarkingStackClosure complete_gc(&_cm, _cm.task(index(worker_id)), _tm == RefProcThreadModel::Single);
+    uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
+    G1CMKeepAliveAndDrainClosure keep_alive(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
+    G1CMDrainMarkingStackClosure complete_gc(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
   }
 
