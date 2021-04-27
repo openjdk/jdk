@@ -33,9 +33,18 @@ template <typename E, MEMFLAGS F>
 class GrowableArrayCHeap;
 
 // G1AbstractSubTask represents a task to be performed either within an
-// G1BatchedGangTask running on a single thread ("serially") or multiple threads
+// G1BatchedGangTask running on a single worker ("serially") or multiple workers
 // ("in parallel"). A G1AbstractSubTask is always associated with a phase tag
 // that is used to automatically store timing information.
+//
+// A "serial" task is some piece of work that either can not be parallelized
+// easily, or is typically so short that parallelization is not worth the effort.
+// Current examples would be summarizing per worker thread information gathered
+// during garbage collection (e.g. Merge PSS work).
+//
+// A "parallel" task could be some large amount of work that typically naturally
+// splits across the heap in some way. Current examples would be clearing the
+// card table 
 //
 // See G1BatchedGangTask for information on execution.
 class G1AbstractSubTask : public CHeapObj<mtGC> {
@@ -51,7 +60,7 @@ public:
   G1AbstractSubTask(G1GCPhaseTimes::GCParPhases tag) : _tag(tag) { }
   virtual ~G1AbstractSubTask() { }
 
-  // How many worker (threads) would this task be able to keep busy for at least
+  // How many workers (threads) would this task be able to keep busy for at least
   // as long as to amortize worker startup costs.
   // Called by G1BatchedGangTask to determine total number of workers.
   virtual double num_busy_workers() const { return 1.0; }
@@ -60,12 +69,12 @@ public:
   // number of workers for all subtasks after it has been determined.
   virtual void set_max_workers(uint max_workers) { }
 
-  // Perform the actual work.
+  // Perform the actual work. Gets the worker id it is run on passed in.
   virtual void do_work(uint worker_id) = 0;
 
   // Tag for this G1AbstractSubTask.
   G1GCPhaseTimes::GCParPhases tag() const { return _tag; }
-  // Human readable name.
+  // Human readable name derived from the tag.
   const char* name() const;
 };
 
@@ -74,16 +83,18 @@ public:
 // Subclasses of this class add their G1AbstractSubTasks into either the list
 // of "serial" or the list of "parallel" tasks.
 // During execution in the work gang, this class will make sure that the "serial"
-// tasks are executed by a single thread only exactly once, while "parallel"
-// tasks may be executed by different workers, at most once per given worker id.
+// tasks are executed by a single worker only exactly once, but different "serial"
+// tasks may be executed in parallel using different workers. "Parallel" tasks'
+// do_work() method may be called by different workers passing a different
+// worker_id at the same time, but at most once per given worker id.
 //
 // The G1AbstractSubTask's do_work() method gets a unique worker_id each time the
 // method is called.
 // There is no guarantee that G1AbstractSubTasks::do_work() of different tasks
 // are actually run in parallel.
 //
-// The current framework assumes that constructors and destructors of the
-// G1AbstractSubTasks are executed in the constructor/destructor of an instance
+// The current implementation assumes that constructors and destructors of the
+// G1AbstractSubTasks can executed in the constructor/destructor of an instance
 // of this class.
 //
 // The constructor, destructor and the do_work() methods from different
