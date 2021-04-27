@@ -1209,7 +1209,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
          (result->is_single_fpu() && result->as_float_reg() == Z_F0) ||
          (result->is_double_fpu() && result->as_double_reg() == Z_F0), "convention");
 
-  __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
+  __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::polling_page_offset()));
 
   // Pop the frame before the safepoint code.
   __ pop_frame_restore_retPC(initial_frame_size_in_bytes());
@@ -1228,7 +1228,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   const Register poll_addr = tmp->as_register_lo();
-  __ z_lg(poll_addr, Address(Z_thread, Thread::polling_page_offset()));
+  __ z_lg(poll_addr, Address(Z_thread, JavaThread::polling_page_offset()));
   guarantee(info != NULL, "Shouldn't be NULL");
   add_debug_info_for_branch(info);
   int offset = __ offset();

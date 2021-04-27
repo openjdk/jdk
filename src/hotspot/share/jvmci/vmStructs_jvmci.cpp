@@ -187,6 +187,7 @@
   nonstatic_field(JavaThread,                  _jvmci_reserved_oop0,                          oop)                                   \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
+  nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
@@ -332,7 +333,6 @@
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
-  nonstatic_field(Thread,                   _poll_data,                                       SafepointMechanism::ThreadData)        \
                                                                                                                                      \
   nonstatic_field(ThreadLocalAllocBuffer,   _start,                                           HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,   _top,                                             HeapWord*)                             \

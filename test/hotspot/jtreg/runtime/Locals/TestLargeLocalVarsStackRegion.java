@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +24,27 @@
 
 /*
  * @test
- * @bug 8228888
- * @summary Test PhaseIdealLoop::has_local_phi_input() with phi input with non-dominating control.
- * @library /test/lib
- * @compile StrangeControl.jasm
- * @run main/othervm -Xbatch -XX:CompileCommand=inline,compiler.loopopts.StrangeControl::test
- *                   compiler.loopopts.TestStrangeControl
+ * @bug 8265756
+ * @library /test/lib /
+ * @compile TestLargeLocalVarsStackRegionHelper.jasm
+ * @run main runtime.Locals.TestLargeLocalVarsStackRegion
  */
 
-package compiler.loopopts;
+package runtime.Locals;
 
-import jdk.test.lib.Utils;
+import jdk.test.lib.Asserts;
 
-public class TestStrangeControl {
+public class TestLargeLocalVarsStackRegion {
 
-    public static void main(String[] args) throws Exception {
-        Thread thread = new Thread() {
-            public void run() {
-                // Run this in an own thread because it's basically an endless loop
-                StrangeControl.test(42);
-            }
-        };
-        thread.setDaemon(true);
-        thread.start();
-        // Give thread executing strange control loop enough time to trigger OSR compilation
-        Thread.sleep(Utils.adjustTimeout(4000));
+    // Some platforms (such as windows-aarch64) may have
+    // stack page touch order restrictions.
+    // Test calls method with large local vars stack region
+    // to trigger usage of several stack memory pages and
+    // check the validity of the touch order.
+    //
+    // Helper method is written in jasm as this allows to
+    // specify local vars stack region size directly.
+    public static void main(String args[]) {
+        Asserts.assertEQ(TestLargeLocalVarsStackRegionHelper.tst(), 0);
     }
 }

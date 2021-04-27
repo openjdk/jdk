@@ -286,11 +286,7 @@ public class FieldSetAccessibleTest {
          * Filter deployment modules
          */
         static Set<String> systemModules() {
-            Set<String> mods = Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws",
-                // All JVMCI packages other than jdk.vm.ci.services are dynamically
-                // exported to jdk.internal.vm.compiler
-                "jdk.internal.vm.compiler"
-            );
+            Set<String> mods = Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws");
             return ModuleFinder.ofSystem().findAll().stream()
                                .map(mref -> mref.descriptor().name())
                                .filter(mn -> !mods.contains(mn))

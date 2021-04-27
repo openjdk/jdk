@@ -293,27 +293,10 @@ class Thread: public ThreadShadow {
 #endif // ASSERT
 
  private:
-
-  // Debug support for checking if code allows safepoints or not.
-  // Safepoints in the VM can happen because of allocation, invoking a VM operation, or blocking on
-  // mutex, or blocking on an object synchronizer (Java locking).
-  // If _no_safepoint_count is non-zero, then an assertion failure will happen in any of
-  // the above cases.
-  //
-  // The class NoSafepointVerifier is used to set this counter.
-  //
-  NOT_PRODUCT(int _no_safepoint_count;)         // If 0, thread allow a safepoint to happen
-
- private:
   // Used by SkipGCALot class.
   NOT_PRODUCT(bool _skip_gcalot;)               // Should we elide gc-a-lot?
 
   friend class GCLocker;
-  friend class NoSafepointVerifier;
-  friend class PauseNoSafepointVerifier;
-
- protected:
-  SafepointMechanism::ThreadData _poll_data;
 
  private:
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
@@ -334,25 +317,6 @@ class Thread: public ThreadShadow {
 
   // ObjectMonitor on which this thread called Object.wait()
   ObjectMonitor* _current_waiting_monitor;
-
-#ifdef ASSERT
- private:
-  volatile uint64_t _visited_for_critical_count;
-
- public:
-  void set_visited_for_critical_count(uint64_t safepoint_id) {
-    assert(_visited_for_critical_count == 0, "Must be reset before set");
-    assert((safepoint_id & 0x1) == 1, "Must be odd");
-    _visited_for_critical_count = safepoint_id;
-  }
-  void reset_visited_for_critical_count(uint64_t safepoint_id) {
-    assert(_visited_for_critical_count == safepoint_id, "Was not visited");
-    _visited_for_critical_count = 0;
-  }
-  bool was_visited_for_critical_count(uint64_t safepoint_id) const {
-    return _visited_for_critical_count == safepoint_id;
-  }
-#endif
 
  public:
   enum {
@@ -703,11 +667,6 @@ protected:
   void set_current_resource_mark(ResourceMark* rm) { _current_resource_mark = rm; }
 #endif // ASSERT
 
-  // These functions check conditions on a JavaThread before possibly going to a safepoint,
-  // including NoSafepointVerifier.
-  void check_for_valid_safepoint_state() NOT_DEBUG_RETURN;
-  void check_possible_safepoint() NOT_DEBUG_RETURN;
-
  private:
   volatile int _jvmti_env_iteration_count;
 
@@ -723,9 +682,6 @@ protected:
 
   static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base); }
   static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size); }
-
-  static ByteSize polling_word_offset()          { return byte_offset_of(Thread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_word);}
-  static ByteSize polling_page_offset()          { return byte_offset_of(Thread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_page);}
 
   static ByteSize tlab_start_offset()            { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::start_offset(); }
   static ByteSize tlab_end_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::end_offset(); }
@@ -879,12 +835,49 @@ class JavaThread: public Thread {
   oop           _pending_async_exception;
 
   // Safepoint support
- public:                                         // Expose _thread_state for SafeFetchInt()
+ public:                                                        // Expose _thread_state for SafeFetchInt()
   volatile JavaThreadState _thread_state;
  private:
-  ThreadSafepointState* _safepoint_state;        // Holds information about a thread during a safepoint
-  address               _saved_exception_pc;     // Saved pc of instruction where last implicit exception happened
-  NOT_PRODUCT(bool      _requires_cross_modify_fence;) // State used by VerifyCrossModifyFence
+  SafepointMechanism::ThreadData _poll_data;
+  ThreadSafepointState*          _safepoint_state;              // Holds information about a thread during a safepoint
+  address                        _saved_exception_pc;           // Saved pc of instruction where last implicit exception happened
+  NOT_PRODUCT(bool               _requires_cross_modify_fence;) // State used by VerifyCrossModifyFence
+#ifdef ASSERT
+  // Debug support for checking if code allows safepoints or not.
+  // Safepoints in the VM can happen because of allocation, invoking a VM operation, or blocking on
+  // mutex, or blocking on an object synchronizer (Java locking).
+  // If _no_safepoint_count is non-zero, then an assertion failure will happen in any of
+  // the above cases. The class NoSafepointVerifier is used to set this counter.
+  int _no_safepoint_count;                             // If 0, thread allow a safepoint to happen
+
+ public:
+  void inc_no_safepoint_count() { _no_safepoint_count++; }
+  void dec_no_safepoint_count() { _no_safepoint_count--; }
+#endif // ASSERT
+ public:
+  // These functions check conditions before possibly going to a safepoint.
+  // including NoSafepointVerifier.
+  void check_for_valid_safepoint_state() NOT_DEBUG_RETURN;
+  void check_possible_safepoint()        NOT_DEBUG_RETURN;
+
+#ifdef ASSERT
+ private:
+  volatile uint64_t _visited_for_critical_count;
+
+ public:
+  void set_visited_for_critical_count(uint64_t safepoint_id) {
+    assert(_visited_for_critical_count == 0, "Must be reset before set");
+    assert((safepoint_id & 0x1) == 1, "Must be odd");
+    _visited_for_critical_count = safepoint_id;
+  }
+  void reset_visited_for_critical_count(uint64_t safepoint_id) {
+    assert(_visited_for_critical_count == safepoint_id, "Was not visited");
+    _visited_for_critical_count = 0;
+  }
+  bool was_visited_for_critical_count(uint64_t safepoint_id) const {
+    return _visited_for_critical_count == safepoint_id;
+  }
+#endif // ASSERT
 
   // JavaThread termination support
  public:
@@ -1280,6 +1273,8 @@ class JavaThread: public Thread {
   static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
   static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
   static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
+  static ByteSize polling_word_offset()          { return byte_offset_of(JavaThread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_word);}
+  static ByteSize polling_page_offset()          { return byte_offset_of(JavaThread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_page);}
   static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
   static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }
 #if INCLUDE_JVMCI
