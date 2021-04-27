@@ -48,6 +48,7 @@ class LambdaFormInvokers : public AllStatic {
     return _static_archive_invokers;
   }
   static void dump_static_archive_invokers();
+  static void read_static_archive_invokers();
   static void serialize(SerializeClosure* soc);
 };
 #endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP

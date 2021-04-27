@@ -1456,14 +1456,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
   if (DynamicDumpSharedSpaces) {
     // Read stored LF format lines stored in static archive
-    Array<Array<char>*>* static_archive_invokers = LambdaFormInvokers::static_archive_invokers();
-    if (static_archive_invokers != nullptr) {
-      for (int i = 0; i < static_archive_invokers->length(); i++) {
-        Array<char>* line = static_archive_invokers->at(i);
-        char* str = line->adr_at(0);
-        LambdaFormInvokers::append_filtered(str);
-      }
-    }
+    LambdaFormInvokers::read_static_archive_invokers();
   }
 
   if (PrintSharedArchiveAndExit) {

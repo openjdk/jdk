@@ -87,16 +87,8 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
   objArrayHandle list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
-  if (list_lines == nullptr) {
-    log_info(cds)("Out of memory, skip regenerate holder classes");
-    return;
-  }
   for (int i = 0; i < len; i++) {
     Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
-    if (h_line == nullptr) {
-      log_info(cds)("Out of memory, skip regenerate holder classes");
-      return;
-    }
     list_lines->obj_at_put(i, h_line());
   }
 
@@ -133,17 +125,14 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     }
     int len = h_bytes->length();
     // make a copy of class bytes so GC will not affect us.
-    char *buf = resource_allocate_bytes(THREAD, len);
+    char *buf = resource_allocate_bytes(THREAD, len, AllocFailStrategy::RETURN_NULL);
     if (buf == nullptr) {
-      log_info(cds)("Out of memory when reloading classes for %s, quit", class_name);
+      log_info(cds)("Out of memory when reloading class %s, quit", class_name);
       return;
     }
     memcpy(buf, (char*)h_bytes->byte_at_addr(0), len);
     ClassFileStream st((u1*)buf, len, NULL, ClassFileStream::verify);
-
     reload_class(class_name, st, THREAD);
-    // free buf
-    resource_free_bytes(buf, len);
 
     if (HAS_PENDING_EXCEPTION) {
       log_info(cds)("Exception happened: %s", PENDING_EXCEPTION->klass()->name()->as_C_string());
@@ -201,6 +190,16 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
 
       _static_archive_invokers->at_put(i, line);
       ArchivePtrMarker::mark_pointer(_static_archive_invokers->adr_at(i));
+    }
+  }
+}
+
+void LambdaFormInvokers::read_static_archive_invokers() {
+  if (_static_archive_invokers != nullptr) {
+    for (int i = 0; i < _static_archive_invokers->length(); i++) {
+      Array<char>* line = _static_archive_invokers->at(i);
+      char* str = line->adr_at(0);
+      append_filtered(str);
     }
   }
 }
