@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -404,13 +404,9 @@ public class Annotate {
     }
     //where:
         private boolean isAttributeTrue(Attribute attr) {
-            if (attr instanceof Attribute.Constant) {
-                Attribute.Constant v = (Attribute.Constant) attr;
-                if (v.type == syms.booleanType && ((Integer) v.value) != 0) {
-                    return true;
-                }
-            }
-            return false;
+            return (attr instanceof Attribute.Constant constant)
+                    && constant.type == syms.booleanType
+                    && ((Integer) constant.value) != 0;
         }
 
     /**
@@ -447,7 +443,7 @@ public class Annotate {
     {
         // The attribute might have been entered if it is Target or Repeatable
         // Because TreeCopier does not copy type, redo this if type is null
-        if (a.attribute == null || a.type == null || !(a.attribute instanceof Attribute.TypeCompound)) {
+        if (a.attribute == null || a.type == null || !(a.attribute instanceof Attribute.TypeCompound typeCompound)) {
             // Create a new TypeCompound
             List<Pair<MethodSymbol,Attribute>> elems =
                     attributeAnnotationValues(a, expectedAnnotationType, env);
@@ -458,7 +454,7 @@ public class Annotate {
             return tc;
         } else {
             // Use an existing TypeCompound
-            return (Attribute.TypeCompound)a.attribute;
+            return typeCompound;
         }
     }
 
@@ -911,12 +907,12 @@ public class Annotate {
             log.error(pos, Errors.InvalidRepeatableAnnotation(annoDecl));
             return null;
         }
-        if (!(p.snd instanceof Attribute.Class)) { // check that the value of "value" is an Attribute.Class
+        if (!(p.snd instanceof Attribute.Class attributeClass)) { // check that the value of "value" is an Attribute.Class
             log.error(pos, Errors.InvalidRepeatableAnnotation(annoDecl));
             return null;
         }
 
-        return ((Attribute.Class)p.snd).getValue();
+        return attributeClass.getValue();
     }
 
     /* Validate that the suggested targetContainerType Type is a valid

@@ -1359,13 +1359,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean equals(Object obj) {
-            if (obj instanceof ArrayType) {
-                ArrayType that = (ArrayType)obj;
-                return this == that ||
-                        elemtype.equals(that.elemtype);
-            }
-
-            return false;
+            return (obj instanceof ArrayType arrayType)
+                    && (this == arrayType || elemtype.equals(arrayType.elemtype));
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)

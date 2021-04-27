@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "jvm_io.h"
-#include "aot/aotLoader.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -683,7 +682,6 @@ void CodeCache::metadata_do(MetadataClosure* f) {
   while(iter.next()) {
     iter.method()->metadata_do(f);
   }
-  AOTLoader::metadata_do(f);
 }
 
 int CodeCache::alignment_unit() {
@@ -972,11 +970,6 @@ void codeCache_init() {
   CodeCache::initialize();
 }
 
-void AOTLoader_init() {
-  // Load AOT libraries and add AOT code heaps.
-  AOTLoader::initialize();
-}
-
 //------------------------------------------------------------------------------------------------
 
 int CodeCache::number_of_nmethods_with_dependencies() {
@@ -1038,15 +1031,6 @@ CompiledMethod* CodeCache::find_compiled(void* start) {
   return (CompiledMethod*)cb;
 }
 
-bool CodeCache::is_far_target(address target) {
-#if INCLUDE_AOT
-  return NativeCall::is_far_call(_low_bound,  target) ||
-         NativeCall::is_far_call(_high_bound, target);
-#else
-  return false;
-#endif
-}
-
 #if INCLUDE_JVMTI
 // RedefineClasses support for unloading nmethods that are dependent on "old" methods.
 // We don't really expect this table to grow very large.  If it does, it can become a hashtable.
@@ -1096,11 +1080,6 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
 // Just marks the methods in this class as needing deoptimization
 void CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-
-  // Mark dependent AOT nmethods, which are only found via the class redefined.
-  // TODO: add dependencies to aotCompiledMethod's metadata section so this isn't
-  // needed.
-  AOTLoader::mark_evol_dependent_methods(dependee);
 }
 
 
