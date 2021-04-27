@@ -27,8 +27,10 @@
  * @summary (x86 only) checks that java.lang.Thread.onSpinWait is intrinsified
  * @bug 8147844
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
+ *
+ * @requires vm.flagless
  * @requires os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64"
+ *
  * @run driver compiler.onSpinWait.TestOnSpinWait
  */
 
