@@ -1425,12 +1425,6 @@ public class RandomSupport {
          * to create spliterators, then the main public methods.
          */
 
-        /**
-         * No instances.
-         */
-        private AbstractSpliteratorGenerator() {
-        }
-
         // stream methods, coded in a way intended to better isolate for
         // maintenance purposes the small differences across forms.
 
