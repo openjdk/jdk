@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,14 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZRELOCATE_HPP
-#define SHARE_GC_Z_ZRELOCATE_HPP
+#ifndef SHARE_GC_Z_ZABORT_INLINE_HPP
+#define SHARE_GC_Z_ZABORT_INLINE_HPP
 
-#include "gc/z/zRelocationSet.hpp"
+#include "gc/z/zAbort.hpp"
+#include "runtime/atomic.hpp"
 
-class ZForwarding;
-class ZWorkers;
+inline bool ZAbort::should_abort() {
+  return Atomic::load_acquire(&_should_abort);
+}
 
-class ZRelocate {
-  friend class ZRelocateTask;
-
-private:
-  ZWorkers* const _workers;
-
-  void work(ZRelocationSetParallelIterator* iter);
-
-public:
-  ZRelocate(ZWorkers* workers);
-
-  uintptr_t relocate_object(ZForwarding* forwarding, uintptr_t from_addr) const;
-  uintptr_t forward_object(ZForwarding* forwarding, uintptr_t from_addr) const;
-
-  void relocate(ZRelocationSet* relocation_set);
-};
-
-#endif // SHARE_GC_Z_ZRELOCATE_HPP
+#endif // SHARE_GC_Z_ZABORT_INLINE_HPP

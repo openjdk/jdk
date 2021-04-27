@@ -4061,7 +4061,7 @@ public class Resolve {
                 location = site.tsym;
             }
             if (!location.name.isEmpty()) {
-                if (location.kind == PCK && !site.tsym.exists()) {
+                if (location.kind == PCK && !site.tsym.exists() && location.name != names.java) {
                     return diags.create(dkind, log.currentSource(), pos,
                         "doesnt.exist", location);
                 }

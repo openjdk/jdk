@@ -601,8 +601,9 @@ final class CompilerToVM {
      * {@link HotSpotVMConfig#invalidVtableIndex} if {@code method} is not in {@code type}'s
      * v-table.
      *
-     * @throws InternalError if {@code type} is an interface or {@code method} is not held by an
-     *             interface or class represented by {@code type} is not initialized
+     * @throws InternalError if {@code type} is an interface, {@code method} is not defined by an
+     *             interface, {@code type} does not implement the interface defining {@code method}
+     *             or class represented by {@code type} is not initialized
      */
     native int getVtableIndexForInterfaceMethod(HotSpotResolvedObjectTypeImpl type, HotSpotResolvedJavaMethodImpl method);
 

@@ -25,7 +25,31 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/formatBuffer.hpp"
+#include "threadHelper.inline.hpp"
 #include "unittest.hpp"
+
+const int iterations = 10;
+static Mutex* m[iterations];
+static int i = 0;
+
+static void create_mutex(Thread* thr) {
+  m[i] = new Mutex(Mutex::leaf, FormatBuffer<128>("MyLock lock #%u", i), true, Mutex::_safepoint_check_never);
+  i++;
+}
+
+TEST_VM(MutexName, mutex_name) {
+  // Create mutexes in threads, where the names are created on the thread
+  // stacks and then check that their names are correct.
+  for (int i = 0; i < iterations; i++) {
+    nomt_test_doer(create_mutex);
+  }
+  for (int i = 0; i < iterations; i++) {
+    FormatBuffer<128> f("MyLock lock #%u", i);
+    ASSERT_STREQ(m[i]->name(), f.buffer()) << "Wrong name!";
+  }
+}
 
 #ifdef ASSERT
 
