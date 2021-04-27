@@ -1004,9 +1004,27 @@ public class DoubleByte {
                         Character.isLowSurrogate(src[sp])) {
                         sp++;
                     }
-                    dst[dp++] = repl[0];
-                    if (repl.length > 1)
+                    if (repl.length == 1) {
+                        if (currentState == DBCS) {
+                            currentState = SBCS;
+                            dst[dp++] = SI;
+                        }
+                        dst[dp++] = repl[0];
+                    } else if (repl.length == 4) {
+                        if (currentState == SBCS) {
+                            currentState = DBCS;
+                            dst[dp++] = SO;
+                        }
                         dst[dp++] = repl[1];
+                        dst[dp++] = repl[2];
+                    } else {
+                        if (currentState == SBCS) {
+                            currentState = DBCS;
+                            dst[dp++] = SO;
+                        }
+                        dst[dp++] = repl[0];
+                        dst[dp++] = repl[1];
+                    }
                     continue;
                 } //else
                 if (bb > MAX_SINGLEBYTE) {           // DoubleByte
@@ -1041,9 +1059,27 @@ public class DoubleByte {
                 int bb = encodeChar(c);
                 if (bb == UNMAPPABLE_ENCODING) {
                     // no surrogate pair in latin1 string
-                    dst[dp++] = repl[0];
-                    if (repl.length > 1)
+                    if (repl.length == 1) {
+                        if (currentState == DBCS) {
+                            currentState = SBCS;
+                            dst[dp++] = SI;
+                        }
+                        dst[dp++] = repl[0];
+                    } else if (repl.length == 4) {
+                        if (currentState == SBCS) {
+                            currentState = DBCS;
+                            dst[dp++] = SO;
+                        }
                         dst[dp++] = repl[1];
+                        dst[dp++] = repl[2];
+                    } else {
+                        if (currentState == SBCS) {
+                            currentState = DBCS;
+                            dst[dp++] = SO;
+                        }
+                        dst[dp++] = repl[0];
+                        dst[dp++] = repl[1];
+                    }
                     continue;
                 } //else
                 if (bb > MAX_SINGLEBYTE) {           // DoubleByte
@@ -1080,9 +1116,27 @@ public class DoubleByte {
                         Character.isLowSurrogate(StringUTF16.getChar(src, sp))) {
                         sp++;
                     }
-                    dst[dp++] = repl[0];
-                    if (repl.length > 1)
+                    if (repl.length == 1) {
+                        if (currentState == DBCS) {
+                            currentState = SBCS;
+                            dst[dp++] = SI;
+                        }
+                        dst[dp++] = repl[0];
+                    } else if (repl.length == 4) {
+                        if (currentState == SBCS) {
+                            currentState = DBCS;
+                            dst[dp++] = SO;
+                        }
                         dst[dp++] = repl[1];
+                        dst[dp++] = repl[2];
+                    } else {
+                        if (currentState == SBCS) {
+                            currentState = DBCS;
+                            dst[dp++] = SO;
+                        }
+                        dst[dp++] = repl[0];
+                        dst[dp++] = repl[1];
+                    }
                     continue;
                 } //else
                 if (bb > MAX_SINGLEBYTE) {           // DoubleByte

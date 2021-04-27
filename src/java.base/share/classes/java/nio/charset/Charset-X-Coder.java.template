@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,9 @@ public abstract class Charset$Coder$ {
     private final float max$ItypesPerOtype$;
 
     private $replType$ replacement;
+#if[encoder]
+    private char[] replacementChars = new char[] { '\uFFFD' };
+#end[encoder]
     private CodingErrorAction malformedInputAction
         = CodingErrorAction.REPORT;
     private CodingErrorAction unmappableCharacterAction
@@ -300,6 +303,12 @@ public abstract class Charset$Coder$ {
         this.replacement = Arrays.copyOf(newReplacement, newReplacement.$replLength$);
 #end[encoder]
         implReplaceWith(this.replacement);
+#if[encoder]
+        ByteBuffer bb = ByteBuffer.wrap(this.replacement);
+        CharBuffer cb = CharBuffer.wrap(replacementChars);
+        CoderResult cr = checkReplacement(bb, cb);
+        if (!cr.isUnderflow()) replacementChars[0] = '\uFFFD';
+#end[encoder]
         return this;
     }
 
@@ -319,6 +328,24 @@ public abstract class Charset$Coder$ {
 
     private WeakReference<CharsetDecoder> cachedDecoder = null;
 
+    private CoderResult checkReplacement(ByteBuffer bb, CharBuffer cb) {
+        WeakReference<CharsetDecoder> wr = cachedDecoder;
+        CharsetDecoder dec = null;
+        if ((wr == null) || ((dec = wr.get()) == null)) {
+            dec = charset().newDecoder();
+            dec.onMalformedInput(CodingErrorAction.REPORT);
+            dec.onUnmappableCharacter(CodingErrorAction.REPORT);
+            cachedDecoder = new WeakReference<CharsetDecoder>(dec);
+        } else {
+            dec.reset();
+        }
+        if (cb == null) {
+            cb = CharBuffer.allocate((int)(bb.remaining()
+                                     * dec.maxCharsPerByte()));
+        }
+        return dec.decode(bb, cb, true);
+    }
+
     /**
      * Tells whether or not the given byte array is a legal replacement value
      * for this encoder.
@@ -336,20 +363,8 @@ public abstract class Charset$Coder$ {
      *          is a legal replacement value for this encoder
      */
     public boolean isLegalReplacement(byte[] repl) {
-        WeakReference<CharsetDecoder> wr = cachedDecoder;
-        CharsetDecoder dec = null;
-        if ((wr == null) || ((dec = wr.get()) == null)) {
-            dec = charset().newDecoder();
-            dec.onMalformedInput(CodingErrorAction.REPORT);
-            dec.onUnmappableCharacter(CodingErrorAction.REPORT);
-            cachedDecoder = new WeakReference<CharsetDecoder>(dec);
-        } else {
-            dec.reset();
-        }
         ByteBuffer bb = ByteBuffer.wrap(repl);
-        CharBuffer cb = CharBuffer.allocate((int)(bb.remaining()
-                                                  * dec.maxCharsPerByte()));
-        CoderResult cr = dec.decode(bb, cb, true);
+        CoderResult cr = checkReplacement(bb, null);
         return !cr.isError();
     }
 
@@ -611,9 +626,29 @@ public abstract class Charset$Coder$ {
                 return cr;
 
             if (action == CodingErrorAction.REPLACE) {
+#if[encoder]
+                CoderResult crTemp;
+                if (replacementChars[0] == '\uFFFD'
+                    && !unmappableCharacterAction.equals(CodingErrorAction.REPLACE)) {
+                    CodingErrorAction currentAction = unmappableCharacterAction;
+                    onUnmappableCharacter(CodingErrorAction.REPLACE);
+                    crTemp = encodeLoop(CharBuffer.wrap(replacementChars), out);
+                    onUnmappableCharacter(currentAction);
+                } else {
+                    crTemp = encodeLoop(CharBuffer.wrap(replacementChars), out);
+                }
+                if (crTemp.isOverflow()) return crTemp;
+                if (crTemp.isError()) {
+                    if (out.remaining() < replacement.length)
+                        return CoderResult.OVERFLOW;
+                    out.put(replacement);
+                }
+#end[encoder]
+#if[decoder]
                 if (out.remaining() < replacement.$replLength$)
                     return CoderResult.OVERFLOW;
                 out.put(replacement);
+#end[decoder]
             }
 
             if ((action == CodingErrorAction.IGNORE)
