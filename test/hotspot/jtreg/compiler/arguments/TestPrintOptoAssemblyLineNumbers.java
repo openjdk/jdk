@@ -37,6 +37,8 @@ package compiler.arguments;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+//    THIS TEST IS LINE NUMBER SENSITIVE
+
 public class TestPrintOptoAssemblyLineNumbers {
     public static void main(String[] args) throws Throwable {
         // create subprocess to run some code with -XX:+PrintOptoAssembly enabled
@@ -53,7 +55,7 @@ public class TestPrintOptoAssemblyLineNumbers {
 
         if (oa.getOutput().contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11")) {
             // if C2 optimizer invoked ensure output includes line numbers:
-            oa.stdoutShouldContain("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11 (line 68)");
+            oa.stdoutShouldContain("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11 (line 70)");
         }
     }
 
