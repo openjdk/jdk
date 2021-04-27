@@ -81,9 +81,8 @@ struct WorkData {
 
 // The work gang is the collection of workers to execute tasks.
 // The number of workers run for a task is "_active_workers"
-// while "_total_workers" is the number of available of workers.
+// while "_total_workers" is the number of available workers.
 class WorkGang : public CHeapObj<mtInternal> {
- private:
   // The array of worker threads for this gang.
   GangWorker** _workers;
   // The count of the number of workers in the gang.

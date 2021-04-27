@@ -50,7 +50,7 @@ class WorkerManager : public AllStatic {
   // create all the worker at start should considered a problem so exit.
   // If initializing = false, there are already some number of worker
   // threads and a failure would not be optimal but should not be fatal.
-  static uint add_workers (WorkGang* holder,
+  static uint add_workers (WorkGang* workers,
                            uint active_workers,
                            uint total_workers,
                            uint created_workers,
@@ -58,14 +58,14 @@ class WorkerManager : public AllStatic {
                            bool initializing);
 
   // Log (at trace level) a change in the number of created workers.
-  static void log_worker_creation(WorkGang* holder,
+  static void log_worker_creation(WorkGang* workers,
                                   uint previous_created_workers,
                                   uint active_workers,
                                   uint created_workers,
                                   bool initializing);
 };
 
-uint WorkerManager::add_workers(WorkGang* holder,
+uint WorkerManager::add_workers(WorkGang* workers,
                                 uint active_workers,
                                 uint total_workers,
                                 uint created_workers,
@@ -76,7 +76,7 @@ uint WorkerManager::add_workers(WorkGang* holder,
   for (uint worker_id = start; worker_id < end; worker_id += 1) {
     WorkerThread* new_worker = NULL;
     if (initializing || !InjectGCWorkerCreationFailure) {
-      new_worker = holder->install_worker(worker_id);
+      new_worker = workers->install_worker(worker_id);
     }
     if (new_worker == NULL || !os::create_thread(new_worker, worker_type)) {
       log_trace(gc, task)("WorkerManager::add_workers() : "
@@ -98,7 +98,7 @@ uint WorkerManager::add_workers(WorkGang* holder,
   return created_workers;
 }
 
-void WorkerManager::log_worker_creation(WorkGang* holder,
+void WorkerManager::log_worker_creation(WorkGang* workers,
                                         uint previous_created_workers,
                                         uint active_workers,
                                         uint created_workers,
@@ -106,7 +106,7 @@ void WorkerManager::log_worker_creation(WorkGang* holder,
   if (previous_created_workers < created_workers) {
     const char* initializing_msg = initializing ? "Adding initial" : "Creating additional";
     log_trace(gc, task)("%s %s(s) previously created workers %u active workers %u total created workers %u",
-                        initializing_msg, holder->group_name(), previous_created_workers, active_workers, created_workers);
+                        initializing_msg, workers->group_name(), previous_created_workers, active_workers, created_workers);
   }
 }
 
