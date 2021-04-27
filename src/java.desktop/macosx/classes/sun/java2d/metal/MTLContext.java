@@ -32,7 +32,6 @@ import sun.java2d.pipe.hw.ContextCapabilities;
 
 import java.lang.annotation.Native;
 
-import static sun.java2d.pipe.BufferedOpCodes.INVALIDATE_CONTEXT;
 import static sun.java2d.pipe.BufferedOpCodes.SET_SCRATCH_SURFACE;
 
 /**
