@@ -44,9 +44,6 @@ class LambdaFormInvokers : public AllStatic {
   static GrowableArrayCHeap<char*, mtClassShared>* lambdaform_lines() {
     return _lambdaform_lines;
   }
-  static  Array<Array<char>*>* static_archive_invokers() {
-    return _static_archive_invokers;
-  }
   static void dump_static_archive_invokers();
   static void read_static_archive_invokers();
   static void serialize(SerializeClosure* soc);

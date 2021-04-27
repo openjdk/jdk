@@ -346,6 +346,7 @@ private:
   static SharedPathTable       _shared_path_table;
   static SharedPathTable       _saved_shared_path_table;
   static bool                  _validating_shared_path_table;
+
   // FileMapHeader describes the shared space data in the file to be
   // mapped.  This structure gets written to a file.  It is not a class, so
   // that the compilers don't add any compiler-private data to it.
