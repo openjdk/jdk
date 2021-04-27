@@ -34,7 +34,6 @@
 
 package compiler.arguments;
 
-import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -49,11 +48,12 @@ public class TestPrintOptoAssemblyLineNumbers {
         };
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
-        String output = new OutputAnalyzer(pb.start()).getOutput();
+        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        oa.shouldHaveExitValue(0);
 
-        if (output.contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11")) {
+        if (oa.getOutput().contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11")) {
             // if C2 optimizer invoked ensure output includes line numbers:
-            Asserts.assertTrue(output.contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11 (line 68)"));
+            oa.stdoutShouldContain("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11 (line 68)");
         }
     }
 
