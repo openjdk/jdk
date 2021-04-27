@@ -185,6 +185,9 @@ public abstract class Reader implements Readable, Closeable {
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {
+        if (target.isReadOnly())
+            throw new ReadOnlyBufferException();
+
         int nread;
         if (target.hasArray()) {
             char[] cbuf = target.array();
@@ -197,10 +200,10 @@ public abstract class Reader implements Readable, Closeable {
             if (nread > 0)
                 target.position(pos + nread);
         } else {
-            if (target.isReadOnly())
-                throw new ReadOnlyBufferException();
             int len = target.remaining();
             char[] cbuf = new char[len];
+            // If a read-only check had not been done above, then
+            // the stream would be incorrectly advanced here.
             nread = read(cbuf, 0, len);
             if (nread > 0)
                 target.put(cbuf, 0, nread);

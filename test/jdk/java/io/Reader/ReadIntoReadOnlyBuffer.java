@@ -49,7 +49,7 @@ public class ReadIntoReadOnlyBuffer {
     private static void read(Reader r, CharBuffer b) throws IOException {
         try {
             r.read(b);
-            throw new RuntimeException();
+            throw new RuntimeException("ReadOnlyBufferException expected");
         } catch (ReadOnlyBufferException expected) {
         }
 
