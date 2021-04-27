@@ -654,7 +654,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             if (document.isOpen()) {
                 document.close();
             }
-            writer.close();
+            if (writer != null) {
+                writer.close();
+            }
         }
     }
 
