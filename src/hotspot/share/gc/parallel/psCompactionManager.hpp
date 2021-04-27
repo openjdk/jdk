@@ -39,13 +39,11 @@ class ParallelCompactData;
 class ParMarkBitMap;
 
 class ParCompactionManager : public CHeapObj<mtGC> {
-  friend class CompactionWithStealingTask;
   friend class MarkFromRootsTask;
   friend class ParallelCompactRefProcProxyTask;
   friend class ParallelScavengeRefProcProxyTask;
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
-  friend class UpdateAndFillClosure;
   friend class UpdateDensePrefixAndCompactionTask;
 
  private:

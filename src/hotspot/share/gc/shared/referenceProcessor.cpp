@@ -221,24 +221,24 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
                                 total_count(_discoveredPhantomRefs));
 
   {
-    RefProcTotalPhaseTimesTracker tt(RefPhase1, &phase_times, this);
+    RefProcTotalPhaseTimesTracker tt(RefPhase1, &phase_times);
     process_soft_ref_reconsider(proxy_task, phase_times);
   }
 
   update_soft_ref_master_clock();
 
   {
-    RefProcTotalPhaseTimesTracker tt(RefPhase2, &phase_times, this);
+    RefProcTotalPhaseTimesTracker tt(RefPhase2, &phase_times);
     process_soft_weak_final_refs(proxy_task, phase_times);
   }
 
   {
-    RefProcTotalPhaseTimesTracker tt(RefPhase3, &phase_times, this);
+    RefProcTotalPhaseTimesTracker tt(RefPhase3, &phase_times);
     process_final_keep_alive(proxy_task, phase_times);
   }
 
   {
-    RefProcTotalPhaseTimesTracker tt(RefPhase4, &phase_times, this);
+    RefProcTotalPhaseTimesTracker tt(RefPhase4, &phase_times);
     process_phantom_refs(proxy_task, phase_times);
   }
 
@@ -775,15 +775,15 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
 }
 
 void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive) {
-  WorkGang* gang = Universe::heap()->safepoint_workers();
-  assert(gang != NULL || !processing_is_mt(), "can not dispatch multi threaded without a work gang");
   log_debug(gc, ref)("ReferenceProcessor::execute queues: %d, %s, marks_oops_alive: %s",
                      num_queues(),
                      processing_is_mt() ? "RefProcThreadModel::Multi" : "RefProcThreadModel::Single",
                      marks_oops_alive ? "true" : "false");
 
   proxy_task.prepare_run_task(task, num_queues(), processing_is_mt() ? RefProcThreadModel::Multi : RefProcThreadModel::Single, marks_oops_alive);
-  if (gang != NULL && processing_is_mt()) {
+  if (processing_is_mt()) {
+    WorkGang* gang = Universe::heap()->safepoint_workers();
+    assert(gang != NULL, "can not dispatch multi threaded without a work gang");
     assert(gang->active_workers() >= num_queues(),
            "Ergonomically chosen workers(%u) should be less than or equal to active workers(%u)",
            num_queues(), gang->active_workers());

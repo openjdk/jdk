@@ -588,6 +588,12 @@ class ReferenceProcessorAtomicMutator: StackObj {
 
 enum class RefProcThreadModel { Multi, Single };
 
+/*
+ * This is the (base) task that handles reference processing that does not depend on
+ * the chosen GC (Serial, Parallel or G1). This RefProcTask will be called from a subclass
+ * of RefProcProxyTask. The RefProcProxyTask will give the behaviour of the selected GC by
+ * calling rp_work with the gc-specific closures.
+ */
 class RefProcTask : StackObj {
 protected:
   ReferenceProcessor& _ref_processor;
@@ -605,6 +611,12 @@ public:
                        VoidClosure* complete_gc) = 0;
 };
 
+/*
+ * This is the (base) task that handles reference processing that do depend on
+ * the chosen GC (Serial, Parallel or G1). This RefProcProxyTask will call a subclass
+ * of RefProcTask that will handle reference processing in a generic way for Serial,
+ * Parallel and G1. This proxy will add the relevant closures, task terminators etc.
+ */
 class RefProcProxyTask : public AbstractGangTask {
 protected:
   const uint _max_workers;
