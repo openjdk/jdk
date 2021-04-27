@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,52 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8228888
- * @summary Test PhaseIdealLoop::has_local_phi_input() with phi input with non-dominating control.
+ * @bug 8265938
+ * @summary Test conditional move optimization with a TOP PhiNode.
  * @library /test/lib
- * @compile StrangeControl.jasm
- * @run main/othervm -Xbatch -XX:CompileCommand=inline,compiler.loopopts.StrangeControl::test
- *                   compiler.loopopts.TestStrangeControl
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.TestCMoveWithDeadPhi::test
+ *                   compiler.loopopts.TestCMoveWithDeadPhi
  */
 
 package compiler.loopopts;
 
 import jdk.test.lib.Utils;
 
-public class TestStrangeControl {
+public class TestCMoveWithDeadPhi {
+
+    static void test(boolean b) {
+        if (b) {
+            long l = 42;
+            for (int i = 0; i < 100; i++) {
+                if (i < 10) {
+                    l++;
+                    if (i == 5) {
+                        break;
+                    }
+                }
+            }
+
+            // Infinite loop
+            for (int j = 0; j < 100; j++) {
+                j--;
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
+        // Execute test in own thread because it contains an infinite loop
         Thread thread = new Thread() {
             public void run() {
-                // Run this in an own thread because it's basically an endless loop
-                StrangeControl.test(42);
+                for (int i = 0; i < 50_000; ++i) {
+                    test((i % 2) == 0);
+                }
             }
         };
+        // Give thread some time to trigger compilation
         thread.setDaemon(true);
         thread.start();
-        // Give thread executing strange control loop enough time to trigger OSR compilation
         Thread.sleep(Utils.adjustTimeout(4000));
     }
 }
