@@ -26,6 +26,7 @@
  * @bug 8026949 8164091
  * @summary Test ensures correct VM output during startup
  * @library /test/lib
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  *

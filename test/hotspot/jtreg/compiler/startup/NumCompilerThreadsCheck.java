@@ -26,6 +26,7 @@
  * @bug 8034775
  * @summary Ensures correct minimal number of compiler threads (provided by -XX:CICompilerCount=)
  * @library /test/lib
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
