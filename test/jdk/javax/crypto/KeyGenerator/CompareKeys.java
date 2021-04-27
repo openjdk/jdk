@@ -79,21 +79,23 @@ public class CompareKeys {
      */
     private static void checkKeyEquality(Key origKey, Key copyKey) {
 
-        if (!(origKey.equals(copyKey)
-                || origKey.hashCode() == copyKey.hashCode())
-                && !Arrays.equals(origKey.getEncoded(), copyKey.getEncoded())
-                && !origKey.getFormat().equals(copyKey.getFormat())) {
-            System.out.println("Result- equals/hashCode: "
-                    + !(origKey.equals(copyKey)
-                    || origKey.hashCode() == copyKey.hashCode()));
+        if ((origKey.equals(copyKey)
+                && origKey.hashCode() == copyKey.hashCode()
+                && Arrays.equals(origKey.getEncoded(), copyKey.getEncoded())
+                && origKey.getFormat().equals(copyKey.getFormat()))) {
+            System.out.printf("%s equality check Passed%n",
+                    origKey.getClass().getName());
+        } else {
+            System.out.println("Result- equals: "
+                    + !origKey.equals(copyKey));
+            System.out.println("Result- hashCode: "
+                    + !(origKey.hashCode() == copyKey.hashCode()));
             System.out.println("Result- encoded check: " + !Arrays.equals(
                     origKey.getEncoded(), copyKey.getEncoded()));
             System.out.println("Result- format check: "
                     + !origKey.getFormat().equals(copyKey.getFormat()));
             throw new RuntimeException("Key inequality found");
         }
-        System.out.printf("%s equality check Passed%n",
-                origKey.getClass().getName());
     }
 
     private static Key copy(String algo, Key key) throws Exception {
@@ -118,8 +120,8 @@ public class CompareKeys {
         for (Provider p : Security.getProviders()) {
             for (Provider.Service s : p.getServices()) {
                 // Ignore the algorithms from the list which require
-                // pre-initialisation to make the Test generic across algorithms
-                // SunMSCAPI provider ignored too because of incompatibilty
+                // pre-initialisation to make the Test generic across algorithms.
+                // SunMSCAPI provider is ignored too because of incompatibilty
                 // for serialization and with PKCS8EncodedKeySpec for certain
                 // algorithms like RSA.
                 if (s.getType().contains(type)
