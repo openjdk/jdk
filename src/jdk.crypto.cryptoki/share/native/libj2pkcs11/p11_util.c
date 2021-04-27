@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -182,27 +182,48 @@ void removeAllModuleEntries(JNIEnv *env) {
 /*
  * function to convert a PKCS#11 return value into a PKCS#11Exception
  *
- * This function generates a PKCS#11Exception with the returnValue as the errorcode
- * if the returnValue is not CKR_OK. The functin returns 0, if the returnValue is
- * CKR_OK. Otherwise, it returns the returnValue as a jLong.
+ * This function generates a PKCS#11Exception with the returnValue as the
+ * errorcode. If the returnValue is not CKR_OK. The functin returns 0, if the
+ * returnValue is CKR_OK. Otherwise, it returns the returnValue as a jLong.
  *
  * @param env - used to call JNI funktions and to get the Exception class
  * @param returnValue - of the PKCS#11 function
  */
-jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue)
-{
+jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue) {
+    return ckAssertReturnValueOK2(env, returnValue, NULL);
+}
+
+/*
+ * function to convert a PKCS#11 return value and additional message into a
+ * PKCS#11Exception
+ *
+ * This function generates a PKCS#11Exception with the returnValue as the
+ * errorcode. If the returnValue is not CKR_OK. The functin returns 0, if the
+ * returnValue is CKR_OK. Otherwise, it returns the returnValue as a jLong.
+ *
+ * @param env - used to call JNI funktions and to get the Exception class
+ * @param returnValue - of the PKCS#11 function
+ * @param msg - additional message for the generated PKCS11Exception
+ */
+jlong ckAssertReturnValueOK2(JNIEnv *env, CK_RV returnValue, const char* msg) {
     jclass jPKCS11ExceptionClass;
     jmethodID jConstructor;
     jthrowable jPKCS11Exception;
     jlong jErrorCode = 0L;
+    jstring jMsg = NULL;
 
     if (returnValue != CKR_OK) {
         jErrorCode = ckULongToJLong(returnValue);
         jPKCS11ExceptionClass = (*env)->FindClass(env, CLASS_PKCS11EXCEPTION);
         if (jPKCS11ExceptionClass != NULL) {
-            jConstructor = (*env)->GetMethodID(env, jPKCS11ExceptionClass, "<init>", "(J)V");
+            jConstructor = (*env)->GetMethodID(env, jPKCS11ExceptionClass,
+                    "<init>", "(JLjava/lang/String;)V");
             if (jConstructor != NULL) {
-                jPKCS11Exception = (jthrowable) (*env)->NewObject(env, jPKCS11ExceptionClass, jConstructor, jErrorCode);
+                if (msg != NULL) {
+                    jMsg = (*env)->NewStringUTF(env, msg);
+                }
+                jPKCS11Exception = (jthrowable) (*env)->NewObject(env,
+                        jPKCS11ExceptionClass, jConstructor, jErrorCode, jMsg);
                 if (jPKCS11Exception != NULL) {
                     (*env)->Throw(env, jPKCS11Exception);
                 }
@@ -210,7 +231,7 @@ jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue)
         }
         (*env)->DeleteLocalRef(env, jPKCS11ExceptionClass);
     }
-    return jErrorCode ;
+    return jErrorCode;
 }
 
 

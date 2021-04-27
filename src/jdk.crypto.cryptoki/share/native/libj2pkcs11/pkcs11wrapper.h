@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -305,6 +305,7 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr);
  */
 
 jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue);
+jlong ckAssertReturnValueOK2(JNIEnv *env, CK_RV returnValue, const char *msg);
 void throwOutOfMemoryError(JNIEnv *env, const char *message);
 void throwNullPointerException(JNIEnv *env, const char *message);
 void throwIOException(JNIEnv *env, const char *message);
