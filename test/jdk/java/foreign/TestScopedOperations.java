@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestScopedOperations
  */
 
