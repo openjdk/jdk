@@ -32,7 +32,7 @@
 template <typename E, MEMFLAGS F>
 class GrowableArrayCHeap;
 
-// G1AbstractSubTask represents a task to be performed either within an
+// G1AbstractSubTask represents a task to be performed either within a
 // G1BatchedGangTask running on a single worker ("serially") or multiple workers
 // ("in parallel"). A G1AbstractSubTask is always associated with a phase tag
 // that is used to automatically store timing information.
@@ -92,14 +92,12 @@ public:
 //   [...]
 //
 // During execution in the work gang, this class will make sure that the "serial"
-// tasks are executed by a single worker only exactly once, but different "serial"
+// tasks are executed by a single worker exactly once, but different "serial"
 // tasks may be executed in parallel using different workers. "Parallel" tasks'
 // do_work() method may be called by different workers passing a different
-// worker_id at the same time, but at most once per given worker id.
+// worker_id at the same time, but at most once per given worker_id.
 //
-// The G1AbstractSubTask's do_work() method gets a unique worker_id each time the
-// method is called.
-// There is no guarantee that G1AbstractSubTasks::do_work() of different tasks
+// There is also no guarantee that G1AbstractSubTasks::do_work() of different tasks
 // are actually run in parallel.
 //
 // The current implementation assumes that constructors and destructors of the
