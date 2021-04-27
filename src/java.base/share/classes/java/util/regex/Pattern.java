@@ -2663,7 +2663,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                                     right = right.union(clazz(true));
                             } else { // abc&&def
                                 unread();
-                                right = clazz(false);
+                                if (right == null) {
+                                    right = clazz(false);
+                                } else {
+                                    right = right.union(clazz(false));
+                                }
                             }
                             ch = peek();
                         }

@@ -504,97 +504,106 @@ final class CipherCore {
                   || (opmode == Cipher.UNWRAP_MODE);
 
         byte[] keyBytes = getKeyBytes(key);
-        int tagLen = -1;
-        byte[] ivBytes = null;
-        if (params != null) {
-            if (cipherMode == GCM_MODE) {
-                if (params instanceof GCMParameterSpec) {
-                    tagLen = ((GCMParameterSpec)params).getTLen();
-                    if (tagLen < 96 || tagLen > 128 || ((tagLen & 0x07) != 0)) {
+        try {
+            int tagLen = -1;
+            byte[] ivBytes = null;
+            if (params != null) {
+                if (cipherMode == GCM_MODE) {
+                    if (params instanceof GCMParameterSpec) {
+                        tagLen = ((GCMParameterSpec) params).getTLen();
+                        if (tagLen < 96 || tagLen > 128 || ((tagLen & 0x07) != 0)) {
+                            throw new InvalidAlgorithmParameterException
+                                    ("Unsupported TLen value; must be one of " +
+                                            "{128, 120, 112, 104, 96}");
+                        }
+                        tagLen = tagLen >> 3;
+                        ivBytes = ((GCMParameterSpec) params).getIV();
+                    } else {
                         throw new InvalidAlgorithmParameterException
-                            ("Unsupported TLen value; must be one of " +
-                             "{128, 120, 112, 104, 96}");
-                    }
-                    tagLen = tagLen >> 3;
-                    ivBytes = ((GCMParameterSpec)params).getIV();
-                } else {
-                    throw new InvalidAlgorithmParameterException
-                        ("Unsupported parameter: " + params);
-               }
-            } else {
-                if (params instanceof IvParameterSpec) {
-                    ivBytes = ((IvParameterSpec)params).getIV();
-                    if ((ivBytes == null) || (ivBytes.length != blockSize)) {
-                        throw new InvalidAlgorithmParameterException
-                            ("Wrong IV length: must be " + blockSize +
-                             " bytes long");
-                    }
-                } else if (params instanceof RC2ParameterSpec) {
-                    ivBytes = ((RC2ParameterSpec)params).getIV();
-                    if ((ivBytes != null) && (ivBytes.length != blockSize)) {
-                        throw new InvalidAlgorithmParameterException
-                            ("Wrong IV length: must be " + blockSize +
-                             " bytes long");
+                                ("Unsupported parameter: " + params);
                     }
                 } else {
-                    throw new InvalidAlgorithmParameterException
-                        ("Unsupported parameter: " + params);
+                    if (params instanceof IvParameterSpec) {
+                        ivBytes = ((IvParameterSpec) params).getIV();
+                        if ((ivBytes == null) || (ivBytes.length != blockSize)) {
+                            throw new InvalidAlgorithmParameterException
+                                    ("Wrong IV length: must be " + blockSize +
+                                            " bytes long");
+                        }
+                    } else if (params instanceof RC2ParameterSpec) {
+                        ivBytes = ((RC2ParameterSpec) params).getIV();
+                        if ((ivBytes != null) && (ivBytes.length != blockSize)) {
+                            throw new InvalidAlgorithmParameterException
+                                    ("Wrong IV length: must be " + blockSize +
+                                            " bytes long");
+                        }
+                    } else {
+                        throw new InvalidAlgorithmParameterException
+                                ("Unsupported parameter: " + params);
+                    }
                 }
             }
-        }
-        if (cipherMode == ECB_MODE) {
-            if (ivBytes != null) {
-                throw new InvalidAlgorithmParameterException
-                                                ("ECB mode cannot use IV");
-            }
-        } else if (ivBytes == null)  {
-            if (decrypting) {
-                throw new InvalidAlgorithmParameterException("Parameters "
-                                                             + "missing");
+            if (cipherMode == ECB_MODE) {
+                if (ivBytes != null) {
+                    throw new InvalidAlgorithmParameterException
+                            ("ECB mode cannot use IV");
+                }
+            } else if (ivBytes == null) {
+                if (decrypting) {
+                    throw new InvalidAlgorithmParameterException("Parameters "
+                            + "missing");
+                }
+
+                if (random == null) {
+                    random = SunJCE.getRandom();
+                }
+                if (cipherMode == GCM_MODE) {
+                    ivBytes = new byte[GaloisCounterMode.DEFAULT_IV_LEN];
+                } else {
+                    ivBytes = new byte[blockSize];
+                }
+                random.nextBytes(ivBytes);
             }
 
-            if (random == null) {
-                random = SunJCE.getRandom();
-            }
+            buffered = 0;
+            diffBlocksize = blockSize;
+
+            String algorithm = key.getAlgorithm();
+
+            // GCM mode needs additional handling
             if (cipherMode == GCM_MODE) {
-                ivBytes = new byte[GaloisCounterMode.DEFAULT_IV_LEN];
-            } else {
-                ivBytes = new byte[blockSize];
-            }
-            random.nextBytes(ivBytes);
-        }
-
-        buffered = 0;
-        diffBlocksize = blockSize;
-
-        String algorithm = key.getAlgorithm();
-
-        // GCM mode needs additional handling
-        if (cipherMode == GCM_MODE) {
-            if(tagLen == -1) {
-                tagLen = GaloisCounterMode.DEFAULT_TAG_LEN;
-            }
-            if (decrypting) {
-                minBytes = tagLen;
-            } else {
-                // check key+iv for encryption in GCM mode
-                requireReinit =
-                    Arrays.equals(ivBytes, lastEncIv) &&
-                    MessageDigest.isEqual(keyBytes, lastEncKey);
-                if (requireReinit) {
-                    throw new InvalidAlgorithmParameterException
-                        ("Cannot reuse iv for GCM encryption");
+                if (tagLen == -1) {
+                    tagLen = GaloisCounterMode.DEFAULT_TAG_LEN;
                 }
-                lastEncIv = ivBytes;
-                lastEncKey = keyBytes;
+                if (decrypting) {
+                    minBytes = tagLen;
+                } else {
+                    // check key+iv for encryption in GCM mode
+                    requireReinit =
+                            Arrays.equals(ivBytes, lastEncIv) &&
+                                    MessageDigest.isEqual(keyBytes, lastEncKey);
+                    if (requireReinit) {
+                        throw new InvalidAlgorithmParameterException
+                                ("Cannot reuse iv for GCM encryption");
+                    }
+                    lastEncIv = ivBytes;
+                    if (lastEncKey != null) {
+                        Arrays.fill(lastEncKey, (byte) 0);
+                    }
+                    lastEncKey = keyBytes;
+                }
+                ((GaloisCounterMode) cipher).init
+                        (decrypting, algorithm, keyBytes, ivBytes, tagLen);
+            } else {
+                cipher.init(decrypting, algorithm, keyBytes, ivBytes);
             }
-            ((GaloisCounterMode) cipher).init
-                (decrypting, algorithm, keyBytes, ivBytes, tagLen);
-        } else {
-            cipher.init(decrypting, algorithm, keyBytes, ivBytes);
+            // skip checking key+iv from now on until after doFinal()
+            requireReinit = false;
+        } finally {
+            if (lastEncKey != keyBytes) {
+                Arrays.fill(keyBytes, (byte) 0);
+            }
         }
-        // skip checking key+iv from now on until after doFinal()
-        requireReinit = false;
     }
 
     void init(int opmode, Key key, AlgorithmParameters params,
@@ -1156,7 +1165,11 @@ final class CipherCore {
                 throw new InvalidKeyException("Cannot get an encoding of " +
                                               "the key to be wrapped");
             }
-            result = doFinal(encodedKey, 0, encodedKey.length);
+            try {
+                result = doFinal(encodedKey, 0, encodedKey.length);
+            } finally {
+                Arrays.fill(encodedKey, (byte)0);
+            }
         } catch (BadPaddingException e) {
             // Should never happen
         }
@@ -1197,8 +1210,12 @@ final class CipherCore {
             throw new InvalidKeyException("The wrapped key does not have " +
                                           "the correct length");
         }
-        return ConstructKeys.constructKey(encodedKey, wrappedKeyAlgorithm,
-                                          wrappedKeyType);
+        try {
+            return ConstructKeys.constructKey(encodedKey, wrappedKeyAlgorithm,
+                    wrappedKeyType);
+        } finally {
+            Arrays.fill(encodedKey, (byte)0);
+        }
     }
 
     /**

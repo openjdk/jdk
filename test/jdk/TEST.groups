@@ -74,10 +74,6 @@ tier3 = \
     :build \
     :jdk_vector \
     :jdk_rmi \
-    :jdk_beans \
-    :jdk_imageio \
-    :jdk_sound \
-    :jdk_client_sanity \
     :jdk_jfr_tier3
 
 ###############################################################################

@@ -238,36 +238,32 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return f.isDateBased() || f.isTimeBased();
+        if (field instanceof ChronoField chronoField) {
+            return chronoField.isDateBased() || chronoField.isTimeBased();
         }
         return field != null && field.isSupportedBy(this);
     }
 
     @Override
     public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return (f.isTimeBased() ? time.range(field) : date.range(field));
+        if (field instanceof ChronoField chronoField) {
+            return (chronoField.isTimeBased() ? time.range(field) : date.range(field));
         }
         return field.rangeRefinedBy(this);
     }
 
     @Override
     public int get(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return (f.isTimeBased() ? time.get(field) : date.get(field));
+        if (field instanceof ChronoField chronoField) {
+            return (chronoField.isTimeBased() ? time.get(field) : date.get(field));
         }
         return range(field).checkValidIntValue(getLong(field), field);
     }
 
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return (f.isTimeBased() ? time.getLong(field) : date.getLong(field));
+        if (field instanceof ChronoField chronoField) {
+            return (chronoField.isTimeBased() ? time.getLong(field) : date.getLong(field));
         }
         return field.getFrom(this);
     }
@@ -289,9 +285,8 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
 
     @Override
     public ChronoLocalDateTimeImpl<D> with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (f.isTimeBased()) {
+        if (field instanceof ChronoField chronoField) {
+            if (chronoField.isTimeBased()) {
                 return with(date, time.with(field, newValue));
             } else {
                 return with(date.with(field, newValue), time);
@@ -303,9 +298,8 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     //-----------------------------------------------------------------------
     @Override
     public ChronoLocalDateTimeImpl<D> plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            switch (f) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case NANOS: return plusNanos(amountToAdd);
                 case MICROS: return plusDays(amountToAdd / MICROS_PER_DAY).plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
                 case MILLIS: return plusDays(amountToAdd / MILLIS_PER_DAY).plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000000);
@@ -373,10 +367,10 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
         Objects.requireNonNull(endExclusive, "endExclusive");
         @SuppressWarnings("unchecked")
         ChronoLocalDateTime<D> end = (ChronoLocalDateTime<D>) getChronology().localDateTime(endExclusive);
-        if (unit instanceof ChronoUnit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
             if (unit.isTimeBased()) {
                 long amount = end.getLong(EPOCH_DAY) - date.getLong(EPOCH_DAY);
-                switch ((ChronoUnit) unit) {
+                switch (chronoUnit) {
                     case NANOS: amount = Math.multiplyExact(amount, NANOS_PER_DAY); break;
                     case MICROS: amount = Math.multiplyExact(amount, MICROS_PER_DAY); break;
                     case MILLIS: amount = Math.multiplyExact(amount, MILLIS_PER_DAY); break;

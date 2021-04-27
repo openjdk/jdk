@@ -38,7 +38,7 @@ hotspot_compiler_xcomp = \
 
 hotspot_compiler_all_gcs = \
   :hotspot_compiler \
-  -:tier1_compiler_aot_jvmci \
+  -compiler/jvmci \
   -compiler/graalunit
 
 hotspot_gc = \
@@ -151,12 +151,7 @@ tier1_compiler_3 = \
   -compiler/runtime/Test6826736.java
 
 tier1_compiler_not_xcomp = \
-  compiler/aot \
   compiler/profiling
-
-tier1_compiler_aot_jvmci = \
-  compiler/aot \
-  compiler/jvmci
 
 tier1_compiler_graal = \
   compiler/graalunit/HotspotTest.java
@@ -324,7 +319,8 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
  -runtime/cds/appcds/javaldr/HumongousDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
- -runtime/cds/appcds/jcmd/JCmdTest.java \
+ -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
+ -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/ArchiveRelocationTest.java \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,10 +100,6 @@ public class VerifySystemPropertyUsage extends VerifyPhase<CoreProviders> {
             // JFR for SVM must read system properties in:
             // * its JDK substitutions to mimic required JDK semantics
             // * native-image for config info
-            return;
-        } else if (packageName.startsWith("jdk.tools.jaotc")) {
-            // Workaround since jdk.internal.vm.ci/jdk.vm.ci.services is not exported to jdk.aot.
-            // The jaotc launcher dynamically adds these exports.
             return;
         }
         for (MethodCallTargetNode t : graph.getNodes(MethodCallTargetNode.TYPE)) {

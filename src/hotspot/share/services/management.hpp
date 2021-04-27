@@ -28,6 +28,7 @@
 #include "jmm.h"
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/timer.hpp"
 

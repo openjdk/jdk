@@ -73,3 +73,18 @@ TEST_VM(MetaspaceUtils, committed_compressed_class_pointers) {
   EXPECT_LE(committed_class, committed);
 }
 
+TEST_VM(MetaspaceUtils, non_compressed_class_pointers) {
+  if (UseCompressedClassPointers) {
+    return;
+  }
+
+  size_t committed_class = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
+  EXPECT_EQ(committed_class, 0UL);
+
+  size_t used_class = MetaspaceUtils::used_bytes(Metaspace::ClassType);
+  EXPECT_EQ(used_class, 0UL);
+
+  size_t reserved_class = MetaspaceUtils::reserved_bytes(Metaspace::ClassType);
+  EXPECT_EQ(reserved_class, 0UL);
+}
+
