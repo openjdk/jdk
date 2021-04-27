@@ -149,13 +149,12 @@ public class CLHSDB {
                 doUsage();
                 return;
             }
-            // If all numbers, it is a PID to attach to
-            // Else, it is a pathname to a .../bin/java for a core file.
             try {
+                // Attempt to attach as a PID
                 pid = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                execPath = args[0];
-                coreFilename = "core";
+                // Attempt to connect to remote debug server
+                debugServerName = args[0];
             }
             break;
 
@@ -256,7 +255,7 @@ public class CLHSDB {
         exceed the given number of characters per line. Strips
         extraneous whitespace. */
     private String formatMessage(String message, int charsPerLine) {
-        StringBuffer buf = new StringBuffer(message.length());
+        StringBuilder buf = new StringBuilder(message.length());
         StringTokenizer tokenizer = new StringTokenizer(message);
         int curLineLength = 0;
         while (tokenizer.hasMoreTokens()) {

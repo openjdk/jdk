@@ -30,6 +30,7 @@ package com.sun.tools.javac.comp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
@@ -700,7 +701,7 @@ public class Flow {
             TypeSymbol selectorSym = tree.selector.type.tsym;
             if ((selectorSym.flags() & ENUM) != 0) {
                 constants = new HashSet<>();
-                Filter<Symbol> enumConstantFilter =
+                Predicate<Symbol> enumConstantFilter =
                         s -> (s.flags() & ENUM) != 0 && s.kind == Kind.VAR;
                 for (Symbol s : selectorSym.members().getSymbols(enumConstantFilter)) {
                     constants.add(s.name);
@@ -748,11 +749,10 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             for (JCTree resource : tree.resources) {
-                if (resource instanceof JCVariableDecl) {
-                    JCVariableDecl vdecl = (JCVariableDecl) resource;
-                    visitVarDef(vdecl);
-                } else if (resource instanceof JCExpression) {
-                    scan((JCExpression) resource);
+                if (resource instanceof JCVariableDecl variableDecl) {
+                    visitVarDef(variableDecl);
+                } else if (resource instanceof JCExpression expression) {
+                    scan(expression);
                 } else {
                     throw new AssertionError(tree);  // parser error
                 }
@@ -942,8 +942,7 @@ public class Flow {
             for (PendingExit exit = pendingExits.next();
                  exit != null;
                  exit = pendingExits.next()) {
-                if (exit instanceof ThrownPendingExit) {
-                    ThrownPendingExit thrownExit = (ThrownPendingExit) exit;
+                if (exit instanceof ThrownPendingExit thrownExit) {
                     if (classDef != null &&
                         classDef.pos == exit.tree.pos) {
                         log.error(exit.tree.pos(),
@@ -1221,11 +1220,10 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             for (JCTree resource : tree.resources) {
-                if (resource instanceof JCVariableDecl) {
-                    JCVariableDecl vdecl = (JCVariableDecl) resource;
-                    visitVarDef(vdecl);
-                } else if (resource instanceof JCExpression) {
-                    scan((JCExpression) resource);
+                if (resource instanceof JCVariableDecl variableDecl) {
+                    visitVarDef(variableDecl);
+                } else if (resource instanceof JCExpression expression) {
+                    scan(expression);
                 } else {
                     throw new AssertionError(tree);  // parser error
                 }
@@ -2431,13 +2429,12 @@ public class Flow {
             final Bits initsTry = new Bits(inits);
             uninitsTry.assign(uninits);
             for (JCTree resource : tree.resources) {
-                if (resource instanceof JCVariableDecl) {
-                    JCVariableDecl vdecl = (JCVariableDecl) resource;
-                    visitVarDef(vdecl);
-                    unrefdResources.enter(vdecl.sym);
-                    resourceVarDecls.append(vdecl);
-                } else if (resource instanceof JCExpression) {
-                    scanExpr((JCExpression) resource);
+                if (resource instanceof JCVariableDecl variableDecl) {
+                    visitVarDef(variableDecl);
+                    unrefdResources.enter(variableDecl.sym);
+                    resourceVarDecls.append(variableDecl);
+                } else if (resource instanceof JCExpression expression) {
+                    scanExpr(expression);
                 } else {
                     throw new AssertionError(tree);  // parser error
                 }
@@ -2494,9 +2491,9 @@ public class Flow {
                     // versus finally!
                     while (exits.nonEmpty()) {
                         PendingExit exit = exits.next();
-                        if (exit instanceof AssignPendingExit) {
-                            ((AssignPendingExit) exit).exit_inits.orSet(inits);
-                            ((AssignPendingExit) exit).exit_uninits.andSet(uninits);
+                        if (exit instanceof AssignPendingExit assignPendingExit) {
+                            assignPendingExit.exit_inits.orSet(inits);
+                            assignPendingExit.exit_uninits.andSet(uninits);
                         }
                         pendingExits.append(exit);
                     }

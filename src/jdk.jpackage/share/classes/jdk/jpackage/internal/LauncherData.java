@@ -238,7 +238,7 @@ final class LauncherData {
                                   .relativize(p.toAbsolutePath()))
                         .collect(Collectors.toSet());
                 jars.remove(mainJarName);
-                classPath = jars.stream().sorted().collect(Collectors.toList());
+                classPath = jars.stream().sorted().toList();
             }
         }
     }

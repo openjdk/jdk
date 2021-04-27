@@ -38,8 +38,8 @@ import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
 
 final class Dispatcher {
 
-    final static class EventDispatcher {
-        private final static EventDispatcher[] NO_DISPATCHERS = new EventDispatcher[0];
+    static final class EventDispatcher {
+        private static final EventDispatcher[] NO_DISPATCHERS = new EventDispatcher[0];
 
         private final String eventName;
         private final Consumer<RecordedEvent> action;

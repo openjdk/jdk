@@ -569,6 +569,9 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                         Finishings[] fAll = (Finishings[])
                             (new ExtFinishing(100)).getAll();
                         for (int j=0; j<fAll.length; j++) {
+                            if (fAll[j] == null) {
+                                continue;
+                            }
                             if (finArray[i] == fAll[j].getValue()) {
                                 finSup[i] = fAll[j];
                                 break;

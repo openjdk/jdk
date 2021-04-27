@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,7 @@ class ReplParser extends JavacParser {
                         nextToken();
                         JCStatement stat = parseStatement();
                         return List.<JCTree>of(F.at(pos).Labelled(prevToken.name(), stat));
-                    } else if ((isVoid || (lastmode & TYPE) != 0) && LAX_IDENTIFIER.accepts(token.kind)) {
+                    } else if ((isVoid || (lastmode & TYPE) != 0) && LAX_IDENTIFIER.test(token.kind)) {
                         // we have "Type Ident", so we can assume it is variable or method declaration
                         pos = token.pos;
                         Name name = ident();

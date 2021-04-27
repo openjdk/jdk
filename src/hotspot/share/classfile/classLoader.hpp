@@ -65,10 +65,10 @@ public:
   ClassPathEntry() : _next(NULL) {}
   // Attempt to locate file_name through this class path entry.
   // Returns a class file parsing stream if successfull.
-  virtual ClassFileStream* open_stream(const char* name, TRAPS) = 0;
+  virtual ClassFileStream* open_stream(Thread* current, const char* name) = 0;
   // Open the stream for a specific class loader
-  virtual ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS) {
-    return open_stream(name, THREAD);
+  virtual ClassFileStream* open_stream_for_loader(Thread* current, const char* name, ClassLoaderData* loader_data) {
+    return open_stream(current, name);
   }
 };
 
@@ -81,7 +81,7 @@ class ClassPathDirEntry: public ClassPathEntry {
     _dir = copy_path(dir);
   }
   virtual ~ClassPathDirEntry() {}
-  ClassFileStream* open_stream(const char* name, TRAPS);
+  ClassFileStream* open_stream(Thread* current, const char* name);
 };
 
 // Type definitions for zip file and zip file entry
@@ -108,8 +108,8 @@ class ClassPathZipEntry: public ClassPathEntry {
   const char* name() const { return _zip_name; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append, bool from_class_path_attr);
   virtual ~ClassPathZipEntry();
-  u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
-  ClassFileStream* open_stream(const char* name, TRAPS);
+  u1* open_entry(Thread* current, const char* name, jint* filesize, bool nul_terminate);
+  ClassFileStream* open_stream(Thread* current, const char* name);
   void contents_do(void f(const char* name, void* context), void* context);
 };
 
@@ -117,19 +117,18 @@ class ClassPathZipEntry: public ClassPathEntry {
 // For java image files
 class ClassPathImageEntry: public ClassPathEntry {
 private:
-  JImageFile* _jimage;
   const char* _name;
   DEBUG_ONLY(static ClassPathImageEntry* _singleton;)
 public:
   bool is_modules_image() const;
-  bool is_open() const { return _jimage != NULL; }
   const char* name() const { return _name == NULL ? "" : _name; }
-  JImageFile* jimage() const { return _jimage; }
+  JImageFile* jimage() const;
+  JImageFile* jimage_non_null() const;
   void close_jimage();
   ClassPathImageEntry(JImageFile* jimage, const char* name);
-  virtual ~ClassPathImageEntry();
-  ClassFileStream* open_stream(const char* name, TRAPS);
-  ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS);
+  virtual ~ClassPathImageEntry() { ShouldNotReachHere(); }
+  ClassFileStream* open_stream(Thread* current, const char* name);
+  ClassFileStream* open_stream_for_loader(Thread* current, const char* name, ClassLoaderData* loader_data);
 };
 
 // ModuleClassPathList contains a linked list of ClassPathEntry's
@@ -222,12 +221,12 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static ClassPathEntry* _last_app_classpath_entry;)
   CDS_ONLY(static ClassPathEntry* _module_path_entries;)
   CDS_ONLY(static ClassPathEntry* _last_module_path_entry;)
-  CDS_ONLY(static void setup_app_search_path(const char* class_path, TRAPS);)
-  CDS_ONLY(static void setup_module_search_path(const char* path, TRAPS);)
-  static void add_to_app_classpath_entries(const char* path,
+  CDS_ONLY(static void setup_app_search_path(Thread* current, const char* class_path);)
+  CDS_ONLY(static void setup_module_search_path(Thread* current, const char* path);)
+  static void add_to_app_classpath_entries(Thread* current,
+                                           const char* path,
                                            ClassPathEntry* entry,
-                                           bool check_for_duplicates,
-                                           TRAPS);
+                                           bool check_for_duplicates);
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
                                            ClassPathEntry* entry);)
  public:
@@ -241,8 +240,8 @@ class ClassLoader: AllStatic {
   //   - setup the boot loader's system class path
   //   - setup the boot loader's patch mod entries, if present
   //   - create the ModuleEntry for java.base
-  static void setup_bootstrap_search_path(TRAPS);
-  static void setup_bootstrap_search_path_impl(const char *class_path, TRAPS);
+  static void setup_bootstrap_search_path(Thread* current);
+  static void setup_bootstrap_search_path_impl(Thread* current, const char *class_path);
   static void setup_patch_mod_entries();
   static void create_javabase();
 
@@ -258,10 +257,10 @@ class ClassLoader: AllStatic {
   static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
 
  public:
-  static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
-                                                 bool throw_exception,
+  static ClassPathEntry* create_class_path_entry(Thread* current,
+                                                 const char *path, const struct stat* st,
                                                  bool is_boot_append,
-                                                 bool from_class_path_attr, TRAPS);
+                                                 bool from_class_path_attr);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
@@ -270,11 +269,11 @@ class ClassLoader: AllStatic {
                                               int class_name_len);
   static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data);
   static int crc32(int crc, const char* buf, int len);
-  static bool update_class_path_entry_list(const char *path,
+  static bool update_class_path_entry_list(Thread* current,
+                                           const char *path,
                                            bool check_for_duplicates,
                                            bool is_boot_append,
-                                           bool from_class_path_attr,
-                                           TRAPS);
+                                           bool from_class_path_attr);
   static void print_bootclasspath();
 
   // Timing
@@ -311,12 +310,13 @@ class ClassLoader: AllStatic {
   static void close_jrt_image();
 
   // Add a module's exploded directory to the boot loader's exploded module build list
-  static void add_to_exploded_build_list(Symbol* module_name, TRAPS);
+  static void add_to_exploded_build_list(Thread* current, Symbol* module_name);
 
   // Attempt load of individual class from either the patched or exploded modules build lists
-  static ClassFileStream* search_module_entries(const GrowableArray<ModuleClassPathList*>* const module_list,
+  static ClassFileStream* search_module_entries(Thread* current,
+                                                const GrowableArray<ModuleClassPathList*>* const module_list,
                                                 const char* const class_name,
-                                                const char* const file_name, TRAPS);
+                                                const char* const file_name);
 
   // Load individual .class file
   static InstanceKlass* load_class(Symbol* class_name, bool search_append_only, TRAPS);
@@ -337,8 +337,8 @@ class ClassLoader: AllStatic {
 
   // Initialization
   static void initialize(TRAPS);
-  static void classLoader_init2(TRAPS);
-  CDS_ONLY(static void initialize_shared_path(TRAPS);)
+  static void classLoader_init2(Thread* current);
+  CDS_ONLY(static void initialize_shared_path(Thread* current);)
   CDS_ONLY(static void initialize_module_path(TRAPS);)
 
   static int compute_Object_vtable();
@@ -365,7 +365,7 @@ class ClassLoader: AllStatic {
   static int num_module_path_entries();
   static void  exit_with_path_failure(const char* error, const char* message);
   static char* skip_uri_protocol(char* source);
-  static void  record_result(InstanceKlass* ik, const ClassFileStream* stream, TRAPS);
+  static void  record_result(Thread* current, InstanceKlass* ik, const ClassFileStream* stream);
 #endif
 
   static char* lookup_vm_options();
@@ -383,9 +383,6 @@ class ClassLoader: AllStatic {
   static jlong class_verify_time_ms();
   static jlong class_link_count();
   static jlong class_link_time_ms();
-
-  // indicates if class path already contains a entry (exact match by name)
-  static bool contains_append_entry(const char* name);
 
   // adds a class path to the boot append entries
   static void add_to_boot_append_entries(ClassPathEntry* new_entry);

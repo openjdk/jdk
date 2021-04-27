@@ -46,11 +46,11 @@ public class JISAutoDetect
     implements HistoricallyNamedCharset
 {
 
-    private final static int EUCJP_MASK       = 0x01;
-    private final static int SJIS2B_MASK      = 0x02;
-    private final static int SJIS1B_MASK      = 0x04;
-    private final static int EUCJP_KANA1_MASK = 0x08;
-    private final static int EUCJP_KANA2_MASK = 0x10;
+    private static final int EUCJP_MASK       = 0x01;
+    private static final int SJIS2B_MASK      = 0x02;
+    private static final int SJIS1B_MASK      = 0x04;
+    private static final int EUCJP_KANA1_MASK = 0x08;
+    private static final int EUCJP_KANA2_MASK = 0x10;
 
     public JISAutoDetect() {
         super("x-JISAutoDetect", ExtendedCharsets.aliasesFor("x-JISAutoDetect"));
@@ -93,11 +93,11 @@ public class JISAutoDetect
     }
 
     private static class Decoder extends CharsetDecoder {
-        private final static String osName = AccessController.doPrivileged(
+        private static final String osName = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("os.name"));
 
-        private final static String SJISName = getSJISName();
-        private final static String EUCJPName = "EUC_JP";
+        private static final String SJISName = getSJISName();
+        private static final String EUCJPName = "EUC_JP";
         private DelegatableDecoder detectedDecoder = null;
 
         public Decoder(Charset cs) {

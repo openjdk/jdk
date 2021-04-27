@@ -158,24 +158,6 @@ void os::Bsd::init_thread_fpu_state(void) {
   // Nothing to do
 }
 
-bool os::is_allocatable(size_t bytes) {
-#ifdef _LP64
-  return true;
-#else
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // _LP64
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // thread stack
 

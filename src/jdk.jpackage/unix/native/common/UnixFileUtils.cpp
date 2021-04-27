@@ -62,4 +62,9 @@ tstring toAbsolutePath(const tstring& path) {
     return mkpath() << toAbsolutePath("") << path;
 }
 
+tstring stripExeSuffix(const tstring& path) {
+    // for unix - there is no suffix to remove
+    return path;
+}
+
 } //  namespace FileUtils

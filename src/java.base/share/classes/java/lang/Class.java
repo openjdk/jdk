@@ -779,12 +779,14 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Returns {@code true} if and only if this class has the synthetic modifier
-     * bit set.
+     *{@return {@code true} if and only if this class has the synthetic modifier
+     * bit set}
      *
-     * @return {@code true} if and only if this class has the synthetic modifier bit set
      * @jls 13.1 The Form of a Binary
      * @jvms 4.1 The {@code ClassFile} Structure
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      * @since 1.5
      */
     public boolean isSynthetic() {
@@ -1267,6 +1269,9 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      * @since 1.1
      * @jls 8.1.1 Class Modifiers
      * @jls 9.1.1. Interface Modifiers
@@ -1620,12 +1625,15 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Returns the simple name of the underlying class as given in the
-     * source code. Returns an empty string if the underlying class is
-     * anonymous.
+     * source code. An empty string is returned if the underlying class is
+     * {@linkplain #isAnonymousClass() anonymous}.
+     * A {@linkplain #isSynthetic() synthetic class}, one not present
+     * in source code, can have a non-empty name including special
+     * characters, such as "{@code $}".
      *
-     * <p>The simple name of an array is the simple name of the
+     * <p>The simple name of an {@linkplain isArray() array class} is the simple name of the
      * component type with "[]" appended.  In particular the simple
-     * name of an array whose component type is anonymous is "[]".
+     * name of an array class whose component type is anonymous is "[]".
      *
      * @return the simple name of the underlying class
      * @since 1.5
@@ -2397,6 +2405,10 @@ public final class Class<T> implements java.io.Serializable,
      * declared methods of the class or interface represented by this {@code
      * Class} object, including public, protected, default (package)
      * access, and private methods, but excluding inherited methods.
+     * The declared methods may include methods <em>not</em> in the
+     * source of the class or interface, including {@linkplain
+     * Method#isBridge bridge methods} and other {@linkplain
+     * Executable#isSynthetic synthetic} methods added by compilers.
      *
      * <p> If this {@code Class} object represents a class or interface that
      * has multiple declared methods with the same name and parameter types,
@@ -2441,6 +2453,9 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      * @since 1.1
      */
     @CallerSensitive

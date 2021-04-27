@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "runtime/atomic.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/hashtable.hpp"
-#include "utilities/dtrace.hpp"
 
 // Inline function definitions for hashtable.hpp.
 
@@ -37,8 +36,7 @@
 
 // Initialize a table.
 
-template <MEMFLAGS F> inline BasicHashtable<F>::BasicHashtable(int table_size, int entry_size) :
-    _entry_blocks(4) {
+template <MEMFLAGS F> inline BasicHashtable<F>::BasicHashtable(int table_size, int entry_size) {
   // Called on startup, no locking needed
   initialize(table_size, entry_size, 0);
   _buckets = NEW_C_HEAP_ARRAY2(HashtableBucket<F>, table_size, F, CURRENT_PC);
@@ -51,8 +49,8 @@ template <MEMFLAGS F> inline BasicHashtable<F>::BasicHashtable(int table_size, i
 
 template <MEMFLAGS F> inline BasicHashtable<F>::BasicHashtable(int table_size, int entry_size,
                                       HashtableBucket<F>* buckets,
-                                      int number_of_entries) :
-    _entry_blocks(4) {
+                                      int number_of_entries) {
+
   // Called on startup, no locking needed
   initialize(table_size, entry_size, number_of_entries);
   _buckets = buckets;
@@ -60,9 +58,6 @@ template <MEMFLAGS F> inline BasicHashtable<F>::BasicHashtable(int table_size, i
 }
 
 template <MEMFLAGS F> inline BasicHashtable<F>::~BasicHashtable() {
-  for (int i = 0; i < _entry_blocks.length(); i++) {
-    FREE_C_HEAP_ARRAY(char, _entry_blocks.at(i));
-  }
   free_buckets();
 }
 
@@ -71,9 +66,6 @@ template <MEMFLAGS F> inline void BasicHashtable<F>::initialize(int table_size, 
   // Called on startup, no locking needed
   _table_size = table_size;
   _entry_size = entry_size;
-  _free_list = NULL;
-  _first_free_entry = NULL;
-  _end_block = NULL;
   _number_of_entries = number_of_entries;
 }
 
@@ -117,13 +109,6 @@ template <MEMFLAGS F> inline void BasicHashtable<F>::add_entry(int index, BasicH
   _buckets[index].set_entry(entry);
   ++_number_of_entries;
   JFR_ONLY(_stats_rate.add();)
-}
-
-template <MEMFLAGS F> inline void BasicHashtable<F>::free_entry(BasicHashtableEntry<F>* entry) {
-  entry->set_next(_free_list);
-  _free_list = entry;
-  --_number_of_entries;
-  JFR_ONLY(_stats_rate.remove();)
 }
 
 #endif // SHARE_UTILITIES_HASHTABLE_INLINE_HPP

@@ -33,13 +33,11 @@ hotspot_compiler = \
 
 hotspot_compiler_xcomp = \
   :hotspot_compiler \
-  -:tier1_compiler_not_xcomp \
-  -compiler/graalunit
+  -:tier1_compiler_not_xcomp
 
 hotspot_compiler_all_gcs = \
   :hotspot_compiler \
-  -:tier1_compiler_aot_jvmci \
-  -compiler/graalunit
+  -compiler/jvmci
 
 hotspot_gc = \
   gc
@@ -88,8 +86,7 @@ tier1_compiler = \
 hotspot_not_fast_compiler = \
   :hotspot_compiler \
   -:tier1_compiler \
-  -:hotspot_slow_compiler \
-  -compiler/graalunit
+  -:hotspot_slow_compiler
 
 hotspot_slow_compiler = \
   compiler/codegen/aes \
@@ -151,15 +148,7 @@ tier1_compiler_3 = \
   -compiler/runtime/Test6826736.java
 
 tier1_compiler_not_xcomp = \
-  compiler/aot \
   compiler/profiling
-
-tier1_compiler_aot_jvmci = \
-  compiler/aot \
-  compiler/jvmci
-
-tier1_compiler_graal = \
-  compiler/graalunit/HotspotTest.java
 
 ctw_1 = \
   applications/ctw/modules/ \
@@ -175,7 +164,6 @@ ctw_2 = \
 ctw_3 = \
   applications/ctw/modules/java_xml.java \
   applications/ctw/modules/jdk_compiler.java \
-  applications/ctw/modules/jdk_internal_vm_compiler.java \
   applications/ctw/modules/jdk_localedata.java \
   applications/ctw/modules/jdk_localedata_2.java
 
@@ -324,6 +312,8 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
  -runtime/cds/appcds/javaldr/HumongousDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
+ -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
+ -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/ArchiveRelocationTest.java \

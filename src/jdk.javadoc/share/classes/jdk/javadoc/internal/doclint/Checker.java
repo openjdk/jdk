@@ -269,7 +269,20 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitDocComment(DocCommentTree tree, Void ignore) {
-        super.visitDocComment(tree, ignore);
+        scan(tree.getFirstSentence(), ignore);
+        scan(tree.getBody(), ignore);
+        checkTagStack();
+
+        for (DocTree blockTag : tree.getBlockTags()) {
+            tagStack.clear();
+            scan(blockTag, ignore);
+            checkTagStack();
+        }
+
+        return null;
+    }
+
+    private void checkTagStack() {
         for (TagStackItem tsi: tagStack) {
             warnIfEmpty(tsi, null);
             if (tsi.tree.getKind() == DocTree.Kind.START_ELEMENT
@@ -278,7 +291,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 env.messages.error(HTML, t, "dc.tag.not.closed", t.getName());
             }
         }
-        return null;
     }
     // </editor-fold>
 
@@ -548,6 +560,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     done = true;
                     break;
                 } else if (top.tag == null || top.tag.endKind != HtmlTag.EndKind.REQUIRED) {
+                    warnIfEmpty(top, null);
                     tagStack.pop();
                 } else {
                     boolean found = false;

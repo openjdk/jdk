@@ -79,7 +79,7 @@ class nmethod : public CompiledMethod {
   // STW two-phase nmethod root processing helpers.
   //
   // When determining liveness of a given nmethod to do code cache unloading,
-  // some collectors need to to different things depending on whether the nmethods
+  // some collectors need to do different things depending on whether the nmethods
   // need to absolutely be kept alive during root processing; "strong"ly reachable
   // nmethods are known to be kept alive at root processing, but the liveness of
   // "weak"ly reachable ones is to be determined later.
@@ -671,6 +671,7 @@ public:
   void print_native_invokers();
   void print_handler_table();
   void print_nul_chk_table();
+  void print_recorded_oop(int log_n, int index);
   void print_recorded_oops();
   void print_recorded_metadata();
 

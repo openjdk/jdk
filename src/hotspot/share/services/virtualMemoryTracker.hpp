@@ -205,8 +205,7 @@ class VirtualMemoryRegion {
   inline bool overlap_region(address addr, size_t sz) const {
     assert(sz > 0, "Invalid size");
     assert(size() > 0, "Invalid size");
-    return contain_address(addr) ||
-           contain_address(addr + sz - 1);
+    return MAX2(addr, base()) < MIN2(addr + sz, end());
   }
 
   inline bool adjacent_to(address addr, size_t sz) const {

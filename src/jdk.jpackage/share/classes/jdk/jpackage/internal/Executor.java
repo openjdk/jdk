@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-final public class Executor {
+public final class Executor {
 
     Executor() {
     }
@@ -148,7 +148,7 @@ final public class Executor {
 
                     if ((outputConsumer != null || Log.isVerbose())
                             || saveOutput) {
-                        savedOutput = br.lines().collect(Collectors.toList());
+                        savedOutput = br.lines().toList();
                     } else {
                         savedOutput = null;
                     }
@@ -223,7 +223,7 @@ final public class Executor {
         return sb.toString();
     }
 
-    public final static int INFINITE_TIMEOUT = -1;
+    public static final int INFINITE_TIMEOUT = -1;
 
     private ProcessBuilder pb;
     private boolean saveOutput;

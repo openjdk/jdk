@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -33,7 +34,6 @@
 #include "interpreter/rewriter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
@@ -135,8 +135,7 @@ void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        int field_offset,
                                        TosState field_type,
                                        bool is_final,
-                                       bool is_volatile,
-                                       Klass* root_klass) {
+                                       bool is_volatile) {
   set_f1(field_holder);
   set_f2(field_offset);
   assert((field_index & field_index_mask) == field_index,

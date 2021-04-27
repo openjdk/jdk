@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "atomic_aarch64.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -5573,6 +5574,306 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void generate_base64_decode_simdround(Register src, Register dst,
+        FloatRegister codecL, FloatRegister codecH, int size, Label& Exit) {
+
+    FloatRegister in0  = v16, in1  = v17,  in2 = v18,  in3 = v19;
+    FloatRegister out0 = v20, out1 = v21, out2 = v22;
+
+    FloatRegister decL0 = v23, decL1 = v24, decL2 = v25, decL3 = v26;
+    FloatRegister decH0 = v28, decH1 = v29, decH2 = v30, decH3 = v31;
+
+    Label NoIllegalData, ErrorInLowerHalf, StoreLegalData;
+
+    Assembler::SIMD_Arrangement arrangement = size == 16 ? __ T16B : __ T8B;
+
+    __ ld4(in0, in1, in2, in3, arrangement, __ post(src, 4 * size));
+
+    // we need unsigned saturating substract, to make sure all input values
+    // in range [0, 63] will have 0U value in the higher half lookup
+    __ uqsubv(decH0, __ T16B, in0, v27);
+    __ uqsubv(decH1, __ T16B, in1, v27);
+    __ uqsubv(decH2, __ T16B, in2, v27);
+    __ uqsubv(decH3, __ T16B, in3, v27);
+
+    // lower half lookup
+    __ tbl(decL0, arrangement, codecL, 4, in0);
+    __ tbl(decL1, arrangement, codecL, 4, in1);
+    __ tbl(decL2, arrangement, codecL, 4, in2);
+    __ tbl(decL3, arrangement, codecL, 4, in3);
+
+    // higher half lookup
+    __ tbx(decH0, arrangement, codecH, 4, decH0);
+    __ tbx(decH1, arrangement, codecH, 4, decH1);
+    __ tbx(decH2, arrangement, codecH, 4, decH2);
+    __ tbx(decH3, arrangement, codecH, 4, decH3);
+
+    // combine lower and higher
+    __ orr(decL0, arrangement, decL0, decH0);
+    __ orr(decL1, arrangement, decL1, decH1);
+    __ orr(decL2, arrangement, decL2, decH2);
+    __ orr(decL3, arrangement, decL3, decH3);
+
+    // check illegal inputs, value larger than 63 (maximum of 6 bits)
+    __ cmhi(decH0, arrangement, decL0, v27);
+    __ cmhi(decH1, arrangement, decL1, v27);
+    __ cmhi(decH2, arrangement, decL2, v27);
+    __ cmhi(decH3, arrangement, decL3, v27);
+    __ orr(in0, arrangement, decH0, decH1);
+    __ orr(in1, arrangement, decH2, decH3);
+    __ orr(in2, arrangement, in0,   in1);
+    __ umaxv(in3, arrangement, in2);
+    __ umov(rscratch2, in3, __ B, 0);
+
+    // get the data to output
+    __ shl(out0,  arrangement, decL0, 2);
+    __ ushr(out1, arrangement, decL1, 4);
+    __ orr(out0,  arrangement, out0,  out1);
+    __ shl(out1,  arrangement, decL1, 4);
+    __ ushr(out2, arrangement, decL2, 2);
+    __ orr(out1,  arrangement, out1,  out2);
+    __ shl(out2,  arrangement, decL2, 6);
+    __ orr(out2,  arrangement, out2,  decL3);
+
+    __ cbz(rscratch2, NoIllegalData);
+
+    // handle illegal input
+    __ umov(r10, in2, __ D, 0);
+    if (size == 16) {
+      __ cbnz(r10, ErrorInLowerHalf);
+
+      // illegal input is in higher half, store the lower half now.
+      __ st3(out0, out1, out2, __ T8B, __ post(dst, 24));
+
+      __ umov(r10, in2,  __ D, 1);
+      __ umov(r11, out0, __ D, 1);
+      __ umov(r12, out1, __ D, 1);
+      __ umov(r13, out2, __ D, 1);
+      __ b(StoreLegalData);
+
+      __ BIND(ErrorInLowerHalf);
+    }
+    __ umov(r11, out0, __ D, 0);
+    __ umov(r12, out1, __ D, 0);
+    __ umov(r13, out2, __ D, 0);
+
+    __ BIND(StoreLegalData);
+    __ tbnz(r10, 5, Exit); // 0xff indicates illegal input
+    __ strb(r11, __ post(dst, 1));
+    __ strb(r12, __ post(dst, 1));
+    __ strb(r13, __ post(dst, 1));
+    __ lsr(r10, r10, 8);
+    __ lsr(r11, r11, 8);
+    __ lsr(r12, r12, 8);
+    __ lsr(r13, r13, 8);
+    __ b(StoreLegalData);
+
+    __ BIND(NoIllegalData);
+    __ st3(out0, out1, out2, arrangement, __ post(dst, 3 * size));
+  }
+
+
+   /**
+   *  Arguments:
+   *
+   *  Input:
+   *  c_rarg0   - src_start
+   *  c_rarg1   - src_offset
+   *  c_rarg2   - src_length
+   *  c_rarg3   - dest_start
+   *  c_rarg4   - dest_offset
+   *  c_rarg5   - isURL
+   *
+   */
+  address generate_base64_decodeBlock() {
+
+    // The SIMD part of this Base64 decode intrinsic is based on the algorithm outlined
+    // on http://0x80.pl/articles/base64-simd-neon.html#encoding-quadwords, in section
+    // titled "Base64 decoding".
+
+    // Non-SIMD lookup tables are mostly dumped from fromBase64 array used in java.util.Base64,
+    // except the trailing character '=' is also treated illegal value in this instrinsic. That
+    // is java.util.Base64.fromBase64['='] = -2, while fromBase(URL)64ForNoSIMD['='] = 255 here.
+    static const uint8_t fromBase64ForNoSIMD[256] = {
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+       15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u, 255u,
+      255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+       41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+    };
+
+    static const uint8_t fromBase64URLForNoSIMD[256] = {
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+       15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,  63u,
+      255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+       41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+    };
+
+    // A legal value of base64 code is in range [0, 127].  We need two lookups
+    // with tbl/tbx and combine them to get the decode data. The 1st table vector
+    // lookup use tbl, out of range indices are set to 0 in destination. The 2nd
+    // table vector lookup use tbx, out of range indices are unchanged in
+    // destination. Input [64..126] is mapped to index [65, 127] in second lookup.
+    // The value of index 64 is set to 0, so that we know that we already get the
+    // decoded data with the 1st lookup.
+    static const uint8_t fromBase64ForSIMD[128] = {
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+        0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
+       14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
+      255u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
+       40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
+    };
+
+    static const uint8_t fromBase64URLForSIMD[128] = {
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+        0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
+       14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
+       63u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
+       40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "decodeBlock");
+    address start = __ pc();
+
+    Register src   = c_rarg0;  // source array
+    Register soff  = c_rarg1;  // source start offset
+    Register send  = c_rarg2;  // source end offset
+    Register dst   = c_rarg3;  // dest array
+    Register doff  = c_rarg4;  // position for writing to dest array
+    Register isURL = c_rarg5;  // Base64 or URL character set
+
+    Register length = send;    // reuse send as length of source data to process
+
+    Register simd_codec   = c_rarg6;
+    Register nosimd_codec = c_rarg7;
+
+    Label ProcessData, Process64B, Process32B, Process4B, SIMDEnter, SIMDExit, Exit;
+
+    __ enter();
+
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+
+    __ mov(doff, dst);
+
+    __ sub(length, send, soff);
+    __ bfm(length, zr, 0, 1);
+
+    __ lea(nosimd_codec, ExternalAddress((address) fromBase64ForNoSIMD));
+    __ cbz(isURL, ProcessData);
+    __ lea(nosimd_codec, ExternalAddress((address) fromBase64URLForNoSIMD));
+
+    __ BIND(ProcessData);
+    __ mov(rscratch1, length);
+    __ cmp(length, (u1)144); // 144 = 80 + 64
+    __ br(Assembler::LT, Process4B);
+
+    // In the MIME case, the line length cannot be more than 76
+    // bytes (see RFC 2045). This is too short a block for SIMD
+    // to be worthwhile, so we use non-SIMD here.
+    __ movw(rscratch1, 79);
+
+    __ BIND(Process4B);
+    __ ldrw(r14, __ post(src, 4));
+    __ ubfxw(r10, r14, 0,  8);
+    __ ubfxw(r11, r14, 8,  8);
+    __ ubfxw(r12, r14, 16, 8);
+    __ ubfxw(r13, r14, 24, 8);
+    // get the de-code
+    __ ldrb(r10, Address(nosimd_codec, r10, Address::uxtw(0)));
+    __ ldrb(r11, Address(nosimd_codec, r11, Address::uxtw(0)));
+    __ ldrb(r12, Address(nosimd_codec, r12, Address::uxtw(0)));
+    __ ldrb(r13, Address(nosimd_codec, r13, Address::uxtw(0)));
+    // error detection, 255u indicates an illegal input
+    __ orrw(r14, r10, r11);
+    __ orrw(r15, r12, r13);
+    __ orrw(r14, r14, r15);
+    __ tbnz(r14, 7, Exit);
+    // recover the data
+    __ lslw(r14, r10, 10);
+    __ bfiw(r14, r11, 4, 6);
+    __ bfmw(r14, r12, 2, 5);
+    __ rev16w(r14, r14);
+    __ bfiw(r13, r12, 6, 2);
+    __ strh(r14, __ post(dst, 2));
+    __ strb(r13, __ post(dst, 1));
+    // non-simd loop
+    __ subsw(rscratch1, rscratch1, 4);
+    __ br(Assembler::GT, Process4B);
+
+    // if exiting from PreProcess80B, rscratch1 == -1;
+    // otherwise, rscratch1 == 0.
+    __ cbzw(rscratch1, Exit);
+    __ sub(length, length, 80);
+
+    __ lea(simd_codec, ExternalAddress((address) fromBase64ForSIMD));
+    __ cbz(isURL, SIMDEnter);
+    __ lea(simd_codec, ExternalAddress((address) fromBase64URLForSIMD));
+
+    __ BIND(SIMDEnter);
+    __ ld1(v0, v1, v2, v3, __ T16B, __ post(simd_codec, 64));
+    __ ld1(v4, v5, v6, v7, __ T16B, Address(simd_codec));
+    __ mov(rscratch1, 63);
+    __ dup(v27, __ T16B, rscratch1);
+
+    __ BIND(Process64B);
+    __ cmp(length, (u1)64);
+    __ br(Assembler::LT, Process32B);
+    generate_base64_decode_simdround(src, dst, v0, v4, 16, Exit);
+    __ sub(length, length, 64);
+    __ b(Process64B);
+
+    __ BIND(Process32B);
+    __ cmp(length, (u1)32);
+    __ br(Assembler::LT, SIMDExit);
+    generate_base64_decode_simdround(src, dst, v0, v4, 8, Exit);
+    __ sub(length, length, 32);
+    __ b(Process32B);
+
+    __ BIND(SIMDExit);
+    __ cbz(length, Exit);
+    __ movw(rscratch1, length);
+    __ b(Process4B);
+
+    __ BIND(Exit);
+    __ sub(c_rarg0, dst, doff);
+
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
 #ifdef LINUX
 
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
@@ -6815,6 +7116,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
+        StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }
 
     // data cache line writeback

@@ -36,7 +36,6 @@
   LOG_TAG(age) \
   LOG_TAG(alloc) \
   LOG_TAG(annotation) \
-  LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
@@ -165,6 +164,7 @@
   LOG_TAG(stacktrace) \
   LOG_TAG(stackwalk) \
   LOG_TAG(start) \
+  LOG_TAG(startup) \
   LOG_TAG(startuptime) \
   LOG_TAG(state) \
   LOG_TAG(stats) \
@@ -173,6 +173,7 @@
   LOG_TAG(stringtable) \
   LOG_TAG(subclass) \
   LOG_TAG(survivor) \
+  LOG_TAG(suspend) \
   LOG_TAG(sweep) \
   LOG_TAG(symboltable) \
   LOG_TAG(system) \

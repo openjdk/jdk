@@ -130,4 +130,15 @@ public:
   virtual void doit();
 };
 
+class VM_ShenandoahFinalRoots: public VM_ShenandoahOperation {
+  ShenandoahConcurrentGC* const _gc;
+public:
+  VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc) :
+    VM_ShenandoahOperation(),
+    _gc(gc) {};
+  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalRoots; }
+  const char* name()             const { return "Shenandoah Final Roots"; }
+  virtual void doit();
+};
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHVMOPERATIONS_HPP
