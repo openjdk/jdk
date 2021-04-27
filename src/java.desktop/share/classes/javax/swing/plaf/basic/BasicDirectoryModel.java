@@ -224,7 +224,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     }
 
     /**
-     * Obsolete - not used.
+     * Obsolete - not used. This method is a no-op.
      * @param e list data event
      * @deprecated Obsolete method, not used anymore.
      */
@@ -233,7 +233,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     }
 
     /**
-     * Obsolete - not used.
+     * Obsolete - not used. This method is a no-op.
      * @param e list data event
      * @deprecated Obsolete method, not used anymore.
      */
