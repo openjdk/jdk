@@ -1324,9 +1324,21 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
     info = state_for(x);
   }
 
+  LabelObj* L_not_prim = new LabelObj();
+  LabelObj* L_done = new LabelObj();
+
   LIR_Opr temp = new_register(T_METADATA);
-  __ move(new LIR_Address(receiver.result(), oopDesc::klass_offset_in_bytes(), T_ADDRESS), temp, info);
+  // Checking if it's a java mirror of primitive type
+  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), temp, info);
+  __ cmp(lir_cond_notEqual, temp, LIR_OprFact::metadataConst(0));
+  __ branch(lir_cond_notEqual, L_not_prim->label());
+  __ move(LIR_OprFact::intConst(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), result);
+  __ branch(lir_cond_always, L_done->label());
+
+  __ branch_destination(L_not_prim->label());
+  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), temp, NULL);
   __ move(new LIR_Address(temp, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
+  __ branch_destination(L_done->label());
 }
 
 // Example: Thread.currentThread()
@@ -3157,7 +3169,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_Object_init:    do_RegisterFinalizer(x); break;
   case vmIntrinsics::_isInstance:     do_isInstance(x);    break;
   case vmIntrinsics::_isPrimitive:    do_isPrimitive(x);   break;
-  case vmIntrinsics::_getModifiers:   do_getModifiers(x);   break;
+  case vmIntrinsics::_getModifiers:   do_getModifiers(x);  break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
   case vmIntrinsics::_currentThread:  do_currentThread(x); break;
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;

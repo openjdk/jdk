@@ -58,7 +58,7 @@ public class CanonicalizeGetModifiers {
     interface T6 {
     }
 
-    static void test() {
+    static void test(Class poison) {
         Asserts.assertEQ(CanonicalizeGetModifiers.class.getModifiers(), Modifier.PUBLIC);
         Asserts.assertEQ(T1.class.getModifiers(), Modifier.PUBLIC | Modifier.STATIC);
         Asserts.assertEQ(T2.class.getModifiers(), Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC);
@@ -82,17 +82,25 @@ public class CanonicalizeGetModifiers {
         Asserts.assertEQ(char[].class.getModifiers(), Modifier.PUBLIC | Modifier.ABSTRACT | Modifier.FINAL);
         Asserts.assertEQ(byte[].class.getModifiers(), Modifier.PUBLIC | Modifier.ABSTRACT | Modifier.FINAL);
         Asserts.assertEQ(short[].class.getModifiers(), Modifier.PUBLIC | Modifier.ABSTRACT | Modifier.FINAL);
+        Asserts.assertEQ(Object[].class.getModifiers(), Modifier.PUBLIC | Modifier.ABSTRACT | Modifier.FINAL);
+        Asserts.assertEQ(CanonicalizeGetModifiers[].class.getModifiers(), Modifier.PUBLIC | Modifier.ABSTRACT | Modifier.FINAL);
 
         Asserts.assertEQ(new CanonicalizeGetModifiers().getClass().getModifiers(), Modifier.PUBLIC);
         Asserts.assertEQ(new T1().getClass().getModifiers(), Modifier.PUBLIC | Modifier.STATIC);
         Asserts.assertEQ(new T2().getClass().getModifiers(), Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC);
         Asserts.assertEQ(new T3().getClass().getModifiers(), Modifier.PRIVATE | Modifier.STATIC);
         Asserts.assertEQ(new T4().getClass().getModifiers(), Modifier.PROTECTED | Modifier.STATIC);
+        try {
+            // null_check
+            poison.getModifiers();
+        } catch(NullPointerException npe) {
+            // got it!
+        }
     }
 
     public static void main(String... args) {
-        for (int i = 0; i < 1_0000; i++) {
-            test();
+        for (int i = 0; i < 10_000; i++) {
+            test(i == 9999 ? null : CanonicalizeGetModifiers.class);
         }
     }
 }

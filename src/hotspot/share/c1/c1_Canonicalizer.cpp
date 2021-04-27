@@ -548,7 +548,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     }
     break;
   }
-  case vmIntrinsics::_getModifiers           : {
+  case vmIntrinsics::_getModifiers: {
     assert(x->number_of_arguments() == 1, "wrong type");
 
     // Optimize for Foo.class.getModifier()
@@ -557,6 +557,9 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
       ciType* t = c->value()->java_mirror_type();
       if (t->is_klass()) {
         set_constant(t->as_klass()->modifier_flags());
+      } else {
+        assert(t->is_primitive_type(), "should be a primitive type");
+        set_constant(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
       }
     }
     break;
