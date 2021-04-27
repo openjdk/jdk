@@ -28,9 +28,9 @@
  *
  * @requires vm.compiler2.enabled & vm.debug == true
  *
- * @library /compiler/patches /test/lib
- * @run main/othervm compiler.arguments.TestPrintOptoAssemblyLineNumbers
-*/
+ * @library /test/lib
+ * @run driver compiler.arguments.TestPrintOptoAssemblyLineNumbers
+ */
 
 package compiler.arguments;
 
@@ -41,31 +41,31 @@ import jdk.test.lib.process.ProcessTools;
 public class TestPrintOptoAssemblyLineNumbers {
     public static void main(String[] args) throws Throwable {
         // create subprocess to run some code with -XX:+PrintOptoAssembly enabled
-        String[] procArgs = new String[]{
+        String[] procArgs = new String[] {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:-TieredCompilation",
             "-XX:+PrintOptoAssembly",
-            "compiler.arguments.TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly"
-            };
+            CheckC2OptoAssembly.class.getName()
+        };
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
         String output = new OutputAnalyzer(pb.start()).getOutput();
 
-        if(output.contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11")){
+        if (output.contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11")){
             // if C2 optimizer invoked ensure output includes line numbers:
             Asserts.assertTrue(output.contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11 (line 68)"));
         }
     }
 
-    public static class CheckC2OptoAssembly{ // contents of this class serves to just invoke C2
-        public static boolean foo(String arg){
+    public static class CheckC2OptoAssembly { // contents of this class serves to just invoke C2
+        public static boolean foo(String arg) {
             return arg.contains("45");
         }
 
-        public static void main(String[] args){
+        public static void main(String[] args) {
             int count = 0;
-            for(int x = 0; x < 200_000; x++){
-                if(foo("something" + x)){ // <- test expects this line of code to be on line 68
+            for (int x = 0; x < 200_000; x++){
+                if (foo("something" + x)) { // <- test expects this line of code to be on line 68
                     count += 1;
                 }
             }
