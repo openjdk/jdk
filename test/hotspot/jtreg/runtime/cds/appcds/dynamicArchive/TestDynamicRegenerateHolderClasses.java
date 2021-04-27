@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8255493
  * @summary LambHello World test for regenerate lambda holder classes in dynamic archive
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes

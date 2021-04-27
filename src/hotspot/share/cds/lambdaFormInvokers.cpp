@@ -82,7 +82,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
   guarantee(cds_klass != NULL, "jdk/internal/misc/CDS must exist!");
-  DEBUG_ONLY(log_info(cds)("Total lambdaform lines %d", _lambdaform_lines->length());)
+  log_debug(cds)("Total lambdaform lines %d", _lambdaform_lines->length());
 
   HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
