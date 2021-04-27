@@ -2414,13 +2414,13 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 int nch;
                 boolean lastWasCR = false;
                 int last;
-                StringBuffer sbuff = null;
+                StringBuilder sbuff = null;
 
                 // Read in a block at a time, mapping \r\n to \n, as well as single
                 // \r to \n.
                 while ((nch = in.read(buff, 0, buff.length)) != -1) {
                     if (sbuff == null) {
-                        sbuff = new StringBuffer(nch);
+                        sbuff = new StringBuilder(nch);
                     }
                     last = 0;
                     for(int counter = 0; counter < nch; counter++) {

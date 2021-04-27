@@ -29,6 +29,7 @@
 #include "interpreter/interpreter.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/registerMap.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #ifdef ZERO
@@ -63,10 +64,6 @@ inline address frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_ma
 
 inline oop* frame::oopmapreg_to_oop_location(VMReg reg, const RegisterMap* reg_map) const {
   return (oop*)oopmapreg_to_location(reg, reg_map);
-}
-
-inline bool StackFrameStream::is_done() {
-  return (_is_done) ? true : (_is_done = _fr.is_first_frame(), false);
 }
 
 #endif // SHARE_RUNTIME_FRAME_INLINE_HPP

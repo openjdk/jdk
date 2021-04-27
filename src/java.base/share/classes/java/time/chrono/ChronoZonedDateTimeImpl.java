@@ -283,12 +283,11 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
     //-----------------------------------------------------------------------
     @Override
     public ChronoZonedDateTime<D> with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 case INSTANT_SECONDS: return plus(newValue - toEpochSecond(), SECONDS);
                 case OFFSET_SECONDS: {
-                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(f.checkValidIntValue(newValue));
+                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue));
                     return create(dateTime.toInstant(offset), zone);
                 }
             }

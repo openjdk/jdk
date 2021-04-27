@@ -95,7 +95,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Africa/Juba">
 				<usesMetazone to="2000-01-15 10:00" mzone="Africa_Central"/>
-				<usesMetazone from="2000-01-15 10:00" mzone="Africa_Eastern"/>
+				<usesMetazone to="2021-01-31 21:00" from="2000-01-15 10:00" mzone="Africa_Eastern"/>
+				<usesMetazone from="2021-01-31 21:00" mzone="Africa_Central"/>
 			</timezone>
 			<timezone type="Africa/Kampala">
 				<usesMetazone mzone="Africa_Eastern"/>
@@ -404,8 +405,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1988-10-30 02:01" mzone="Atlantic"/>
 			</timezone>
 			<timezone type="America/Grand_Turk">
-				<usesMetazone to="2015-11-01 06:00" mzone="America_Eastern"/>
-				<usesMetazone to="2018-03-11 07:00" from="2015-11-01 06:00" mzone="Atlantic"/>
+				<usesMetazone to="2015-03-08 07:00" mzone="America_Eastern"/>
+				<usesMetazone to="2018-03-11 07:00" from="2015-03-08 07:00" mzone="Atlantic"/>
 				<usesMetazone from="2018-03-11 07:00" mzone="America_Eastern"/>
 			</timezone>
 			<timezone type="America/Grenada">
@@ -1390,9 +1391,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1999-10-31 01:00" mzone="Europe_Eastern"/>
 			</timezone>
 			<timezone type="Europe/Volgograd">
-				<usesMetazone to="1992-03-28 22:00" mzone="Volgograd"/>
-				<usesMetazone to="2018-10-27 23:00" from="1992-03-28 22:00" mzone="Moscow"/>
-				<usesMetazone from="2018-10-27 23:00" mzone="Volgograd"/>
+				<usesMetazone mzone="Volgograd"/>
 			</timezone>
 			<timezone type="Europe/Warsaw">
 				<usesMetazone mzone="Europe_Central"/>

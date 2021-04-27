@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
@@ -105,9 +106,12 @@ uint G1FullCollector::calc_active_workers() {
   return worker_count;
 }
 
-G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs) :
+G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
+                                 bool explicit_gc,
+                                 bool clear_soft_refs,
+                                 bool do_maximum_compaction) :
     _heap(heap),
-    _scope(heap->g1mm(), explicit_gc, clear_soft_refs),
+    _scope(heap->g1mm(), explicit_gc, clear_soft_refs, do_maximum_compaction),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
@@ -156,7 +160,7 @@ public:
 
   bool do_heap_region(HeapRegion* hr) {
     G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
-    _collector->update_attribute_table(hr);
+    _collector->before_marking_update_attribute_table(hr);
     return false;
   }
 };
@@ -225,16 +229,17 @@ void G1FullCollector::complete_collection() {
   _heap->print_heap_after_full_collection(scope()->heap_transition());
 }
 
-void G1FullCollector::update_attribute_table(HeapRegion* hr) {
+void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
-    return;
-  }
-  if (hr->is_closed_archive()) {
-    _region_attr_table.set_closed_archive(hr->hrm_index());
+    // Set as Invalid by default.
+    _region_attr_table.verify_is_invalid(hr->hrm_index());
+  } else if (hr->is_closed_archive()) {
+    _region_attr_table.set_skip_marking(hr->hrm_index());
   } else if (hr->is_pinned()) {
-    _region_attr_table.set_pinned(hr->hrm_index());
+    _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {
-    _region_attr_table.set_normal(hr->hrm_index());
+    // Everything else should be compacted.
+    _region_attr_table.set_compacting(hr->hrm_index());
   }
 }
 

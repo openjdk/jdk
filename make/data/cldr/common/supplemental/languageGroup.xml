@@ -47,7 +47,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languageGroup parent="fox">bnn bzg ckv dru fos pwn pyu ssf sxr tay trv tsu uun xnb xsy</languageGroup>
 		<languageGroup parent="gem">gme gmq gmw</languageGroup>
 		<languageGroup parent="gme">got xvn</languageGroup>
-		<languageGroup parent="gmq">da fo is nb nn non nrn ovd rmg sv</languageGroup>
+		<languageGroup parent="gmq">da fo is nb nn no non nrn ovd rmg sv</languageGroup>
 		<languageGroup parent="gmw">af ang cim de dum en enm frk frr fy gct gmh gml goh gos gsw ksh lb li lng mhn nds nl odt ofs osx pdc pfl sco stq swg wae wep wym yec yi zea</languageGroup>
 		<languageGroup parent="grk">cpg el gmy grc pnt tsd yej</languageGroup>
 		<languageGroup parent="hmx">bje bpn buh bwn cqd hmd hml hmn hnj ium mji mmr mww pha pnu shx</languageGroup>

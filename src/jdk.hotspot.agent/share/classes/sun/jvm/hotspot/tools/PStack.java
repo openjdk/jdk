@@ -256,19 +256,19 @@ public class PStack extends Tool {
          JavaVFrame vf = jvframes[fCount];
          Frame f = vf.getFrame();
          if (fp.equals(f.getFP())) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             Method method = vf.getMethod();
             // a special char to identify java frames in output
             sb.append("* ");
             sb.append(method.externalNameAndSignature());
-            sb.append(" bci:" + vf.getBCI());
+            sb.append(" bci:").append(vf.getBCI());
             int lineNumber = method.getLineNumberFromBCI(vf.getBCI());
             if (lineNumber != -1) {
-                sb.append(" line:" + lineNumber);
+                sb.append(" line:").append(lineNumber);
             }
 
             if (verbose) {
-               sb.append(" Method*:" + method.getAddress());
+               sb.append(" Method*:").append(method.getAddress());
             }
 
             if (vf.isCompiledFrame()) {

@@ -230,17 +230,11 @@ class Startup {
                 } else if (all.length % 4 == 0) {
                     List<StartupEntry> e = new ArrayList<>(all.length / 4);
                     for (int i = 0; i < all.length; i += 4) {
-                        final boolean isBuiltIn;
-                        switch (all[i]) {
-                            case "*":
-                                isBuiltIn = true;
-                                break;
-                            case "-":
-                                isBuiltIn = false;
-                                break;
-                            default:
-                                throw new IllegalArgumentException("Unexpected StartupEntry kind: " + all[i]);
-                        }
+                        final boolean isBuiltIn = switch (all[i]) {
+                            case "*" -> true;
+                            case "-" -> false;
+                            default -> throw new IllegalArgumentException("Unexpected StartupEntry kind: " + all[i]);
+                        };
                         String name = all[i + 1];
                         String timeStamp = all[i + 2];
                         String content = all[i + 3];

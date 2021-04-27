@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
@@ -239,7 +239,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   }
 
   klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
-  SystemDictionary::load_shared_class_misc(klass, loader_data, CHECK);
+  SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int hash = dictionary->compute_hash(klass->name());
   dictionary->add_klass(hash, klass->name(), klass);

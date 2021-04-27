@@ -71,7 +71,6 @@
 #include "opto/type.hpp"
 #include "opto/vector.hpp"
 #include "opto/vectornode.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -287,13 +286,6 @@ void Compile::gvn_replace_by(Node* n, Node* nn) {
   }
 }
 
-
-static inline bool not_a_node(const Node* n) {
-  if (n == NULL)                   return true;
-  if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
-  if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
-  return false;
-}
 
 // Identify all nodes that are reachable from below, useful.
 // Use breadth-first pass that records state in a Unique_Node_List,
@@ -554,6 +546,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _do_cleanup(false),
                   _has_reserved_stack_access(target->has_reserved_stack_access()),
 #ifndef PRODUCT
+                  _igv_idx(0),
                   _trace_opto_output(directive->TraceOptoOutputOption),
                   _print_ideal(directive->PrintIdealOption),
 #endif
@@ -860,6 +853,7 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_incrementally(false),
     _has_reserved_stack_access(false),
 #ifndef PRODUCT
+    _igv_idx(0),
     _trace_opto_output(directive->TraceOptoOutputOption),
     _print_ideal(directive->PrintIdealOption),
 #endif
@@ -2440,7 +2434,7 @@ static bool is_vector_bitwise_op(Node* n) {
 }
 
 static bool is_vector_bitwise_cone_root(Node* n) {
-  if (!is_vector_bitwise_op(n)) {
+  if (n->bottom_type()->isa_vectmask() || !is_vector_bitwise_op(n)) {
     return false;
   }
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {

@@ -41,6 +41,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -431,7 +432,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
   }
 
   if (UseBiasedLocking) {
-      BiasedLocking::revoke(obj, current);
+    BiasedLocking::revoke(current, obj);
   }
 
   markWord mark = obj->mark();
@@ -535,7 +536,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
 // NOTE: must use heavy weight monitor to handle complete_exit/reenter()
 intx ObjectSynchronizer::complete_exit(Handle obj, JavaThread* current) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke(obj, current);
+    BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -549,7 +550,7 @@ intx ObjectSynchronizer::complete_exit(Handle obj, JavaThread* current) {
 // NOTE: must use heavy weight monitor to handle complete_exit/reenter()
 void ObjectSynchronizer::reenter(Handle obj, intx recursions, JavaThread* current) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke(obj, current);
+    BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -575,7 +576,7 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
 
   // the current locking is from JNI instead of Java code
   if (UseBiasedLocking) {
-    BiasedLocking::revoke(obj, current);
+    BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
   current->set_current_pending_monitor_is_from_java(false);
@@ -596,7 +597,7 @@ void ObjectSynchronizer::jni_exit(oop obj, TRAPS) {
   JavaThread* current = THREAD->as_Java_thread();
   if (UseBiasedLocking) {
     Handle h_obj(current, obj);
-    BiasedLocking::revoke(h_obj, current);
+    BiasedLocking::revoke(current, h_obj);
     obj = h_obj();
   }
   assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
@@ -638,7 +639,7 @@ ObjectLocker::~ObjectLocker() {
 int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   JavaThread* current = THREAD->as_Java_thread();
   if (UseBiasedLocking) {
-    BiasedLocking::revoke(obj, current);
+    BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
   if (millis < 0) {
@@ -664,7 +665,7 @@ int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
 // correct and we have to wait until notified - so no interrupts or timeouts.
 void ObjectSynchronizer::wait_uninterruptibly(Handle obj, JavaThread* current) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke(obj, current);
+    BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
   // The ObjectMonitor* can't be async deflated because the _waiters
@@ -677,7 +678,7 @@ void ObjectSynchronizer::wait_uninterruptibly(Handle obj, JavaThread* current) {
 void ObjectSynchronizer::notify(Handle obj, TRAPS) {
   JavaThread* current = THREAD->as_Java_thread();
   if (UseBiasedLocking) {
-    BiasedLocking::revoke(obj, current);
+    BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -696,7 +697,7 @@ void ObjectSynchronizer::notify(Handle obj, TRAPS) {
 void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
   JavaThread* current = THREAD->as_Java_thread();
   if (UseBiasedLocking) {
-    BiasedLocking::revoke(obj, current);
+    BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -858,7 +859,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       if (SafepointSynchronize::is_at_safepoint()) {
         BiasedLocking::revoke_at_safepoint(hobj);
       } else {
-        BiasedLocking::revoke(hobj, current);
+        BiasedLocking::revoke(current->as_Java_thread(), hobj);
       }
       obj = hobj();
       assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
@@ -985,7 +986,7 @@ intptr_t ObjectSynchronizer::identity_hash_value_for(Handle obj) {
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
                                                    Handle h_obj) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke(h_obj, current);
+    BiasedLocking::revoke(current, h_obj);
     assert(!h_obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -1016,7 +1017,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
     if (SafepointSynchronize::is_at_safepoint()) {
       BiasedLocking::revoke_at_safepoint(h_obj);
     } else {
-      BiasedLocking::revoke(h_obj, JavaThread::current());
+      BiasedLocking::revoke(JavaThread::current(), h_obj);
     }
     assert(!h_obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }

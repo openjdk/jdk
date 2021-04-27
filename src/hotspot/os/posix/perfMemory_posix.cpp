@@ -527,6 +527,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   // directory search
   char* oldest_user = NULL;
   time_t oldest_ctime = 0;
+  char buffer[MAXPATHLEN + 1];
   int searchpid;
   char* tmpdirname = (char *)os::get_temp_directory();
 #if defined(LINUX)
@@ -537,7 +538,6 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   if (nspid == -1) {
     searchpid = vmid;
   } else {
-    char buffer[MAXPATHLEN + 1];
     jio_snprintf(buffer, MAXPATHLEN, "/proc/%d/root%s", vmid, tmpdirname);
     tmpdirname = buffer;
     searchpid = nspid;
@@ -1311,7 +1311,7 @@ void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode, char** 
 // the indicated process's PerfData memory region from this
 // process's address space.
 //
-void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
+void PerfMemory::detach(char* addr, size_t bytes) {
 
   assert(addr != 0, "address sanity check");
   assert(bytes > 0, "capacity sanity check");

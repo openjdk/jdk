@@ -133,7 +133,6 @@ class Node;
 class Node_Array;
 class Node_List;
 class Node_Stack;
-class NullCheckNode;
 class OopMap;
 class ParmNode;
 class PCTableNode;
@@ -323,6 +322,10 @@ protected:
   // preserved in _parse_idx.
   const node_idx_t _idx;
   DEBUG_ONLY(const node_idx_t _parse_idx;)
+  // IGV node identifier. It is similar to Node::_debug_idx in that it is unique
+  // across all compilation phases, but different in that it is initialized in
+  // each compilation, for stability.
+  NOT_PRODUCT(node_idx_t _igv_idx;)
 
   // Get the (read-only) number of input edges
   uint req() const { return _cnt; }
@@ -693,6 +696,8 @@ public:
       DEFINE_CLASS_ID(EncodeNarrowPtr, Type, 6)
         DEFINE_CLASS_ID(EncodeP, EncodeNarrowPtr, 0)
         DEFINE_CLASS_ID(EncodePKlass, EncodeNarrowPtr, 1)
+      DEFINE_CLASS_ID(Vector, Type, 7)
+        DEFINE_CLASS_ID(VectorMaskCmp, Vector, 0)
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -737,8 +742,6 @@ public:
     DEFINE_CLASS_ID(BoxLock,  Node, 10)
     DEFINE_CLASS_ID(Add,      Node, 11)
     DEFINE_CLASS_ID(Mul,      Node, 12)
-    DEFINE_CLASS_ID(Vector,   Node, 13)
-      DEFINE_CLASS_ID(VectorMaskCmp, Vector, 0)
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt,     Node, 15)
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
@@ -1247,19 +1250,12 @@ public:
   }
 };
 
-
-#ifndef PRODUCT
-
-// Used in debugging code to avoid walking across dead or uninitialized edges.
-inline bool NotANode(const Node* n) {
+inline bool not_a_node(const Node* n) {
   if (n == NULL)                   return true;
   if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
   if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
   return false;
 }
-
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Iterators over DU info, and associated Node functions.

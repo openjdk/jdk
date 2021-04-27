@@ -27,7 +27,6 @@
 
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
-#include "compiler/oopMap.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
@@ -113,10 +112,6 @@ class Method : public Metadata {
   // NULL only at safepoints (because of a de-opt).
   CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
-
-#if INCLUDE_AOT
-  CompiledMethod* _aot_code;
-#endif
 
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags);
@@ -404,18 +399,6 @@ class Method : public Metadata {
     }
   }
 
-#if INCLUDE_AOT
-  void set_aot_code(CompiledMethod* aot_code) {
-    _aot_code = aot_code;
-  }
-
-  CompiledMethod* aot_code() const {
-    return _aot_code;
-  }
-#else
-  CompiledMethod* aot_code() const { return NULL; }
-#endif // INCLUDE_AOT
-
   int nmethod_age() const {
     if (method_counters() == NULL) {
       return INT_MAX;
@@ -675,8 +658,6 @@ public:
   // simultaneously. Use with caution.
   bool has_compiled_code() const;
 
-  bool has_aot_code() const                      { return aot_code() != NULL; }
-
   bool needs_clinit_barrier() const;
 
   // sizing
@@ -822,7 +803,7 @@ public:
 
   // Clear methods
   static void clear_jmethod_ids(ClassLoaderData* loader_data);
-  static void print_jmethod_ids(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
+  static void print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
   jmethodID jmethod_id();
@@ -839,7 +820,7 @@ public:
   void     set_intrinsic_id(vmIntrinsicID id) {                           _intrinsic_id = (u2) id; }
 
   // Helper routines for intrinsic_id() and vmIntrinsics::method().
-  void init_intrinsic_id();     // updates from _none if a match
+  void init_intrinsic_id(vmSymbolID klass_id);     // updates from _none if a match
   static vmSymbolID klass_id_for_intrinsics(const Klass* holder);
 
   bool caller_sensitive() {

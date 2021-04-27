@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,8 @@ public class DelegatingJavaFileManager implements JavaFileManager {
                                                  JavaFileManager releaseFM,
                                                  JavaFileManager originalFM) {
         context.put(JavaFileManager.class, (JavaFileManager) null);
-        JavaFileManager nue = originalFM instanceof StandardJavaFileManager
-                ? new DelegatingSJFM(releaseFM,
-                                                        (StandardJavaFileManager) originalFM)
+        JavaFileManager nue = originalFM instanceof StandardJavaFileManager standardJavaFileManager
+                ? new DelegatingSJFM(releaseFM, standardJavaFileManager)
                 : new DelegatingJavaFileManager(releaseFM, originalFM);
         context.put(JavaFileManager.class, nue);
     }

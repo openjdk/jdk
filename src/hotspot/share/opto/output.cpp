@@ -572,10 +572,6 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           if (mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method) {
             stub_size  += CompiledStaticCall::to_interp_stub_size();
             reloc_size += CompiledStaticCall::reloc_to_interp_stub();
-#if INCLUDE_AOT
-            stub_size  += CompiledStaticCall::to_aot_stub_size();
-            reloc_size += CompiledStaticCall::reloc_to_aot_stub();
-#endif
           }
         } else if (mach->is_MachSafePoint()) {
           // If call/safepoint are adjacent, account for possible
@@ -826,8 +822,9 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       ciKlass* cik = t->is_oopptr()->klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
-      sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+      ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
+      sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
+                                    : new ObjectValue(spobj->_idx, klass_sv);
       set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -1099,8 +1096,9 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           ciKlass* cik = t->is_oopptr()->klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
-          ObjectValue* sv = new ObjectValue(spobj->_idx,
-                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+          ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
+          ObjectValue* sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
+                                        : new ObjectValue(spobj->_idx, klass_sv);
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);
