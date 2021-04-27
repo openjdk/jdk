@@ -171,7 +171,7 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 }
 
 // create a klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass_impl(int n, TRAPS) {
+Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
   int dim = dimension();
   assert(dim <= n, "check order of chain");
     if (dim == n)
@@ -204,7 +204,7 @@ Klass* TypeArrayKlass::array_klass_impl(int n, TRAPS) {
 }
 
 // return existing klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass_or_null_impl(int n) {
+Klass* TypeArrayKlass::array_klass_or_null(int n) {
   int dim = dimension();
   assert(dim <= n, "check order of chain");
     if (dim == n)
@@ -219,12 +219,12 @@ Klass* TypeArrayKlass::array_klass_or_null_impl(int n) {
   return h_ak->array_klass_or_null(n);
 }
 
-Klass* TypeArrayKlass::array_klass_impl(TRAPS) {
-  return array_klass_impl(dimension() +  1, THREAD);
+Klass* TypeArrayKlass::array_klass(TRAPS) {
+  return array_klass(dimension() +  1, THREAD);
 }
 
-Klass* TypeArrayKlass::array_klass_or_null_impl() {
-  return array_klass_or_null_impl(dimension() +  1);
+Klass* TypeArrayKlass::array_klass_or_null() {
+  return array_klass_or_null(dimension() +  1);
 }
 
 int TypeArrayKlass::oop_size(oop obj) const {

@@ -310,7 +310,7 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
 }
 
 
-Klass* ObjArrayKlass::array_klass_impl(int n, TRAPS) {
+Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
 
   assert(dimension() <= n, "check order of chain");
   int dim = dimension();
@@ -344,7 +344,7 @@ Klass* ObjArrayKlass::array_klass_impl(int n, TRAPS) {
   return ak->array_klass(n, THREAD);
 }
 
-Klass* ObjArrayKlass::array_klass_or_null_impl(int n) {
+Klass* ObjArrayKlass::array_klass_or_null(int n) {
 
   assert(dimension() <= n, "check order of chain");
   int dim = dimension();
@@ -359,12 +359,12 @@ Klass* ObjArrayKlass::array_klass_or_null_impl(int n) {
   return ak->array_klass_or_null(n);
 }
 
-Klass* ObjArrayKlass::array_klass_impl(TRAPS) {
-  return array_klass_impl(dimension() +  1, THREAD);
+Klass* ObjArrayKlass::array_klass(TRAPS) {
+  return array_klass(dimension() +  1, THREAD);
 }
 
-Klass* ObjArrayKlass::array_klass_or_null_impl() {
-  return array_klass_or_null_impl(dimension() +  1);
+Klass* ObjArrayKlass::array_klass_or_null() {
+  return array_klass_or_null(dimension() +  1);
 }
 
 bool ObjArrayKlass::can_be_primary_super_slow() const {

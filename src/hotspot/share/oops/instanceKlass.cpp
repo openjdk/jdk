@@ -1427,7 +1427,7 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
   }
 }
 
-Klass* InstanceKlass::array_klass_impl(int n, TRAPS) {
+Klass* InstanceKlass::array_klass(int n, TRAPS) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == NULL) {
     ResourceMark rm(THREAD);
@@ -1449,7 +1449,7 @@ Klass* InstanceKlass::array_klass_impl(int n, TRAPS) {
   return oak->array_klass(n, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_or_null_impl(int n) {
+Klass* InstanceKlass::array_klass_or_null(int n) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == NULL) {
     return NULL;
@@ -1459,12 +1459,12 @@ Klass* InstanceKlass::array_klass_or_null_impl(int n) {
   return oak->array_klass_or_null(n);
 }
 
-Klass* InstanceKlass::array_klass_impl(TRAPS) {
-  return array_klass_impl(1, THREAD);
+Klass* InstanceKlass::array_klass(TRAPS) {
+  return array_klass(1, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_or_null_impl() {
-  return array_klass_or_null_impl(1);
+Klass* InstanceKlass::array_klass_or_null() {
+  return array_klass_or_null(1);
 }
 
 static int call_class_initializer_counter = 0;   // for debugging
