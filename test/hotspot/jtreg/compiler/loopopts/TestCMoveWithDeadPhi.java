@@ -25,11 +25,14 @@
  * @test
  * @bug 8265938
  * @summary Test conditional move optimization with a TOP PhiNode.
+ * @library /test/lib
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.TestCMoveWithDeadPhi::test
  *                   compiler.loopopts.TestCMoveWithDeadPhi
  */
 
 package compiler.loopopts;
+
+import jdk.test.lib.Utils;
 
 public class TestCMoveWithDeadPhi {
 
@@ -62,7 +65,8 @@ public class TestCMoveWithDeadPhi {
             }
         };
         // Give thread some time to trigger compilation
+        thread.setDaemon(true);
         thread.start();
-        Thread.sleep(4000);
+        Thread.sleep(Utils.adjustTimeout(4000));
     }
 }
