@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  * @see Run
  */
 abstract public class AbstractInfo {
-    private static final Random random = Utils.getRandomInstance();
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     protected final Class<?> testClass;
     private boolean onWarmUp = true;
@@ -55,7 +55,7 @@ abstract public class AbstractInfo {
      * @return the random object.
      */
     public Random getRandom() {
-        return random;
+        return RANDOM;
     }
 
     /**
@@ -84,7 +84,7 @@ abstract public class AbstractInfo {
         } catch (NoSuchMethodException e) {
             String parameters = args == null || args.length == 0 ? "" :
                     " with arguments [" + Arrays.stream(args).map(Class::getName).collect(Collectors.joining(",")) + "]";
-            throw new TestRunException("Could not find method " + name + " in " + c + parameters);
+            throw new TestRunException("Could not find method " + name + " in " + c + parameters, e);
         }
     }
 

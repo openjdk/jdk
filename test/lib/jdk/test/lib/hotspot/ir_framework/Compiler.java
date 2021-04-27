@@ -24,20 +24,40 @@
 package jdk.test.lib.hotspot.ir_framework;
 
 /**
- * This enum is used in {@link Check#when()} of a <b>checked test</b> to specify when the framework will invoke the
- * check method after invoking the associated {@link Test} method.
+ * Compilers to select for {@link DontCompile}. HotSpot does not handle the exclusion of a C1 method at a specific level.
+ * It can only exclude a method for the entire C1 compilation. Thus, this annotation is provided for {@link DontCompile}
+ * instead of {@link CompLevel}.
  *
- * @see Check
- * @see Test
+ * @see DontCompile
  */
-public enum CheckAt {
+public enum Compiler {
     /**
-     * Default: Invoke the {@link Check} method each time after invoking the associated {@link Test} method.
+     * Selecting both the C1 and C2 compiler. This must be in sync with hotspot/share/compiler/compilerDefinitions.hpp.
      */
-    EACH_INVOCATION,
+    ANY(-2),
     /**
-     * Invoke the {@link Check} method only once after the warm-up of the associated {@link Test} method had been completed
-     * and the framework has compiled the associated {@link Test} method.
+     * The C1 compiler.
      */
-    COMPILED,
+    C1(1),
+    /**
+     * The C2 compiler.
+     */
+    C2(4),
+
+    ;
+
+    private final int value;
+
+    Compiler(int level) {
+        this.value = level;
+    }
+
+    /**
+     * Get the compilation level as integer value. These will match the levels specified in HotSpot (if available).
+     *
+     * @return the compilation level as integer.
+     */
+    public int getValue() {
+        return value;
+    }
 }

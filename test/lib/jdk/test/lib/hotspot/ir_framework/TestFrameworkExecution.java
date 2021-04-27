@@ -89,8 +89,8 @@ public class TestFrameworkExecution {
     private static final boolean SHUFFLE_TESTS = Boolean.parseBoolean(System.getProperty("ShuffleTests", "true"));
     // Use separate flag as VERIFY_IR could have been set by user but due to other flags it was disabled by flag VM.
     private static final boolean PRINT_VALID_IR_RULES = Boolean.getBoolean("ShouldDoIRVerification");
-    protected static final long PerMethodTrapLimit = (Long)WHITE_BOX.getVMFlag("PerMethodTrapLimit");
-    protected static final boolean ProfileInterpreter = (Boolean)WHITE_BOX.getVMFlag("ProfileInterpreter");
+    protected static final long PER_METHOD_TRAP_LIMIT = (Long)WHITE_BOX.getVMFlag("PerMethodTrapLimit");
+    protected static final boolean PROFILE_INTERPRETER = (Boolean)WHITE_BOX.getVMFlag("ProfileInterpreter");
     private static final boolean FLIP_C1_C2 = Boolean.getBoolean("FlipC1C2");
 
     private final HashMap<Method, DeclaredTest> declaredTests = new HashMap<>();
@@ -146,8 +146,7 @@ public class TestFrameworkExecution {
         try {
             String testClassName = args[0];
             System.out.println("Framework main(), about to run tests in class " + testClassName);
-            Class<?> testClass;
-            testClass = getClassObject(testClassName, "test");
+            Class<?> testClass = getClassObject(testClassName, "test");
 
             TestFrameworkExecution framework = new TestFrameworkExecution(testClass);
             framework.addHelperClasses(args);
@@ -158,25 +157,23 @@ public class TestFrameworkExecution {
     }
 
     protected static Class<?> getClassObject(String className, String classType) {
-        Class<?> c;
         try {
-            c = Class.forName(className);
+            return Class.forName(className);
         } catch (Exception e) {
             throw new TestRunException("Could not find " + classType + " class", e);
         }
-        return c;
     }
 
     /**
      * Set up all helper classes and verify they are specified correctly.
      */
     private void addHelperClasses(String[] args) {
-        Class<?>[] helperClasses = getHelperClasses(args);
-        if (helperClasses != null) {
-            TestRun.check(Arrays.stream(helperClasses).noneMatch(Objects::isNull), "A Helper class cannot be null");
+        Class<?>[] helperClassesList = getHelperClasses(args);
+        if (helperClassesList != null) {
+            TestRun.check(Arrays.stream(helperClassesList).noneMatch(Objects::isNull), "A Helper class cannot be null");
             this.helperClasses = new HashSet<>();
 
-            for (Class<?> helperClass : helperClasses) {
+            for (Class<?> helperClass : helperClassesList) {
                 if (Arrays.stream(testClass.getDeclaredClasses()).anyMatch(c -> c == helperClass)) {
                     // Nested class of test class is automatically treated as helper class
                     TestFormat.failNoThrow("Nested " + helperClass + " inside test " + testClass + " is implicitly"
@@ -337,23 +334,25 @@ public class TestFrameworkExecution {
 
     private void applyClassAnnotations(Class<?> c) {
         ForceCompileClassInitializer anno = getAnnotation(c, ForceCompileClassInitializer.class);
-        if (anno != null) {
-            // Compile class initializer
-            CompLevel level = anno.value();
-            if (level == CompLevel.SKIP || level == CompLevel.WAIT_FOR_COMPILATION) {
-                TestFormat.failNoThrow("Cannot define compilation level SKIP or WAIT_FOR_COMPILATION in " +
-                                       "@ForceCompileClassInitializer at " + c);
-                return;
-            }
-            level = restrictCompLevel(anno.value());
-            if (level != CompLevel.SKIP) {
-                // Make sure class is initialized to avoid compilation bailout of <clinit>
-                getClassObject(c.getName(), "nested"); // calls Class.forName() to initialize 'c'
-                TestFormat.checkNoThrow(WHITE_BOX.enqueueInitializerForCompilation(c, level.getValue()),
-                                        "Failed to enqueue <clinit> of " + c + " for compilation. Did you specify "
-                                        + "@ForceCompileClassInitializer without providing a static class initialization? "
-                                        + "Make sure to provide any form of static initialization or remove the annotation.");
-            }
+        if (anno == null) {
+            return;
+        }
+
+        // Compile class initializer
+        CompLevel level = anno.value();
+        if (level == CompLevel.SKIP || level == CompLevel.WAIT_FOR_COMPILATION) {
+            TestFormat.failNoThrow("Cannot define compilation level SKIP or WAIT_FOR_COMPILATION in " +
+                                   "@ForceCompileClassInitializer at " + c);
+            return;
+        }
+        level = restrictCompLevel(anno.value());
+        if (level != CompLevel.SKIP) {
+            // Make sure class is initialized to avoid compilation bailout of <clinit>
+            getClassObject(c.getName(), "nested"); // calls Class.forName() to initialize 'c'
+            TestFormat.checkNoThrow(WHITE_BOX.enqueueInitializerForCompilation(c, level.getValue()),
+                                    "Failed to enqueue <clinit> of " + c + " for compilation. Did you specify "
+                                    + "@ForceCompileClassInitializer without providing a static class initialization? "
+                                    + "Make sure to provide any form of static initialization or remove the annotation.");
         }
     }
 
@@ -363,38 +362,20 @@ public class TestFrameworkExecution {
     }
 
     /**
-     * Exclude a method from compilation randomly and returns the compilation level on which a compilation is still
-     * possible.
+     * Exclude a method from compilation with a compiler randomly. Return the compiler for which the method was made
+     * not compilable.
      */
-    static CompLevel excludeRandomly(Executable ex) {
-        Random random = Utils.getRandomInstance();
-        boolean exclude = random.nextBoolean();
-        CompLevel level = CompLevel.ANY;
-        if (exclude) {
-            String levelName;
-            switch (random.nextInt() % 3) {
-                case 1 -> {
-                    level = CompLevel.C1;
-                    WHITE_BOX.makeMethodNotCompilable(ex, CompLevel.C2.getValue(), false);
-                    WHITE_BOX.makeMethodNotCompilable(ex, CompLevel.C2.getValue(), true);
-                    levelName = "C2";
-                }
-                case 2 -> {
-                    level = CompLevel.C2;
-                    WHITE_BOX.makeMethodNotCompilable(ex, CompLevel.C1.getValue(), false);
-                    WHITE_BOX.makeMethodNotCompilable(ex, CompLevel.C1.getValue(), true);
-                    levelName = "C1";
-                }
-                default -> {
-                    level = CompLevel.SKIP;
-                    WHITE_BOX.makeMethodNotCompilable(ex, CompLevel.ANY.getValue(), false);
-                    WHITE_BOX.makeMethodNotCompilable(ex, CompLevel.ANY.getValue(), true);
-                    levelName = "C1 and C2";
-                }
-            }
-            System.out.println("Excluding from " + levelName + " compilation: " + ex);
+    static Compiler excludeRandomly(Executable ex) {
+        Compiler compiler;
+        switch (Utils.getRandomInstance().nextInt() % 3) {
+            case 1 -> compiler = Compiler.C1;
+            case 2 -> compiler = Compiler.C2;
+            default -> compiler = Compiler.ANY;
         }
-        return level;
+        WHITE_BOX.makeMethodNotCompilable(ex, compiler.getValue(), false);
+        WHITE_BOX.makeMethodNotCompilable(ex, compiler.getValue(), true);
+        System.out.println("Excluding from " + compiler.name() + " compilation: " + ex);
+        return compiler;
     }
 
     private void applyIndependentCompilationCommands(Executable ex) {
@@ -410,15 +391,13 @@ public class TestFrameworkExecution {
             WHITE_BOX.testSetForceInlineMethod(ex, true);
         }
         if (dontCompileAnno != null) {
-            CompLevel compLevel = dontCompileAnno.value();
-            TestFormat.check(compLevel == CompLevel.C1 || compLevel == CompLevel.C2 || compLevel == CompLevel.ANY,
-                             "Can only specify compilation level C1 (no individual C1 levels), " +
-                             "C2 or ANY (no compilation, same as specifying anything) in @DontCompile at " + ex);
-            dontCompileAtLevel(ex, compLevel);
+            dontCompileWithCompiler(ex, dontCompileAnno.value());
         }
         if (EXCLUDE_RANDOM && getAnnotation(ex, Test.class) == null && forceCompileAnno == null && dontCompileAnno == null) {
             // Randomly exclude helper methods from compilation
-            excludeRandomly(ex);
+            if (Utils.getRandomInstance().nextBoolean()) {
+                excludeRandomly(ex);
+            }
         }
     }
 
@@ -437,14 +416,14 @@ public class TestFrameworkExecution {
         }
         TestFormat.check(forceInlineAnno == null || dontInlineAnno == null, "Cannot have @ForceInline and @DontInline at the same time at " + ex);
         if (forceCompileAnno != null && dontCompileAnno != null) {
-            CompLevel forceCompile = forceCompileAnno.value();
-            CompLevel dontCompile = dontCompileAnno.value();
-            TestFormat.check(dontCompile != CompLevel.ANY,
-                             "Cannot have @DontCompile(CompLevel.ANY) and @ForceCompile at the same time at " + ex);
-            TestFormat.check(forceCompile != CompLevel.ANY,
+            CompLevel forceCompileLevel = forceCompileAnno.value();
+            Compiler dontCompileCompiler = dontCompileAnno.value();
+            TestFormat.check(dontCompileCompiler != Compiler.ANY,
+                             "Cannot have @DontCompile(Compiler.ANY) and @ForceCompile at the same time at " + ex);
+            TestFormat.check(forceCompileLevel != CompLevel.ANY,
                              "Cannot have @ForceCompile(CompLevel.ANY) and @DontCompile at the same time at " + ex);
-            TestFormat.check(!CompLevel.overlapping(dontCompile, forceCompile),
-                             "Overlapping compilation levels with @ForceCompile and @DontCompile at " + ex);
+            TestFormat.check(forceCompileLevel.isNotCompilationLevelOfCompiler(dontCompileCompiler),
+                             "Overlapping compilation level and compiler with @ForceCompile and @DontCompile at " + ex);
         }
     }
 
@@ -457,13 +436,13 @@ public class TestFrameworkExecution {
         WHITE_BOX.testSetDontInlineMethod(m, true);
     }
 
-    private void dontCompileAtLevel(Executable ex, CompLevel compLevel) {
+    private void dontCompileWithCompiler(Executable ex, Compiler compiler) {
         if (VERBOSE) {
-            System.out.println("dontCompileAtLevel " + ex + " , level = " + compLevel.name());
+            System.out.println("dontCompileWithCompiler " + ex + " , compiler = " + compiler.name());
         }
-        WHITE_BOX.makeMethodNotCompilable(ex, compLevel.getValue(), true);
-        WHITE_BOX.makeMethodNotCompilable(ex, compLevel.getValue(), false);
-        if (compLevel == CompLevel.ANY) {
+        WHITE_BOX.makeMethodNotCompilable(ex, compiler.getValue(), true);
+        WHITE_BOX.makeMethodNotCompilable(ex, compiler.getValue(), false);
+        if (compiler == Compiler.ANY) {
             WHITE_BOX.testSetDontInlineMethod(ex, true);
         }
     }
@@ -475,11 +454,11 @@ public class TestFrameworkExecution {
             TestFormat.check(complevel != CompLevel.SKIP && complevel != CompLevel.WAIT_FOR_COMPILATION,
                              "Cannot define compilation level SKIP or WAIT_FOR_COMPILATION in @ForceCompile at " + ex);
             complevel = restrictCompLevel(forceCompileAnno.value());
-            if (EXCLUDE_RANDOM) {
-                complevel = CompLevel.join(complevel, excludeRandomly(ex));
-            }
             if (FLIP_C1_C2) {
-                complevel = flipCompLevel(complevel);
+                complevel = complevel.flipCompLevel();
+            }
+            if (EXCLUDE_RANDOM) {
+                complevel = complevel.excludeCompilationRandomly(ex);
             }
             if (complevel != CompLevel.SKIP) {
                 enqueueForCompilation(ex, complevel);
@@ -538,10 +517,10 @@ public class TestFrameworkExecution {
         }
         CompLevel compLevel = restrictCompLevel(testAnno.compLevel());
         if (FLIP_C1_C2) {
-            compLevel = flipCompLevel(compLevel);
+            compLevel = compLevel.flipCompLevel();
         }
         if (EXCLUDE_RANDOM) {
-            compLevel = CompLevel.join(compLevel, excludeRandomly(m));
+            compLevel = compLevel.excludeCompilationRandomly(m);
         }
         DeclaredTest test = new DeclaredTest(m, ArgumentValue.getArguments(m), compLevel, warmupIterations);
         declaredTests.put(m, test);
@@ -584,18 +563,6 @@ public class TestFrameworkExecution {
         }
         if (TIERED_COMPILATION && compLevel.getValue() > TIERED_COMPILATION_STOP_AT_LEVEL.getValue()) {
             return CompLevel.SKIP;
-        }
-        return compLevel;
-    }
-
-    private static CompLevel flipCompLevel(CompLevel compLevel) {
-        switch (compLevel) {
-            case C1, C1_LIMITED_PROFILE, C1_FULL_PROFILE -> {
-                return CompLevel.C2;
-            }
-            case C2 -> {
-                return CompLevel.C1;
-            }
         }
         return compLevel;
     }
@@ -903,15 +870,15 @@ public class TestFrameworkExecution {
     }
 
     static void assertDeoptimizedByC1(Method m) {
-        if (notUnstableDeoptAssertion(m, CompLevel.C1)) {
-            TestRun.check(compiledByC1(m) != TriState.Yes || PerMethodTrapLimit == 0 || !ProfileInterpreter,
+        if (notUnstableDeoptAssertion(m, CompLevel.C1_SIMPLE)) {
+            TestRun.check(compiledByC1(m) != TriState.Yes || PER_METHOD_TRAP_LIMIT == 0 || !PROFILE_INTERPRETER,
                           m + " should have been deoptimized by C1");
         }
     }
 
     static void assertDeoptimizedByC2(Method m) {
         if (notUnstableDeoptAssertion(m, CompLevel.C2)) {
-            TestRun.check(compiledByC2(m) != TriState.Yes || PerMethodTrapLimit == 0 || !ProfileInterpreter,
+            TestRun.check(compiledByC2(m) != TriState.Yes || PER_METHOD_TRAP_LIMIT == 0 || !PROFILE_INTERPRETER,
                           m + " should have been deoptimized by C2");
         }
     }
@@ -946,7 +913,7 @@ public class TestFrameworkExecution {
     }
 
     private static TriState compiledByC1(Method m) {
-        TriState triState = compiledAtLevel(m, CompLevel.C1);
+        TriState triState = compiledAtLevel(m, CompLevel.C1_SIMPLE);
         if (triState != TriState.No) {
             return triState;
         }
@@ -965,7 +932,7 @@ public class TestFrameworkExecution {
     private static TriState compiledAtLevel(Method m, CompLevel level) {
         if (WHITE_BOX.isMethodCompiled(m, false)) {
             switch (level) {
-                case C1, C1_LIMITED_PROFILE, C1_FULL_PROFILE, C2 -> {
+                case C1_SIMPLE, C1_LIMITED_PROFILE, C1_FULL_PROFILE, C2 -> {
                     if (WHITE_BOX.getMethodCompilationLevel(m, false) == level.getValue()) {
                         return TriState.Yes;
                     }
@@ -1142,8 +1109,8 @@ abstract class AbstractTest {
             if (TestFrameworkExecution.VERBOSE) {
                 System.out.println("Is " + testMethod + " compiled? " + isCompiled);
             }
-            if (isCompiled || TestFrameworkExecution.XCOMP) {
-                // Don't wait for compilation if -Xcomp is enabled.
+            if (isCompiled || TestFrameworkExecution.XCOMP || TestFrameworkExecution.EXCLUDE_RANDOM) {
+                // Don't wait for compilation if -Xcomp is enabled or if we are randomly excluding methods from compilation.
                 return;
             }
         } while (elapsed < WAIT_FOR_COMPILATION_TIMEOUT);

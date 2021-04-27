@@ -98,7 +98,8 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DFlipC1C2=true`: The framework compiles all `@Test` annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.
 - `-DShuffleTests=false`: Disables the random execution order of all tests (such a shuffling is always done by default).
 - `-DDumpReplay=true`: Add the `DumpReplay` directive to the test VM.
-- `-DGCAfter=true`: Perform `System.gc()` after each test (slows the execution don).
+- `-DGCAfter=true`: Perform `System.gc()` after each test (slows the execution down).
+- `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT_FOR_COMPILATION](./CompLevel.java).
 
 
 ## 3. Test Framework Execution

@@ -43,7 +43,7 @@ class IREncodingPrinter {
     public static final int NO_RULE_APPLIED = -1;
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    private static final List<Function<String, Object>> longGetters = Arrays.asList(
+    private static final List<Function<String, Object>> LONG_GETTERS = Arrays.asList(
             WHITE_BOX::getIntVMFlag, WHITE_BOX::getUintVMFlag, WHITE_BOX::getIntxVMFlag,
             WHITE_BOX::getUintxVMFlag, WHITE_BOX::getUint64VMFlag, WHITE_BOX::getSizeTVMFlag);
 
@@ -185,7 +185,7 @@ class IREncodingPrinter {
         if (actualFlagValue != null) {
             return checkBooleanFlag(flag, value, (Boolean) actualFlagValue);
         }
-        actualFlagValue = longGetters.stream().map(f -> f.apply(flag)).filter(Objects::nonNull).findAny().orElse(null);
+        actualFlagValue = LONG_GETTERS.stream().map(f -> f.apply(flag)).filter(Objects::nonNull).findAny().orElse(null);
         if (actualFlagValue != null) {
             return checkLongFlag(flag, value, (Long) actualFlagValue);
         }

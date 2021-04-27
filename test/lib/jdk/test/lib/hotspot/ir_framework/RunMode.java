@@ -39,5 +39,5 @@ public enum RunMode {
      * trigger the compilation(s), especially in regard of possible {@link IR} annotations at the associated {@link Test}
      * method.
      */
-    STANDALONE
+    STANDALONE,
 }

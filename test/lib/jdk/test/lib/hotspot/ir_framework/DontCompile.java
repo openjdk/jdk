@@ -28,14 +28,12 @@ import java.lang.annotation.RetentionPolicy;
 
 /**
  * Prevent a compilation of the annotated <b>helper method</b> (not specifying {@link Test @Test},
- * {@link Check @Check} or {@link Run @Run}):
+ * {@link Check @Check} or {@link Run @Run}) with the specified compiler.
  *
  * <ul>
- *     <li><p>{@link CompLevel#ANY} (default): No C1 or C2 compilation.</li>
- *     <li><p>{@link CompLevel#C1}: No C1 compilation, C2 compilation still possible.</li>
- *     <li><p>{@link CompLevel#C2}: No C2 compilation, C1 compilation still possible.</li>
- *     <li><p>The usage of any other compilation level is forbidden and results in a
- *            {@link TestFormatException TestFormatException}.</li>
+ *     <li><p>{@link Compiler#ANY} (default): No C1 or C2 compilation.</li>
+ *     <li><p>{@link Compiler#C1}: No C1 compilation, C2 compilation still possible.</li>
+ *     <li><p>{@link Compiler#C2}: No C2 compilation, C1 compilation still possible.</li>
  * </ul>
  * <p>
  * Using this annotation on <i>non-helper methods</i> results in a {@link TestFormatException TestFormatException}.
@@ -43,7 +41,7 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DontCompile {
     /**
-     * The excluded compilation level for the helper method.
+     * The compiler with which a compilation of a helper method is excluded.
      */
-    CompLevel value() default CompLevel.ANY;
+    Compiler value() default Compiler.ANY;
 }

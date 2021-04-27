@@ -77,5 +77,5 @@ public enum Argument {
      * Provides a different random primitive value on each test invocation.
      * Float and double values are restricted to the range [-10000,10000].
      */
-    RANDOM_EACH
+    RANDOM_EACH,
 }

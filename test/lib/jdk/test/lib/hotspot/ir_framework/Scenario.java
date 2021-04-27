@@ -24,6 +24,7 @@
 package jdk.test.lib.hotspot.ir_framework;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a scenario that can be executed by the {@link TestFramework}.
@@ -42,8 +43,8 @@ import java.util.*;
 public class Scenario {
     private static final String ADDITIONAL_SCENARIO_FLAGS_PROPERTY = System.getProperty("ScenarioFlags", "");
     private static final String SCENARIOS_PROPERTY = System.getProperty("Scenarios", "");
-    private static final List<String> ADDITIONAL_SCENARIO_FLAGS = new ArrayList<>();
-    private static final Set<Integer> ENABLED_SCENARIOS = new HashSet<>();
+    private static final List<String> ADDITIONAL_SCENARIO_FLAGS;
+    private static final Set<Integer> ENABLED_SCENARIOS;
 
     private final List<String> flags;
     private final int index;
@@ -52,18 +53,19 @@ public class Scenario {
 
     static {
         if (!SCENARIOS_PROPERTY.isEmpty()) {
-            System.out.println(Arrays.toString(SCENARIOS_PROPERTY.split("\\s*,\\s*")));
+            var split = SCENARIOS_PROPERTY.split("\\s*,\\s*");
             try {
-                Arrays.stream(SCENARIOS_PROPERTY.split("\\s*,\\s*")).map(Integer::parseInt).forEachOrdered(ENABLED_SCENARIOS::add);
+                ENABLED_SCENARIOS = Arrays.stream(split).map(Integer::parseInt).collect(Collectors.toSet());
             } catch (NumberFormatException e) {
                 throw new TestRunException("Provided a scenario index in the -DScenario comma-separated list which is not "
                                            + "a number: " + SCENARIOS_PROPERTY);
             }
+        } else {
+            ENABLED_SCENARIOS = Collections.emptySet();
         }
 
-        if (!ADDITIONAL_SCENARIO_FLAGS_PROPERTY.isEmpty()) {
-            ADDITIONAL_SCENARIO_FLAGS.addAll(Arrays.asList(ADDITIONAL_SCENARIO_FLAGS_PROPERTY.split("\\s*,\\s*")));
-        }
+        ADDITIONAL_SCENARIO_FLAGS = ADDITIONAL_SCENARIO_FLAGS_PROPERTY.isEmpty() ? Collections.emptyList() :
+                Arrays.asList(ADDITIONAL_SCENARIO_FLAGS_PROPERTY.split("\\s*,\\s*"));
     }
 
     /**

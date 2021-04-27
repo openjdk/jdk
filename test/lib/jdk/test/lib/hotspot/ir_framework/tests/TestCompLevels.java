@@ -24,7 +24,6 @@
 package jdk.test.lib.hotspot.ir_framework.tests;
 
 import jdk.test.lib.hotspot.ir_framework.*;
-import jdk.test.lib.Asserts;
 
 import java.lang.reflect.Method;
 
@@ -64,14 +63,14 @@ public class TestCompLevels {
         framework.setDefaultWarmup(10).addScenarios(new Scenario(0, "-XX:TieredStopAtLevel=1")).start();
     }
 
-    @Test(compLevel = CompLevel.C1)
+    @Test(compLevel = CompLevel.C1_SIMPLE)
     public void testC1() {
         testExecuted[0]++;
     }
 
     @Check(test = "testC1", when = CheckAt.COMPILED)
     public void checkTestC1(TestInfo info) {
-        TestFramework.assertCompiledAtLevel(info.getTest(), CompLevel.C1);
+        TestFramework.assertCompiledAtLevel(info.getTest(), CompLevel.C1_SIMPLE);
     }
 
     @Test(compLevel = CompLevel.C1_LIMITED_PROFILE)
@@ -111,7 +110,7 @@ public class TestCompLevels {
 }
 
 class TestNoTiered {
-    @Test(compLevel = CompLevel.C1)
+    @Test(compLevel = CompLevel.C1_SIMPLE)
     public void level1() {
     }
 
@@ -165,7 +164,7 @@ class TestNoTiered {
 }
 
 class TestStopAtLevel1 {
-    @Test(compLevel = CompLevel.C1)
+    @Test(compLevel = CompLevel.C1_SIMPLE)
     public int level1() {
         return 34;
     }

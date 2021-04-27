@@ -34,7 +34,7 @@ import java.util.Random;
  * This class represents an argument value specified by {@link Argument} in {@link Arguments}.
  */
 class ArgumentValue {
-    private static final Random random = Utils.getRandomInstance();
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     private final Object argumentValue;
     private final boolean isRandomEach;
@@ -282,23 +282,23 @@ class ArgumentValue {
 
     private static Object getRandom(Class<?> c) {
         if (isBoolean(c)) {
-            return random.nextBoolean();
+            return RANDOM.nextBoolean();
         } else if (c.equals(byte.class)) {
-            return (byte)random.nextInt(256);
+            return (byte) RANDOM.nextInt(256);
         } else if (isChar(c)) {
-            return (char)random.nextInt(65536);
+            return (char) RANDOM.nextInt(65536);
         }  else if (c.equals(short.class)) {
-            return (short)random.nextInt(65536);
+            return (short) RANDOM.nextInt(65536);
         } else if (c.equals(int.class)) {
-            return random.nextInt();
+            return RANDOM.nextInt();
         } else if (c.equals(long.class)) {
-            return random.nextLong();
+            return RANDOM.nextLong();
         } else if (c.equals(float.class)) {
             // Get float between -10000 and 10000.
-            return random.nextFloat() * 20000 - 10000;
+            return RANDOM.nextFloat() * 20000 - 10000;
         } else if (c.equals(double.class)) {
             // Get double between -10000 and 10000.
-            return random.nextDouble() * 20000 - 10000;
+            return RANDOM.nextDouble() * 20000 - 10000;
         } else {
             TestFormat.fail("Cannot generate random value for non-primitive type");
             return null;

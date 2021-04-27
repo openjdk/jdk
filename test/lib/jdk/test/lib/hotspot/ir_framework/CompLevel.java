@@ -23,27 +23,32 @@
 
 package jdk.test.lib.hotspot.ir_framework;
 
+import jdk.test.lib.Utils;
+
+import java.lang.reflect.Executable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Compilation levels used by the framework. The compilation levels map to the used levels in HotSpot (apart from the
- * framework specific values {@link #SKIP} and {@link #WAIT_FOR_COMPILATION} that cannot be found in HotSpot).
+ * Compilation levels used by the framework to initiate a compilation of a method. The compilation levels map to the used
+ * levels in HotSpot (apart from the framework specific values {@link #SKIP} and {@link #WAIT_FOR_COMPILATION} that cannot
+ * be found in HotSpot). The HotSpot specific levels must be in sync with hotspot/share/compiler/compilerDefinitions.hpp.
  *
  * <p>
- * The compilation levels can be specified in the {@link Test}, {@link ForceCompile} and {@link DontCompile} annotation.
- *
+ * The compilation levels can be specified in the {@link Test}, {@link ForceCompile}, and
+ * {@link ForceCompileClassInitializer} annotation.
  *
  * @see Test
  * @see ForceCompile
- * @see DontCompile
+ * @see ForceCompileClassInitializer
  */
 public enum CompLevel {
     /**
      * Can only be used at {@link Test#compLevel()}. After the warm-up, the framework keeps invoking the test over a span
      * of 10s (configurable by setting the property flag {@code -DWaitForCompilationTimeout}) until HotSpot compiles the
      * {@link Test} method. If the method was not compiled after 10s, an exception is thrown. The framework does not wait
-     * for the compilation if the test VM is run with {@code -Xcomp}, {@code -XX:-UseCompiler} or {@code -DStressCC=true}.
+     * for the compilation if the test VM is run with {@code -Xcomp}, {@code -XX:-UseCompiler}, or
+     * {@code -DExcludeRandom=true}.
      */
     WAIT_FOR_COMPILATION(-4),
     /**
@@ -62,7 +67,7 @@ public enum CompLevel {
     /**
      *  Compilation level 1: C1 compilation without any profile information.
      */
-    C1(1),
+    C1_SIMPLE(1),
     /**
      *  Compilation level 2: C1 compilation with limited profile information: Includes Invocation and backedge counters.
      */
@@ -74,14 +79,16 @@ public enum CompLevel {
     /**
      * Compilation level 4: C2 compilation with full optimizations.
      */
-    C2(4);
+    C2(4),
 
-    private static final Map<Integer, CompLevel> typesByValue = new HashMap<>();
+    ;
+
+    private static final Map<Integer, CompLevel> TYPES_BY_VALUE = new HashMap<>();
     private final int value;
 
     static {
         for (CompLevel level : CompLevel.values()) {
-            typesByValue.put(level.value, level);
+            TYPES_BY_VALUE.put(level.value, level);
         }
     }
 
@@ -106,28 +113,54 @@ public enum CompLevel {
      * @return the compilation level enum for {@code value}.
      */
     public static CompLevel forValue(int value) {
-        CompLevel level = typesByValue.get(value);
+        CompLevel level = TYPES_BY_VALUE.get(value);
         TestRun.check(level != null, "Invalid compilation level " + value);
         return level;
     }
 
     /**
-     * Checks if two compilation levels are overlapping.
+     * Checks if this compilation level is not part of the compiler.
      */
-    static boolean overlapping(CompLevel l1, CompLevel l2) {
-        return l1.isC1() == l2.isC1() || (l1 == C2 && l2 == C2);
+    boolean isNotCompilationLevelOfCompiler(Compiler c) {
+        return switch (c) {
+            case C1 -> !isC1();
+            case C2 -> this != C2;
+            default -> throw new TestFrameworkException("Should not be called with compiler " + c);
+        };
     }
 
-    static CompLevel join(CompLevel l1, CompLevel l2) {
-        return switch (l1) {
-            case ANY -> l2;
-            case C1, C1_LIMITED_PROFILE, C1_FULL_PROFILE -> l2.isC1() || l2 == ANY ? C1 : SKIP;
-            case C2 -> l2 == C2 || l2 == ANY ? C2 : SKIP;
-            default -> SKIP;
+    /**
+     * Flip the compilation levels.
+     */
+    CompLevel flipCompLevel() {
+        switch (this) {
+            case C1_SIMPLE, C1_LIMITED_PROFILE, C1_FULL_PROFILE -> {
+                return CompLevel.C2;
+            }
+            case C2 -> {
+                return CompLevel.C1_SIMPLE;
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Return the compilation level when only allowing a compilation with the specified compiler.
+     */
+    CompLevel excludeCompilationRandomly(Executable ex) {
+        if (Utils.getRandomInstance().nextBoolean()) {
+            // No exclusion
+            return this;
+        }
+        Compiler compiler = TestFrameworkExecution.excludeRandomly(ex);
+        return switch (compiler) {
+            case ANY -> SKIP;
+            case C1 -> isC1() ? SKIP : this;
+            case C2 -> this == C2 ? SKIP : this;
         };
     }
 
     private boolean isC1() {
-        return this == C1 || this == C1_LIMITED_PROFILE || this == C1_FULL_PROFILE;
+        return this == C1_SIMPLE || this == C1_LIMITED_PROFILE || this == C1_FULL_PROFILE;
     }
 }

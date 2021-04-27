@@ -83,11 +83,11 @@ class DeclaredTest {
                 if (argument.isFixedRandom()) {
                     hasRandomArgs = true;
                     Object argumentVal = argument.getArgument();
-                    String argumentValString = argumentVal.toString();
+                    builder.append("arg ").append(i).append(": ").append(argumentVal.toString());
                     if (argumentVal instanceof Character) {
-                        argumentValString += " (" + (int)(Character)argumentVal + ")";
+                        builder.append(" (").append((int)(Character)argumentVal).append(")");
                     }
-                    builder.append("arg ").append(i).append(": ").append(argumentValString).append(", ");
+                    builder.append(", ");
                 }
             }
             if (hasRandomArgs) {

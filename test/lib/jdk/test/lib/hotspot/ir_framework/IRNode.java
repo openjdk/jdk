@@ -129,7 +129,7 @@ public class IRNode {
     private static final String LOAD_OF_FIELD_POSTFIX = ",.*" + END;
 
     static List<String> mergeNodes(String[] nodes) {
-        final List<String> mergedNodes = new ArrayList<>();
+        List<String> mergedNodes = new ArrayList<>();
         for (int i = 0; i < nodes.length; i += 2) {
             String node = nodes[i];
             switch (node) {

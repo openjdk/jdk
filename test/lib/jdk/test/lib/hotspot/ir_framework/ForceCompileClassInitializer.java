@@ -28,23 +28,11 @@ import java.lang.annotation.RetentionPolicy;
 
 /**
  * Force a compilation of the static class initializer method ({@code <clinit>}) of the annotated test or helper class
- * immediately at the specified level:
- * <ul>
- *     <li><p>{@link CompLevel#ANY} (default): Highest available compilation level is selected which is usually
- *            {@link CompLevel#C2}</li>
- *     <li><p>{@link CompLevel#C1}: Level 1: C1 compilation without any profile information.</li>
- *     <li><p>{@link CompLevel#C1_LIMITED_PROFILE}: Level 2: C1 compilation with limited profile information:
- *     Includes Invocation and backedge counters.</li>
- *     <li><p>{@link CompLevel#C1_FULL_PROFILE}: Level 3: C1 compilation with full profile information:
- *     Includes Invocation and backedge counters with MDO.</li>
- *     <li><p>{@link CompLevel#C2}: Level 4: C2 compilation with full optimizations.</li>
- *     <li><p>{@link CompLevel#SKIP}: Does not apply to {@code @ForceCompileClassInitializer} and results in a
- *     {@link TestFormatException}.</li>
- *     <li><p>{@link CompLevel#WAIT_FOR_COMPILATION}: Does not apply to {@code @ForceCompileClassInitializer} and results in a
- *     {@link TestFormatException}.</li>
- * </ul>
+ * immediately at the specified level. {@link CompLevel#SKIP} and {@link CompLevel#WAIT_FOR_COMPILATION} do not apply
+ * and result in a {@link TestFormatException}.
+
  * <p>
- *  Using this annotation on non-classes results in a {@link TestFormatException}.
+ *  Using this annotation on non-classes also results in a {@link TestFormatException}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ForceCompileClassInitializer {

@@ -142,18 +142,18 @@ public class TestFramework {
     private static final boolean PREFER_COMMAND_LINE_FLAGS = Boolean.getBoolean("PreferCommandLineFlags");
     private static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
-    private final boolean VERIFY_VM = Boolean.getBoolean("VerifyVM") && Platform.isDebugBuild();
-    private boolean VERIFY_IR = Boolean.parseBoolean(System.getProperty("VerifyIR", "true"));
+    private static final boolean VERIFY_VM = Boolean.getBoolean("VerifyVM") && Platform.isDebugBuild();
 
+    private boolean irVerificationPossible = Boolean.parseBoolean(System.getProperty("VerifyIR", "true"));
     private boolean shouldVerifyIR; // Should we perform IR matching?
     private static String lastTestVMOutput;
     private static boolean toggleBool;
 
     private final Class<?> testClass;
-    private Set<Class<?>> helperClasses = null;
-    private List<Scenario> scenarios = null;
-    private Set<Integer> scenarioIndices = null;
-    private List<String> flags = null;
+    private Set<Class<?>> helperClasses;
+    private List<Scenario> scenarios;
+    private Set<Integer> scenarioIndices;
+    private List<String> flags;
     private int defaultWarmup = -1;
     private TestFrameworkSocket socket;
     private Scenario scenario;
@@ -625,23 +625,23 @@ public class TestFramework {
      * Disable IR verification completely in certain cases.
      */
     private void disableIRVerificationIfNotFeasible() {
-        if (VERIFY_IR) {
-            VERIFY_IR = Platform.isDebugBuild() && !Platform.isInt() && !Platform.isComp();
-            if (!VERIFY_IR) {
+        if (irVerificationPossible) {
+            irVerificationPossible = Platform.isDebugBuild() && !Platform.isInt() && !Platform.isComp();
+            if (!irVerificationPossible) {
                 System.out.println("IR verification disabled due to not running a debug build (required for PrintIdeal" +
                                    "and PrintOptoAssembly), running with -Xint, or -Xcomp (use warm-up of 0 instead)");
                 return;
             }
 
-            VERIFY_IR = hasIRAnnotations();
-            if (!VERIFY_IR) {
+            irVerificationPossible = hasIRAnnotations();
+            if (!irVerificationPossible) {
                 System.out.println("IR verification disabled due to test " + testClass + " not specifying any @IR annotations");
                 return;
             }
 
             // No IR verification is done if additional non-whitelisted JTreg VM or Javaoptions flag is specified.
-            VERIFY_IR = onlyWhitelistedJTregVMAndJavaOptsFlags();
-            if (!VERIFY_IR) {
+            irVerificationPossible = onlyWhitelistedJTregVMAndJavaOptsFlags();
+            if (!irVerificationPossible) {
                 System.out.println("IR verification disabled due to using non-whitelisted JTreg VM or Javaoptions flag(s)."
                                    + System.lineSeparator());
             }
@@ -730,7 +730,7 @@ public class TestFramework {
                                "-DScenarios and is therefore not executed.");
             return;
         }
-        shouldVerifyIR = VERIFY_IR;
+        shouldVerifyIR = irVerificationPossible;
         socket = TestFrameworkSocket.getSocket();
         this.scenario = scenario;
         try {

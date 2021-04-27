@@ -25,6 +25,7 @@ package jdk.test.lib.hotspot.ir_framework.tests;
 
 import jdk.test.lib.hotspot.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.hotspot.ir_framework.Compiler;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
@@ -168,7 +169,7 @@ public class TestControls {
         executed[6]++;
     }
 
-    @DontCompile(CompLevel.ANY)
+    @DontCompile(Compiler.ANY)
     public static void dontCompile2() {
         executed[7]++;
     }
@@ -212,21 +213,21 @@ public class TestControls {
         wasExecuted = true;
     }
 
-    @DontCompile(CompLevel.ANY)
+    @DontCompile(Compiler.ANY)
     public void dontCompileAny() {
         for (int i = 0; i < 10; i++) {
             iFld = i;
         }
     }
 
-    @DontCompile(CompLevel.C1)
+    @DontCompile(Compiler.C1)
     public void dontCompileC1() {
         for (int i = 0; i < 10; i++) {
             iFld = 3;
         }
     }
 
-    @DontCompile(CompLevel.C2)
+    @DontCompile(Compiler.C2)
     public void dontCompileC2(int x, boolean b) {
         for (int i = 0; i < 10; i++) {
             iFld = x;
@@ -245,7 +246,7 @@ public class TestControls {
         wasExecuted = true;
     }
 
-    @ForceCompile(CompLevel.C1)
+    @ForceCompile(CompLevel.C1_SIMPLE)
     public void forceCompileC1() {
         wasExecuted = true;
     }
@@ -265,14 +266,14 @@ public class TestControls {
         wasExecuted = true;
     }
 
-    @ForceCompile(CompLevel.C1)
-    @DontCompile(CompLevel.C2)
+    @ForceCompile(CompLevel.C1_SIMPLE)
+    @DontCompile(Compiler.C2)
     public void forceC1DontC2() {
         wasExecuted = true;
     }
 
     @ForceCompile(CompLevel.C2)
-    @DontCompile(CompLevel.C1)
+    @DontCompile(Compiler.C1)
     public void forceC2DontC1() {
         wasExecuted = true;
     }
@@ -293,11 +294,11 @@ public class TestControls {
         TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceCompileDefault"), CompLevel.C2);
         TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceCompileAny"), CompLevel.C2);
         TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceCompileC2"), CompLevel.C2);
-        TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceCompileC1"), CompLevel.C1);
+        TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceCompileC1"), CompLevel.C1_SIMPLE);
         TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceCompileC1Limited"), CompLevel.C1_LIMITED_PROFILE);
         TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceCompileC1Full"), CompLevel.C1_FULL_PROFILE);
 
-        TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceC1DontC2"), CompLevel.C1);
+        TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceC1DontC2"), CompLevel.C1_SIMPLE);
         TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceC2DontC1"), CompLevel.C2);
         executed[13]++;
     }

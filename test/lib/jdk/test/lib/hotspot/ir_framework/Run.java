@@ -93,7 +93,7 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Run {
     /**
-     * The associated {@link Test @Test} methods (one or more) for for this {@code @Run} annotated run method.
+     * The associated {@link Test @Test} methods (one or more) for this {@code @Run} annotated run method.
      * The framework directly invokes the run method instead of the associated {@code @Test} methods.
      */
     String[] test();

@@ -23,7 +23,7 @@
 
 package jdk.test.lib.hotspot.ir_framework;
 
-import java.io.*;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -36,9 +36,9 @@ import java.util.regex.Pattern;
  */
 class IRMatcher {
     private static final boolean PRINT_IR_ENCODING = Boolean.parseBoolean(System.getProperty("PrintIREncoding", "false"));
-    private static final Pattern irEncodingPattern =
+    private static final Pattern IR_ENCODING_PATTERN =
             Pattern.compile("(?<=" + IREncodingPrinter.START + "\\R)[\\s\\S]*(?=" + IREncodingPrinter.END + ")");
-    private static final Pattern compileIdPattern = Pattern.compile("compile_id='(\\d+)'");
+    private static final Pattern COMPILE_ID_PATTERN = Pattern.compile("compile_id='(\\d+)'");
 
     private final Map<String, IRMethod> compilations;
     private final Class<?> testClass;
@@ -51,7 +51,7 @@ class IRMatcher {
     private int irRuleIndex; // Current IR rule index;
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
-        this.compilations =  new HashMap<>();
+        this.compilations = new HashMap<>();
         this.fails = new HashMap<>();
         this.testClass = testClass;
         this.compileIdPatternForTestClass = Pattern.compile("compile_id='(\\d+)'.*" + Pattern.quote(testClass.getCanonicalName())
@@ -93,7 +93,7 @@ class IRMatcher {
      */
     private Map<String, int[]>  parseIREncoding(String irEncoding) {
         Map<String, int[]> irRulesMap = new HashMap<>();
-        Matcher matcher = irEncodingPattern.matcher(irEncoding);
+        Matcher matcher = IR_ENCODING_PATTERN.matcher(irEncoding);
         TestFramework.check(matcher.find(), "Did not find IR encoding");
         String[] lines = matcher.group(0).split("\\R");
 
@@ -124,7 +124,7 @@ class IRMatcher {
      */
     private void parseHotspotPidFile() {
         Map<Integer, String> compileIdMap = new HashMap<>();
-        try (BufferedReader br = Files.newBufferedReader(Paths.get(hotspotPidFileName))) {
+        try (var br = Files.newBufferedReader(Paths.get(hotspotPidFileName))) {
             String line;
             StringBuilder builder = new StringBuilder();
             boolean append = false;
@@ -249,7 +249,7 @@ class IRMatcher {
      * Returns null if not an interesting method (i.e. from test class).
      */
     private String getMethodName(Map<Integer, String> compileIdMap, String line) {
-        Matcher matcher = compileIdPattern.matcher(line);
+        Matcher matcher = COMPILE_ID_PATTERN.matcher(line);
         TestFramework.check(matcher.find(), "Is " + hotspotPidFileName + " corrupted?");
         int compileId = getCompileId(matcher);
         return compileIdMap.get(compileId);

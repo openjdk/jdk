@@ -25,6 +25,7 @@ package jdk.test.lib.hotspot.ir_framework.tests;
 
 import jdk.test.lib.hotspot.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.hotspot.ir_framework.Compiler;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -345,40 +346,28 @@ class BadCompilerControl {
     @ForceCompile(CompLevel.SKIP)
     public void invalidSkip1() {}
 
-    @DontCompile(CompLevel.SKIP)
-    public void invalidSkip2() {}
-
     @ForceCompile(CompLevel.WAIT_FOR_COMPILATION)
     public void invalidWaitForCompilation() {}
 
-    @DontCompile(CompLevel.WAIT_FOR_COMPILATION)
-    public void invalidWaitForCompilation2() {}
-
-    @ForceCompile(CompLevel.C1)
-    @DontCompile(CompLevel.C1)
+    @ForceCompile(CompLevel.C1_SIMPLE)
+    @DontCompile(Compiler.C1)
     public void overlappingCompile1() {}
 
     @ForceCompile(CompLevel.C2)
-    @DontCompile(CompLevel.C2)
+    @DontCompile(Compiler.C2)
     public void overlappingCompile2() {}
 
     @ForceCompile(CompLevel.ANY)
-    @DontCompile(CompLevel.C1)
+    @DontCompile(Compiler.C1)
     public void invalidMix1() {}
 
     @ForceCompile(CompLevel.ANY)
-    @DontCompile(CompLevel.C2)
+    @DontCompile(Compiler.C2)
     public void invalidMix2() {}
 
     @ForceCompile(CompLevel.ANY)
     @DontCompile
     public void invalidMix3() {}
-
-    @DontCompile(CompLevel.C1_LIMITED_PROFILE)
-    public void invalidDontCompile1() {}
-
-    @DontCompile(CompLevel.C1_FULL_PROFILE)
-    public void invalidDontCompile2() {}
 }
 
 class BadWarmup {
@@ -416,7 +405,7 @@ class BadWarmup {
     @Warmup(-1)
     public void noWarmupAtStandalone() {}
 
-    @Test(compLevel = CompLevel.C1)
+    @Test(compLevel = CompLevel.C1_SIMPLE)
     public void testNoCompLevelStandalone() {}
 
     @Test(compLevel = CompLevel.WAIT_FOR_COMPILATION)
