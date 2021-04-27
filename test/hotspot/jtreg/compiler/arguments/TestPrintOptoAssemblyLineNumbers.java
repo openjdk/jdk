@@ -27,6 +27,7 @@
  * @bug 8033441
  * @summary Test to ensure that line numbers are now present with the -XX:+PrintOptoAssembly command line option
  *
+ * @requires vm.flagless
  * @requires vm.compiler2.enabled & vm.debug == true
  *
  * @library /test/lib
@@ -56,7 +57,7 @@ public class TestPrintOptoAssemblyLineNumbers {
 
         if (oa.getOutput().contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11")) {
             // if C2 optimizer invoked ensure output includes line numbers:
-            oa.stdoutShouldContain("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11 (line 71)");
+            oa.stdoutShouldContain("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11 (line 72)");
         }
     }
 
@@ -68,7 +69,7 @@ public class TestPrintOptoAssemblyLineNumbers {
         public static void main(String[] args) {
             int count = 0;
             for (int x = 0; x < 200_000; x++) {
-                if (foo("something" + x)) { // <- test expects this line of code to be on line 71
+                if (foo("something" + x)) { // <- test expects this line of code to be on line 72
                     count += 1;
                 }
             }
