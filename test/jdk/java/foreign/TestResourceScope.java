@@ -182,8 +182,10 @@ public class TestResourceScope {
         ResourceScope scope = cleaner != null ?
                 ResourceScope.newSharedScope(cleaner) :
                 ResourceScope.newSharedScope();
+        AtomicInteger lockCount = new AtomicInteger();
         for (int i = 0 ; i < N_THREADS ; i++) {
             new Thread(() -> {
+                lockCount.incrementAndGet();
                 try {
                     ResourceScope.Handle handle = scope.acquire();
                     waitSomeTime();
@@ -192,13 +194,16 @@ public class TestResourceScope {
                     scope.release(handle); // make sure it's idempotent
                 } catch (IllegalStateException ex) {
                     // might be already closed - do nothing
+                } finally {
+                    lockCount.decrementAndGet();
                 }
             }).start();
         }
 
-        while (true) {
+        while (lockCount.get() > 0) {
             try {
                 scope.close();
+                assertEquals(lockCount.get(), 0);
                 break;
             } catch (IllegalStateException ex) {
                 waitSomeTime();
@@ -251,6 +256,7 @@ public class TestResourceScope {
 
     private void acquireRecursive(ResourceScope scope, int acquireCount) {
         ResourceScope.Handle handle = scope.acquire();
+        assertEquals(handle.scope(), scope);
         if (acquireCount > 0) {
             // recursive acquire
             acquireRecursive(scope, acquireCount - 1);

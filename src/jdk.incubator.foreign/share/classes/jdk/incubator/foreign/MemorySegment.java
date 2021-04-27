@@ -184,7 +184,8 @@ public interface MemorySegment extends Addressable {
      *
      * @param elementLayout the layout to be used for splitting.
      * @return the element spliterator for this segment
-     * @throws IllegalArgumentException if this segment size is not a multiple of the size of {@code elementLayout}.
+     * @throws IllegalArgumentException if the {@code elementLayout} size is zero, or the segment size modulo the
+     * {@code elementLayout} size is greater than zero.
      */
     Spliterator<MemorySegment> spliterator(MemoryLayout elementLayout);
 
@@ -197,7 +198,8 @@ public interface MemorySegment extends Addressable {
      *
      * @param elementLayout the layout to be used for splitting.
      * @return a sequential {@code Stream} over disjoint slices in this segment.
-     * @throws IllegalArgumentException if this segment size is not a multiple of the size of {@code elementLayout}.
+     * @throws IllegalArgumentException if the {@code elementLayout} size is zero, or the segment size modulo the
+     * {@code elementLayout} size is greater than zero.
      */
     Stream<MemorySegment> elements(MemoryLayout elementLayout);
 

@@ -180,7 +180,7 @@ class SharedScope extends ResourceScopeImpl {
         }
 
         @Override
-        public void close() {
+        public void release() {
             if (released.compareAndSet(false, true)) {
                 int value;
                 do {
@@ -190,7 +190,6 @@ class SharedScope extends ResourceScopeImpl {
                         throw new IllegalStateException("Already closed");
                     }
                 } while (!STATE.compareAndSet(jdk.internal.foreign.SharedScope.this, value, value - 1));
-                Reference.reachabilityFence(SharedScope.this);
             }
         }
     }

@@ -118,6 +118,9 @@ public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy imple
     @Override
     public Spliterator<MemorySegment> spliterator(MemoryLayout elementLayout) {
         Objects.requireNonNull(elementLayout);
+        if (elementLayout.byteSize() == 0) {
+            throw new IllegalArgumentException("Element layout size cannot be zero");
+        }
         if (byteSize() % elementLayout.byteSize() != 0) {
             throw new IllegalArgumentException("Segment size is no a multiple of layout size");
         }

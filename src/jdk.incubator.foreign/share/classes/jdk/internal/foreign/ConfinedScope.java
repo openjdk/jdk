@@ -122,12 +122,11 @@ final class ConfinedScope extends ResourceScopeImpl {
         }
 
         @Override
-        public void close() {
+        public void release() {
             checkValidState(); // thread check
             if (!released) {
                 released = true;
                 lockCount--;
-                Reference.reachabilityFence(ConfinedScope.this);
             }
         }
     }

@@ -126,10 +126,10 @@ public abstract class ResourceScopeImpl implements ResourceScope, ScopedMemoryAc
     private final void release0(HandleImpl handle) {
         try {
             Objects.requireNonNull(handle);
-            if (!checkHandle(handle)) {
+            if (handle.scope() != this) {
                 throw new IllegalArgumentException("Cannot release an handle acquired from another scope");
             }
-            handle.close();
+            handle.release();
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -148,10 +148,6 @@ public abstract class ResourceScopeImpl implements ResourceScope, ScopedMemoryAc
     @Override
     public abstract HandleImpl acquire();
 
-    boolean checkHandle(ResourceScope.Handle handle) {
-        return handle.scope() == this;
-    }
-
     /**
      * Internal interface used to implement resource scope handles.
      */
@@ -160,7 +156,7 @@ public abstract class ResourceScopeImpl implements ResourceScope, ScopedMemoryAc
         @Override
         ResourceScopeImpl scope();
 
-        void close();
+        void release();
     }
 
     /**
@@ -229,10 +225,9 @@ public abstract class ResourceScopeImpl implements ResourceScope, ScopedMemoryAc
     /**
      * A non-closeable, shared scope. Similar to a shared scope, but its {@link #close()} method throws unconditionally.
      * In addition, non-closeable scopes feature a much simpler scheme for generating resource scope handles, where
-     * the same per-scope handle is shared across multiple calls to {@link #acquire()}. In fact, for non-closeable
-     * scopes, it is sufficient for resource scope handles to keep a strong reference to their scopes, to prevent closure.
+     * the scope itself also acts as a resource scope handle and is returned by {@link #acquire()}.
      */
-    static class ImplicitScopeImpl extends SharedScope {
+    static class ImplicitScopeImpl extends SharedScope implements HandleImpl {
 
         public ImplicitScopeImpl(Cleaner cleaner) {
             super(cleaner);
@@ -240,7 +235,7 @@ public abstract class ResourceScopeImpl implements ResourceScope, ScopedMemoryAc
 
         @Override
         public HandleImpl acquire() {
-            return implicitHandle;
+            return this;
         }
 
         @Override
@@ -254,21 +249,14 @@ public abstract class ResourceScopeImpl implements ResourceScope, ScopedMemoryAc
         }
 
         @Override
-        boolean checkHandle(ResourceScope.Handle handle) {
-            return handle == implicitHandle;
+        public void release() {
+            // do nothing
         }
 
-        private final static HandleImpl implicitHandle = new HandleImpl() {
-            @Override
-            public void close() {
-                // do nothing
-            }
-
-            @Override
-            public ResourceScopeImpl scope() {
-                return GLOBAL;
-            }
-        };
+        @Override
+        public ResourceScopeImpl scope() {
+            return this;
+        }
     }
 
     /**

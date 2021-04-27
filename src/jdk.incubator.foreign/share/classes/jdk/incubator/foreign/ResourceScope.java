@@ -201,10 +201,6 @@ public interface ResourceScope extends AutoCloseable {
      * If this resource scope is explicit, this method acquires a new resource scope handle, associated with this
      * resource scope; an explicit resource scope cannot be {@link #close() closed}
      * until all the resource scope handles acquired from it have been {@link #release(Handle)} released}.
-     * <p>
-     * If this scope is an {@link #isImplicit()} implicit} scope, calling this method will always return the
-     * <em>implicit</em> resource scope handle. The implicit resource scope handle is associated with the
-     * {@link ResourceScope#globalScope() global scope}.
      * @return a resource scope handle.
      */
     Handle acquire();
@@ -213,8 +209,7 @@ public interface ResourceScope extends AutoCloseable {
      * Release the provided resource scope handle. This method is idempotent, that is, releasing the same handle
      * multiple times has no effect.
      * @param handle the resource scope handle to be released.
-     * @throws IllegalArgumentException if this resource scope is explicit and the provided handle is not associated
-     * with this scope.
+     * @throws IllegalArgumentException if the provided handle is not associated with this scope.
      */
     void release(Handle handle);
 
@@ -227,10 +222,8 @@ public interface ResourceScope extends AutoCloseable {
     interface Handle {
 
         /**
-         * Returns the resource scope associated with this handle, or the {@link ResourceScope#globalScope()}
-         * if this handle is the implicit resource scope handle.
-         * @return the resource scope associated with this handle, or the {@link ResourceScope#globalScope()}
-         * if this handle is the implicit resource scope handle.
+         * Returns the resource scope associated with this handle.
+         * @return the resource scope associated with this handle.
          */
         ResourceScope scope();
     }
