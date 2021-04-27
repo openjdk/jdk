@@ -2392,10 +2392,8 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
     int sig_index = 0;
     for (int index = 0; index < len; index++) {
       int value = 0;
-      for (int byte = 0; byte < _basic_types_per_int; byte++) {
-        int bt = ((sig_index < total_args_passed)
-                  ? adapter_encoding(sig_bt[sig_index++])
-                  : 0);
+      for (int byte = 0; sig_index < total_args_passed && byte < _basic_types_per_int; byte++) {
+        int bt = adapter_encoding(sig_bt[sig_index++]);
         assert((bt & _basic_type_mask) == bt, "must fit in 4 bits");
         value = (value << _basic_type_bits) | bt;
       }
@@ -2441,6 +2439,46 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
     }
     return st.as_string();
   }
+
+#ifndef PRODUCT
+  const char* as_signature_string() {
+    stringStream st;
+    st.print("(");
+    bool long_prev = false;
+    for (int i = length() - 1; i >= 0; i--) {
+      uint val = (uint)value(i);
+      for (int j = 32 - _basic_type_bits; j >= 0; j -= _basic_type_bits) {
+        uint v = (val >> j) & _basic_type_mask;
+        if (v == 0) {
+          assert(st.size() == 1, "Only allow zeroes at end");
+          continue;
+        }
+        if (long_prev) {
+          long_prev = false;
+          if (v == T_VOID) {
+            st.print("J");
+          } else {
+            st.print("L");
+          }
+        }
+        switch (v) {
+          case T_INT:    st.print("I");    break;
+          case T_LONG:   long_prev = true; break;
+          case T_FLOAT:  st.print("F");    break;
+          case T_DOUBLE: st.print("D");    break;
+          case T_VOID:   break;
+
+          default: ShouldNotReachHere();
+        }
+      }
+    }
+    if (long_prev) {
+      st.print("L");
+    }
+    st.print(")");
+    return st.as_string();
+  }
+#endif // !product
 
   bool equals(AdapterFingerPrint* other) {
     if (other->_length != _length) {
@@ -2622,6 +2660,19 @@ void AdapterHandlerLibrary::initialize() {
   assert(_adapters == NULL, "Initializing more than once");
 
   ResourceMark rm;
+  AdapterBlob* no_arg_blob = NULL;
+
+  AdapterBlob* int_arg_blob = NULL;
+  BasicType    int_args[] = { T_OBJECT };
+
+  AdapterBlob* obj_arg_blob = NULL;
+  BasicType    obj_args[] = { T_OBJECT };
+
+  AdapterBlob* obj_int_arg_blob = NULL;
+  BasicType    obj_int_args[] = { T_OBJECT, T_INT };
+
+  AdapterBlob* obj_obj_arg_blob = NULL;
+  BasicType    obj_obj_args[] = { T_OBJECT, T_OBJECT };
 
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
@@ -2638,94 +2689,27 @@ void AdapterHandlerLibrary::initialize() {
                                                                 wrong_method_abstract, wrong_method_abstract);
 
     _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
+
+    _no_arg_handler = create_adapter(no_arg_blob, 0, NULL, /* generate_code_blob */ true);
+    _obj_arg_handler = create_adapter(obj_arg_blob, 1, obj_args, /* generate_code_blob */ true);
+    _int_arg_handler = create_adapter(int_arg_blob, 1, int_args, /* generate_code_blob */ true);
+    _obj_int_arg_handler = create_adapter(obj_int_arg_blob, 2, obj_int_args, /* generate_code_blob */ true);
+    _obj_obj_arg_handler = create_adapter(obj_obj_arg_blob, 2, obj_obj_args, /* generate_code_blob */ true);
   }
 
-  _no_arg_handler = create_adapter(0, NULL, false);
-  {
-    BasicType sig_bt[] = { T_OBJECT };
-    _obj_arg_handler = create_adapter(1, sig_bt, false);
-  }
-  {
-    BasicType sig_bt[] = { T_INT };
-    _int_arg_handler = create_adapter(1, sig_bt, false);
-  }
-  {
-    BasicType sig_bt[] = { T_OBJECT, T_INT };
-    _obj_int_arg_handler = create_adapter(2, sig_bt, false);
-  }
-  {
-    BasicType sig_bt[] = { T_OBJECT, T_OBJECT };
-    _obj_obj_arg_handler = create_adapter(2, sig_bt, false);
-  }
-}
+  assert(no_arg_blob != NULL &&
+         obj_arg_blob != NULL &&
+         int_arg_blob != NULL &&
+         obj_int_arg_blob != NULL &&
+         obj_obj_arg_blob != NULL, "Initial adapters must be properly created");
 
-AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(int total_args_passed,
-                                                           BasicType* sig_bt,
-                                                           bool add_to_table) {
-
-  AdapterHandlerEntry* entry = NULL;
-  AdapterBlob* new_adapter = NULL;
-  AdapterFingerPrint* fingerprint = NULL;
-  {
-    MutexLocker mu(AdapterHandlerLibrary_lock);
-    VMRegPair stack_regs[16];
-    VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
-
-    int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
-    BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
-    CodeBuffer buffer(buf);
-    short buffer_locs[20];
-    buffer.insts()->initialize_shared_locs((relocInfo*)buffer_locs,
-                                            sizeof(buffer_locs)/sizeof(relocInfo));
-
-    // StubRoutines::code2() is initialized after this function can be called. As a result,
-    // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
-    // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
-    // stub that ensure that an I2C stub is called from an interpreter frame.
-    bool contains_all_checks = StubRoutines::code2() != NULL;
-
-    AdapterFingerPrint* fingerprint = new AdapterFingerPrint(total_args_passed, sig_bt);
-    MacroAssembler _masm(&buffer);
-    entry = SharedRuntime::generate_i2c2i_adapters(&_masm,
-                                                  total_args_passed,
-                                                  comp_args_on_stack,
-                                                  sig_bt,
-                                                  regs,
-                                                  fingerprint);
-
-#ifdef ASSERT
-    if (VerifyAdapterSharing) {
-      entry->save_code(buf->code_begin(), buffer.insts_size());
-    }
-#endif
-    AdapterBlob* new_adapter = AdapterBlob::create(&buffer);
-    if (new_adapter == NULL) {
-      fatal("No memory to create adapter");
-    }
-    entry->relocate(new_adapter->content_begin());
-
-    // Add the entry only if the entry contains all required checks (see sharedRuntime_xxx.cpp)
-    // The checks are inserted only if -XX:+VerifyAdapterCalls is specified.
-    if (add_to_table && (contains_all_checks || !VerifyAdapterCalls)) {
-      _adapters->add(entry);
-    }
-  }
   // Outside of the lock
-  if (new_adapter != NULL) {
-    char blob_id[256];
-    jio_snprintf(blob_id,
-                 sizeof(blob_id),
-                 "%s(%s)@" PTR_FORMAT,
-                 new_adapter->name(),
-                 fingerprint->as_string(),
-                 new_adapter->content_begin());
-    Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+  post_adapter_creation(no_arg_blob, _no_arg_handler->fingerprint());
+  post_adapter_creation(obj_arg_blob, _obj_arg_handler->fingerprint());
+  post_adapter_creation(int_arg_blob, _int_arg_handler->fingerprint());
+  post_adapter_creation(obj_int_arg_blob, _obj_int_arg_handler->fingerprint());
+  post_adapter_creation(obj_obj_arg_blob, _obj_obj_arg_handler->fingerprint());
 
-    if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
-    }
-  }
-  return entry;
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint,
@@ -2818,34 +2802,88 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
 
     // Lookup method signature's fingerprint
     entry = _adapters->lookup(total_args_passed, sig_bt);
-  }
 
-  if (entry != NULL) {
+    if (entry != NULL) {
 #ifdef ASSERT
-    if (VerifyAdapterSharing) {
-      AdapterHandlerEntry* comparison_entry
-        = create_adapter(total_args_passed, sig_bt, /* add_to_table */ false);
-      assert(comparison_entry->compare_code(entry), "code must match");
-      // Release the one just created and return the original
-      _adapters->free_entry(comparison_entry);
+      if (VerifyAdapterSharing) {
+        AdapterBlob* comparison_blob = NULL;
+        AdapterHandlerEntry* comparison_entry
+          = create_adapter(comparison_blob, total_args_passed, sig_bt, /* generate_code_blob */ false);
+        assert(comparison_blob == NULL, "no blob should be created when creating an adapter for comparison");
+        assert(comparison_entry->compare_code(entry), "code must match");
+        // Release the one just created and return the original
+        _adapters->free_entry(comparison_entry);
+      }
+#endif
+      return entry;
     }
-#endif
-    return entry;
+
+    // StubRoutines::code2() is initialized after this function can be called. As a result,
+    // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
+    // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
+    // stub that ensure that an I2C stub is called from an interpreter frame.
+    bool contains_all_checks = StubRoutines::code2() != NULL;
+
+    entry = create_adapter(new_adapter, total_args_passed, sig_bt, /* generate_code_blob */ true);
+
+    // Add the entry only if the entry contains all required checks (see sharedRuntime_xxx.cpp)
+    // The checks are inserted only if -XX:+VerifyAdapterCalls is specified.
+    if (contains_all_checks || !VerifyAdapterCalls) {
+      _adapters->add(entry);
+    }
   }
 
-  entry = create_adapter(total_args_passed, sig_bt, /* add_to_table = */ true);
-#ifndef PRODUCT
-  int insts_size = -1;
+  // Outside of the lock
+  post_adapter_creation(new_adapter, entry->fingerprint());
+  return entry;
+}
+
+AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_adapter,
+                                                           int total_args_passed,
+                                                           BasicType* sig_bt,
+                                                           bool allocate_code_blob) {
+  VMRegPair stack_regs[16];
+  VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
+
+  int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
+  BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
+  CodeBuffer buffer(buf);
+  short buffer_locs[20];
+  buffer.insts()->initialize_shared_locs((relocInfo*)buffer_locs,
+                                          sizeof(buffer_locs)/sizeof(relocInfo));
+
+  AdapterFingerPrint* fingerprint = new AdapterFingerPrint(total_args_passed, sig_bt);
+  MacroAssembler _masm(&buffer);
+  AdapterHandlerEntry* entry = SharedRuntime::generate_i2c2i_adapters(&_masm,
+                                                total_args_passed,
+                                                comp_args_on_stack,
+                                                sig_bt,
+                                                regs,
+                                                fingerprint);
+
 #ifdef ASSERT
-  insts_size = entry->_saved_code_length;
+  if (VerifyAdapterSharing) {
+    entry->save_code(buf->code_begin(), buffer.insts_size());
+    if (!allocate_code_blob) {
+      return entry;
+    }
+  }
 #endif
+
+  new_adapter = AdapterBlob::create(&buffer);
+  NOT_PRODUCT(int insts_size = buffer.insts_size());
+  if (new_adapter == NULL) {
+    fatal("No memory to create adapter");
+  }
+  entry->relocate(new_adapter->content_begin());
+#ifndef PRODUCT
   // debugging suppport
   if (PrintAdapterHandlers || PrintStubCode) {
     ttyLocker ttyl;
     entry->print_adapter_on(tty);
-    tty->print_cr("i2c argument handler #%d for: %s %s %s (%d bytes generated)",
-                  _adapters->number_of_entries(), (method->is_static() ? "static" : "receiver"),
-                  method->signature()->as_C_string(), fingerprint->as_string(), insts_size);
+    tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
+                  _adapters->number_of_entries(), fingerprint->as_signature_string(),
+                  fingerprint->as_string(), insts_size);
     tty->print_cr("c2i argument handler starts at %p", entry->get_c2i_entry());
     if (Verbose || PrintStubCode) {
       address first_pc = entry->base_address();
@@ -2856,7 +2894,25 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     }
   }
 #endif
+
   return entry;
+}
+
+void AdapterHandlerLibrary::post_adapter_creation(AdapterBlob* new_adapter, AdapterFingerPrint* fingerprint) {
+  if (new_adapter != NULL) {
+    char blob_id[256];
+    jio_snprintf(blob_id,
+                  sizeof(blob_id),
+                  "%s(%s)@" PTR_FORMAT,
+                  new_adapter->name(),
+                  fingerprint->as_string(),
+                  new_adapter->content_begin());
+    Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+
+    if (JvmtiExport::should_post_dynamic_code_generated()) {
+      JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    }
+  }
 }
 
 address AdapterHandlerEntry::base_address() {
