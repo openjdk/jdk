@@ -60,8 +60,8 @@ public class bug8033069NoScrollBar {
     private JComboBox cb1;
     private JComboBox cb2;
 
-    volatile private Point p;
-    volatile private Dimension d;
+    private volatile Point p;
+    private volatile Dimension d;
 
     public static void main(String[] args) throws Exception {
         iterateLookAndFeels(new bug8033069NoScrollBar(NO_SCROLL_ITEMS));
