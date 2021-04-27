@@ -766,6 +766,7 @@ javax/swing/JPopupMenu/4634626/bug4634626.java 8017175 macosx-all
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
+sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
 ############################################################################
 
