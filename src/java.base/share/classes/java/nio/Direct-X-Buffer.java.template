@@ -481,7 +481,7 @@ class Direct$Type$Buffer$RW$$BO$
             try {
 #if[!byte]
                 if (order() != ByteOrder.nativeOrder())
-                    SCOPED_MEMORY_ACCESS.copySwapMemory(scope(), null, src,
+                    SCOPED_MEMORY_ACCESS.copySwapMemory(null, scope(), src,
                                           srcOffset,
                                           null,
                                           ix(pos),
@@ -489,7 +489,7 @@ class Direct$Type$Buffer$RW$$BO$
                                           (long)1 << $LG_BYTES_PER_VALUE$);
                 else
 #end[!byte]
-                    SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, src,
+                    SCOPED_MEMORY_ACCESS.copyMemory(null, scope(), src,
                                       srcOffset,
                                       null,
                                       ix(pos),
@@ -518,7 +518,7 @@ class Direct$Type$Buffer$RW$$BO$
             try {
 #if[!byte]
                 if (order() != ByteOrder.nativeOrder())
-                    SCOPED_MEMORY_ACCESS.copySwapMemory(scope(), null, src,
+                    SCOPED_MEMORY_ACCESS.copySwapMemory(null, scope(), src,
                                           srcOffset,
                                           null,
                                           ix(index),
@@ -527,7 +527,7 @@ class Direct$Type$Buffer$RW$$BO$
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            scope(), null, src,
+                            null, scope(), src,
                             srcOffset, null, ix(index), (long)length << $LG_BYTES_PER_VALUE$);
             } finally {
                 Reference.reachabilityFence(this);
@@ -548,6 +548,7 @@ class Direct$Type$Buffer$RW$$BO$
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         try {
+            // null is passed as destination Scope to avoid checking scope() twice
             SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, null,
                     ix(pos), null, ix(0), (long)rem << $LG_BYTES_PER_VALUE$);
         } finally {

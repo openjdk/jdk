@@ -32,7 +32,6 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"

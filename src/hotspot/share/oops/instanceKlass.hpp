@@ -31,7 +31,6 @@
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceOop.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/os.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
@@ -52,7 +51,6 @@ class RecordComponent;
 //      indicating where oops are located in instances of this klass.
 //    [EMBEDDED implementor of the interface] only exist for interface
 //    [EMBEDDED unsafe_anonymous_host klass] only exist for an unsafe anonymous class (JSR 292 enabled)
-//    [EMBEDDED fingerprint       ] only if should_store_fingerprint()==true
 
 
 // forward declaration for class -- see below for definition
@@ -255,8 +253,7 @@ class InstanceKlass: public Klass {
     _misc_has_nonstatic_concrete_methods      = 1 << 5,  // class/superclass/implemented interfaces has non-static, concrete methods
     _misc_declares_nonstatic_concrete_methods = 1 << 6,  // directly declares non-static, concrete methods
     _misc_has_been_redefined                  = 1 << 7,  // class has been redefined
-    _misc_has_passed_fingerprint_check        = 1 << 8,  // when this class was loaded, the fingerprint computed from its
-                                                         // code source was found to be matching the value recorded by AOT.
+    _unused                                   = 1 << 8,  //
     _misc_is_scratch_class                    = 1 << 9,  // class is the redefined scratch class
     _misc_is_shared_boot_class                = 1 << 10, // defining class loader is boot class loader
     _misc_is_shared_platform_class            = 1 << 11, // defining class loader is platform class loader
@@ -790,24 +787,6 @@ public:
     _misc_flags |= _misc_has_been_redefined;
   }
 
-  bool has_passed_fingerprint_check() const {
-    return (_misc_flags & _misc_has_passed_fingerprint_check) != 0;
-  }
-  void set_has_passed_fingerprint_check(bool b) {
-    if (b) {
-      _misc_flags |= _misc_has_passed_fingerprint_check;
-    } else {
-      _misc_flags &= ~_misc_has_passed_fingerprint_check;
-    }
-  }
-  bool supers_have_passed_fingerprint_checks();
-
-  static bool should_store_fingerprint(bool is_hidden_or_anonymous);
-  bool should_store_fingerprint() const { return should_store_fingerprint(is_hidden() || is_unsafe_anonymous()); }
-  bool has_stored_fingerprint() const;
-  uint64_t get_stored_fingerprint() const;
-  void store_fingerprint(uint64_t fingerprint);
-
   bool is_scratch_class() const {
     return (_misc_flags & _misc_is_scratch_class) != 0;
   }
@@ -1065,21 +1044,19 @@ public:
 
   static int size(int vtable_length, int itable_length,
                   int nonstatic_oop_map_size,
-                  bool is_interface, bool is_unsafe_anonymous, bool has_stored_fingerprint) {
+                  bool is_interface, bool is_unsafe_anonymous) {
     return align_metadata_size(header_size() +
            vtable_length +
            itable_length +
            nonstatic_oop_map_size +
            (is_interface ? (int)sizeof(Klass*)/wordSize : 0) +
-           (is_unsafe_anonymous ? (int)sizeof(Klass*)/wordSize : 0) +
-           (has_stored_fingerprint ? (int)sizeof(uint64_t*)/wordSize : 0));
+           (is_unsafe_anonymous ? (int)sizeof(Klass*)/wordSize : 0));
   }
   int size() const                    { return size(vtable_length(),
                                                itable_length(),
                                                nonstatic_oop_map_size(),
                                                is_interface(),
-                                               is_unsafe_anonymous(),
-                                               has_stored_fingerprint());
+                                               is_unsafe_anonymous());
   }
 
   inline intptr_t* start_of_itable() const;
@@ -1092,7 +1069,6 @@ public:
 
   inline InstanceKlass* volatile* adr_implementor() const;
   inline InstanceKlass** adr_unsafe_anonymous_host() const;
-  inline address adr_fingerprint() const;
 
   // Use this to return the size of an instance in heap words:
   int size_helper() const {

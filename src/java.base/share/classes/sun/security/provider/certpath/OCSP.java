@@ -123,7 +123,8 @@ public final class OCSP {
         throws IOException, CertPathValidatorException
     {
         return check(cert, issuerCert, responderURI, responderCert, date,
-                     Collections.<Extension>emptyList(), Validator.VAR_GENERIC);
+                     Collections.<Extension>emptyList(),
+                     Validator.VAR_PLUGIN_CODE_SIGNING);
     }
 
 
