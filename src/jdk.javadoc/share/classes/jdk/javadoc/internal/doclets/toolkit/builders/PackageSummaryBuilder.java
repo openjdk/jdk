@@ -349,6 +349,6 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     private List<PackageElement> filterPackages(Predicate<? super PackageElement> filter) {
         return configuration.packages.stream()
                 .filter(p -> p != packageElement && filter.test(p))
-                .collect(Collectors.toList());
+                .toList();
     }
 }
