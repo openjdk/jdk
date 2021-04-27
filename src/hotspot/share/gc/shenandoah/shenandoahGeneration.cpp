@@ -71,9 +71,7 @@ class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
   bool is_thread_safe() { return true; }
 };
 
-void ShenandoahGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
-  _heuristics = gc_mode->initialize_heuristics(this);
-
+void ShenandoahGeneration::confirm_heuristics_mode() {
   if (_heuristics->is_diagnostic() && !UnlockDiagnosticVMOptions) {
     vm_exit_during_initialization(
             err_msg("Heuristics \"%s\" is diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions.",
@@ -84,6 +82,19 @@ void ShenandoahGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
             err_msg("Heuristics \"%s\" is experimental, and must be enabled via -XX:+UnlockExperimentalVMOptions.",
                     _heuristics->name()));
   }
+}
+
+ShenandoahOldHeuristics* ShenandoahGeneration::initialize_old_heuristics(ShenandoahMode* gc_mode) {
+  ShenandoahOldHeuristics* old_heuristics = gc_mode->initialize_old_heuristics(this);
+  _heuristics = old_heuristics;
+  confirm_heuristics_mode();
+  return old_heuristics;
+}
+
+ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
+  _heuristics = gc_mode->initialize_heuristics(this);
+  confirm_heuristics_mode();
+  return _heuristics;
 }
 
 size_t ShenandoahGeneration::bytes_allocated_since_gc_start() {
@@ -148,7 +159,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
                             ShenandoahPhaseTimings::degen_gc_choose_cset);
     ShenandoahHeapLocker locker(heap->lock());
     heap->collection_set()->clear();
-    _heuristics->choose_collection_set(heap->collection_set());
+    _heuristics->choose_collection_set(heap->collection_set(), heap->old_heuristics());
   }
 
   {

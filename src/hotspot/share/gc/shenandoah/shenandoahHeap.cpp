@@ -479,9 +479,10 @@ void ShenandoahHeap::initialize_heuristics() {
                     _gc_mode->name()));
   }
 
+  // ojo: want to instantiate a ShenandoahOldHeuristics object here
+  _old_heuristics = _old_generation->initialize_old_heuristics(_gc_mode);
   _global_generation->initialize_heuristics(_gc_mode);
   _young_generation->initialize_heuristics(_gc_mode);
-  _old_generation->initialize_heuristics(_gc_mode);
 }
 
 #ifdef _MSC_VER
@@ -492,6 +493,7 @@ void ShenandoahHeap::initialize_heuristics() {
 ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   CollectedHeap(),
   _gc_generation(NULL),
+  _old_heuristics(nullptr),
   _initial_size(0),
   _used(0),
   _committed(0),

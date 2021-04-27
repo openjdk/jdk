@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 class ShenandoahGeneration;
 class ShenandoahHeuristics;
+class ShenandoahOldHeuristics;
 
 #define SHENANDOAH_CHECK_FLAG_SET(name)                                     \
   do {                                                                      \
@@ -52,6 +53,7 @@ class ShenandoahMode : public CHeapObj<mtGC> {
 public:
   virtual void initialize_flags() const = 0;
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahGeneration* generation) const;
+  virtual ShenandoahOldHeuristics* initialize_old_heuristics(ShenandoahGeneration* generation) const;
   virtual const char* name() = 0;
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;

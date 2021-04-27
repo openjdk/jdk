@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Amazon.com, Inc. or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,24 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOLDGC_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHOLDGC_HPP
+#ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTOLDHEURISTICS_HPP
+#define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTOLDHEURISTICS_HPP
 
-#include "gc/shared/gcCause.hpp"
-#include "gc/shenandoah/shenandoahConcurrentGC.hpp"
+#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 
-class ShenandoahGeneration;
+class ShenandoahCompactOldHeuristics : public ShenandoahOldHeuristics {
+public:
+  ShenandoahCompactOldHeuristics(ShenandoahGeneration* generation);
 
-class ShenandoahOldGC : public ShenandoahConcurrentGC {
- public:
-  ShenandoahOldGC(ShenandoahGeneration* generation, ShenandoahSharedFlag& allow_preemption);
-  bool collect(GCCause::Cause cause);
- private:
-  void entry_old_evacuations();
-  void entry_coalesce_and_fill();
-  ShenandoahSharedFlag& _allow_preemption;
-  void op_coalesce_and_fill();
-  void entry_coalesce_and_fill_message(char *buf, size_t len) const;
+  virtual bool should_start_gc();
+
+  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                     RegionData* data, size_t size,
+                                                     size_t actual_free);
+
+  virtual const char* name()     { return "CompactOld"; }
+  virtual bool is_diagnostic()   { return false; }
+  virtual bool is_experimental() { return false; }
 };
 
-
-#endif //SHARE_GC_SHENANDOAH_SHENANDOAHOLDGC_HPP
+#endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTOLDHEURISTICS_HPP

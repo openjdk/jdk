@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
 }
 
 ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahGeneration* generation) :
+  _generation(generation),
   _region_data(NULL),
   _degenerated_cycles_in_a_row(0),
   _successful_cycles_in_a_row(0),
@@ -54,8 +55,7 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahGeneration* generation) :
   _gc_times_learned(0),
   _gc_time_penalties(0),
   _gc_time_history(new TruncatedSeq(10, ShenandoahAdaptiveDecayFactor)),
-  _metaspace_oom(),
-  _generation(generation)
+  _metaspace_oom()
 {
   // No unloading during concurrent mark? Communicate that to heuristics
   if (!ClassUnloadingWithConcurrentMark) {
@@ -72,10 +72,11 @@ ShenandoahHeuristics::~ShenandoahHeuristics() {
   FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
 }
 
-void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
-  assert(collection_set->count() == 0, "Must be empty");
-
+void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  assert(collection_set->count() == 0, "Must be empty");
+  assert(_generation->generation_mode() != OLD, "Old GC invokes ShenandoahOldHeuristics::choose_collection_set()");
 
   // Check all pinned regions have updated status before choosing the collection set.
   heap->assert_pinned_region_status();
@@ -116,11 +117,8 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         immediate_regions++;
         immediate_garbage += garbage;
         region->make_trash_immediate();
-      } else if (_generation->generation_mode() != OLD) {
-        // HEY! At this stage in development our concurrent old
-        // marking does NOT complete the subsequent phases of the collection
-        // and we don't want regions stuck in the 'in_cset' state because
-        // various asserts will trip.
+      } else {
+        assert (_generation->generation_mode() != OLD, "OLD is handled elsewhere");
 
         // This is our candidate for later consideration.
         candidates[cand_idx]._region = region;
@@ -162,6 +160,14 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
+
+    if (old_heuristics != NULL) {
+      old_heuristics->prime_collection_set(collection_set);
+    }
+    // else, this is global collection and doesn't need to prime_collection_set
+
+    // Add young-gen regions into the collection set.  This is a virtual call, implemented differently by each
+    // of the heuristics subclasses.
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
 
@@ -221,7 +227,7 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 
 void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-          "In range before adjustment: " INTX_FORMAT, _gc_time_penalties);
+         "In range before adjustment: " INTX_FORMAT, _gc_time_penalties);
 
   intx new_val = _gc_time_penalties + step;
   if (new_val < 0) {
@@ -233,7 +239,7 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
   _gc_time_penalties = new_val;
 
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-          "In range after adjustment: " INTX_FORMAT, _gc_time_penalties);
+         "In range after adjustment: " INTX_FORMAT, _gc_time_penalties);
 }
 
 void ShenandoahHeuristics::record_success_concurrent() {
@@ -303,7 +309,8 @@ double ShenandoahHeuristics::time_since_last_gc() const {
 }
 
 bool ShenandoahHeuristics::in_generation(ShenandoahHeapRegion* region) {
-  return (_generation->generation_mode() == GLOBAL)
-      || (_generation->generation_mode() == YOUNG && region->affiliation() == YOUNG_GENERATION)
-      || (_generation->generation_mode() == OLD && region->affiliation() == OLD_GENERATION);
+  return ((_generation->generation_mode() == GLOBAL)
+          || (_generation->generation_mode() == YOUNG && region->affiliation() == YOUNG_GENERATION)
+          || (_generation->generation_mode() == OLD && region->affiliation() == OLD_GENERATION));
 }
+

@@ -26,11 +26,55 @@
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGC.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "utilities/events.hpp"
+
+class ShenandoahConcurrentCoalesceAndFillTask : public AbstractGangTask {
+private:
+  // remember nworkers, coalesce_and_fill_region_array,coalesce_and_fill_regions_count
+
+  uint _nworkers;
+  ShenandoahHeapRegion** _coalesce_and_fill_region_array;
+  uint _coalesce_and_fill_region_count;
+
+public:
+  ShenandoahConcurrentCoalesceAndFillTask(uint nworkers,
+                                          ShenandoahHeapRegion** coalesce_and_fill_region_array, uint region_count) :
+    AbstractGangTask("Shenandoah Concurrent Coalesce and Fill"),
+    _nworkers(nworkers),
+    _coalesce_and_fill_region_array(coalesce_and_fill_region_array),
+    _coalesce_and_fill_region_count(region_count) {
+  }
+
+  void work(uint worker_id) {
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+    for (uint region_idx = worker_id; region_idx < _coalesce_and_fill_region_count; region_idx += _nworkers) {
+      ShenandoahHeapRegion* r = _coalesce_and_fill_region_array[region_idx];
+      if (!r->is_humongous())
+        r->oop_fill_and_coalesce();
+      else {
+        // there's only one object in this region and it's not garbage, so no need to coalesce or fill
+      }
+    }
+  }
+};
+
 
 ShenandoahOldGC::ShenandoahOldGC(ShenandoahGeneration* generation, ShenandoahSharedFlag& allow_preemption) :
   ShenandoahConcurrentGC(generation), _allow_preemption(allow_preemption) {}
+
+void ShenandoahOldGC::entry_old_evacuations() {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
+  entry_coalesce_and_fill();
+  old_heuristics->start_old_evacuations();
+}
 
 bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
@@ -43,6 +87,8 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
 
   // Complete marking under STW
   vmop_entry_final_mark();
+
+  entry_old_evacuations();
 
   // We aren't dealing with old generation evacuation yet. Our heuristic
   // should not have built a cset in final mark.
@@ -83,4 +129,49 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
 
   entry_rendezvous_roots();
   return true;
+}
+
+void ShenandoahOldGC::entry_coalesce_and_fill_message(char *buf, size_t len) const {
+  // ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  jio_snprintf(buf, len, "Coalescing and filling (%s)", _generation->name());
+}
+
+void ShenandoahOldGC::op_coalesce_and_fill() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  WorkGang* workers = heap->workers();
+  uint nworkers = workers->active_workers();
+
+  assert(_generation->generation_mode() == OLD, "Only old-GC does coalesce and fill");
+
+  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
+  uint coalesce_and_fill_regions_count = old_heuristics->old_coalesce_and_fill_candidates();
+  ShenandoahHeapRegion* coalesce_and_fill_region_array[coalesce_and_fill_regions_count];
+
+  old_heuristics->get_coalesce_and_fill_candidates(coalesce_and_fill_region_array);
+  ShenandoahConcurrentCoalesceAndFillTask task(nworkers, coalesce_and_fill_region_array, coalesce_and_fill_regions_count);
+
+
+  // TODO:  We need to implement preemption of coalesce and fill.  If young-gen wants to run while we're working on this,
+  // we should preempt this code and then resume it after young-gen has finished.  This requires that we "remember" the state
+  // of each worker thread so it can be resumed where it left off.  Note that some worker threads may have processed more regions
+  // than others at the time of preemption.
+
+  workers->run_task(&task);
+}
+
+void ShenandoahOldGC::entry_coalesce_and_fill() {
+  char msg[1024];
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  entry_coalesce_and_fill_message(msg, sizeof(msg));
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::coalesce_and_fill);
+
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  EventMark em("%s", msg);
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+                              "concurrent coalesce and fill");
+
+  op_coalesce_and_fill();
 }

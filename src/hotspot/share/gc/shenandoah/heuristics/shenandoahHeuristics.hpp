@@ -69,6 +69,21 @@ protected:
     size_t _garbage;
   } RegionData;
 
+  ShenandoahGeneration* _generation;
+
+  // if (_generation->generation_mode() == GLOBAL) _region_data represents
+  //  the results of most recently completed global marking pass
+  // if (_generation->generation_mode() == OLD) _region_data represents
+  //  the results of most recently completed old-gen marking pass
+  // if (_generation->generation_mode() == YOUNG) _region_data represents
+  //  the resulits of most recently completed young-gen marking pass
+  //
+  // Note that there is some redundancy represented in _region_data because
+  // each instance is an array large enough to hold all regions.  However,
+  // any region in young-gen is not in old-gen.  And any time we are
+  // making use of the GLOBAL data, there is no need to maintain the
+  // YOUNG or OLD data.  Consider this redundancy of data structure to
+  // have negligible cost unless proven otherwise.
   RegionData* _region_data;
 
   uint _degenerated_cycles_in_a_row;
@@ -84,9 +99,11 @@ protected:
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
 
-  ShenandoahGeneration* _generation;
-
   static int compare_by_garbage(RegionData a, RegionData b);
+
+  // TODO: We need to enhance this API to give visibility to accompanying old-gen evacuation effort.
+  // In the case that the old-gen evacuation effort is small or zero, the young-gen heuristics
+  // should feel free to dedicate increased efforts to young-gen evacuation.
 
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                                      RegionData* data, size_t data_size,
@@ -122,7 +139,7 @@ public:
 
   virtual void record_requested_gc();
 
-  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
+  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics);
 
   virtual bool can_unload_classes();
   virtual bool can_unload_classes_normal();

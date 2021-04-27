@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,26 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP
-#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP
+#ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHAGGRESSIVEOLDHEURISTICS_HPP
+#define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHAGGRESSIVEOLDHEURISTICS_HPP
 
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 
-class ShenandoahPassiveMode : public ShenandoahMode {
+class ShenandoahAggressiveOldHeuristics : public ShenandoahOldHeuristics {
 public:
-  virtual void initialize_flags() const;
-  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahGeneration* generation) const;
-  virtual ShenandoahOldHeuristics* initialize_old_heuristics(ShenandoahGeneration* generation) const;
-  virtual const char* name()     { return "Passive"; }
+  ShenandoahAggressiveOldHeuristics(ShenandoahGeneration* generation);
+
+  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                     RegionData* data, size_t size,
+                                                     size_t free);
+
+  virtual bool should_start_gc();
+
+  virtual bool should_unload_classes();
+
+  virtual const char* name()     { return "AggressiveOld"; }
   virtual bool is_diagnostic()   { return true; }
   virtual bool is_experimental() { return false; }
 };
 
-#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP
+#endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHAGGRESSIVEOLDHEURISTICS_HPP

@@ -27,6 +27,7 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "runtime/mutex.hpp"
 
@@ -74,7 +75,7 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   ShenandoahSharedFlag _heap_changed;
   ShenandoahControlThread* _control_thread;
   ShenandoahHeuristics* _young_heuristics;
-  ShenandoahHeuristics* _old_heuristics;
+  ShenandoahOldHeuristics* _old_heuristics;
   ShenandoahHeuristics* _global_heuristics;
 
   int _sleep;
