@@ -1519,6 +1519,8 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
                   cast = new CastFFNode(in, in_t, true);
                 } else if (in_t->isa_double()) {
                   cast = new CastDDNode(in, in_t, true);
+                } else if (in_t->isa_vect()) {
+                  cast = new CastVVNode(in, in_t, true);
                 }
               }
               if (cast != NULL) {
