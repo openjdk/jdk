@@ -26,8 +26,10 @@
  * @bug 8059604
  * @summary Add CompileThresholdScaling flag to control when methods are first compiled (with +/-TieredCompilation)
  * @library /test/lib
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
  * @run driver compiler.arguments.CheckCompileThresholdScaling
  */
 

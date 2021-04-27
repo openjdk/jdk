@@ -26,6 +26,7 @@
  * @bug 8130858 8132525 8162881
  * @summary Check that correct range of values for CICompilerCount are allowed depending on whether tiered is enabled or not
  * @library /test/lib /
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver compiler.arguments.CheckCICompilerCount

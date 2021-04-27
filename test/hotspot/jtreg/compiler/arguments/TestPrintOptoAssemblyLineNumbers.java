@@ -27,6 +27,7 @@
  * @bug 8033441
  * @summary Test to ensure that line numbers are now present with the -XX:+PrintOptoAssembly command line option
  *
+ * @requires vm.flagless
  * @requires vm.compiler2.enabled & vm.debug == true
  *
  * @library /test/lib
