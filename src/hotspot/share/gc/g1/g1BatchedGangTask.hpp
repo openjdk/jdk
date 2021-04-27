@@ -63,7 +63,7 @@ public:
   // How many workers (threads) would this task be able to keep busy for at least
   // as long as to amortize worker startup costs.
   // Called by G1BatchedGangTask to determine total number of workers.
-  virtual double num_busy_workers() const { return 1.0; }
+  virtual double num_busy_workers() const = 0;
 
   // Called by G1BatchedGangTask to provide information about the the maximum
   // number of workers for all subtasks after it has been determined.
@@ -81,7 +81,16 @@ public:
 // G1BatchedGangTask runs a set of G1AbstractSubTask using a work gang.
 //
 // Subclasses of this class add their G1AbstractSubTasks into either the list
-// of "serial" or the list of "parallel" tasks.
+// of "serial" or the list of "parallel" tasks. They are supposed to be the owners
+// of the G1AbstractSubTasks.
+//
+// Eg. the constructor contains code like the following:
+//
+//   add_serial_task(new SomeSubTask());
+//   [...]
+//   add_parallel_task(new SomeOtherSubTask());
+//   [...]
+//
 // During execution in the work gang, this class will make sure that the "serial"
 // tasks are executed by a single worker only exactly once, but different "serial"
 // tasks may be executed in parallel using different workers. "Parallel" tasks'
