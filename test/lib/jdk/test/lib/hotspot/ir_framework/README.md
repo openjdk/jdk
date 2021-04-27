@@ -100,6 +100,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DDumpReplay=true`: Add the `DumpReplay` directive to the test VM.
 - `-DGCAfter=true`: Perform `System.gc()` after each test (slows the execution down).
 - `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT_FOR_COMPILATION](./CompLevel.java).
+- `-DIgnoreCompilerControls=false`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
 
 
 ## 3. Test Framework Execution

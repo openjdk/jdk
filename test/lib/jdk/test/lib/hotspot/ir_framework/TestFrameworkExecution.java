@@ -92,6 +92,7 @@ public class TestFrameworkExecution {
     protected static final long PER_METHOD_TRAP_LIMIT = (Long)WHITE_BOX.getVMFlag("PerMethodTrapLimit");
     protected static final boolean PROFILE_INTERPRETER = (Boolean)WHITE_BOX.getVMFlag("ProfileInterpreter");
     private static final boolean FLIP_C1_C2 = Boolean.getBoolean("FlipC1C2");
+    private static final boolean IGNORE_COMPILER_CONTROLS = Boolean.getBoolean("IgnoreCompilerControls");
 
     private final HashMap<Method, DeclaredTest> declaredTests = new HashMap<>();
     private final List<AbstractTest> allTests = new ArrayList<>();
@@ -302,31 +303,31 @@ public class TestFrameworkExecution {
     }
 
     private void processControlAnnotations(Class<?> clazz) {
-        if (!XCOMP) {
-            // Don't control compilations if -Xcomp is enabled.
-            // Also apply compile commands to all inner classes of 'clazz'.
-            ArrayList<Class<?>> classes = new ArrayList<>(Arrays.asList(clazz.getDeclaredClasses()));
-            classes.add(clazz);
-            for (Class<?> c : classes) {
-                applyClassAnnotations(c);
-                List<Executable> executables = new ArrayList<>(Arrays.asList(c.getDeclaredMethods()));
-                Collections.addAll(executables, c.getDeclaredConstructors());
-                for (Executable ex : executables) {
-                    checkClassAnnotations(ex);
-                    try {
-                        applyIndependentCompilationCommands(ex);
-                    } catch (TestFormatException e) {
-                        // Failure logged. Continue and report later.
-                    }
+        if (IGNORE_COMPILER_CONTROLS) {
+            return;
+        }
+        // Also apply compile commands to all inner classes of 'clazz'.
+        ArrayList<Class<?>> classes = new ArrayList<>(Arrays.asList(clazz.getDeclaredClasses()));
+        classes.add(clazz);
+        for (Class<?> c : classes) {
+            applyClassAnnotations(c);
+            List<Executable> executables = new ArrayList<>(Arrays.asList(c.getDeclaredMethods()));
+            Collections.addAll(executables, c.getDeclaredConstructors());
+            for (Executable ex : executables) {
+                checkClassAnnotations(ex);
+                try {
+                    applyIndependentCompilationCommands(ex);
+                } catch (TestFormatException e) {
+                    // Failure logged. Continue and report later.
                 }
+            }
 
-                // Only force compilation now because above annotations affect inlining
-                for (Executable ex : executables) {
-                    try {
-                        applyForceCompileCommand(ex);
-                    } catch (TestFormatException e) {
-                        // Failure logged. Continue and report later.
-                    }
+            // Only force compilation now because above annotations affect inlining
+            for (Executable ex : executables) {
+                try {
+                    applyForceCompileCommand(ex);
+                } catch (TestFormatException e) {
+                    // Failure logged. Continue and report later.
                 }
             }
         }
@@ -431,9 +432,11 @@ public class TestFrameworkExecution {
      * Exlude the method from compilation and make sure it is not inlined.
      */
     private void dontCompileAndDontInlineMethod(Method m) {
-        WHITE_BOX.makeMethodNotCompilable(m, CompLevel.ANY.getValue(), true);
-        WHITE_BOX.makeMethodNotCompilable(m, CompLevel.ANY.getValue(), false);
-        WHITE_BOX.testSetDontInlineMethod(m, true);
+        if (!IGNORE_COMPILER_CONTROLS) {
+            WHITE_BOX.makeMethodNotCompilable(m, CompLevel.ANY.getValue(), true);
+            WHITE_BOX.makeMethodNotCompilable(m, CompLevel.ANY.getValue(), false);
+            WHITE_BOX.testSetDontInlineMethod(m, true);
+        }
     }
 
     private void dontCompileWithCompiler(Executable ex, Compiler compiler) {
@@ -511,8 +514,8 @@ public class TestFrameworkExecution {
             TestFormat.checkNoThrow(warmupIterations >= 0, "Cannot have negative value for @Warmup at " + m);
         }
 
-        if (!XCOMP) {
-            // Don't inline test methods. Don't care when -Xcomp set.
+        if (!IGNORE_COMPILER_CONTROLS) {
+            // Don't inline test methods by default. Do not apply this when -DIgnoreCompilerControls=true is set.
             WHITE_BOX.testSetDontInlineMethod(m, true);
         }
         CompLevel compLevel = restrictCompLevel(testAnno.compLevel());
@@ -887,7 +890,7 @@ public class TestFrameworkExecution {
      * Some VM flags could make the deopt assertions unstable.
      */
     private static boolean notUnstableDeoptAssertion(Method m, CompLevel level) {
-        return (USE_COMPILER && !XCOMP && !TEST_C1 &&
+        return (USE_COMPILER && !XCOMP && !IGNORE_COMPILER_CONTROLS && !TEST_C1 &&
                (!EXCLUDE_RANDOM || WHITE_BOX.isMethodCompilable(m, level.getValue(), false)));
     }
 
@@ -943,7 +946,7 @@ public class TestFrameworkExecution {
                 default -> throw new TestRunException("compiledAtLevel() should not be called with " + level);
             }
         }
-        if (!USE_COMPILER || XCOMP || TEST_C1 ||
+        if (!USE_COMPILER || XCOMP || TEST_C1 || IGNORE_COMPILER_CONTROLS ||
             (EXCLUDE_RANDOM && !WHITE_BOX.isMethodCompilable(m, level.getValue(), false))) {
             return TriState.Maybe;
         }
