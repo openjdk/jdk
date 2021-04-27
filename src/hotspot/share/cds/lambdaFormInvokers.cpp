@@ -82,8 +82,8 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
   guarantee(cds_klass != NULL, "jdk/internal/misc/CDS must exist!");
+  DEBUG_ONLY(log_info(cds)("Total lambdaform lines %d", _lambdaform_lines->length());)
 
-  log_info(cds)("Total lambdaform lines %d", _lambdaform_lines->length());
   HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
   objArrayHandle list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
@@ -119,10 +119,6 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     assert(h_bytes != NULL, "Class bytes is NULL");
 
     char *class_name = java_lang_String::as_utf8_string(h_name());
-    if (class_name == nullptr) {
-      log_info(cds)("Out of memory when reloading classes, quit");
-      return;
-    }
     int len = h_bytes->length();
     // make a copy of class bytes so GC will not affect us.
     char *buf = resource_allocate_bytes(THREAD, len, AllocFailStrategy::RETURN_NULL);
