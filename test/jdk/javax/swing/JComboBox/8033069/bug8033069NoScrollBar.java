@@ -60,8 +60,8 @@ public class bug8033069NoScrollBar {
     private JComboBox cb1;
     private JComboBox cb2;
 
-    private Point p;
-    private Dimension d;
+    volatile private Point p;
+    volatile private Dimension d;
 
     public static void main(String[] args) throws Exception {
         iterateLookAndFeels(new bug8033069NoScrollBar(NO_SCROLL_ITEMS));
@@ -104,6 +104,12 @@ public class bug8033069NoScrollBar {
         frame.setVisible(true);
     }
 
+    private void disposeUI() {
+        if (frame != null) {
+            frame.dispose();
+        }
+    }
+
     public void runTest() throws Exception {
         try {
             SwingUtilities.invokeAndWait(this::setupUI);
@@ -117,11 +123,8 @@ public class bug8033069NoScrollBar {
                 p = cb1.getLocationOnScreen();
                 d = cb1.getSize();
             });
-            robot.waitForIdle();
 
             robot.mouseMove(p.x + d.width / 2, p.y + d.height / 2);
-            robot.waitForIdle();
-
             // Click it to open popup
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
@@ -142,7 +145,6 @@ public class bug8033069NoScrollBar {
 
             // Move mouse down on the popup
             robot.mouseMove(p.x + d.width / 2, p.y + d.height * 3);
-            robot.waitForIdle();
 
             robot.mouseWheel(1);
             robot.waitForIdle();
@@ -160,19 +162,15 @@ public class bug8033069NoScrollBar {
                 p = cb2.getLocationOnScreen();
                 d = cb2.getSize();
             });
-            robot.waitForIdle();
 
             robot.mouseMove(p.x + d.width / 2, p.y + d.height / 2);
-            robot.waitForIdle();
 
             robot.mouseWheel(1);
             robot.waitForIdle();
             assertFalse("cb1 popup is visible after mouse wheel up on cb2",
                         Util.invokeOnEDT(cb1::isPopupVisible));
         } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(frame::dispose);
-            }
+            SwingUtilities.invokeAndWait(this::disposeUI);
         }
 
         System.out.println("Test passed");
