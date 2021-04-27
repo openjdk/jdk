@@ -488,11 +488,6 @@ extern "C" JNIEXPORT void pp(void* p) {
 }
 
 
-// pv: print vm-printable object
-#ifndef PRODUCT
-// AllocatedObj in allocation.hpp is not defined for PRODUCT
-extern "C" JNIEXPORT void pa(intptr_t p)   { ((AllocatedObj*) p)->print(); }
-#endif
 extern "C" JNIEXPORT void findpc(intptr_t x);
 
 extern "C" JNIEXPORT void ps() { // print stack
@@ -651,7 +646,6 @@ void help() {
   Command c("help");
   tty->print_cr("basic");
   tty->print_cr("  pp(void* p)   - try to make sense of p");
-  tty->print_cr("  pv(intptr_t p)- ((PrintableResourceObj*) p)->print()");
   tty->print_cr("  ps()          - print current thread stack");
   tty->print_cr("  pss()         - print all thread stacks");
   tty->print_cr("  pm(int pc)    - print Method* given compiled PC");
