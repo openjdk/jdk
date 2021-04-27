@@ -39,9 +39,9 @@ import java.util.stream.Collectors;
 
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
-import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
 import sun.net.www.MimeTable;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -59,63 +59,55 @@ public class ServerMimeTypesResolutionTest {
     static final boolean ENABLE_LOGGING = true;
     static final String FILE_NAME = "empty-file-of-type";
     static final String UNKNOWN_FILE_EXTENSION = ".unknown-file-extension";
-    final Properties ACTUAL_MIME_TYPES = new Properties();
-    Path root;
+    static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
+    static final Properties SUPPORTED_MIME_TYPES = new Properties();
+    static Path root;
 
     @BeforeTest
     public void setup() throws Exception {
         if (ENABLE_LOGGING) {
-            Logger logger = Logger.getLogger("com.sun.net.httpserver");
             ConsoleHandler ch = new ConsoleHandler();
-            logger.setLevel(Level.ALL);
+            LOGGER.setLevel(Level.ALL);
             ch.setLevel(Level.ALL);
-            logger.addHandler(ch);
+            LOGGER.addHandler(ch);
         }
-        getActualOperatingSystemSpecificMimeTypes(ACTUAL_MIME_TYPES);
-        root = createFileTreeFromMimeTypes(ACTUAL_MIME_TYPES);
+        getSupportedMimeTypes(SUPPORTED_MIME_TYPES);
+        root = createFileTreeFromMimeTypes(SUPPORTED_MIME_TYPES);
     }
 
-    private List<String> getFileTypes(Properties input) {
-        return new ArrayList<>(getMimeTypesPerFileType(input).keySet());
-    }
-
-    private Map<String,String> getMimeTypesPerFileType(Properties input) {
-        return input
-                .entrySet()
-                .stream()
-                .filter( entry -> ((String)entry.getValue()).contains("file_extensions"))
-                .flatMap(entry ->
-                        Arrays.asList(
-                                ((String)deserialize((String) entry.getValue(), ";")
-                                        .get("file_extensions")).split(",")
-                        )
-                        .stream()
-                        .map( extension ->
-                                Map.entry(extension, entry.getKey().toString())
-                        )
-                )
-                .collect(
-                      Collectors.toMap(
-                          entry -> entry.getKey(),
-                          entry -> entry.getValue()
-                      )
-                );
-    }
-
-    private Path createFileTreeFromMimeTypes(Properties properties) throws IOException {
-        final Path root = Files.createDirectory(CWD.resolve(getClass().getSimpleName()));
-        for (String type : getFileTypes(properties)) {
-            Files.createFile(root.resolve(toFileName(type)));
+    private static Path createFileTreeFromMimeTypes(Properties properties)
+            throws IOException {
+        final Path root = Files.createDirectory(CWD.resolve(ServerMimeTypesResolutionTest.class.getSimpleName()));
+        for (String extension : getFileExtensions(properties)) {
+            Files.createFile(root.resolve(toFileName(extension)));
         }
         Files.createFile(root.resolve(toFileName(UNKNOWN_FILE_EXTENSION)));
         return root;
     }
 
-    private String toFileName(String extension) {
+    private static List<String> getFileExtensions(Properties input) {
+        return new ArrayList<>(getMimeTypesPerFileExtension(input).keySet());
+    }
+
+    private static Map<String,String> getMimeTypesPerFileExtension(Properties input) {
+        return input
+                .entrySet()
+                .stream()
+                .filter(entry -> ((String)entry.getValue()).contains("file_extensions"))
+                .flatMap(entry ->
+                        Arrays.stream(
+                                ((String)deserialize((String) entry.getValue(), ";")
+                                        .get("file_extensions")).split(","))
+                        .map(extension ->
+                                Map.entry(extension, entry.getKey().toString())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private static String toFileName(String extension) {
         return "%s%s".formatted(FILE_NAME, extension);
     }
 
-    protected Properties deserialize(String serialized, String delimiter) {
+    protected static Properties deserialize(String serialized, String delimiter) {
         try {
             Properties properties = new Properties();
             properties.load(
@@ -136,35 +128,38 @@ public class ServerMimeTypesResolutionTest {
         }
     }
 
-    public Properties getActualOperatingSystemSpecificMimeTypes(Properties properties) throws Exception {
+    public Properties getSupportedMimeTypes(Properties properties) throws Exception {
         properties.load(MimeTable.class.getResourceAsStream("content-types.properties"));
         return properties;
     }
 
     @Test
-    public void testMimeTypeHeaders() throws Exception {
-        final var serverUnderTest = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
-        serverUnderTest.start();
+    public static void testMimeTypeHeaders() throws Exception {
+        final var server = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
+        server.start();
         try {
             final var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            final Map<String, String> mimeTypesPerFileType = getMimeTypesPerFileType(ACTUAL_MIME_TYPES);
-            for (String fileExtension : getFileTypes(ACTUAL_MIME_TYPES)) {
-                final String expectedMimeType = mimeTypesPerFileType.get(fileExtension);
-                execute(serverUnderTest, client, fileExtension, expectedMimeType);
+            final Map<String, String> mimeTypesPerFileExtension = getMimeTypesPerFileExtension(SUPPORTED_MIME_TYPES);
+            for (String extension : getFileExtensions(SUPPORTED_MIME_TYPES)) {
+                final String expectedMimeType = mimeTypesPerFileExtension.get(extension);
+                execute(server, client, extension, expectedMimeType);
             }
-            execute(serverUnderTest, client, UNKNOWN_FILE_EXTENSION,"application/octet-stream");
+            execute(server, client, UNKNOWN_FILE_EXTENSION,"application/octet-stream");
         } finally {
-            serverUnderTest.stop(0);
+            server.stop(0);
         }
     }
 
-    private void execute(HttpServer server, HttpClient client, String inputFileExtension, String expectedMimeType)
-                                                                        throws IOException, InterruptedException {
+    private static void execute(HttpServer server,
+                         HttpClient client,
+                         String inputFileExtension,
+                         String expectedMimeType)
+            throws IOException, InterruptedException {
         final var uri = URI.create(
-                            "http://localhost:%s/%s".formatted(
-                                    server.getAddress().getPort(),
-                                    toFileName(inputFileExtension)
-                            )
+                "http://localhost:%s/%s".formatted(
+                        server.getAddress().getPort(),
+                        toFileName(inputFileExtension)
+                )
         );
         final var request = HttpRequest.newBuilder(uri).build();
         final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -172,20 +167,25 @@ public class ServerMimeTypesResolutionTest {
         assertEquals(response.headers().firstValue("content-type").get(),expectedMimeType);
     }
 
-    @Test
-    public void verifyCommonMimeTypes() {
-        List<String> commonMimeTypes = Arrays.asList(".aac", ".abw", ".arc", ".avi", ".azw", ".bin", ".bmp", ".bz",
+    // Source common mime types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+    // TODO: many of these are not supported - decide if we want to support them
+    @DataProvider
+    public static Object[][] commonExtensions() {
+        Set<String> extensions = Set.of(".aac", ".abw", ".arc", ".avi", ".azw", ".bin", ".bmp", ".bz",
                 ".bz2", ".csh", ".css", ".csv", ".doc", ".docx",".eot", ".epub", ".gz", ".gif", ".htm", ".html", ".ico",
                 ".ics", ".jar", ".jpeg", ".jpg", ".js", ".json", ".jsonld", ".mid", ".midi", ".mjs", ".mp3", ".cda",
                 ".mp4", ".mpeg", ".mpkg", ".odp", ".ods", ".odt", ".oga", ".ogv", ".ogx", ".opus", ".otf", ".png",
                 ".pdf", ".php", ".ppt", ".pptx", ".rar", ".rtf", ".sh", ".svg", ".swf", ".tar", ".tif", ".tiff", ".ts",
                 ".ttf", ".txt", ".vsd", ".wav", ".weba", ".webm", ".webp", ".woff", ".woff2", ".xhtml", ".xls", ".xlsx",
                 ".xml", ".xul", ".zip", ".3gp", "3g2", ".7z");
-        Set<String> actualFileTypes = new HashSet<>(getFileTypes(ACTUAL_MIME_TYPES));
-        for (String commonMimeType : commonMimeTypes) {
-            assertTrue(!actualFileTypes.add(commonMimeType), "expecting %s to be present".formatted(commonMimeType));
-        }
+        return extensions.stream().map(e -> new Object[]{e}).toArray(Object[][]::new);
     }
 
+    static final Set<String> SUPPORTED_EXTENSIONS = new HashSet<>(getFileExtensions(SUPPORTED_MIME_TYPES));
 
+    @Test(dataProvider = "commonExtensions")
+    public static void verifyCommonExtensions(String extension) {
+        assertFalse(SUPPORTED_EXTENSIONS.add(extension),
+                "expecting %s to be present".formatted(extension));
+    }
 }
