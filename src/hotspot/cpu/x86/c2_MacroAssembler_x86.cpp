@@ -34,6 +34,33 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
 
+// Note: 'double' and 'long long' have 32-bits alignment on x86.
+static jlong* double_quadword(jlong *adr, jlong lo, jlong hi) {
+  // Use the expression (adr)&(~0xF) to provide 128-bits aligned address
+  // of 128-bits operands for SSE instructions.
+  jlong *operand = (jlong*)(((uintptr_t)adr)&((uintptr_t)(~0xF)));
+  // Store the value to a 128-bits operand.
+  operand[0] = lo;
+  operand[1] = hi;
+  return operand;
+}
+
+// Buffer for 128-bits masks used by SSE instructions.
+static jlong fp_signmask_pool[(4+1)*2]; // 4*128bits(data) + 128bits(alignment)
+
+// Static initialization during VM startup.
+static jlong *float_signflip_pool  = double_quadword(&fp_signmask_pool[3*2], CONST64(0x8000000080000000), CONST64(0x8000000080000000));
+static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], CONST64(0x8000000000000000), CONST64(0x8000000000000000));
+
+  // Float masks come from different places depending on platform.
+#ifdef _LP64
+  static address float_signflip()  { return StubRoutines::x86::float_sign_flip(); }
+  static address double_signflip() { return StubRoutines::x86::double_sign_flip(); }
+#else
+  static address float_signflip()  { return (address)float_signflip_pool; }
+  static address double_signflip() { return (address)double_signflip_pool; }
+#endif
+
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {
   switch (vlen_in_bytes) {
     case  4: // fall-through
@@ -1073,9 +1100,9 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst,
   jcc(Assembler::above, DONE_LABEL);
 
   if (opcode == Op_SignumF){
-    xorps(dst, ExternalAddress(StubRoutines::x86::float_sign_flip()), scratch);
+    xorps(dst, ExternalAddress(float_signflip()), scratch);
   } else if (opcode == Op_SignumD){
-    xorpd(dst, ExternalAddress(StubRoutines::x86::double_sign_flip()), scratch);
+    xorpd(dst, ExternalAddress(double_signflip()), scratch);
   }
 
   bind(DONE_LABEL);
