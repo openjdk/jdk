@@ -112,9 +112,9 @@ public abstract class DatatypeFactory {
 
     /**
      * Obtain a new instance of a {@code DatatypeFactory}.
-     *
-     * <p>The implementation resolution mechanisms are <a href="#DatatypeFactory.newInstance">defined</a> in this
-     * {@code Class}'s documentation.
+     * This method uses the
+     * <a href="../../../module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
+     * to determine the {@code DatatypeFactory} implementation class to load.
      *
      * @return New instance of a {@code DatatypeFactory}
      *

@@ -240,7 +240,7 @@
  * specific features and properties which the implementation currently supports
  * can be found at the end of this note.
  *
- * <h3>Naming Convention</h3>
+ * <h3 id="NamingConvention">Naming Convention</h3>
  * The names of the features and properties are fully qualified, composed of a
  * prefix and name.
  *
@@ -326,11 +326,11 @@
  * <tr>
  * <th scope="row" style="font-weight:normal" id="DOM">DOM</th>
  * <td style="text-align:center">DOM Parser</td>
- * <td style="text-align:center">
+ * <td>
  * {@code DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();}<br>
  * {@code dbf.setAttribute(name, value);}
  * </td>
- * <td style="text-align:center">
+ * <td>
  * {@code DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();}<br>
  * {@code dbf.setFeature(name, value);}
  * </td>
@@ -338,12 +338,12 @@
  * <tr>
  * <th scope="row" style="font-weight:normal" id="SAX">SAX</th>
  * <td style="text-align:center">SAX Parser</td>
- * <td style="text-align:center">
+ * <td>
  * {@code SAXParserFactory spf = SAXParserFactory.newInstance();}<br>
  * {@code SAXParser parser = spf.newSAXParser();}<br>
  * {@code parser.setProperty(name, value);}
  * </td>
- * <td style="text-align:center">
+ * <td>
  * {@code SAXParserFactory spf = SAXParserFactory.newInstance();}<br>
  * {@code spf.setFeature(name, value);}<br>
  * </td>
@@ -351,11 +351,11 @@
  * <tr>
  * <th scope="row" style="font-weight:normal" id="StAX">StAX</th>
  * <td style="text-align:center">StAX Parser</td>
- * <td style="text-align:center">
+ * <td>
  * {@code XMLInputFactory xif = XMLInputFactory.newInstance();}<br>
  * {@code xif.setProperty(name, value);}
  * </td>
- * <td style="text-align:center">
+ * <td>
  * {@code XMLInputFactory xif = XMLInputFactory.newInstance();}<br>
  * {@code xif.setProperty(name, value);}
  * </td>
@@ -363,11 +363,11 @@
  * <tr>
  * <th scope="row" style="font-weight:normal" id="Validation">Validation</th>
  * <td style="text-align:center">XML Validation API</td>
- * <td style="text-align:center">
+ * <td>
  * {@code SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);}<br>
  * {@code schemaFactory.setProperty(name, value);}
  * </td>
- * <td style="text-align:center">
+ * <td>
  * {@code SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);}<br>
  * {@code schemaFactory.setFeature(name, value);}
  * </td>
@@ -375,11 +375,11 @@
  * <tr>
  * <th scope="row" style="font-weight:normal" id="Transform">Transform</th>
  * <td style="text-align:center">XML Transform API</td>
- * <td style="text-align:center">
+ * <td>
  * {@code TransformerFactory factory = TransformerFactory.newInstance();}<br>
  * {@code factory.setAttribute(name, value);}
  * </td>
- * <td style="text-align:center">
+ * <td>
  * {@code TransformerFactory factory = TransformerFactory.newInstance();}<br>
  * {@code factory.setFeature(name, value);}
  * </td>
@@ -387,29 +387,29 @@
  * <tr>
  * <th scope="row" style="font-weight:normal" id="XSLTCSerializer">XSLTC Serializer</th>
  * <td style="text-align:center">XSLTC Serializer</td>
- * <td style="text-align:center">
+ * <td>
  * {@code Transformer transformer = TransformerFactory.newInstance().newTransformer();}<br>
  * {@code transformer.setOutputProperty(name, value);}
  * </td>
- * <td style="text-align:center">
+ * <td>
  * </td>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="DOMLS">DOMLS</th>
  * <td style="text-align:center">DOM Load and Save</td>
- * <td style="text-align:center">
+ * <td>
  * {@code LSSerializer serializer = domImplementation.createLSSerializer();} <br>
  * {@code serializer.getDomConfig().setParameter(name, value);}
  * </td>
- * <td style="text-align:center">
+ * <td>
  * </td>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="XPATH">XPath</th>
  * <td style="text-align:center">XPath</td>
- * <td style="text-align:center">
+ * <td>
  * </td>
- * <td style="text-align:center">
+ * <td>
  * {@code XPathFactory factory = XPathFactory.newInstance();} <br>
  * {@code factory.setFeature(name, value);}
  * </td>
@@ -429,7 +429,8 @@
  * <caption>Implementation Specific Properties</caption>
  * <thead>
  * <tr>
- * <th scope="col" rowspan="2">Name <a href="#Note1">[1]</a></th>
+ * <th scope="col" rowspan="2">Full Name (<a href="#NamingConvention">prefix + name</a>)
+ * <a href="#Note1">[1]</a></th>
  * <th scope="col" rowspan="2">Description</th>
  * <th scope="col" rowspan="2">System Property <a href="#Note2">[2]</a></th>
  * <th scope="col" rowspan="2">jaxp.properties <a href="#Note2">[2]</a></th>
@@ -449,7 +450,7 @@
  * <tbody>
  *
  * <tr>
- * <td style="text-align:center" id="EELimit">entityExpansionLimit</td>
+ * <td style="text-align:center" id="EELimit">{@systemProperty jdk.xml.entityExpansionLimit}</td>
  * <td>Limits the number of entity expansions.
  * </td>
  * <td style="text-align:center" rowspan="9">yes</td>
@@ -472,14 +473,14 @@
  * <td style="text-align:center" rowspan="9">8</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="EALimit">elementAttributeLimit</td>
+ * <td style="text-align:center" id="EALimit">{@systemProperty jdk.xml.elementAttributeLimit}</td>
  * <td>Limits the number of attributes an element can have.
  * </td>
  * <td style="text-align:center">10000</td>
  * <td style="text-align:center">10000</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="OccurLimit">maxOccurLimit</td>
+ * <td style="text-align:center" id="OccurLimit">jdk.xml.maxOccurLimit</td>
  * <td>Limits the number of content model nodes that may be created when building
  * a grammar for a W3C XML Schema that contains maxOccurs attributes with values
  * other than "unbounded".
@@ -488,7 +489,7 @@
  * <td style="text-align:center">5000</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="SizeLimit">totalEntitySizeLimit</td>
+ * <td style="text-align:center" id="SizeLimit">{@systemProperty jdk.xml.totalEntitySizeLimit}</td>
  * <td>Limits the total size of all entities that include general and parameter
  * entities. The size is calculated as an aggregation of all entities.
  * </td>
@@ -496,14 +497,14 @@
  * <td style="text-align:center">5x10^7</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="GELimit">maxGeneralEntitySizeLimit</td>
+ * <td style="text-align:center" id="GELimit">jdk.xml.maxGeneralEntitySizeLimit</td>
  * <td>Limits the maximum size of any general entities.
  * </td>
  * <td style="text-align:center">0</td>
  * <td style="text-align:center">0</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="PELimit">maxParameterEntitySizeLimit</td>
+ * <td style="text-align:center" id="PELimit">{@systemProperty jdk.xml.maxParameterEntitySizeLimit}</td>
  * <td>Limits the maximum size of any parameter entities, including the result
  * of nesting multiple parameter entities.
  * </td>
@@ -511,21 +512,21 @@
  * <td style="text-align:center">10^6</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="ERLimit">entityReplacementLimit</td>
+ * <td style="text-align:center" id="ERLimit">{@systemProperty jdk.xml.entityReplacementLimit}</td>
  * <td>Limits the total number of nodes in all entity references.
  * </td>
  * <td style="text-align:center">3x10^6</td>
  * <td style="text-align:center">3x10^6</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="ElementDepth">maxElementDepth</td>
+ * <td style="text-align:center" id="ElementDepth">{@systemProperty jdk.xml.maxElementDepth}</td>
  * <td>Limits the maximum element depth.
  * </td>
  * <td style="text-align:center">0</td>
  * <td style="text-align:center">0</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="NameLimit">maxXMLNameLimit</td>
+ * <td style="text-align:center" id="NameLimit">{@systemProperty jdk.xml.maxXMLNameLimit}</td>
  * <td>Limits the maximum size of XML names, including element name, attribute
  * name and namespace prefix and URI.
  * </td>
@@ -534,7 +535,7 @@
  * </tr>
  *
  * <tr>
- * <td style="text-align:center" id="ISSTANDALONE">isStandalone</td>
+ * <td style="text-align:center" id="ISSTANDALONE">{@systemProperty jdk.xml.isStandalone}</td>
  * <td>Indicates that the serializer should treat the output as a
  * standalone document. The property can be used to ensure a newline is written
  * after the XML declaration. Unlike the property
@@ -552,7 +553,7 @@
  * <td style="text-align:center">17</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="XSLTCISSTANDALONE">xsltcIsStandalone</td>
+ * <td style="text-align:center" id="XSLTCISSTANDALONE">{@systemProperty jdk.xml.xsltcIsStandalone}</td>
  * <td>Indicates that the <a href="#XSLTCSerializer">XSLTC serializer</a> should
  * treat the output as a standalone document. The property can be used to ensure
  * a newline is written after the XML declaration. Unlike the property
@@ -575,7 +576,7 @@
  * <td style="text-align:center">17</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="cdataChunkSize">cdataChunkSize</td>
+ * <td style="text-align:center" id="cdataChunkSize">{@systemProperty jdk.xml.cdataChunkSize}</td>
  * <td>Instructs the parser to return the data in a CData section in a single chunk
  * when the property is zero or unspecified, or in multiple chunks when it is greater
  * than zero. The parser shall split the data by linebreaks, and any chunks that are
@@ -594,7 +595,7 @@
  * <td style="text-align:center">9</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="extensionClassLoader">extensionClassLoader</td>
+ * <td style="text-align:center" id="extensionClassLoader">jdk.xml.extensionClassLoader</td>
  * <td>Sets a non-null ClassLoader instance to be used for loading XSLTC java
  * extension functions.
  * </td>
@@ -618,7 +619,8 @@
  * <caption>Implementation Specific Features</caption>
  * <thead>
  * <tr>
- * <th scope="col" rowspan="2">Name <a href="#Note1">[1]</a></th>
+ * <th scope="col" rowspan="2">Full Name (<a href="#NamingConvention">prefix + name</a>)
+ * <a href="#Note1">[1]</a></th>
  * <th scope="col" rowspan="2">Description</th>
  * <th scope="col" rowspan="2">System Property <a href="#Note2">[2]</a></th>
  * <th scope="col" rowspan="2">jaxp.properties <a href="#Note2">[2]</a></th>
@@ -636,7 +638,7 @@
  * </thead>
  * <tbody>
  * <tr>
- * <td style="text-align:center" id="ExtFunc">enableExtensionFunctions</td>
+ * <td style="text-align:center" id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
  * <td>Determines if XSLT and XPath extension functions are to be allowed.
  * </td>
  * <td style="text-align:center" rowspan="3">yes</td>
@@ -655,7 +657,7 @@
  * <td style="text-align:center">8</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="ORParser">overrideDefaultParser</td>
+ * <td style="text-align:center" id="ORParser">{@systemProperty jdk.xml.overrideDefaultParser}</td>
  * <td>Enables the use of a 3rd party's parser implementation to override the
  * system-default parser for the JDK's Transform, Validation and XPath implementations.
  * </td>
@@ -676,7 +678,7 @@
  * <td style="text-align:center">9</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="symbolTable">resetSymbolTable</td>
+ * <td style="text-align:center" id="symbolTable">{@systemProperty jdk.xml.resetSymbolTable}</td>
  * <td>Instructs the parser to reset its internal symbol table during each parse operation.
  * </td>
  * <td>
@@ -696,8 +698,7 @@
  * </tbody>
  * </table>
  * <p id="Note1">
- * <b>[1]</b> The name of a property. The fully-qualified name, prefix + name,
- * should be used when setting the property.
+ * <b>[1]</b> The full name of a property should be used when setting the property.
  * <p id="Note2">
  * <b>[2]</b> A value "yes" indicates there is a corresponding System Property
  * for the property, "no" otherwise.
