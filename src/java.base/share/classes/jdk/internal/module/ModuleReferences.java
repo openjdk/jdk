@@ -274,7 +274,7 @@ class ModuleReferences {
             // take snapshot to avoid async close
             List<String> names = jf.versionedStream()
                     .map(JarEntry::getName)
-                    .collect(Collectors.toList());
+                    .toList();
             return names.stream();
         }
 
@@ -340,7 +340,7 @@ class ModuleReferences {
             List<String> names = jf.stream()
                     .filter(e -> e.section() == JmodFile.Section.CLASSES)
                     .map(JmodFile.Entry::name)
-                    .collect(Collectors.toList());
+                    .toList();
             return names.stream();
         }
 

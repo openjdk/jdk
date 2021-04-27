@@ -359,7 +359,7 @@ public class IPAddressUtil {
                 .filter(a -> (a instanceof Inet6Address)
                         && address.equals(a)
                         && ((Inet6Address) a).getScopeId() != 0)
-                .collect(Collectors.toList());
+                .toList();
         List<InetAddress> result;
         try {
             result = AccessController.doPrivileged(pa);

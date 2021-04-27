@@ -184,7 +184,7 @@ public final class LocaleMatcher {
             Collection<String> tags) {
         Set<String> distinctTags = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         return tags.stream().filter(x -> distinctTags.add(x))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

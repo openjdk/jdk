@@ -84,7 +84,7 @@ public final class ModulePatcher {
                 String mn = e.getKey();
                 List<Path> paths = e.getValue().stream()
                         .map(Paths::get)
-                        .collect(Collectors.toList());
+                        .toList();
                 map.put(mn, paths);
             }
             this.map = map;
