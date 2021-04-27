@@ -30,7 +30,6 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "cds/metaspaceShared.hpp"
-#include "cds/lambdaFormInvokers.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
@@ -1231,7 +1230,9 @@ void FileMapInfo::open_for_write(const char* path) {
   seek_to_position(_file_offset);
 }
 
+
 // Write the header to the file, seek to the next allocation boundary.
+
 void FileMapInfo::write_header() {
   _file_offset = 0;
   seek_to_position(_file_offset);
@@ -2119,14 +2120,15 @@ void FileMapInfo::metaspace_pointers_do(MetaspaceClosure* it, bool use_copy) {
   }
 }
 
-FileMapInfo* FileMapInfo::_current_info = nullptr;
-FileMapInfo* FileMapInfo::_dynamic_archive_info = nullptr;
+FileMapInfo* FileMapInfo::_current_info = NULL;
+FileMapInfo* FileMapInfo::_dynamic_archive_info = NULL;
 bool FileMapInfo::_heap_pointers_need_patching = false;
 SharedPathTable FileMapInfo::_shared_path_table;
 SharedPathTable FileMapInfo::_saved_shared_path_table;
 bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
-GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
+GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = NULL;
+
 // Open the shared archive file, read and validate the header
 // information (version, boot classpath, etc.).  If initialization
 // fails, shared spaces are disabled and the file is closed. [See

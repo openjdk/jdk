@@ -237,7 +237,6 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   bool   _use_full_module_graph;        // Can we use the full archived module graph?
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
   narrowOop _heap_obj_roots;            // An objArray that stores all the roots of archived heap objects
-
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
