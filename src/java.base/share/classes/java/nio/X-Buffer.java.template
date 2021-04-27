@@ -796,7 +796,6 @@ public abstract class $Type$Buffer
         int pos = position();
         if (length > limit() - pos)
             throw new BufferUnderflowException();
-        int end = offset + length;
 
         getArray(pos, dst, offset, length);
 
