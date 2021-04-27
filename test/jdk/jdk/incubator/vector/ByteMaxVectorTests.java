@@ -2429,6 +2429,10 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
 
 
 
+
+
+
+
     static byte MIN(byte a, byte b) {
         return (byte)(Math.min(a, b));
     }

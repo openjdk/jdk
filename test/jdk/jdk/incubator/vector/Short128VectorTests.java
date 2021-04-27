@@ -2414,6 +2414,10 @@ public class Short128VectorTests extends AbstractVectorTest {
         assertShiftArraysEquals(r, a, b, mask, Short128VectorTests::ASHR_unary);
     }
 
+
+
+
+
     static short MIN(short a, short b) {
         return (short)(Math.min(a, b));
     }

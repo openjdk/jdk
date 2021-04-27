@@ -142,9 +142,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_RoundDoubleMode:
     return (bt == T_DOUBLE ? Op_RoundDoubleModeV : 0);
   case Op_RotateLeft:
-    return (bt == T_LONG || bt == T_INT ? Op_RotateLeftV : 0);
+    return (is_integral_type(bt) ? Op_RotateLeftV : 0);
   case Op_RotateRight:
-    return (bt == T_LONG || bt == T_INT ? Op_RotateRightV : 0);
+    return (is_integral_type(bt) ? Op_RotateRightV : 0);
   case Op_SqrtF:
     return (bt == T_FLOAT ? Op_SqrtVF : 0);
   case Op_SqrtD:
@@ -295,13 +295,6 @@ bool VectorNode::is_roundopD(Node* n) {
   return false;
 }
 
-bool VectorNode::is_scalar_rotate(Node* n) {
-  if (n->Opcode() == Op_RotateLeft || n->Opcode() == Op_RotateRight) {
-    return true;
-  }
-  return false;
-}
-
 bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
   assert(vopc == Op_RotateLeftV || vopc == Op_RotateRightV, "wrong opcode");
 
@@ -345,6 +338,23 @@ bool VectorNode::is_shift_opcode(int opc) {
 
 bool VectorNode::is_shift(Node* n) {
   return is_shift_opcode(n->Opcode());
+}
+
+bool VectorNode::is_rotate_opcode(int opc) {
+  switch (opc) {
+  case Op_RotateRight:
+  case Op_RotateLeft:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool VectorNode::is_scalar_rotate(Node* n) {
+  if (is_rotate_opcode(n->Opcode())) {
+    return true;
+  }
+  return false;
 }
 
 bool VectorNode::is_vshift_cnt(Node* n) {
@@ -1127,12 +1137,21 @@ MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node
 
 Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_left,
                                            int vlen, BasicType bt, PhaseGVN* phase) {
-  assert(bt == T_INT || bt == T_LONG, "sanity");
+  assert(is_integral_type(bt), "sanity");
   const TypeVect* vt = TypeVect::make(bt, vlen);
 
-  int shift_mask = (bt == T_INT) ? 0x1F : 0x3F;
-  int shiftLOpc = (bt == T_INT) ? Op_LShiftI : Op_LShiftL;
-  int shiftROpc = (bt == T_INT) ? Op_URShiftI: Op_URShiftL;
+  int shift_mask = (type2aelembytes(bt) * 8) - 1;
+  int shiftLOpc = (bt == T_LONG) ? Op_LShiftL : Op_LShiftI;
+  auto urshiftopc = [=]() {
+    switch(bt) {
+      case T_INT: return Op_URShiftI;
+      case T_LONG: return Op_URShiftL;
+      case T_BYTE: return Op_URShiftB;
+      case T_SHORT: return Op_URShiftS;
+      default: return (Opcodes)0;
+    }
+  };
+  int shiftROpc = urshiftopc();
 
   // Compute shift values for right rotation and
   // later swap them in case of left rotation.

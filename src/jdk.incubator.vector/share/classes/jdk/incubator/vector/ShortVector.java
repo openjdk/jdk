@@ -613,12 +613,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 // This allows the JIT to ignore some ISA details.
                 that = that.lanewise(AND, SHIFT_MASK);
             }
-            if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-                ShortVector neg = that.lanewise(NEG);
-                ShortVector hi = this.lanewise(LSHL, (op == ROR) ? neg : that);
-                ShortVector lo = this.lanewise(LSHR, (op == ROR) ? that : neg);
-                return hi.lanewise(OR, lo);
-            } else if (op == AND_NOT) {
+            if (op == AND_NOT) {
                 // FIXME: Support this in the JIT.
                 that = that.lanewise(NOT);
                 op = AND;
@@ -659,6 +654,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
                         v0.bOp(v1, (i, a, n) -> (short)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (short)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> (short)((a << (n & (Short.SIZE-1))) | (a >>> (Short.SIZE - (n & (Short.SIZE-1))))));
+                case VECTOR_OP_RROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> (short)((a >>> (n & (Short.SIZE-1))) | (a << (Short.SIZE - (n & (Short.SIZE-1))))));
                 default: return null;
                 }}));
     }
@@ -805,11 +804,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         assert(opKind(op, VO_SHIFT));
         // As per shift specification for Java, mask the shift count.
         e &= SHIFT_MASK;
-        if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-            ShortVector hi = this.lanewise(LSHL, (op == ROR) ? -e : e);
-            ShortVector lo = this.lanewise(LSHR, (op == ROR) ? e : -e);
-            return hi.lanewise(OR, lo);
-        }
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
             opc, getClass(), short.class, length(),
@@ -822,6 +816,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
                         v.uOp((i, a) -> (short)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (short)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v, n) ->
+                        v.uOp((i, a) -> (short)((a << (n & (Short.SIZE-1))) | (a >>> (Short.SIZE - (n & (Short.SIZE-1))))));
+                case VECTOR_OP_RROTATE: return (v, n) ->
+                        v.uOp((i, a) -> (short)((a >>> (n & (Short.SIZE-1))) | (a << (Short.SIZE - (n & (Short.SIZE-1))))));
                 default: return null;
                 }}));
     }

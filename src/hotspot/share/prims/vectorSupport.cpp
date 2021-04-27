@@ -362,6 +362,26 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
+    case VECTOR_OP_LROTATE: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:  return Op_RotateLeft;
+        default: fatal("URSHIFT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_RROTATE: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:  return Op_RotateRight;
+        default: fatal("URSHIFT: %s", type2name(bt));
+      }
+      break;
+    }
     default: fatal("unknown op: %d", vop);
   }
   return 0; // Unimplemented

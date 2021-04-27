@@ -2424,6 +2424,10 @@ public class Byte128VectorTests extends AbstractVectorTest {
 
 
 
+
+
+
+
     static byte MIN(byte a, byte b) {
         return (byte)(Math.min(a, b));
     }

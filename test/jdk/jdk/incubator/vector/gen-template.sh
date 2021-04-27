@@ -449,6 +449,8 @@ gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
 gen_shift_cst_op  "ASHR" "(a >> b)" "intOrLong"
 gen_shift_cst_op  "ASHR" "(a >> (b \& 7))" "byte"
 gen_shift_cst_op  "ASHR" "(a >> (b \& 15))" "short"
+gen_shift_cst_op  "ROL" "(a << b) | (a >>> -b)" "intOrLong"
+gen_shift_cst_op  "ROR" "(a >>> b) | (a << -b)" "intOrLong"
 
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"

@@ -673,12 +673,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 that = that.lanewise(AND, SHIFT_MASK);
             }
 #end[!FP]
-            if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-                $abstractvectortype$ neg = that.lanewise(NEG);
-                $abstractvectortype$ hi = this.lanewise(LSHL, (op == ROR) ? neg : that);
-                $abstractvectortype$ lo = this.lanewise(LSHR, (op == ROR) ? that : neg);
-                return hi.lanewise(OR, lo);
-            } else if (op == AND_NOT) {
+            if (op == AND_NOT) {
                 // FIXME: Support this in the JIT.
                 that = that.lanewise(NOT);
                 op = AND;
@@ -730,6 +725,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                         v0.bOp(v1, (i, a, n) -> ($type$)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> ($type$)((a << (n & ($Boxtype$.SIZE-1))) | (a >>> ($Boxtype$.SIZE - (n & ($Boxtype$.SIZE-1))))));
+                case VECTOR_OP_RROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> ($type$)((a >>> (n & ($Boxtype$.SIZE-1))) | (a << ($Boxtype$.SIZE - (n & ($Boxtype$.SIZE-1))))));
 #end[BITWISE]
                 default: return null;
                 }}));
@@ -886,11 +885,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         assert(opKind(op, VO_SHIFT));
         // As per shift specification for Java, mask the shift count.
         e &= SHIFT_MASK;
-        if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-            $abstractvectortype$ hi = this.lanewise(LSHL, (op == ROR) ? -e : e);
-            $abstractvectortype$ lo = this.lanewise(LSHR, (op == ROR) ? e : -e);
-            return hi.lanewise(OR, lo);
-        }
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
             opc, getClass(), $type$.class, length(),
@@ -903,6 +897,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                         v.uOp((i, a) -> ($type$)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v, n) ->
+                        v.uOp((i, a) -> ($type$)((a << (n & ($Boxtype$.SIZE-1))) | (a >>> ($Boxtype$.SIZE - (n & ($Boxtype$.SIZE-1))))));
+                case VECTOR_OP_RROTATE: return (v, n) ->
+                        v.uOp((i, a) -> ($type$)((a >>> (n & ($Boxtype$.SIZE-1))) | (a << ($Boxtype$.SIZE - (n & ($Boxtype$.SIZE-1))))));
                 default: return null;
                 }}));
     }

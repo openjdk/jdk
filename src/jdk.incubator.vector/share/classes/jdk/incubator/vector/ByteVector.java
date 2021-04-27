@@ -613,12 +613,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                 // This allows the JIT to ignore some ISA details.
                 that = that.lanewise(AND, SHIFT_MASK);
             }
-            if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-                ByteVector neg = that.lanewise(NEG);
-                ByteVector hi = this.lanewise(LSHL, (op == ROR) ? neg : that);
-                ByteVector lo = this.lanewise(LSHR, (op == ROR) ? that : neg);
-                return hi.lanewise(OR, lo);
-            } else if (op == AND_NOT) {
+            if (op == AND_NOT) {
                 // FIXME: Support this in the JIT.
                 that = that.lanewise(NOT);
                 op = AND;
@@ -659,6 +654,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                         v0.bOp(v1, (i, a, n) -> (byte)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (byte)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> (byte)((a << (n & (Byte.SIZE-1))) | (a >>> (Byte.SIZE - (n & (Byte.SIZE-1))))));
+                case VECTOR_OP_RROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> (byte)((a >>> (n & (Byte.SIZE-1))) | (a << (Byte.SIZE - (n & (Byte.SIZE-1))))));
                 default: return null;
                 }}));
     }
@@ -805,11 +804,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         assert(opKind(op, VO_SHIFT));
         // As per shift specification for Java, mask the shift count.
         e &= SHIFT_MASK;
-        if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-            ByteVector hi = this.lanewise(LSHL, (op == ROR) ? -e : e);
-            ByteVector lo = this.lanewise(LSHR, (op == ROR) ? e : -e);
-            return hi.lanewise(OR, lo);
-        }
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
             opc, getClass(), byte.class, length(),
@@ -822,6 +816,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                         v.uOp((i, a) -> (byte)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (byte)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v, n) ->
+                        v.uOp((i, a) -> (byte)((a << (n & (Byte.SIZE-1))) | (a >>> (Byte.SIZE - (n & (Byte.SIZE-1))))));
+                case VECTOR_OP_RROTATE: return (v, n) ->
+                        v.uOp((i, a) -> (byte)((a >>> (n & (Byte.SIZE-1))) | (a << (Byte.SIZE - (n & (Byte.SIZE-1))))));
                 default: return null;
                 }}));
     }

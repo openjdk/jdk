@@ -65,9 +65,11 @@ public class VectorSupport {
     public static final int VECTOR_OP_LSHIFT  = 14;
     public static final int VECTOR_OP_RSHIFT  = 15;
     public static final int VECTOR_OP_URSHIFT = 16;
+    public static final int VECTOR_OP_LROTATE = 17;
+    public static final int VECTOR_OP_RROTATE = 18;
 
-    public static final int VECTOR_OP_CAST        = 17;
-    public static final int VECTOR_OP_REINTERPRET = 18;
+    public static final int VECTOR_OP_CAST        = 19;
+    public static final int VECTOR_OP_REINTERPRET = 20;
 
     // enum BoolTest
     public static final int BT_eq = 0;
