@@ -28,6 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.flagless
  * @run driver compiler.oracle.TestCompileCommand
  */
 
