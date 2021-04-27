@@ -645,28 +645,29 @@ void Klass::set_archived_java_mirror(oop m) {
 #endif // INCLUDE_CDS_JAVA_HEAP
 
 Klass* Klass::array_klass_or_null(int rank) {
-  EXCEPTION_MARK;
-  // No exception can be thrown by array_klass_impl when called with or_null == true.
-  // (In anycase, the execption mark will fail if it do so)
-  return array_klass_impl(true, rank, THREAD);
+  return array_klass_or_null_impl(rank);
 }
-
 
 Klass* Klass::array_klass_or_null() {
-  EXCEPTION_MARK;
-  // No exception can be thrown by array_klass_impl when called with or_null == true.
-  // (In anycase, the execption mark will fail if it do so)
-  return array_klass_impl(true, THREAD);
+  return array_klass_or_null_impl();
 }
 
-
-Klass* Klass::array_klass_impl(bool or_null, int rank, TRAPS) {
+Klass* Klass::array_klass_impl(int rank, TRAPS) {
   fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
   return NULL;
 }
 
+Klass* Klass::array_klass_impl(TRAPS) {
+  fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
+  return NULL;
+}
 
-Klass* Klass::array_klass_impl(bool or_null, TRAPS) {
+Klass* Klass::array_klass_or_null_impl(int rank) {
+  fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
+  return NULL;
+}
+
+Klass* Klass::array_klass_or_null_impl() {
   fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
   return NULL;
 }

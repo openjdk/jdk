@@ -97,10 +97,12 @@ class ObjArrayKlass : public ArrayKlass {
                int length, TRAPS);
  protected:
   // Returns the ObjArrayKlass for n'th dimension.
-  virtual Klass* array_klass_impl(bool or_null, int n, TRAPS);
+  virtual Klass* array_klass_impl(int n, TRAPS);
+  virtual Klass* array_klass_or_null_impl(int n);
 
   // Returns the array class with this class as element type.
-  virtual Klass* array_klass_impl(bool or_null, TRAPS);
+  virtual Klass* array_klass_impl(TRAPS);
+  virtual Klass* array_klass_or_null_impl();
 
  public:
 

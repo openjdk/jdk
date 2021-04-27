@@ -1427,11 +1427,9 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
   }
 }
 
-Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
+Klass* InstanceKlass::array_klass_impl(int n, TRAPS) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == NULL) {
-    if (or_null) return NULL;
-
     ResourceMark rm(THREAD);
     JavaThread *jt = THREAD->as_Java_thread();
     {
@@ -1448,14 +1446,25 @@ Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   }
   // _this will always be set at this point
   ObjArrayKlass* oak = array_klasses();
-  if (or_null) {
-    return oak->array_klass_or_null(n);
-  }
   return oak->array_klass(n, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_impl(bool or_null, TRAPS) {
-  return array_klass_impl(or_null, 1, THREAD);
+Klass* InstanceKlass::array_klass_or_null_impl(int n) {
+  // Need load-acquire for lock-free read
+  if (array_klasses_acquire() == NULL) {
+    return NULL;
+  }
+  // _this will always be set at this point
+  ObjArrayKlass* oak = array_klasses();
+  return oak->array_klass_or_null(n);
+}
+
+Klass* InstanceKlass::array_klass_impl(TRAPS) {
+  return array_klass_impl(1, THREAD);
+}
+
+Klass* InstanceKlass::array_klass_or_null_impl() {
+  return array_klass_or_null_impl(1);
 }
 
 static int call_class_initializer_counter = 0;   // for debugging

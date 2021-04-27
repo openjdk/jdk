@@ -1212,10 +1212,12 @@ private:
   JNIid* jni_id_for_impl                         (int offset);
 
   // Returns the array class for the n'th dimension
-  Klass* array_klass_impl(bool or_null, int n, TRAPS);
+  Klass* array_klass_impl(int n, TRAPS);
+  Klass* array_klass_or_null_impl(int n);
 
   // Returns the array class with this class as element type
-  Klass* array_klass_impl(bool or_null, TRAPS);
+  Klass* array_klass_impl(TRAPS);
+  Klass* array_klass_or_null_impl();
 
   // find a local method (returns NULL if not found)
   Method* find_method_impl(const Symbol* name,
