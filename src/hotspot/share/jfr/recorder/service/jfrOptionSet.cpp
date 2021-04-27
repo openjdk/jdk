@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,34 +393,40 @@ static julong divide_with_user_unit(Argument& memory_argument, julong value) {
   return value;
 }
 
-template <typename Argument>
-static void log_lower_than_min_value(Argument& memory_argument, julong min_value) {
+static const char higher_than_msg[] = "This value is higher than the maximum size limited ";
+static const char lower_than_msg[] = "This value is lower than the minimum size required ";
+template <typename Argument, char const *msg>
+static void log_out_of_range_value(Argument& memory_argument, julong min_value) {
   if (memory_argument.value()._size != memory_argument.value()._val) {
     // has multiplier
     log_error(arguments) (
-      "This value is lower than the minimum size required " JULONG_FORMAT "%c",
+      "%s" JULONG_FORMAT "%c", msg,
       divide_with_user_unit(memory_argument, min_value),
       memory_argument.value()._multiplier);
     return;
   }
   log_error(arguments) (
-    "This value is lower than the minimum size required " JULONG_FORMAT,
+    "%s" JULONG_FORMAT, msg,
     divide_with_user_unit(memory_argument, min_value));
 }
 
+static const char default_val_msg[] = "Value default for option ";
+static const char specified_val_msg[] = "Value specified for option ";
 template <typename Argument>
 static void log_set_value(Argument& memory_argument) {
   if (memory_argument.value()._size != memory_argument.value()._val) {
     // has multiplier
     log_error(arguments) (
-      "Value specified for option \"%s\" is " JULONG_FORMAT "%c",
+      "%s\"%s\" is " JULONG_FORMAT "%c",
+      memory_argument.is_set() ? specified_val_msg: default_val_msg,
       memory_argument.name(),
       memory_argument.value()._val,
       memory_argument.value()._multiplier);
     return;
   }
   log_error(arguments) (
-    "Value specified for option \"%s\" is " JULONG_FORMAT,
+    "%s\"%s\" is " JULONG_FORMAT,
+    memory_argument.is_set() ? specified_val_msg: default_val_msg,
     memory_argument.name(), memory_argument.value()._val);
 }
 
@@ -541,6 +547,10 @@ static bool valid_memory_relations(const JfrMemoryOptions& options) {
         return false;
       }
     }
+  } else if (options.thread_buffer_size_configured && options.memory_size_configured) {
+    if (!ensure_first_gteq_second(_dcmd_memorysize, _dcmd_threadbuffersize)) {
+      return false;
+    }
   }
   return true;
 }
@@ -609,7 +619,7 @@ template <typename Argument>
 static bool ensure_gteq(Argument& memory_argument, const jlong value) {
   if ((jlong)memory_argument.value()._size < value) {
     log_set_value(memory_argument);
-    log_lower_than_min_value(memory_argument, value);
+    log_out_of_range_value<Argument, lower_than_msg>(memory_argument, value);
     return false;
   }
   return true;
@@ -640,6 +650,30 @@ static bool ensure_valid_minimum_sizes() {
   return true;
 }
 
+template <typename Argument>
+static bool ensure_lteq(Argument& memory_argument, const jlong value) {
+  if ((jlong)memory_argument.value()._size > value) {
+    log_set_value(memory_argument);
+    log_out_of_range_value<Argument, higher_than_msg>(memory_argument, value);
+    return false;
+  }
+  return true;
+}
+
+static bool ensure_valid_maximum_sizes() {
+  if (_dcmd_globalbuffersize.is_set()) {
+    if (!ensure_lteq(_dcmd_globalbuffersize, MAX_GLOBAL_BUFFER_SIZE)) {
+      return false;
+    }
+  }
+  if (_dcmd_threadbuffersize.is_set()) {
+    if (!ensure_lteq(_dcmd_threadbuffersize, MAX_THREAD_BUFFER_SIZE)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Starting with the initial set of memory values from the user,
  * sanitize, enforce min/max rules and adjust to a set of consistent options.
@@ -647,7 +681,7 @@ static bool ensure_valid_minimum_sizes() {
  * Adjusted memory sizes will be page aligned.
  */
 bool JfrOptionSet::adjust_memory_options() {
-  if (!ensure_valid_minimum_sizes()) {
+  if (!ensure_valid_minimum_sizes() || !ensure_valid_maximum_sizes()) {
     return false;
   }
   JfrMemoryOptions options;
@@ -656,6 +690,24 @@ bool JfrOptionSet::adjust_memory_options() {
     return false;
   }
   if (!JfrMemorySizer::adjust_options(&options)) {
+    if (options.buffer_count < MIN_BUFFER_COUNT || options.global_buffer_size < options.thread_buffer_size) {
+      log_set_value(_dcmd_memorysize);
+      log_set_value(_dcmd_globalbuffersize);
+      log_error(arguments) ("%s \"%s\" is " JLONG_FORMAT,
+        _dcmd_numglobalbuffers.is_set() ? specified_val_msg: default_val_msg,
+        _dcmd_numglobalbuffers.name(), _dcmd_numglobalbuffers.value());
+      log_set_value(_dcmd_threadbuffersize);
+      if (options.buffer_count < MIN_BUFFER_COUNT) {
+        log_error(arguments) ("numglobalbuffers " JULONG_FORMAT " is less than minimal value " JULONG_FORMAT,
+          options.buffer_count, MIN_BUFFER_COUNT);
+        log_error(arguments) ("Decrease globalbuffersize/threadbuffersize or increase memorysize");
+      } else {
+        log_error(arguments) ("globalbuffersize " JULONG_FORMAT " is less than threadbuffersize" JULONG_FORMAT,
+          options.global_buffer_size, options.thread_buffer_size);
+        log_error(arguments) ("Decrease globalbuffersize or increase memorysize or adjust global/threadbuffersize");
+      }
+      return false;
+    }
     if (!check_for_ambiguity(_dcmd_memorysize, _dcmd_globalbuffersize, _dcmd_numglobalbuffers)) {
       return false;
     }
