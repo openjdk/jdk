@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -44,7 +45,6 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/dynamicArchive.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
@@ -63,7 +63,6 @@
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -223,10 +222,6 @@ void print_bytecode_count() {
 
 // General statistics printing (profiling ...)
 void print_statistics() {
-  if (MemProfiling) {
-    MemProfiler::disengage();
-  }
-
   if (CITime) {
     CompileBroker::print_times();
   }
@@ -325,6 +320,11 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     SystemDictionary::print();
+  }
+
+  if (PrintClassLoaderDataGraphAtExit) {
+    ResourceMark rm;
+    MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::print();
   }
 

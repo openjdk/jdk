@@ -54,7 +54,9 @@ class Invokers {
             INV_EXACT          =  0,  // MethodHandles.exactInvoker
             INV_GENERIC        =  1,  // MethodHandles.invoker (generic invocation)
             INV_BASIC          =  2,  // MethodHandles.basicInvoker
-            INV_LIMIT          =  3;
+            VH_INV_EXACT       =  3,  // MethodHandles.varHandleExactInvoker
+            VH_INV_GENERIC     =  VH_INV_EXACT   + VarHandle.AccessMode.values().length,  // MethodHandles.varHandleInvoker
+            INV_LIMIT          =  VH_INV_GENERIC + VarHandle.AccessMode.values().length;
 
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.
@@ -101,14 +103,20 @@ class Invokers {
 
     /*non-public*/
     MethodHandle varHandleMethodInvoker(VarHandle.AccessMode ak) {
-        // TODO cache invoker
-        return makeVarHandleMethodInvoker(ak, false);
+        boolean isExact = false;
+        MethodHandle invoker = cachedVHInvoker(isExact, ak);
+        if (invoker != null)  return invoker;
+        invoker = makeVarHandleMethodInvoker(ak, isExact);
+        return setCachedVHInvoker(isExact, ak, invoker);
     }
 
     /*non-public*/
     MethodHandle varHandleMethodExactInvoker(VarHandle.AccessMode ak) {
-        // TODO cache invoker
-        return makeVarHandleMethodInvoker(ak, true);
+        boolean isExact = true;
+        MethodHandle invoker = cachedVHInvoker(isExact, ak);
+        if (invoker != null)  return invoker;
+        invoker = makeVarHandleMethodInvoker(ak, isExact);
+        return setCachedVHInvoker(isExact, ak, invoker);
     }
 
     private MethodHandle cachedInvoker(int idx) {
@@ -120,6 +128,16 @@ class Invokers {
         MethodHandle prev = invokers[idx];
         if (prev != null)  return prev;
         return invokers[idx] = invoker;
+    }
+
+    private MethodHandle cachedVHInvoker(boolean isExact, VarHandle.AccessMode ak) {
+        int baseIndex = (isExact ? VH_INV_EXACT : VH_INV_GENERIC);
+        return cachedInvoker(baseIndex + ak.ordinal());
+    }
+
+    private MethodHandle setCachedVHInvoker(boolean isExact, VarHandle.AccessMode ak, final MethodHandle invoker) {
+        int baseIndex = (isExact ? VH_INV_EXACT : VH_INV_GENERIC);
+        return setCachedInvoker(baseIndex + ak.ordinal(), invoker);
     }
 
     private MethodHandle makeExactOrGeneralInvoker(boolean isExact) {

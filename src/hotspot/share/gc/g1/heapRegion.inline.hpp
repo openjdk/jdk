@@ -124,7 +124,7 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
   assert(!is_humongous(), "Humongous objects not handled here");
   bool obj_is_dead = is_obj_dead(obj, prev_bitmap);
 
-  if (ClassUnloadingWithConcurrentMark && obj_is_dead) {
+  if (ClassUnloading && obj_is_dead) {
     assert(!block_is_obj(addr), "must be");
     *size = block_size_using_bitmap(addr, prev_bitmap);
   } else {
@@ -141,14 +141,21 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
     assert(is_continues_humongous(), "This case can only happen for humongous regions");
     return (p == humongous_start_region()->bottom());
   }
-  if (ClassUnloadingWithConcurrentMark) {
+  // When class unloading is enabled it is not safe to only consider top() to conclude if the
+  // given pointer is a valid object. The situation can occur both for class unloading in a
+  // Full GC and during a concurrent cycle.
+  // During a Full GC regions can be excluded from compaction due to high live ratio, and
+  // because of this there can be stale objects for unloaded classes left in these regions.
+  // During a concurrent cycle class unloading is done after marking is complete and objects
+  // for the unloaded classes will be stale until the regions are collected.
+  if (ClassUnloading) {
     return !g1h->is_obj_dead(cast_to_oop(p), this);
   }
   return p < top();
 }
 
 inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
-  assert(ClassUnloadingWithConcurrentMark,
+  assert(ClassUnloading,
          "All blocks should be objects if class unloading isn't used, so this method should not be called. "
          "HR: [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ") "
          "addr: " PTR_FORMAT,
@@ -198,9 +205,8 @@ inline void HeapRegion::reset_compacted_after_full_gc() {
   reset_after_full_gc_common();
 }
 
-inline void HeapRegion::reset_pinned_after_full_gc() {
-  assert(!is_free(), "should not have compacted free region");
-  assert(is_pinned(), "must be");
+inline void HeapRegion::reset_skip_compacting_after_full_gc() {
+  assert(!is_free(), "must be");
 
   assert(compaction_top() == bottom(),
          "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
@@ -443,6 +449,18 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   int age_in_group = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
+}
+
+inline bool HeapRegion::evacuation_failed() const {
+  return Atomic::load(&_evacuation_failed);
+}
+
+inline bool HeapRegion::set_evacuation_failed() {
+  return !Atomic::load(&_evacuation_failed) && !Atomic::cmpxchg(&_evacuation_failed, false, true, memory_order_relaxed);
+}
+
+inline void HeapRegion::reset_evacuation_failed() {
+  Atomic::store(&_evacuation_failed, false);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class MouseComboBoxTest {
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
 
         UIManager.setLookAndFeel(new MetalLookAndFeel());
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -57,6 +57,7 @@ public class MouseComboBoxTest {
             }
         });
         robot.waitForIdle();
+        robot.delay(1000);
 
         for (int i = 0; i < items.length; i++) {
             // Open popup
@@ -116,6 +117,7 @@ public class MouseComboBoxTest {
         comboBoxUI = new MyComboBoxUI();
         comboBox.setUI(comboBoxUI);
 
+        frame.setUndecorated(true);
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
@@ -123,6 +125,7 @@ public class MouseComboBoxTest {
         JWindow window = new JWindow(frame);
         window.add(comboBox);
         window.pack();
+        window.setLocationRelativeTo(null);
         window.setVisible(true);
     }
 

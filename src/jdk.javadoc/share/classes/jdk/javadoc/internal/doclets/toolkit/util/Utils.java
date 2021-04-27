@@ -2097,21 +2097,21 @@ public class Utils {
     public List<TypeElement> getOrdinaryClasses(Element e) {
         return getClasses(e).stream()
                 .filter(te -> (!isException(te) && !isError(te)))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<TypeElement> getErrors(Element e) {
         return getClasses(e)
                 .stream()
                 .filter(this::isError)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<TypeElement> getExceptions(Element e) {
         return getClasses(e)
                 .stream()
                 .filter(this::isException)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @SuppressWarnings("preview")
@@ -2601,7 +2601,7 @@ public class Utils {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
@@ -2609,7 +2609,7 @@ public class Utils {
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
                 .map(t -> tClass.cast(t))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
@@ -3027,7 +3027,7 @@ public class Utils {
                 usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
                 usedInDeclaration.addAll(types2Classes(te.getInterfaces()));
                 usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
-                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).collect(Collectors.toList()))); //TODO: annotations on record components???
+                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).toList())); //TODO: annotations on record components???
             }
             case CONSTRUCTOR, METHOD -> {
                 ExecutableElement ee = (ExecutableElement) el;
@@ -3037,7 +3037,7 @@ public class Utils {
                 usedInDeclaration.addAll(types2Classes(List.of(ee.getReturnType())));
                 usedInDeclaration.addAll(types2Classes(List.of(ee.getReceiverType())));
                 usedInDeclaration.addAll(types2Classes(ee.getThrownTypes()));
-                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).collect(Collectors.toList())));
+                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).toList()));
                 usedInDeclaration.addAll(annotationValue2Classes(ee.getDefaultValue()));
             }
             case FIELD, ENUM_CONSTANT, RECORD_COMPONENT -> {

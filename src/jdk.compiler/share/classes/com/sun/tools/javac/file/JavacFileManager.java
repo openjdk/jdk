@@ -491,7 +491,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
             java.util.List<Path> files;
             try (Stream<Path> s = Files.list(d)) {
-                files = (sortFiles == null ? s : s.sorted(sortFiles)).collect(Collectors.toList());
+                files = (sortFiles == null ? s : s.sorted(sortFiles)).toList();
             } catch (IOException ignore) {
                 return;
             }

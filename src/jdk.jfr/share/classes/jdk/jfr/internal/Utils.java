@@ -661,15 +661,16 @@ public final class Utils {
         Class<?> cMirror = Objects.requireNonNull(mirror);
         Class<?> cReal = Objects.requireNonNull(real);
 
-        while (cReal != null) {
-            Map<String, Field> mirrorFields = new HashMap<>();
-            if (cMirror != null) {
-                for (Field f : cMirror.getDeclaredFields()) {
-                    if (isSupportedType(f.getType())) {
-                        mirrorFields.put(f.getName(), f);
-                    }
+        Map<String, Field> mirrorFields = new HashMap<>();
+        while (cMirror != null) {
+            for (Field f : cMirror.getDeclaredFields()) {
+                if (isSupportedType(f.getType())) {
+                    mirrorFields.put(f.getName(), f);
                 }
             }
+            cMirror = cMirror.getSuperclass();
+        }
+        while (cReal != null) {
             for (Field realField : cReal.getDeclaredFields()) {
                 if (isSupportedType(realField.getType())) {
                     String fieldName = realField.getName();
@@ -677,20 +678,20 @@ public final class Utils {
                     if (mirrorField == null) {
                         throw new InternalError("Missing mirror field for " + cReal.getName() + "#" + fieldName);
                     }
+                    if (realField.getType() != mirrorField.getType()) {
+                        throw new InternalError("Incorrect type for mirror field " + fieldName);
+                    }
                     if (realField.getModifiers() != mirrorField.getModifiers()) {
-                        throw new InternalError("Incorrect modifier for mirror field "+ cMirror.getName() + "#" + fieldName);
+                        throw new InternalError("Incorrect modifier for mirror field " + fieldName);
                     }
                     mirrorFields.remove(fieldName);
                 }
             }
-            if (!mirrorFields.isEmpty()) {
-                throw new InternalError(
-                        "Found additional fields in mirror class " + cMirror.getName() + " " + mirrorFields.keySet());
-            }
-            if (cMirror != null) {
-                cMirror = cMirror.getSuperclass();
-            }
             cReal = cReal.getSuperclass();
+        }
+
+        if (!mirrorFields.isEmpty()) {
+            throw new InternalError("Found additional fields in mirror class " + mirrorFields.keySet());
         }
     }
 

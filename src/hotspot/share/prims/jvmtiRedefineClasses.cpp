@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -40,7 +41,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/annotations.hpp"

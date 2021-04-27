@@ -25,6 +25,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/oopMap.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"

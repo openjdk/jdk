@@ -27,11 +27,14 @@
 
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
-#include "compiler/oopMap.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+
+class ImmutableOopMap;
+class ImmutableOopMapSet;
+class OopMapSet;
 
 // CodeBlob Types
 // Used in the CodeCache to assign CodeBlobs to different CodeHeaps
