@@ -1250,19 +1250,12 @@ public:
   }
 };
 
-
-#ifndef PRODUCT
-
-// Used in debugging code to avoid walking across dead or uninitialized edges.
-inline bool NotANode(const Node* n) {
+inline bool not_a_node(const Node* n) {
   if (n == NULL)                   return true;
   if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
   if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
   return false;
 }
-
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Iterators over DU info, and associated Node functions.
