@@ -60,6 +60,8 @@ class CompileLog;
 class CompileTask;
 class DepChange;
 class   KlassDepChange;
+class     NewKlassDepChange;
+class     KlassInitDepChange;
 class   CallSiteDepChange;
 class NoSafepointVerifier;
 
@@ -401,10 +403,10 @@ class Dependencies: public ResourceObj {
   // Checking old assertions at run-time (in the VM only):
   static Klass* check_evol_method(Method* m);
   static Klass* check_leaf_type(InstanceKlass* ctxk);
-  static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, KlassDepChange* changes = NULL);
-  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, KlassDepChange* changes = NULL);
+  static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, NewKlassDepChange* changes = NULL);
+  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, NewKlassDepChange* changes = NULL);
   static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, Klass* resolved_klass, Method* resolved_method, KlassDepChange* changes = NULL);
-  static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, KlassDepChange* changes = NULL);
+  static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes = NULL);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned Klass* is NULL if the dependency assertion is still
   // valid.  A non-NULL Klass* is a 'witness' to the assertion
@@ -559,6 +561,8 @@ class Dependencies: public ResourceObj {
     inline oop recorded_oop_at(int i);
 
     Klass* check_klass_dependency(KlassDepChange* changes);
+    Klass* check_new_klass_dependency(NewKlassDepChange* changes);
+    Klass* check_klass_init_dependency(KlassInitDepChange* changes);
     Klass* check_call_site_dependency(CallSiteDepChange* changes);
 
     void trace_and_log_witness(Klass* witness);
@@ -657,8 +661,10 @@ class DependencySignature : public ResourceObj {
 class DepChange : public StackObj {
  public:
   // What kind of DepChange is this?
-  virtual bool is_klass_change()     const { return false; }
-  virtual bool is_call_site_change() const { return false; }
+  virtual bool is_klass_change()      const { return false; }
+  virtual bool is_new_klass_change()  const { return false; }
+  virtual bool is_klass_init_change() const { return false; }
+  virtual bool is_call_site_change()  const { return false; }
 
   virtual void mark_for_deoptimization(nmethod* nm) = 0;
 
@@ -666,6 +672,14 @@ class DepChange : public StackObj {
   KlassDepChange*    as_klass_change() {
     assert(is_klass_change(), "bad cast");
     return (KlassDepChange*) this;
+  }
+  NewKlassDepChange* as_new_klass_change() {
+    assert(is_new_klass_change(), "bad cast");
+    return (NewKlassDepChange*) this;
+  }
+  KlassInitDepChange* as_klass_init_change() {
+    assert(is_klass_init_change(), "bad cast");
+    return (KlassInitDepChange*) this;
   }
   CallSiteDepChange* as_call_site_change() {
     assert(is_call_site_change(), "bad cast");
@@ -726,28 +740,27 @@ class DepChange : public StackObj {
 
 
 // A class hierarchy change coming through the VM (under the Compile_lock).
-// The change is structured as a single new type with any number of supers
-// and implemented interface types.  Other than the new type, any of the
+// The change is structured as a single type with any number of supers
+// and implemented interface types.  Other than the type, any of the
 // super types can be context types for a relevant dependency, which the
-// new type could invalidate.
+// type could invalidate.
 class KlassDepChange : public DepChange {
  private:
-  // each change set is rooted in exactly one new type (at present):
-  InstanceKlass* _new_type;
+  // each change set is rooted in exactly one type (at present):
+  InstanceKlass* _type;
 
   void initialize();
 
- public:
-  // notes the new type, marks it and all its super-types
-  KlassDepChange(InstanceKlass* new_type)
-    : _new_type(new_type)
-  {
+ protected:
+  // notes the type, marks it and all its super-types
+  KlassDepChange(InstanceKlass* type) : _type(type) {
     initialize();
   }
 
   // cleans up the marks
   ~KlassDepChange();
 
+ public:
   // What kind of DepChange is this?
   virtual bool is_klass_change() const { return true; }
 
@@ -755,12 +768,31 @@ class KlassDepChange : public DepChange {
     nm->mark_for_deoptimization(/*inc_recompile_counts=*/true);
   }
 
-  InstanceKlass* new_type() { return _new_type; }
+  InstanceKlass* type() { return _type; }
 
-  // involves_context(k) is true if k is new_type or any of the super types
+  // involves_context(k) is true if k == _type or any of its super types
   bool involves_context(Klass* k);
 };
 
+// A class hierarchy change: new type is loaded.
+class NewKlassDepChange : public KlassDepChange {
+ public:
+  NewKlassDepChange(InstanceKlass* new_type) : KlassDepChange(new_type) {}
+
+  // What kind of DepChange is this?
+  virtual bool is_new_klass_change() const { return true; }
+
+  InstanceKlass* new_type() { return type(); }
+};
+
+// Change in initialization state of a loaded class.
+class KlassInitDepChange : public KlassDepChange {
+ public:
+  KlassInitDepChange(InstanceKlass* type) : KlassDepChange(type) {}
+
+  // What kind of DepChange is this?
+  virtual bool is_klass_init_change() const { return true; }
+};
 
 // A CallSite has changed its target.
 class CallSiteDepChange : public DepChange {

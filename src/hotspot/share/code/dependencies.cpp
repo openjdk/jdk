@@ -1025,7 +1025,7 @@ class AbstractClassHierarchyWalker {
   static PerfCounter* _perf_find_witness_in_calls_count;
 
  protected:
-  virtual Klass* find_witness_in(KlassDepChange* changes) = 0;
+  virtual Klass* find_witness_in(KlassDepChange& changes) = 0;
   virtual Klass* find_witness_anywhere(InstanceKlass* context_type) = 0;
 
   AbstractClassHierarchyWalker(Klass* participant) : _record_witnesses(0), _num_participants(0)
@@ -1159,7 +1159,7 @@ Klass* AbstractClassHierarchyWalker::find_witness(InstanceKlass* context_type, K
     if (UsePerfData) {
       _perf_find_witness_in_calls_count->inc();
     }
-    return find_witness_in(changes);
+    return find_witness_in(*changes);
   } else {
     if (UsePerfData) {
       _perf_find_witness_anywhere_calls_count->inc();
@@ -1173,7 +1173,7 @@ class ConcreteSubtypeFinder : public AbstractClassHierarchyWalker {
   bool is_witness(Klass* k);
 
  protected:
-  virtual Klass* find_witness_in(KlassDepChange* changes);
+  virtual Klass* find_witness_in(KlassDepChange& changes);
   virtual Klass* find_witness_anywhere(InstanceKlass* context_type);
 
  public:
@@ -1188,15 +1188,15 @@ bool ConcreteSubtypeFinder::is_witness(Klass* k) {
   }
 }
 
-Klass* ConcreteSubtypeFinder::find_witness_in(KlassDepChange* changes) {
+Klass* ConcreteSubtypeFinder::find_witness_in(KlassDepChange& changes) {
   // When looking for unexpected concrete types, do not look beneath expected ones:
   //  * CX > CC > C' is OK, even if C' is new.
   //  * CX > { CC,  C' } is not OK if C' is new, and C' is the witness.
-  Klass* new_type = changes->new_type();
+  Klass* new_type = changes.as_new_klass_change()->new_type();
   assert(!is_participant(new_type), "only old classes are participants");
   // If the new type is a subtype of a participant, we are done.
   for (uint i = 0; i < num_participants(); i++) {
-    if (changes->involves_context(participant(i))) {
+    if (changes.involves_context(participant(i))) {
       // new guy is protected from this check by previous participant
       return NULL;
     }
@@ -1234,7 +1234,7 @@ class ConcreteMethodFinder : public AbstractClassHierarchyWalker {
   bool is_witness(Klass* k);
 
  protected:
-  virtual Klass* find_witness_in(KlassDepChange* changes);
+  virtual Klass* find_witness_in(KlassDepChange& changes);
   virtual Klass* find_witness_anywhere(InstanceKlass* context_type);
 
   bool witnessed_reabstraction_in_supers(Klass* k);
@@ -1333,10 +1333,10 @@ bool ConcreteMethodFinder::is_witness(Klass* k) {
   }
 }
 
-Klass* ConcreteMethodFinder::find_witness_in(KlassDepChange* changes) {
+Klass* ConcreteMethodFinder::find_witness_in(KlassDepChange& changes) {
   // When looking for unexpected concrete methods, look beneath expected ones, to see if there are overrides.
   //  * CX.m > CC.m > C'.m is not OK, if C'.m is new, and C' is the witness.
-  Klass* new_type = changes->new_type();
+  Klass* new_type = changes.as_new_klass_change()->new_type();
   assert(!is_participant(new_type), "only old classes are participants");
   if (is_witness(new_type)) {
     return new_type;
@@ -1436,7 +1436,7 @@ class LinkedConcreteMethodFinder : public AbstractClassHierarchyWalker {
   }
 
  protected:
-  virtual Klass* find_witness_in(KlassDepChange* changes);
+  virtual Klass* find_witness_in(KlassDepChange& changes);
   virtual Klass* find_witness_anywhere(InstanceKlass* context_type);
 
  public:
@@ -1471,13 +1471,13 @@ class LinkedConcreteMethodFinder : public AbstractClassHierarchyWalker {
   }
 };
 
-Klass* LinkedConcreteMethodFinder::find_witness_in(KlassDepChange* changes) {
-  Klass* new_type = changes->new_type();
+Klass* LinkedConcreteMethodFinder::find_witness_in(KlassDepChange& changes) {
+  Klass* type = changes.type();
 
-  assert(!is_participant(new_type), "only old classes are participants");
+  assert(!is_participant(type), "only old classes are participants");
 
-  if (is_witness(new_type)) {
-    return new_type;
+  if (is_witness(type)) {
+    return type;
   }
   return NULL; // No witness found.  The dependency remains unbroken.
 }
@@ -1717,7 +1717,7 @@ Klass* Dependencies::check_leaf_type(InstanceKlass* ctxk) {
 // when dealing with the types of actual instances.
 Klass* Dependencies::check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk,
                                                                  Klass* conck,
-                                                                 KlassDepChange* changes) {
+                                                                 NewKlassDepChange* changes) {
   ConcreteSubtypeFinder wf(conck);
   Klass* k = wf.find_witness(ctxk, changes);
   return k;
@@ -1758,7 +1758,7 @@ Klass* Dependencies::find_unique_concrete_subtype(InstanceKlass* ctxk) {
 // Otherwise, return a class that contains an interfering method.
 Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
                                                   Method* uniqm,
-                                                  KlassDepChange* changes) {
+                                                  NewKlassDepChange* changes) {
   // Here is a missing optimization:  If uniqm->is_final(),
   // we don't really need to search beneath it for overrides.
   // This is probably not important, since we don't use dependencies
@@ -1884,7 +1884,7 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
   return fm;
 }
 
-Klass* Dependencies::check_has_no_finalizable_subclasses(InstanceKlass* ctxk, KlassDepChange* changes) {
+Klass* Dependencies::check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes) {
   Klass* search_at = ctxk;
   if (changes != NULL)
     search_at = changes->new_type(); // just look at the new bit
@@ -1920,46 +1920,73 @@ void Dependencies::DepStream::trace_and_log_witness(Klass* witness) {
   }
 }
 
-
-Klass* Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) {
+Klass* Dependencies::DepStream::check_new_klass_dependency(NewKlassDepChange* changes) {
   assert_locked_or_safepoint(Compile_lock);
   Dependencies::check_valid_dependency_type(type());
 
   Klass* witness = NULL;
-  if (UseVtableBasedCHA && changes != NULL && changes->new_type()->is_linked()) {
-    // No new types added. Only unique_concrete_method_4 is sensitive to class initialization changes.
-    if (type() == unique_concrete_method_4) {
-      witness = check_unique_concrete_method(context_type(), method_argument(1), type_argument(2), method_argument(3), changes);
-    }
-  } else {
-    switch (type()) {
-    case evol_method:
-      witness = check_evol_method(method_argument(0));
-      break;
-    case leaf_type:
-      witness = check_leaf_type(context_type());
-      break;
-    case abstract_with_unique_concrete_subtype:
-      witness = check_abstract_with_unique_concrete_subtype(context_type(), type_argument(1), changes);
-      break;
-    case unique_concrete_method_2:
-      witness = check_unique_concrete_method(context_type(), method_argument(1), changes);
-      break;
-    case unique_concrete_method_4:
-      witness = check_unique_concrete_method(context_type(), method_argument(1), type_argument(2), method_argument(3), changes);
-      break;
-    case no_finalizable_subclasses:
-      witness = check_has_no_finalizable_subclasses(context_type(), changes);
-      break;
-    default:
-      witness = NULL;
-      break;
-    }
+  switch (type()) {
+  case evol_method:
+    witness = check_evol_method(method_argument(0));
+    break;
+  case leaf_type:
+    witness = check_leaf_type(context_type());
+    break;
+  case abstract_with_unique_concrete_subtype:
+    witness = check_abstract_with_unique_concrete_subtype(context_type(), type_argument(1), changes);
+    break;
+  case unique_concrete_method_2:
+    witness = check_unique_concrete_method(context_type(), method_argument(1), changes);
+    break;
+  case unique_concrete_method_4:
+    witness = check_unique_concrete_method(context_type(), method_argument(1), type_argument(2), method_argument(3), changes);
+    break;
+  case no_finalizable_subclasses:
+    witness = check_has_no_finalizable_subclasses(context_type(), changes);
+    break;
+  default:
+    witness = NULL;
+    break;
   }
   trace_and_log_witness(witness);
   return witness;
 }
 
+Klass* Dependencies::DepStream::check_klass_init_dependency(KlassInitDepChange* changes) {
+  assert_locked_or_safepoint(Compile_lock);
+  Dependencies::check_valid_dependency_type(type());
+
+  // No new types added. Only unique_concrete_method_4 is sensitive to class initialization changes.
+  Klass* witness = NULL;
+  switch (type()) {
+  case unique_concrete_method_4:
+    witness = check_unique_concrete_method(context_type(), method_argument(1), type_argument(2), method_argument(3), changes);
+    break;
+  default:
+    witness = NULL;
+    break;
+  }
+  trace_and_log_witness(witness);
+  return witness;
+}
+
+Klass* Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) {
+  assert_locked_or_safepoint(Compile_lock);
+  Dependencies::check_valid_dependency_type(type());
+
+  if (changes != NULL) {
+    if (UseVtableBasedCHA && changes->is_klass_init_change()) {
+      return check_klass_init_dependency(changes->as_klass_init_change());
+    } else {
+      return check_new_klass_dependency(changes->as_new_klass_change());
+    }
+  } else {
+    Klass* witness = check_new_klass_dependency(NULL);
+    // check_klass_init_dependency duplicates check_new_klass_dependency checks when class hierarchy change info is absent.
+    assert(witness != NULL || check_klass_init_dependency(NULL) == NULL, "missed dependency");
+    return witness;
+  }
+}
 
 Klass* Dependencies::DepStream::check_call_site_dependency(CallSiteDepChange* changes) {
   assert_locked_or_safepoint(Compile_lock);
@@ -2025,9 +2052,9 @@ void DepChange::print() {
 }
 
 void DepChange::ContextStream::start() {
-  Klass* new_type = _changes.is_klass_change() ? _changes.as_klass_change()->new_type() : (Klass*) NULL;
-  _change_type = (new_type == NULL ? NO_CHANGE : Start_Klass);
-  _klass = new_type;
+  Klass* type = (_changes.is_klass_change() ? _changes.as_klass_change()->type() : (Klass*) NULL);
+  _change_type = (type == NULL ? NO_CHANGE : Start_Klass);
+  _klass = type;
   _ti_base = NULL;
   _ti_index = 0;
   _ti_limit = 0;
@@ -2097,7 +2124,7 @@ bool KlassDepChange::involves_context(Klass* k) {
   }
   InstanceKlass* ik = InstanceKlass::cast(k);
   bool is_contained = ik->is_marked_dependent();
-  assert(is_contained == new_type()->is_subtype_of(k),
+  assert(is_contained == type()->is_subtype_of(k),
          "correct marking of potential context types");
   return is_contained;
 }
