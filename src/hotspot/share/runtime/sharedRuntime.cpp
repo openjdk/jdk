@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -1323,8 +1322,8 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
         if (VM_Version::supports_fast_class_init_checks() &&
             invoke_code == Bytecodes::_invokestatic &&
             callee_method->needs_clinit_barrier() &&
-            callee != NULL && (callee->is_compiled_by_jvmci() || callee->is_aot())) {
-          return true; // skip patching for JVMCI or AOT code
+            callee != NULL && callee->is_compiled_by_jvmci()) {
+          return true; // skip patching for JVMCI
         }
         CompiledStaticCall* ssc = caller_nm->compiledStaticCall_before(caller_frame.pc());
         if (ssc->is_clean()) ssc->set(static_call_info);

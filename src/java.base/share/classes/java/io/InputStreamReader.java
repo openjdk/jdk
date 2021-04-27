@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import sun.nio.cs.StreamDecoder;
@@ -150,6 +151,10 @@ public class InputStreamReader extends Reader {
      */
     public String getEncoding() {
         return sd.getEncoding();
+    }
+
+    public int read(CharBuffer target) throws IOException {
+        return sd.read(target);
     }
 
     /**

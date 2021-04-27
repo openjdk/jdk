@@ -1202,14 +1202,10 @@ public class Infer {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof IncorporationBinaryOp)) {
-                return false;
-            } else {
-                IncorporationBinaryOp that = (IncorporationBinaryOp)o;
-                return opKind == that.opKind &&
-                        types.isSameType(op1, that.op1) &&
-                        types.isSameType(op2, that.op2);
-            }
+            return (o instanceof IncorporationBinaryOp incorporationBinaryOp)
+                    && opKind == incorporationBinaryOp.opKind
+                    && types.isSameType(op1, incorporationBinaryOp.op1)
+                    && types.isSameType(op2, incorporationBinaryOp.op2);
         }
 
         @Override

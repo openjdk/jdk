@@ -48,7 +48,6 @@
 #include "utilities/powerOfTwo.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;
-int    HeapRegion::LogOfHRGrainWords = 0;
 int    HeapRegion::LogCardsPerRegion = 0;
 size_t HeapRegion::GrainBytes        = 0;
 size_t HeapRegion::GrainWords        = 0;
@@ -84,9 +83,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
   LogOfHRGrainBytes = region_size_log;
 
-  guarantee(LogOfHRGrainWords == 0, "we should only set it once");
-  LogOfHRGrainWords = LogOfHRGrainBytes - LogHeapWordSize;
-
   guarantee(GrainBytes == 0, "we should only set it once");
   // The cast to int is safe, given that we've bounded region_size by
   // MIN_REGION_SIZE and MAX_REGION_SIZE.
@@ -94,7 +90,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
-  guarantee((size_t) 1 << LogOfHRGrainWords == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift;

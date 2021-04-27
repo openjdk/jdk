@@ -133,7 +133,6 @@ class Node;
 class Node_Array;
 class Node_List;
 class Node_Stack;
-class NullCheckNode;
 class OopMap;
 class ParmNode;
 class PCTableNode;
