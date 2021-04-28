@@ -45,6 +45,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -224,7 +225,7 @@ public class TestBufferVectorization {
                                                        "-XX:+TraceNewVectors",
                                                        "compiler.vectorization.TestBufferVectorization",
                                                        testName,
-                                                       "skip_verify");
+                                                       "run");
             out = new OutputAnalyzer(pb.start());
         } catch (Exception e) {
             throw new RuntimeException(" Exception launching Java process: " + e);
@@ -236,7 +237,7 @@ public class TestBufferVectorization {
             return; // bufferDirect uses Unsafe memory accesses which are not vectorized currently
         }
 
-        if (testName.equals("bufferHeap") && (arch.equals("x86") || arch.equals("i386"))) {
+        if (testName.equals("bufferHeap") && (Platform.is32bit())) {
             return; // bufferHeap uses Long type for memory accesses which are not vectorized in 32-bit VM
         }
 
