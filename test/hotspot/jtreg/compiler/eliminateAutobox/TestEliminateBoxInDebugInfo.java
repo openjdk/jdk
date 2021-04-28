@@ -46,8 +46,8 @@ public class TestEliminateBoxInDebugInfo {
         };
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(arguments);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        String pattern = ".*Eliminated.*";
-        output.stdoutShouldContain(pattern);
+        output.shouldHaveExitValue(0)
+              .stdoutShouldContain("++++ Eliminated: ");
     }
 
     public static void main(String[] args) throws Exception {
