@@ -2571,6 +2571,9 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   jccb(Assembler::notEqual, L_NOT_DOUBLE0DOT5);
   jccb(Assembler::parity, L_NOT_DOUBLE0DOT5);
   ucomisd(xmm0, ExternalAddress(DOUBLE0));
+  // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
+  // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
+  // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
   jccb(Assembler::belowEqual, L_NOT_DOUBLE0DOT5); // pow(x, 0.5) => sqrt(x) only for x > 0.0
   sqrtsd(xmm0, xmm0);
   jmp(L_2TAG_PACKET_21_0_2);

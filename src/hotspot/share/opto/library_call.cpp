@@ -1652,6 +1652,9 @@ bool LibraryCallKit::inline_math_pow() {
       Node* phi = new PhiNode(region, Type::DOUBLE);
 
       Node* cmp  = _gvn.transform(new CmpDNode(base, zero));
+      // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
+      // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
+      // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
       Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::le));
 
       Node* if_pow = generate_slow_guard(test, NULL);
