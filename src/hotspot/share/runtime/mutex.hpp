@@ -118,7 +118,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void check_no_safepoint_state(Thread* thread)                       NOT_DEBUG_RETURN;
   void check_rank              (Thread* thread)                       NOT_DEBUG_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
-  void no_safepoint_verifier   (Thread* thread, bool enable)          NOT_DEBUG_RETURN;
 
  public:
   static const bool _allow_vm_block_flag        = true;

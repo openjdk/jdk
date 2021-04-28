@@ -128,17 +128,13 @@ const char* Abstract_VM_Version::vm_info_string() {
       return UseSharedSpaces ? "interpreted mode, sharing" : "interpreted mode";
     case Arguments::_mixed:
       if (UseSharedSpaces) {
-        if (UseAOT) {
-          return "mixed mode, aot, sharing";
-        } else if (CompilationModeFlag::quick_only()) {
+        if (CompilationModeFlag::quick_only()) {
           return "mixed mode, emulated-client, sharing";
         } else {
           return "mixed mode, sharing";
          }
       } else {
-        if (UseAOT) {
-          return "mixed mode, aot";
-        } else if (CompilationModeFlag::quick_only()) {
+        if (CompilationModeFlag::quick_only()) {
           return "mixed mode, emulated-client";
         } else {
           return "mixed mode";

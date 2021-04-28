@@ -322,6 +322,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         String pkgPrefix = lastdot > 0 ? pkgName.substring(0, lastdot) : null;
         List<PackageElement> packages = new ArrayList<>(
                 filterPackages(p -> p.getQualifiedName().toString().equals(pkgPrefix)));
+        boolean hasSuperPackage = !packages.isEmpty();
 
         // add subpackages unless there are very many of them
         Pattern subPattern = Pattern.compile(pkgName.replace(".", "\\.") + "\\.\\w+");
@@ -331,8 +332,9 @@ public class PackageSummaryBuilder extends AbstractBuilder {
             packages.addAll(subpackages);
         }
 
-        // only add sibling packages if we are beneath threshold, and number of siblings is beneath threshold as well
-        if (pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
+        // only add sibling packages if there is a non-empty super package, we are beneath threshold,
+        // and number of siblings is beneath threshold as well
+        if (hasSuperPackage && pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
             Pattern siblingPattern = Pattern.compile(pkgPrefix.replace(".", "\\.") + "\\.\\w+");
 
             List<PackageElement> siblings = filterPackages(
@@ -347,6 +349,6 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     private List<PackageElement> filterPackages(Predicate<? super PackageElement> filter) {
         return configuration.packages.stream()
                 .filter(p -> p != packageElement && filter.test(p))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

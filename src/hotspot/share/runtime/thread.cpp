@@ -25,7 +25,6 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -261,7 +260,6 @@ Thread::Thread() {
 
   // plain initialization
   debug_only(_owned_locks = NULL;)
-  NOT_PRODUCT(_no_safepoint_count = 0;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
@@ -269,10 +267,6 @@ Thread::Thread() {
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
   _current_pending_raw_monitor = NULL;
-
-#ifdef ASSERT
-  _visited_for_critical_count = false;
-#endif
 
   _suspend_flags = 0;
 
@@ -720,38 +714,6 @@ void Thread::print_owned_locks_on(outputStream* st) const {
     }
   }
 }
-
-// Checks safepoint allowed and clears unhandled oops at potential safepoints.
-void Thread::check_possible_safepoint() {
-  if (!is_Java_thread()) return;
-
-  if (_no_safepoint_count > 0) {
-    print_owned_locks();
-    assert(false, "Possible safepoint reached by thread that does not allow it");
-  }
-#ifdef CHECK_UNHANDLED_OOPS
-  // Clear unhandled oops in JavaThreads so we get a crash right away.
-  clear_unhandled_oops();
-#endif // CHECK_UNHANDLED_OOPS
-}
-
-void Thread::check_for_valid_safepoint_state() {
-  if (!is_Java_thread()) return;
-
-  // Check NoSafepointVerifier, which is implied by locks taken that can be
-  // shared with the VM thread.  This makes sure that no locks with allow_vm_block
-  // are held.
-  check_possible_safepoint();
-
-  if (this->as_Java_thread()->thread_state() != _thread_in_vm) {
-    fatal("LEAF method calling lock?");
-  }
-
-  if (GCALotAtAllSafepoints) {
-    // We could enter a safepoint here and thus have a gc
-    InterfaceSupport::check_gc_alot();
-  }
-}
 #endif // ASSERT
 
 // We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
@@ -1044,6 +1006,36 @@ bool JavaThread::resize_all_jvmci_counters(int new_size) {
 
 #endif // INCLUDE_JVMCI
 
+#ifdef ASSERT
+// Checks safepoint allowed and clears unhandled oops at potential safepoints.
+void JavaThread::check_possible_safepoint() {
+  if (_no_safepoint_count > 0) {
+    print_owned_locks();
+    assert(false, "Possible safepoint reached by thread that does not allow it");
+  }
+#ifdef CHECK_UNHANDLED_OOPS
+  // Clear unhandled oops in JavaThreads so we get a crash right away.
+  clear_unhandled_oops();
+#endif // CHECK_UNHANDLED_OOPS
+}
+
+void JavaThread::check_for_valid_safepoint_state() {
+  // Check NoSafepointVerifier, which is implied by locks taken that can be
+  // shared with the VM thread.  This makes sure that no locks with allow_vm_block
+  // are held.
+  check_possible_safepoint();
+
+  if (thread_state() != _thread_in_vm) {
+    fatal("LEAF method calling lock?");
+  }
+
+  if (GCALotAtAllSafepoints) {
+    // We could enter a safepoint here and thus have a gc
+    InterfaceSupport::check_gc_alot();
+  }
+}
+#endif // ASSERT
+
 // A JavaThread is a normal Java thread
 
 JavaThread::JavaThread() :
@@ -1067,6 +1059,10 @@ JavaThread::JavaThread() :
 
   _thread_state(_thread_new),
   _saved_exception_pc(nullptr),
+#ifdef ASSERT
+  _no_safepoint_count(0),
+  _visited_for_critical_count(false),
+#endif
 
   _terminated(_not_terminated),
   _in_deopt_handler(0),
@@ -1869,32 +1865,19 @@ void JavaThread::verify_not_published() {
 }
 #endif
 
-// Slow path when the native==>VM/Java barriers detect a safepoint is in
-// progress or when _suspend_flags is non-zero.
-// Current thread needs to self-suspend if there is a suspend request and/or
-// block if a safepoint is in progress.
-// Async exception ISN'T checked.
-// Note only the ThreadInVMfromNative transition can call this function
-// directly and when thread state is _thread_in_native_trans
-void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
-  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
-
-  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
-}
-
-// Slow path when the native==>VM/Java barriers detect a safepoint is in
-// progress or when _suspend_flags is non-zero.
-// Current thread needs to self-suspend if there is a suspend request and/or
-// block if a safepoint is in progress.
-// Also check for pending async exception (not including unsafe access error).
-// Note only the native==>VM/Java barriers can call this function and when
-// thread state is _thread_in_native_trans.
+// Slow path when the native==>Java barriers detect a safepoint/handshake is
+// pending, when _suspend_flags is non-zero or when we need to process a stack
+// watermark. Also check for pending async exceptions (except unsafe access error).
+// Note only the native==>Java barriers can call this function when thread state
+// is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
+  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
+  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
+
   // Enable WXWrite: called directly from interpreter native wrapper.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
-  check_safepoint_and_suspend_for_native_trans(thread);
+  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
 
   // After returning from native, it could be that the stack frames are not
   // yet safe to use. We catch such situations in the subsequent stack watermark
@@ -2713,9 +2696,6 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
-
-  // Eager box cache initialization only if AOT is on and any library is loaded.
-  AOTLoader::initialize_box_caches(CHECK);
 }
 
 void Threads::initialize_jsr292_core_classes(TRAPS) {
@@ -2922,8 +2902,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // We need this to update the java.vm.info property in case any flags used
-  // to initially define it have been changed. This is needed for both CDS and
-  // AOT, since UseSharedSpaces and UseAOT may be changed after java.vm.info
+  // to initially define it have been changed. This is needed for both CDS
+  // since UseSharedSpaces may be changed after java.vm.info
   // is initially computed. See Abstract_VM_Version::vm_info_string().
   // This update must happen before we initialize the java classes, but
   // after any initialization logic that might modify the flags.

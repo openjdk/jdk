@@ -1377,7 +1377,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   // deoptimized frame
 
   if (nm != NULL) {
-    RegisterMap map(current, false);
+    RegisterMap map(current, false /* update_map */, false /* process_frames */);
     frame caller = current->last_frame().sender(&map);
 #ifdef ASSERT
     assert(caller.is_compiled_frame(), "must be");
