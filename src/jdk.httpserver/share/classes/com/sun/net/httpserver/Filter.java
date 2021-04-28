@@ -169,7 +169,7 @@ public abstract class Filter {
      *
      * @param description the string to be returned from {@link #description()}
      * @param operation the operation of the returned filter
-     * @return a filter
+     * @return a filter whose operation is invoked before the exchange is handled
      * @throws NullPointerException if any argument is null
      * @since 17
      */
@@ -229,7 +229,7 @@ public abstract class Filter {
      *
      * @param description the string to be returned from {@link #description()}
      * @param operation the operation of the returned filter
-     * @return a filter
+     * @return a filter whose operation is invoked after the exchange is handled
      * @throws NullPointerException if any argument is null
      * @since 17
      */
