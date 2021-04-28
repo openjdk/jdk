@@ -2279,7 +2279,7 @@ void Parse::add_safepoint() {
   // Create a node for the polling address
   Node *polladr;
   Node *thread = _gvn.transform(new ThreadLocalNode());
-  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(Thread::polling_page_offset())));
+  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(JavaThread::polling_page_offset())));
   polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
   sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
 

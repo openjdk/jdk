@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -266,10 +265,6 @@ void print_statistics() {
 #endif // COMPILER1
 #endif // INCLUDE_JVMCI
 #endif // COMPILER2
-
-  if (PrintAOTStatistics) {
-    AOTLoader::print_statistics();
-  }
 
   if (PrintNMethodStatistics) {
     nmethod::print_statistics();

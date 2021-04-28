@@ -281,8 +281,6 @@ public:
 
   // Update above counter, as appropriate, at the end of a stop-world GC cycle
   unsigned int update_full_collections_completed();
-  // Update above counter, as appropriate, at the end of a concurrent GC cycle
-  unsigned int update_full_collections_completed(unsigned int count);
 
   // Update the gc statistics for each generation.
   void update_gc_stats(Generation* current_generation, bool full) {

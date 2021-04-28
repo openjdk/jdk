@@ -203,7 +203,7 @@ Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   if (or_null) {
     return h_ak->array_klass_or_null(n);
   }
-  THREAD->check_possible_safepoint();
+  THREAD->as_Java_thread()->check_possible_safepoint();
   return h_ak->array_klass(n, THREAD);
 }
 
