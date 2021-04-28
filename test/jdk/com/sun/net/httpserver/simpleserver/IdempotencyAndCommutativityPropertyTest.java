@@ -22,7 +22,6 @@
  */
 import com.sun.net.httpserver.HttpServer;
 
-import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -30,12 +29,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,41 +44,57 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @summary Proving commutativity and idempotence of send request operation for an exhaustive or randomized set of
- *  request sequences of lengths from 2 to 5 for a given file tree and socket
- * @run testng/othervm/timeout=10 IdempotencyAndCommutativityPropertyTest
+ * @summary Randomly testing commutativity and idempotence of send request operation for a randomized set of
+ *           request sequences for a given sequence length and set size. A non random run will execute an exhaustive
+ *           search for sequences of length one (testing the test).
+ * @run testng/othervm IdempotencyAndCommutativityPropertyTest
  */
 public class IdempotencyAndCommutativityPropertyTest {
 
-    static final Integer CASES_COUNT = 100;
+    static final int SEQUENCE_LENGTH = 5;
+    static final int INPUT_SET_SIZE = 100;
+    static final boolean RANDOM = false;
+
     static final Path CWD = Path.of(".").toAbsolutePath();
     static final InetSocketAddress WILDCARD_ADDR = new InetSocketAddress(0);
 
     static final boolean ENABLE_LOGGING = true;
 
-
-        private static final Path ACTUAL_ROOT = createSimpleFileTree(
-                IdempotencyAndCommutativityPropertyTest.class,
-                                                    "actual-root"
-        );
-        private static final Path EXPECTED_ROOT = createSimpleFileTree(
-                IdempotencyAndCommutativityPropertyTest.class,
-                                                        "expected-root"
-        );
-        private static final HttpClient CLIENT = createClient();
-        private static final HttpServer SERVER_UNDER_TEST = createNoOutputWildcardBoundServer(ACTUAL_ROOT);
+    private static final Path ACTUAL_ROOT = createSimpleFileTree(
+            IdempotencyAndCommutativityPropertyTest.class,
+                                                "actual-root"
+    );
+    private static final Path EXPECTED_ROOT = createSimpleFileTree(
+            IdempotencyAndCommutativityPropertyTest.class,
+                                                    "expected-root"
+    );
+    private static final HttpClient CLIENT = createClient();
+    private static final HttpServer SERVER_UNDER_TEST = createNoOutputWildcardBoundServer(ACTUAL_ROOT);
 
     static final String FILE_NAME = "aFile.txt";
     static final String FILE_CONTENTS = "Quoted file content";
     private static final String DIRECTORY = "";
     private static final String NONEXISTING = "nonexisting";
+
     private static final List<String> FILES = Collections.unmodifiableList(
             Arrays.asList(DIRECTORY, FILE_NAME, NONEXISTING)
     );
+
+    private enum REQUEST {
+        //GET, HEAD, UNKNOWN;
+        GET, HEAD;
+        //UNKNOWN;
+
+        static List<String> asList() {
+            return Arrays.asList(REQUEST.values()).stream().map(REQUEST::name).collect(Collectors.toList());
+        }
+    }
+
     private static final Map<Map.Entry<String,String>,Integer> EXPECTED_STATUS_CODES = initStatusCodes();/*
     private static Map<Map.Entry<String,String>,Integer> expectedHeaders = initHeaders();
     private static Map<Map.Entry<String,String>,Integer> expectedBodies = initBodies();
 */
+
     private static Map<Map.Entry<String,String>,Integer> initStatusCodes() {
         return Collections.unmodifiableMap(
                 Map.ofEntries(
@@ -114,27 +124,20 @@ public class IdempotencyAndCommutativityPropertyTest {
                     ),
                     Map.entry(
                             Map.entry("UNKNOWN",DIRECTORY),
-                            400
+                            405
                     ),
                     Map.entry(
                             Map.entry("UNKNOWN",FILE_NAME),
-                            400
+                            405
                     ),
                     Map.entry(
                             Map.entry("UNKNOWN",NONEXISTING),
-                            400
+                            405
                     )
                 )
         );
     }
-/*
-    private static Map<Map.Entry<String,String>,Integer> initHeaders() {
-    }
 
-    private static Map<Map.Entry<String,String>,Integer> initBodies() {
-        return null;
-    }
-*/
     @BeforeTest
     void before() {
         if (ENABLE_LOGGING) {
@@ -144,54 +147,55 @@ public class IdempotencyAndCommutativityPropertyTest {
             ch.setLevel(Level.ALL);
             logger.addHandler(ch);
         }
+        SERVER_UNDER_TEST.start();
     }
 
     @DataProvider(name = "dataProvider")
     public Object[][] data() throws Exception {
-        System.out.println("data");
-        final int total = 9324;
-        Object[][] data = new Object[1][];
-        ObjectInputStream objectInputStream = new ObjectInputStream(
-                IdempotencyAndCommutativityPropertyTest
-                        .class.getResourceAsStream("IdempotencyAndCommutativityPropertyTestInput.ser")
-        );
-        int counter = 0;
-        do {
-            data[counter]= new Object[]{objectInputStream.readObject()};
-            break;
-        } while (++counter < total);
+        final List<String> requests = REQUEST.asList();
+        final Random random = new Random();
+        final int TEST_CASE_COUNT = RANDOM ? INPUT_SET_SIZE : requests.size() * FILES.size();
+        final int ACTUAL_SEQUENCE_LENGTH = RANDOM ? SEQUENCE_LENGTH : 1;
+
+        final Object[][] data = new Object[TEST_CASE_COUNT][];
+        for (int caseIndex = 0; caseIndex < TEST_CASE_COUNT; caseIndex++) {
+            List<Map.Entry<String,String>> inputs = new ArrayList<>();
+            for (int sequenceIndex = 0; sequenceIndex < ACTUAL_SEQUENCE_LENGTH; sequenceIndex++) {
+                int requestIndex,fileIndex;
+                if (RANDOM) {
+                    requestIndex = random.ints(0, requests.size()).findFirst().getAsInt();
+                    fileIndex = random.ints(0, FILES.size()).findFirst().getAsInt();
+                }
+                else {
+                    requestIndex = caseIndex / FILES.size();
+                    fileIndex = caseIndex % FILES.size();
+                }
+                inputs.add(Map.entry(requests.get(requestIndex), FILES.get(fileIndex)));
+            }
+            data[caseIndex] = new Object[] {inputs};
+        }
         return data;
     }
-/*
+
     @Test (dataProvider = "dataProvider")
     public void test2(List<Map.Entry<String, String>> sequence) throws Exception {
-
- */
-    @Test
-    public void test2() throws Exception {
-        List<Map.Entry<String, String>> sequence = Arrays.asList(Map.entry("GET",DIRECTORY),Map.entry("GET",DIRECTORY));
-    System.out.println(sequence);
         for (Map.Entry<String, String> input : sequence) {
-            System.out.println("method %s path %s".formatted(input.getKey(),input.getValue()));
             final HttpRequest request = createRequest(
                     SERVER_UNDER_TEST,
                     input.getValue(),
                     input.getKey(),
                     HttpRequest.BodyPublishers.noBody()
             );
-            System.out.println("before client send");
             final HttpResponse<String> actualResponse = CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("after client send");
             assertEquals(actualResponse.statusCode(), (long)EXPECTED_STATUS_CODES.get(input));
-          //  assertEquals(actualResponse.headers(), EXPECTED_RESPONSE.get(input).headers());
+            //  assertEquals(actualResponse.headers(), EXPECTED_RESPONSE.get(input).headers());
             //assertEquals(actualResponse.body(), EXPECTED_RESPONSE.get(input).body());
             //todo assertEquals(ACTUAL_ROOT, EXPECTED_ROOT)
         }
     }
 
-
     static HttpServer createNoOutputWildcardBoundServer(Path root) {
-        return SimpleFileServer.createFileServer(WILDCARD_ADDR, root, SimpleFileServer.OutputLevel.VERBOSE);
+        return SimpleFileServer.createFileServer(WILDCARD_ADDR, root, SimpleFileServer.OutputLevel.NONE);
     }
 
     static HttpClient createClient() {
@@ -210,19 +214,11 @@ public class IdempotencyAndCommutativityPropertyTest {
 
     static HttpRequest createRequest(HttpServer server, String path, String method,
                                      HttpRequest.BodyPublisher bodyPublisher) {
-/*
         return HttpRequest.newBuilder(
                 URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path))
         )
-                .method(method,bodyPublisher)
-               .build();
- */
-        System.out.println("port=%s method=%s path=%s".formatted(server.getAddress().getPort(),method,path));
-        return HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path)))
-               // .method(method,bodyPublisher)
-                .build();
-
+        .method(method,bodyPublisher)
+        .build();
     }
 
 }

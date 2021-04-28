@@ -22,7 +22,6 @@
  */
 
 
-import jdk.com.sun.net.httpserver.simpleserver.ServerMimeTypesResolutionTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -101,7 +100,7 @@ public abstract class AbstractMimeTypesTest {
     }
 
     protected Properties load(String path) throws IOException {
-        InputStream rs = ServerMimeTypesResolutionTest.class.getResourceAsStream(path);
+        InputStream rs = AbstractMimeTypesTest.class.getResourceAsStream(path);
         Properties properties = new Properties();
         properties.load(rs);
         return properties;
