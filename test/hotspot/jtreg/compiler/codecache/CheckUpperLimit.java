@@ -26,8 +26,7 @@
  * @bug 8015635
  * @summary Test ensures that the ReservedCodeCacheSize is at most MAXINT
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @requires vm.flagless
  *
  * @run driver compiler.codecache.CheckUpperLimit
  */

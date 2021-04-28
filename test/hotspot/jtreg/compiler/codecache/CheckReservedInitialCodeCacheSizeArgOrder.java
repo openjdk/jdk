@@ -27,8 +27,7 @@
  * @summary Test checks that the order in which ReversedCodeCacheSize and
  *          InitialCodeCacheSize are passed to the VM is irrelevant.
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @requires vm.flagless
  *
  * @run driver compiler.codecache.CheckReservedInitialCodeCacheSizeArgOrder
  */
