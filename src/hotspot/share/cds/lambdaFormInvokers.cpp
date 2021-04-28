@@ -49,11 +49,28 @@
 
 GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = nullptr;
 Array<Array<char>*>* LambdaFormInvokers::_static_archive_invokers = nullptr;
+
 #define NUM_FILTER 4
 static const char* filter[NUM_FILTER] = {"java.lang.invoke.Invokers$Holder",
                                          "java.lang.invoke.DirectMethodHandle$Holder",
                                          "java.lang.invoke.DelegatingMethodHandle$Holder",
                                          "java.lang.invoke.LambdaForm$Holder"};
+
+static bool should_be_archived(char* line) {
+  for (int k = 0; k < NUM_FILTER; k++) {
+    if (strstr(line, filter[k]) != nullptr) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void LambdaFormInvokers::append_filtered(char* line) {
+  if (should_be_archived(line)) {
+      append(line);
+  }
+}
+#undef NUM_FILTER
 
 void LambdaFormInvokers::append(char* line) {
   if (_lambdaform_lines == NULL) {
@@ -61,16 +78,6 @@ void LambdaFormInvokers::append(char* line) {
   }
   _lambdaform_lines->append(line);
 }
-
-void LambdaFormInvokers::append_filtered(char* line) {
-  for (int k = 0; k < NUM_FILTER; k++) {
-    if (strstr(line, filter[k]) != nullptr) {
-        append(line);
-        break;
-    }
-  }
-}
-#undef NUM_FILTER
 
 void LambdaFormInvokers::regenerate_holder_classes() {
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
@@ -177,16 +184,31 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
 
 void LambdaFormInvokers::dump_static_archive_invokers() {
   if (_lambdaform_lines != nullptr && _lambdaform_lines->length() > 0) {
-    int count = _lambdaform_lines->length();
-    _static_archive_invokers = ArchiveBuilder::new_ro_array<Array<char>*>(count);
-    for (int i = 0; i < count; i++) {
+    int count = 0;
+    int len   = _lambdaform_lines->length();
+    for (int i = 0; i < len; i++) {
       char* str = _lambdaform_lines->at(i);
-      int len = (int)strlen(str);
-      Array<char>* line = ArchiveBuilder::new_ro_array<char>(len+1);
-      strncpy(line->adr_at(0), str, (size_t)(len + 1)); // copies terminating zero as well
+      if (should_be_archived(str)) {
+        count++;
+      }
+    }
+    log_debug(cds)("Number of LF invoker lines stored: %d", count);
+    if (count > 0) {
+      _static_archive_invokers = ArchiveBuilder::new_ro_array<Array<char>*>(count);
+      int index = 0;
+      for (int i = 0; i < len; i++) {
+        char* str = _lambdaform_lines->at(i);
+        if (should_be_archived(str)) {
+          size_t str_len = strlen(str) + 1;  // including terminating zero
+          Array<char>* line = ArchiveBuilder::new_ro_array<char>((int)str_len);
+          strncpy(line->adr_at(0), str, str_len);
 
-      _static_archive_invokers->at_put(i, line);
-      ArchivePtrMarker::mark_pointer(_static_archive_invokers->adr_at(i));
+          _static_archive_invokers->at_put(index, line);
+          ArchivePtrMarker::mark_pointer(_static_archive_invokers->adr_at(index));
+          index++;
+        }
+      }
+      assert(index == count, "Should match");
     }
   }
 }
