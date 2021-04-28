@@ -269,7 +269,6 @@ public class GCMBufferTest implements Cloneable {
                         System.err.print(v + " ");
                     }
                     System.err.println("]");
-                    System.err.flush();
                     encrypt(data);
                 }
                 Arrays.fill(sizes, 0);
@@ -280,7 +279,6 @@ public class GCMBufferTest implements Cloneable {
                         System.err.print(v + " ");
                     }
                     System.err.println("]");
-                    System.err.flush();
                     decrypt(data);
                 }
 
@@ -288,11 +286,9 @@ public class GCMBufferTest implements Cloneable {
                 // Default test of 0 and 2 offset doing in place and different
                 // i/o buffers
                 System.err.println("Encrypt:  Data Index: " + i);
-                System.err.flush();
                 encrypt(data);
 
                 System.err.println("Decrypt:  Data Index: " + i);
-                System.err.flush();
                 decrypt(data);
             }
             i++;
