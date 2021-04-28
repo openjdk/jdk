@@ -2054,7 +2054,8 @@ instruct vsll$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
             ',
   $3$4, 4S, n->as_Vector()->length() == 2 ||`
             ')n->as_Vector()->length() == $3);
-  match(Set dst (LShiftV$4 src (LShiftCntV shift)));
+  ifelse($4, B, match(Set dst (LShiftV$4 src shift));`
+  ')match(Set dst (LShiftV$4 src (LShiftCntV shift)));
   ins_cost(INSN_COST);
   format %{ "$1    $dst, $src, $shift\t# vector ($3$5)" %}
   ins_encode %{ifelse($4, B,`
