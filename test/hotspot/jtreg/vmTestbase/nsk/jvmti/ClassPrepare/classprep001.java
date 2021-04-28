@@ -51,7 +51,7 @@ public class classprep001 {
     }
 
     public static int run(String args[], PrintStream out) {
-        Thread otherTread = new Thread(() -> {
+        Thread otherThread = new Thread(() -> {
             new TestClass2().run();
         });
 
@@ -61,9 +61,9 @@ public class classprep001 {
         new TestClass().run();
 
         // loading classes on other thread should not generate the events
-        otherTread.start();
+        otherThread.start();
         try {
-            otherTread.join();
+            otherThread.join();
         } catch (InterruptedException e) {
         }
 
