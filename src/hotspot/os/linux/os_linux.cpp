@@ -3732,19 +3732,30 @@ void os::large_page_init() {
   // re-add the default page size to the list of page sizes to be sure.
   all_large_pages.add(default_large_page_size);
 
-  // Populate large page sizes to _page_sizes. Add pages that
-  // are less than or equal to LargePageSizeInBytes, except when LargePageSizeInBytes=0
-  // or FLAG_IS_DEFAULT(LargePageSizeInBytes), add all sizes
-  for (size_t page_size = all_large_pages.largest(); page_size != 0;
-         page_size = all_large_pages.next_smaller(page_size)) {
-    if (LargePageSizeInBytes != 0
-        || !FLAG_IS_DEFAULT(LargePageSizeInBytes)) {
-      if (page_size <= LargePageSizeInBytes){
-        _page_sizes.add(page_size);
-      }
+  // Check LargePageSizeInBytes matches an available page size and if so set _large_page_size
+  // using LargePageSizeInBytes as the maximum allowed large page size. If LargePageSizeInBytes
+  // doesn't match an available page size set _large_page_size to default_large_page_size
+  // and use it as the maximum.
+  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != default_large_page_size) {
+    if (all_large_pages.contains(LargePageSizeInBytes)) {
+      _large_page_size = LargePageSizeInBytes;
+      log_info(pagesize)("Overriding default large page size ( "
+                         SIZE_FORMAT " ) using LargePageSizeInBytes: "
+                         SIZE_FORMAT,
+                         default_large_page_size,
+                         LargePageSizeInBytes);
     } else {
-      _page_sizes.add(page_size);
+      _large_page_size = default_large_page_size;
     }
+  } else {
+    _large_page_size = default_large_page_size;
+  }
+
+  // Populate _page_sizes with large page sizes less than or equal to
+  // _large_page_size.
+  for (size_t page_size = _large_page_size; page_size != 0;
+         page_size = all_large_pages.next_smaller(page_size)) {
+    _page_sizes.add(page_size);
   }
 
   LogTarget(Info, pagesize) lt;
@@ -3752,18 +3763,6 @@ void os::large_page_init() {
     LogStream ls(lt);
     ls.print("Available page sizes: ");
     _page_sizes.print_on(&ls);
-  }
-
-  // Handle LargePageSizeInBytes
-  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != default_large_page_size) {
-    if (all_large_pages.contains(LargePageSizeInBytes)) {
-      _large_page_size = LargePageSizeInBytes;
-      log_info(os)("Overriding default large page size using LargePageSizeInBytes");
-    } else {
-      _large_page_size = default_large_page_size;
-    }
-  } else {
-    _large_page_size = default_large_page_size;
   }
 
   // Now determine the type of large pages to use:
