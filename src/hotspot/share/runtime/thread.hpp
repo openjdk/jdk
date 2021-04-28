@@ -319,10 +319,6 @@ class Thread: public ThreadShadow {
   ObjectMonitor* _current_waiting_monitor;
 
  public:
-  enum {
-    is_definitely_current_thread = true
-  };
-
   // Constructor
   Thread();
   virtual ~Thread() = 0;        // Thread is abstract.
@@ -776,14 +772,6 @@ class JavaThread: public Thread {
   }
  private:  // restore original namespace restriction
 #endif  // ifdef ASSERT
-
-#ifndef PRODUCT
- public:
-  enum {
-    jump_ring_buffer_size = 16
-  };
- private:  // restore original namespace restriction
-#endif
 
   JavaFrameAnchor _anchor;                       // Encapsulation of current java frame and it state
 
