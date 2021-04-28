@@ -36,7 +36,6 @@ import static java.util.Locale.LanguageRange.*;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * Implementation for BCP47 Locale matching

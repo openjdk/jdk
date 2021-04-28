@@ -41,7 +41,6 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import static java.util.Collections.*;
 
 import jdk.internal.access.JavaLangAccess;
