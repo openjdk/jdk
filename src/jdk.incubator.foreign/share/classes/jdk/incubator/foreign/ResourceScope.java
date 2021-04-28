@@ -183,7 +183,7 @@ public interface ResourceScope extends AutoCloseable {
      *     <li>this resource scope is not <em>alive</em>
      *     <li>this resource scope is confined, and this method is called from a thread other than the thread owning this resource scope</li>
      *     <li>this resource scope is shared and a resource associated with this scope is accessed while this method is called</li>
-     *     <li>one or more handles (see {@link #acquire()}) associated with this resource scope have not been closed</li>
+     *     <li>one or more handles (see {@link #acquire()}) associated with this resource scope have not been {@link #release(Handle) released}</li>
      * </ul>
      * @throws UnsupportedOperationException if this resource scope is {@link #isImplicit() implicit}.
      */
@@ -198,9 +198,8 @@ public interface ResourceScope extends AutoCloseable {
     void addCloseAction(Runnable runnable);
 
     /**
-     * If this resource scope is explicit, this method acquires a new resource scope handle, associated with this
-     * resource scope; an explicit resource scope cannot be {@link #close() closed}
-     * until all the resource scope handles acquired from it have been {@link #release(Handle)} released}.
+     * Acquires a resource scope handle associated with this resource scope. An explicit resource scope cannot be
+     * {@link #close() closed} until all the resource scope handles acquired from it have been {@link #release(Handle)} released}.
      * @return a resource scope handle.
      */
     Handle acquire();

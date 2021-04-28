@@ -250,6 +250,17 @@ public final class Module implements AnnotatedElement {
         return null;
     }
 
+    /**
+     * Update this module to allow access to restricted methods.
+     */
+    Module addEnableNativeAccess() {
+        enableNativeAccess = true;
+        return this;
+    }
+
+    /**
+     * Returns true if module m can access restricted methods.
+     */
     boolean isEnableNativeAccess() {
         if (enableNativeAccess) {
             return true;
@@ -426,11 +437,6 @@ public final class Module implements AnnotatedElement {
             }
             implAddReads(other, true);
         }
-        return this;
-    }
-
-    Module addEnableNativeAccess() {
-        enableNativeAccess = true;
         return this;
     }
 

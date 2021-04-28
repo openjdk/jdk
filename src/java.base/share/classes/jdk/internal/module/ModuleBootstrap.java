@@ -268,8 +268,9 @@ public final class ModuleBootstrap {
         if (baseUri == null)
             throw new InternalError(JAVA_BASE + " does not have a location");
         BootLoader.loadModule(base);
-        SharedSecrets.getJavaLangAccess()
-                .addEnableNativeAccess(Modules.defineModule(null, base.descriptor(), baseUri));
+
+        Module baseModule = Modules.defineModule(null, base.descriptor(), baseUri);
+        JLA.addEnableNativeAccess(baseModule);
 
         // Step 2a: Scan all modules when --validate-modules specified
 
@@ -873,14 +874,16 @@ public final class ModuleBootstrap {
         builder.complete();
     }
 
+    /**
+     * Process the --enable-native-access option to grant access to restricted methods to selected modules.
+     */
     private static void addEnableNativeAccess(ModuleLayer layer) {
         // add native modules explicitly provided on the command line
 
-        JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
         for (String name : IllegalNativeAccessChecker.enableNativeAccessModules()) {
             Optional<Module> module = layer.findModule(name);
             if (module.isPresent()) {
-                jla.addEnableNativeAccess(module.get());
+                SharedSecrets.getJavaLangAccess().addEnableNativeAccess(module.get());
             } else {
                 // silently skip.
                 // warnUnknownModule(ENABLE_NATIVE_ACCESS, name);

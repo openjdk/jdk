@@ -257,6 +257,16 @@ public interface JavaLangAccess {
     boolean isReflectivelyOpened(Module module, String pn, Module other);
 
     /**
+     * Updates module m to allow access to restricted methods.
+     */
+    Module addEnableNativeAccess(Module m);
+
+    /**
+     * Returns true if module m can access restricted methods.
+     */
+    boolean isEnableNativeAccess(Module m);
+
+    /**
      * Returns the ServicesCatalog for the given Layer.
      */
     ServicesCatalog getServicesCatalog(ModuleLayer layer);
@@ -378,8 +388,4 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
-
-    Module addEnableNativeAccess(Module m);
-
-    boolean isEnableNativeAccess(Module m);
 }
