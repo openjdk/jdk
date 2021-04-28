@@ -171,6 +171,7 @@ public final class FileServerHandler implements HttpHandler {
     {
         var respHdrs = exchange.getResponseHeaders();
         respHdrs.set("Content-Type", mediaType(path.toString()));
+        respHdrs.set("Last-Modified", "Wed, 21 Oct 2015 07:28:00 GMT");
         if (writeBody) {
             exchange.sendResponseHeaders(200, Files.size(path));
             try (InputStream fis = Files.newInputStream(path);
@@ -188,6 +189,7 @@ public final class FileServerHandler implements HttpHandler {
     {
         var respHdrs = exchange.getResponseHeaders();
         respHdrs.set("Content-Type", "text/html; charset=UTF-8");
+        respHdrs.set("Last-Modified", "Wed, 21 Oct 2015 07:28:00 GMT");
         var body = dirListing(exchange, path);
         if (writeBody) {
             exchange.sendResponseHeaders(200, body.length());
