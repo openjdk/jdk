@@ -5289,6 +5289,7 @@ instruct vsll8B_imm(vecD dst, vecD src, immI shift) %{
   predicate(n->as_Vector()->length() == 4 ||
             n->as_Vector()->length() == 8);
   match(Set dst (LShiftVB src (LShiftCntV shift)));
+  match(Set dst (LShiftVB src shift));
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (8B)" %}
   ins_encode %{
@@ -5308,6 +5309,7 @@ instruct vsll8B_imm(vecD dst, vecD src, immI shift) %{
 instruct vsll16B_imm(vecX dst, vecX src, immI shift) %{
   predicate(n->as_Vector()->length() == 16);
   match(Set dst (LShiftVB src (LShiftCntV shift)));
+  match(Set dst (LShiftVB src shift));
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (16B)" %}
   ins_encode %{
