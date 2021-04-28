@@ -1633,6 +1633,65 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
   return true;
 }
 
+//------------------------------inline_math_pow-----------------------------
+bool LibraryCallKit::inline_math_pow() {
+  Node* exp = round_double_node(argument(2));
+  const TypeD* d = _gvn.type(exp)->isa_double_constant();
+  if (d != NULL) {
+    if (d->getd() == 2.0) {
+      // Special case: pow(x, 2.0) => x * x
+      Node* base = round_double_node(argument(0));
+      set_result(_gvn.transform(new MulDNode(base, base)));
+      return true;
+    }
+#if defined(X86) && defined(_LP64)
+    else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
+      // Special case: pow(x, 0.5) => sqrt(x)
+      Node* base = round_double_node(argument(0));
+      Node* zero = _gvn.zerocon(T_DOUBLE);
+
+      RegionNode* region = new RegionNode(3);
+      Node* phi = new PhiNode(region, Type::DOUBLE);
+
+      Node* cmp  = _gvn.transform(new CmpDNode(base, zero));
+      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::le));
+
+      Node* if_pow = generate_slow_guard(test, NULL);
+      Node* value_sqrt = _gvn.transform(new SqrtDNode(C, control(), base));
+      phi->init_req(1, value_sqrt);
+      region->init_req(1, control());
+
+      if (if_pow != NULL) {
+        set_control(if_pow);
+        address target = StubRoutines::dpow() != NULL ? StubRoutines::dpow() :
+                                                        CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
+        const TypePtr* no_memory_effects = NULL;
+        Node* trig = make_runtime_call(RC_LEAF, OptoRuntime::Math_DD_D_Type(), target, "POW",
+                                       no_memory_effects, base, top(), exp, top());
+        Node* value_pow = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+0));
+#ifdef ASSERT
+        Node* value_top = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+1));
+        assert(value_top == top(), "second value must be top");
+#endif
+        phi->init_req(2, value_pow);
+        region->init_req(2, _gvn.transform(new ProjNode(trig, TypeFunc::Control)));
+      }
+
+      C->set_has_split_ifs(true); // Has chance for split-if optimization
+      set_control(_gvn.transform(region));
+      record_for_igvn(region);
+      set_result(_gvn.transform(phi));
+
+      return true;
+    }
+#endif // defined(X86) && defined(_LP64)
+  }
+
+  return StubRoutines::dpow() != NULL ?
+    runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(),  "dpow") :
+    runtime_math(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow),  "POW");
+}
+
 //------------------------------inline_math_native-----------------------------
 bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
 #define FN_PTR(f) CAST_FROM_FN_PTR(address, f)
@@ -1673,21 +1732,9 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
     return StubRoutines::dexp() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
       runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dexp),  "EXP");
-  case vmIntrinsics::_dpow: {
-    Node* exp = round_double_node(argument(2));
-    const TypeD* d = _gvn.type(exp)->isa_double_constant();
-    if (d != NULL && d->getd() == 2.0) {
-      // Special case: pow(x, 2.0) => x * x
-      Node* base = round_double_node(argument(0));
-      set_result(_gvn.transform(new MulDNode(base, base)));
-      return true;
-    }
-    return StubRoutines::dpow() != NULL ?
-      runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(),  "dpow") :
-      runtime_math(OptoRuntime::Math_DD_D_Type(), FN_PTR(SharedRuntime::dpow),  "POW");
-  }
 #undef FN_PTR
 
+  case vmIntrinsics::_dpow:      return inline_math_pow();
   case vmIntrinsics::_dcopySign: return inline_double_math(id);
   case vmIntrinsics::_fcopySign: return inline_math(id);
   case vmIntrinsics::_dsignum: return inline_double_math(id);

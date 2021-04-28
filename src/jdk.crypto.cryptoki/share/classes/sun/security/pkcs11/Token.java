@@ -53,7 +53,7 @@ class Token implements Serializable {
     // how often to check if the token is still present (in ms)
     // this is different from checking if a token has been inserted,
     // that is done in SunPKCS11. Currently 50 ms.
-    private final static long CHECK_INTERVAL = 50;
+    private static final long CHECK_INTERVAL = 50;
 
     final SunPKCS11 provider;
 
@@ -117,10 +117,10 @@ class Token implements Serializable {
     private long lastLoginCheck;
 
     // mutex for token-present-check
-    private final static Object CHECK_LOCK = new Object();
+    private static final Object CHECK_LOCK = new Object();
 
     // object for indicating unsupported mechanism in 'mechInfoMap'
-    private final static CK_MECHANISM_INFO INVALID_MECH =
+    private static final CK_MECHANISM_INFO INVALID_MECH =
         new CK_MECHANISM_INFO(0, 0, 0);
 
     // flag indicating whether the token supports raw secret key material import

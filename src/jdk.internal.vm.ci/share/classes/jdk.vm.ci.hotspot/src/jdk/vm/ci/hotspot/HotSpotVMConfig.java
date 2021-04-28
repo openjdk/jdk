@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,6 +255,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int jvmConstantMethodHandleInError = getConstant("JVM_CONSTANT_MethodHandleInError", Integer.class);
     final int jvmConstantMethodType = getConstant("JVM_CONSTANT_MethodType", Integer.class);
     final int jvmConstantMethodTypeInError = getConstant("JVM_CONSTANT_MethodTypeInError", Integer.class);
+    final int jvmConstantDynamic = getConstant("JVM_CONSTANT_Dynamic", Integer.class);
+    final int jvmConstantDynamicInError = getConstant("JVM_CONSTANT_DynamicInError", Integer.class);
     final int jvmConstantInvokeDynamic = getConstant("JVM_CONSTANT_InvokeDynamic", Integer.class);
 
     final int jvmConstantExternalMax = getConstant("JVM_CONSTANT_ExternalMax", Integer.class);

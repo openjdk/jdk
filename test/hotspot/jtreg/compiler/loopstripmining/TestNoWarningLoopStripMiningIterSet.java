@@ -25,11 +25,10 @@
  * @test
  * @bug 8241486
  * @summary G1/Z give warning when using LoopStripMiningIter and turn off LoopStripMiningIter (0)
+ * @requires vm.flagless
  * @requires vm.flavor == "server" & !vm.graal.enabled
  * @requires vm.gc.G1 & vm.gc.Shenandoah & vm.gc.Z & vm.gc.Epsilon
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver TestNoWarningLoopStripMiningIterSet
  */
 

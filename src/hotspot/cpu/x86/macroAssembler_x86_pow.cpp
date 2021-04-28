@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2016, Intel Corporation.
+* Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -765,6 +766,16 @@ ATTRIBUTE_ALIGNED(8) juint _DOUBLE2[] =
     0x00000000UL, 0x40000000UL
 };
 
+ATTRIBUTE_ALIGNED(8) juint _DOUBLE0[] =
+{
+    0x00000000UL, 0x00000000UL
+};
+
+ATTRIBUTE_ALIGNED(8) juint _DOUBLE0DOT5[] =
+{
+    0x00000000UL, 0x3fe00000UL
+};
+
 //registers,
 // input: xmm0, xmm1
 // scratch: xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
@@ -789,6 +800,7 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   Label L_2TAG_PACKET_52_0_2, L_2TAG_PACKET_53_0_2, L_2TAG_PACKET_54_0_2, L_2TAG_PACKET_55_0_2;
   Label L_2TAG_PACKET_56_0_2;
   Label B1_2, B1_3, B1_5, start;
+  Label L_POW;
 
   assert_different_registers(tmp1, tmp2, eax, ecx, edx);
   jmp(start);
@@ -804,6 +816,8 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   address HALFMASK = (address)_HALFMASK;
   address log2 = (address)_log2_pow;
   address DOUBLE2 = (address)_DOUBLE2;
+  address DOUBLE0 = (address)_DOUBLE0;
+  address DOUBLE0DOT5 = (address)_DOUBLE0DOT5;
 
 
   bind(start);
@@ -818,7 +832,17 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   mulsd(xmm0, xmm0);
   jmp(B1_5);
 
+  // Special case: pow(x, 0.5) => sqrt(x)
   bind(B1_2);
+  cmp64(tmp1, ExternalAddress(DOUBLE0DOT5));
+  jccb(Assembler::notEqual, L_POW); // For pow(x, y), check whether y == 0.5
+  movdq(tmp2, xmm0);
+  cmp64(tmp2, ExternalAddress(DOUBLE0));
+  jccb(Assembler::less, L_POW); // pow(x, 0.5) => sqrt(x) only for x >= 0.0 or x is +inf/NaN
+  sqrtsd(xmm0, xmm0);
+  jmp(B1_5);
+
+  bind(L_POW);
   pextrw(eax, xmm0, 3);
   xorpd(xmm2, xmm2);
   mov64(tmp2, 0x3ff0000000000000);
@@ -2491,6 +2515,8 @@ ATTRIBUTE_ALIGNED(16) juint _static_const_table_pow[] =
 
 };
 
+ATTRIBUTE_ALIGNED(8) double _DOUBLE2 = 2.0;
+
 //registers,
 // input: xmm0, xmm1
 // scratch: xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
@@ -2514,10 +2540,12 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   Label L_2TAG_PACKET_48_0_2, L_2TAG_PACKET_49_0_2, L_2TAG_PACKET_50_0_2, L_2TAG_PACKET_51_0_2;
   Label L_2TAG_PACKET_52_0_2, L_2TAG_PACKET_53_0_2, L_2TAG_PACKET_54_0_2, L_2TAG_PACKET_55_0_2;
   Label L_2TAG_PACKET_56_0_2, L_2TAG_PACKET_57_0_2, L_2TAG_PACKET_58_0_2, start;
+  Label L_NOT_DOUBLE2;
 
   assert_different_registers(tmp, eax, ecx, edx);
 
   address static_const_table_pow = (address)_static_const_table_pow;
+  address DOUBLE2 = (address) &_DOUBLE2;
 
   bind(start);
   subl(rsp, 120);
@@ -2525,6 +2553,15 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   lea(tmp, ExternalAddress(static_const_table_pow));
   movsd(xmm0, Address(rsp, 128));
   movsd(xmm1, Address(rsp, 136));
+
+  // Special case: pow(x, 2.0) => x * x
+  ucomisd(xmm1, ExternalAddress(DOUBLE2));
+  jccb(Assembler::notEqual, L_NOT_DOUBLE2);
+  jccb(Assembler::parity, L_NOT_DOUBLE2);
+  mulsd(xmm0, xmm0);
+  jmp(L_2TAG_PACKET_21_0_2);
+
+  bind(L_NOT_DOUBLE2);
   xorpd(xmm2, xmm2);
   movl(eax, 16368);
   pinsrw(xmm2, eax, 3);

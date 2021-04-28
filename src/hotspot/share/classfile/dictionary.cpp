@@ -207,6 +207,7 @@ void DictionaryEntry::add_protection_domain(ClassLoaderData* loader_data, Handle
     protection_domain->print_value_on(&ls);
     ls.print(" ");
     print_count(&ls);
+    ls.cr();
   }
 }
 
@@ -580,7 +581,7 @@ void DictionaryEntry::print_count(outputStream *st) {
                               current = current->next_acquire()) {
     count++;
   }
-  st->print_cr("pd set count = #%d", count);
+  st->print("pd set count = #%d", count);
 }
 
 // ----------------------------------------------------------------------------
