@@ -450,13 +450,10 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       } else {
         print_prop("is_dontcare", "false");
       }
-
-#ifdef ASSERT
       Node* old = C->matcher()->find_old_node(node);
       if (old != NULL) {
         print_prop("old_node_idx", old->_idx);
       }
-#endif
     }
 
     if (node->is_Proj()) {
