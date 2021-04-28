@@ -138,7 +138,8 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dcos: return java_lang_math_cos;
       case vmIntrinsics::_dtan: return java_lang_math_tan;
       case vmIntrinsics::_dabs: return java_lang_math_abs;
-      case vmIntrinsics::_dsqrt: return java_lang_math_sqrt;
+      // _dsqrt will be selected for java.lang.StrictMath::sqrt - which is still native
+      case vmIntrinsics::_dsqrt: return m->is_native() ? native : java_lang_math_sqrt;
       case vmIntrinsics::_dlog: return java_lang_math_log;
       case vmIntrinsics::_dlog10: return java_lang_math_log10;
       case vmIntrinsics::_dpow: return java_lang_math_pow;
