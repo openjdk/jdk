@@ -320,7 +320,6 @@ public class GCMBufferTest implements Cloneable {
             inOfs + "  outOfs " + outOfs + "  in/out buffer: in-place");
             cryptoSameBuffer(true, data, input, output);
         }
-        System.err.flush();
     }
 
     // Setup data for decryption
@@ -637,7 +636,7 @@ public class GCMBufferTest implements Cloneable {
         GCMBufferTest t;
 
         initTest();
-/*
+
         // Test single byte array
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
         offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)));
@@ -720,17 +719,11 @@ public class GCMBufferTest implements Cloneable {
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).incrementalSegments().
             dataSet(0).test();
-
- */
-        for (int x = 0; x < 10000; x++) {
-            new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)).test();
-        }
-
         // Test update-update-doFinal with direct bytebuffers, incrementing through
         // every data size combination for the Data set 0
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
-            incrementalSegments().dataSet(0).differentBufferOnly().test();
+            incrementalSegments().dataSet(0).test();
 
     }
 
