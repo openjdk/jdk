@@ -2676,7 +2676,7 @@ void AdapterHandlerLibrary::initialize() {
   AdapterBlob* no_arg_blob = NULL;
 
   AdapterBlob* int_arg_blob = NULL;
-  BasicType    int_args[] = { T_OBJECT };
+  BasicType    int_args[] = { T_INT };
 
   AdapterBlob* obj_arg_blob = NULL;
   BasicType    obj_args[] = { T_OBJECT };
