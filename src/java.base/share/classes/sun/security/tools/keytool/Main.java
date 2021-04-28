@@ -933,16 +933,26 @@ public final class Main {
             }
         }
 
-        // Create new keystore
-        // Probe for keystore type when filename is available
         if (ksfile != null && ksStream != null && providerName == null &&
-                storetype == null && !inplaceImport) {
-            keyStore = KeyStore.getInstance(ksfile, storePass);
-            storetype = keyStore.getType();
+                !inplaceImport) {
+            // existing keystore
+            if (storetype == null) {
+                // Probe for keystore type when filename is available
+                keyStore = KeyStore.getInstance(ksfile, storePass);
+                storetype = keyStore.getType();
+            } else {
+                keyStore = KeyStore.getInstance(storetype);
+                keyStore.load(ksStream, storePass);
+            }
             if (storetype.equalsIgnoreCase("pkcs12")) {
-                isPasswordlessKeyStore = PKCS12KeyStore.isPasswordless(ksfile);
+                try {
+                    isPasswordlessKeyStore = PKCS12KeyStore.isPasswordless(ksfile);
+                } catch (IOException ioe) {
+                    // This must be a JKS keystore that's opened as a PKCS12
+                }
             }
         } else {
+            // Create new keystore
             if (storetype == null) {
                 storetype = KeyStore.getDefaultType();
             }
