@@ -29,14 +29,14 @@
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *      -XX:+WhiteBoxAPI compiler.whitebox.EnqueueInitializerForCompilationTest
+ *      -XX:+WhiteBoxAPI compiler.whitebox.TestEnqueueInitializerForCompilation
  */
 
 package compiler.whitebox;
 
 import sun.hotspot.WhiteBox;
 
-public class EnqueueInitializerForCompilationTest {
+public class TestEnqueueInitializerForCompilation {
 
     public static void main(String[] args) {
         WhiteBox.getWhiteBox().enqueueInitializerForCompilation(LongWrapper.class, 4);

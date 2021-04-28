@@ -1039,12 +1039,8 @@ WB_END
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   Method* clinit = ik->class_initializer();
-  if (clinit == NULL) {
+  if (clinit == NULL || clinit->method_holder()->is_not_initialized()) {
     return false;
-  }
-  methodHandle mh(THREAD, clinit);
-  if (mh->method_holder()->is_not_initialized()) {
-    return false; // Bail out if not initialized
   }
   return WhiteBox::compile_method(clinit, comp_level, InvocationEntryBci, THREAD);
 WB_END
