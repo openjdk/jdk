@@ -66,6 +66,7 @@ public class PrintFontWithMissedFontFamilyTest {
     private static volatile boolean testFinished;
     private static final float FONT_SIZE = 32.0f;
     private static final String TEXT = "ABCDEF";
+    private static final String FONT_FILE = "SampleFontMissedFontFamily.ttf";
     private static Font customFont;
 
     public static void main(String[] args) throws Exception {
@@ -178,7 +179,7 @@ public class PrintFontWithMissedFontFamilyTest {
 
         try {
             File dir = new File(System.getProperty("test.src", "."));
-            File customFontFile = new File(dir, "SampleBowMissedFamilyName.ttf");
+            File customFontFile = new File(dir, FONT_FILE);
             customFont = Font.createFont(Font.TRUETYPE_FONT, customFontFile);
             customFont = customFont.deriveFont(FONT_SIZE);
         } catch(Exception e) {
