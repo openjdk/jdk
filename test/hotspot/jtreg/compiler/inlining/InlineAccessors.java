@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8140650
  * @summary Method::is_accessor should cover getters and setters for all types
- * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
  * @run driver compiler.inlining.InlineAccessors
@@ -38,14 +37,11 @@ import jdk.test.lib.process.ProcessTools;
 
 public class InlineAccessors {
     public static void main(String[] args) throws Exception {
-        // try some sanity checks first
-        doTest();
-
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-server", "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
-                    Launcher.class.getName());
+                 Launcher.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
