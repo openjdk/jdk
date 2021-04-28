@@ -2660,10 +2660,9 @@ static void post_adapter_creation(const AdapterBlob* new_adapter, const AdapterH
   char blob_id[256];
   jio_snprintf(blob_id,
                 sizeof(blob_id),
-                "%s(%s)@" PTR_FORMAT,
+                "%s(%s)",
                 new_adapter->name(),
-                entry->fingerprint()->as_string(),
-                new_adapter->content_begin());
+                entry->fingerprint()->as_string());
   Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
 
   if (JvmtiExport::should_post_dynamic_code_generated()) {
@@ -2787,11 +2786,10 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     return entry;
   }
 
+  ResourceMark rm;
   AdapterBlob* new_adapter = NULL;
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
-
-    ResourceMark rm;
 
     // Fill in the signature array, for the calling-convention call.
     int total_args_passed = method->size_of_parameters(); // All args on stack
