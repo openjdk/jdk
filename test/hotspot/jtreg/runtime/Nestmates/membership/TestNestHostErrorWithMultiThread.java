@@ -26,11 +26,10 @@
  * @bug 8264760
  * @summary JVM crashes when two threads encounter the same resolution error
  *
- * @library /test/lib
  * @compile HostNoNestMember.java
  * @compile HostNoNestMember.jcod
  *
- * @run main/othervm TestNestHostErrorWithMultiThread
+ * @run main TestNestHostErrorWithMultiThread
  */
 
 import java.util.concurrent.CountDownLatch;
@@ -38,36 +37,41 @@ import java.util.concurrent.CountDownLatch;
 public class TestNestHostErrorWithMultiThread {
 
   public static void main(String args[]) {
-    CountDownLatch latch1 = new CountDownLatch(1);
-    CountDownLatch latch2 = new CountDownLatch(2);
+    CountDownLatch runLatch = new CountDownLatch(1);
+    CountDownLatch startLatch = new CountDownLatch(2);
 
-    new Thread(new Test(latch1, latch2)).start();
-    new Thread(new Test(latch1, latch2)).start();
+    Runnable test = new Test(runLatch, startLatch);
+
+    new Thread(test).start();
+    new Thread(test).start();
 
     try {
       // waiting thread creation
-      latch2.await();
-      latch1.countDown();
-    } catch (InterruptedException e) {}
+      startLatch.await();
+      runLatch.countDown();
+    } catch (InterruptedException e) {
+      throw new Error("Unexpected interrupt");
+    }
   }
 
   static class Test implements Runnable {
-    private CountDownLatch latch1;
-    private CountDownLatch latch2;
+    private CountDownLatch runLatch;
+    private CountDownLatch startLatch;
 
-    Test(CountDownLatch latch1, CountDownLatch latch2) {
-      this.latch1 = latch1;
-      this.latch2 = latch2;
+    Test(CountDownLatch runLatch, CountDownLatch startLatch) {
+      this.runLatch = runLatch;
+      this.startLatch = startLatch;
     }
 
     @Override
     public void run() {
       try {
-        latch2.countDown();
+        startLatch.countDown();
         // Try to have all threads trigger the nesthost check at the same time
-        latch1.await();
+        runLatch.await();
         HostNoNestMember h = new HostNoNestMember();
         h.test();
+        throw new Error("IllegalAccessError was not thrown as expected");
       } catch (IllegalAccessError expected) {
         String msg = "current type is not listed as a nest member";
         if (!expected.getMessage().contains(msg)) {
@@ -76,7 +80,9 @@ public class TestNestHostErrorWithMultiThread {
                           msg + "\"", expected);
         }
         System.out.println("OK - got expected exception: " + expected);
-      } catch (InterruptedException e) {}
+      } catch (InterruptedException e) {
+        throw new Error("Unexpected interrupt");
+      }
     }
   }
 }
