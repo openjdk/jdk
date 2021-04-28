@@ -2746,27 +2746,27 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandl
       return _obj_arg_handler;
     }
     switch (method->signature()->char_at(1)) {
-      case 'L': // fall-through
-      case '[':
+      case JVM_SIGNATURE_CLASS:
+      case JVM_SIGNATURE_ARRAY:
         return _obj_arg_handler;
-      case 'I':
-      case 'Z':
-      case 'C':
-      case 'B':
-      case 'S':
+      case JVM_SIGNATURE_INT:
+      case JVM_SIGNATURE_BOOLEAN:
+      case JVM_SIGNATURE_CHAR:
+      case JVM_SIGNATURE_BYTE:
+      case JVM_SIGNATURE_SHORT:
         return _int_arg_handler;
     }
   } else if (total_args_passed == 2 &&
              !method->is_static()) {
     switch (method->signature()->char_at(1)) {
-      case 'L': // fall-through
-      case '[':
+      case JVM_SIGNATURE_CLASS:
+      case JVM_SIGNATURE_ARRAY:
         return _obj_obj_arg_handler;
-      case 'I':
-      case 'Z':
-      case 'C':
-      case 'B':
-      case 'S':
+      case JVM_SIGNATURE_INT:
+      case JVM_SIGNATURE_BOOLEAN:
+      case JVM_SIGNATURE_CHAR:
+      case JVM_SIGNATURE_BYTE:
+      case JVM_SIGNATURE_SHORT:
         return _obj_int_arg_handler;
     }
   }
