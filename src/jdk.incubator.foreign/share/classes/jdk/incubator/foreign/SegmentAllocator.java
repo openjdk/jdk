@@ -362,6 +362,9 @@ public interface SegmentAllocator {
      * @param size the size (in bytes) of the allocation arena.
      * @param scope the scope associated with the segments returned by this allocator.
      * @return a new bounded arena-based allocator
+     * @throws IllegalArgumentException if {@code size <= 0}.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
     static SegmentAllocator arenaAllocator(long size, ResourceScope scope) {
         Objects.requireNonNull(scope);
@@ -397,6 +400,8 @@ public interface SegmentAllocator {
      *
      * @param scope the scope associated with the segments returned by this allocator.
      * @return a new unbounded arena-based allocator
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
     static SegmentAllocator arenaAllocator(ResourceScope scope) {
         Objects.requireNonNull(scope);
@@ -432,7 +437,7 @@ public interface SegmentAllocator {
     SegmentAllocator scoped = (size, align) -> MemorySegment.allocateNative(size, align, scope);
      * }</pre></blockquote>
      *
-     * @param scope the resource scope associated to the segments created by the returned allocator.
+     * @param scope the resource scope associated with the segments created by the returned allocator.
      * @return an allocator which allocates new memory segment bound by the provided resource scope.
      */
     static SegmentAllocator ofScope(ResourceScope scope) {

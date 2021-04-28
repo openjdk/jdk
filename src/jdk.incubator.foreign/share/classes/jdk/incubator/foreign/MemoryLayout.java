@@ -191,7 +191,7 @@ long offset2 = (long) offsetHandle.invokeExact(2L); // 16
  *
  * Layouts can be optionally associated with one or more <em>attributes</em>. A layout attribute forms a <em>name/value</em>
  * pair, where the name is a {@link String} and the value is a {@link Constable}. The most common form of layout attribute
- * is the <em>layout name</em> (see {@link #LAYOUT_NAME}), a custom name that can be associated to memory layouts and that can be referred to when
+ * is the <em>layout name</em> (see {@link #LAYOUT_NAME}), a custom name that can be associated with memory layouts and that can be referred to when
  * constructing <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
  *
  * @apiNote In the future, if the Java language permits, {@link MemoryLayout}
@@ -267,7 +267,7 @@ public interface MemoryLayout extends Constable {
      * }</pre></blockquote>
      *
      * @param name the layout name.
-     * @return a new layout which is the same as this layout, except for the <em>name</em> associated to it.
+     * @return a new layout which is the same as this layout, except for the <em>name</em> associated with it.
      * @see MemoryLayout#name()
      */
     MemoryLayout withName(String name);
@@ -316,7 +316,7 @@ public interface MemoryLayout extends Constable {
      * Creates a new layout which features the desired alignment constraint.
      *
      * @param bitAlignment the layout alignment constraint, expressed in bits.
-     * @return a new layout which is the same as this layout, except for the alignment constraint associated to it.
+     * @return a new layout which is the same as this layout, except for the alignment constraint associated with it.
      * @throws IllegalArgumentException if {@code bitAlignment} is not a power of two, or if it's less than than 8.
      */
     MemoryLayout withBitAlignment(long bitAlignment);

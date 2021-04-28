@@ -54,6 +54,18 @@ import static org.testng.Assert.fail;
 
 public class TestScopedOperations {
 
+    static Path tempPath;
+
+    static {
+        try {
+            File file = File.createTempFile("scopedBuffer", "txt");
+            file.deleteOnExit();
+            tempPath = file.toPath();
+        } catch (IOException ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
+
     @Test(dataProvider = "scopedOperations")
     public void testOpAfterClose(String name, ScopedOperation scopedOperation) {
         ResourceScope scope = ResourceScope.newConfinedScope();
@@ -90,56 +102,69 @@ public class TestScopedOperations {
     static List<ScopedOperation> scopedOperations = new ArrayList<>();
 
     static {
-            // scope operations
-            ScopedOperation.ofScope(scope -> scope.addCloseAction(() -> {}), "ResourceScope::addOnClose");
-            ScopedOperation.ofScope(scope -> {
-                ResourceScope.Handle handle = scope.acquire();
-                scope.release(handle);
-            }, "ResourceScope::lock");
-            // segment operations
-            ScopedOperation.ofSegment(MemorySegment::toByteArray, "MemorySegment::toByteArray");
-            ScopedOperation.ofSegment(MemorySegment::toCharArray, "MemorySegment::toCharArray");
-            ScopedOperation.ofSegment(MemorySegment::toShortArray, "MemorySegment::toShortArray");
-            ScopedOperation.ofSegment(MemorySegment::toIntArray, "MemorySegment::toIntArray");
-            ScopedOperation.ofSegment(MemorySegment::toFloatArray, "MemorySegment::toFloatArray");
-            ScopedOperation.ofSegment(MemorySegment::toLongArray, "MemorySegment::toLongArray");
-            ScopedOperation.ofSegment(MemorySegment::toDoubleArray, "MemorySegment::toDoubleArray");
-            ScopedOperation.ofSegment(MemorySegment::address, "MemorySegment::address");
-            ScopedOperation.ofSegment(s -> MemoryLayout.sequenceLayout(s.byteSize(), MemoryLayouts.JAVA_BYTE), "MemorySegment::spliterator");
-            ScopedOperation.ofSegment(s -> s.copyFrom(s), "MemorySegment::copyFrom");
-            ScopedOperation.ofSegment(s -> s.mismatch(s), "MemorySegment::mismatch");
-            ScopedOperation.ofSegment(s -> s.fill((byte) 0), "MemorySegment::fill");
-            // address operations
-            ScopedOperation.ofAddress(a -> a.toRawLongValue(), "MemoryAddress::toRawLongValue");
-            ScopedOperation.ofAddress(a -> a.asSegment(100, ResourceScope.globalScope()), "MemoryAddress::asSegment");
-            // valist operations
-            ScopedOperation.ofVaList(CLinker.VaList::address, "VaList::address");
-            ScopedOperation.ofVaList(CLinker.VaList::copy, "VaList::copy");
-            ScopedOperation.ofVaList(list -> list.vargAsAddress(MemoryLayouts.ADDRESS), "VaList::vargAsAddress");
-            ScopedOperation.ofVaList(list -> list.vargAsInt(MemoryLayouts.JAVA_INT), "VaList::vargAsInt");
-            ScopedOperation.ofVaList(list -> list.vargAsLong(MemoryLayouts.JAVA_LONG), "VaList::vargAsLong");
-            ScopedOperation.ofVaList(list -> list.vargAsDouble(MemoryLayouts.JAVA_DOUBLE), "VaList::vargAsDouble");
-            ScopedOperation.ofVaList(CLinker.VaList::skip, "VaList::skip");
-            ScopedOperation.ofVaList(list -> list.vargAsSegment(MemoryLayout.structLayout(MemoryLayouts.JAVA_INT), ResourceScope.newImplicitScope()), "VaList::vargAsSegment/1");
-            // allocator operations
-            ScopedOperation.ofAllocator(a -> a.allocate(1), "NativeAllocator::allocate/size");
-            ScopedOperation.ofAllocator(a -> a.allocate(1, 1), "NativeAllocator::allocate/size/align");
-            ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_BYTE), "NativeAllocator::allocate/layout");
-            ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_BYTE, (byte)0), "NativeAllocator::allocate/byte");
-            ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_CHAR, (char)0), "NativeAllocator::allocate/char");
-            ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_SHORT, (short)0), "NativeAllocator::allocate/short");
-            ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_INT, 0), "NativeAllocator::allocate/int");
-            ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_FLOAT, 0f), "NativeAllocator::allocate/float");
-            ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_LONG, 0L), "NativeAllocator::allocate/long");
-            ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_DOUBLE, 0d), "NativeAllocator::allocate/double");
-            ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_BYTE, 1L), "NativeAllocator::allocateArray/size");
-            ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_BYTE, new byte[] { 0 }), "NativeAllocator::allocateArray/byte");
-            ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_CHAR, new char[] { 0 }), "NativeAllocator::allocateArray/char");
-            ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_SHORT, new short[] { 0 }), "NativeAllocator::allocateArray/short");
-            ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_INT, new int[] { 0 }), "NativeAllocator::allocateArray/int");
-            ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_FLOAT, new float[] { 0 }), "NativeAllocator::allocateArray/float");
-            ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_LONG, new long[] { 0 }), "NativeAllocator::allocateArray/long");
-            ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_DOUBLE, new double[] { 0 }), "NativeAllocator::allocateArray/double");
+        // scope operations
+        ScopedOperation.ofScope(scope -> scope.addCloseAction(() -> {
+        }), "ResourceScope::addOnClose");
+        ScopedOperation.ofScope(scope -> {
+            ResourceScope.Handle handle = scope.acquire();
+            scope.release(handle);
+        }, "ResourceScope::lock");
+        ScopedOperation.ofScope(scope -> MemorySegment.allocateNative(100, scope), "MemorySegment::allocateNative");
+        ScopedOperation.ofScope(scope -> {
+            try {
+                MemorySegment.mapFile(tempPath, 0, 10, FileChannel.MapMode.READ_WRITE, scope);
+            } catch (IOException ex) {
+                fail();
+            }
+        }, "MemorySegment::mapFromFile");
+        ScopedOperation.ofScope(scope -> CLinker.VaList.make(b -> {}, scope), "VaList::make");
+        ScopedOperation.ofScope(scope -> CLinker.VaList.ofAddress(MemoryAddress.ofLong(42), scope), "VaList::make");
+        ScopedOperation.ofScope(scope -> CLinker.toCString("Hello", scope), "CLinker::toCString");
+        ScopedOperation.ofScope(SegmentAllocator::arenaAllocator, "SegmentAllocator::arenaAllocator");
+        // segment operations
+        ScopedOperation.ofSegment(MemorySegment::toByteArray, "MemorySegment::toByteArray");
+        ScopedOperation.ofSegment(MemorySegment::toCharArray, "MemorySegment::toCharArray");
+        ScopedOperation.ofSegment(MemorySegment::toShortArray, "MemorySegment::toShortArray");
+        ScopedOperation.ofSegment(MemorySegment::toIntArray, "MemorySegment::toIntArray");
+        ScopedOperation.ofSegment(MemorySegment::toFloatArray, "MemorySegment::toFloatArray");
+        ScopedOperation.ofSegment(MemorySegment::toLongArray, "MemorySegment::toLongArray");
+        ScopedOperation.ofSegment(MemorySegment::toDoubleArray, "MemorySegment::toDoubleArray");
+        ScopedOperation.ofSegment(MemorySegment::address, "MemorySegment::address");
+        ScopedOperation.ofSegment(s -> MemoryLayout.sequenceLayout(s.byteSize(), MemoryLayouts.JAVA_BYTE), "MemorySegment::spliterator");
+        ScopedOperation.ofSegment(s -> s.copyFrom(s), "MemorySegment::copyFrom");
+        ScopedOperation.ofSegment(s -> s.mismatch(s), "MemorySegment::mismatch");
+        ScopedOperation.ofSegment(s -> s.fill((byte) 0), "MemorySegment::fill");
+        // address operations
+        ScopedOperation.ofAddress(a -> a.toRawLongValue(), "MemoryAddress::toRawLongValue");
+        ScopedOperation.ofAddress(a -> a.asSegment(100, ResourceScope.globalScope()), "MemoryAddress::asSegment");
+        // valist operations
+        ScopedOperation.ofVaList(CLinker.VaList::address, "VaList::address");
+        ScopedOperation.ofVaList(CLinker.VaList::copy, "VaList::copy");
+        ScopedOperation.ofVaList(list -> list.vargAsAddress(MemoryLayouts.ADDRESS), "VaList::vargAsAddress");
+        ScopedOperation.ofVaList(list -> list.vargAsInt(MemoryLayouts.JAVA_INT), "VaList::vargAsInt");
+        ScopedOperation.ofVaList(list -> list.vargAsLong(MemoryLayouts.JAVA_LONG), "VaList::vargAsLong");
+        ScopedOperation.ofVaList(list -> list.vargAsDouble(MemoryLayouts.JAVA_DOUBLE), "VaList::vargAsDouble");
+        ScopedOperation.ofVaList(CLinker.VaList::skip, "VaList::skip");
+        ScopedOperation.ofVaList(list -> list.vargAsSegment(MemoryLayout.structLayout(MemoryLayouts.JAVA_INT), ResourceScope.newImplicitScope()), "VaList::vargAsSegment/1");
+        // allocator operations
+        ScopedOperation.ofAllocator(a -> a.allocate(1), "NativeAllocator::allocate/size");
+        ScopedOperation.ofAllocator(a -> a.allocate(1, 1), "NativeAllocator::allocate/size/align");
+        ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_BYTE), "NativeAllocator::allocate/layout");
+        ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_BYTE, (byte) 0), "NativeAllocator::allocate/byte");
+        ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_CHAR, (char) 0), "NativeAllocator::allocate/char");
+        ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_SHORT, (short) 0), "NativeAllocator::allocate/short");
+        ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_INT, 0), "NativeAllocator::allocate/int");
+        ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_FLOAT, 0f), "NativeAllocator::allocate/float");
+        ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_LONG, 0L), "NativeAllocator::allocate/long");
+        ScopedOperation.ofAllocator(a -> a.allocate(MemoryLayouts.JAVA_DOUBLE, 0d), "NativeAllocator::allocate/double");
+        ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_BYTE, 1L), "NativeAllocator::allocateArray/size");
+        ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_BYTE, new byte[]{0}), "NativeAllocator::allocateArray/byte");
+        ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_CHAR, new char[]{0}), "NativeAllocator::allocateArray/char");
+        ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_SHORT, new short[]{0}), "NativeAllocator::allocateArray/short");
+        ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_INT, new int[]{0}), "NativeAllocator::allocateArray/int");
+        ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_FLOAT, new float[]{0}), "NativeAllocator::allocateArray/float");
+        ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_LONG, new long[]{0}), "NativeAllocator::allocateArray/long");
+        ScopedOperation.ofAllocator(a -> a.allocateArray(MemoryLayouts.JAVA_DOUBLE, new double[]{0}), "NativeAllocator::allocateArray/double");
     };
 
     @DataProvider(name = "scopedOperations")

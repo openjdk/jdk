@@ -98,7 +98,7 @@ import java.util.stream.Stream;
  *
  * <h2>Lifecycle and confinement</h2>
  *
- * Memory segments are associated to a resource scope (see {@link ResourceScope}), which can be accessed using
+ * Memory segments are associated with a resource scope (see {@link ResourceScope}), which can be accessed using
  * the {@link #scope()} method. As for all resources associated with a resource scope, a segment cannot be
  * accessed after its corresponding scope has been closed. For instance, the following code will result in an
  * exception:
@@ -109,9 +109,9 @@ try (ResourceScope scope = ResourceScope.newConfinedScope()) {
 }
 MemoryAccess.getLong(segment); // already closed!
  * }</pre></blockquote>
- * Additionally, access to a memory segment in subject to the thread-confinement checks enforced by the owning scope; that is,
+ * Additionally, access to a memory segment is subject to the thread-confinement checks enforced by the owning scope; that is,
  * if the segment is associated with a shared scope, it can be accessed by multiple threads; if it is associated with a confined
- * scope, it can only be accessed by the thread which own the scope.
+ * scope, it can only be accessed by the thread which owns the scope.
  * <p>
  * Heap and buffer segments are always associated with a <em>global</em>, shared scope. This scope cannot be closed,
  * and can be considered as <em>always alive</em>.
@@ -132,7 +132,7 @@ MemorySegment roSegment = segment.asReadOnly();
  * To allow for interoperability with existing code, a byte buffer view can be obtained from a memory segment
  * (see {@link #asByteBuffer()}). This can be useful, for instance, for those clients that want to keep using the
  * {@link ByteBuffer} API, but need to operate on large memory segments. Byte buffers obtained in such a way support
- * the same spatial and temporal access restrictions associated to the memory segment from which they originated.
+ * the same spatial and temporal access restrictions associated with the memory segment from which they originated.
  *
  * <h2>Stream support</h2>
  *
@@ -674,7 +674,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new confined native memory segment that models a newly allocated block of off-heap memory with given layout
-     * and resource scope. A client is responsible make sure that the resource scope associated to the returned segment is closed
+     * and resource scope. A client is responsible make sure that the resource scope associated with the returned segment is closed
      * when the segment is no longer in use. Failure to do so will result in off-heap memory leaks.
      * <p>
      * This is equivalent to the following code:
@@ -688,6 +688,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param scope the segment scope.
      * @return a new native memory segment.
      * @throws IllegalArgumentException if the specified layout has illegal size or alignment constraint.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
     static MemorySegment allocateNative(MemoryLayout layout, ResourceScope scope) {
         Objects.requireNonNull(scope);
@@ -697,7 +699,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new confined native memory segment that models a newly allocated block of off-heap memory with given size (in bytes)
-     * and resource scope. A client is responsible make sure that the resource scope associated to the returned segment is closed
+     * and resource scope. A client is responsible make sure that the resource scope associated with the returned segment is closed
      * when the segment is no longer in use. Failure to do so will result in off-heap memory leaks.
      * <p>
      * This is equivalent to the following code:
@@ -711,6 +713,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param scope the segment scope.
      * @return a new native memory segment.
      * @throws IllegalArgumentException if {@code bytesSize <= 0}.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
     static MemorySegment allocateNative(long bytesSize, ResourceScope scope) {
         return allocateNative(bytesSize, 1, scope);
@@ -719,7 +723,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
     /**
      * Creates a new confined native memory segment that models a newly allocated block of off-heap memory with given size
      * (in bytes), alignment constraint (in bytes) and resource scope. A client is responsible make sure that the resource
-     * scope associated to the returned segment is closed when the segment is no longer in use.
+     * scope associated with the returned segment is closed when the segment is no longer in use.
      * Failure to do so will result in off-heap memory leaks.
      * <p>
      * The block of off-heap memory associated with the returned native memory segment is initialized to zero.
@@ -730,6 +734,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a new native memory segment.
      * @throws IllegalArgumentException if {@code bytesSize <= 0}, {@code alignmentBytes <= 0}, or if {@code alignmentBytes}
      * is not a power of 2.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
     static MemorySegment allocateNative(long bytesSize, long alignmentBytes, ResourceScope scope) {
         Objects.requireNonNull(scope);
@@ -777,6 +783,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a new confined mapped memory segment.
      * @throws IllegalArgumentException if {@code bytesOffset < 0}, {@code bytesSize < 0}, or if {@code path} is not associated
      * with the default file system.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      * @throws UnsupportedOperationException if an unsupported map mode is specified.
      * @throws IOException if the specified path does not point to an existing file, or if some other I/O error occurs.
      * @throws  SecurityException If a security manager is installed and it denies an unspecified permission required by the implementation.

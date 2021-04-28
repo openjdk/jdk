@@ -44,7 +44,7 @@ import java.util.Objects;
  * (see {@link MemoryHandles#varHandle(Class, ByteOrder)},
  * {@link MemoryHandles#varHandle(Class, long, ByteOrder)}). This determines the variable type
  * (all primitive types but {@code void} and {@code boolean} are supported), as well as the alignment constraint and the
- * byte order associated to a memory access var handle. The resulting memory access var handle can then be combined in various ways
+ * byte order associated with a memory access var handle. The resulting memory access var handle can then be combined in various ways
  * to emulate different addressing modes. The var handles created by this class feature a <em>mandatory</em> coordinate type
  * (of type {@link MemorySegment}), and one {@code long} coordinate type, which represents the offset, in bytes, relative
  * to the segment, at which dereference should occur.

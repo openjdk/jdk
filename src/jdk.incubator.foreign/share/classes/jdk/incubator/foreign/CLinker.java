@@ -213,6 +213,8 @@ public interface CLinker {
      * @param scope the upcall stub scope.
      * @return the native stub segment.
      * @throws IllegalArgumentException if the target's method type and the function descriptor mismatch.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
     MemoryAddress upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope);
 
@@ -297,6 +299,8 @@ public interface CLinker {
      * @param str the Java string to be converted into a C string.
      * @param scope the resource scope to be associated with the returned segment.
      * @return a new native memory segment containing the converted C string.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
     static MemorySegment toCString(String str, ResourceScope scope) {
         return toCString(str, SegmentAllocator.ofScope(scope));
@@ -336,6 +340,8 @@ public interface CLinker {
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
      * @param scope the resource scope to be associated with the returned segment.
      * @return a new native memory segment containing the converted C string.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
     static MemorySegment toCString(String str, Charset charset, ResourceScope scope) {
         return toCString(str, charset, SegmentAllocator.ofScope(scope));
@@ -573,6 +579,8 @@ public interface CLinker {
          * @throws IllegalStateException if the resource scope associated with this instance has been closed
          * (see {@link #scope()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code MemorySegment}
+         * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+         * than the thread owning {@code scope}.
          */
         MemorySegment vargAsSegment(MemoryLayout layout, ResourceScope scope);
 
@@ -649,6 +657,8 @@ public interface CLinker {
          * @param address a memory address pointing to an existing C {@code va_list}.
          * @param scope the resource scope to be associated with the returned {@code VaList} instance.
          * @return a new {@code VaList} instance backed by the C {@code va_list} at {@code address}.
+         * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+         * than the thread owning {@code scope}.
          */
         @CallerSensitive
         static VaList ofAddress(MemoryAddress address, ResourceScope scope) {
@@ -672,6 +682,8 @@ public interface CLinker {
          *                of the underlying C {@code va_list}.
          * @param scope the scope to be used for the valist allocation.
          * @return a new {@code VaList} instance backed by a fresh C {@code va_list}.
+         * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+         * than the thread owning {@code scope}.
          */
         static VaList make(Consumer<Builder> actions, ResourceScope scope) {
             Objects.requireNonNull(actions);
