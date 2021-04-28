@@ -29,6 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.flagless
  * @requires vm.rtm.cpu & !(vm.flavor == "server" & !vm.emulatedClient)
  * @run driver compiler.rtm.cli.TestUseRTMLockingOptionOnUnsupportedVM
  */
