@@ -49,6 +49,7 @@ public class TestStressCM {
             "-XX:StressSeed=" + stressSeed, className, "10"};
         ProcessBuilder pb  = ProcessTools.createJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
         // Extract the trace of our method (the last one after those of all
         // mandatory stubs such as _new_instance_Java, etc.).
         String [] traces = out.getStdout().split("\\R");
