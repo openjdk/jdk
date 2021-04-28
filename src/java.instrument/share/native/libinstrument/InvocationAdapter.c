@@ -949,6 +949,7 @@ appendBootClassPath( JPLISAgent* agent,
 
             resolved = resolve(parent, path);
             jvmtierr = (*jvmtienv)->AddToBootstrapClassLoaderSearch(jvmtienv, resolved);
+            free(resolved);
         }
 
         /* print warning if boot class path not updated */
