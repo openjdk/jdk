@@ -146,8 +146,7 @@ public abstract class Filter {
      * Returns a pre-processing {@code Filter} with the given description and
      * operation.
      *
-     * <p>The {@link #description() description} describes the returned filter.
-     * The {@link Consumer operation} is the effective implementation of the
+     * <p>The {@link Consumer operation} is the effective implementation of the
      * filter. It is executed for each {@code HttpExchange} before invoking
      * either the next filter in the chain or the exchange handler (if this is
      * the final filter in the chain).
@@ -161,14 +160,14 @@ public abstract class Filter {
      * request or {@linkplain HttpExchange#sendResponseHeaders(int, long) send response headers},
      * since this is commonly done by the exchange handler.
      *
-     * <p> Example of adding the Foo response header to all responses:
+     * <p> Example of adding the {@code "Foo"} response header to all responses:
      * <pre>{@code
      *     var filter = Filter.beforeHandler("Add response header Foo",
      *                 e -> e.getResponseHeaders().set("Foo", "Bar"));
      *     httpContext.getFilters().add(filter);
      * }</pre>
      *
-     * @param description the description of the returned filter
+     * @param description the string to be returned from {@link #description()}
      * @param operation the operation of the returned filter
      * @return a filter
      * @throws NullPointerException if any argument is null
@@ -195,8 +194,7 @@ public abstract class Filter {
      * Returns a post-processing {@code Filter} with the given description and
      * operation.
      *
-     * <p>The {@link #description() description} describes the returned filter.
-     * The {@link Consumer operation} is the effective implementation of the
+     * <p>The {@link Consumer operation} is the effective implementation of the
      * filter. It is executed for each {@code HttpExchange} after invoking
      * either the next filter in the chain or the exchange handler (if this
      * filter is the final filter in the chain).
@@ -208,8 +206,8 @@ public abstract class Filter {
      * subsequent filters in the chain and the exchange handler have been
      * executed. The filter {@code operation} is not expected to handle the
      * exchange or {@linkplain HttpExchange#sendResponseHeaders(int, long) send the response headers}.
-     * Doing so is likely to fail, since this is commonly done by the exchange
-     * handler.
+     * Doing so is likely to fail, since the exchange has commonly been handled
+     * before the operation is invoked.
      *
      * <p> Example of adding a filter that logs the response code of all exchanges:
      * <pre>{@code
@@ -218,8 +216,9 @@ public abstract class Filter {
      * }</pre>
      *
      * <p> Example of adding a sequence of afterHandler filters to a context:<br>
-     * The order in which the filters are invoked is reverse to the order in
-     * which they are added to the context's filter-list.
+     * The order in which the filter operations are invoked is reverse to the
+     * order in which the filters are added to the context's filter-list.
+     *
      * <pre>{@code
      *     var a1Set = Filter.afterHandler("Set a1", e -> e.setAttribute("a1", "some value"));
      *     var a1Get = Filter.afterHandler("Get a1", e -> doSomething(e.getAttribute("a1")));
@@ -228,7 +227,7 @@ public abstract class Filter {
      * <p>The operation of {@code a1Get} will be invoked after the operation of
      * {@code a1Set} because {@code a1Get} was added before {@code a1Set}.
      *
-     * @param description the description of the returned filter
+     * @param description the string to be returned from {@link #description()}
      * @param operation the operation of the returned filter
      * @return a filter
      * @throws NullPointerException if any argument is null

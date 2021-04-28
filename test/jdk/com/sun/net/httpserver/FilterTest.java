@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary  Tests for Filter static factory methods
+ * @summary Tests for Filter static factory methods
  * @run testng/othervm FilterTest
  */
 
@@ -71,7 +71,7 @@ public class FilterTest {
 
     @Test
     public void testNull() {
-        expectThrows(NPE, () -> Filter.beforeHandler(null, (HttpExchange e) -> e.getResponseHeaders().set("X-Foo", "Bar")));
+        expectThrows(NPE, () -> Filter.beforeHandler(null, e -> e.getResponseHeaders().set("X-Foo", "Bar")));
         expectThrows(NPE, () -> Filter.beforeHandler("Some description", null));
         expectThrows(NPE, () -> Filter.afterHandler(null, HttpExchange::getResponseCode));
         expectThrows(NPE, () -> Filter.afterHandler("Some description", null));
@@ -90,7 +90,7 @@ public class FilterTest {
     public void testBeforeHandler() throws Exception {
         var handler = new EchoHandler();
         var filter = Filter.beforeHandler("Add x-foo response header",
-                (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
+                e -> e.getResponseHeaders().set("x-foo", "bar"));
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
         server.createContext("/", handler).getFilters().add(filter);
         server.start();
@@ -110,9 +110,9 @@ public class FilterTest {
     public void testBeforeHandlerRepeated() throws Exception {
         var handler = new EchoHandler();
         var filter1 = Filter.beforeHandler("Add x-foo response header",
-                (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
+                e -> e.getResponseHeaders().set("x-foo", "bar"));
         var filter2 = Filter.beforeHandler("Update x-foo response header",
-                (var e) -> e.getResponseHeaders().set("x-foo", "barbar"));
+                e -> e.getResponseHeaders().set("x-foo", "barbar"));
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(filter1);
@@ -134,7 +134,7 @@ public class FilterTest {
     public void testBeforeHandlerSendResponse() throws Exception {
         var handler = new NoResponseHandler();
         var filter = Filter.beforeHandler("Add x-foo response header and send response",
-                (var e) -> {
+                e -> {
                     try (InputStream is = e.getRequestBody();
                          OutputStream os = e.getResponseBody()) {
                         is.readAllBytes();
@@ -167,7 +167,7 @@ public class FilterTest {
         var handler = new EchoHandler();
         var respCode = new AtomicInteger();
         var filter = Filter.afterHandler("Log response code",
-                (var e) -> respCode.set(e.getResponseCode()));
+                e -> respCode.set(e.getResponseCode()));
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         server.createContext("/", handler).getFilters().add(filter);
         server.start();
@@ -188,9 +188,9 @@ public class FilterTest {
         var attr = new AtomicReference<String>();
         final var value = "some value";
         var filter1 = Filter.afterHandler("Set attribute",
-                (var e) -> e.setAttribute("test-attr", value));
+                e -> e.setAttribute("test-attr", value));
         var filter2 = Filter.afterHandler("Read attribute",
-                (var e) -> attr.set((String) e.getAttribute("test-attr")));
+                e -> attr.set((String) e.getAttribute("test-attr")));
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(filter2);
@@ -212,7 +212,7 @@ public class FilterTest {
         var handler = new NoResponseHandler();
         var respCode = new AtomicInteger();
         var filter = Filter.afterHandler("Log response code and send response",
-                (var e) -> {
+                e -> {
                     try (InputStream is = e.getRequestBody();
                          OutputStream os = e.getResponseBody()) {
                         is.readAllBytes();
@@ -244,9 +244,9 @@ public class FilterTest {
         var handler = new EchoHandler();
         var respCode = new AtomicInteger();
         var beforeFilter = Filter.beforeHandler("Add x-foo response header",
-                (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
+                e -> e.getResponseHeaders().set("x-foo", "bar"));
         var afterFilter = Filter.afterHandler("Log response code",
-                (var e) -> respCode.set(e.getResponseCode()));
+                e -> respCode.set(e.getResponseCode()));
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(beforeFilter);
