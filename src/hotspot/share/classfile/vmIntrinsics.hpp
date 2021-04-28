@@ -464,9 +464,6 @@ class methodHandle;
   do_intrinsic(_ghash_processBlocks, com_sun_crypto_provider_ghash, processBlocks_name, ghash_processBlocks_signature, F_S) \
    do_name(processBlocks_name, "processBlocks")                                                                         \
    do_signature(ghash_processBlocks_signature, "([BII[J[J)V")                                                           \
-  do_intrinsic(_ghash_processBlocksBB, com_sun_crypto_provider_ghash, processBlocksBB_name, ghash_processBlocksBB_signature, F_S) \
-   do_name(processBlocksBB_name, "processBlocksDirect")                                                                         \
-   do_signature(ghash_processBlocksBB_signature, "(JII[J[J)V")                                                           \
                                                                                                                         \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \

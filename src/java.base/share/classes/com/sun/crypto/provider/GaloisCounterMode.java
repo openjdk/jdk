@@ -574,7 +574,31 @@ abstract class GaloisCounterMode extends CipherSpi {
             gctrPAndC = new GCTR(blockCipher, j0Plus1);
             ghashAllToS = new GHASH(subkeyH);
         }
+/*
+        GCMEngine(GCMEngine e) {
+            preCounterBlock = e.preCounterBlock.clone();
+            processed = e.processed;
+            blockSize = e.blockSize;
+            aadBufferSave =
+                ((aadBuffer == null || aadBuffer.size() == 0)?
+                    null : aadBuffer.toByteArray());
+            if (ibuffer != null)  {
+                ibuffer.writeBytes(e.ibuffer.toByteArray());
+            }
 
+            // originalDst and originalOut must be the same value as they are
+            // references back to the original variables.
+            if (originalDst != null) {
+                originalDst = e.originalDst;
+            }
+            if (originalOut != null) {
+                originalOut = e.originalOut;
+                originalOutOfs = e.originalOutOfs;
+            }
+            gctrPAndC.clone();
+            ghashAllToS.clone();
+        }
+*/
         /**
          *
          * @param inLen Contains the length of the input data and buffered data.

@@ -215,7 +215,6 @@ class StubRoutines: AllStatic {
   static address _electronicCodeBook_decryptAESCrypt;
   static address _counterMode_AESCrypt;
   static address _ghash_processBlocks;
-  static address _ghash_processBlocksBB;
   static address _base64_encodeBlock;
   static address _base64_decodeBlock;
 

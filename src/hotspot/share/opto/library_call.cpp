@@ -577,8 +577,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_ghash_processBlocks:
     return inline_ghash_processBlocks();
-  case vmIntrinsics::_ghash_processBlocksBB:
-    return inline_ghash_processBlocksBB();
   case vmIntrinsics::_base64_encodeBlock:
     return inline_base64_encodeBlock();
   case vmIntrinsics::_base64_decodeBlock:
@@ -6195,43 +6193,6 @@ bool LibraryCallKit::inline_ghash_processBlocks() {
   assert(subkeyH_start, "subkeyH is NULL");
   Node* data_start  = array_element_address(data, offset, T_BYTE);
   assert(data_start, "data is NULL");
-
-  Node* ghash = make_runtime_call(RC_LEAF|RC_NO_FP,
-                                  OptoRuntime::ghash_processBlocks_Type(),
-                                  stubAddr, stubName, TypePtr::BOTTOM,
-                                  state_start, subkeyH_start, data_start, len);
-  return true;
-}
-
-//------------------------------inline_ghash_processBlocksBB
-bool LibraryCallKit::inline_ghash_processBlocksBB() {
-  address stubAddr;
-  const char *stubName;
-  assert(UseGHASHIntrinsics, "need GHASH intrinsics support");
-
-  stubAddr = StubRoutines::ghash_processBlocks();
-  stubName = "ghash_processBlocks";
-
-  Node* ptr            = argument(0);
-  Node* offset         = argument(2);
-  Node* len            = argument(3);
-  Node* state          = argument(4);
-  Node* subkeyH        = argument(5);
-
-  ptr = ConvL2X(ptr);  // adjust Java long to machine word
-  Node* base = _gvn.transform(new CastX2PNode(ptr));
-  offset = ConvI2X(offset);
-
-  // 'src_start' points to src array + scaled offset
-  Node* data_start = basic_plus_adr(top(), base, offset);
-
-  state = must_be_not_null(state, true);
-  subkeyH = must_be_not_null(subkeyH, true);
-
-  Node* state_start  = array_element_address(state, intcon(0), T_LONG);
-  assert(state_start, "state is NULL");
-  Node* subkeyH_start  = array_element_address(subkeyH, intcon(0), T_LONG);
-  assert(subkeyH_start, "subkeyH is NULL");
 
   Node* ghash = make_runtime_call(RC_LEAF|RC_NO_FP,
                                   OptoRuntime::ghash_processBlocks_Type(),
