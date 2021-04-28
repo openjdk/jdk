@@ -342,7 +342,6 @@ public class GCMBufferTest implements Cloneable {
             inOfs + "  outOfs " + outOfs + "  in-place: same");
             cryptoSameBuffer(false, data, input, output);
         }
-        System.err.flush();
     }
 
     /**
