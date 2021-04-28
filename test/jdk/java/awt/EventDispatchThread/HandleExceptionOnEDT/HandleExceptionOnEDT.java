@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,118 +43,126 @@ public class HandleExceptionOnEDT
 
     private static volatile boolean exceptionHandled = false;
     private static volatile boolean mousePressed = false;
+    private static Frame f = null;
+    private static Dialog d = null;
 
     public static void main(String[] args)
     {
-        final Thread.UncaughtExceptionHandler eh = new Thread.UncaughtExceptionHandler()
-        {
-            @Override
-            public void uncaughtException(Thread t, Throwable e)
+        try {
+            final Thread.UncaughtExceptionHandler eh = new Thread.UncaughtExceptionHandler()
             {
-                if (e.getMessage().equals(EXCEPTION_MESSAGE))
+                @Override
+                public void uncaughtException(Thread t, Throwable e)
                 {
-                    exceptionHandled = true;
+                    if (e.getMessage().equals(EXCEPTION_MESSAGE))
+                    {
+                        exceptionHandled = true;
+                    }
                 }
-            }
-        };
+            };
 
-        Frame f = new Frame("F");
-        f.setBounds(100, 100, 400, 300);
-        // set exception handler for EDT
-        f.addWindowListener(new WindowAdapter()
-        {
-            @Override
-            public void windowOpened(WindowEvent we)
+            f = new Frame("F");
+            f.setBounds(100, 100, 400, 300);
+            // set exception handler for EDT
+            f.addWindowListener(new WindowAdapter()
             {
-                Thread edt = Thread.currentThread();
-                edt.setUncaughtExceptionHandler(eh);
-            }
-        });
-        f.setVisible(true);
+                @Override
+                public void windowOpened(WindowEvent we)
+                {
+                    Thread edt = Thread.currentThread();
+                    edt.setUncaughtExceptionHandler(eh);
+                }
+            });
+            f.setVisible(true);
 
-        Robot r = Util.createRobot();
-        Util.waitForIdle(r);
+            Robot r = Util.createRobot();
+            Util.waitForIdle(r);
+            r.delay(1000);
 
-        // check exception without modal dialog
-        MouseListener exceptionListener = new MouseAdapter()
-        {
-            @Override
-            public void mousePressed(MouseEvent me)
+            // check exception without modal dialog
+            MouseListener exceptionListener = new MouseAdapter()
             {
-                throw new RuntimeException(EXCEPTION_MESSAGE);
-            }
-        };
-        f.addMouseListener(exceptionListener);
+                @Override
+                public void mousePressed(MouseEvent me)
+                {
+                    throw new RuntimeException(EXCEPTION_MESSAGE);
+                }
+            };
+            f.addMouseListener(exceptionListener);
 
-        exceptionHandled = false;
-        Point fp = f.getLocationOnScreen();
-        r.mouseMove(fp.x + f.getWidth() / 2, fp.y + f.getHeight() / 2);
-        Util.waitForIdle(r);
-        r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        Util.waitForIdle(r);
-        r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        f.removeMouseListener(exceptionListener);
+            exceptionHandled = false;
+            Point fp = f.getLocationOnScreen();
+            r.mouseMove(fp.x + f.getWidth() / 2, fp.y + f.getHeight() / 2);
+            Util.waitForIdle(r);
+            r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            Util.waitForIdle(r);
+            r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            f.removeMouseListener(exceptionListener);
 
-        if (!exceptionHandled)
-        {
-            throw new RuntimeException("Test FAILED: exception is not handled for frame");
-        }
-
-        // check exception with modal dialog
-        final Dialog d = new Dialog(f, "D", true);
-        d.setBounds(fp.x + 100, fp.y + 100, 400, 300);
-        d.addMouseListener(exceptionListener);
-        EventQueue.invokeLater(new Runnable()
-        {
-            @Override
-            public void run()
+            if (!exceptionHandled)
             {
-                d.setVisible(true);
+                throw new RuntimeException("Test FAILED: exception is not handled for frame");
             }
-        });
-        Util.waitForIdle(r);
 
-        exceptionHandled = false;
-        Point dp = d.getLocationOnScreen();
-        r.mouseMove(dp.x + d.getWidth() / 2, dp.y + d.getHeight() / 2);
-        Util.waitForIdle(r);
-        r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        Util.waitForIdle(r);
-        r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        d.removeMouseListener(exceptionListener);
-
-        if (!exceptionHandled)
-        {
-            throw new RuntimeException("Test FAILED: exception is not handled for modal dialog");
-        }
-
-        // check the dialog is still modal
-        MouseListener pressedListener = new MouseAdapter()
-        {
-            @Override
-            public void mousePressed(MouseEvent me)
+            // check exception with modal dialog
+            d = new Dialog(f, "D", true);
+            d.setBounds(fp.x + 100, fp.y + 100, 400, 300);
+            d.addMouseListener(exceptionListener);
+            EventQueue.invokeLater(new Runnable()
             {
-                mousePressed = true;
+                @Override
+                public void run()
+                {
+                    d.setVisible(true);
+                }
+            });
+            Util.waitForIdle(r);
+            r.delay(1000);
+
+            exceptionHandled = false;
+            Point dp = d.getLocationOnScreen();
+            r.mouseMove(dp.x + d.getWidth() / 2, dp.y + d.getHeight() / 2);
+            Util.waitForIdle(r);
+            r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            Util.waitForIdle(r);
+            r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            d.removeMouseListener(exceptionListener);
+
+            if (!exceptionHandled)
+            {
+                throw new RuntimeException("Test FAILED: exception is not handled for modal dialog");
             }
-        };
-        f.addMouseListener(pressedListener);
 
-        mousePressed = false;
-        r.mouseMove(fp.x + 50, fp.y + 50);
-        Util.waitForIdle(r);
-        r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        Util.waitForIdle(r);
-        r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        Util.waitForIdle(r);
-        f.removeMouseListener(pressedListener);
+            // check the dialog is still modal
+            MouseListener pressedListener = new MouseAdapter()
+            {
+                @Override
+                public void mousePressed(MouseEvent me)
+                {
+                    mousePressed = true;
+                }
+            };
+            f.addMouseListener(pressedListener);
 
-        if (mousePressed)
-        {
-            throw new RuntimeException("Test FAILED: modal dialog is not modal or visible after exception");
-        }
+            mousePressed = false;
+            r.mouseMove(fp.x + 50, fp.y + 50);
+            Util.waitForIdle(r);
+            r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            Util.waitForIdle(r);
+            r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            Util.waitForIdle(r);
+            f.removeMouseListener(pressedListener);
 
-        // test is passed
-        d.dispose();
-        f.dispose();
+            if (mousePressed)
+            {
+                throw new RuntimeException("Test FAILED: modal dialog is not modal or visible after exception");
+            }
+        } finally {
+            // dispose frame and dialog
+	    if (f != null && d != null) {
+                d.dispose();
+                f.dispose();
+	    }
+	}
     }
 }
