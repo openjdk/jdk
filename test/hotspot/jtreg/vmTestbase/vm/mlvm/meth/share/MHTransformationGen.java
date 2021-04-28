@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
+import jdk.test.lib.Platform;
+
 import nsk.share.test.LazyIntArrayToString;
 import nsk.share.test.TestUtils;
 import vm.mlvm.meth.share.transform.v2.MHArrayEnvelopeTFPair;
@@ -74,8 +76,8 @@ public class MHTransformationGen {
     private static final Optional<MemoryPoolMXBean> NON_PROFILED_NMETHODS_POOL ;
 
     // Limit numbers are arbitrary, feel free to change if arguably necessary
-    private static final int NON_SEGMENTED_CACHE_ALLOWANCE = 10_000_000;
-    private static final int SEGMENTED_CACHE_ALLOWANCE = 10_000_000;
+    private static final int NON_SEGMENTED_CACHE_ALLOWANCE = Platform.isComp() ? 10_000_000 : 5_000_000;
+    private static final int SEGMENTED_CACHE_ALLOWANCE = Platform.isComp() ? 10_000_000 : 5_000_000;
 
     static {
         var pools = ManagementFactory.getMemoryPoolMXBeans();
