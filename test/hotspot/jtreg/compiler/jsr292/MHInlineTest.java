@@ -25,6 +25,8 @@
  * @test
  * @bug 8062280
  * @summary C2: inlining failure due to access checks being too strict
+ *
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *
@@ -50,7 +52,7 @@ public class MHInlineTest {
                 "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-XX:CompileCommand=dontinline,compiler.jsr292.MHInlineTest::test*",
-                    Launcher.class.getName());
+                 Launcher.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 

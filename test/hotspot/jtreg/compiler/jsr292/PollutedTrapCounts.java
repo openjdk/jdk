@@ -24,9 +24,11 @@
 /**
  * @test
  * @bug 8074551
+ *
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @build jdk.test.lib.* jdk.test.lib.process.*
+ *
  * @run driver compiler.jsr292.PollutedTrapCounts
  */
 
@@ -46,7 +48,7 @@ public class PollutedTrapCounts {
                 "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:PerBytecodeRecompilationCutoff=10", "-XX:PerMethodRecompilationCutoff=10",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
-                    Test.class.getName());
+                Test.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
