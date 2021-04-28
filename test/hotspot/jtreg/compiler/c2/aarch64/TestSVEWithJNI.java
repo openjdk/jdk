@@ -29,8 +29,9 @@
  * @requires os.arch == "aarch64" & vm.compiler2.enabled & os.family == "linux"
  * @summary Verify VM SVE checking behavior
  * @library /test/lib
- * @run main/othervm/native compiler.c2.aarch64.TestSVEWithJNI
+ * @requires vm.flagless
  *
+ * @run main/othervm/native compiler.c2.aarch64.TestSVEWithJNI
  */
 
 package compiler.c2.aarch64;
