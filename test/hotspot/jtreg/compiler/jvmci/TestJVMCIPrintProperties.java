@@ -25,7 +25,8 @@
  * @test TestBasicLogOutput
  * @bug 8203370
  * @summary Ensure -XX:-JVMCIPrintProperties can be enabled and successfully prints expected output to stdout.
- * @requires vm.jvmci & !vm.graal.enabled & vm.compMode == "Xmixed"
+ * @requires vm.flagless
+ * @requires vm.jvmci
  * @library /test/lib
  * @run driver TestJVMCIPrintProperties
  */
