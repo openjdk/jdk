@@ -146,28 +146,26 @@ public abstract class Filter {
      * Returns a pre-processing {@code Filter} with the given description and
      * operation.
      *
-     * <p>The {@code description} string describes the returned filter. The
-     * {@link Consumer operation} is the effective implementation of the filter.
-     * It is executed for each {@code HttpExchange} before invoking either the
-     * next filter in the chain or the exchange handler (if this is the final
-     * filter in the chain).
+     * <p>The {@link #description() description} describes the returned filter.
+     * The {@link Consumer operation} is the effective implementation of the
+     * filter. It is executed for each {@code HttpExchange} before invoking
+     * either the next filter in the chain or the exchange handler (if this is
+     * the final filter in the chain).
      *
      * @apiNote
      * A beforeHandler filter is typically used to examine or modify the
-     * exchange state before it is handled. The filter operation is executed
-     * before {@link Filter.Chain#doFilter(HttpExchange)} is invoked, so before
-     * any subsequent filters in the chain and the exchange handler are
-     * executed. The response is commonly sent by the exchange handler.
-     * The filter is only expected to send the response in the uncommon case
-     * that the exchange will not be handled after the filter is executed.
+     * exchange state before it is handled. The filter {@code operation} is
+     * executed before {@link Filter.Chain#doFilter(HttpExchange)} is invoked,
+     * so before any subsequent filters in the chain and the exchange handler
+     * are executed. The filter {@code operation} is not expected to handle the
+     * request or {@linkplain HttpExchange#sendResponseHeaders(int, long) send response headers},
+     * since this is commonly done by the exchange handler.
      *
-     * <p> Example of adding a response header to all responses:
+     * <p> Example of adding the Foo response header to all responses:
      * <pre>{@code
-     *     var filter = Filter.beforeHandler("Add response header X-Content-Type-Options",
-     *                 (var e) -> e.getResponseHeaders().set("X-Content-Type-Options", "nosniff"));
-     *     var server = HttpServer.create(new InetSocketAddress(0), 10);
-     *     server.createContext("/", new SomeHandler()).getFilters().add(filter);
-     *     server.start();
+     *     var filter = Filter.beforeHandler("Add response header Foo",
+     *                 e -> e.getResponseHeaders().set("Foo", "Bar"));
+     *     httpContext.getFilters().add(filter);
      * }</pre>
      *
      * @param description the description of the returned filter
@@ -197,41 +195,38 @@ public abstract class Filter {
      * Returns a post-processing {@code Filter} with the given description and
      * operation.
      *
-     * <p>The {@code description} string describes the returned filter. The
-     * {@link Consumer operation} is the effective implementation of the filter.
-     * It is executed for each {@code HttpExchange} after invoking either the
-     * next filter in the chain or the exchange handler (if this filter is the
-     * final filter in the chain).
+     * <p>The {@link #description() description} describes the returned filter.
+     * The {@link Consumer operation} is the effective implementation of the
+     * filter. It is executed for each {@code HttpExchange} after invoking
+     * either the next filter in the chain or the exchange handler (if this
+     * filter is the final filter in the chain).
      *
      * @apiNote
      * An afterHandler filter is typically used to examine the exchange state
-     * rather than modifying it. The filter operation is executed after
+     * rather than modifying it. The filter {@code operation} is executed after
      * {@link Filter.Chain#doFilter(HttpExchange)} is invoked, this means any
      * subsequent filters in the chain and the exchange handler have been
-     * executed and the response has commonly been sent. The filter is only
-     * expected to send the response in the uncommon case that the exchange
-     * has not been handled before the filter is executed.
+     * executed. The filter {@code operation} is not expected to handle the
+     * exchange or {@linkplain HttpExchange#sendResponseHeaders(int, long) send the response headers}.
+     * Doing so is likely to fail, since this is commonly done by the exchange
+     * handler.
      *
-     * <p> Example of logging the response code of all exchanges:
+     * <p> Example of adding a filter that logs the response code of all exchanges:
      * <pre>{@code
-     *     var filter = Filter.afterHandler("Log response code", (var e) -> log(e.getResponseCode());
-     *     var server = HttpServer.create(new InetSocketAddress(0), 10);
-     *     var context = server.createContext("/", new SomeHandler());
-     *     context.getFilters().add(filter);
-     *     server.start();
+     *     var filter = Filter.afterHandler("Log response code", e -> log(e.getResponseCode());
+     *     httpContext.getFilters().add(filter);
      * }</pre>
      *
-     * <p> Example of adding a sequence of afterHandler filters to a context
-     * (note the ordering):
+     * <p> Example of adding a sequence of afterHandler filters to a context:<br>
+     * The order in which the filters are invoked is reverse to the order in
+     * which they are added to the context's filter-list.
      * <pre>{@code
-     *     var filter1 = Filter.afterHandler("Set a1", (var e) -> e.setAttribute("a1", "some value"));
-     *     var filter2 = Filter.afterHandler("Get a1", (var e) -> doSomething(e.getAttribute("a1")));
-     *     var server = HttpServer.create(new InetSocketAddress(0), 10);
-     *     var context = server.createContext("/", new SomeHandler());
-     *     context.getFilters().add(filter2);
-     *     context.getFilters().add(filter1);
-     *     server.start();
+     *     var a1Set = Filter.afterHandler("Set a1", e -> e.setAttribute("a1", "some value"));
+     *     var a1Get = Filter.afterHandler("Get a1", e -> doSomething(e.getAttribute("a1")));
+     *     httpContext.getFilters().addAll(List.of(a1Get, a1Set));
      * }</pre>
+     * <p>The operation of {@code a1Get} will be invoked after the operation of
+     * {@code a1Set} because {@code a1Get} was added before {@code a1Set}.
      *
      * @param description the description of the returned filter
      * @param operation the operation of the returned filter

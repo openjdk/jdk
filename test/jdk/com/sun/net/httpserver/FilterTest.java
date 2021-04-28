@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -54,7 +55,7 @@ import static org.testng.Assert.*;
 public class FilterTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
-
+    static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
     static final boolean ENABLE_LOGGING = true;
     static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
 
@@ -90,7 +91,7 @@ public class FilterTest {
         var handler = new EchoHandler();
         var filter = Filter.beforeHandler("Add x-foo response header",
                 (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
-        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
         server.createContext("/", handler).getFilters().add(filter);
         server.start();
         try {
@@ -112,7 +113,7 @@ public class FilterTest {
                 (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
         var filter2 = Filter.beforeHandler("Update x-foo response header",
                 (var e) -> e.getResponseHeaders().set("x-foo", "barbar"));
-        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(filter1);
         context.getFilters().add(filter2);
@@ -146,7 +147,7 @@ public class FilterTest {
                         throw new UncheckedIOException(ioe);
                     }
                 });
-        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         server.createContext("/", handler).getFilters().add(filter);
         server.start();
         try {
@@ -167,7 +168,7 @@ public class FilterTest {
         var respCode = new AtomicInteger();
         var filter = Filter.afterHandler("Log response code",
                 (var e) -> respCode.set(e.getResponseCode()));
-        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         server.createContext("/", handler).getFilters().add(filter);
         server.start();
         try {
@@ -190,7 +191,7 @@ public class FilterTest {
                 (var e) -> e.setAttribute("test-attr", value));
         var filter2 = Filter.afterHandler("Read attribute",
                 (var e) -> attr.set((String) e.getAttribute("test-attr")));
-        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(filter2);
         context.getFilters().add(filter1);
@@ -224,7 +225,7 @@ public class FilterTest {
                         throw new UncheckedIOException(ioe);
                     }
                 });
-        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         server.createContext("/", handler).getFilters().add(filter);
         server.start();
         try {
@@ -246,7 +247,7 @@ public class FilterTest {
                 (var e) -> e.getResponseHeaders().set("x-foo", "bar"));
         var afterFilter = Filter.afterHandler("Log response code",
                 (var e) -> respCode.set(e.getResponseCode()));
-        var server = HttpServer.create(new InetSocketAddress(0), 10);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(beforeFilter);
         context.getFilters().add(afterFilter);
