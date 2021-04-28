@@ -1327,17 +1327,16 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
   LabelObj* L_not_prim = new LabelObj();
   LabelObj* L_done = new LabelObj();
 
-  LIR_Opr temp = new_register(T_METADATA);
+  LIR_Opr klass = new_register(T_METADATA);
   // Checking if it's a java mirror of primitive type
-  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), temp, info);
-  __ cmp(lir_cond_notEqual, temp, LIR_OprFact::metadataConst(0));
+  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), klass, info);
+  __ cmp(lir_cond_notEqual, klass, LIR_OprFact::metadataConst(0));
   __ branch(lir_cond_notEqual, L_not_prim->label());
   __ move(LIR_OprFact::intConst(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), result);
   __ branch(lir_cond_always, L_done->label());
 
   __ branch_destination(L_not_prim->label());
-  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), temp, NULL);
-  __ move(new LIR_Address(temp, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
+  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
   __ branch_destination(L_done->label());
 }
 
