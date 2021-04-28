@@ -36,6 +36,7 @@
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
+template <StringDedupMode STRING_DEDUP>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
 private:
   ShenandoahObjToScanQueue* const _queue;
@@ -50,14 +51,16 @@ public:
   void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
+template <StringDedupMode STRING_DEDUP>
+ShenandoahInitMarkRootsClosure<STRING_DEDUP>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
   _queue(q),
   _mark_context(ShenandoahHeap::heap()->marking_context()) {
 }
 
+template <StringDedupMode STRING_DEDUP>
 template <class T>
-void ShenandoahInitMarkRootsClosure::do_oop_work(T* p) {
-  ShenandoahMark::mark_through_ref<T, NO_DEDUP>(p, _queue, _mark_context, false);
+void ShenandoahInitMarkRootsClosure<STRING_DEDUP>::do_oop_work(T* p) {
+  ShenandoahMark::mark_through_ref<T, STRING_DEDUP>(p, _queue, _mark_context, false);
 }
 
 class ShenandoahSTWMarkTask : public AbstractGangTask {
@@ -123,8 +126,13 @@ void ShenandoahSTWMark::mark() {
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
-  ShenandoahInitMarkRootsClosure  init_mark(task_queues()->queue(worker_id));
-  _root_scanner.roots_do(&init_mark, worker_id);
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahInitMarkRootsClosure<ALWAYS_DEDUP>  init_mark(task_queues()->queue(worker_id));
+    _root_scanner.roots_do(&init_mark, worker_id);
+  } else {
+    ShenandoahInitMarkRootsClosure<NO_DEDUP>  init_mark(task_queues()->queue(worker_id));
+    _root_scanner.roots_do(&init_mark, worker_id);
+  }
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
@@ -133,7 +141,7 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
 
   mark_loop(worker_id, &_terminator, rp,
-            false, // not cancellable
-            ShenandoahStringDedup::is_enabled());
+            false /* not cancellable */,
+            ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP);
 }
 

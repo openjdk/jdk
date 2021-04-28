@@ -34,8 +34,11 @@ public:
   // Initialize string deduplication.
   static void initialize();
 
-  // Enqueue a string to worker's local string dedup queue
+  // Enqueue a candidate string to worker's local string dedup queue
   static void enqueue_candidate(oop java_string);
+
+  // Enqueue a string to worker's local string dedup queue
+  static void enqueue_string(oop java_string);
 
   // Deduplicate a string, the call is lock-free
   static void deduplicate(oop java_string);

@@ -65,6 +65,15 @@ void ShenandoahStringDedup::enqueue_candidate(oop java_string) {
   }
 }
 
+/* Enqueue strings for deduplication, disregard string's age
+ * The method should only be called by GC worker threads during marking phases.
+ */
+void ShenandoahStringDedup::enqueue_string(oop java_string) {
+  assert(Thread::current()->is_Worker_thread(),
+        "Only from a GC worker thread");
+  StringDedupQueue::push(ShenandoahWorkerSession::worker_id(), java_string);
+}
+
 // Deduplicate a string, return true if it is deduplicated.
 void ShenandoahStringDedup::deduplicate(oop java_string) {
   assert(is_enabled(), "String deduplication not enabled");

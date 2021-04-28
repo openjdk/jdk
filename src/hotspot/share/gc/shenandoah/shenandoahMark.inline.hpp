@@ -259,6 +259,9 @@ inline void ShenandoahMark::mark_through_ref(T* p, ShenandoahObjToScanQueue* q, 
       if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
         assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
         ShenandoahStringDedup::enqueue_candidate(obj);
+      } else if ((STRING_DEDUP == ALWAYS_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
+        assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
+        ShenandoahStringDedup::enqueue_string(obj);
       }
     }
 
