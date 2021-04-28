@@ -31,15 +31,11 @@ package com.sun.crypto.provider;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.ProviderException;
-import java.util.HexFormat;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.nio.ch.DirectBuffer;
 
 /**
  * This class represents the GHASH function defined in NIST 800-38D
@@ -185,16 +181,8 @@ final class GHASH implements Cloneable {
 
         // If src is a direct bytebuffer, send it directly to the intrinsic
         if (ct.isDirect()) {
-            System.err.println(ct.order() + "\t" +
-                HexFormat.of().toHexDigits(((DirectBuffer) ct).address()));
-
             int processed = inLen - (inLen % AES_BLOCK_SIZE);
-            try {
-                processBlocksDirect(((DirectBuffer) ct).address(), ct.position(),
-                    processed / AES_BLOCK_SIZE, state, subkeyHtbl);
-            } finally {
-                Reference.reachabilityFence(ct);
-            }
+            processBlocksDirect(ct, inLen);
             ct.position(ct.position() + processed);
             return processed;
         } else if (!ct.isReadOnly()) {
@@ -290,45 +278,20 @@ final class GHASH implements Cloneable {
             offset += AES_BLOCK_SIZE;
         }
     }
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
 
-    private static void processBlockDirect(long address, int offset, long[] st,
-        long[] subH) {
-       // int firstHalf = unsafe.getInt(address);
-        //int secondHalf = unsafe.getInt(address + 8 );
+    private void processBlocksDirect(ByteBuffer ct, int inLen) {
 
-        //XXX  This handles little endian, need to handle big
-        /*
-        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-            Long l = unsafe.getLong(address + offset);
-            l = Long.reverseBytes(l);
-            st[1] ^= l;
-            l = unsafe.getLong(address + offset + 8);
-            l = Long.reverseBytes(l);
-            st[0] ^= l;
-        } else {
-              */
-            Long l = unsafe.getLong(address + offset);
-            l = Long.reverseBytes(l);
-            st[0] ^= l;
-            l = unsafe.getLong(address + offset + 8);
-            l = Long.reverseBytes(l);
-            st[1] ^= l;
-     //   }
-        blockMult(st, subH);
-    }
-
-    static int xxx = 0;
-    @IntrinsicCandidate
-    private static void processBlocksDirect(long address, int offset, int blocks, long[] st,
-        long[] subH) {
-
-        System.err.print("\t" + xxx++);
-
-        do {
-            processBlockDirect(address, offset, st, subH);
-            offset += 16;
-        } while (--blocks > 0);
+        byte[] data = new byte[Math.min(MAX_LEN, inLen)];
+        while (inLen > MAX_LEN) {
+            ct.get(data, 0, MAX_LEN);
+            processBlocks(data, 0, MAX_LEN / AES_BLOCK_SIZE, state, subkeyHtbl);
+            inLen -= MAX_LEN;
+        }
+        if (inLen >= AES_BLOCK_SIZE) {
+            int len = inLen - (inLen % AES_BLOCK_SIZE);
+            ct.get(data, 0, len);
+            processBlocks(data, 0, len / AES_BLOCK_SIZE, state, subkeyHtbl);
+        }
     }
 
     byte[] digest() {
