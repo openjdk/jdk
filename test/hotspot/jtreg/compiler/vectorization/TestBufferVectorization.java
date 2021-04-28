@@ -28,12 +28,12 @@
  * @library /test/lib /
  * @requires vm.compiler2.enabled & vm.debug == true
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
- * @run main compiler.vectorization.TestBufferVectorization array
- * @run main compiler.vectorization.TestBufferVectorization arrayOffset
- * @run main compiler.vectorization.TestBufferVectorization buffer
- * @run main compiler.vectorization.TestBufferVectorization bufferHeap
- * @run main compiler.vectorization.TestBufferVectorization bufferDirect
- * @run main compiler.vectorization.TestBufferVectorization arrayView
+ * @run driver compiler.vectorization.TestBufferVectorization array
+ * @run driver compiler.vectorization.TestBufferVectorization arrayOffset
+ * @run driver compiler.vectorization.TestBufferVectorization buffer
+ * @run driver compiler.vectorization.TestBufferVectorization bufferHeap
+ * @run driver compiler.vectorization.TestBufferVectorization bufferDirect
+ * @run driver compiler.vectorization.TestBufferVectorization arrayView
  */
 
 package compiler.vectorization;
