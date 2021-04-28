@@ -5788,7 +5788,6 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktm
 // --------------------------------- Signum ---------------------------
 
 instruct signumF_reg(regF dst, regF zero, regF one, rRegP scratch, rFlagsReg cr) %{
-  predicate(UseSSE>=1);
   match(Set dst (SignumF dst (Binary zero one)));
   effect(TEMP scratch, KILL cr);
   format %{ "signumF $dst, $dst\t! using $scratch as TEMP" %}
@@ -5800,7 +5799,6 @@ instruct signumF_reg(regF dst, regF zero, regF one, rRegP scratch, rFlagsReg cr)
 %}
 
 instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr) %{
-  predicate(UseSSE>=2);
   match(Set dst (SignumD dst (Binary zero one)));
   effect(TEMP scratch, KILL cr);
   format %{ "signumD $dst, $dst\t! using $scratch as TEMP" %}
