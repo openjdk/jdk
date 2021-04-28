@@ -413,7 +413,7 @@ public class DocCommentParser {
     protected DCReference reference(boolean allowMember) throws ParseException {
         int pos = bp;
         int depth = 0;
-
+        StringBuilder sb = new StringBuilder();
         // scan to find the end of the signature, by looking for the first
         // whitespace not enclosed in () or <>, or the end of the tag
         loop:
@@ -426,18 +426,23 @@ public class DocCommentParser {
                 case ' ': case '\t':
                     if (depth == 0)
                         break loop;
+                    // Only add whitespace if necessary, and normalize to space char
+                    if (shouldAddWhitespace(sb))
+                        sb.append(' ');
                     break;
 
                 case '(':
                 case '<':
                     newline = false;
                     depth++;
+                    sb.append(ch);
                     break;
 
                 case ')':
                 case '>':
                     newline = false;
                     --depth;
+                    sb.append(ch);
                     break;
 
                 case '}':
@@ -453,6 +458,7 @@ public class DocCommentParser {
 
                 default:
                     newline = false;
+                    sb.append(ch);
 
             }
             nextChar();
@@ -461,8 +467,7 @@ public class DocCommentParser {
         if (depth != 0)
             throw new ParseException("dc.unterminated.signature");
 
-        String sig = newString(pos, bp);
-
+        String sig = sb.toString();
 
         try {
             ReferenceParser.Reference ref = new ReferenceParser(fac).parse(sig);
@@ -474,6 +479,16 @@ public class DocCommentParser {
             throw new ParseException(parseException.getMessage());
         }
 
+    }
+
+    // Checks whether whitespace should be added to a (mostly) normalized signature string.
+    private boolean shouldAddWhitespace(StringBuilder sb) {
+        if (!sb.isEmpty()) {
+            char lastChar = sb.charAt(sb.length() - 1);
+            // Suppress repeated whitespace, as well as whitespace after opening parens/brackets
+            return !Character.isWhitespace(lastChar) && lastChar != '(' && lastChar != '<';
+        }
+        return false;
     }
 
     /**

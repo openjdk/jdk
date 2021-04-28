@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@ public class Test {
    /**
     * Testing different combos of see tags.
     * @see InnerOne#foo()
-    * @see InnerOne#bar(Object)
+    * @see InnerOne#bar(
+    *                   Object)
     * @see <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a>
     * @see InnerOne#baz(float priority) something
     */

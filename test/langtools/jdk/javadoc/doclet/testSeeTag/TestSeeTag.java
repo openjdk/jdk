@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8017191 8182765 8200432 8239804
+ * @bug      8017191 8182765 8200432 8239804 8250766
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
