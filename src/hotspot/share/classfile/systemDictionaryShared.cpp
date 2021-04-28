@@ -2274,7 +2274,7 @@ public:
 
   void do_value(const RunTimeSharedClassInfo* record) {
     ResourceMark rm;
-    _st->print_cr("%4d: %s %s", ++_index, record->_klass->external_name(),
+    _st->print_cr("%4d: %s %s", _index++, record->_klass->external_name(),
         class_loader_name_for_shared(record->_klass));
   }
   int index() const { return _index; }
@@ -2291,10 +2291,9 @@ public:
       ResourceMark rm;
       Klass* k = record->proxy_klass_head();
       while (k != nullptr) {
-        _st->print_cr("%4d: %s %s", _index, k->external_name(),
+        _st->print_cr("%4d: %s %s", _index++, k->external_name(),
                       class_loader_name_for_shared(k));
         k = k->next_link();
-        _index++;
       }
     }
   }
@@ -2313,7 +2312,7 @@ void SystemDictionaryShared::print_on(const char* prefix,
   unregistered_dictionary->iterate(&p);
   if (!lambda_dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
-    SharedLambdaDictionaryPrinter ldp(st, p.index() + 1);
+    SharedLambdaDictionaryPrinter ldp(st, p.index());
     lambda_dictionary->iterate(&ldp);
   }
 }

@@ -72,11 +72,12 @@ void LambdaFormInvokers::append_filtered(char* line) {
 }
 #undef NUM_FILTER
 
-void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
+void LambdaFormInvokers::regenerate_holder_classes() {
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
     log_info(cds)("Nothing to regenerate for holder classes");
     return;
   }
+  JavaThread* THREAD = JavaThread::current();
   ResourceMark rm(THREAD);
 
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
@@ -182,7 +183,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
       char* str = _lambdaform_lines->at(i);
       int len = (int)strlen(str);
       Array<char>* line = ArchiveBuilder::new_ro_array<char>(len+1);
-      strcpy(line->adr_at(0), str); // copies terminating zero as well
+      strncpy(line->adr_at(0), str, (size_t)(len + 1)); // copies terminating zero as well
 
       _static_archive_invokers->at_put(i, line);
       ArchivePtrMarker::mark_pointer(_static_archive_invokers->adr_at(i));

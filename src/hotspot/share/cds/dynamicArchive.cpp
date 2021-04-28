@@ -369,9 +369,8 @@ void DynamicArchive::dump() {
   }
 
   // regenerate lambdaform holder classes
-  JavaThread* THREAD = JavaThread::current();
   log_info(cds, dynamic)("Regenerate lambdaform holder classes ...");
-  LambdaFormInvokers::regenerate_holder_classes(THREAD);
+  LambdaFormInvokers::regenerate_holder_classes();
   log_info(cds, dynamic)("Regenerate lambdaform holder classes ...done");
 
   VM_PopulateDynamicDumpSharedSpace op;

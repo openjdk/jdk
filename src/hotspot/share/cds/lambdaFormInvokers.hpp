@@ -40,7 +40,7 @@ class LambdaFormInvokers : public AllStatic {
  public:
   static void append(char* line);
   static void append_filtered(char* line);
-  static void regenerate_holder_classes(TRAPS);
+  static void regenerate_holder_classes();
   static GrowableArrayCHeap<char*, mtClassShared>* lambdaform_lines() {
     return _lambdaform_lines;
   }
