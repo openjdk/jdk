@@ -522,6 +522,11 @@ java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720 w
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720 windows-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java
 
+# Several tests which fail sometimes on macos11
+java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
+java/awt/security/WarningWindowDisposeTest/WarningWindowDisposeTest.java 8266059 macosx-all
+java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
+java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
 
 ############################################################################
 
