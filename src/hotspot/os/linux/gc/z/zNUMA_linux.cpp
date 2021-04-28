@@ -30,22 +30,24 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
-static bool check_get_mempolicy_support() {
-  int dummy = 0;
-  int mode = -1;
-  // Check whether get_mempolicy is supported since most containers may disable it by default.
-  if (ZSyscall::get_mempolicy(&mode, NULL, 0, (void*)&dummy, MPOL_F_NODE | MPOL_F_ADDR) == -1) {
-    if (!FLAG_IS_DEFAULT(UseNUMA)) {
-      warning("ZGC NUMA support is disabled since get_mempolicy is unsupported.");
-    }
-    return false;
+static bool numa_memory_id(void* addr, uint32_t* id) {
+  return ZSyscall::get_mempolicy((int*)id, NULL, 0, addr, MPOL_F_NODE | MPOL_F_ADDR) != -1;
+}
+
+static bool is_numa_supported() {
+  // Test if syscall is available
+  uint32_t dummy = 0;
+  const bool available = numa_memory_id(&dummy, &dummy);
+
+  if (!available && !FLAG_IS_DEFAULT(UseNUMA)) {
+    warning("NUMA support disabled, system call get_mempolicy not available");
   }
 
-  return true;
+  return available;
 }
 
 void ZNUMA::pd_initialize() {
-  _enabled = UseNUMA && check_get_mempolicy_support();
+  _enabled = UseNUMA && is_numa_supported();
 }
 
 uint32_t ZNUMA::count() {
@@ -74,7 +76,7 @@ uint32_t ZNUMA::memory_id(uintptr_t addr) {
 
   uint32_t id = (uint32_t)-1;
 
-  if (ZSyscall::get_mempolicy((int*)&id, NULL, 0, (void*)addr, MPOL_F_NODE | MPOL_F_ADDR) == -1) {
+  if (!numa_memory_id((void*)addr, &id)) {
     ZErrno err;
     fatal("Failed to get NUMA id for memory at " PTR_FORMAT " (%s)", addr, err.to_string());
   }
