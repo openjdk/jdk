@@ -1654,7 +1654,7 @@ bool LibraryCallKit::inline_math_pow() {
       Node* phi = new PhiNode(region, Type::DOUBLE);
 
       Node* cmp  = _gvn.transform(new CmpDNode(base, zero));
-      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::le));
 
       Node* if_pow = generate_slow_guard(test, NULL);
       Node* value_sqrt = _gvn.transform(new SqrtDNode(C, control(), base));
