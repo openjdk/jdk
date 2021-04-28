@@ -2656,8 +2656,22 @@ extern "C" void unexpected_adapter_call() {
   ShouldNotCallThis();
 }
 
+static void post_adapter_creation(const AdapterBlob* new_adapter, const AdapterHandlerEntry* entry) {
+  char blob_id[256];
+  jio_snprintf(blob_id,
+                sizeof(blob_id),
+                "%s(%s)@" PTR_FORMAT,
+                new_adapter->name(),
+                entry->fingerprint()->as_string(),
+                new_adapter->content_begin());
+  Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+
+  if (JvmtiExport::should_post_dynamic_code_generated()) {
+    JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+  }
+}
+
 void AdapterHandlerLibrary::initialize() {
-  assert(_adapters == NULL, "Initializing more than once");
 
   ResourceMark rm;
   AdapterBlob* no_arg_blob = NULL;
@@ -2676,6 +2690,8 @@ void AdapterHandlerLibrary::initialize() {
 
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
+    assert(_adapters == NULL, "Initializing more than once");
+
     _adapters = new AdapterHandlerTable();
 
     // Create a special handler for abstract methods.  Abstract methods
@@ -2690,11 +2706,11 @@ void AdapterHandlerLibrary::initialize() {
 
     _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
 
-    _no_arg_handler = create_adapter(no_arg_blob, 0, NULL, /* generate_code_blob */ true);
-    _obj_arg_handler = create_adapter(obj_arg_blob, 1, obj_args, /* generate_code_blob */ true);
-    _int_arg_handler = create_adapter(int_arg_blob, 1, int_args, /* generate_code_blob */ true);
-    _obj_int_arg_handler = create_adapter(obj_int_arg_blob, 2, obj_int_args, /* generate_code_blob */ true);
-    _obj_obj_arg_handler = create_adapter(obj_obj_arg_blob, 2, obj_obj_args, /* generate_code_blob */ true);
+    _no_arg_handler = create_adapter(no_arg_blob, 0, NULL, true);
+    _obj_arg_handler = create_adapter(obj_arg_blob, 1, obj_args, true);
+    _int_arg_handler = create_adapter(int_arg_blob, 1, int_args, true);
+    _obj_int_arg_handler = create_adapter(obj_int_arg_blob, 2, obj_int_args, true);
+    _obj_obj_arg_handler = create_adapter(obj_obj_arg_blob, 2, obj_obj_args, true);
   }
 
   assert(no_arg_blob != NULL &&
@@ -2704,12 +2720,11 @@ void AdapterHandlerLibrary::initialize() {
          obj_obj_arg_blob != NULL, "Initial adapters must be properly created");
 
   // Outside of the lock
-  post_adapter_creation(no_arg_blob, _no_arg_handler->fingerprint());
-  post_adapter_creation(obj_arg_blob, _obj_arg_handler->fingerprint());
-  post_adapter_creation(int_arg_blob, _int_arg_handler->fingerprint());
-  post_adapter_creation(obj_int_arg_blob, _obj_int_arg_handler->fingerprint());
-  post_adapter_creation(obj_obj_arg_blob, _obj_obj_arg_handler->fingerprint());
-
+  post_adapter_creation(no_arg_blob, _no_arg_handler);
+  post_adapter_creation(obj_arg_blob, _obj_arg_handler);
+  post_adapter_creation(int_arg_blob, _int_arg_handler);
+  post_adapter_creation(obj_int_arg_blob, _obj_int_arg_handler);
+  post_adapter_creation(obj_obj_arg_blob, _obj_obj_arg_handler);
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint,
@@ -2764,10 +2779,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
   // the AdapterHandlerTable (it is not safe for concurrent readers
   // and a single writer: this could be fixed if it becomes a
   // problem).
-  assert(_adapters != NULL &&
-         _abstract_method_handler != NULL &&
-         _no_arg_handler != NULL &&
-         _obj_arg_handler != NULL, "Uninitialized");
+  assert(_adapters != NULL, "Uninitialized");
 
   // Fast-path for trivial adapters
   AdapterHandlerEntry* entry = get_simple_adapter(method);
@@ -2775,20 +2787,17 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     return entry;
   }
 
-  ResourceMark rm;
-
   AdapterBlob* new_adapter = NULL;
-  AdapterFingerPrint* fingerprint = NULL;
-  int total_args_passed = method->size_of_parameters(); // All args on stack
-
-  BasicType stack_sig_bt[16];
-  BasicType* sig_bt = (total_args_passed <= 16) ? stack_sig_bt : NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
-
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
+    ResourceMark rm;
+
     // Fill in the signature array, for the calling-convention call.
     int total_args_passed = method->size_of_parameters(); // All args on stack
+
+    BasicType stack_sig_bt[16];
+    BasicType* sig_bt = (total_args_passed <= 16) ? stack_sig_bt : NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
 
     int i = 0;
     if (!method->is_static())  // Pass in receiver first
@@ -2807,8 +2816,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
 #ifdef ASSERT
       if (VerifyAdapterSharing) {
         AdapterBlob* comparison_blob = NULL;
-        AdapterHandlerEntry* comparison_entry
-          = create_adapter(comparison_blob, total_args_passed, sig_bt, /* generate_code_blob */ false);
+        AdapterHandlerEntry* comparison_entry = create_adapter(comparison_blob, total_args_passed, sig_bt, false);
         assert(comparison_blob == NULL, "no blob should be created when creating an adapter for comparison");
         assert(comparison_entry->compare_code(entry), "code must match");
         // Release the one just created and return the original
@@ -2817,14 +2825,13 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
 #endif
       return entry;
     }
-
     // StubRoutines::code2() is initialized after this function can be called. As a result,
     // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
     // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
     // stub that ensure that an I2C stub is called from an interpreter frame.
     bool contains_all_checks = StubRoutines::code2() != NULL;
 
-    entry = create_adapter(new_adapter, total_args_passed, sig_bt, /* generate_code_blob */ true);
+    entry = create_adapter(new_adapter, total_args_passed, sig_bt, /* allocate_code_blob */ true);
 
     // Add the entry only if the entry contains all required checks (see sharedRuntime_xxx.cpp)
     // The checks are inserted only if -XX:+VerifyAdapterCalls is specified.
@@ -2834,7 +2841,9 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
   }
 
   // Outside of the lock
-  post_adapter_creation(new_adapter, entry->fingerprint());
+  if (new_adapter != NULL) {
+    post_adapter_creation(new_adapter, entry);
+  }
   return entry;
 }
 
@@ -2845,6 +2854,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   VMRegPair stack_regs[16];
   VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
 
+  // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
   int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
   BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
   CodeBuffer buffer(buf);
@@ -2852,6 +2862,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   buffer.insts()->initialize_shared_locs((relocInfo*)buffer_locs,
                                           sizeof(buffer_locs)/sizeof(relocInfo));
 
+  // Make a C heap allocated version of the fingerprint to store in the adapter
   AdapterFingerPrint* fingerprint = new AdapterFingerPrint(total_args_passed, sig_bt);
   MacroAssembler _masm(&buffer);
   AdapterHandlerEntry* entry = SharedRuntime::generate_i2c2i_adapters(&_masm,
@@ -2894,25 +2905,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
     }
   }
 #endif
-
   return entry;
-}
-
-void AdapterHandlerLibrary::post_adapter_creation(AdapterBlob* new_adapter, AdapterFingerPrint* fingerprint) {
-  if (new_adapter != NULL) {
-    char blob_id[256];
-    jio_snprintf(blob_id,
-                  sizeof(blob_id),
-                  "%s(%s)@" PTR_FORMAT,
-                  new_adapter->name(),
-                  fingerprint->as_string(),
-                  new_adapter->content_begin());
-    Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
-
-    if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
-    }
-  }
 }
 
 address AdapterHandlerEntry::base_address() {
