@@ -187,16 +187,18 @@ final class GHASH {
         blockMult(st, subH);
     }
 
-    void update(byte[] in) {
-        update(in, 0, in.length);
+    int update(byte[] in) {
+        return update(in, 0, in.length);
     }
 
-    void update(byte[] in, int inOfs, int inLen) {
+    int update(byte[] in, int inOfs, int inLen) {
         if (inLen == 0) {
-            return;
+            return 0;
         }
-        ghashRangeCheck(in, inOfs, inLen, state, subkeyHtbl);
-        processBlocks(in, inOfs, inLen/AES_BLOCK_SIZE, state, subkeyHtbl);
+        int len = inLen - (inLen % AES_BLOCK_SIZE);
+        ghashRangeCheck(in, inOfs, len, state, subkeyHtbl);
+        processBlocks(in, inOfs, len / AES_BLOCK_SIZE, state, subkeyHtbl);
+        return len;
     }
 
     // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
@@ -229,6 +231,18 @@ final class GHASH {
         byte[] block = new byte[AES_BLOCK_SIZE];
         src.get(block, 0, inLen - processed);
         update(block, 0, AES_BLOCK_SIZE);
+    }
+
+    int doLastBlock(byte[] in, int inOfs, int inLen) {
+        int remainder = inLen % AES_BLOCK_SIZE;
+        inOfs += update(in, inOfs, inLen - remainder);
+        if (remainder > 0) {
+            byte[] block = new byte[AES_BLOCK_SIZE];
+            System.arraycopy(in, inOfs, block, 0,
+                remainder);
+            update(block, 0, AES_BLOCK_SIZE);
+        }
+        return inLen;
     }
 
     private static void ghashRangeCheck(byte[] in, int inOfs, int inLen, long[] st, long[] subH) {

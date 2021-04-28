@@ -197,15 +197,6 @@ final class CipherCore {
             cipher = new CounterMode(rawImpl);
             unitBytes = 1;
             padding = null;
-        }  else if (modeUpperCase.equals("GCM")) {
-            // can only be used for block ciphers w/ 128-bit block size
-            if (blockSize != 16) {
-                throw new NoSuchAlgorithmException
-                    ("GCM mode can only be used for AES cipher");
-            }
-            cipherMode = GCM_MODE;
-            cipher = new GaloisCounterMode(rawImpl);
-            padding = null;
         } else if (modeUpperCase.startsWith("CFB")) {
             cipherMode = CFB_MODE;
             unitBytes = getNumOfUnit(mode, "CFB".length(), blockSize);
@@ -328,32 +319,16 @@ final class CipherCore {
     private int getOutputSizeByOperation(int inputLen, boolean isDoFinal) {
         int totalLen = Math.addExact(buffered, cipher.getBufferedLength());
         totalLen = Math.addExact(totalLen, inputLen);
-        switch (cipherMode) {
-        case GCM_MODE:
-            if (isDoFinal) {
-                int tagLen = ((GaloisCounterMode) cipher).getTagLen();
-                if (!decrypting) {
-                    totalLen = Math.addExact(totalLen, tagLen);
+        if (padding != null && !decrypting) {
+            if (unitBytes != blockSize) {
+                if (totalLen < diffBlocksize) {
+                    totalLen = diffBlocksize;
                 } else {
-                    totalLen -= tagLen;
+                    int residue = (totalLen - diffBlocksize) % blockSize;
+                    totalLen = Math.addExact(totalLen, (blockSize - residue));
                 }
-            }
-            if (totalLen < 0) {
-                totalLen = 0;
-            }
-            break;
-        default:
-            if (padding != null && !decrypting) {
-                if (unitBytes != blockSize) {
-                    if (totalLen < diffBlocksize) {
-                        totalLen = diffBlocksize;
-                    } else {
-                        int residue = (totalLen - diffBlocksize) % blockSize;
-                        totalLen = Math.addExact(totalLen, (blockSize - residue));
-                    }
-                } else {
-                    totalLen = Math.addExact(totalLen, padding.padLength(totalLen));
-                }
+            } else {
+                totalLen = Math.addExact(totalLen, padding.padLength(totalLen));
             }
             break;
         }
@@ -406,18 +381,12 @@ final class CipherCore {
             }
             SunJCE.getRandom().nextBytes(iv);
         }
-        if (cipherMode == GCM_MODE) {
-            algName = "GCM";
-            spec = new GCMParameterSpec
-                (((GaloisCounterMode) cipher).getTagLen()*8, iv);
+        if (algName.equals("RC2")) {
+            RC2Crypt rawImpl = (RC2Crypt) cipher.getEmbeddedCipher();
+            spec = new RC2ParameterSpec
+                (rawImpl.getEffectiveKeyBits(), iv);
         } else {
-           if (algName.equals("RC2")) {
-               RC2Crypt rawImpl = (RC2Crypt) cipher.getEmbeddedCipher();
-               spec = new RC2ParameterSpec
-                   (rawImpl.getEffectiveKeyBits(), iv);
-           } else {
-               spec = new IvParameterSpec(iv);
-           }
+            spec = new IvParameterSpec(iv);
         }
         try {
             params = AlgorithmParameters.getInstance(algName,
@@ -505,42 +474,25 @@ final class CipherCore {
 
         byte[] keyBytes = getKeyBytes(key);
         try {
-            int tagLen = -1;
             byte[] ivBytes = null;
             if (params != null) {
-                if (cipherMode == GCM_MODE) {
-                    if (params instanceof GCMParameterSpec) {
-                        tagLen = ((GCMParameterSpec) params).getTLen();
-                        if (tagLen < 96 || tagLen > 128 || ((tagLen & 0x07) != 0)) {
-                            throw new InvalidAlgorithmParameterException
-                                    ("Unsupported TLen value; must be one of " +
-                                            "{128, 120, 112, 104, 96}");
-                        }
-                        tagLen = tagLen >> 3;
-                        ivBytes = ((GCMParameterSpec) params).getIV();
-                    } else {
+                if (params instanceof IvParameterSpec) {
+                    ivBytes = ((IvParameterSpec) params).getIV();
+                    if ((ivBytes == null) || (ivBytes.length != blockSize)) {
                         throw new InvalidAlgorithmParameterException
-                                ("Unsupported parameter: " + params);
+                            ("Wrong IV length: must be " + blockSize +
+                                " bytes long");
+                    }
+                } else if (params instanceof RC2ParameterSpec) {
+                    ivBytes = ((RC2ParameterSpec) params).getIV();
+                    if ((ivBytes != null) && (ivBytes.length != blockSize)) {
+                        throw new InvalidAlgorithmParameterException
+                            ("Wrong IV length: must be " + blockSize +
+                                " bytes long");
                     }
                 } else {
-                    if (params instanceof IvParameterSpec) {
-                        ivBytes = ((IvParameterSpec) params).getIV();
-                        if ((ivBytes == null) || (ivBytes.length != blockSize)) {
-                            throw new InvalidAlgorithmParameterException
-                                    ("Wrong IV length: must be " + blockSize +
-                                            " bytes long");
-                        }
-                    } else if (params instanceof RC2ParameterSpec) {
-                        ivBytes = ((RC2ParameterSpec) params).getIV();
-                        if ((ivBytes != null) && (ivBytes.length != blockSize)) {
-                            throw new InvalidAlgorithmParameterException
-                                    ("Wrong IV length: must be " + blockSize +
-                                            " bytes long");
-                        }
-                    } else {
-                        throw new InvalidAlgorithmParameterException
-                                ("Unsupported parameter: " + params);
-                    }
+                    throw new InvalidAlgorithmParameterException
+                        ("Unsupported parameter: " + params);
                 }
             }
             if (cipherMode == ECB_MODE) {
@@ -569,34 +521,7 @@ final class CipherCore {
             diffBlocksize = blockSize;
 
             String algorithm = key.getAlgorithm();
-
-            // GCM mode needs additional handling
-            if (cipherMode == GCM_MODE) {
-                if (tagLen == -1) {
-                    tagLen = GaloisCounterMode.DEFAULT_TAG_LEN;
-                }
-                if (decrypting) {
-                    minBytes = tagLen;
-                } else {
-                    // check key+iv for encryption in GCM mode
-                    requireReinit =
-                            Arrays.equals(ivBytes, lastEncIv) &&
-                                    MessageDigest.isEqual(keyBytes, lastEncKey);
-                    if (requireReinit) {
-                        throw new InvalidAlgorithmParameterException
-                                ("Cannot reuse iv for GCM encryption");
-                    }
-                    lastEncIv = ivBytes;
-                    if (lastEncKey != null) {
-                        Arrays.fill(lastEncKey, (byte) 0);
-                    }
-                    lastEncKey = keyBytes;
-                }
-                ((GaloisCounterMode) cipher).init
-                        (decrypting, algorithm, keyBytes, ivBytes, tagLen);
-            } else {
-                cipher.init(decrypting, algorithm, keyBytes, ivBytes);
-            }
+            cipher.init(decrypting, algorithm, keyBytes, ivBytes);
             // skip checking key+iv from now on until after doFinal()
             requireReinit = false;
         } finally {
@@ -1245,31 +1170,5 @@ final class CipherCore {
     void updateAAD(byte[] src, int offset, int len) {
         checkReinit();
         cipher.updateAAD(src, offset, len);
-    }
-
-    // This must only be used with GCM.
-    // If some data has been buffered from an update call, operate on the buffer
-    // then run doFinal.
-    int gcmDoFinal(ByteBuffer src, ByteBuffer dst) throws ShortBufferException,
-        IllegalBlockSizeException, BadPaddingException {
-        int estOutSize = getOutputSizeByOperation(src.remaining(), true);
-        if (estOutSize > dst.remaining()) {
-            throw new ShortBufferException("output buffer too small");
-        }
-
-        int len;
-        if (decrypting) {
-            if (buffered > 0) {
-                cipher.decrypt(buffer, 0, buffered, new byte[0], 0);
-            }
-            len = cipher.decryptFinal(src, dst);
-        } else {
-            if (buffered > 0) {
-                ((GaloisCounterMode)cipher).encrypt(buffer, 0, buffered);
-            }
-            len = cipher.encryptFinal(src, dst);
-        }
-        endDoFinal();
-        return len;
     }
 }

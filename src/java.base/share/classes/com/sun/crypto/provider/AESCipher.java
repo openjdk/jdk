@@ -138,19 +138,19 @@ abstract class AESCipher extends CipherSpi {
             super(32, "CFB", "NOPADDING");
         }
     }
-    public static final class AES128_GCM_NoPadding extends OidImpl {
+    public static final class AES128_GCM_NoPadding extends GaloisCounterMode {
         public AES128_GCM_NoPadding() {
-            super(16, "GCM", "NOPADDING");
+            super(16, new AESCrypt());
         }
     }
-    public static final class AES192_GCM_NoPadding extends OidImpl {
+    public static final class AES192_GCM_NoPadding extends GaloisCounterMode {
         public AES192_GCM_NoPadding() {
-            super(24, "GCM", "NOPADDING");
+            super(24, new AESCrypt());
         }
     }
-    public static final class AES256_GCM_NoPadding extends OidImpl {
+    public static final class AES256_GCM_NoPadding extends GaloisCounterMode {
         public AES256_GCM_NoPadding() {
-            super(32, "GCM", "NOPADDING");
+            super(32, new AESCrypt());
         }
     }
 
@@ -672,10 +672,6 @@ abstract class AESCipher extends CipherSpi {
     protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
         throws ShortBufferException, IllegalBlockSizeException,
         BadPaddingException {
-        if (core.getMode() == CipherCore.GCM_MODE && !input.hasArray()) {
-            return core.gcmDoFinal(input, output);
-        } else {
-            return super.engineDoFinal(input, output);
-        }
+        return super.engineDoFinal(input, output);
     }
 }
