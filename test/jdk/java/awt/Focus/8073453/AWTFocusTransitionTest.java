@@ -36,7 +36,6 @@ import java.awt.DefaultFocusTraversalPolicy;
 import java.awt.Frame;
 import java.awt.GridLayout;
 import java.awt.Panel;
-import java.awt.Point;
 import java.awt.Robot;
 import java.awt.TextField;
 import java.awt.event.KeyEvent;
@@ -48,30 +47,15 @@ public class AWTFocusTransitionTest {
     private static TextField textField;
     private static Button button;
 
-    private static void blockTillDisplayed(Component comp) {
-        Point p = null;
-        while (p == null) {
-            try {
-                p = comp.getLocationOnScreen();
-            } catch (IllegalStateException e) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ie) {
-                }
-            }
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
 
         try {
             createAndShowGUI();
 
             robot.waitForIdle();
 
-            blockTillDisplayed(textField);
             checkFocusOwner(textField);
 
             robot.keyPress(KeyEvent.VK_TAB);
@@ -123,7 +107,6 @@ public class AWTFocusTransitionTest {
         p.add(panel);
 
         frame.add(p);
-        frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }

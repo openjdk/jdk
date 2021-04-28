@@ -39,7 +39,6 @@ import javax.swing.SwingUtilities;
 import java.awt.Component;
 import java.awt.DefaultFocusTraversalPolicy;
 import java.awt.GridLayout;
-import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 
@@ -50,23 +49,9 @@ public class SwingFocusTransitionTest {
     private static JTextField textField;
     private static JButton button;
 
-    private static void blockTillDisplayed(Component comp) {
-        Point p = null;
-        while (p == null) {
-            try {
-                p = comp.getLocationOnScreen();
-            } catch (IllegalStateException e) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ie) {
-                }
-            }
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -78,7 +63,6 @@ public class SwingFocusTransitionTest {
 
             robot.waitForIdle();
 
-            blockTillDisplayed(textField);
             checkFocusOwner(textField);
 
             robot.keyPress(KeyEvent.VK_TAB);
@@ -135,7 +119,6 @@ public class SwingFocusTransitionTest {
         p.add(panel);
 
         frame.add(p);
-        frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
