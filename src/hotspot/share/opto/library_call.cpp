@@ -1643,9 +1643,7 @@ bool LibraryCallKit::inline_math_pow() {
       Node* base = round_double_node(argument(0));
       set_result(_gvn.transform(new MulDNode(base, base)));
       return true;
-    }
-#if defined(X86) && defined(_LP64)
-    else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
+    } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
       // Special case: pow(x, 0.5) => sqrt(x)
       Node* base = round_double_node(argument(0));
       Node* zero = _gvn.zerocon(T_DOUBLE);
@@ -1684,7 +1682,6 @@ bool LibraryCallKit::inline_math_pow() {
 
       return true;
     }
-#endif // defined(X86) && defined(_LP64)
   }
 
   return StubRoutines::dpow() != NULL ?
