@@ -269,7 +269,7 @@ public final class XMLSecurityManager {
             printEntityCountInfo = (String)value;
         } else {
             int temp;
-            if (Integer.class.isAssignableFrom(value.getClass())) {
+            if (value instanceof Integer) {
                 temp = (Integer)value;
             } else {
                 temp = Integer.parseInt((String) value);
@@ -566,13 +566,13 @@ public final class XMLSecurityManager {
             }
             return securityManager;
         }
-        if (XMLSecurityManager.class.isAssignableFrom(value.getClass())) {
+        if (value instanceof XMLSecurityManager) {
             return (XMLSecurityManager)value;
         } else {
             if (securityManager == null) {
                 securityManager = new XMLSecurityManager(true);
             }
-            if (SecurityManager.class.isAssignableFrom(value.getClass())) {
+            if (value instanceof SecurityManager) {
                 SecurityManager origSM = (SecurityManager)value;
                 securityManager.setLimit(Limit.MAX_OCCUR_NODE_LIMIT, State.APIPROPERTY, origSM.getMaxOccurNodeLimit());
                 securityManager.setLimit(Limit.ENTITY_EXPANSION_LIMIT, State.APIPROPERTY, origSM.getEntityExpansionLimit());

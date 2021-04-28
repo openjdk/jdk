@@ -260,7 +260,7 @@ public final class XMLSecurityManager {
             printEntityCountInfo = (String)value;
         } else {
             int temp;
-            if (Integer.class.isAssignableFrom(value.getClass())) {
+            if (value instanceof Integer) {
                 temp = (Integer)value;
             } else {
                 temp = Integer.parseInt((String) value);
